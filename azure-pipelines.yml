@@ -3,8 +3,8 @@
 # Add steps that publish symbols, save build artifacts, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
 
-trigger:
-- master
+#trigger:
+#- master
 
 pool:
   vmImage: 'VS2017-Win2016'
@@ -19,7 +19,7 @@ steps:
 
 - task: NuGetCommand@2
   inputs:
-    restoreSolution: '$(solution)'
+    solution: '$(solution)'
 
 - task: VSBuild@1
   inputs:
@@ -31,3 +31,8 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- task: NuGetCommand@2
+  inputs:
+    command: pack
+    packagesToPack: 'src/Meziantou.Analyzer/Meziantou.Analyzer.csproj'
