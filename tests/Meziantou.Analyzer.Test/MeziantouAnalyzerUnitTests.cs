@@ -13,11 +13,25 @@ namespace Meziantou.Analyzer.Test
             return new StringComparisonAnalyzer();
         }
 
-        //No diagnostics expected to show up
         [TestMethod]
         public void StringComparisonIsMissing_ShouldNotReportDiagnosticForEmptyString()
         {
             var test = @"";
+            VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
+        public void StringComparisonIsMissing_ShouldNotReportDiagnosticWhenStringComparisonIsSpecified()
+        {
+            var test = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = ""test"";
+        string.Equals(a, ""v"", System.StringComparison.Ordinal);
+    }
+}";
 
             VerifyCSharpDiagnostic(test);
         }
@@ -39,16 +53,13 @@ class TypeName
                 Id = "MA0001",
                 Message = "StringComparison is missing",
                 Severity = DiagnosticSeverity.Warning,
-                Locations =
-                    new[]
-                    {
-                    // Test0.cs is the name of the file created by VerifyCSharpDiagnostic
+                Locations = new[]
+                {
                     new DiagnosticResultLocation("Test0.cs", line: 7, column: 9)
-                    }
+                }
             };
 
             VerifyCSharpDiagnostic(test, expected);
         }
-
     }
 }

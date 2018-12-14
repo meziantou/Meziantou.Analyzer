@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,6 +28,8 @@ namespace Meziantou.Analyzer
 
         private void AnalyzeNode(SyntaxNodeAnalysisContext context)
         {
+            var stringComparisonType = context.Compilation.GetTypeByMetadataName(typeof(StringComparison).FullName);
+
             var invocationExpr = (InvocationExpressionSyntax)context.Node;
 
             // invocationExpr.Expression is the expression before "(", here "string.Equals".
@@ -47,6 +50,20 @@ namespace Meziantou.Analyzer
             // Check the method is a member of the class string
             if (memberSymbol.ContainingType.SpecialType != SpecialType.System_String)
                 return;
+
+            foreach (var arg in invocationExpr.ArgumentList.Arguments)
+            {
+                var argExpr = arg.Expression;
+                // TODO handle string literal
+                if (context.SemanticModel.GetSymbolInfo(argExpr).Symbol?.ContainingType == stringComparisonType)
+                {
+
+                }
+                else
+                {
+
+                }
+            }
 
             // If there are not 3 arguments, the comparison type is missing => report it
             // We could improve this validation by checking the types of the arguments, but it would be a little longer for this post.
