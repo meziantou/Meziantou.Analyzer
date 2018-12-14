@@ -1,0 +1,21 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>Meziantou</Authors>
+    <Company>Meziantou</Company>
+    <PackageProjectUrl>https://github.com/meziantou/Meziantou.Analyzer</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/meziantou/Meziantou.Analyzer</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseUrl>https://github.com/meziantou/Meziantou.Analyzer/blob/master/LICENSE</PackageLicenseUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <Features>strict</Features>
+  </PropertyGroup>
+
+</Project>

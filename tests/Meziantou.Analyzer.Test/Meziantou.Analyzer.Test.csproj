@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
   </ItemGroup>
 
 </Project>
