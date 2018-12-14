@@ -3,11 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28407.52
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meziantou.Analyzer", "Meziantou.Analyzer\Meziantou.Analyzer\Meziantou.Analyzer.csproj", "{FF3C6E64-F949-4B0E-B795-06627D8453AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meziantou.Analyzer.Vsix", "src\Meziantou.Analyzer.Vsix\Meziantou.Analyzer.Vsix.csproj", "{B4D89FB9-72BD-45E0-B137-5B0278E841C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meziantou.Analyzer.Test", "Meziantou.Analyzer\Meziantou.Analyzer.Test\Meziantou.Analyzer.Test.csproj", "{9AB20C4D-A1CD-4FCD-807E-70EF4DAE8DDC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meziantou.Analyzer", "src\Meziantou.Analyzer\Meziantou.Analyzer.csproj", "{FF3C6E64-F949-4B0E-B795-06627D8453AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meziantou.Analyzer.Vsix", "Meziantou.Analyzer\Meziantou.Analyzer.Vsix\Meziantou.Analyzer.Vsix.csproj", "{B4D89FB9-72BD-45E0-B137-5B0278E841C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meziantou.Analyzer.Test", "tests\Meziantou.Analyzer.Test\Meziantou.Analyzer.Test.csproj", "{9AB20C4D-A1CD-4FCD-807E-70EF4DAE8DDC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E2CFE0B7-CCC9-4FE5-8942-ECA9A71C5A3F}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		azure-pipelines.yml = azure-pipelines.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
