@@ -84,7 +84,7 @@ class TypeName
         }
 
         [TestMethod]
-        public void IndexOf_Char_ShouldNotReportDiagnostic()
+        public void IndexOf_Char_ShouldReportDiagnostic()
         {
             var test = @"
 class TypeName
@@ -95,7 +95,18 @@ class TypeName
     }
 }";
 
-            VerifyCSharpDiagnostic(test);
+            var expected = new DiagnosticResult
+            {
+                Id = "MA0001",
+                Message = "Use an overload of 'IndexOf' that has a StringComparison parameter",
+                Severity = DiagnosticSeverity.Warning,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
         }
 
         [TestMethod]
