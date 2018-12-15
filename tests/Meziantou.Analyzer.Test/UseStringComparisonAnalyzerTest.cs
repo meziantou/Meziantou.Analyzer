@@ -47,7 +47,7 @@ class TypeName
             var expected = new DiagnosticResult
             {
                 Id = "MA0001",
-                Message = "StringComparison is missing",
+                Message = "Use an overload of 'Equals' that has a StringComparison parameter",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
@@ -72,7 +72,7 @@ class TypeName
             var expected = new DiagnosticResult
             {
                 Id = "MA0001",
-                Message = "StringComparison is missing",
+                Message = "Use an overload of 'Equals' that has a StringComparison parameter",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
@@ -126,7 +126,7 @@ class TypeName
             var expected = new DiagnosticResult
             {
                 Id = "MA0001",
-                Message = "StringComparison is missing",
+                Message = "Use an overload of 'IndexOf' that has a StringComparison parameter",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
@@ -165,7 +165,7 @@ class TypeName
             var expected = new DiagnosticResult
             {
                 Id = "MA0001",
-                Message = "StringComparison is missing",
+                Message = "Use an overload of 'StartsWith' that has a StringComparison parameter",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {

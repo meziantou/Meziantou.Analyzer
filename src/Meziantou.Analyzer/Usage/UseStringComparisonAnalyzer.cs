@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseStringComparison,
             title: "StringComparison is missing",
-            messageFormat: "StringComparison is missing",
+            messageFormat: "Use an overload of '{0}' that has a StringComparison parameter",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -49,7 +49,7 @@ namespace Meziantou.Analyzer
                 // Check if there is an overload with a StringComparison
                 if (HasOverloadWithStringComparison(context, invocationExpr, stringComparisonType))
                 {
-                    var diagnostic = Diagnostic.Create(s_rule, invocationExpr.GetLocation());
+                    var diagnostic = Diagnostic.Create(s_rule, invocationExpr.GetLocation(), GetMethodName(context, invocationExpr));
                     context.ReportDiagnostic(diagnostic);
                 }
             }
@@ -80,6 +80,16 @@ namespace Meziantou.Analyzer
                 return false;
 
             return true;
+        }
+
+        private static string GetMethodName(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expression)
+        {
+
+            var methodSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(expression).Symbol;
+            if (methodSymbol == null)
+                return null;
+
+            return methodSymbol.Name;
         }
 
         private static bool HasOverloadWithStringComparison(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expression, ITypeSymbol stringComparisonType)
