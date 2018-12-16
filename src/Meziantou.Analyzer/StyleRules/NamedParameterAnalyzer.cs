@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -28,6 +29,12 @@ namespace Meziantou.Analyzer
             context.RegisterCompilationStartAction(compilationContext =>
             {
                 var taskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+                var taskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+                var methodBaseTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
+                var fieldInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.FieldInfo");
+                var propertyInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.PropertyInfo");
+                var assertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+                var keyValuePairTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
 
                 compilationContext.RegisterSyntaxNodeAction(symbolContext =>
                 {
@@ -44,7 +51,34 @@ namespace Meziantou.Analyzer
                         var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
                         if (invocationExpression != null)
                         {
-                            if (IsMethod(symbolContext, invocationExpression, taskTokenType, nameof(Task.ConfigureAwait)))
+                            var methodSymbol = (IMethodSymbol)symbolContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                            var argumentIndex = ArgumentIndex(argument);
+
+                            if (IsMethod(methodSymbol, taskTokenType, nameof(Task.ConfigureAwait)))
+                                return;
+
+                            if (IsMethod(methodSymbol, taskGenericTokenType, nameof(Task.ConfigureAwait)))
+                                return;
+
+                            if (IsMethod(methodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.SetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.GetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.SetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, assertTokenType, "AreEqual"))
+                                return;
+
+                            if ((methodSymbol.Name == "Parse" || methodSymbol.Name == "TryParse") && argumentIndex == 0)
                                 return;
                         }
 
@@ -57,19 +91,33 @@ namespace Meziantou.Analyzer
             });
         }
 
-        private static bool IsMethod(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expression, ITypeSymbol type, string name)
+        private static bool IsMethod(IMethodSymbol method, ITypeSymbol type, string name)
         {
-            var methodSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(expression).Symbol;
-            if (methodSymbol == null)
+            if (type == null || method == null)
                 return false;
-
-            if (methodSymbol.Name != name)
+            
+            if (method.Name != name)
                 return false;
-
-            if (!type.Equals(methodSymbol.ContainingType))
+            
+            if (!type.Equals(method.ContainingType.OriginalDefinition))
                 return false;
 
             return true;
+        }
+
+        private static int ArgumentIndex(ArgumentSyntax argument)
+        {
+            var argumentListExpression = argument.FirstAncestorOrSelf<ArgumentListSyntax>();
+            if (argumentListExpression == null)
+                return -1;
+
+            for (int i = 0; i < argumentListExpression.Arguments.Count; i++)
+            {
+                if (argumentListExpression.Arguments[i] == argument)
+                    return i;
+            }
+
+            return -1;
         }
     }
 }

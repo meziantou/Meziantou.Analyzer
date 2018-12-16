@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Test.StyleRules
         }
 
         [TestMethod]
-        public void FalseConfigureAwait_ShouldNotReportDiagnostic()
+        public void Task_ConfigureAwait_ShouldNotReportDiagnostic()
         {
             var test = @"
 class TypeName
@@ -31,7 +31,21 @@ class TypeName
 
             VerifyCSharpDiagnostic(test);
         }
-        
+
+        [TestMethod]
+        public void Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+class TypeName
+{
+    public async System.Threading.Tasks.Task Test()
+    {
+        await System.Threading.Tasks.Task.Run(() => 10).ConfigureAwait(true);
+    }
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
 
         [TestMethod]
         public void NamedParameter_ShouldNotReportDiagnostic()
@@ -120,6 +134,47 @@ class TypeName
                 Locations = new[]
                  {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 23)
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
+        }
+
+        [TestMethod]
+        public void MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+class TypeName
+{
+    public void Test()
+    {
+        typeof(TypeName).GetMethod("").Invoke(null, new object[0])
+    }
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
+        public void MethodBaseInvoke_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+class TypeName
+{
+    public void Test()
+    {
+        typeof(TypeName).GetMethod("""").Invoke(null, null);
+    }
+}";
+
+            var expected = new DiagnosticResult
+            {
+                Id = "MA0003",
+                Message = "Name the parameter to improve the readability of the code",
+                Severity = DiagnosticSeverity.Warning,
+                Locations = new[]
+              {
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 53)
                 }
             };
 
