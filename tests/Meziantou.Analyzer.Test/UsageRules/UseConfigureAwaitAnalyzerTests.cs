@@ -125,5 +125,41 @@ class MyClass : System.Windows.Window
 
             VerifyCSharpDiagnostic(test, expected);
         }
+
+        [TestMethod]
+        public void AfterConfigureAwaitFalseInANonAccessibleBranch_ShouldNotReportDiagnostic()
+        {
+            var test = @"using System.Threading.Tasks;
+namespace System.Windows
+{
+    namespace Threading
+    {
+        class DispatcherObject
+        {
+        }
+    }
+
+    class Window : Threading.DispatcherObject
+    {
+    }
+}
+
+class MyClass : System.Windows.Window
+{
+    async Task Test()
+    {
+        bool a = true;
+        if (a)
+        {
+            await Task.Delay(1).ConfigureAwait(false);
+            return;
+        }
+
+        await Task.Delay(1);
+    }
+}";
+            
+            VerifyCSharpDiagnostic(test);
+        }
     }
 }

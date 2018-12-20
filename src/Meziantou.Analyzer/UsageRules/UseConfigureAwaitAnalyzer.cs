@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -35,13 +36,38 @@ namespace Meziantou.Analyzer.UsageRules
             // Use ConfigureAwait(false) everywhere except if the parent class is a WPF, Winform, or ASP.NET class, or ASP.NET Core (because there is no SynchronizationContext)
 
             var node = (AwaitExpressionSyntax)context.Node;
-            var awaitExpressionType = context.SemanticModel.GetTypeInfo(node.Expression).ConvertedType;
-            if (awaitExpressionType == null)
+            if (HasConfigureAwait(context, node))
                 return;
 
-            var configuredTaskAwaitableType = context.Compilation.GetTypeByMetadataName<ConfiguredTaskAwaitable>();
-            if (configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType))
-                return;
+            // Find all previous awaits with ConfiguredAwait(false)
+            // Use context.SemanticModel.AnalyzeControlFlow to check if the current await is accessible from one of the previous await
+            // https://joshvarty.com/2015/03/24/learn-roslyn-now-control-flow-analysis/
+            var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            if (method != null)
+            {
+                var allAwaits = method.DescendantNodes(n => true).OfType<AwaitExpressionSyntax>();
+                foreach (var a in allAwaits)
+                {
+                    if (a == node)
+                        continue;
+
+                    if (!HasConfigureAwait(context, a))
+                        continue;
+
+                    var parentStatement = a.FirstAncestorOrSelf<StatementSyntax>();
+                    var nodeStatement = node.FirstAncestorOrSelf<StatementSyntax>();
+
+                    var result = context.SemanticModel.AnalyzeControlFlow(parentStatement, nodeStatement);
+                    if (!result.Succeeded)
+                        continue;
+
+                    if (!result.EndPointIsReachable)
+                        continue;
+
+                    context.ReportDiagnostic(Diagnostic.Create(s_rule, context.Node.GetLocation()));
+                    return;
+                }
+            }
 
             var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass != null)
@@ -57,11 +83,18 @@ namespace Meziantou.Analyzer.UsageRules
                 }
             }
 
-            // TODO find all previous awaits with ConfiguredAwait(false)
-            // Use context.SemanticModel.AnalyzeControlFlow to check if the current await is accessible from one of the previous await
-            // https://joshvarty.com/2015/03/24/learn-roslyn-now-control-flow-analysis/
 
             context.ReportDiagnostic(Diagnostic.Create(s_rule, context.Node.GetLocation()));
+        }
+
+        private static bool HasConfigureAwait(SyntaxNodeAnalysisContext context, AwaitExpressionSyntax awaitSyntax)
+        {
+            var awaitExpressionType = context.SemanticModel.GetTypeInfo(awaitSyntax.Expression).ConvertedType;
+            if (awaitExpressionType == null)
+                return false;
+
+            var configuredTaskAwaitableType = context.Compilation.GetTypeByMetadataName<ConfiguredTaskAwaitable>();
+            return configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType);
         }
 
         private static bool Implements(INamedTypeSymbol classSymbol, ITypeSymbol type)
