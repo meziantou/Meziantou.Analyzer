@@ -80,7 +80,7 @@ class TypeName
                 Message = "Name the parameter to improve the readability of the code",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
-                 {
+                {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 23)
                 }
             };
@@ -106,7 +106,7 @@ class TypeName
                 Message = "Name the parameter to improve the readability of the code",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
-                 {
+                {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 23)
                 }
             };
@@ -132,7 +132,7 @@ class TypeName
                 Message = "Name the parameter to improve the readability of the code",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
-                 {
+                {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 23)
                 }
             };
@@ -156,7 +156,7 @@ class TypeName
         }
 
         [TestMethod]
-        public void MethodBaseInvoke_ShouldNotReportDiagnostic()
+        public void MethodBaseInvoke_ShouldReportDiagnostic()
         {
             var test = @"
 class TypeName
@@ -173,12 +173,61 @@ class TypeName
                 Message = "Name the parameter to improve the readability of the code",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
-              {
+                {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 53)
                 }
             };
 
             VerifyCSharpDiagnostic(test, expected);
+        }
+
+        [TestMethod]
+        public void Attribute_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+[assembly: SkipNamedAttribute(""TypeName"", ""Test"")]
+internal class SkipNamedAttribute : System.Attribute
+{
+    public SkipNamedAttribute(string typeName, string methodName) { }
+}
+
+class TypeName
+{
+    public void Test(string name) => Test(null);
+    public void Test2(string name) => Test2(null);
+}";
+
+            var expected = new DiagnosticResult
+            {
+                Id = "MA0003",
+                Message = "Name the parameter to improve the readability of the code",
+                Severity = DiagnosticSeverity.Warning,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line: 11, column: 45)
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
+        }
+
+        [TestMethod]
+        public void AttributeWithWildcard_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+[assembly: SkipNamedAttribute(""TypeName"", ""*"")]
+internal class SkipNamedAttribute : System.Attribute
+{
+    public SkipNamedAttribute(string typeName, string methodName) { }
+}
+
+class TypeName
+{
+    public void Test(string name) => Test(null);
+    public void Test2(string name) => Test2(null);
+}";
+
+            VerifyCSharpDiagnostic(test);
         }
     }
 }

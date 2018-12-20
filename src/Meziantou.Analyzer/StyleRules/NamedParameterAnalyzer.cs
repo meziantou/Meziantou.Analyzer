@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -28,6 +29,8 @@ namespace Meziantou.Analyzer
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
+                var attributeTokenType = compilationContext.Compilation.GetTypeByMetadataName("SkipNamedAttribute");
+
                 var taskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 var taskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
                 var methodBaseTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
@@ -53,6 +56,9 @@ namespace Meziantou.Analyzer
                         {
                             var methodSymbol = (IMethodSymbol)symbolContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
                             var argumentIndex = ArgumentIndex(argument);
+
+                            if (Skip(symbolContext, attributeTokenType, methodSymbol))
+                                return;
 
                             if (IsMethod(methodSymbol, taskTokenType, nameof(Task.ConfigureAwait)))
                                 return;
@@ -90,15 +96,63 @@ namespace Meziantou.Analyzer
 
             });
         }
+        private static bool Skip(SyntaxNodeAnalysisContext context, ITypeSymbol attributeType, IMethodSymbol methodSymbol)
+        {
+            if (attributeType == null)
+                return false;
+
+            foreach (var syntaxTree in context.Compilation.SyntaxTrees)
+            {
+                var root = syntaxTree.GetRoot();
+                foreach (var list in root.DescendantNodesAndSelf().OfType<AttributeListSyntax>())
+                {
+                    if (list.Target != null && list.Target?.Identifier.IsKind(SyntaxKind.AssemblyKeyword) == true)
+                    {
+                        foreach (var attribute in list.Attributes)
+                        {
+                            if (attribute.ArgumentList?.Arguments.Count != 2)
+                                continue;
+
+                            var attr = context.SemanticModel.GetSymbolInfo(attribute).Symbol;
+                            if (attr != null && attributeType.Equals(attr.ContainingType))
+                            {
+                                var a = GetStringValue(attribute.ArgumentList.Arguments[0]);
+                                var b = GetStringValue(attribute.ArgumentList.Arguments[1]);
+
+                                var type = context.Compilation.GetTypeByMetadataName(a);
+                                return IsMethod(methodSymbol, type, b);
+                            }
+                        }
+                    }
+                }
+
+                var model = context.Compilation.GetSemanticModel(syntaxTree);
+
+            }
+
+            return false;
+
+            string GetStringValue(AttributeArgumentSyntax argument)
+            {
+                var expression = argument.Expression;
+                if (expression.IsKind(SyntaxKind.StringLiteralExpression))
+                {
+                    var token = ((LiteralExpressionSyntax)expression).Token.ValueText;
+                    return token;
+                }
+
+                return null;
+            }
+        }
 
         private static bool IsMethod(IMethodSymbol method, ITypeSymbol type, string name)
         {
             if (type == null || method == null)
                 return false;
-            
-            if (method.Name != name)
+
+            if (name != "*" && method.Name != name)
                 return false;
-            
+
             if (!type.Equals(method.ContainingType.OriginalDefinition))
                 return false;
 
@@ -111,7 +165,7 @@ namespace Meziantou.Analyzer
             if (argumentListExpression == null)
                 return -1;
 
-            for (int i = 0; i < argumentListExpression.Arguments.Count; i++)
+            for (var i = 0; i < argumentListExpression.Arguments.Count; i++)
             {
                 if (argumentListExpression.Arguments[i] == argument)
                     return i;
