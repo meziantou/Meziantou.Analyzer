@@ -37,7 +37,6 @@ namespace Meziantou.Analyzer
                     {
                         var creationNode = (ObjectCreationExpressionSyntax)symbolContext.Node;
                         var variableTypeInfo = symbolContext.SemanticModel.GetTypeInfo(symbolContext.Node).ConvertedType as INamedTypeSymbol;
-
                         if (variableTypeInfo == null)
                             return;
 
