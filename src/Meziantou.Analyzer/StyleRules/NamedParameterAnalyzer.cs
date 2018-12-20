@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer
     public class NamedParameterAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
-            RuleIdentifiers.NameParameter,
+            RuleIdentifiers.UseNamedParameter,
             title: "Name parameter",
             messageFormat: "Name the parameter to improve the readability of the code",
             RuleCategories.Style,
@@ -81,7 +81,13 @@ namespace Meziantou.Analyzer
                             if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
                                 return;
 
-                            if (IsMethod(methodSymbol, assertTokenType, "AreEqual"))
+                            if (IsMethod(methodSymbol, assertTokenType, "AreEqual") && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, assertTokenType, "IsTrue") && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, assertTokenType, "IsFalse") && argumentIndex == 0)
                                 return;
 
                             if ((methodSymbol.Name == "Parse" || methodSymbol.Name == "TryParse") && argumentIndex == 0)
@@ -92,8 +98,6 @@ namespace Meziantou.Analyzer
                     }
 
                 }, SyntaxKind.Argument);
-
-
             });
         }
         private static bool Skip(SyntaxNodeAnalysisContext context, ITypeSymbol attributeType, IMethodSymbol methodSymbol)

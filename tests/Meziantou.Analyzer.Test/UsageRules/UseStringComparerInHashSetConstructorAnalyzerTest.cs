@@ -50,7 +50,7 @@ class TypeName
                 Message = "Use an overload of the constructor that has a IEqualityComparer<string> parameter",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
-             {
+                {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
                 }
             };
