@@ -19,7 +19,8 @@ namespace Meziantou.Analyzer
             RuleCategories.Style,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
-            description: "");
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNamedParameter));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
