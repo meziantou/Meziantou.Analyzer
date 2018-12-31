@@ -15,7 +15,7 @@ namespace Meziantou.Analyzer.Test.UsageRules
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseConfigureAwaitAnalyzer();
 
         [TestMethod]
-        public void Equals_ShouldNotReportDiagnosticForEmptyString()
+        public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
         {
             var test = @"";
             VerifyCSharpDiagnostic(test);
@@ -45,7 +45,7 @@ async Task Test()
         }
 
         [TestMethod]
-        public void ConfigureAwait_ShouldNotReportError()
+        public void ConfigureAwaitIsPresent_ShouldNotReportError()
         {
             var test = @"using System.Threading.Tasks;
 async Task Test()
@@ -84,7 +84,6 @@ class MyClass : System.Windows.Window
             VerifyCSharpDiagnostic(test);
         }
 
-
         [TestMethod]
         public void AfterConfigureAwaitFalse_AllAwaitShouldUseConfigureAwait()
         {
@@ -107,6 +106,7 @@ class MyClass : System.Windows.Window
 {
     async Task Test()
     {
+        await Task.Delay(1);
         await Task.Delay(1).ConfigureAwait(false);
         await Task.Delay(1);
     }
@@ -119,7 +119,7 @@ class MyClass : System.Windows.Window
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 21, column: 9)
+                    new DiagnosticResultLocation("Test0.cs", line: 22, column: 9)
                 }
             };
 
@@ -160,6 +160,53 @@ class MyClass : System.Windows.Window
 }";
             
             VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
+        public void AfterConfigureAwaitFalseInNonAccessibleBranch2_ShouldReportDiagnostic()
+        {
+            var test = @"using System.Threading.Tasks;
+namespace System.Windows
+{
+    namespace Threading
+    {
+        class DispatcherObject
+        {
+        }
+    }
+
+    class Window : Threading.DispatcherObject
+    {
+    }
+}
+
+class MyClass : System.Windows.Window
+{
+    async Task Test()
+    {
+        bool a = true;
+        if (a)
+        {
+            await Task.Delay(1).ConfigureAwait(false);
+        }
+        else
+        {
+            await Task.Delay(1);
+        }
+    }
+}";
+            var expected = new DiagnosticResult
+            {
+                Id = "MA0004",
+                Message = "Use ConfigureAwait(false) as the current SynchronizationContext is not needed",
+                Severity = DiagnosticSeverity.Warning,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line: 27, column: 13)
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
         }
     }
 }
