@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="Meziantou.Analyzer.dd3c9fea-c73f-4c59-a7e0-cd45a3a44d24" Version="1.0.5" Language="en-US" Publisher="Meziantou"/>
+        <Identity Id="Meziantou.Analyzer.dd3c9fea-c73f-4c59-a7e0-cd45a3a44d24" Version="1.0.6" Language="en-US" Publisher="Meziantou"/>
         <DisplayName>Meziantou.Analyzer</DisplayName>
         <Description xml:space="preserve">This is a diagnostic extension for the .NET Compiler Platform ("Roslyn").</Description>
     </Metadata>

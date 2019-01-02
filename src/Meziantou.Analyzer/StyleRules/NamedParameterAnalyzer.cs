@@ -37,7 +37,9 @@ namespace Meziantou.Analyzer
                 var methodBaseTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
                 var fieldInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.FieldInfo");
                 var propertyInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.PropertyInfo");
-                var assertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+                var msTestAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+                var nunitAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("NUnit.Framework.Assert");
+                var xunitAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Xunit.Assert");
                 var keyValuePairTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
 
                 compilationContext.RegisterSyntaxNodeAction(symbolContext =>
@@ -82,13 +84,13 @@ namespace Meziantou.Analyzer
                             if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
                                 return;
 
-                            if (IsMethod(methodSymbol, assertTokenType, "AreEqual") && argumentIndex == 0)
+                            if (IsMethod(methodSymbol, msTestAssertTokenType, "*"))
                                 return;
 
-                            if (IsMethod(methodSymbol, assertTokenType, "IsTrue") && argumentIndex == 0)
+                            if (IsMethod(methodSymbol, nunitAssertTokenType, "*"))
                                 return;
 
-                            if (IsMethod(methodSymbol, assertTokenType, "IsFalse") && argumentIndex == 0)
+                            if (IsMethod(methodSymbol, xunitAssertTokenType, "*"))
                                 return;
 
                             if ((methodSymbol.Name == "Parse" || methodSymbol.Name == "TryParse") && argumentIndex == 0)

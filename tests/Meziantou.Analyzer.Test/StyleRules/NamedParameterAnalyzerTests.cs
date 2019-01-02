@@ -229,5 +229,65 @@ class TypeName
 
             VerifyCSharpDiagnostic(test);
         }
+
+        [TestMethod]
+        public void MSTestAssert_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+namespace Microsoft.VisualStudio.TestTools.UnitTesting
+{
+    public class Assert
+    {
+        public static void AreEqual(object expected, object actual) { }
+    }
+}
+
+class TypeName
+{
+    public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
+        public void NunitAssert_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+namespace NUnit.Framework
+{
+    public class Assert
+    {
+        public static void AreEqual(object expected, object actual) { }
+    }
+}
+
+class TypeName
+{
+    public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
+        public void XunitAssert_ShouldNotReportDiagnostic()
+        {
+            var test = @"
+namespace Xunit
+{
+    public class Assert
+    {
+        public static void AreEqual(object expected, object actual) { }
+    }
+}
+
+class TypeName
+{
+    public void Test() => Xunit.Assert.AreEqual(null, true);
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
     }
 }
