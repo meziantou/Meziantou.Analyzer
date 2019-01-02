@@ -85,6 +85,28 @@ class MyClass : System.Windows.Window
         }
 
         [TestMethod]
+        public void MissingConfigureAwaitInWpfCommandClass_ShouldNotReportError()
+        {
+            var test = @"using System.Threading.Tasks;
+namespace System.Windows.Input
+{
+    interface ICommand
+    {
+    }
+}
+
+class MyClass : System.Windows.Input.ICommand
+{
+    async Task Test()
+    {
+        await Task.Delay(1);
+    }
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
         public void AfterConfigureAwaitFalse_AllAwaitShouldUseConfigureAwait()
         {
             var test = @"using System.Threading.Tasks;

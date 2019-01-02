@@ -56,10 +56,11 @@ namespace Meziantou.Analyzer.UsageRules
                 var symbol = context.SemanticModel.GetDeclaredSymbol(containingClass);
                 if (symbol != null)
                 {
-                    if (Implements(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
-                        Implements(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
-                        Implements(symbol, context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
-                        Implements(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase"))) // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                    if (InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
+                        Implements(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
+                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
+                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
+                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase"))) // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
                         return false;
                 }
             }
@@ -132,7 +133,7 @@ namespace Meziantou.Analyzer.UsageRules
             return configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType);
         }
 
-        private static bool Implements(INamedTypeSymbol classSymbol, ITypeSymbol type)
+        private static bool InheritsFrom(INamedTypeSymbol classSymbol, ITypeSymbol type)
         {
             if (type == null)
                 return false;
@@ -147,6 +148,14 @@ namespace Meziantou.Analyzer.UsageRules
             }
 
             return false;
+        }
+
+        private static bool Implements(INamedTypeSymbol classSymbol, ITypeSymbol type)
+        {
+            if (type == null)
+                return false;
+
+            return classSymbol.AllInterfaces.Any(i => type.Equals(i));
         }
     }
 }
