@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Test
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = @"";
+            var test = "";
             VerifyCSharpDiagnostic(test);
         }
 

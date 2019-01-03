@@ -6,7 +6,7 @@ namespace TestHelper
     /// <summary>
     /// Location where the diagnostic appears, as determined by path, line number, and column number.
     /// </summary>
-    public struct DiagnosticResultLocation
+    public readonly struct DiagnosticResultLocation
     {
         public DiagnosticResultLocation(string path, int line, int column)
         {
@@ -39,15 +39,7 @@ namespace TestHelper
 
         public DiagnosticResultLocation[] Locations
         {
-            get
-            {
-                if (_locations == null)
-                {
-                    _locations = Array.Empty<DiagnosticResultLocation>();
-                }
-                return _locations;
-            }
-
+            get => _locations ?? (_locations = Array.Empty<DiagnosticResultLocation>());
             set => _locations = value;
         }
 

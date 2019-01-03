@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer
                             return;
 
                         // We only care about dictionaries who use a string as the key
-                        if (variableTypeInfo.TypeArguments.First().SpecialType != SpecialType.System_String)
+                        if (variableTypeInfo.TypeArguments[0].SpecialType != SpecialType.System_String)
                             return;
 
                         var arguments = creationNode.ArgumentList?.Arguments;
