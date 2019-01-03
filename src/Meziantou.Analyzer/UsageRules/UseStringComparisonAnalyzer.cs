@@ -2,9 +2,8 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer
 {
@@ -27,52 +26,51 @@ namespace Meziantou.Analyzer
         {
             context.EnableConcurrentExecution();
 
-            context.RegisterSyntaxNodeAction(AnalyzeNode, SyntaxKind.InvocationExpression);
+            context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
         }
 
-        private void AnalyzeNode(SyntaxNodeAnalysisContext context)
+        private void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var stringComparisonType = context.Compilation.GetTypeByMetadataName<StringComparison>();
-            var stringType = context.Compilation.GetTypeByMetadataName<string>();
+            var stringType = context.Compilation.GetSpecialType(SpecialType.System_String);
 
-            var invocationExpr = (InvocationExpressionSyntax)context.Node;
-            if (!IsMethod(context, invocationExpr, stringType, nameof(string.Equals)) &&
-                !IsMethod(context, invocationExpr, stringType, nameof(string.IndexOf)) &&
-                !IsMethod(context, invocationExpr, stringType, nameof(string.IndexOfAny)) &&
-                !IsMethod(context, invocationExpr, stringType, nameof(string.LastIndexOf)) &&
-                !IsMethod(context, invocationExpr, stringType, nameof(string.LastIndexOfAny)) &&
-                !IsMethod(context, invocationExpr, stringType, nameof(string.EndsWith)) &&
-                !IsMethod(context, invocationExpr, stringType, nameof(string.StartsWith)))
+            var operation = (IInvocationOperation)context.Operation;
+            if (!IsMethod(operation, stringType, nameof(string.Equals)) &&
+                !IsMethod(operation, stringType, nameof(string.IndexOf)) &&
+                !IsMethod(operation, stringType, nameof(string.IndexOfAny)) &&
+                !IsMethod(operation, stringType, nameof(string.LastIndexOf)) &&
+                !IsMethod(operation, stringType, nameof(string.LastIndexOfAny)) &&
+                !IsMethod(operation, stringType, nameof(string.EndsWith)) &&
+                !IsMethod(operation, stringType, nameof(string.StartsWith)))
             {
                 return;
             }
 
-            if (!HasStringComparisonParameter(context, invocationExpr, stringComparisonType))
+            if (!HasStringComparisonParameter(operation, stringComparisonType))
             {
                 // Check if there is an overload with a StringComparison
-                if (HasOverloadWithStringComparison(context, invocationExpr, stringComparisonType))
+                if (HasOverloadWithStringComparison(operation, stringComparisonType))
                 {
-                    var diagnostic = Diagnostic.Create(s_rule, invocationExpr.GetLocation(), GetMethodName(context, invocationExpr));
+                    var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name);
                     context.ReportDiagnostic(diagnostic);
                 }
             }
         }
 
-        private static bool HasStringComparisonParameter(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expressionSyntax, ITypeSymbol stringComparisonType)
+        private static bool HasStringComparisonParameter(IInvocationOperation operation, ITypeSymbol stringComparisonType)
         {
-            foreach (var arg in expressionSyntax.ArgumentList.Arguments)
+            foreach (var arg in operation.Arguments)
             {
-                var argExpr = arg.Expression;
-                if (context.SemanticModel.GetSymbolInfo(argExpr).Symbol?.ContainingType == stringComparisonType)
+                if (stringComparisonType.Equals(arg.Value.Type.ContainingType))
                     return true;
             }
 
             return false;
         }
 
-        private static bool IsMethod(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expression, ITypeSymbol type, string name)
+        private static bool IsMethod(IInvocationOperation operation, ITypeSymbol type, string name)
         {
-            var methodSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(expression).Symbol;
+            var methodSymbol = operation.TargetMethod;
             if (methodSymbol == null)
                 return false;
 
@@ -85,18 +83,9 @@ namespace Meziantou.Analyzer
             return true;
         }
 
-        private static string GetMethodName(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expression)
+        private static bool HasOverloadWithStringComparison(IInvocationOperation operation, ITypeSymbol stringComparisonType)
         {
-            var methodSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(expression).Symbol;
-            if (methodSymbol == null)
-                return null;
-
-            return methodSymbol.Name;
-        }
-
-        private static bool HasOverloadWithStringComparison(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expression, ITypeSymbol stringComparisonType)
-        {
-            var methodSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(expression).Symbol;
+            var methodSymbol = operation.TargetMethod;
 
             var members = methodSymbol.ContainingType.GetMembers(methodSymbol.Name);
             return members.OfType<IMethodSymbol>().Any(IsOverload);
