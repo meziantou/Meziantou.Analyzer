@@ -1,9 +1,8 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer
 {
@@ -31,51 +30,44 @@ namespace Meziantou.Analyzer
                 var hashSetTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1");
                 var dictionaryTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2");
                 var equalityComparerInterfaceType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+                var stringType = compilationContext.Compilation.GetSpecialType(SpecialType.System_String);
+                var stringEqualityComparerInterfaceType = equalityComparerInterfaceType.Construct(stringType);
 
                 if (dictionaryTokenType != null || hashSetTokenType != null)
                 {
-                    compilationContext.RegisterSyntaxNodeAction(symbolContext =>
+                    compilationContext.RegisterOperationAction(operationContext =>
                     {
-                        var creationNode = (ObjectCreationExpressionSyntax)symbolContext.Node;
-                        var variableTypeInfo = symbolContext.SemanticModel.GetTypeInfo(symbolContext.Node).ConvertedType as INamedTypeSymbol;
-                        if (variableTypeInfo == null)
+                        var operation = (IObjectCreationOperation)operationContext.Operation;
+                        var type = operation.Type as INamedTypeSymbol;
+                        if (type == null || type.OriginalDefinition == null)
                             return;
 
-                        if (!variableTypeInfo.OriginalDefinition.Equals(dictionaryTokenType) &&
-                            !variableTypeInfo.OriginalDefinition.Equals(hashSetTokenType))
-                            return;
-
-                        // We only care about dictionaries who use a string as the key
-                        if (variableTypeInfo.TypeArguments[0].SpecialType != SpecialType.System_String)
-                            return;
-
-                        var arguments = creationNode.ArgumentList?.Arguments;
-                        if (arguments == null || arguments.Value.Count == 0)
+                        if (type.OriginalDefinition.Equals(hashSetTokenType) || type.OriginalDefinition.Equals(dictionaryTokenType))
                         {
-                            symbolContext.ReportDiagnostic(Diagnostic.Create(s_rule, symbolContext.Node.GetLocation()));
-                            return;
-                        }
-
-                        var hasEqualityComparer = false;
-                        foreach (var argument in arguments)
-                        {
-                            var argumentType = symbolContext.SemanticModel.GetTypeInfo(argument.Expression);
-
-                            if (argumentType.ConvertedType == null)
+                            // We only care about dictionaries who use a string as the key
+                            if (!type.TypeArguments[0].IsString())
                                 return;
 
-                            if (argumentType.ConvertedType.OriginalDefinition.Equals(equalityComparerInterfaceType))
+                            var hasEqualityComparer = false;
+                            foreach (var argument in operation.Arguments)
                             {
-                                hasEqualityComparer = true;
-                                break;
+                                var argumentType = argument.Value.Type;
+                                if (argumentType == null)
+                                    continue;
+
+                                if (argumentType.GetAllInterfacesIncludingThis().Any(i => stringEqualityComparerInterfaceType.Equals(i)))
+                                {
+                                    hasEqualityComparer = true;
+                                    break;
+                                }
+                            }
+
+                            if (!hasEqualityComparer)
+                            {
+                                operationContext.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
                             }
                         }
-
-                        if (!hasEqualityComparer)
-                        {
-                            symbolContext.ReportDiagnostic(Diagnostic.Create(s_rule, symbolContext.Node.GetLocation()));
-                        }
-                    }, SyntaxKind.ObjectCreationExpression);
+                    }, OperationKind.ObjectCreation);
                 }
             });
         }
