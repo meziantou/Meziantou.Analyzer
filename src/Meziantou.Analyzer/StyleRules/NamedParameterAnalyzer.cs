@@ -99,10 +99,10 @@ namespace Meziantou.Analyzer
 
                         symbolContext.ReportDiagnostic(Diagnostic.Create(s_rule, symbolContext.Node.GetLocation()));
                     }
-
                 }, SyntaxKind.Argument);
             });
         }
+
         private static bool Skip(SyntaxNodeAnalysisContext context, ITypeSymbol attributeType, IMethodSymbol methodSymbol)
         {
             if (attributeType == null)
@@ -134,7 +134,6 @@ namespace Meziantou.Analyzer
                 }
 
                 var model = context.Compilation.GetSemanticModel(syntaxTree);
-
             }
 
             return false;

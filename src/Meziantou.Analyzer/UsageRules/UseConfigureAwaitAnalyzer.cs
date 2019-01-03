@@ -61,7 +61,9 @@ namespace Meziantou.Analyzer.UsageRules
                         InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
                         InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
                         InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase"))) // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                    {
                         return false;
+                    }
                 }
             }
 
@@ -76,25 +78,25 @@ namespace Meziantou.Analyzer.UsageRules
             var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (method != null)
             {
-                var otherAwaitExpressions = method.DescendantNodes(n => true).OfType<AwaitExpressionSyntax>();
-                foreach (var a in otherAwaitExpressions)
+                var otherAwaitExpressions = method.DescendantNodes(_ => true).OfType<AwaitExpressionSyntax>();
+                foreach (var expr in otherAwaitExpressions)
                 {
-                    if (IsPreviousConfigureAwait(a))
+                    if (IsPreviousConfigureAwait(expr))
                         return true;
 
                     bool IsPreviousConfigureAwait(AwaitExpressionSyntax otherAwaitExpression)
                     {
-                        if (a == node)
+                        if (otherAwaitExpression == node)
                             return false;
 
-                        if (a.GetLocation().SourceSpan.Start > node.GetLocation().SourceSpan.Start)
+                        if (otherAwaitExpression.GetLocation().SourceSpan.Start > node.GetLocation().SourceSpan.Start)
                             return false;
 
-                        if (!IsConfiguredTaskAwaitable(context, a))
+                        if (!IsConfiguredTaskAwaitable(context, otherAwaitExpression))
                             return false;
 
                         var nodeStatement = node.FirstAncestorOrSelf<StatementSyntax>();
-                        var parentStatement = a.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
+                        var parentStatement = otherAwaitExpression.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
                         while (parentStatement != null && nodeStatement != parentStatement)
                         {
                             if (!IsEndPointReachable(context, parentStatement))

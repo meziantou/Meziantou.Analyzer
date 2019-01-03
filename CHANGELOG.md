@@ -5,3 +5,5 @@
 # v1.0.6
 
 - MA0003 does not report diagnostic for `Microsoft.VisualStudio.TestTools.UnitTesting.Assert`, `NUnit.Framework.Assert` and `Xunit.Assert`
+
+# v1.0.7

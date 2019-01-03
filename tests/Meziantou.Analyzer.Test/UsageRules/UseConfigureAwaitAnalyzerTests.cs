@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Meziantou.Analyzer.UsageRules;
+﻿using Meziantou.Analyzer.UsageRules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,7 +14,7 @@ namespace Meziantou.Analyzer.Test.UsageRules
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = @"";
+            var test = "";
             VerifyCSharpDiagnostic(test);
         }
 
@@ -180,7 +177,7 @@ class MyClass : System.Windows.Window
         await Task.Delay(1);
     }
 }";
-            
+
             VerifyCSharpDiagnostic(test);
         }
 

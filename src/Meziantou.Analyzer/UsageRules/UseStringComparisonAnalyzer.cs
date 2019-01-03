@@ -43,7 +43,9 @@ namespace Meziantou.Analyzer
                 !IsMethod(context, invocationExpr, stringType, nameof(string.LastIndexOfAny)) &&
                 !IsMethod(context, invocationExpr, stringType, nameof(string.EndsWith)) &&
                 !IsMethod(context, invocationExpr, stringType, nameof(string.StartsWith)))
+            {
                 return;
+            }
 
             if (!HasStringComparisonParameter(context, invocationExpr, stringComparisonType))
             {
@@ -85,7 +87,6 @@ namespace Meziantou.Analyzer
 
         private static string GetMethodName(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax expression)
         {
-
             var methodSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(expression).Symbol;
             if (methodSymbol == null)
                 return null;
