@@ -53,6 +53,17 @@ async Task Test()
         }
 
         [TestMethod]
+        public void ConfigureAwaitOfTIsPresent_ShouldNotReportError()
+        {
+            var test = @"using System.Threading.Tasks;
+async Task Test()
+{
+    await Task.Run(() => 10).ConfigureAwait(true);
+}";
+            VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
         public void MissingConfigureAwaitInWpfWindowClass_ShouldNotReportError()
         {
             var test = @"using System.Threading.Tasks;

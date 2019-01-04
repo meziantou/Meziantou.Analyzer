@@ -131,8 +131,10 @@ namespace Meziantou.Analyzer.UsageRules
             if (awaitExpressionType == null)
                 return false;
 
-            var configuredTaskAwaitableType = context.Compilation.GetTypeByMetadataName<ConfiguredTaskAwaitable>();
-            return configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType);
+            var configuredTaskAwaitableType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
+            var configuredTaskAwaitableOfTType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
+            return (configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType)) ||
+                   (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.Equals(awaitExpressionType.OriginalDefinition));
         }
 
         private static bool InheritsFrom(INamedTypeSymbol classSymbol, ITypeSymbol type)
