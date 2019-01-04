@@ -61,7 +61,18 @@ var a = new int[length];";
         [TestMethod]
         public void ParamsMethod_ShouldNotReportError()
         {
-            var test = "void Test(params int[] values) { Test(); }";
+            var test = @"
+public class TestClass
+{
+    public void Test(params string[] values)
+    {
+    }
+
+    public void CallTest()
+    {
+        Test();
+    }
+}";
 
             VerifyCSharpDiagnostic(test);
         }
