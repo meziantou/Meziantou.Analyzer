@@ -9,3 +9,10 @@
 # v1.0.7
 
 - New analyzer: MA0005 Use `Array.Empty<T>` instead of `new int[0]`
+
+# v1.0.8
+
+- MA0003 reports as information instead of warning
+- MA0003 doesn't process generated code
+- MA0004 correctly detects ConfiguredTaskAwaitable<T>
+- MA0005 doesn't report diagnostic for `params` arguments
