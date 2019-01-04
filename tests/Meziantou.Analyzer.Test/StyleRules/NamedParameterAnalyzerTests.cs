@@ -78,7 +78,7 @@ class TypeName
             {
                 Id = "MA0003",
                 Message = "Name the parameter to improve the readability of the code",
-                Severity = DiagnosticSeverity.Warning,
+                Severity = DiagnosticSeverity.Info,
                 Locations = new[]
                 {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 23)
@@ -104,7 +104,7 @@ class TypeName
             {
                 Id = "MA0003",
                 Message = "Name the parameter to improve the readability of the code",
-                Severity = DiagnosticSeverity.Warning,
+                Severity = DiagnosticSeverity.Info,
                 Locations = new[]
                 {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 23)
@@ -130,7 +130,7 @@ class TypeName
             {
                 Id = "MA0003",
                 Message = "Name the parameter to improve the readability of the code",
-                Severity = DiagnosticSeverity.Warning,
+                Severity = DiagnosticSeverity.Info,
                 Locations = new[]
                 {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 23)
@@ -171,7 +171,7 @@ class TypeName
             {
                 Id = "MA0003",
                 Message = "Name the parameter to improve the readability of the code",
-                Severity = DiagnosticSeverity.Warning,
+                Severity = DiagnosticSeverity.Info,
                 Locations = new[]
                 {
                     new DiagnosticResultLocation("Test0.cs", line: 6, column: 53)
@@ -201,7 +201,7 @@ class TypeName
             {
                 Id = "MA0003",
                 Message = "Name the parameter to improve the readability of the code",
-                Severity = DiagnosticSeverity.Warning,
+                Severity = DiagnosticSeverity.Info,
                 Locations = new[]
                 {
                     new DiagnosticResultLocation("Test0.cs", line: 11, column: 45)
