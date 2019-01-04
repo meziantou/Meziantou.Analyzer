@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer
             title: "Name parameter",
             messageFormat: "Name the parameter to improve the readability of the code",
             RuleCategories.Style,
-            DiagnosticSeverity.Warning,
+            DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNamedParameter));
@@ -27,6 +27,7 @@ namespace Meziantou.Analyzer
         public override void Initialize(AnalysisContext context)
         {
             context.EnableConcurrentExecution();
+            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
@@ -46,6 +47,9 @@ namespace Meziantou.Analyzer
                 {
                     var argument = (ArgumentSyntax)symbolContext.Node;
                     if (argument.NameColon != null)
+                        return;
+
+                    if (argument.Expression == null)
                         return;
 
                     var kind = argument.Expression.Kind();
