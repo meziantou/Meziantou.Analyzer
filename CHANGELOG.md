@@ -16,3 +16,7 @@
 - MA0003 doesn't process generated code
 - MA0004 correctly detects ConfiguredTaskAwaitable<T>
 - MA0005 doesn't report diagnostic for `params` arguments
+
+# v1.0.9
+
+- MA0002 now support `ConcurrentDictionary<string, TValue>`
