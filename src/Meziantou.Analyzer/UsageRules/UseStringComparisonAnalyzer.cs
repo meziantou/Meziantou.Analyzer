@@ -31,7 +31,7 @@ namespace Meziantou.Analyzer
 
         private void AnalyzeInvocation(OperationAnalysisContext context)
         {
-            var stringComparisonType = context.Compilation.GetTypeByMetadataName<StringComparison>();
+            var stringComparisonType = context.Compilation.GetTypeByMetadataName("System.StringComparison");
             var stringType = context.Compilation.GetSpecialType(SpecialType.System_String);
 
             var operation = (IInvocationOperation)context.Operation;

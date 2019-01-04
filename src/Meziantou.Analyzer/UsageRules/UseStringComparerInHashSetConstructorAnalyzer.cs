@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -27,13 +28,16 @@ namespace Meziantou.Analyzer
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
-                var hashSetTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1");
-                var dictionaryTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2");
+                var types = new List<INamedTypeSymbol>();
+                types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
+                types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
+                types.AddIfNotNull(compilationContext.Compilation.GetTypesByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2")); // Not sure we need to find types instead of type
+
                 var equalityComparerInterfaceType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
                 var stringType = compilationContext.Compilation.GetSpecialType(SpecialType.System_String);
                 var stringEqualityComparerInterfaceType = equalityComparerInterfaceType.Construct(stringType);
 
-                if (dictionaryTokenType != null || hashSetTokenType != null)
+                if (types.Any() && stringEqualityComparerInterfaceType != null)
                 {
                     compilationContext.RegisterOperationAction(operationContext =>
                     {
@@ -42,7 +46,7 @@ namespace Meziantou.Analyzer
                         if (type == null || type.OriginalDefinition == null)
                             return;
 
-                        if (type.OriginalDefinition.Equals(hashSetTokenType) || type.OriginalDefinition.Equals(dictionaryTokenType))
+                        if (types.Any(t => type.OriginalDefinition.Equals(t)))
                         {
                             // We only care about dictionaries who use a string as the key
                             if (!type.TypeArguments[0].IsString())

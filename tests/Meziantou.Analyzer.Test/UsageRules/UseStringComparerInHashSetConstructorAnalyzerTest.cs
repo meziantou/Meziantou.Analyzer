@@ -72,5 +72,57 @@ class TypeName
 
             VerifyCSharpDiagnostic(test);
         }
+
+        [TestMethod]
+        public void Dictionary_String_ShouldReportDiagnostic()
+        {
+            var test = @"
+class TypeName
+{
+    public void Test()
+    {
+        new System.Collections.Generic.Dictionary<string, int>();
+    }
+}";
+
+            var expected = new DiagnosticResult
+            {
+                Id = "MA0002",
+                Message = "Use an overload of the constructor that has a IEqualityComparer<string> parameter",
+                Severity = DiagnosticSeverity.Warning,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
+        }
+
+        [TestMethod]
+        public void ConcurrentDictionary_String_ShouldReportDiagnostic()
+        {
+            var test = @"
+class TypeName
+{
+    public void Test()
+    {
+        new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
+    }
+}";
+
+            var expected = new DiagnosticResult
+            {
+                Id = "MA0002",
+                Message = "Use an overload of the constructor that has a IEqualityComparer<string> parameter",
+                Severity = DiagnosticSeverity.Warning,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
+        }
     }
 }

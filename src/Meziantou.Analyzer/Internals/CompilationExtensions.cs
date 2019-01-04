@@ -1,18 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
 {
     internal static class CompilationExtensions
     {
-        public static INamedTypeSymbol GetTypeByMetadataName(this Compilation compilation, Type type)
+        public static IEnumerable<INamedTypeSymbol> GetTypesByMetadataName(this Compilation compilation, string typeMetadataName)
         {
-            return compilation.GetTypeByMetadataName(type.FullName);
-        }
-
-        public static INamedTypeSymbol GetTypeByMetadataName<T>(this Compilation compilation)
-        {
-            return GetTypeByMetadataName(compilation, typeof(T));
+            return compilation.References
+                .Select(compilation.GetAssemblyOrModuleSymbol)
+                .OfType<IAssemblySymbol>()
+                .Select(assemblySymbol => assemblySymbol.GetTypeByMetadataName(typeMetadataName))
+                .Where(t => t != null);
         }
     }
 }
