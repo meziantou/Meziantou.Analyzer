@@ -29,3 +29,7 @@
 # v1.0.11
 
 - MA0003: Fix some potential NullReferenceException
+
+# v1.0.12
+
+- MA0001 detect missing `StringComparison` in `string.Replace`
