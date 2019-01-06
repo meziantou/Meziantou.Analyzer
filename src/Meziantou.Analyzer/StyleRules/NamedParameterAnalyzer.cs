@@ -33,6 +33,7 @@ namespace Meziantou.Analyzer
             {
                 var attributeTokenType = compilationContext.Compilation.GetTypeByMetadataName("SkipNamedAttribute");
 
+                var objectType = compilationContext.Compilation.GetSpecialType(SpecialType.System_Object);
                 var taskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 var taskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
                 var methodBaseTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
@@ -62,43 +63,49 @@ namespace Meziantou.Analyzer
                         if (invocationExpression != null)
                         {
                             var methodSymbol = (IMethodSymbol)symbolContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
-                            var argumentIndex = ArgumentIndex(argument);
+                            if (methodSymbol != null)
+                            {
+                                var argumentIndex = ArgumentIndex(argument);
 
-                            if (Skip(symbolContext, attributeTokenType, methodSymbol))
-                                return;
+                                if (Skip(symbolContext, attributeTokenType, methodSymbol))
+                                    return;
 
-                            if (IsMethod(methodSymbol, taskTokenType, nameof(Task.ConfigureAwait)))
-                                return;
+                                if (IsMethod(methodSymbol, objectType, nameof(object.Equals)))
+                                    return;
 
-                            if (IsMethod(methodSymbol, taskGenericTokenType, nameof(Task.ConfigureAwait)))
-                                return;
+                                if (IsMethod(methodSymbol, taskTokenType, nameof(Task.ConfigureAwait)))
+                                    return;
 
-                            if (IsMethod(methodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
-                                return;
+                                if (IsMethod(methodSymbol, taskGenericTokenType, nameof(Task.ConfigureAwait)))
+                                    return;
 
-                            if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.SetValue)) && argumentIndex == 0)
-                                return;
+                                if (IsMethod(methodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
+                                    return;
 
-                            if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.GetValue)) && argumentIndex == 0)
-                                return;
+                                if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.SetValue)) && argumentIndex == 0)
+                                    return;
 
-                            if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.SetValue)) && argumentIndex == 0)
-                                return;
+                                if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.GetValue)) && argumentIndex == 0)
+                                    return;
 
-                            if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
-                                return;
+                                if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.SetValue)) && argumentIndex == 0)
+                                    return;
 
-                            if (IsMethod(methodSymbol, msTestAssertTokenType, "*"))
-                                return;
+                                if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
+                                    return;
 
-                            if (IsMethod(methodSymbol, nunitAssertTokenType, "*"))
-                                return;
+                                if (IsMethod(methodSymbol, msTestAssertTokenType, "*"))
+                                    return;
 
-                            if (IsMethod(methodSymbol, xunitAssertTokenType, "*"))
-                                return;
+                                if (IsMethod(methodSymbol, nunitAssertTokenType, "*"))
+                                    return;
 
-                            if ((methodSymbol.Name == "Parse" || methodSymbol.Name == "TryParse") && argumentIndex == 0)
-                                return;
+                                if (IsMethod(methodSymbol, xunitAssertTokenType, "*"))
+                                    return;
+
+                                if ((methodSymbol.Name == "Parse" || methodSymbol.Name == "TryParse") && argumentIndex == 0)
+                                    return;
+                            }
                         }
 
                         symbolContext.ReportDiagnostic(Diagnostic.Create(s_rule, symbolContext.Node.GetLocation()));
@@ -115,6 +122,9 @@ namespace Meziantou.Analyzer
             foreach (var syntaxTree in context.Compilation.SyntaxTrees)
             {
                 var root = syntaxTree.GetRoot();
+                if (root == null)
+                    continue;
+
                 foreach (var list in root.DescendantNodesAndSelf().OfType<AttributeListSyntax>())
                 {
                     if (list.Target != null && list.Target?.Identifier.IsKind(SyntaxKind.AssemblyKeyword) == true)
@@ -157,10 +167,10 @@ namespace Meziantou.Analyzer
 
         private static bool IsMethod(IMethodSymbol method, ITypeSymbol type, string name)
         {
-            if (type == null || method == null)
+            if (type == null || method == null || method.ContainingType == null)
                 return false;
 
-            if (name != "*" && method.Name != name)
+            if (name != "*" && !string.Equals(method.Name, name, System.StringComparison.Ordinal))
                 return false;
 
             if (!type.Equals(method.ContainingType.OriginalDefinition))

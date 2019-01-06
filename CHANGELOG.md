@@ -20,3 +20,12 @@
 # v1.0.9
 
 - MA0002 now support `ConcurrentDictionary<string, TValue>`
+
+# v1.0.10
+
+- MA0003 now doesn't report diagnostic for `object.Equals`
+- MA0004 better detects ASP.NET Core types
+
+# v1.0.11
+
+- MA0003: Fix some potential NullReferenceException
