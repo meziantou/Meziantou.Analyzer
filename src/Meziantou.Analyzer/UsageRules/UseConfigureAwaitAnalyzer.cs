@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -60,7 +59,10 @@ namespace Meziantou.Analyzer.UsageRules
                         Implements(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
                         InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
                         InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
-                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase"))) // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase")) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                        Implements(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
+                        Implements(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
+                        Implements(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")))  // ASP.NET Core
                     {
                         return false;
                     }
