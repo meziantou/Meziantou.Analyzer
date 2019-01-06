@@ -40,6 +40,7 @@ namespace Meziantou.Analyzer
                 !IsMethod(operation, stringType, nameof(string.LastIndexOf)) &&
                 !IsMethod(operation, stringType, nameof(string.LastIndexOfAny)) &&
                 !IsMethod(operation, stringType, nameof(string.EndsWith)) &&
+                !IsMethod(operation, stringType, nameof(string.Replace)) &&
                 !IsMethod(operation, stringType, nameof(string.StartsWith)))
             {
                 return;
