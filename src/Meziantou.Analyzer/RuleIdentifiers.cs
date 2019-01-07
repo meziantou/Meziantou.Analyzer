@@ -9,6 +9,7 @@ namespace Meziantou.Analyzer
         public const string UseNamedParameter = "MA0003";
         public const string UseConfigureAwaitFalse = "MA0004";
         public const string UseArrayEmpty = "MA0005";
+        public const string UseStringEquals = "MA0006";
 
         public static string GetHelpUri(string idenfifier)
         {

@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Test
     [TestClass]
     public class UseStringComparisonAnalyzerTest : CodeFixVerifier
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new StringComparisonAnalyzer();
+        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparisonAnalyzer();
 
         [TestMethod]
         public void Equals_ShouldNotReportDiagnosticForEmptyString()

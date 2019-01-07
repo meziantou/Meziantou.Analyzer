@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class StringComparisonAnalyzer : DiagnosticAnalyzer
+    public class UseStringComparisonAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseStringComparison,
@@ -120,10 +120,7 @@ namespace Meziantou.Analyzer
                 }
 
                 // Ensure the last argument is of type StringComparison
-                if (i != j || (i == j && stringComparisonType.Equals(member.Parameters[j].Type)))
-                    return true;
-
-                return false;
+                return i != j || (i == j && stringComparisonType.Equals(member.Parameters[j].Type));
             }
         }
     }
