@@ -83,5 +83,21 @@ class TypeName
 
             VerifyCSharpDiagnostic(test);
         }
+
+        [TestMethod]
+        public void Equals_stringLiteral_null_ShouldReportDiagnostic()
+        {
+            var test = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = """" == null;
+        var b = null == """";
+    }
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
     }
 }

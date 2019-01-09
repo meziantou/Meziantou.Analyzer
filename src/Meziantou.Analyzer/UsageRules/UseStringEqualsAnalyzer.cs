@@ -36,9 +36,18 @@ namespace Meziantou.Analyzer
             {
                 if (operation.LeftOperand.Type.IsString() && operation.RightOperand.Type.IsString())
                 {
+                    if (IsNull(operation.LeftOperand) || IsNull(operation.RightOperand))
+                        return;
+
                     context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), $"{operation.OperatorKind} operator"));
                 }
             }
         }
+
+        private static bool IsNull(IOperation operation)
+        {
+            return operation.ConstantValue.HasValue && operation.ConstantValue.Value == null;
+        }
+
     }
 }
