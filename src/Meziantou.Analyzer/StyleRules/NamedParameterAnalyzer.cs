@@ -73,6 +73,9 @@ namespace Meziantou.Analyzer
                                 if (IsMethod(methodSymbol, objectType, nameof(object.Equals)))
                                     return;
 
+                                if (IsMethod(methodSymbol, objectType, nameof(object.ReferenceEquals)))
+                                    return;
+
                                 if (IsMethod(methodSymbol, taskTokenType, nameof(Task.ConfigureAwait)))
                                     return;
 
