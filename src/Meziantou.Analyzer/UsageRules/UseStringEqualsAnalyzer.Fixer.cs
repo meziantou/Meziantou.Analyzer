@@ -15,7 +15,7 @@ namespace Meziantou.Analyzer.UsageRules
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
     public sealed class UseStringEqualsFixer : CodeFixProvider
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseStringComparison);
+        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseStringEquals);
 
         public override FixAllProvider GetFixAllProvider()
         {
