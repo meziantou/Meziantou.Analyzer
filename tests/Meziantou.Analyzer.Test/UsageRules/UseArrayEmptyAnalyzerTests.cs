@@ -1,5 +1,6 @@
 ﻿using Meziantou.Analyzer.UsageRules;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -10,6 +11,8 @@ namespace Meziantou.Analyzer.Test.UsageRules
     public class UseArrayEmptyAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseArrayEmptyAnalyzer();
+
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseArrayEmptyFixer();
 
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
@@ -37,6 +40,9 @@ namespace Meziantou.Analyzer.Test.UsageRules
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = "var a = System.Array.Empty<int>();";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [DataTestMethod]
