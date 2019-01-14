@@ -69,6 +69,23 @@ namespace Meziantou.Analyzer.UsageRules
                 }
             }
 
+            var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            if (containingMethod != null)
+            {
+                var methodInfo = context.SemanticModel.GetSymbolInfo(containingMethod).Symbol as IMethodSymbol;
+                if (methodInfo != null)
+                {
+                    if (MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("XUnit.FactAttribute")) ||
+                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("NUnit.Framework.NUnitAttribute")) ||
+                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("NUnit.Framework.TheoryAttribute")) ||
+                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute")) ||
+                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute")))
+                    {
+                        return false;
+                    }
+                }
+            }
+
             return true;
         }
 
@@ -83,10 +100,10 @@ namespace Meziantou.Analyzer.UsageRules
                 var otherAwaitExpressions = method.DescendantNodes(_ => true).OfType<AwaitExpressionSyntax>();
                 foreach (var expr in otherAwaitExpressions)
                 {
-                    if (IsPreviousConfigureAwait(expr))
+                    if (HasPreviousConfigureAwait(expr))
                         return true;
 
-                    bool IsPreviousConfigureAwait(AwaitExpressionSyntax otherAwaitExpression)
+                    bool HasPreviousConfigureAwait(AwaitExpressionSyntax otherAwaitExpression)
                     {
                         if (otherAwaitExpression == node)
                             return false;
@@ -162,6 +179,24 @@ namespace Meziantou.Analyzer.UsageRules
                 return false;
 
             return classSymbol.AllInterfaces.Any(i => type.Equals(i));
+        }
+
+        public static bool MethodHasAttribute(ISymbol method, ITypeSymbol attributeType)
+        {
+            if (attributeType == null)
+                return false;
+
+            var attributes = method.GetAttributes();
+            if (attributes == null)
+                return false;
+
+            foreach (var attribute in attributes)
+            {
+                if (attributeType.Equals(attribute.AttributeClass))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

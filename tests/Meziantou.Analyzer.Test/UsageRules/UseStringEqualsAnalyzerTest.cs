@@ -1,4 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Meziantou.Analyzer.UsageRules;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -9,6 +11,8 @@ namespace Meziantou.Analyzer.Test
     public class UseStringEqualsAnalyzerTest : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringEqualsAnalyzer();
+
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringEqualsFixer();
 
         [TestMethod]
         public void Equals_ShouldNotReportDiagnosticForEmptyString()
@@ -40,6 +44,51 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = string.Equals(""a"", ""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
+        }
+
+        [TestMethod]
+        public void NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
+        {
+            var test = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = ""a"" != ""v"";
+    }
+}";
+            var expected = new DiagnosticResult
+            {
+                Id = "MA0006",
+                Message = "Use string.Equals instead of NotEquals operator",
+                Severity = DiagnosticSeverity.Warning,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 17)
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = !string.Equals(""a"", ""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
@@ -66,6 +115,17 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        string str = "";
+        var a = string.Equals(str, ""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
