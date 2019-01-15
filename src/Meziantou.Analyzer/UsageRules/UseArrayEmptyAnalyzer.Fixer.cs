@@ -63,7 +63,7 @@ namespace Meziantou.Analyzer.UsageRules
         private static SyntaxNode GenerateArrayEmptyInvocation(SyntaxGenerator generator, ITypeSymbol elementType, SemanticModel semanticModel)
         {
             var arrayTypeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Array");
-            var arrayEmptyName = generator.QualifiedName(
+            var arrayEmptyName = generator.MemberAccessExpression(
                 generator.TypeExpression(arrayTypeSymbol),
                 generator.GenericName("Empty", elementType));
             return generator.InvocationExpression(arrayEmptyName);
