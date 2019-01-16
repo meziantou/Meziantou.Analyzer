@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -9,6 +10,8 @@ namespace Meziantou.Analyzer.Test
     public class UseStringComparerInHashSetConstructorAnalyzerTest : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerInHashSetConstructorAnalyzer();
+
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerInHashSetConstructorFixer();
 
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
@@ -56,6 +59,16 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
@@ -97,12 +110,22 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
         public void ConcurrentDictionary_String_ShouldReportDiagnostic()
         {
-            var test = @"
+            var test = @"namespace System.Collections.Concurrent { public class ConcurrentDictionary<TKey, TValue> {  public ConcurrentDictionary() { } public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { } } }
 class TypeName
 {
     public void Test()
@@ -123,6 +146,16 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"namespace System.Collections.Concurrent { public class ConcurrentDictionary<TKey, TValue> {  public ConcurrentDictionary() { } public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { } } }
+class TypeName
+{
+    public void Test()
+    {
+        new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
     }
 }

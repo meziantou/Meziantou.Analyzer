@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -9,6 +10,8 @@ namespace Meziantou.Analyzer.Test.StyleRules
     public class NamedParameterAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new NamedParameterAnalyzer();
+
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new NamedParameterFixer();
 
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
@@ -157,6 +160,15 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        typeof(TypeName).GetMethod("""").Invoke(null, parameters: null);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]

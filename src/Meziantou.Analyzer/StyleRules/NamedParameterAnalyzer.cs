@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -67,7 +68,7 @@ namespace Meziantou.Analyzer
                             {
                                 var argumentIndex = ArgumentIndex(argument);
 
-                                if (Skip(symbolContext, attributeTokenType, methodSymbol))
+                                if (MustSkip(symbolContext, attributeTokenType, methodSymbol))
                                     return;
 
                                 if (IsMethod(methodSymbol, objectType, nameof(object.Equals)))
@@ -106,7 +107,7 @@ namespace Meziantou.Analyzer
                                 if (IsMethod(methodSymbol, xunitAssertTokenType, "*"))
                                     return;
 
-                                if ((methodSymbol.Name == "Parse" || methodSymbol.Name == "TryParse") && argumentIndex == 0)
+                                if ((string.Equals(methodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(methodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
                                     return;
                             }
                         }
@@ -117,7 +118,7 @@ namespace Meziantou.Analyzer
             });
         }
 
-        private static bool Skip(SyntaxNodeAnalysisContext context, ITypeSymbol attributeType, IMethodSymbol methodSymbol)
+        private static bool MustSkip(SyntaxNodeAnalysisContext context, ITypeSymbol attributeType, IMethodSymbol methodSymbol)
         {
             if (attributeType == null)
                 return false;
@@ -159,10 +160,7 @@ namespace Meziantou.Analyzer
             {
                 var expression = argument.Expression;
                 if (expression.IsKind(SyntaxKind.StringLiteralExpression))
-                {
-                    var token = ((LiteralExpressionSyntax)expression).Token.ValueText;
-                    return token;
-                }
+                    return ((LiteralExpressionSyntax)expression).Token.ValueText;
 
                 return null;
             }
@@ -173,7 +171,7 @@ namespace Meziantou.Analyzer
             if (type == null || method == null || method.ContainingType == null)
                 return false;
 
-            if (name != "*" && !string.Equals(method.Name, name, System.StringComparison.Ordinal))
+            if (name != "*" && !string.Equals(method.Name, name, StringComparison.Ordinal))
                 return false;
 
             if (!type.Equals(method.ContainingType.OriginalDefinition))
@@ -182,7 +180,7 @@ namespace Meziantou.Analyzer
             return true;
         }
 
-        private static int ArgumentIndex(ArgumentSyntax argument)
+        internal static int ArgumentIndex(ArgumentSyntax argument)
         {
             var argumentListExpression = argument.FirstAncestorOrSelf<ArgumentListSyntax>();
             if (argumentListExpression == null)

@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -74,7 +75,7 @@ namespace Meziantou.Analyzer
             if (methodSymbol == null)
                 return false;
 
-            if (methodSymbol.Name != name)
+            if (!string.Equals(methodSymbol.Name, name, StringComparison.Ordinal))
                 return false;
 
             if (!type.Equals(methodSymbol.ContainingType))

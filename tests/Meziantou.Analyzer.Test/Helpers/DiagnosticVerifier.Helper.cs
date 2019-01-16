@@ -21,7 +21,6 @@ namespace TestHelper
         private static readonly MetadataReference CSharpSymbolsReference = MetadataReference.CreateFromFile(typeof(CSharpCompilation).Assembly.Location);
         private static readonly MetadataReference CodeAnalysisReference = MetadataReference.CreateFromFile(typeof(Compilation).Assembly.Location);
         private static readonly MetadataReference HashSetReference = MetadataReference.CreateFromFile(typeof(HashSet<>).Assembly.Location);
-        private static readonly MetadataReference ConcurrentDictionaryReference = MetadataReference.CreateFromFile(typeof(ConcurrentDictionary<,>).Assembly.Location);
 
         internal static string DefaultFilePathPrefix = "Test";
         internal static string CSharpDefaultFileExt = "cs";
@@ -156,8 +155,7 @@ namespace TestHelper
                 .AddMetadataReference(projectId, SystemCoreReference)
                 .AddMetadataReference(projectId, CSharpSymbolsReference)
                 .AddMetadataReference(projectId, CodeAnalysisReference)
-                .AddMetadataReference(projectId, HashSetReference)
-                .AddMetadataReference(projectId, ConcurrentDictionaryReference);
+                .AddMetadataReference(projectId, HashSetReference);
 
             int count = 0;
             foreach (var source in sources)
