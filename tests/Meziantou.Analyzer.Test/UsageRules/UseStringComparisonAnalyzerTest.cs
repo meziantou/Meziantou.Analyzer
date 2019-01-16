@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -9,6 +10,8 @@ namespace Meziantou.Analyzer.Test
     public class UseStringComparisonAnalyzerTest : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparisonAnalyzer();
+
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparisonFixer();
 
         [TestMethod]
         public void Equals_ShouldNotReportDiagnosticForEmptyString()
@@ -56,6 +59,16 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        System.String.Equals(""a"", ""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
@@ -81,6 +94,15 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        ""a"".Equals(""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
@@ -107,6 +129,16 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        ""a"".IndexOf('v', System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
@@ -146,6 +178,16 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        ""a"".IndexOf(""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
 
         [TestMethod]
@@ -185,6 +227,16 @@ class TypeName
             };
 
             VerifyCSharpDiagnostic(test, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        ""a"".StartsWith(""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyCSharpFix(test, fixtest);
         }
     }
 }
