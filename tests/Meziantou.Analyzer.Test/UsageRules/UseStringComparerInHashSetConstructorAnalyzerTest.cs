@@ -125,7 +125,9 @@ class TypeName
         [TestMethod]
         public void ConcurrentDictionary_String_ShouldReportDiagnostic()
         {
-            var test = @"namespace System.Collections.Concurrent { public class ConcurrentDictionary<TKey, TValue> {  public ConcurrentDictionary() { } public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { } } }
+            const string ConcurrentDictionary = "namespace System.Collections.Concurrent { public class ConcurrentDictionary<TKey, TValue> {  public ConcurrentDictionary() { } public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { } } }";
+
+            var test = ConcurrentDictionary + @"
 class TypeName
 {
     public void Test()
@@ -147,7 +149,7 @@ class TypeName
 
             VerifyCSharpDiagnostic(test, expected);
 
-            var fixtest = @"namespace System.Collections.Concurrent { public class ConcurrentDictionary<TKey, TValue> {  public ConcurrentDictionary() { } public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { } } }
+            var fixtest = ConcurrentDictionary + @"
 class TypeName
 {
     public void Test()
