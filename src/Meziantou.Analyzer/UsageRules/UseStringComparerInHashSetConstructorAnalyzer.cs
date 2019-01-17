@@ -28,16 +28,19 @@ namespace Meziantou.Analyzer
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
+                var equalityComparerInterfaceType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+                if (equalityComparerInterfaceType == null)
+                    return;
+
+                var stringType = compilationContext.Compilation.GetSpecialType(SpecialType.System_String);
+                var stringEqualityComparerInterfaceType = equalityComparerInterfaceType.Construct(stringType);
+
                 var types = new List<INamedTypeSymbol>();
                 types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
                 types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
                 types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
 
-                var equalityComparerInterfaceType = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
-                var stringType = compilationContext.Compilation.GetSpecialType(SpecialType.System_String);
-                var stringEqualityComparerInterfaceType = equalityComparerInterfaceType.Construct(stringType);
-
-                if (types.Any() && stringEqualityComparerInterfaceType != null)
+                if (types.Any())
                 {
                     compilationContext.RegisterOperationAction(operationContext =>
                     {
@@ -48,7 +51,7 @@ namespace Meziantou.Analyzer
 
                         if (types.Any(t => type.OriginalDefinition.Equals(t)))
                         {
-                            // We only care about dictionaries who use a string as the key
+                            // We only care about dictionaries that use a string as the key
                             if (!type.TypeArguments[0].IsString())
                                 return;
 
