@@ -27,5 +27,13 @@ namespace Meziantou.Analyzer
 
             return symbol.SpecialType == SpecialType.System_String;
         }
+
+        public static bool IsBoolean(this ITypeSymbol symbol)
+        {
+            if (symbol == null)
+                return false;
+
+            return symbol.SpecialType == SpecialType.System_Boolean;
+        }
     }
 }
