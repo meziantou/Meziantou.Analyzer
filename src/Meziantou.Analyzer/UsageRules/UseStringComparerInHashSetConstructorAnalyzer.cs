@@ -33,6 +33,9 @@ namespace Meziantou.Analyzer
                     return;
 
                 var stringType = compilationContext.Compilation.GetSpecialType(SpecialType.System_String);
+                if (stringType == null)
+                    return;
+
                 var stringEqualityComparerInterfaceType = equalityComparerInterfaceType.Construct(stringType);
 
                 var types = new List<INamedTypeSymbol>();

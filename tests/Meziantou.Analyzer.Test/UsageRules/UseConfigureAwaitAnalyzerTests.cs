@@ -229,5 +229,17 @@ class MyClass : System.Windows.Window
 
             VerifyCSharpDiagnostic(test, expected);
         }
+
+        [TestMethod]
+        public void TaskYield_ShouldNotReportDiagnostic()
+        {
+            var test = @"using System.Threading.Tasks;
+async Task Test()
+{
+    await Task.Yield();
+}";
+
+            VerifyCSharpDiagnostic(test);
+        }
     }
 }

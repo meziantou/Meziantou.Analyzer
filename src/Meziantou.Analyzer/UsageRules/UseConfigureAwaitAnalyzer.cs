@@ -35,7 +35,7 @@ namespace Meziantou.Analyzer.UsageRules
             // If ConfigureAwait(false) somewhere in a method, all following await calls should have ConfigureAwait(false)
             // Use ConfigureAwait(false) everywhere except if the parent class is a WPF, Winform, or ASP.NET class, or ASP.NET Core (because there is no SynchronizationContext)
             var node = (AwaitExpressionSyntax)context.Node;
-            if (IsConfiguredTaskAwaitable(context, node))
+            if (!CanAddConfigureAwait(context, node))
                 return;
 
             if (MustUseConfigureAwait(context, node))
@@ -144,6 +144,16 @@ namespace Meziantou.Analyzer.UsageRules
             return true;
         }
 
+        private static bool CanAddConfigureAwait(SyntaxNodeAnalysisContext context, AwaitExpressionSyntax awaitSyntax)
+        {
+            var awaitExpressionType = context.SemanticModel.GetTypeInfo(awaitSyntax.Expression).Type;
+            if (awaitExpressionType == null)
+                return false;
+
+            var members = awaitExpressionType.GetMembers("ConfigureAwait");
+            return members.OfType<IMethodSymbol>().Any(member => !member.ReturnsVoid && member.TypeParameters.Length == 0 && member.Parameters.Length == 1 && member.Parameters[0].Type.IsBoolean());
+        }
+
         private static bool IsConfiguredTaskAwaitable(SyntaxNodeAnalysisContext context, AwaitExpressionSyntax awaitSyntax)
         {
             var awaitExpressionType = context.SemanticModel.GetTypeInfo(awaitSyntax.Expression).ConvertedType;
@@ -156,15 +166,31 @@ namespace Meziantou.Analyzer.UsageRules
                    (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.Equals(awaitExpressionType.OriginalDefinition));
         }
 
-        private static bool InheritsFrom(INamedTypeSymbol classSymbol, ITypeSymbol type)
+        private static bool IsOrInheritsFrom(ITypeSymbol classSymbol, ITypeSymbol baseClassType)
         {
-            if (type == null)
+            if (baseClassType == null)
+                return false;
+
+            while (classSymbol != null)
+            {
+                if (baseClassType.Equals(classSymbol))
+                    return true;
+
+                classSymbol = classSymbol.BaseType;
+            }
+
+            return false;
+        }
+
+        private static bool InheritsFrom(ITypeSymbol classSymbol, ITypeSymbol baseClassType)
+        {
+            if (baseClassType == null)
                 return false;
 
             var baseType = classSymbol.BaseType;
             while (baseType != null)
             {
-                if (type.Equals(baseType))
+                if (baseClassType.Equals(baseType))
                     return true;
 
                 baseType = baseType.BaseType;
@@ -173,12 +199,12 @@ namespace Meziantou.Analyzer.UsageRules
             return false;
         }
 
-        private static bool Implements(INamedTypeSymbol classSymbol, ITypeSymbol type)
+        private static bool Implements(ITypeSymbol classSymbol, ITypeSymbol interfaceType)
         {
-            if (type == null)
+            if (interfaceType == null)
                 return false;
 
-            return classSymbol.AllInterfaces.Any(i => type.Equals(i));
+            return classSymbol.AllInterfaces.Any(i => interfaceType.Equals(i));
         }
 
         public static bool MethodHasAttribute(ISymbol method, ITypeSymbol attributeType)
