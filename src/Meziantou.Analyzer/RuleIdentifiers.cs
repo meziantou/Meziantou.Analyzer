@@ -10,6 +10,7 @@ namespace Meziantou.Analyzer
         public const string UseConfigureAwaitFalse = "MA0004";
         public const string UseArrayEmpty = "MA0005";
         public const string UseStringEquals = "MA0006";
+        public const string MissingCommaInObjectInitializer = "MA0007";
 
         public static string GetHelpUri(string idenfifier)
         {
