@@ -43,7 +43,8 @@ namespace Meziantou.Analyzer.UsageRules
                 return;
 
             var regexType = context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
-            if (regexType == null)
+            var timespanType = context.Compilation.GetTypeByMetadataName("System.TimeSpan");
+            if (regexType == null || timespanType == null)
                 return;
 
             if (!s_methodNames.Contains(op.TargetMethod.Name, StringComparer.Ordinal))
@@ -52,11 +53,23 @@ namespace Meziantou.Analyzer.UsageRules
             if (!regexType.Equals(op.TargetMethod.ContainingSymbol))
                 return;
 
+            if (op.Arguments.Any(a => timespanType.Equals(a.Type)))
+                return;
+
             // TODO contains TimeSpan parameter?
         }
 
         private void AnalyzeObjectCreation(OperationAnalysisContext context)
         {
+            var op = (IObjectCreationOperation)context.Operation;
+            if (op == null)
+                return;
+
+            var regexType = context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
+            var timespanType = context.Compilation.GetTypeByMetadataName("System.TimeSpan");
+            if (regexType == null || timespanType == null)
+                return;
+
             // TODO
         }
     }
