@@ -171,7 +171,7 @@ namespace Meziantou.Analyzer
             if (type == null || method == null || method.ContainingType == null)
                 return false;
 
-            if (name != "*" && !string.Equals(method.Name, name, StringComparison.Ordinal))
+            if (!string.Equals(name, "*", StringComparison.Ordinal) && !string.Equals(method.Name, name, StringComparison.Ordinal))
                 return false;
 
             if (!type.Equals(method.ContainingType.OriginalDefinition))

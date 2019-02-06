@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Meziantou.Analyzer.UsageRules;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -13,42 +9,39 @@ namespace Meziantou.Analyzer.Test.UsageRules
     public class UseStructLayoutAttributeAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStructLayoutAttributeAnalyzer();
+        protected override string ExpectedDiagnosticId => "MA0008";
+        protected override string ExpectedDiagnosticMessage => "Add StructLayoutAttribute";
+        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
         [TestMethod]
         public void ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = "";
-            VerifyCSharpDiagnostic(test);
+            var test = new ProjectBuilder();
+            VerifyDiagnostic(test);
         }
 
         [TestMethod]
         public void MissingAttribute_ShouldReportDiagnostic()
         {
-            var test = "struct TypeName { }";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0008",
-                Message = "Add StructLayoutAttribute",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 1, column: 0)
-                }
-            };
+            var project = new ProjectBuilder()
+                .WithSource("struct TypeName { }");
 
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 1, column: 0);
+
+            VerifyDiagnostic(project, expected);
         }
 
         [TestMethod]
         public void WithAttribute_ShouldNotReportDiagnostic()
         {
-            var test = @"using System.Runtime.InteropServices;
+            var project = new ProjectBuilder()
+                .WithSource(@"using System.Runtime.InteropServices;
 [StructLayout(LayoutKind.Sequential)]
 struct TypeName
 {
-}";
-            
-            VerifyCSharpDiagnostic(test);
+}");
+
+            VerifyDiagnostic(project);
         }
     }
 }

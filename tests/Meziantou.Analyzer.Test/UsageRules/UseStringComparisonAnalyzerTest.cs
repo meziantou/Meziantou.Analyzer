@@ -10,20 +10,22 @@ namespace Meziantou.Analyzer.Test
     public class UseStringComparisonAnalyzerTest : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparisonAnalyzer();
-
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparisonFixer();
+        protected override string ExpectedDiagnosticId => "MA0001";
+        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
         [TestMethod]
         public void Equals_ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = "";
-            VerifyCSharpDiagnostic(test);
+            var project = new ProjectBuilder();
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecified()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
@@ -31,34 +33,25 @@ class TypeName
         var a = ""test"";
         string.Equals(a, ""v"", System.StringComparison.Ordinal);
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void Equals_String_string_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         System.String.Equals(""a"", ""v"");
     }
-}";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0001",
-                Message = "Use an overload of 'Equals' that has a StringComparison parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+}");
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'Equals' that has a StringComparison parameter");
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -68,32 +61,25 @@ class TypeName
         System.String.Equals(""a"", ""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void Equals_String_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         ""a"".Equals(""v"");
     }
-}";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0001",
-                Message = "Use an overload of 'Equals' that has a StringComparison parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
-            };
+}");
 
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'Equals' that has a StringComparison parameter");
+            VerifyDiagnostic(project, expected);
+
             var fixtest = @"
 class TypeName
 {
@@ -102,33 +88,24 @@ class TypeName
         ""a"".Equals(""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void IndexOf_Char_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         ""a"".IndexOf('v');
     }
-}";
+}");
 
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0001",
-                Message = "Use an overload of 'IndexOf' that has a StringComparison parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'IndexOf' that has a StringComparison parameter");
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -138,46 +115,39 @@ class TypeName
         ""a"".IndexOf('v', System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         ""a"".IndexOf(""v"", System.StringComparison.Ordinal);
     }
-}";
-            VerifyCSharpDiagnostic(test);
+}");
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void IndexOf_String_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         ""a"".IndexOf(""v"");
     }
-}";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0001",
-                Message = "Use an overload of 'IndexOf' that has a StringComparison parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
-            };
+}");
 
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'IndexOf' that has a StringComparison parameter");
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -187,46 +157,38 @@ class TypeName
         ""a"".IndexOf(""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         ""a"".StartsWith(""v"", System.StringComparison.Ordinal);
     }
-}";
-            VerifyCSharpDiagnostic(test);
+}");
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void StartsWith_String_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         ""a"".StartsWith(""v"");
     }
-}";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0001",
-                Message = "Use an overload of 'StartsWith' that has a StringComparison parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+}");
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'StartsWith' that has a StringComparison parameter");
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -236,7 +198,7 @@ class TypeName
         ""a"".StartsWith(""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
     }
 }

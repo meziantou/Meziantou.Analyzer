@@ -1,0 +1,8 @@
+﻿namespace System.Collections.Concurrent
+{
+    public class ConcurrentDictionary<TKey, TValue>
+    {
+        public ConcurrentDictionary() { }
+        public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { }
+    }
+}

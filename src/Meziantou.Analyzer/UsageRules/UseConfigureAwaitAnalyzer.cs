@@ -166,22 +166,6 @@ namespace Meziantou.Analyzer.UsageRules
                    (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.Equals(awaitExpressionType.OriginalDefinition));
         }
 
-        private static bool IsOrInheritsFrom(ITypeSymbol classSymbol, ITypeSymbol baseClassType)
-        {
-            if (baseClassType == null)
-                return false;
-
-            while (classSymbol != null)
-            {
-                if (baseClassType.Equals(classSymbol))
-                    return true;
-
-                classSymbol = classSymbol.BaseType;
-            }
-
-            return false;
-        }
-
         private static bool InheritsFrom(ITypeSymbol classSymbol, ITypeSymbol baseClassType)
         {
             if (baseClassType == null)

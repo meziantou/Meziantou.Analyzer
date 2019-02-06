@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
@@ -8,6 +8,7 @@ using System.Threading;
 
 namespace TestHelper
 {
+
     /// <summary>
     /// Diagnostic Producer class with extra methods dealing with applying codefixes
     /// All methods are static
@@ -46,7 +47,7 @@ namespace TestHelper
 
             while (newIndex < newArray.Length)
             {
-                if (oldIndex < oldArray.Length && oldArray[oldIndex].Id == newArray[newIndex].Id)
+                if (oldIndex < oldArray.Length && string.Equals(oldArray[oldIndex].Id, newArray[newIndex].Id, System.StringComparison.Ordinal))
                 {
                     ++oldIndex;
                     ++newIndex;
