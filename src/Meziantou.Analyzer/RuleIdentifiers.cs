@@ -12,6 +12,7 @@ namespace Meziantou.Analyzer
         public const string UseStringEquals = "MA0006";
         public const string MissingCommaInObjectInitializer = "MA0007";
         public const string MissingStructLayoutAttribute = "MA0008";
+        public const string MissingTimeoutParameterForRegex = "MA0009";
 
         public static string GetHelpUri(string idenfifier)
         {

@@ -14,6 +14,10 @@ namespace TestHelper
     public abstract partial class DiagnosticVerifier
     {
         #region To be implemented by Test classes
+        protected virtual string ExpectedDiagnosticId => null;
+        protected virtual string ExpectedDiagnosticMessage => null;
+        protected virtual DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
+
         /// <summary>
         /// Get the CSharp analyzer being tested - to be implemented in non-abstract class
         /// </summary>
@@ -31,6 +35,20 @@ namespace TestHelper
         }
         #endregion
 
+        protected DiagnosticResult CreateDiagnosticResult(int line, int column, string id = null, string message = null, DiagnosticSeverity? severity = null)
+        {
+            return new DiagnosticResult
+            {
+                Id = id ?? ExpectedDiagnosticId,
+                Message = message ?? ExpectedDiagnosticMessage,
+                Severity = severity ?? ExpectedDiagnosticSeverity,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line, column),
+                },
+            };
+        }
+
         #region Verifier wrappers
 
         /// <summary>
@@ -39,42 +57,9 @@ namespace TestHelper
         /// </summary>
         /// <param name="source">A class in the form of a string to run the analyzer on</param>
         /// <param name="expected"> DiagnosticResults that should appear after the analyzer is run on the source</param>
-        protected void VerifyCSharpDiagnostic(string source, params DiagnosticResult[] expected)
+        protected void VerifyDiagnostic(ProjectBuilder projectBuilder, params DiagnosticResult[] expected)
         {
-            VerifyDiagnostics(new[] { source }, LanguageNames.CSharp, GetCSharpDiagnosticAnalyzer(), expected);
-        }
-
-        /// <summary>
-        /// Called to test a VB DiagnosticAnalyzer when applied on the single inputted string as a source
-        /// Note: input a DiagnosticResult for each Diagnostic expected
-        /// </summary>
-        /// <param name="source">A class in the form of a string to run the analyzer on</param>
-        /// <param name="expected">DiagnosticResults that should appear after the analyzer is run on the source</param>
-        protected void VerifyBasicDiagnostic(string source, params DiagnosticResult[] expected)
-        {
-            VerifyDiagnostics(new[] { source }, LanguageNames.VisualBasic, GetBasicDiagnosticAnalyzer(), expected);
-        }
-
-        /// <summary>
-        /// Called to test a C# DiagnosticAnalyzer when applied on the inputted strings as a source
-        /// Note: input a DiagnosticResult for each Diagnostic expected
-        /// </summary>
-        /// <param name="sources">An array of strings to create source documents from to run the analyzers on</param>
-        /// <param name="expected">DiagnosticResults that should appear after the analyzer is run on the sources</param>
-        protected void VerifyCSharpDiagnostic(string[] sources, params DiagnosticResult[] expected)
-        {
-            VerifyDiagnostics(sources, LanguageNames.CSharp, GetCSharpDiagnosticAnalyzer(), expected);
-        }
-
-        /// <summary>
-        /// Called to test a VB DiagnosticAnalyzer when applied on the inputted strings as a source
-        /// Note: input a DiagnosticResult for each Diagnostic expected
-        /// </summary>
-        /// <param name="sources">An array of strings to create source documents from to run the analyzers on</param>
-        /// <param name="expected">DiagnosticResults that should appear after the analyzer is run on the sources</param>
-        protected void VerifyBasicDiagnostic(string[] sources, params DiagnosticResult[] expected)
-        {
-            VerifyDiagnostics(sources, LanguageNames.VisualBasic, GetBasicDiagnosticAnalyzer(), expected);
+            VerifyDiagnostics(projectBuilder, GetCSharpDiagnosticAnalyzer(), expected);
         }
 
         /// <summary>
@@ -85,9 +70,9 @@ namespace TestHelper
         /// <param name="language">The language of the classes represented by the source strings</param>
         /// <param name="analyzer">The analyzer to be run on the source code</param>
         /// <param name="expected">DiagnosticResults that should appear after the analyzer is run on the sources</param>
-        private void VerifyDiagnostics(string[] sources, string language, DiagnosticAnalyzer analyzer, params DiagnosticResult[] expected)
+        private void VerifyDiagnostics(ProjectBuilder projectBuilder, DiagnosticAnalyzer analyzer, params DiagnosticResult[] expected)
         {
-            var diagnostics = GetSortedDiagnostics(sources, language, analyzer);
+            var diagnostics = GetSortedDiagnostics(projectBuilder, analyzer);
             VerifyDiagnosticResults(diagnostics, analyzer, expected);
         }
 
@@ -146,7 +131,7 @@ namespace TestHelper
                     }
                 }
 
-                if (actual.Id != expected.Id)
+                if (!string.Equals(actual.Id, expected.Id, StringComparison.Ordinal))
                 {
                     Assert.IsTrue(false,
                         string.Format("Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
@@ -160,7 +145,7 @@ namespace TestHelper
                             expected.Severity, actual.Severity, FormatDiagnostics(analyzer, actual)));
                 }
 
-                if (actual.GetMessage() != expected.Message)
+                if (!string.Equals(actual.GetMessage(), expected.Message, StringComparison.Ordinal))
                 {
                     Assert.IsTrue(false,
                         string.Format("Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
@@ -180,7 +165,7 @@ namespace TestHelper
         {
             var actualSpan = actual.GetLineSpan();
 
-            Assert.IsTrue(actualSpan.Path == expected.Path || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.") && expected.Path.Contains("Test.")),
+            Assert.IsTrue(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.") && expected.Path.Contains("Test.")),
                 string.Format("Expected diagnostic to be in file \"{0}\" was actually in file \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                     expected.Path, actualSpan.Path, FormatDiagnostics(analyzer, diagnostic)));
 
@@ -229,7 +214,7 @@ namespace TestHelper
 
                 foreach (var rule in rules)
                 {
-                    if (rule != null && rule.Id == diagnostics[i].Id)
+                    if (rule != null && string.Equals(rule.Id, diagnostics[i].Id, StringComparison.Ordinal))
                     {
                         var location = diagnostics[i].Location;
                         if (location == Location.None)

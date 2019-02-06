@@ -11,39 +11,31 @@ namespace Meziantou.Analyzer.Test
     public class UseStringEqualsAnalyzerTest : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringEqualsAnalyzer();
-
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringEqualsFixer();
+        protected override string ExpectedDiagnosticId => "MA0006";
+        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
         [TestMethod]
         public void Equals_ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = "";
-            VerifyCSharpDiagnostic(test);
+            var project = new ProjectBuilder();
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void Equals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         var a = ""a"" == ""v"";
     }
-}";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0006",
-                Message = "Use string.Equals instead of Equals operator",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 17)
-                }
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+}");
+            var expected = CreateDiagnosticResult(line: 6, column: 17, message: "Use string.Equals instead of Equals operator");
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -53,32 +45,24 @@ class TypeName
         var a = string.Equals(""a"", ""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+    .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         var a = ""a"" != ""v"";
     }
-}";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0006",
-                Message = "Use string.Equals instead of NotEquals operator",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 17)
-                }
-            };
+}");
 
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 6, column: 17, message: "Use string.Equals instead of NotEquals operator");
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -88,66 +72,60 @@ class TypeName
         var a = !string.Equals(""a"", ""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void Equals_StringVariable_stringLiteral_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+    .WithSource(@"
 class TypeName
 {
     public void Test()
     {
-        string str = "";
+        string str = """";
         var a = str == ""v"";
     }
-}";
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0006",
-                Message = "Use string.Equals instead of Equals operator",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 7, column: 17)
-                }
-            };
+}");
 
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 7, column: 17, message: "Use string.Equals instead of Equals operator");
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
 {
     public void Test()
     {
-        string str = "";
+        string str = """";
         var a = string.Equals(str, ""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void Equals_ObjectVariable_stringLiteral_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+    .WithSource(@"
 class TypeName
 {
     public void Test()
     {
-        object str = "";
+        object str = """";
         var a = str == ""v"";
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void Equals_stringLiteral_null_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+    .WithSource(@"
 class TypeName
 {
     public void Test()
@@ -155,9 +133,9 @@ class TypeName
         var a = """" == null;
         var b = null == """";
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
     }
 }

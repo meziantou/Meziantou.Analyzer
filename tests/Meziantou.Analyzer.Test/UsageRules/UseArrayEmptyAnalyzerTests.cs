@@ -11,14 +11,16 @@ namespace Meziantou.Analyzer.Test.UsageRules
     public class UseArrayEmptyAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseArrayEmptyAnalyzer();
-
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseArrayEmptyFixer();
+        protected override string ExpectedDiagnosticId => "MA0005";
+        protected override string ExpectedDiagnosticMessage => "Use Array.Empty<T>()";
+        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = "";
-            VerifyCSharpDiagnostic(test);
+            var project = new ProjectBuilder();
+            VerifyDiagnostic(project);
         }
 
         [DataTestMethod]
@@ -26,23 +28,28 @@ namespace Meziantou.Analyzer.Test.UsageRules
         [DataRow("new int[] { }")]
         public void EmptyArray_ShouldReportError(string code)
         {
-            var test = $"var a = {code};";
+            var project = new ProjectBuilder()
+                  .WithSource($@"
+class TestClass
+{{
+    void Test()
+    {{
+        var a = {code};
+    }}
+}}");
 
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0005",
-                Message = "Use Array.Empty<T>()",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 1, column: 9)
-                }
-            };
+            var expected = CreateDiagnosticResult(line: 6, column: 17);
+            VerifyDiagnostic(project, expected);
 
-            VerifyCSharpDiagnostic(test, expected);
-
-            var fixtest = "var a = System.Array.Empty<int>();";
-            VerifyCSharpFix(test, fixtest);
+            var fixtest = @"
+class TestClass
+{
+    void Test()
+    {
+        var a = System.Array.Empty<int>();
+    }
+}";
+            VerifyFix(project, fixtest);
         }
 
         [DataTestMethod]
@@ -50,24 +57,41 @@ namespace Meziantou.Analyzer.Test.UsageRules
         [DataRow("new int[] { 0 }")]
         public void NonEmptyArray_ShouldReportError(string code)
         {
-            var test = $"var a = {code};";
+            var project = new ProjectBuilder()
+                  .WithSource($@"
+class TestClass
+{{
+    void Test()
+    {{
+        var a = {code};
+    }}
+}}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
-        public void DynamicLength_ShouldNotReportError()
+        public void Length_ShouldNotReportError()
         {
-            var test = @"int length = 0;
-var a = new int[length];";
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TestClass
+{
+    void Test()
+    {
+        int length = 0;
+        var a = new int[length];
+    }
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void ParamsMethod_ShouldNotReportError()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 public class TestClass
 {
     public void Test(params string[] values)
@@ -78,17 +102,23 @@ public class TestClass
     {
         Test();
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void EmptyArrayInAttribute_ShouldNotReportError()
         {
-            var test = "[Test(new int[0])]class TestAttribute : Attribute { }";
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+[Test(new int[0])]
+class TestAttribute : System.Attribute
+{
+    public TestAttribute(int[] data) { }
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
     }
 }

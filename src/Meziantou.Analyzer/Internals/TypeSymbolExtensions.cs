@@ -20,6 +20,17 @@ namespace Meziantou.Analyzer
             return allInterfaces;
         }
 
+        public static bool IsOfType(this ITypeSymbol symbol, ITypeSymbol expectedType)
+        {
+            if (expectedType == null)
+                throw new System.ArgumentNullException(nameof(expectedType));
+
+            if (symbol == null)
+                return false;
+
+            return expectedType.Equals(symbol);
+        }
+
         public static bool IsString(this ITypeSymbol symbol)
         {
             if (symbol == null)
