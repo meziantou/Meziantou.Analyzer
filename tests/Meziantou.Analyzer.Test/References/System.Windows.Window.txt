@@ -1,0 +1,18 @@
+﻿namespace System.Windows
+{
+    namespace Input
+    {
+        interface ICommand
+        {
+        }
+    }
+    namespace Threading
+    {
+        class DispatcherObject
+        {
+        }
+    }
+    class Window : Threading.DispatcherObject
+    {
+    }
+}

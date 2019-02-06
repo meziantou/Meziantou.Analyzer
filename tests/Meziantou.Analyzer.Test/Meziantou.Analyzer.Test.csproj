@@ -20,4 +20,8 @@
     <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="References\*.txt" />
+  </ItemGroup>
+
 </Project>

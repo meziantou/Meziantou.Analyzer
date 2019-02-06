@@ -10,20 +10,22 @@ namespace Meziantou.Analyzer.Test.StyleRules
     public class CommaAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new CommaAnalyzer();
-
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new CommaFixer();
+        protected override string ExpectedDiagnosticId => "MA0007";
+        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
 
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = "";
-            VerifyCSharpDiagnostic(test);
+            var project = new ProjectBuilder();
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void OneLineDeclarationWithMissingTrailingComma_ShouldNotReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public int A { get; set; }
@@ -33,15 +35,16 @@ class TypeName
     {
         new TypeName() { A = 1 };
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public int A { get; set; }
@@ -55,15 +58,16 @@ class TypeName
             B = 2,
         };
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public int A { get; set; }
@@ -77,20 +81,10 @@ class TypeName
             B = 2
         };
     }
-}";
+}");
 
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0007",
-                Message = "Add comma after the last property",
-                Severity = DiagnosticSeverity.Info,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 12, column: 13),
-                },
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 12, column: 13, message: "Add comma after the last property");
+            VerifyDiagnostic(project, expected);
 
             var fix = @"
 class TypeName
@@ -107,7 +101,7 @@ class TypeName
         };
     }
 }";
-            VerifyCSharpFix(test, fix);
+            VerifyFix(project, fix);
         }
     }
 }

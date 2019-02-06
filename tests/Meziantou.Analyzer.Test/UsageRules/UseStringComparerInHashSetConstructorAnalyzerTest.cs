@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -10,69 +11,51 @@ namespace Meziantou.Analyzer.Test
     public class UseStringComparerInHashSetConstructorAnalyzerTest : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerInHashSetConstructorAnalyzer();
-
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerInHashSetConstructorFixer();
-
-        public UseStringComparerInHashSetConstructorAnalyzerTest()
-            : base()
-        {
-            AdditionalFiles.Add(@"
-namespace System.Collections.Concurrent
-{
-    public class ConcurrentDictionary<TKey, TValue>
-    {
-        public ConcurrentDictionary() { }
-        public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { }
-    }
-}");
-        }
+        protected override string ExpectedDiagnosticId => "MA0002";
+        protected override string ExpectedDiagnosticMessage => "Use an overload of the constructor that has a IEqualityComparer<string> parameter";
+        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
         {
-            var test = "";
-            VerifyCSharpDiagnostic(test);
+            var project = new ProjectBuilder();
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void HashSet_Int32_ShouldNotReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .AddReference(typeof(HashSet<>))
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.HashSet<int>();
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void HashSet_String_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .AddReference(typeof(HashSet<>))
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.HashSet<string>();
     }
-}";
+}");
 
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0002",
-                Message = "Use an overload of the constructor that has a IEqualityComparer<string> parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
-                },
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 6, column: 9);
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -82,48 +65,41 @@ class TypeName
         new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
 
         [TestMethod]
         public void HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .AddReference(typeof(HashSet<>))
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
     }
-}";
+}");
 
-            VerifyCSharpDiagnostic(test);
+            VerifyDiagnostic(project);
         }
 
         [TestMethod]
         public void Dictionary_String_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.Dictionary<string, int>();
     }
-}";
+}");
 
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0002",
-                Message = "Use an overload of the constructor that has a IEqualityComparer<string> parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
-                },
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 6, column: 9);
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -133,33 +109,24 @@ class TypeName
         new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
-
-        [TestMethod]
+       [TestMethod]
         public void ConcurrentDictionary_String_ShouldReportDiagnostic()
         {
-            var test = @"
+            var project = new ProjectBuilder()
+                  .AddConcurrentDictionaryApi()
+                  .WithSource(@"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
     }
-}";
+}");
 
-            var expected = new DiagnosticResult
-            {
-                Id = "MA0002",
-                Message = "Use an overload of the constructor that has a IEqualityComparer<string> parameter",
-                Severity = DiagnosticSeverity.Warning,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
-                },
-            };
-
-            VerifyCSharpDiagnostic(test, expected);
+            var expected = CreateDiagnosticResult(line: 6, column: 9);
+            VerifyDiagnostic(project, expected);
 
             var fixtest = @"
 class TypeName
@@ -169,7 +136,7 @@ class TypeName
         new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
     }
 }";
-            VerifyCSharpFix(test, fixtest);
+            VerifyFix(project, fixtest);
         }
     }
 }

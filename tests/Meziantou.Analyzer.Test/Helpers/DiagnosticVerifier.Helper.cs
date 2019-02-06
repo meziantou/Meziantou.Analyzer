@@ -22,22 +22,6 @@ namespace TestHelper
         internal static string VisualBasicDefaultExt = "vb";
         internal static string TestProjectName = "TestProject";
 
-        public IList<MetadataReference> References { get; }
-
-        public IList<string> AdditionalFiles { get; } = new List<string>();
-
-        protected DiagnosticVerifier()
-        {
-            References = new List<MetadataReference>
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(CSharpCompilation).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Compilation).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(HashSet<>).Assembly.Location),
-            };
-        }
-
         #region  Get Diagnostics
 
         /// <summary>
@@ -47,9 +31,9 @@ namespace TestHelper
         /// <param name="language">The language the source classes are in</param>
         /// <param name="analyzer">The analyzer to be run on the sources</param>
         /// <returns>An IEnumerable of Diagnostics that surfaced in the source code, sorted by Location</returns>
-        private Diagnostic[] GetSortedDiagnostics(string[] sources, string language, DiagnosticAnalyzer analyzer)
+        private Diagnostic[] GetSortedDiagnostics(ProjectBuilder projectBuilder, DiagnosticAnalyzer analyzer)
         {
-            return GetSortedDiagnosticsFromDocuments(analyzer, GetDocuments(sources, language));
+            return GetSortedDiagnosticsFromDocuments(analyzer, GetDocuments(projectBuilder));
         }
 
         /// <summary>
@@ -92,7 +76,7 @@ namespace TestHelper
                     }
                     else
                     {
-                        for (int i = 0; i < documents.Length; i++)
+                        for (var i = 0; i < documents.Length; i++)
                         {
                             var document = documents[i];
                             var tree = document.GetSyntaxTreeAsync().Result;
@@ -129,17 +113,12 @@ namespace TestHelper
         /// <param name="sources">Classes in the form of strings</param>
         /// <param name="language">The language the source code is in</param>
         /// <returns>A Tuple containing the Documents produced from the sources and their TextSpans if relevant</returns>
-        private Document[] GetDocuments(string[] sources, string language)
+        private Document[] GetDocuments(ProjectBuilder projectBuilder)
         {
-            if (language != LanguageNames.CSharp && language != LanguageNames.VisualBasic)
-            {
-                throw new ArgumentException("Unsupported Language");
-            }
-
-            var project = CreateProject(sources, language);
+            var project = CreateProject(projectBuilder);
             var documents = project.Documents.ToArray();
 
-            if (sources.Length + AdditionalFiles.Count != documents.Length)
+            if (projectBuilder.ApiReferences.Count + 1 != documents.Length)
             {
                 throw new InvalidOperationException("Amount of sources did not match amount of Documents created");
             }
@@ -153,9 +132,9 @@ namespace TestHelper
         /// <param name="source">Classes in the form of a string</param>
         /// <param name="language">The language the source code is in</param>
         /// <returns>A Document created from the source string</returns>
-        protected Document CreateDocument(string source, string language = LanguageNames.CSharp)
+        protected Document CreateDocument(ProjectBuilder projectBuilder)
         {
-            return CreateProject(new[] { source }, language).Documents.First();
+            return CreateProject(projectBuilder).Documents.First();
         }
 
         /// <summary>
@@ -164,21 +143,21 @@ namespace TestHelper
         /// <param name="sources">Classes in the form of strings</param>
         /// <param name="language">The language the source code is in</param>
         /// <returns>A Project created out of the Documents created from the source strings</returns>
-        private Project CreateProject(string[] sources, string language = LanguageNames.CSharp)
+        private Project CreateProject(ProjectBuilder projectBuilder)
         {
-            string fileNamePrefix = DefaultFilePathPrefix;
-            string fileExt = language == LanguageNames.CSharp ? CSharpDefaultFileExt : VisualBasicDefaultExt;
+            var fileNamePrefix = DefaultFilePathPrefix;
+            var fileExt = CSharpDefaultFileExt;
 
             var projectId = ProjectId.CreateNewId(debugName: TestProjectName);
 
             var solution = new AdhocWorkspace()
                 .CurrentSolution
-                .AddProject(projectId, TestProjectName, TestProjectName, language)
-                .WithProjectParseOptions(projectId, CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7_3))
-                .AddMetadataReferences(projectId, References);
+                .AddProject(projectId, TestProjectName, TestProjectName, LanguageNames.CSharp)
+                .WithProjectParseOptions(projectId, CSharpParseOptions.Default.WithLanguageVersion(projectBuilder.LanguageVersion))
+                .AddMetadataReferences(projectId, projectBuilder.References);
 
-            int count = 0;
-            foreach (var source in sources.Concat(AdditionalFiles))
+            var count = 0;
+            foreach (var source in new[] { projectBuilder.SourceCode }.Concat(projectBuilder.ApiReferences))
             {
                 var newFileName = fileNamePrefix + count + "." + fileExt;
                 var documentId = DocumentId.CreateNewId(projectId, debugName: newFileName);
