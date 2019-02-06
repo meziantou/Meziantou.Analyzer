@@ -14,7 +14,6 @@ namespace TestHelper
             References = new List<MetadataReference>
             {
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(CSharpCompilation).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Compilation).Assembly.Location),
             };
@@ -71,6 +70,9 @@ namespace TestHelper
             return this;
         }
 
+        public ProjectBuilder AddSystemCollectionsApi() => AddApiReference("System.Collections");
+        public ProjectBuilder AddSystemLinqApi() => AddApiReference("System.Linq");
+        public ProjectBuilder AddSystemRuntimeApi() => AddApiReference("System.Runtime");
         public ProjectBuilder AddConcurrentDictionaryApi() => AddApiReference("System.Collections.Concurrent.ConcurrentDictionary");
         public ProjectBuilder AddRegexApi() => AddApiReference("System.Text.RegularExpressions.Regex");
         public ProjectBuilder AddWpfApi() => AddApiReference("System.Windows.Window");

@@ -13,15 +13,8 @@ namespace Meziantou.Analyzer.Test
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerInHashSetConstructorAnalyzer();
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerInHashSetConstructorFixer();
         protected override string ExpectedDiagnosticId => "MA0002";
-        protected override string ExpectedDiagnosticMessage => "Use an overload of the constructor that has a IEqualityComparer<string> parameter";
+        protected override string ExpectedDiagnosticMessage => "Use an overload that has a IEqualityComparer<string> parameter";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-
-        [TestMethod]
-        public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
-        {
-            var project = new ProjectBuilder();
-            VerifyDiagnostic(project);
-        }
 
         [TestMethod]
         public void HashSet_Int32_ShouldNotReportDiagnostic()
@@ -111,7 +104,8 @@ class TypeName
 }";
             VerifyFix(project, fixtest);
         }
-       [TestMethod]
+
+        [TestMethod]
         public void ConcurrentDictionary_String_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
@@ -134,6 +128,39 @@ class TypeName
     public void Test()
     {
         new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
+    }
+}";
+            VerifyFix(project, fixtest);
+        }
+
+
+        [TestMethod]
+        public void EnumerableContains_String_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .AddSystemCollectionsApi()
+                  .AddSystemRuntimeApi()
+                  .AddSystemLinqApi()
+                  .WithSource(@"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.Contains("""");
+    }
+}");
+
+            var expected = CreateDiagnosticResult(line: 7, column: 9);
+            VerifyDiagnostic(project, expected);
+
+            var fixtest = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.Contains("""", System.StringComparer.Ordinal);
     }
 }";
             VerifyFix(project, fixtest);
