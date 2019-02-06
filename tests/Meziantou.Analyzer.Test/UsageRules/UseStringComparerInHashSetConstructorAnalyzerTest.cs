@@ -13,6 +13,20 @@ namespace Meziantou.Analyzer.Test
 
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerInHashSetConstructorFixer();
 
+        public UseStringComparerInHashSetConstructorAnalyzerTest()
+            : base()
+        {
+            AdditionalFiles.Add(@"
+namespace System.Collections.Concurrent
+{
+    public class ConcurrentDictionary<TKey, TValue>
+    {
+        public ConcurrentDictionary() { }
+        public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { }
+    }
+}");
+        }
+
         [TestMethod]
         public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
         {
@@ -54,8 +68,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -105,8 +119,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -125,9 +139,7 @@ class TypeName
         [TestMethod]
         public void ConcurrentDictionary_String_ShouldReportDiagnostic()
         {
-            const string ConcurrentDictionary = "namespace System.Collections.Concurrent { public class ConcurrentDictionary<TKey, TValue> {  public ConcurrentDictionary() { } public ConcurrentDictionary(System.Collections.Generic.IEqualityComparer<TKey> comparer) { } } }";
-
-            var test = ConcurrentDictionary + @"
+            var test = @"
 class TypeName
 {
     public void Test()
@@ -143,13 +155,13 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
 
-            var fixtest = ConcurrentDictionary + @"
+            var fixtest = @"
 class TypeName
 {
     public void Test()

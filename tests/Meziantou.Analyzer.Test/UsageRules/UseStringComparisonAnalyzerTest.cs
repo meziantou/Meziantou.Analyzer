@@ -54,8 +54,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -89,8 +89,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -124,8 +124,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -173,8 +173,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -222,8 +222,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);

@@ -7,7 +7,6 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.UsageRules
 {
@@ -42,8 +41,6 @@ namespace Meziantou.Analyzer.UsageRules
         private static async Task<Document> AddConfigureAwait(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
 
             var syntax = (AwaitExpressionSyntax)nodeToFix;

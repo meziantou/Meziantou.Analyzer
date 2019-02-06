@@ -53,10 +53,14 @@ namespace Meziantou.Analyzer.UsageRules
             if (!regexType.Equals(op.TargetMethod.ContainingSymbol))
                 return;
 
-            if (op.Arguments.Any(a => timespanType.Equals(a.Type)))
+            if (op.Arguments.Length == 0)
                 return;
 
-            // TODO contains TimeSpan parameter?
+            var arg = op.Arguments.Last();
+            if (arg.Value == null || timespanType.Equals(arg.Value.Type))
+                return;
+
+            context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation()));
         }
 
         private void AnalyzeObjectCreation(OperationAnalysisContext context)
@@ -70,7 +74,13 @@ namespace Meziantou.Analyzer.UsageRules
             if (regexType == null || timespanType == null)
                 return;
 
-            // TODO
+            if (op.Arguments.Length == 0)
+                return;
+
+            if (op.Arguments.Last().Value.Type.IsOfType(timespanType))
+                return;
+
+            context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation()));
         }
     }
 }

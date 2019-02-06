@@ -13,6 +13,11 @@ namespace TestHelper
     /// </summary>
     public abstract partial class DiagnosticVerifier
     {
+        protected string Statements(string code)
+        {
+            return "class Test{void Method(){" + code + "}}";
+        }
+
         #region To be implemented by Test classes
         /// <summary>
         /// Get the CSharp analyzer being tested - to be implemented in non-abstract class
@@ -146,7 +151,7 @@ namespace TestHelper
                     }
                 }
 
-                if (actual.Id != expected.Id)
+                if (!string.Equals(actual.Id, expected.Id, StringComparison.Ordinal))
                 {
                     Assert.IsTrue(false,
                         string.Format("Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
@@ -160,7 +165,7 @@ namespace TestHelper
                             expected.Severity, actual.Severity, FormatDiagnostics(analyzer, actual)));
                 }
 
-                if (actual.GetMessage() != expected.Message)
+                if (!string.Equals(actual.GetMessage(), expected.Message, StringComparison.Ordinal))
                 {
                     Assert.IsTrue(false,
                         string.Format("Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
@@ -180,7 +185,7 @@ namespace TestHelper
         {
             var actualSpan = actual.GetLineSpan();
 
-            Assert.IsTrue(actualSpan.Path == expected.Path || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.") && expected.Path.Contains("Test.")),
+            Assert.IsTrue(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.") && expected.Path.Contains("Test.")),
                 string.Format("Expected diagnostic to be in file \"{0}\" was actually in file \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                     expected.Path, actualSpan.Path, FormatDiagnostics(analyzer, diagnostic)));
 
@@ -229,7 +234,7 @@ namespace TestHelper
 
                 foreach (var rule in rules)
                 {
-                    if (rule != null && rule.Id == diagnostics[i].Id)
+                    if (rule != null && string.Equals(rule.Id, diagnostics[i].Id, StringComparison.Ordinal))
                     {
                         var location = diagnostics[i].Location;
                         if (location == Location.None)

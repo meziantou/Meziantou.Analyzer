@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Meziantou.Analyzer.UsageRules;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -32,8 +28,8 @@ namespace Meziantou.Analyzer.Test.UsageRules
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 1, column: 0)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 1, column: 0),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);

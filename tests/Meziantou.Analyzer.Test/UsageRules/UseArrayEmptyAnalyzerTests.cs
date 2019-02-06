@@ -26,7 +26,9 @@ namespace Meziantou.Analyzer.Test.UsageRules
         [DataRow("new int[] { }")]
         public void EmptyArray_ShouldReportError(string code)
         {
-            var test = $"var a = {code};";
+            var test = Statements($@"
+var a = {code};
+");
 
             var expected = new DiagnosticResult
             {
@@ -35,13 +37,15 @@ namespace Meziantou.Analyzer.Test.UsageRules
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 1, column: 9)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 2, column: 9),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
 
-            var fixtest = "var a = System.Array.Empty<int>();";
+            var fixtest = Statements(@"
+var a = System.Array.Empty<int>();
+");
             VerifyCSharpFix(test, fixtest);
         }
 
@@ -50,7 +54,7 @@ namespace Meziantou.Analyzer.Test.UsageRules
         [DataRow("new int[] { 0 }")]
         public void NonEmptyArray_ShouldReportError(string code)
         {
-            var test = $"var a = {code};";
+            var test = Statements($"var a = {code};");
 
             VerifyCSharpDiagnostic(test);
         }
@@ -58,8 +62,9 @@ namespace Meziantou.Analyzer.Test.UsageRules
         [TestMethod]
         public void DynamicLength_ShouldNotReportError()
         {
-            var test = @"int length = 0;
-var a = new int[length];";
+            var test = Statements(@"
+int length = 0;
+var a = new int[length];");
 
             VerifyCSharpDiagnostic(test);
         }
@@ -86,7 +91,12 @@ public class TestClass
         [TestMethod]
         public void EmptyArrayInAttribute_ShouldNotReportError()
         {
-            var test = "[Test(new int[0])]class TestAttribute : Attribute { }";
+            var test = @"
+[Test(new int[0])]
+class TestAttribute : System.Attribute
+{
+    public TestAttribute(int[] data) { }
+}";
 
             VerifyCSharpDiagnostic(test);
         }

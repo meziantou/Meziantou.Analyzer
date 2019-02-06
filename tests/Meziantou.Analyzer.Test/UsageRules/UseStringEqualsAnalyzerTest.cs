@@ -39,8 +39,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 17)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 17),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -74,8 +74,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 17)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 6, column: 17),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -99,7 +99,7 @@ class TypeName
 {
     public void Test()
     {
-        string str = "";
+        string str = """";
         var a = str == ""v"";
     }
 }";
@@ -110,8 +110,8 @@ class TypeName
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line: 7, column: 17)
-                }
+                    new DiagnosticResultLocation("Test0.cs", line: 7, column: 17),
+                },
             };
 
             VerifyCSharpDiagnostic(test, expected);
@@ -121,7 +121,7 @@ class TypeName
 {
     public void Test()
     {
-        string str = "";
+        string str = """";
         var a = string.Equals(str, ""v"", System.StringComparison.Ordinal);
     }
 }";
@@ -136,7 +136,7 @@ class TypeName
 {
     public void Test()
     {
-        object str = "";
+        object str = """";
         var a = str == ""v"";
     }
 }";

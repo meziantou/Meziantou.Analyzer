@@ -1,11 +1,13 @@
 ﻿using Microsoft.CodeAnalysis;
 using System;
+using System.Runtime.InteropServices;
 
 namespace TestHelper
 {
     /// <summary>
     /// Location where the diagnostic appears, as determined by path, line number, and column number.
     /// </summary>
+    [StructLayout(LayoutKind.Auto)]
     public readonly struct DiagnosticResultLocation
     {
         public DiagnosticResultLocation(string path, int line, int column)
@@ -33,6 +35,8 @@ namespace TestHelper
     /// <summary>
     /// Struct that stores information about a Diagnostic appearing in a source
     /// </summary>
+
+    [StructLayout(LayoutKind.Auto)]
     public struct DiagnosticResult
     {
         private DiagnosticResultLocation[] _locations;
