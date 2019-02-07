@@ -84,5 +84,22 @@ class TestClass
 
             VerifyDiagnostic(project);
         }
+
+        [TestMethod]
+        public void NonRegexCtor_ShouldNotReportError()
+        {
+            var project = new ProjectBuilder()
+                  .AddReference(typeof(Regex))
+                  .WithSource(@"
+class TestClass
+{
+    void Test()
+    {
+        new System.Exception("""");
+    }
+}");
+
+            VerifyDiagnostic(project);
+        }
     }
 }

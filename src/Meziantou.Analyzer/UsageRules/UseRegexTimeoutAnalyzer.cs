@@ -77,6 +77,9 @@ namespace Meziantou.Analyzer.UsageRules
             if (op.Arguments.Length == 0)
                 return;
 
+            if (!op.Type.IsOfType(regexType))
+                return;
+
             if (op.Arguments.Last().Value.Type.IsOfType(timespanType))
                 return;
 
