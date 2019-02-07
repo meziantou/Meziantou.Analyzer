@@ -9,12 +9,12 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.UsageRules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public sealed class UseStringComparerInHashSetConstructorFixer : CodeFixProvider
+    public sealed class UseStringComparerFixer : CodeFixProvider
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseStringComparerInHashSetConstructor);
+        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseStringComparer);
 
         public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 

@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.StyleRules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
     public class CommaFixer : CodeFixProvider

@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.UsageRules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer

@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.UsageRules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class UseStringComparisonAnalyzer : DiagnosticAnalyzer

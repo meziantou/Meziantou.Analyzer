@@ -6,12 +6,12 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.UsageRules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class UseStringComparerInHashSetConstructorAnalyzer : DiagnosticAnalyzer
+    public class UseStringComparerAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly string[] _enumerableMethods =
+        private static readonly string[] s_enumerableMethods =
         {
             "Contains",
             "Distinct",
@@ -24,7 +24,7 @@ namespace Meziantou.Analyzer
             "Union",
         };
 
-        private static readonly Dictionary<string, int> _arityIndex = new Dictionary<string, int>(StringComparer.Ordinal)
+        private static readonly Dictionary<string, int> s_arityIndex = new Dictionary<string, int>(StringComparer.Ordinal)
         {
             { "GroupBy", 1 },
             { "GroupJoin", 2 },
@@ -34,14 +34,14 @@ namespace Meziantou.Analyzer
         };
 
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
-            RuleIdentifiers.UseStringComparerInHashSetConstructor,
+            RuleIdentifiers.UseStringComparer,
             title: "IEqualityComparer<string> is missing",
             messageFormat: "Use an overload that has a IEqualityComparer<string> parameter",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparerInHashSetConstructor));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparer));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
@@ -72,10 +72,10 @@ namespace Meziantou.Analyzer
             if (stringEqualityComparerInterfaceType == null)
                 return;
 
-            var types = new List<INamedTypeSymbol>(3);
+            var types = new List<INamedTypeSymbol>();
             types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
             types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
-            types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
+            types.AddIfNotNull(compilationContext.Compilation.GetTypesByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
 
             if (types.Count > 0)
             {
@@ -126,7 +126,7 @@ namespace Meziantou.Analyzer
 
                 if (method.Arity == 1)
                 {
-                    if (!_enumerableMethods.Contains(method.Name, StringComparer.Ordinal))
+                    if (!s_enumerableMethods.Contains(method.Name, StringComparer.Ordinal))
                         return;
 
                     if (!method.TypeArguments[0].IsString())
@@ -134,7 +134,7 @@ namespace Meziantou.Analyzer
                 }
                 else
                 {
-                    if (!_arityIndex.TryGetValue(method.Name, out var arityIndex))
+                    if (!s_arityIndex.TryGetValue(method.Name, out var arityIndex))
                         return;
 
                     if (arityIndex >= method.Arity)
