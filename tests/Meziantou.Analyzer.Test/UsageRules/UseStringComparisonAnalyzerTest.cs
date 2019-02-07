@@ -1,10 +1,11 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Meziantou.Analyzer.UsageRules;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
-namespace Meziantou.Analyzer.Test
+namespace Meziantou.Analyzer.Test.UsageRules
 {
     [TestClass]
     public class UseStringComparisonAnalyzerTest : CodeFixVerifier

@@ -1,16 +1,17 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Meziantou.Analyzer.UsageRules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
-namespace Meziantou.Analyzer.Test
+namespace Meziantou.Analyzer.Test.UsageRules
 {
     [TestClass]
-    public class UseStringComparerInHashSetConstructorAnalyzerTest : CodeFixVerifier
+    public class UseStringComparerAnalyzerTest : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerAnalyzer();
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerFixer();
