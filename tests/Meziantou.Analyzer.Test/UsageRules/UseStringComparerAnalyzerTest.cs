@@ -1,27 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using Meziantou.Analyzer.UsageRules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
-namespace Meziantou.Analyzer.Test
+namespace Meziantou.Analyzer.Test.UsageRules
 {
     [TestClass]
-    public class UseStringComparerInHashSetConstructorAnalyzerTest : CodeFixVerifier
+    public class UseStringComparerAnalyzerTest : CodeFixVerifier
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerInHashSetConstructorAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerInHashSetConstructorFixer();
+        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerAnalyzer();
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerFixer();
         protected override string ExpectedDiagnosticId => "MA0002";
-        protected override string ExpectedDiagnosticMessage => "Use an overload of the constructor that has a IEqualityComparer<string> parameter";
+        protected override string ExpectedDiagnosticMessage => "Use an overload that has a IEqualityComparer<string> parameter";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-
-        [TestMethod]
-        public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
-        {
-            var project = new ProjectBuilder();
-            VerifyDiagnostic(project);
-        }
 
         [TestMethod]
         public void HashSet_Int32_ShouldNotReportDiagnostic()
@@ -111,11 +107,12 @@ class TypeName
 }";
             VerifyFix(project, fixtest);
         }
-       [TestMethod]
+
+        [TestMethod]
         public void ConcurrentDictionary_String_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .AddConcurrentDictionaryApi()
+                  .AddReference(typeof(ConcurrentDictionary<,>))
                   .WithSource(@"
 class TypeName
 {
@@ -134,6 +131,69 @@ class TypeName
     public void Test()
     {
         new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
+    }
+}";
+            VerifyFix(project, fixtest);
+        }
+
+        [TestMethod]
+        public void EnumerableContains_String_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSource(@"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.Contains("""");
+    }
+}");
+
+            var expected = CreateDiagnosticResult(line: 7, column: 9);
+            VerifyDiagnostic(project, expected);
+
+            var fixtest = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.Contains("""", System.StringComparer.Ordinal);
+    }
+}";
+            VerifyFix(project, fixtest);
+        }
+
+        [TestMethod]
+        public void EnumerableToDictionary_String_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .AddReference(typeof(Dictionary<,>))
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSource(@"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.ToDictionary(p => p);
+    }
+}");
+
+            var expected = CreateDiagnosticResult(line: 7, column: 9);
+            VerifyDiagnostic(project, expected);
+
+            var fixtest = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.ToDictionary(p => p, System.StringComparer.Ordinal);
     }
 }";
             VerifyFix(project, fixtest);
