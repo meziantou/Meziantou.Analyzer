@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.StyleRules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class CommaAnalyzer : DiagnosticAnalyzer
@@ -27,8 +27,7 @@ namespace Meziantou.Analyzer
         private static readonly Action<SyntaxNodeAnalysisContext> s_handleAnonymousObjectInitializerAction = HandleAnonymousObjectInitializer;
         private static readonly Action<SyntaxNodeAnalysisContext> s_handleEnumDeclarationAction = HandleEnumDeclaration;
 
-        private static readonly ImmutableArray<SyntaxKind> ObjectInitializerKinds =
-            ImmutableArray.Create(SyntaxKind.ObjectInitializerExpression, SyntaxKind.ArrayInitializerExpression, SyntaxKind.CollectionInitializerExpression);
+        private static readonly ImmutableArray<SyntaxKind> s_objectInitializerKinds = ImmutableArray.Create(SyntaxKind.ObjectInitializerExpression, SyntaxKind.ArrayInitializerExpression, SyntaxKind.CollectionInitializerExpression);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
@@ -36,7 +35,7 @@ namespace Meziantou.Analyzer
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 
-            context.RegisterSyntaxNodeAction(s_handleObjectInitializerAction, ObjectInitializerKinds);
+            context.RegisterSyntaxNodeAction(s_handleObjectInitializerAction, s_objectInitializerKinds);
             context.RegisterSyntaxNodeAction(s_handleAnonymousObjectInitializerAction, SyntaxKind.AnonymousObjectCreationExpression);
             context.RegisterSyntaxNodeAction(s_handleEnumDeclarationAction, SyntaxKind.EnumDeclaration);
         }

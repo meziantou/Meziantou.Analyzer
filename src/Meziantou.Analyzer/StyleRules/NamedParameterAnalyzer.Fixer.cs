@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.StyleRules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
     public sealed class NamedParameterFixer : CodeFixProvider

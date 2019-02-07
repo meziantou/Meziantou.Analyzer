@@ -1,9 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace TestHelper
 {
@@ -14,7 +16,6 @@ namespace TestHelper
             References = new List<MetadataReference>
             {
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(CSharpCompilation).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Compilation).Assembly.Location),
             };
@@ -33,25 +34,54 @@ namespace TestHelper
 
         public ProjectBuilder AddReference(Type type)
         {
-            return AddReferences(new[] { type.Assembly.Location });
-        }
-
-        public ProjectBuilder AddReference(string location)
-        {
-            return AddReferences(new[] { location });
-        }
-
-        public ProjectBuilder AddReferences(IEnumerable<string> locations)
-        {
-            foreach (var location in locations)
+            if (type == typeof(ConcurrentDictionary<,>))
             {
-                References.Add(MetadataReference.CreateFromFile(location));
+                AddReferenceByName("System.Collections.Concurrent");
+                AddReferenceByName("System.Runtime");
+            }
+            else if (type == typeof(Dictionary<,>))
+            {
+                AddReferenceByName("System.Collections");
+                AddReferenceByName("System.Runtime");
+            }
+            else if (type == typeof(Enumerable))
+            {
+                AddReferenceByName("System.Linq");
+            }
+            else if (type == typeof(HashSet<>))
+            {
+                AddReferenceByName("System.Collections");
+            }
+            else if (type == typeof(IEnumerable<>))
+            {
+                AddReferenceByName("System.Runtime");
+            }
+            else if (type == typeof(Regex))
+            {
+                AddReferenceByName("System.Runtime");
+                AddReferenceByName("System.Text.RegularExpressions");
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(type));
             }
 
             return this;
         }
 
-        public ProjectBuilder AddApiReference(string name)
+        private void AddReferenceByName(string name)
+        {
+            var trustedAssembliesPaths = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator);
+            AddReference(trustedAssembliesPaths.Single(p => string.Equals(Path.GetFileNameWithoutExtension(p), name, StringComparison.Ordinal)));
+        }
+
+        private ProjectBuilder AddReference(string location)
+        {
+            References.Add(MetadataReference.CreateFromFile(location));
+            return this;
+        }
+
+        private ProjectBuilder AddApiReference(string name)
         {
             using (var stream = typeof(ProjectBuilder).Assembly.GetManifestResourceStream("Meziantou.Analyzer.Test.References." + name + ".txt"))
             {
@@ -71,8 +101,6 @@ namespace TestHelper
             return this;
         }
 
-        public ProjectBuilder AddConcurrentDictionaryApi() => AddApiReference("System.Collections.Concurrent.ConcurrentDictionary");
-        public ProjectBuilder AddRegexApi() => AddApiReference("System.Text.RegularExpressions.Regex");
         public ProjectBuilder AddWpfApi() => AddApiReference("System.Windows.Window");
 
         public ProjectBuilder WithSource(string content)

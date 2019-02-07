@@ -9,12 +9,12 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.UsageRules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public sealed class UseStringComparerInHashSetConstructorFixer : CodeFixProvider
+    public sealed class UseStringComparerFixer : CodeFixProvider
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseStringComparerInHashSetConstructor);
+        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseStringComparer);
 
         public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -43,17 +43,26 @@ namespace Meziantou.Analyzer
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
 
-            var expression = (ObjectCreationExpressionSyntax)nodeToFix;
-            if (expression == null)
-                return document;
-
             var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
             var newArgument = (ArgumentSyntax)generator.Argument(
                 generator.MemberAccessExpression(
                     generator.TypeExpression(stringComparer, addImport: true),
                     nameof(StringComparer.Ordinal)));
 
-            editor.ReplaceNode(expression, expression.AddArgumentListArguments(newArgument));
+            switch (nodeToFix)
+            {
+                case ObjectCreationExpressionSyntax creationExpression:
+                    editor.ReplaceNode(creationExpression, creationExpression.AddArgumentListArguments(newArgument));
+                    break;
+
+                case InvocationExpressionSyntax invocationExpression:
+                    editor.ReplaceNode(invocationExpression, invocationExpression.AddArgumentListArguments(newArgument));
+                    break;
+
+                default:
+                    return document;
+            }
+
             return editor.GetChangedDocument();
         }
     }

@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.StyleRules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NamedParameterAnalyzer : DiagnosticAnalyzer

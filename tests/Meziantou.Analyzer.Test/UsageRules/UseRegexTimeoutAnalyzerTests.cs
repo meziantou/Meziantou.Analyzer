@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.UsageRules;
+﻿using System.Text.RegularExpressions;
+using Meziantou.Analyzer.UsageRules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,7 +19,7 @@ namespace Meziantou.Analyzer.Test.UsageRules
         public void IsMatch_MissingTimeout_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .AddRegexApi()
+                  .AddReference(typeof(Regex))
                   .WithSource(@"using System.Text.RegularExpressions;
 class TestClass
 {
@@ -36,7 +37,7 @@ class TestClass
         public void IsMatch_WithTimeout_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .AddRegexApi()
+                  .AddReference(typeof(Regex))
                   .WithSource(@"using System.Text.RegularExpressions;
 class TestClass
 {
@@ -53,7 +54,7 @@ class TestClass
         public void Ctor_MissingTimeout_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .AddRegexApi()
+                  .AddReference(typeof(Regex))
                   .WithSource(@"using System.Text.RegularExpressions;
 class TestClass
 {
@@ -71,7 +72,7 @@ class TestClass
         public void Ctor_WithTimeout_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .AddRegexApi()
+                  .AddReference(typeof(Regex))
                   .WithSource(@"using System.Text.RegularExpressions;
 class TestClass
 {
