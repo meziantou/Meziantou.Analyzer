@@ -47,10 +47,10 @@ namespace Meziantou.Analyzer.UsageRules
                 return;
             }
 
-            if (!HasStringComparisonParameter(operation, stringComparisonType))
+            if (!HasArgumentOfType(operation, stringComparisonType))
             {
                 // Check if there is an overload with a StringComparison
-                if (HasOverloadWithStringComparison(operation, stringComparisonType))
+                if (HasOverloadWithAdditionalParameterOfType(operation, stringComparisonType))
                 {
                     var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name);
                     context.ReportDiagnostic(diagnostic);
@@ -58,7 +58,7 @@ namespace Meziantou.Analyzer.UsageRules
             }
         }
 
-        private static bool HasStringComparisonParameter(IInvocationOperation operation, ITypeSymbol stringComparisonType)
+        internal static bool HasArgumentOfType(IInvocationOperation operation, ITypeSymbol stringComparisonType)
         {
             foreach (var arg in operation.Arguments)
             {
@@ -84,9 +84,10 @@ namespace Meziantou.Analyzer.UsageRules
             return true;
         }
 
-        private static bool HasOverloadWithStringComparison(IInvocationOperation operation, ITypeSymbol stringComparisonType)
+        internal static bool HasOverloadWithAdditionalParameterOfType(IInvocationOperation operation, ITypeSymbol additionalParameterType)
         {
             var methodSymbol = operation.TargetMethod;
+            var obsoleteAttribute = operation.SemanticModel.Compilation.GetTypeByMetadataName("System.ObsoleteAttribute");
 
             var members = methodSymbol.ContainingType.GetMembers(methodSymbol.Name);
             return members.OfType<IMethodSymbol>().Any(IsOverload);
@@ -100,6 +101,9 @@ namespace Meziantou.Analyzer.UsageRules
                 if (member.Parameters.Length - 1 != methodSymbol.Parameters.Length)
                     return false;
 
+                if (member.HasAttribute(obsoleteAttribute))
+                    return false;
+
                 var i = 0;
                 var j = 0;
                 while (i < methodSymbol.Parameters.Length && j < member.Parameters.Length)
@@ -107,7 +111,7 @@ namespace Meziantou.Analyzer.UsageRules
                     var x = methodSymbol.Parameters[i].Type;
                     var y = member.Parameters[j].Type;
 
-                    if (stringComparisonType.Equals(y))
+                    if (additionalParameterType.Equals(y))
                     {
                         j++;
                         continue;
@@ -121,7 +125,56 @@ namespace Meziantou.Analyzer.UsageRules
                 }
 
                 // Ensure the last argument is of type StringComparison
-                return i != j || (i == j && stringComparisonType.Equals(member.Parameters[j].Type));
+                return i != j || (i == j && additionalParameterType.Equals(member.Parameters[j].Type));
+            }
+        }
+
+        internal static bool HasOverloadWithAdditionalParameterOfType(IInvocationOperation operation, params ITypeSymbol[] additionalParameterTypes)
+        {
+            var methodSymbol = operation.TargetMethod;
+            var obsoleteAttribute = operation.SemanticModel.Compilation.GetTypeByMetadataName("System.ObsoleteAttribute");
+
+            var members = methodSymbol.ContainingType.GetMembers(methodSymbol.Name);
+            return members.OfType<IMethodSymbol>().Any(IsOverload);
+
+            bool IsOverload(IMethodSymbol member)
+            {
+                if (member.Equals(methodSymbol))
+                    return false;
+
+                // We look for methods that only have one more parameter of type StringComparison
+                if (member.Parameters.Length - additionalParameterTypes.Length != methodSymbol.Parameters.Length)
+                    return false;
+
+                if (member.HasAttribute(obsoleteAttribute))
+                    return false;
+
+                var additionalParameters = additionalParameterTypes.ToList();
+
+                var i = 0;
+                var j = 0;
+                while (i < methodSymbol.Parameters.Length && j < member.Parameters.Length)
+                {
+                    var x = methodSymbol.Parameters[i].Type;
+                    var y = member.Parameters[j].Type;
+
+                    var indexOfParameter = additionalParameters.IndexOf(y);
+                    if (indexOfParameter >= 0)
+                    {
+                        additionalParameters.RemoveAt(indexOfParameter);
+                        j++;
+                        continue;
+                    }
+
+                    if (!x.Equals(y))
+                        return false;
+
+                    i++;
+                    j++;
+                }
+
+                // Ensure the last argument is of type StringComparison
+                return i != j || (i == j && additionalParameterTypes.Equals(member.Parameters[j].Type));
             }
         }
     }

@@ -11,7 +11,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.UsageRules
 {
     [TestClass]
-    public class UseStringComparerAnalyzerTest : CodeFixVerifier
+    public class UseStringComparerAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerAnalyzer();
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerFixer();
