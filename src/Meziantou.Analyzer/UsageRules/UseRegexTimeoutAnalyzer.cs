@@ -77,10 +77,10 @@ namespace Meziantou.Analyzer.UsageRules
             if (op.Arguments.Length == 0)
                 return;
 
-            if (!op.Type.IsOfType(regexType))
+            if (!op.Type.IsEqualsTo(regexType))
                 return;
 
-            if (op.Arguments.Last().Value.Type.IsOfType(timespanType))
+            if (op.Arguments.Last().Value.Type.IsEqualsTo(timespanType))
                 return;
 
             context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation()));

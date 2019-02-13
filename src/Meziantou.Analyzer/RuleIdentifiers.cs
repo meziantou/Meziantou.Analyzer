@@ -15,6 +15,7 @@ namespace Meziantou.Analyzer
         public const string MissingTimeoutParameterForRegex = "MA0009";
         public const string MarkAttributesWithAttributeUsageAttribute = "MA0010";
         public const string UseIFormatProviderParameter = "MA0011";
+        public const string DoNotRaiseReservedExceptionType = "MA0012";
 
         public static string GetHelpUri(string idenfifier)
         {

@@ -118,7 +118,7 @@ namespace Meziantou.Analyzer.UsageRules
                     return;
 
                 var method = operation.TargetMethod;
-                if (!method.ContainingType.IsOfType(enumerableType))
+                if (!method.ContainingType.IsEqualsTo(enumerableType))
                     return;
 
                 if (method.Arity == 0)

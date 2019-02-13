@@ -64,7 +64,7 @@ namespace Meziantou.Analyzer
             return false;
         }
 
-        public static bool IsOfType(this ITypeSymbol symbol, ITypeSymbol expectedType)
+        public static bool IsEqualsTo(this ITypeSymbol symbol, ITypeSymbol expectedType)
         {
             if (expectedType == null)
                 throw new System.ArgumentNullException(nameof(expectedType));
@@ -121,7 +121,7 @@ namespace Meziantou.Analyzer
 
                 default:
                     return false;
-            }            
+            }
         }
     }
 }
