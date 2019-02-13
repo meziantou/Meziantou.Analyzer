@@ -55,14 +55,14 @@ namespace Meziantou.Analyzer.UsageRules
                 var symbol = context.SemanticModel.GetDeclaredSymbol(containingClass);
                 if (symbol != null)
                 {
-                    if (InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
-                        Implements(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
-                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
-                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
-                        InheritsFrom(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase")) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
-                        Implements(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
-                        Implements(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
-                        Implements(symbol, context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")))  // ASP.NET Core
+                    if (symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
+                        symbol.Implements(context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
+                        symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
+                        symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
+                        symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase")) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                        symbol.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
+                        symbol.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
+                        symbol.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")))  // ASP.NET Core
                     {
                         return false;
                     }
@@ -75,11 +75,11 @@ namespace Meziantou.Analyzer.UsageRules
                 var methodInfo = context.SemanticModel.GetSymbolInfo(containingMethod).Symbol as IMethodSymbol;
                 if (methodInfo != null)
                 {
-                    if (MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("XUnit.FactAttribute")) ||
-                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("NUnit.Framework.NUnitAttribute")) ||
-                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("NUnit.Framework.TheoryAttribute")) ||
-                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute")) ||
-                        MethodHasAttribute(methodInfo, context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute")))
+                    if (methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("XUnit.FactAttribute")) ||
+                        methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("NUnit.Framework.NUnitAttribute")) ||
+                        methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("NUnit.Framework.TheoryAttribute")) ||
+                        methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute")) ||
+                        methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute")))
                     {
                         return false;
                     }
@@ -164,49 +164,6 @@ namespace Meziantou.Analyzer.UsageRules
             var configuredTaskAwaitableOfTType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
             return (configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType)) ||
                    (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.Equals(awaitExpressionType.OriginalDefinition));
-        }
-
-        private static bool InheritsFrom(ITypeSymbol classSymbol, ITypeSymbol baseClassType)
-        {
-            if (baseClassType == null)
-                return false;
-
-            var baseType = classSymbol.BaseType;
-            while (baseType != null)
-            {
-                if (baseClassType.Equals(baseType))
-                    return true;
-
-                baseType = baseType.BaseType;
-            }
-
-            return false;
-        }
-
-        private static bool Implements(ITypeSymbol classSymbol, ITypeSymbol interfaceType)
-        {
-            if (interfaceType == null)
-                return false;
-
-            return classSymbol.AllInterfaces.Any(i => interfaceType.Equals(i));
-        }
-
-        public static bool MethodHasAttribute(ISymbol method, ITypeSymbol attributeType)
-        {
-            if (attributeType == null)
-                return false;
-
-            var attributes = method.GetAttributes();
-            if (attributes == null)
-                return false;
-
-            foreach (var attribute in attributes)
-            {
-                if (attributeType.Equals(attribute.AttributeClass))
-                    return true;
-            }
-
-            return false;
         }
     }
 }

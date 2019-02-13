@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
@@ -18,6 +19,49 @@ namespace Meziantou.Analyzer
             }
 
             return allInterfaces;
+        }
+
+        public static bool InheritsFrom(this ITypeSymbol classSymbol, ITypeSymbol baseClassType)
+        {
+            if (baseClassType == null)
+                return false;
+
+            var baseType = classSymbol.BaseType;
+            while (baseType != null)
+            {
+                if (baseClassType.Equals(baseType))
+                    return true;
+
+                baseType = baseType.BaseType;
+            }
+
+            return false;
+        }
+
+        public static bool Implements(this ITypeSymbol classSymbol, ITypeSymbol interfaceType)
+        {
+            if (interfaceType == null)
+                return false;
+
+            return classSymbol.AllInterfaces.Any(i => interfaceType.Equals(i));
+        }
+
+        public static bool HasAttribute(this ISymbol symbol, ITypeSymbol attributeType)
+        {
+            if (attributeType == null)
+                return false;
+
+            var attributes = symbol.GetAttributes();
+            if (attributes == null)
+                return false;
+
+            foreach (var attribute in attributes)
+            {
+                if (attributeType.Equals(attribute.AttributeClass))
+                    return true;
+            }
+
+            return false;
         }
 
         public static bool IsOfType(this ITypeSymbol symbol, ITypeSymbol expectedType)
