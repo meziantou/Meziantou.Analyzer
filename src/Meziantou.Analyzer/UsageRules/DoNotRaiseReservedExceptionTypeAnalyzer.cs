@@ -52,7 +52,7 @@ namespace Meziantou.Analyzer.UsageRules
         private void Analyze(OperationAnalysisContext context, IEnumerable<INamedTypeSymbol> reservedExceptionTypes)
         {
             var operation = (IThrowOperation)context.Operation;
-            if (operation == null)
+            if (operation == null || operation.Exception == null)
                 return;
 
             var exceptionType = operation.Exception.Type;

@@ -16,6 +16,8 @@ namespace Meziantou.Analyzer
         public const string MarkAttributesWithAttributeUsageAttribute = "MA0010";
         public const string UseIFormatProviderParameter = "MA0011";
         public const string DoNotRaiseReservedExceptionType = "MA0012";
+        public const string TypesShouldNotExtendSystemApplicationException = "MA0013";
+        public const string DoNotRaiseApplicationException = "MA0014";
 
         public static string GetHelpUri(string idenfifier)
         {
