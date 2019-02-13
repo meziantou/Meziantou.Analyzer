@@ -14,6 +14,7 @@ namespace Meziantou.Analyzer
         public const string MissingStructLayoutAttribute = "MA0008";
         public const string MissingTimeoutParameterForRegex = "MA0009";
         public const string MarkAttributesWithAttributeUsageAttribute = "MA0010";
+        public const string UseIFormatProviderParameter = "MA0011";
 
         public static string GetHelpUri(string idenfifier)
         {

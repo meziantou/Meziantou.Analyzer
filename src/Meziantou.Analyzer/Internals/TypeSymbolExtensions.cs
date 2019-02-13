@@ -90,5 +90,38 @@ namespace Meziantou.Analyzer
 
             return symbol.SpecialType == SpecialType.System_Boolean;
         }
+
+        public static bool IsDateTime(this ITypeSymbol symbol)
+        {
+            if (symbol == null)
+                return false;
+
+            return symbol.SpecialType == SpecialType.System_DateTime;
+        }
+
+        public static bool IsNumberType(this ITypeSymbol symbol)
+        {
+            if (symbol == null)
+                return false;
+
+            switch (symbol.SpecialType)
+            {
+                case SpecialType.System_Int16:
+                case SpecialType.System_Int32:
+                case SpecialType.System_Int64:
+                case SpecialType.System_UInt16:
+                case SpecialType.System_UInt32:
+                case SpecialType.System_UInt64:
+                case SpecialType.System_Single:
+                case SpecialType.System_Double:
+                case SpecialType.System_Decimal:
+                case SpecialType.System_Byte:
+                case SpecialType.System_SByte:
+                    return true;
+
+                default:
+                    return false;
+            }            
+        }
     }
 }

@@ -8,7 +8,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.UsageRules
 {
     [TestClass]
-    public class UseStringComparisonAnalyzerTest : CodeFixVerifier
+    public class UseStringComparisonAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparisonAnalyzer();
         protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparisonFixer();
