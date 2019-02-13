@@ -7,10 +7,11 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.UsageRules
 {
     [TestClass]
-    public class DoNotRaiseReservedExceptionTypeAnalyzerTests : CodeFixVerifier
+    public class DoNotRaiseApplicationExceptionAnalyzerTests : CodeFixVerifier
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotRaiseReservedExceptionTypeAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0012";
+        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotRaiseApplicationExceptionAnalyzer();
+        protected override string ExpectedDiagnosticId => "MA0014";
+        protected override string ExpectedDiagnosticMessage => "Do not raise System.ApplicationException type";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
         [TestMethod]
@@ -24,6 +25,14 @@ class TestAttribute
     {
         throw new Exception();
         throw new ArgumentException();
+
+        try
+        {
+        }
+        catch (ApplicationException)
+        {
+            throw;
+        }
     }
 }");
 
@@ -39,11 +48,11 @@ class TestAttribute
 {
     void Test()
     {
-        throw new IndexOutOfRangeException();
+        throw new ApplicationException();
     }
 }");
 
-            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "'System.IndexOutOfRangeException' is a reserved exception type");
+            var expected = CreateDiagnosticResult(line: 6, column: 9);
             VerifyDiagnostic(project, expected);
         }
     }
