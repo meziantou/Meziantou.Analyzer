@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Test.UsageRules
         protected override string ExpectedDiagnosticId => "MA0010";
         protected override string ExpectedDiagnosticMessage => "Mark attributes with AttributeUsageAttribute";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-               
+
         [TestMethod]
         public void ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
         {
@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Test.UsageRules
         {
             var project = new ProjectBuilder()
                   .WithSource(@"class TestAttribute : System.Object { }");
-            
+
             VerifyDiagnostic(project);
         }
 
