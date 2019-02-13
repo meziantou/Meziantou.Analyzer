@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.UsageRules
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseIFormatProviderParameter,
             title: "IFormatProvider is missing",
-            messageFormat: "Use an overload of '{0}' that has an IFormatProvider parameter",
+            messageFormat: "Use an overload of '{0}' that has a '{1}' parameter",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -31,6 +31,7 @@ namespace Meziantou.Analyzer.UsageRules
         private void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var formatProviderType = context.Compilation.GetTypeByMetadataName("System.IFormatProvider");
+            var cultureInfoType = context.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
             var numberStyleType = context.Compilation.GetTypeByMetadataName("System.Globalization.NumberStyles");
             var dateTimeStyleType = context.Compilation.GetTypeByMetadataName("System.Globalization.DateTimeStyles");
 
@@ -47,7 +48,9 @@ namespace Meziantou.Analyzer.UsageRules
             }
             else if (!string.Equals(methodName, "Parse", StringComparison.Ordinal) &&
                      !string.Equals(methodName, "TryParse", StringComparison.Ordinal) &&
-                     !string.Equals(methodName, "TryFormat", StringComparison.Ordinal))
+                     !string.Equals(methodName, "TryFormat", StringComparison.Ordinal) &&
+                     !string.Equals(methodName, "ToLower", StringComparison.Ordinal) &&
+                     !string.Equals(methodName, "ToUpper", StringComparison.Ordinal))
             {
                 return;
             }
@@ -58,8 +61,19 @@ namespace Meziantou.Analyzer.UsageRules
                     (operation.TargetMethod.ContainingType.IsNumberType() && UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, numberStyleType)) ||
                     (operation.TargetMethod.ContainingType.IsDateTime() && UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, dateTimeStyleType)))
                 {
-                    var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name);
+                    var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name, formatProviderType.ToDisplayString());
                     context.ReportDiagnostic(diagnostic);
+                    return;
+                }
+            }
+
+            if (!UseStringComparisonAnalyzer.HasArgumentOfType(operation, cultureInfoType))
+            {
+                if (UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, cultureInfoType))
+                {
+                    var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name, cultureInfoType.ToDisplayString());
+                    context.ReportDiagnostic(diagnostic);
+                    return;
                 }
             }
         }

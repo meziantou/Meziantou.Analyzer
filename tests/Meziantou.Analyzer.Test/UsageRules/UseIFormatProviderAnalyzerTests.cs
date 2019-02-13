@@ -41,7 +41,7 @@ class TypeName
         1.ToString();
     }
 }");
-            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'ToString' that has an IFormatProvider parameter");
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter");
             VerifyDiagnostic(project, expected);
         }
 
@@ -75,8 +75,8 @@ class TypeName
     }
 }");
 
-            var expected1 = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'Parse' that has an IFormatProvider parameter");
-            var expected2 = CreateDiagnosticResult(line: 7, column: 9, message: "Use an overload of 'Parse' that has an IFormatProvider parameter");
+            var expected1 = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter");
+            var expected2 = CreateDiagnosticResult(line: 7, column: 9, message: "Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter");
             VerifyDiagnostic(project, expected1, expected2);
         }
 
@@ -93,7 +93,7 @@ class TypeName
     }
 }");
 
-            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'TryParse' that has an IFormatProvider parameter");
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter");
             VerifyDiagnostic(project, expected);
         }
 
@@ -110,7 +110,24 @@ class TypeName
     }
 }");
 
-            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'TryParse' that has an IFormatProvider parameter");
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter");
+            VerifyDiagnostic(project, expected);
+        }
+
+        [TestMethod]
+        public void StringToLower_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public void Test()
+    {
+        """".ToLower();
+    }
+}");
+
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'ToLower' that has a 'System.Globalization.CultureInfo' parameter");
             VerifyDiagnostic(project, expected);
         }
     }
