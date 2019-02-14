@@ -18,6 +18,7 @@ namespace Meziantou.Analyzer
         public const string DoNotRaiseReservedExceptionType = "MA0012";
         public const string TypesShouldNotExtendSystemApplicationException = "MA0013";
         public const string DoNotRaiseApplicationException = "MA0014";
+        public const string ArgumentExceptionShouldSpecifyArgumentName = "MA0015";
 
         public static string GetHelpUri(string idenfifier)
         {
