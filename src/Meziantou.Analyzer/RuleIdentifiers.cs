@@ -20,6 +20,7 @@ namespace Meziantou.Analyzer
         public const string DoNotRaiseApplicationException = "MA0014";
         public const string ArgumentExceptionShouldSpecifyArgumentName = "MA0015";
         public const string PreferReturnCollectionAbstractionInsteadOfImplementation = "MA0016";
+        public const string AbstractTypesShouldNotHaveConstructors = "MA0017";
 
         public static string GetHelpUri(string idenfifier)
         {
