@@ -33,9 +33,6 @@ namespace Meziantou.Analyzer.UsageRules
             context.RegisterSyntaxNodeAction(AnalyzeIndexer, SyntaxKind.IndexerDeclaration);
             context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
             context.RegisterSyntaxNodeAction(AnalyzeProperty, SyntaxKind.PropertyDeclaration);
-            // TODO method parameters
-            // TODO delegate parameters
-            // TODO indexer parameter
         }
 
         private void AnalyzeField(SyntaxNodeAnalysisContext context)
