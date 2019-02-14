@@ -66,10 +66,7 @@ namespace Meziantou.Analyzer
 
         public static bool IsEqualsTo(this ITypeSymbol symbol, ITypeSymbol expectedType)
         {
-            if (expectedType == null)
-                throw new System.ArgumentNullException(nameof(expectedType));
-
-            if (symbol == null)
+            if (symbol == null || expectedType == null)
                 return false;
 
             return expectedType.Equals(symbol);
