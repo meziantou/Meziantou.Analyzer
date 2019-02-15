@@ -51,11 +51,7 @@ namespace Meziantou.Analyzer
             if (attributeType == null)
                 return false;
 
-            var attributes = symbol.GetAttributes();
-            if (attributes == null)
-                return false;
-
-            foreach (var attribute in attributes)
+            foreach (var attribute in symbol.GetAttributes())
             {
                 if (attributeType.Equals(attribute.AttributeClass))
                     return true;

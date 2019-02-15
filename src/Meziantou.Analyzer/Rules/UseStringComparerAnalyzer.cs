@@ -83,7 +83,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     var operation = (IObjectCreationOperation)operationContext.Operation;
                     var type = operation.Type as INamedTypeSymbol;
-                    if (type == null || type.OriginalDefinition == null)
+                    if (type?.OriginalDefinition == null)
                         return;
 
                     if (types.Any(t => type.OriginalDefinition.Equals(t)))
