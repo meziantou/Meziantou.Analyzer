@@ -21,6 +21,7 @@ namespace Meziantou.Analyzer
         public const string ArgumentExceptionShouldSpecifyArgumentName = "MA0015";
         public const string PreferReturnCollectionAbstractionInsteadOfImplementation = "MA0016";
         public const string AbstractTypesShouldNotHaveConstructors = "MA0017";
+        public const string DoNotDeclareStaticMembersOnGenericTypes = "MA0018";
 
         public static string GetHelpUri(string idenfifier)
         {
