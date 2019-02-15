@@ -21,12 +21,20 @@ namespace Meziantou.Analyzer.Test.UsageRules
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
-class TestAttribute
+class Sample
 {
     string Prop
     {
         get { throw null; }
         set { throw new System.ArgumentNullException(nameof(value)); }
+    }
+
+    Sample(string test)
+    {
+        throw new System.Exception();
+        throw new System.ArgumentException(""message"", ""test"");
+        throw new System.ArgumentException(""message"", nameof(test));
+        throw new System.ArgumentNullException(nameof(test));
     }
 
     void Test(string test)
@@ -35,7 +43,7 @@ class TestAttribute
         throw new System.ArgumentException(""message"", ""test"");
         throw new System.ArgumentException(""message"", nameof(test));
         throw new System.ArgumentNullException(nameof(test));
-    }    
+    }
 }");
 
             VerifyDiagnostic(project);
