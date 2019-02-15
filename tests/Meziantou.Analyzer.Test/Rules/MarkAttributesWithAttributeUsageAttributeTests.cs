@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"class TestAttribute : System.Attribute { }");
+                  .WithSource("class TestAttribute : System.Attribute { }");
 
             var expected = CreateDiagnosticResult(line: 1, column: 1);
             VerifyDiagnostic(project, expected);
@@ -28,7 +28,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void ClassDoesNotInheritsFromAttribute_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"class TestAttribute : System.Object { }");
+                  .WithSource("class TestAttribute : System.Object { }");
 
             VerifyDiagnostic(project);
         }

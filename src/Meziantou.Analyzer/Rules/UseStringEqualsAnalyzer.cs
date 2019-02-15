@@ -48,6 +48,5 @@ namespace Meziantou.Analyzer.Rules
         {
             return operation.ConstantValue.HasValue && operation.ConstantValue.Value == null;
         }
-
     }
 }

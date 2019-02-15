@@ -48,6 +48,5 @@ class Test
             };
             VerifyDiagnostic(project, expected);
         }
-
     }
 }
