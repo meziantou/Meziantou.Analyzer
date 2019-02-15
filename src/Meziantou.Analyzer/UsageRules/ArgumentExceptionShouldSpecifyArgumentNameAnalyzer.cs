@@ -68,6 +68,11 @@ namespace Meziantou.Analyzer.UsageRules
                         context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"'{value}' is not a valid parameter name"));
                         return;
                     }
+                    else
+                    {
+                        // Cannot determine the value of the argument
+                        return;
+                    }
                 }
                 else
                 {
@@ -95,6 +100,11 @@ namespace Meziantou.Analyzer.UsageRules
                 else if (node is MethodDeclarationSyntax methodDeclaration)
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
+                    return symbol.Parameters.Select(p => p.Name);
+                }
+                else if (node is ConstructorDeclarationSyntax constructorDeclaration)
+                {
+                    var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
                     return symbol.Parameters.Select(p => p.Name);
                 }
 
