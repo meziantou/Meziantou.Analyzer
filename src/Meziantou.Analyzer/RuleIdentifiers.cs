@@ -22,6 +22,7 @@ namespace Meziantou.Analyzer
         public const string PreferReturnCollectionAbstractionInsteadOfImplementation = "MA0016";
         public const string AbstractTypesShouldNotHaveConstructors = "MA0017";
         public const string DoNotDeclareStaticMembersOnGenericTypes = "MA0018";
+        public const string UseEventArgsEmpty = "MA0019";
 
         public static string GetHelpUri(string idenfifier)
         {
