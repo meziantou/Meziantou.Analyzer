@@ -201,5 +201,47 @@ class TypeName
 }";
             VerifyFix(project, fixtest);
         }
+
+        [TestMethod]
+        public void Compare_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public void Test()
+    {
+        string.Compare(""a"", ""v"");
+    }
+}");
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'Compare' that has a StringComparison parameter");
+            VerifyDiagnostic(project, expected);
+
+            var fixtest = @"
+class TypeName
+{
+    public void Test()
+    {
+        string.Compare(""a"", ""v"", System.StringComparison.Ordinal);
+    }
+}";
+            VerifyFix(project, fixtest);
+        }
+
+        [TestMethod]
+        public void Compare_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public void Test()
+    {
+        string.Compare(""a"", ""v"", ignoreCase: true);
+    }
+}");
+
+            VerifyDiagnostic(project);
+        }
     }
 }
