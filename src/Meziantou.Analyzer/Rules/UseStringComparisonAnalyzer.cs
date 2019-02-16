@@ -35,7 +35,8 @@ namespace Meziantou.Analyzer.Rules
             var stringType = context.Compilation.GetSpecialType(SpecialType.System_String);
 
             var operation = (IInvocationOperation)context.Operation;
-            if (!IsMethod(operation, stringType, nameof(string.Equals)) &&
+            if (!IsMethod(operation, stringType, nameof(string.Compare)) &&
+                !IsMethod(operation, stringType, nameof(string.Equals)) &&
                 !IsMethod(operation, stringType, nameof(string.IndexOf)) &&
                 !IsMethod(operation, stringType, nameof(string.IndexOfAny)) &&
                 !IsMethod(operation, stringType, nameof(string.LastIndexOf)) &&
