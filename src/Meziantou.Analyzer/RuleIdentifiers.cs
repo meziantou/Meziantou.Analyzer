@@ -25,6 +25,7 @@ namespace Meziantou.Analyzer
         public const string UseEventArgsEmpty = "MA0019";
         public const string UseListOfTMethodsInsteadOfEnumerableExtensionMethods = "MA0020";
         public const string DoNotUseStringGetHashCode = "MA0021";
+        public const string ReturnTaskFromResultInsteadOfReturningNull = "MA0022";
 
         public static string GetHelpUri(string idenfifier)
         {
