@@ -23,7 +23,7 @@ namespace Meziantou.Analyzer
 
         public static bool InheritsFrom(this ITypeSymbol classSymbol, ITypeSymbol baseClassType)
         {
-            if (baseClassType == null)
+            if (classSymbol == null || baseClassType == null)
                 return false;
 
             var baseType = classSymbol.BaseType;
