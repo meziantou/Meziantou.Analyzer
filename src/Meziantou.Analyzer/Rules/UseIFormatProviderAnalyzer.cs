@@ -45,6 +45,10 @@ namespace Meziantou.Analyzer.Rules
                 // Boolean.ToString(IFormatProvider) should not be used
                 if (operation.TargetMethod.ContainingType.IsBoolean())
                     return;
+
+                // Guid.ToString(IFormatProvider) should not be used
+                if (operation.TargetMethod.ContainingType.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
+                    return;
             }
             else if (!string.Equals(methodName, "Parse", StringComparison.Ordinal) &&
                      !string.Equals(methodName, "TryParse", StringComparison.Ordinal) &&

@@ -62,7 +62,24 @@ class TypeName
         }
 
         [TestMethod]
-        public void Int32ParseWithoutCultureInfo_ShouldNotReportDiagnostic()
+        public void SystemGuidToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public void Test()
+    {
+        default(System.Guid).ToString();
+        default(System.Guid).ToString(""D"");
+    }
+}");
+
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
@@ -81,7 +98,7 @@ class TypeName
         }
 
         [TestMethod]
-        public void SingleTryParseWithoutCultureInfo_ShouldNotReportDiagnostic()
+        public void SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
@@ -98,7 +115,7 @@ class TypeName
         }
 
         [TestMethod]
-        public void DateTimeTryParseWithoutCultureInfo_ShouldNotReportDiagnostic()
+        public void DateTimeTryParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
@@ -115,7 +132,7 @@ class TypeName
         }
 
         [TestMethod]
-        public void StringToLower_ShouldNotReportDiagnostic()
+        public void StringToLower_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
