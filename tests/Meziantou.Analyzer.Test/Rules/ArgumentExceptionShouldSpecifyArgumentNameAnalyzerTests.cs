@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.ComponentModel;
+using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,6 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void ArgumentNameIsSpecified_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
+                  .AddReference(typeof(InvalidEnumArgumentException))
                   .WithSource(@"
 class Sample
 {
@@ -40,6 +42,7 @@ class Sample
         throw new System.ArgumentException(""message"", ""test"");
         throw new System.ArgumentException(""message"", nameof(test));
         throw new System.ArgumentNullException(nameof(test));
+        throw new System.ComponentModel.InvalidEnumArgumentException(nameof(test), 0, typeof(System.Enum));
     }
 }");
 

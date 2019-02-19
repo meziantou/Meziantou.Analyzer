@@ -61,6 +61,11 @@ namespace TestHelper
                 AddReferenceByName("System.Runtime");
                 AddReferenceByName("System.Text.RegularExpressions");
             }
+            else if (type == typeof(System.ComponentModel.InvalidEnumArgumentException))
+            {
+                AddReferenceByName("System.Runtime");
+                AddReferenceByName("System.ComponentModel.Primitives");
+            }
             else
             {
                 throw new ArgumentOutOfRangeException(nameof(type));
