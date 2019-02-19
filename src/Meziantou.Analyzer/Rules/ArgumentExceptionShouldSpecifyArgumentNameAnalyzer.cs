@@ -52,9 +52,15 @@ namespace Meziantou.Analyzer.Rules
             if (!type.IsEqualsTo(exceptionType) && !type.InheritsFrom(exceptionType))
                 return;
 
+            var parameterName = "paramName";
+            if(type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException")))
+            {
+                parameterName = "argumentName";
+            }
+
             foreach (var argument in op.Arguments)
             {
-                if (!string.Equals(argument.Parameter.Name, "paramName", StringComparison.Ordinal))
+                if (!string.Equals(argument.Parameter.Name, parameterName, StringComparison.Ordinal))
                     continue;
 
                 if (argument.Value.ConstantValue.HasValue)
