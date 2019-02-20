@@ -43,7 +43,7 @@ class TestClass
 {
     void Test()
     {
-        Regex.IsMatch(""test"", ""[a-z]+"", RegexOptions.None, System.TimeSpan.FromSeconds(1));
+        Regex.IsMatch(""test"", ""[a-z]+"", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
     }
 }");
 
@@ -78,7 +78,7 @@ class TestClass
 {
     void Test()
     {
-        new Regex(""[a-z]+"", RegexOptions.None, System.TimeSpan.FromSeconds(1));
+        new Regex(""[a-z]+"", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
     }
 }");
 
