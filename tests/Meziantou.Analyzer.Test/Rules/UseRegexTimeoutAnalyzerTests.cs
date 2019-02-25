@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseRegexTimeoutAnalyzer();
         protected override string ExpectedDiagnosticId => "MA0009";
-        protected override string ExpectedDiagnosticMessage => "Add timeout parameter";
+        protected override string ExpectedDiagnosticMessage => "Regular expressions should not be vulnerable to Denial of Service attacks";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
         [TestMethod]

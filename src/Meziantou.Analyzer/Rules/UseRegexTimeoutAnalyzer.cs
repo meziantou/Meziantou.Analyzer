@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_timeoutRule = new DiagnosticDescriptor(
             RuleIdentifiers.MissingTimeoutParameterForRegex,
             title: "Add timeout parameter",
-            messageFormat: "Add timeout parameter",
+            messageFormat: "Regular expressions should not be vulnerable to Denial of Service attacks",
             RuleCategories.Security,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -104,7 +104,7 @@ namespace Meziantou.Analyzer.Rules
             if (arg.Value.ConstantValue.HasValue)
             {
                 var value = ((RegexOptions)arg.Value.ConstantValue.Value);
-                if (!value.HasFlag(RegexOptions.ExplicitCapture))
+                if (!value.HasFlag(RegexOptions.ExplicitCapture) && !value.HasFlag(RegexOptions.ECMAScript))
                 {
                     context.ReportDiagnostic(Diagnostic.Create(s_explicitCaptureRule, arg.Syntax.GetLocation()));
                 }
