@@ -46,6 +46,7 @@ class TestClass
     {
         new Regex(""[a-z]+"", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, default);
         new Regex(""[a-z]+"", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase, default);
+        new Regex(""[a-z]+"", RegexOptions.ECMAScript, default);
     }
 }");
 
