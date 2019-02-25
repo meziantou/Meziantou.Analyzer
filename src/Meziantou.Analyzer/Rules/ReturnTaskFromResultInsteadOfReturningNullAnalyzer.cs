@@ -117,7 +117,18 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsNullValue(IOperation operation)
         {
-            return operation != null && operation.ConstantValue.HasValue && operation.ConstantValue.Value == null;
+            if (operation == null)
+                return false;
+
+            if (operation.ConstantValue.HasValue && operation.ConstantValue.Value == null)
+                return true;
+
+            if (operation is IConditionalAccessOperation conditionalAccess)
+            {
+                return IsNullValue(conditionalAccess.Operation) || IsNullValue(conditionalAccess.WhenNotNull);
+            }
+
+            return false;
         }
 
         private static bool IsTaskType(Compilation compilation, ITypeSymbol typeSyntax)
