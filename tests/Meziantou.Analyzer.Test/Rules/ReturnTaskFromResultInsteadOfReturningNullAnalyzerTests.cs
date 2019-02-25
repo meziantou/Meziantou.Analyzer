@@ -24,6 +24,7 @@ class Test
 {
     Task A() { return null; }
     Task B() => null;
+    Task C() { return ((Test)null)?.A(); }
     async Task<object> Valid() { return null; }
 }");
 
@@ -31,6 +32,7 @@ class Test
             {
                 CreateDiagnosticResult(line: 4, column: 16),
                 CreateDiagnosticResult(line: 5, column: 17),
+                CreateDiagnosticResult(line: 6, column: 16),
             };
             VerifyDiagnostic(project, expected);
         }
