@@ -164,11 +164,15 @@ namespace Meziantou.Analyzer.Rules
             var list = compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
             var hashset = compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1");
             var dictionary = compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2");
+            var collection = compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1");
+            var readonlyCollection = compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1");
 
             var originalDefinition = symbol.OriginalDefinition;
             if (originalDefinition.IsEqualsTo(list) ||
                 originalDefinition.IsEqualsTo(dictionary) ||
-                originalDefinition.IsEqualsTo(hashset))
+                originalDefinition.IsEqualsTo(hashset) ||
+                originalDefinition.IsEqualsTo(collection) ||
+                originalDefinition.IsEqualsTo(readonlyCollection))
             {
                 return false;
             }
