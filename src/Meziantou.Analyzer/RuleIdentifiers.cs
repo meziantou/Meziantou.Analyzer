@@ -27,6 +27,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseStringGetHashCode = "MA0021";
         public const string ReturnTaskFromResultInsteadOfReturningNull = "MA0022";
         public const string UseRegexExplicitCaptureOptions = "MA0023";
+        public const string DoNotUseEqualityComparerDefaultOfString = "MA0024";
 
         public static string GetHelpUri(string idenfifier)
         {
