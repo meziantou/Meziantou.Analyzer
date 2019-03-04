@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Meziantou.Analyzer.Rules;
+﻿using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -161,6 +160,9 @@ namespace Meziantou.Analyzer.Rules
 
         private bool IsValidType(Compilation compilation, ITypeSymbol symbol)
         {
+            if (symbol == null)
+                return true;
+
             var list = compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
             var hashset = compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1");
             var dictionary = compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2");
