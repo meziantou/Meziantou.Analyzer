@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             var project = new ProjectBuilder()
                   .WithSource(@"using System.Collections.Generic;
-class Test
+public class Test
 {
     private List<int> a;
     public List<int> b; // Error
@@ -58,7 +58,7 @@ public delegate void E(List<string> p1); // Error
         {
             var project = new ProjectBuilder()
                   .WithSource(@"using System.Collections.Generic;
-class Test
+public class Test
 {
     private List<int> this[int value] => throw null;
     public List<int> this[string value] => throw null; // Error
@@ -82,7 +82,7 @@ class Test
         {
             var project = new ProjectBuilder()
                   .WithSource(@"using System.Collections.Generic;
-class Test
+public class Test
 {
     private List<int> A => throw null;
     public List<int> B => throw null; // Error
@@ -104,7 +104,7 @@ class Test
         {
             var project = new ProjectBuilder()
                   .WithSource(@"using System.Collections.Generic;
-class Test
+public class Test
 {
     private List<int> A() => throw null;
     public List<int> B() => throw null; // Error
@@ -124,6 +124,22 @@ class Test
                 CreateDiagnosticResult(line: 11, column: 19),
             };
             VerifyDiagnostic(project, expected);
+        }
+
+        [TestMethod]
+        public void PrivateContainer()
+        {
+            var project = new ProjectBuilder()
+                 .WithSource(@"using System.Collections.Generic;
+internal class Test
+{
+    public delegate List<int> B();
+    public List<int> _a;
+    protected List<int> _b;
+    public List<int> A() => throw null;
+}");
+
+            VerifyDiagnostic(project);
         }
     }
 }

@@ -40,15 +40,12 @@ namespace Meziantou.Analyzer.Rules
             if (node == null)
                 return;
 
-            if (!IsVisible(node.Modifiers))
-                return;
-
             var firstVariable = node.Declaration?.Variables.FirstOrDefault();
             if (firstVariable == null)
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) as IFieldSymbol;
-            if (symbol == null)
+            if (!IsVisible(symbol))
                 return;
 
             if (IsValidType(context.Compilation, symbol.Type))
@@ -63,7 +60,8 @@ namespace Meziantou.Analyzer.Rules
             if (node == null)
                 return;
 
-            if (!IsVisible(node.Modifiers))
+            var symbol = context.SemanticModel.GetDeclaredSymbol(node);
+            if (!IsVisible(symbol))
                 return;
 
             var type = node.ReturnType;
@@ -81,7 +79,8 @@ namespace Meziantou.Analyzer.Rules
             if (node == null)
                 return;
 
-            if (!IsVisible(node.Modifiers))
+            var symbol = context.SemanticModel.GetDeclaredSymbol(node);
+            if (!IsVisible(symbol))
                 return;
 
             var type = node.Type;
@@ -99,7 +98,8 @@ namespace Meziantou.Analyzer.Rules
             if (node == null)
                 return;
 
-            if (!IsVisible(node.Modifiers))
+            var symbol = context.SemanticModel.GetDeclaredSymbol(node);
+            if (!IsVisible(symbol))
                 return;
 
             var type = node.Type;
@@ -115,7 +115,8 @@ namespace Meziantou.Analyzer.Rules
             if (node == null)
                 return;
 
-            if (!IsVisible(node.Modifiers))
+            var symbol = context.SemanticModel.GetDeclaredSymbol(node);
+            if (!IsVisible(symbol))
                 return;
 
             var type = node.ReturnType;
@@ -147,15 +148,22 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static bool IsVisible(SyntaxTokenList modifiers)
+        private static bool IsVisible(ISymbol symbol)
         {
-            if (modifiers.Any(SyntaxKind.PublicKeyword))
+            if (symbol == null)
+                return false;
+
+            if (symbol.DeclaredAccessibility != Accessibility.Public &&
+                symbol.DeclaredAccessibility != Accessibility.Protected &&
+                symbol.DeclaredAccessibility != Accessibility.ProtectedOrInternal)
+            {
+                return false;
+            }
+
+            if (symbol.ContainingType == null)
                 return true;
 
-            if (modifiers.Any(SyntaxKind.ProtectedKeyword) && !modifiers.Any(SyntaxKind.PrivateKeyword))
-                return true;
-
-            return false;
+            return IsVisible(symbol.ContainingType);
         }
 
         private bool IsValidType(Compilation compilation, ITypeSymbol symbol)
