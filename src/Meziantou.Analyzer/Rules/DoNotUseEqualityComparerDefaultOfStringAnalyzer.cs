@@ -36,7 +36,9 @@ namespace Meziantou.Analyzer.Rules
         private void Analyze(OperationAnalysisContext context)
         {
             var operation = (IPropertyReferenceOperation)context.Operation;
+#pragma warning disable MA0024 // Use StringComparer.Ordinal
             if (!string.Equals(operation.Member.Name, nameof(EqualityComparer<string>.Default), StringComparison.Ordinal))
+#pragma warning restore MA0024 // Use StringComparer.Ordinal
                 return;
 
             var equalityComparerSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
