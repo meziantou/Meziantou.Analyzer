@@ -28,6 +28,12 @@ class Sample
         set { throw new System.ArgumentNullException(nameof(value)); }
     }
 
+    string this[int index]
+    {
+        get { throw new System.ArgumentNullException(nameof(index)); }
+        set { throw new System.ArgumentNullException(nameof(index)); }
+    }
+
     Sample(string test)
     {
         throw new System.Exception();
