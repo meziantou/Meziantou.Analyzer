@@ -53,7 +53,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var parameterName = "paramName";
-            if(type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException")))
+            if (type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException")))
             {
                 parameterName = "argumentName";
             }
@@ -94,14 +94,33 @@ namespace Meziantou.Analyzer.Rules
         {
             var semanticModel = operation.SemanticModel;
             var node = operation.Syntax;
+            bool isSetter = false;
             while (node != null)
             {
                 if (node is AccessorDeclarationSyntax accessor)
                 {
                     if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
+                    {
+                        isSetter = true;
+                    }
+                }
+                else if (node is PropertyDeclarationSyntax propertyDeclarationSyntax)
+                {
+                    if (isSetter)
                         return s_setterArgumentNames;
 
                     return Enumerable.Empty<string>();
+                }
+                else if (node is IndexerDeclarationSyntax indexerDeclarationSyntax)
+                {
+                    var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
+                    var parameterNames = symbol.Parameters.Select(p => p.Name);
+                    if (isSetter)
+                    {
+                        return parameterNames.Concat(s_setterArgumentNames);
+                    }
+
+                    return parameterNames;
                 }
                 else if (node is MethodDeclarationSyntax methodDeclaration)
                 {
