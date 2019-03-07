@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,23 +49,40 @@ namespace Meziantou.Analyzer.Rules
             if (argument == null || argument.NameColon != null)
                 return document;
 
-            var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
-            if (invocationExpression == null)
-                return document;
-
-            var methodSymbol = (IMethodSymbol)semanticModel.GetSymbolInfo(invocationExpression).Symbol;
-            if (methodSymbol == null)
+            var parameters = FindParameters(semanticModel, argument);
+            if (parameters == null)
                 return document;
 
             var index = NamedParameterAnalyzer.ArgumentIndex(argument);
-            if (index < 0 || index >= methodSymbol.Parameters.Length)
+            if (index < 0 || index >= parameters.Count)
                 return document;
 
-            var parameter = methodSymbol.Parameters[index];
+            var parameter = parameters[index];
             var argumentName = parameter.Name;
 
             editor.ReplaceNode(argument, argument.WithNameColon(SyntaxFactory.NameColon(argumentName)));
             return editor.GetChangedDocument();
+        }
+
+        private static IReadOnlyList<IParameterSymbol> FindParameters(SemanticModel semanticModel, SyntaxNode node)
+        {
+            while (node != null)
+            {
+                switch (node)
+                {
+                    case InvocationExpressionSyntax invocationExpression:
+                        var method = (IMethodSymbol)semanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                        return method.Parameters;
+
+                    case ObjectCreationExpressionSyntax objectCreationExpression:
+                        var ctor = (IMethodSymbol)semanticModel.GetSymbolInfo(objectCreationExpression).Symbol;
+                        return ctor.Parameters;
+                }
+
+                node = node.Parent;
+            }
+
+            return null;
         }
     }
 }
