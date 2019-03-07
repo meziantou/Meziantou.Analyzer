@@ -13,8 +13,6 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly IEnumerable<string> s_setterArgumentNames = new[] { "value" };
-
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName,
             title: "Should specify the parameter name",
@@ -94,49 +92,52 @@ namespace Meziantou.Analyzer.Rules
         {
             var semanticModel = operation.SemanticModel;
             var node = operation.Syntax;
-            bool isSetter = false;
             while (node != null)
             {
                 if (node is AccessorDeclarationSyntax accessor)
                 {
                     if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
                     {
-                        isSetter = true;
+                        yield return "value";
                     }
                 }
-                else if (node is PropertyDeclarationSyntax propertyDeclarationSyntax)
+                else if (node is PropertyDeclarationSyntax)
                 {
-                    if (isSetter)
-                        return s_setterArgumentNames;
-
-                    return Enumerable.Empty<string>();
+                    yield break;
                 }
                 else if (node is IndexerDeclarationSyntax indexerDeclarationSyntax)
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
-                    var parameterNames = symbol.Parameters.Select(p => p.Name);
-                    if (isSetter)
-                    {
-                        return parameterNames.Concat(s_setterArgumentNames);
-                    }
+                    foreach (var parameter in symbol.Parameters)
+                        yield return parameter.Name;
 
-                    return parameterNames;
+                    yield break;
                 }
                 else if (node is MethodDeclarationSyntax methodDeclaration)
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
-                    return symbol.Parameters.Select(p => p.Name);
+                    foreach (var parameter in symbol.Parameters)
+                        yield return parameter.Name;
+
+                    yield break;
+                }
+                else if (node is LocalFunctionStatementSyntax localFunctionStatement)
+                {
+                    var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
+                    foreach (var parameter in symbol.Parameters)
+                        yield return parameter.Name;
                 }
                 else if (node is ConstructorDeclarationSyntax constructorDeclaration)
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
-                    return symbol.Parameters.Select(p => p.Name);
+                    foreach (var parameter in symbol.Parameters)
+                        yield return parameter.Name;
+
+                    yield break;
                 }
 
                 node = node.Parent;
             }
-
-            return Enumerable.Empty<string>();
         }
     }
 }
