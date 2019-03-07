@@ -86,6 +86,17 @@ class TypeName
 
             var expected = CreateDiagnosticResult(line: 6, column: 40);
             VerifyDiagnostic(project, expected);
+
+            var fix = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = string.Compare("""", """", ignoreCase: true);
+    }
+}";
+
+            VerifyFix(project, fix);
         }
 
         [TestMethod]
@@ -265,6 +276,38 @@ class TypeName
 }");
 
             VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void Ctor_ShouldUseTheRightParameterName()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public void Test()
+    {
+        new TypeName(null);
+    }
+
+    TypeName(string a) { }
+}");
+
+            var expected = CreateDiagnosticResult(line: 6, column: 22);
+            VerifyDiagnostic(project, expected);
+
+            var fix = @"
+class TypeName
+{
+    public void Test()
+    {
+        new TypeName(a: null);
+    }
+
+    TypeName(string a) { }
+}";
+
+            VerifyFix(project, fix);
         }
     }
 }
