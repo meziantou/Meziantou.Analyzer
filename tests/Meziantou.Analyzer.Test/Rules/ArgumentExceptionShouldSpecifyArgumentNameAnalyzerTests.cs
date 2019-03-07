@@ -49,6 +49,11 @@ class Sample
         throw new System.ArgumentException(""message"", nameof(test));
         throw new System.ArgumentNullException(nameof(test));
         throw new System.ComponentModel.InvalidEnumArgumentException(nameof(test), 0, typeof(System.Enum));
+
+        void LocalFunction(string a)
+        {
+            throw new System.ArgumentNullException(nameof(a));
+        }
     }
 }");
 
