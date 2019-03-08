@@ -43,7 +43,13 @@ namespace TestHelper
         /// <param name="allowNewCompilerDiagnostics">A bool controlling whether or not the test will fail if the CodeFix introduces other warnings after being applied</param>
         protected void VerifyFix(ProjectBuilder projectBuilder, string newSource, int? codeFixIndex = null, bool allowNewCompilerDiagnostics = false)
         {
-            VerifyFix(GetCSharpDiagnosticAnalyzer(), GetCSharpCodeFixProvider(), projectBuilder, newSource, codeFixIndex, allowNewCompilerDiagnostics);
+            var codeFixProvider = GetCSharpCodeFixProvider();
+            if (codeFixProvider == null)
+            {
+                Assert.Fail("Fix provider is not configured");
+            }
+
+            VerifyFix(GetCSharpDiagnosticAnalyzer(), codeFixProvider, projectBuilder, newSource, codeFixIndex, allowNewCompilerDiagnostics);
         }
 
         /// <summary>
