@@ -145,7 +145,7 @@ namespace TestHelper
                             expected.Severity, actual.Severity, FormatDiagnostics(analyzer, actual)));
                 }
 
-                if (!string.Equals(actual.GetMessage(), expected.Message, StringComparison.Ordinal))
+                if (expected.Message != null && !string.Equals(actual.GetMessage(), expected.Message, StringComparison.Ordinal))
                 {
                     Assert.IsTrue(false,
                         string.Format("Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",

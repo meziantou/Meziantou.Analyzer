@@ -30,6 +30,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseEqualityComparerDefaultOfString = "MA0024";
         public const string DoNotRaiseNotImplementedException = "MA0025";
         public const string FixToDo = "MA0026";
+        public const string DoNotRemoveOriginalExceptionFromThrowStatement = "MA0027";
 
         public static string GetHelpUri(string idenfifier)
         {
