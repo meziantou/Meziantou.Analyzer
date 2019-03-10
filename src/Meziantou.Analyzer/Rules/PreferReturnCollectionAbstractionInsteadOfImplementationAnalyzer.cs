@@ -45,7 +45,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) as IFieldSymbol;
-            if (!IsVisible(symbol))
+            if (!symbol.IsVisible())
                 return;
 
             if (IsValidType(context.Compilation, symbol.Type))
@@ -61,7 +61,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node);
-            if (!IsVisible(symbol))
+            if (!symbol.IsVisible())
                 return;
 
             var type = node.ReturnType;
@@ -80,7 +80,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node);
-            if (!IsVisible(symbol))
+            if (!symbol.IsVisible())
                 return;
 
             var type = node.Type;
@@ -99,7 +99,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node);
-            if (!IsVisible(symbol))
+            if (!symbol.IsVisible())
                 return;
 
             var type = node.Type;
@@ -116,7 +116,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node);
-            if (!IsVisible(symbol))
+            if (!symbol.IsVisible())
                 return;
 
             var type = node.ReturnType;
@@ -146,24 +146,6 @@ namespace Meziantou.Analyzer.Rules
             {
                 context.ReportDiagnostic(Diagnostic.Create(s_rule, parameter.GetLocation()));
             }
-        }
-
-        private static bool IsVisible(ISymbol symbol)
-        {
-            if (symbol == null)
-                return false;
-
-            if (symbol.DeclaredAccessibility != Accessibility.Public &&
-                symbol.DeclaredAccessibility != Accessibility.Protected &&
-                symbol.DeclaredAccessibility != Accessibility.ProtectedOrInternal)
-            {
-                return false;
-            }
-
-            if (symbol.ContainingType == null)
-                return true;
-
-            return IsVisible(symbol.ContainingType);
         }
 
         private bool IsValidType(Compilation compilation, ITypeSymbol symbol)
