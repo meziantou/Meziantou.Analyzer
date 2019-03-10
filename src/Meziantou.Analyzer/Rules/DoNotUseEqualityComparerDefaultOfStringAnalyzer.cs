@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -27,8 +26,6 @@ namespace Meziantou.Analyzer.Rules
         {
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-            var values = Enum.GetValues(typeof(OperationKind)).Cast<OperationKind>().ToArray();
 
             context.RegisterOperationAction(Analyze, OperationKind.PropertyReference);
         }
