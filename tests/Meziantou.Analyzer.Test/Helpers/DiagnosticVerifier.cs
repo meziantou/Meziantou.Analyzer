@@ -207,7 +207,7 @@ namespace TestHelper
             var builder = new StringBuilder();
             for (var i = 0; i < diagnostics.Length; ++i)
             {
-                builder.Append("// ").AppendLine(diagnostics[i].ToString());
+                builder.Append("// ").Append(diagnostics[i]).AppendLine();
 
                 var analyzerType = analyzer.GetType();
                 var rules = analyzer.SupportedDiagnostics;
