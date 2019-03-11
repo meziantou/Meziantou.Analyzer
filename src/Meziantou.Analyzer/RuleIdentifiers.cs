@@ -32,6 +32,8 @@ namespace Meziantou.Analyzer
         public const string FixToDo = "MA0026";
         public const string DoNotRemoveOriginalExceptionFromThrowStatement = "MA0027";
         public const string OptimizeStringBuilderUsage = "MA0028";
+        public const string OptimizeLinqUsage = "MA0029";
+        public const string DuplicateOrderBy = "MA0030";
 
         public static string GetHelpUri(string idenfifier)
         {

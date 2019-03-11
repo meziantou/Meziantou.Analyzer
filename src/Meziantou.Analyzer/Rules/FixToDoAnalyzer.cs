@@ -59,7 +59,9 @@ namespace Meziantou.Analyzer.Rules
                 void ProcessLine(TextSpan line)
                 {
                     line = line.TrimStart(' ', '\t', '*', '-', '/');
-                    if (string.Equals(line.Text, "TODO", StringComparison.OrdinalIgnoreCase) || line.Text.StartsWith("TODO ", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(line.Text, "TODO", StringComparison.OrdinalIgnoreCase) ||
+                        line.Text.StartsWith("TODO ", StringComparison.OrdinalIgnoreCase) ||
+                        line.Text.StartsWith("TODO:", StringComparison.OrdinalIgnoreCase))
                     {
                         var location = node.SyntaxTree.GetLocation(new Microsoft.CodeAnalysis.Text.TextSpan(node.SpanStart + line.SpanStart, line.Text.Length));
 
