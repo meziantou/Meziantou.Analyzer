@@ -72,6 +72,10 @@ namespace Meziantou.Analyzer.Rules
                     return;
                 }
             }
+            else
+            {
+                return;
+            }
 
             context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
         }

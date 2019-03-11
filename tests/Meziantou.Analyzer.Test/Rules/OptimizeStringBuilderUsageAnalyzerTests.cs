@@ -13,6 +13,22 @@ namespace Meziantou.Analyzer.Test.Rules
         protected override string ExpectedDiagnosticId => "MA0028";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
+        [TestMethod]
+        public void AppendFormat_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().AppendFormat(""{10}"", 10);
+    }
+}");
+
+            VerifyDiagnostic(project);
+        }
+
         [DataTestMethod]
         [DataRow("10")]
         [DataRow("10 + 20")]
