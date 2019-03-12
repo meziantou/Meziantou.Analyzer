@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using static System.FormattableString;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -32,16 +32,26 @@ namespace Meziantou.Analyzer.Rules
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeLinqUsage));
 
         private static readonly DiagnosticDescriptor s_duplicateOrderByMethodsRule = new DiagnosticDescriptor(
-            RuleIdentifiers.DuplicateOrderBy,
+            RuleIdentifiers.DuplicateEnumerable_OrderBy,
             title: "Optimize LINQ usage",
             messageFormat: "Remove the first '{0}' method or use '{1}'",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DuplicateOrderBy));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DuplicateEnumerable_OrderBy));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_listMethodsRule, s_combineLinqMethodsRule, s_duplicateOrderByMethodsRule);
+        private static readonly DiagnosticDescriptor s_optimizeCountRule = new DiagnosticDescriptor(
+            RuleIdentifiers.OptimizeEnumerable_Count,
+            title: "Optimize Enumerable.Count usage",
+            messageFormat: "{0}",
+            RuleCategories.Usage,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_Count));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_listMethodsRule, s_combineLinqMethodsRule, s_duplicateOrderByMethodsRule, s_optimizeCountRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -70,15 +80,7 @@ namespace Meziantou.Analyzer.Rules
             UseIndexerInsteadOfElementAt(context, operation);
             CombineWhereWithNextMethod(context, operation, enumerableSymbol);
             RemoveTwoConsecutiveOrderBy(context, operation, enumerableSymbol);
-
-            // TODO Count() < 0 => false
-            // TODO Count() <= 0 => !Any()
-            // TODO Count() == 0 => !Any()
-            // TODO Count() > 0 => Any()
-            // TODO Count() < 10 => .Any()
-            // TODO Count() <= 10 => .Any()
-            // TODO Count() >= 10 => .Skip(9).Any()
-            // TODO Count() > 10 => .Skip(10).Any()
+            OptimizeCountUsage(context, operation);
         }
 
         private void UseCountPropertyInsteadOfMethod(OperationAnalysisContext context, IInvocationOperation operation)
@@ -197,7 +199,9 @@ namespace Meziantou.Analyzer.Rules
         private void RemoveTwoConsecutiveOrderBy(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
         {
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
-                string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
+                string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal) ||
+                string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ThenBy), StringComparison.Ordinal) ||
+                string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ThenByDescending), StringComparison.Ordinal))
             {
                 var parent = GetParentLinqOperation(operation);
                 if (parent != null && parent.TargetMethod.ContainingType.IsEqualsTo(enumerableSymbol))
@@ -207,6 +211,193 @@ namespace Meziantou.Analyzer.Rules
                     {
                         context.ReportDiagnostic(Diagnostic.Create(s_duplicateOrderByMethodsRule, parent.Syntax.GetLocation(), operation.TargetMethod.Name, parent.TargetMethod.Name.Replace("OrderBy", "ThenBy")));
                     }
+                }
+            }
+        }
+
+        private void OptimizeCountUsage(OperationAnalysisContext context, IInvocationOperation operation)
+        {
+            if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Count), StringComparison.Ordinal))
+                return;
+
+            var binaryOperation = GetParentBinaryOperation(operation, out var countOperand);
+            if (binaryOperation == null)
+                return;
+
+            if (!IsSupportedOperator(binaryOperation.OperatorKind))
+                return;
+
+            if (!binaryOperation.LeftOperand.Type.IsInt32() || !binaryOperation.RightOperand.Type.IsInt32())
+                return;
+
+            var opKind = NormalizeOperator();
+            var otherOperand = binaryOperation.LeftOperand == countOperand ? binaryOperation.RightOperand : binaryOperation.LeftOperand;
+            if (otherOperand == null)
+                return;
+
+            if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
+            {
+                string message = null;
+                switch (opKind)
+                {
+                    case BinaryOperatorKind.Equals:
+                        if (value < 0)
+                        {
+                            // expr.Count() == -1
+                            message = "Expression is always false";
+                        }
+                        else if (value == 0)
+                        {
+                            // expr.Count() == 0
+                            message = "Replace 'Count() == 0' with 'Any() == false'";
+                        }
+                        else if (value == 1)
+                        {
+                            // expr.Count() == 1
+                            message = "Replace 'Count() == 1' with 'Any()'";
+                        }
+                        else
+                        {
+                            // expr.Count() == 10 => expr.Skip(9).Any()
+                            message = Invariant($"Replace 'Count() == {value}' with 'Skip({value - 1}).Any()'");
+                        }
+
+                        break;
+
+                    case BinaryOperatorKind.NotEquals:
+                        if (value < 0)
+                        {
+                            // expr.Count() != -1 is always true
+                            message = "Expression is always true";
+                        }
+                        else if (value == 0)
+                        {
+                            // expr.Count() != 0
+                            message = "Replace 'Count() != 0' with 'Any()'";
+                        }
+
+                        break;
+
+                    case BinaryOperatorKind.LessThan:
+                        if (value <= 0)
+                        {
+                            // expr.Count() < 0
+                            message = "Expression is always false";
+                        }
+                        else if (value == 1)
+                        {
+                            // expr.Count() < 1 ==> expr.Count() == 0
+                            message = "Replace 'Count() < 1' with 'Any() == false'";
+                        }
+                        else
+                        {
+                            // expr.Count() < 10
+                            message = Invariant($"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
+                        }
+
+                        break;
+
+                    case BinaryOperatorKind.LessThanOrEqual:
+                        if (value < 0)
+                        {
+                            // expr.Count() <= -1
+                            message = "Expression is always false";
+                        }
+                        else if (value == 0)
+                        {
+                            // expr.Count() <= 0
+                            message = "Replace 'Count() <= 0' with 'Any() == false'";
+                        }
+                        else
+                        {
+                            // expr.Count() < 10
+                            message = Invariant($"Replace 'Count() <= {value}' with 'Skip({value}).Any() == false'");
+                        }
+
+                        break;
+
+                    case BinaryOperatorKind.GreaterThan:
+                        if (value < 0)
+                        {
+                            // expr.Count() > -1
+                            message = "Expression is always true";
+                        }
+                        else if (value == 0)
+                        {
+                            // expr.Count() > 0
+                            message = "Replace 'Count() > 0' with 'Any()'";
+                        }
+                        else
+                        {
+                            // expr.Count() > 1
+                            message = Invariant($"Replace 'Count() > {value}' with 'Skip({value}).Any()'");
+                        }
+
+                        break;
+
+                    case BinaryOperatorKind.GreaterThanOrEqual:
+                        if (value <= 0)
+                        {
+                            // expr.Count() >= 0
+                            message = "Expression is always true";
+                        }
+                        else if (value == 1)
+                        {
+                            // expr.Count() >= 1
+                            message = "Replace 'Count() >= 1' with 'Any()'";
+                        }
+                        else
+                        {
+                            // expr.Count() >= 2
+                            message = Invariant($"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
+                        }
+
+                        break;
+
+                }
+
+                if (message != null)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(s_optimizeCountRule, binaryOperation.Syntax.GetLocation(), message));
+                }
+
+                // TODO detect non constant values
+            }
+
+            bool IsSupportedOperator(BinaryOperatorKind operatorKind)
+            {
+                switch (operatorKind)
+                {
+                    case BinaryOperatorKind.Equals:
+                    case BinaryOperatorKind.NotEquals:
+                    case BinaryOperatorKind.LessThan:
+                    case BinaryOperatorKind.LessThanOrEqual:
+                    case BinaryOperatorKind.GreaterThanOrEqual:
+                    case BinaryOperatorKind.GreaterThan:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            BinaryOperatorKind NormalizeOperator()
+            {
+                bool isCountLeftOperand = binaryOperation.LeftOperand == countOperand;
+                switch (binaryOperation.OperatorKind)
+                {
+                    case BinaryOperatorKind.LessThan:
+                        return isCountLeftOperand ? BinaryOperatorKind.LessThan : BinaryOperatorKind.GreaterThan;
+                    case BinaryOperatorKind.LessThanOrEqual:
+                        return isCountLeftOperand ? BinaryOperatorKind.LessThanOrEqual : BinaryOperatorKind.GreaterThanOrEqual;
+
+                    case BinaryOperatorKind.GreaterThanOrEqual:
+                        return isCountLeftOperand ? BinaryOperatorKind.GreaterThanOrEqual : BinaryOperatorKind.LessThanOrEqual;
+
+                    case BinaryOperatorKind.GreaterThan:
+                        return isCountLeftOperand ? BinaryOperatorKind.GreaterThan : BinaryOperatorKind.LessThan;
+
+                    default:
+                        return binaryOperation.OperatorKind;
                 }
             }
         }
@@ -238,6 +429,25 @@ namespace Meziantou.Analyzer.Rules
                 return GetParentLinqOperation(parent);
             }
 
+            return null;
+        }
+
+        private static IBinaryOperation GetParentBinaryOperation(IOperation op, out IOperation operand)
+        {
+            var parent = op.Parent;
+            if (parent is IConversionOperation)
+            {
+                op = parent;
+                parent = parent.Parent;
+            }
+
+            if (parent is IBinaryOperation binaryOperation)
+            {
+                operand = op;
+                return binaryOperation;
+            }
+
+            operand = null;
             return null;
         }
     }
