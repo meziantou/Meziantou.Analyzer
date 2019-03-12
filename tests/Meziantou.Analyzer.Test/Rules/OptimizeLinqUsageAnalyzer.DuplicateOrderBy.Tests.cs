@@ -38,5 +38,29 @@ class Test
 
             VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'"));
         }
+
+        [DataTestMethod]
+        [DataRow("ThenBy", "OrderBy", "ThenBy")]
+        [DataRow("ThenByDescending", "OrderBy", "ThenBy")]
+        [DataRow("ThenBy", "OrderByDescending", "ThenByDescending")]
+        [DataRow("ThenByDescending", "OrderByDescending", "ThenByDescending")]
+        public void ThenByFollowedByOrderBy(string a, string b, string expectedMethod)
+        {
+            var project = new ProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSource(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        enumerable.OrderBy(x => x)." + a + @"(x => x)." + b + @"(x => x);
+    }
+}
+");
+
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'"));
+        }
     }
 }
