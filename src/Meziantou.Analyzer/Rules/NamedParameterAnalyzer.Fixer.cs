@@ -72,11 +72,11 @@ namespace Meziantou.Analyzer.Rules
                 {
                     case InvocationExpressionSyntax invocationExpression:
                         var method = (IMethodSymbol)semanticModel.GetSymbolInfo(invocationExpression).Symbol;
-                        return method.Parameters;
+                        return method?.Parameters;
 
                     case ObjectCreationExpressionSyntax objectCreationExpression:
                         var ctor = (IMethodSymbol)semanticModel.GetSymbolInfo(objectCreationExpression).Symbol;
-                        return ctor.Parameters;
+                        return ctor?.Parameters;
                 }
 
                 node = node.Parent;
