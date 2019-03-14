@@ -35,6 +35,9 @@ namespace Meziantou.Analyzer
         public const string OptimizeLinqUsage = "MA0029";
         public const string DuplicateEnumerable_OrderBy = "MA0030";
         public const string OptimizeEnumerable_Count = "MA0031";
+        public const string DontTagInstanceFieldsWithThreadStaticAttribute = "MA0033";
+        public const string DontUseInstanceFieldsOfTypeAsyncLocal = "MA0034";
+        public const string DontUseDangerousThreadingMethods = "MA0035";
 
         public static string GetHelpUri(string idenfifier)
         {
