@@ -25,7 +25,7 @@ namespace Meziantou.Analyzer.Rules
             RuleIdentifiers.OptimizeLinqUsage,
             title: "Optimize LINQ usage",
             messageFormat: "Combine '{0}' with '{1}'",
-            RuleCategories.Usage,
+            RuleCategories.Performance,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
@@ -35,7 +35,7 @@ namespace Meziantou.Analyzer.Rules
             RuleIdentifiers.DuplicateEnumerable_OrderBy,
             title: "Optimize LINQ usage",
             messageFormat: "Remove the first '{0}' method or use '{1}'",
-            RuleCategories.Usage,
+            RuleCategories.Performance,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
@@ -45,7 +45,7 @@ namespace Meziantou.Analyzer.Rules
             RuleIdentifiers.OptimizeEnumerable_Count,
             title: "Optimize Enumerable.Count usage",
             messageFormat: "{0}",
-            RuleCategories.Usage,
+            RuleCategories.Performance,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
@@ -80,7 +80,7 @@ namespace Meziantou.Analyzer.Rules
             UseIndexerInsteadOfElementAt(context, operation);
             CombineWhereWithNextMethod(context, operation, enumerableSymbol);
             RemoveTwoConsecutiveOrderBy(context, operation, enumerableSymbol);
-            OptimizeCountUsage(context, operation);
+            OptimizeCountUsage(context, operation, enumerableSymbol);
         }
 
         private void UseCountPropertyInsteadOfMethod(OperationAnalysisContext context, IInvocationOperation operation)
@@ -215,7 +215,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void OptimizeCountUsage(OperationAnalysisContext context, IInvocationOperation operation)
+        private void OptimizeCountUsage(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
         {
             if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Count), StringComparison.Ordinal))
                 return;
@@ -251,15 +251,13 @@ namespace Meziantou.Analyzer.Rules
                             // expr.Count() == 0
                             message = "Replace 'Count() == 0' with 'Any() == false'";
                         }
-                        else if (value == 1)
-                        {
-                            // expr.Count() == 1
-                            message = "Replace 'Count() == 1' with 'Any()'";
-                        }
                         else
                         {
-                            // expr.Count() == 10 => expr.Skip(9).Any()
-                            message = Invariant($"Replace 'Count() == {value}' with 'Skip({value - 1}).Any()'");
+                            // expr.Count() == 1
+                            if (!HasTake())
+                            {
+                                message = Invariant($"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
+                            }
                         }
 
                         break;
@@ -274,6 +272,14 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() != 0
                             message = "Replace 'Count() != 0' with 'Any()'";
+                        }
+                        else
+                        {
+                            // expr.Count() != 1
+                            if (!HasTake())
+                            {
+                                message = Invariant($"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
+                            }
                         }
 
                         break;
@@ -353,15 +359,61 @@ namespace Meziantou.Analyzer.Rules
                         }
 
                         break;
-
                 }
 
                 if (message != null)
                 {
                     context.ReportDiagnostic(Diagnostic.Create(s_optimizeCountRule, binaryOperation.Syntax.GetLocation(), message));
                 }
+            }
+            else
+            {
+                string message = null;
+                switch (opKind)
+                {
+                    case BinaryOperatorKind.Equals:
+                        // expr.Count() == 1
+                        if (!HasTake())
+                        {
+                            message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
+                        }
 
-                // TODO detect non constant values
+                        break;
+
+                    case BinaryOperatorKind.NotEquals:
+                        // expr.Count() != 1
+                        if (!HasTake())
+                        {
+                            message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
+                        }
+
+                        break;
+
+                    case BinaryOperatorKind.LessThan:
+                        // expr.Count() < 10
+                        message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
+                        break;
+
+                    case BinaryOperatorKind.LessThanOrEqual:
+                        // expr.Count() <= 10
+                        message = "Replace 'Count() <= n' with 'Skip(n).Any() == false'";
+                        break;
+
+                    case BinaryOperatorKind.GreaterThan:
+                        // expr.Count() > 1
+                        message = "Replace 'Count() > n' with 'Skip(n).Any()'";
+                        break;
+
+                    case BinaryOperatorKind.GreaterThanOrEqual:
+                        // expr.Count() >= 2
+                        message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
+                        break;
+                }
+
+                if (message != null)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(s_optimizeCountRule, binaryOperation.Syntax.GetLocation(), message));
+                }
             }
 
             bool IsSupportedOperator(BinaryOperatorKind operatorKind)
@@ -400,6 +452,15 @@ namespace Meziantou.Analyzer.Rules
                         return binaryOperation.OperatorKind;
                 }
             }
+
+            bool HasTake()
+            {
+                var op = GetChildLinqOperation(operation);
+                if (op == null)
+                    return false;
+
+                return string.Equals(op.TargetMethod.Name, nameof(Enumerable.Take), StringComparison.Ordinal) && op.TargetMethod.ContainingType.Equals(enumerableSymbol);
+            }
         }
 
         private static ITypeSymbol GetActualType(IArgumentOperation argument)
@@ -428,6 +489,18 @@ namespace Meziantou.Analyzer.Rules
             {
                 return GetParentLinqOperation(parent);
             }
+
+            return null;
+        }
+
+        private static IInvocationOperation GetChildLinqOperation(IInvocationOperation op)
+        {
+            if (op.Arguments.Length == 0)
+                return null;
+
+            var argument = op.Arguments[0].Value;
+            if (argument is IInvocationOperation invocationOperation)
+                return invocationOperation;
 
             return null;
         }
