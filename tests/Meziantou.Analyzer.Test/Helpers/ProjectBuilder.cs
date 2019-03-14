@@ -61,6 +61,10 @@ namespace TestHelper
                 AddReferenceByName("System.Runtime");
                 AddReferenceByName("System.Text.RegularExpressions");
             }
+            else if (type == typeof(System.Threading.Thread))
+            {
+                AddReferenceByName("System.Threading.Thread");
+            }
             else if (type == typeof(System.ComponentModel.InvalidEnumArgumentException))
             {
                 AddReferenceByName("System.Runtime");
