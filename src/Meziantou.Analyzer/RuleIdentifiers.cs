@@ -38,6 +38,7 @@ namespace Meziantou.Analyzer
         public const string DontTagInstanceFieldsWithThreadStaticAttribute = "MA0033";
         public const string DontUseInstanceFieldsOfTypeAsyncLocal = "MA0034";
         public const string DontUseDangerousThreadingMethods = "MA0035";
+        public const string MakeClassStaticAnalyzer = "MA0036";
 
         public static string GetHelpUri(string idenfifier)
         {
