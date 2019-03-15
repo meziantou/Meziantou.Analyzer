@@ -112,6 +112,8 @@ namespace TestHelper
 
         public ProjectBuilder AddWpfApi() => AddApiReference("System.Windows.Window");
 
+        public ProjectBuilder AddXUnit() => AddApiReference("XUnit");
+
         public ProjectBuilder WithSource(string content)
         {
             SourceCode = content;
