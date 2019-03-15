@@ -72,7 +72,7 @@ namespace Meziantou.Analyzer.Rules
             var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (containingMethod != null)
             {
-                var methodInfo = context.SemanticModel.GetSymbolInfo(containingMethod).Symbol as IMethodSymbol;
+                var methodInfo = context.SemanticModel.GetDeclaredSymbol(containingMethod) as IMethodSymbol;
                 if (methodInfo != null)
                 {
                     if (methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("XUnit.FactAttribute")) ||

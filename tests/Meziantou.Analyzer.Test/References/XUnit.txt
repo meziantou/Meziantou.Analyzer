@@ -1,0 +1,6 @@
+﻿namespace XUnit
+{
+    public class FactAttribute : System.Attribute
+    {
+    }
+}
