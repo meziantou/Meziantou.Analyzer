@@ -36,10 +36,10 @@ class Test2
 class Test2
 {
     [System.ThreadStatic]
-    int _a, _b;
+    int _a;
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 5));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 9));
         }
     }
 }

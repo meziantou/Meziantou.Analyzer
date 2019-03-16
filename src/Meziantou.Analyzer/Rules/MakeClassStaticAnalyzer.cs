@@ -31,25 +31,48 @@ namespace Meziantou.Analyzer.Rules
 
             context.RegisterCompilationStartAction(s =>
             {
-                var potentialClasses = new List<(ClassDeclarationSyntax, ITypeSymbol)>();
-                var parentClasses = new List<ITypeSymbol>();
+                var potentialClasses = new List<ITypeSymbol>();
+                var parentClasses = new HashSet<ITypeSymbol>();
 
-                s.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration);
-                s.RegisterCompilationEndAction(context => End());
+                s.RegisterSymbolAction(ctx =>
+                {
+                    var symbol = (INamedTypeSymbol)ctx.Symbol;
+                    if (!symbol.IsReferenceType)
+                        return;
+
+                    if (IsPotentialStatic(symbol))
+                    {
+                        potentialClasses.Add(symbol);
+                    }
+
+                    if (symbol.BaseType != null)
+                    {
+                        parentClasses.Add(symbol.BaseType);
+                    }
+                }, SymbolKind.NamedType);
+
+                s.RegisterCompilationEndAction(ctx =>
+                {
+                    foreach (var c in potentialClasses)
+                    {
+                        if (parentClasses.Contains(c))
+                            continue;
+
+                        foreach (var location in c.Locations)
+                        {
+                            ctx.ReportDiagnostic(Diagnostic.Create(s_rule, location));
+                        }
+                    }
+                });
             });
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context)
+        private bool IsPotentialStatic(INamedTypeSymbol symbol)
         {
-            var node = (ClassDeclarationSyntax)context.Node;
-            var classSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (classSymbol == null || classSymbol.IsStatic)
-                return;
-
-            if (classSymbol.GetMembers().All(member => member.IsStatic))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, node.Identifier.GetLocation()));
-            }
+            return !symbol.IsAbstract &&
+                !symbol.IsStatic &&
+                (symbol.BaseType == null || symbol.BaseType.SpecialType == SpecialType.System_Object) &&
+                symbol.GetMembers().All(member => member.IsStatic || member.IsImplicitlyDeclared);
         }
     }
 }

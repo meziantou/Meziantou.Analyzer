@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Test.Rules
 class Test2
 {
     int _a;
-    static System.Threading.ThreadLocal<int> _b;
+    static System.Threading.AsyncLocal<int> _b;
 }");
 
             VerifyDiagnostic(project);
@@ -34,10 +34,10 @@ class Test2
                   .WithSource(@"
 class Test2
 {
-    System.Threading.AsyncLocal<int> _a, _b;
+    System.Threading.AsyncLocal<int> _a;
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 5));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 38));
         }
     }
 }
