@@ -58,6 +58,7 @@ namespace TestHelper
         /// </summary>
         /// <param name="source">A class in the form of a string to run the analyzer on</param>
         /// <param name="expected"> DiagnosticResults that should appear after the analyzer is run on the source</param>
+        [DebuggerStepThrough]
         protected void VerifyDiagnostic(ProjectBuilder projectBuilder, params DiagnosticResult[] expected)
         {
             VerifyDiagnostics(projectBuilder, GetCSharpDiagnosticAnalyzer(), expected);
@@ -71,6 +72,7 @@ namespace TestHelper
         /// <param name="language">The language of the classes represented by the source strings</param>
         /// <param name="analyzer">The analyzer to be run on the source code</param>
         /// <param name="expected">DiagnosticResults that should appear after the analyzer is run on the sources</param>
+        [DebuggerStepThrough]
         private void VerifyDiagnostics(ProjectBuilder projectBuilder, DiagnosticAnalyzer analyzer, params DiagnosticResult[] expected)
         {
             var diagnostics = GetSortedDiagnostics(projectBuilder, analyzer);
