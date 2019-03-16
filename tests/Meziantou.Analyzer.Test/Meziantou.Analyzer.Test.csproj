@@ -24,4 +24,8 @@
     <EmbeddedResource Include="References\*.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="References\XUnit.txt" />
+  </ItemGroup>
+
 </Project>

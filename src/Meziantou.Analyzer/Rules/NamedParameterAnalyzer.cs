@@ -44,6 +44,7 @@ namespace Meziantou.Analyzer.Rules
                 var nunitAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("NUnit.Framework.Assert");
                 var xunitAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Xunit.Assert");
                 var keyValuePairTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
+                var propertyBuilderType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
 
                 compilationContext.RegisterSyntaxNodeAction(symbolContext =>
                 {
@@ -69,6 +70,9 @@ namespace Meziantou.Analyzer.Rules
                                 var argumentIndex = ArgumentIndex(argument);
 
                                 if (MustSkip(symbolContext, attributeTokenType, methodSymbol))
+                                    return;
+
+                                if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
                                     return;
 
                                 if (IsMethod(methodSymbol, objectType, nameof(object.Equals)))
