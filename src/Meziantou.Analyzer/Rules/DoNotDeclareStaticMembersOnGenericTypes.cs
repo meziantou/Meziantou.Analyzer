@@ -27,17 +27,13 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration);
+            context.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context)
+        private void Analyze(SymbolAnalysisContext context)
         {
-            var node = (ClassDeclarationSyntax)context.Node;
-            if (node == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(node);
-            if (symbol == null || !symbol.IsGenericType)
+            var symbol = (INamedTypeSymbol)context.Symbol;
+            if (!symbol.IsGenericType)
                 return;
 
             foreach (var member in symbol.GetMembers())

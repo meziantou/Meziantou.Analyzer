@@ -1,7 +1,5 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules
@@ -33,24 +31,17 @@ namespace Meziantou.Analyzer.Rules
 
                 if (type != null)
                 {
-                    ctx.RegisterSyntaxNodeAction(_ => Analyze(_, type), SyntaxKind.ClassDeclaration);
+                    ctx.RegisterSymbolAction(_ => Analyze(_, type), SymbolKind.NamedType);
                 }
             });
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol applicationExceptionType)
+        private void Analyze(SymbolAnalysisContext context, INamedTypeSymbol applicationExceptionType)
         {
-            var node = (ClassDeclarationSyntax)context.Node;
-            if (node == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(node);
-            if (symbol == null)
-                return;
-
+            var symbol = (INamedTypeSymbol)context.Symbol;
             if (symbol.InheritsFrom(applicationExceptionType))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+                context.ReportDiagnostic(s_rule, symbol);
             }
         }
     }
