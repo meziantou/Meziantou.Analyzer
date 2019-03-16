@@ -2,10 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.FindSymbols;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -71,6 +68,7 @@ namespace Meziantou.Analyzer.Rules
         {
             return !symbol.IsAbstract &&
                 !symbol.IsStatic &&
+                !symbol.Interfaces.Any() &&
                 (symbol.BaseType == null || symbol.BaseType.SpecialType == SpecialType.System_Object) &&
                 symbol.GetMembers().All(member => member.IsStatic || member.IsImplicitlyDeclared);
         }

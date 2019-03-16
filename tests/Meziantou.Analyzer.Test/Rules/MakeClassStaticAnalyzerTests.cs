@@ -15,25 +15,40 @@ namespace Meziantou.Analyzer.Test.Rules
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
 
         [TestMethod]
-        public void NoDiagnostic()
+        public void AbstractClass_NoDiagnostic()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
-// The class is abstract
 abstract class AbstractClass
 {
     static void A() { }
 }
+");
 
-// Test3 inherits from the class
-class Test2
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void Inherited_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
 {
     static void A() { }
 }
 
-class Test3 : Test2 { }
+class Test2 : Test { }
+");
 
-// The class has one instance field
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void InstanceField_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
 class Test4
 {
     int _a;
@@ -43,6 +58,20 @@ class Test4
             VerifyDiagnostic(project);
         }
 
+        [TestMethod]
+        public void ImplementInterface_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test : ITest
+{
+}
+
+interface ITest { }
+");
+
+            VerifyDiagnostic(project);
+        }
 
         [TestMethod]
         public void Diagnostic()
@@ -51,6 +80,7 @@ class Test4
                   .WithSource(@"
 class Test
 {
+    const int a = 10;
     static void A() { }
 }");
 
