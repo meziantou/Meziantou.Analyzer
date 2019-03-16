@@ -211,5 +211,23 @@ class ClassTest
 
             VerifyDiagnostic(project);
         }
+
+        [TestMethod]
+        public void XUnitAttribute_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .AddXUnit()
+                  .WithSource(@"using System.Threading.Tasks;
+class ClassTest
+{
+    [XUnit.Fact]
+    async Task Test()
+    {
+        await Task.Delay(1);
+    }
+}");
+
+            VerifyDiagnostic(project);
+        }
     }
 }

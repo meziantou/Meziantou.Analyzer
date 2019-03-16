@@ -309,5 +309,30 @@ class TypeName
 
             VerifyFix(project, fix);
         }
+
+        [TestMethod]
+        public void PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public async System.Threading.Tasks.Task Test()
+    {
+        new Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder<int>().IsUnicode(false);
+    }
+}
+
+namespace Microsoft.EntityFrameworkCore.Metadata.Builders
+{
+    public class PropertyBuilder<TProperty>
+    {
+        public bool IsUnicode(bool value) => throw null;
+    }
+}
+");
+
+            VerifyDiagnostic(project);
+        }
     }
 }
