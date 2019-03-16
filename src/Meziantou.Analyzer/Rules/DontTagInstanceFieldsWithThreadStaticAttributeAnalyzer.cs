@@ -1,7 +1,5 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules
@@ -26,23 +24,21 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.FieldDeclaration);
+            context.RegisterSymbolAction(Analyze, SymbolKind.Field);
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context)
+        private void Analyze(SymbolAnalysisContext context)
         {
-            var node = (FieldDeclarationSyntax)context.Node;
-            var variable = node.Declaration?.Variables.FirstOrDefault(); // Just check the first variable
-            if (variable == null)
-                return;
-
-            var field = context.SemanticModel.GetDeclaredSymbol(variable) as IFieldSymbol;
-            if (field == null || field.IsStatic)
+            var field = (IFieldSymbol)context.Symbol;
+            if (field.IsStatic)
                 return;
 
             if (field.HasAttribute(context.Compilation.GetTypeByMetadataName("System.ThreadStaticAttribute")))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+                foreach (var location in field.Locations)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(s_rule, location));
+                }
             }
         }
     }

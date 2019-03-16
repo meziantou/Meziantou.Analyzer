@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Test.Rules
     public class MakeClassStaticAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new MakeClassStaticAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0032";
+        protected override string ExpectedDiagnosticId => "MA0036";
         protected override string ExpectedDiagnosticMessage => "Make class static";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
 
@@ -19,19 +19,42 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
-abstract class Test
+// The class is abstract
+abstract class AbstractClass
 {
     static void A() { }
 }
 
+// Test3 inherits from the class
 class Test2
 {
     static void A() { }
 }
 
-class Test : Test2 { }");
+class Test3 : Test2 { }
+
+// The class has one instance field
+class Test4
+{
+    int _a;
+}
+");
 
             VerifyDiagnostic(project);
+        }
+
+
+        [TestMethod]
+        public void Diagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    static void A() { }
+}");
+
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 2, column: 7));
         }
     }
 }
