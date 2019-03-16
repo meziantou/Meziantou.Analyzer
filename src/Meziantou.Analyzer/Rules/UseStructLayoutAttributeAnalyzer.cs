@@ -33,28 +33,24 @@ namespace Meziantou.Analyzer.Rules
                 if (attributeType == null)
                     return;
 
-                compilationContext.RegisterSyntaxNodeAction(Analyze, SyntaxKind.StructDeclaration);
+                compilationContext.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
             });
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context)
+        private void Analyze(SymbolAnalysisContext context)
         {
-            var declaration = (StructDeclarationSyntax)context.Node;
-            if (declaration == null)
+            var symbol = (INamedTypeSymbol)context.Symbol;
+            if (!symbol.IsValueType)
                 return;
 
             var attributeType = context.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
             if (attributeType == null)
                 return;
 
-            var typeInfo = context.SemanticModel.GetDeclaredSymbol(declaration);
-            if (typeInfo == null)
+            if (symbol.GetAttributes().Any(attr => attributeType.Equals(attr.AttributeClass)))
                 return;
 
-            if (typeInfo.GetAttributes().Any(attr => attributeType.Equals(attr.AttributeClass)))
-                return;
-
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, declaration.GetLocation()));
+            context.ReportDiagnostic(s_rule, symbol);
         }
     }
 }

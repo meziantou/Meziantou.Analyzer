@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Test.Rules
             var project = new ProjectBuilder()
                 .WithSource("struct TypeName { }");
 
-            var expected = CreateDiagnosticResult(line: 1, column: 0);
+            var expected = CreateDiagnosticResult(line: 1, column: 8);
 
             VerifyDiagnostic(project, expected);
 

@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     public class MakeClassStaticAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
-            RuleIdentifiers.MakeClassStaticAnalyzer,
+            RuleIdentifiers.MakeClassStatic,
             title: "Make class static",
             messageFormat: "Make class static",
             RuleCategories.Design,

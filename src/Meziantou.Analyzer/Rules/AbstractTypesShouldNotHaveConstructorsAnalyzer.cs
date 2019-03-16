@@ -1,8 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules
@@ -27,17 +25,13 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ClassDeclaration);
+            context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context)
+        private void AnalyzeSymbol(SymbolAnalysisContext context)
         {
-            var node = (ClassDeclarationSyntax)context.Node;
-            if (node == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(node);
-            if (symbol == null || !symbol.IsAbstract)
+            var symbol = (INamedTypeSymbol)context.Symbol;
+            if (!symbol.IsAbstract)
                 return;
 
             foreach (var ctor in symbol.InstanceConstructors)

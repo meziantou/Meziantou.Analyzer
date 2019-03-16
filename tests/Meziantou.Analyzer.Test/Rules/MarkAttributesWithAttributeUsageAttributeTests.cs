@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
             var project = new ProjectBuilder()
                   .WithSource("class TestAttribute : System.Attribute { }");
 
-            var expected = CreateDiagnosticResult(line: 1, column: 1);
+            var expected = CreateDiagnosticResult(line: 1, column: 7);
             VerifyDiagnostic(project, expected);
         }
 
