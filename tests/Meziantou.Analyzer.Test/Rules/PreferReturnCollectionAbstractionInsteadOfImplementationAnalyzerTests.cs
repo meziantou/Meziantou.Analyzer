@@ -1,4 +1,7 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -14,116 +17,206 @@ namespace Meziantou.Analyzer.Test.Rules
         protected override string ExpectedDiagnosticMessage => "Prefer return collection abstraction instead of implementation";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
-        [TestMethod]
-        public void Fields()
+        private static IEnumerable<object[]> ReturnTypeValues
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;
-public class Test
-{
-    private List<int> a;
-    public List<int> b; // Error
-    protected List<int> c; // Error
-    private protected List<int> d;
-    public string e;
-}");
-
-            var expected1 = CreateDiagnosticResult(line: 5, column: 5);
-            var expected2 = CreateDiagnosticResult(line: 6, column: 5);
-            VerifyDiagnostic(project, expected1, expected2);
+            get
+            {
+                yield return new object[] { "private", "List<int>", true };
+                yield return new object[] { "private", "List<int>", true };
+                yield return new object[] { "public", "Task<List<int>>", false };
+                yield return new object[] { "public", "List<int>", false };
+                yield return new object[] { "protected", "List<int>", false };
+                yield return new object[] { "private protected", "List<int>", true };
+                yield return new object[] { "public", "string", true };
+            }
         }
 
-        [TestMethod]
-        public void Delegates()
+        private static IEnumerable<object[]> ParametersTypeValues
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;
-internal delegate List<int> A();
-public delegate List<int> B(); // Error
-public delegate string C();
-public delegate void D(object p1);
-public delegate void E(List<string> p1); // Error
-");
-
-            var expected = new[]
+            get
             {
-                CreateDiagnosticResult(line: 3, column: 1),
-                CreateDiagnosticResult(line: 6, column: 24),
-            };
-            VerifyDiagnostic(project, expected);
+                yield return new object[] { "private", "List<int>", true };
+                yield return new object[] { "public", "List<int>", false };
+                yield return new object[] { "protected", "List<int>", false };
+                yield return new object[] { "private protected", "List<int>", true };
+                yield return new object[] { "public", "string", true };
+            }
         }
 
-        [TestMethod]
-        public void Indexer()
+        [DataTestMethod]
+        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        public void Fields(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
-    private List<int> this[int value] => throw null;
-    public List<int> this[string value] => throw null; // Error
-    protected List<int> this[object value] => throw null; // Error
-    private protected List<int> this[short value] => throw null;
-    public string this[uint value] => throw null;
-    public string this[List<string> value] => throw null; // Error
+    " + visibility + @"
+    " + type + @" _a;
 }");
 
-            var expected = new[]
+            if (isValid)
             {
-                CreateDiagnosticResult(line: 5, column: 5),
-                CreateDiagnosticResult(line: 6, column: 5),
-                CreateDiagnosticResult(line: 9, column: 24),
-            };
-            VerifyDiagnostic(project, expected);
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
         }
 
-        [TestMethod]
-        public void Properties()
+        [DataTestMethod]
+        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        public void Delegates(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
-    private List<int> A => throw null;
-    public List<int> B => throw null; // Error
-    protected List<int> C => throw null; // Error
-    private protected List<int> D => throw null;
-    public string E => throw null;
+    " + visibility + @" delegate
+    " + type + @" A();
 }");
 
-            var expected = new[]
+            if (isValid)
             {
-                CreateDiagnosticResult(line: 5, column: 5),
-                CreateDiagnosticResult(line: 6, column: 5),
-            };
-            VerifyDiagnostic(project, expected);
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
         }
 
-        [TestMethod]
-        public void Methods()
+        [DataTestMethod]
+        [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
+        public void Delegates_Parameters(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
-    private List<int> A() => throw null;
-    public List<int> B() => throw null; // Error
-    protected List<int> C() => throw null; // Error
-    private protected List<int> D() => throw null;
-    public string E() => throw null;
-    public void F() => throw null;
-    public void G(object p1) => throw null;
-    public void H(List<int> p1) => throw null;
-    internal void I(List<int> p1) => throw null;
+    " + visibility + @" delegate void A(
+    " + type + @" p);
 }");
 
-            var expected = new[]
+            if (isValid)
             {
-                CreateDiagnosticResult(line: 5, column: 5),
-                CreateDiagnosticResult(line: 6, column: 5),
-                CreateDiagnosticResult(line: 11, column: 19),
-            };
-            VerifyDiagnostic(project, expected);
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        public void Indexers(string visibility, string type, bool isValid)
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+public class Test
+{
+    " + visibility + @"
+    " + type + @" this[int value] => throw null;
+}");
+
+            if (isValid)
+            {
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
+        public void Indexers_Parameters(string visibility, string type, bool isValid)
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+public class Test
+{
+    " + visibility + @" int this[
+    " + type + @" value] => throw null;
+}");
+
+            if (isValid)
+            {
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        public void Properties(string visibility, string type, bool isValid)
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+public class Test
+{
+    " + visibility + @"
+    " + type + @" A => throw null;
+}");
+
+            if (isValid)
+            {
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        public void Methods(string visibility, string type, bool isValid)
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+public class Test
+{
+    " + visibility + @"
+    " + type + @" A() => throw null;
+}");
+
+            if (isValid)
+            {
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
+        public void Methods_Parameters(string visibility, string type, bool isValid)
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+public class Test
+{
+    " + visibility + @" void A(
+    " + type + @" p) => throw null;
+}");
+
+            if (isValid)
+            {
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+            }
         }
 
         [TestMethod]

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,14 +28,19 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterSyntaxNodeAction(AnalyzeDelegate, SyntaxKind.DelegateDeclaration);
-            context.RegisterSyntaxNodeAction(AnalyzeField, SyntaxKind.FieldDeclaration);
-            context.RegisterSyntaxNodeAction(AnalyzeIndexer, SyntaxKind.IndexerDeclaration);
-            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
-            context.RegisterSyntaxNodeAction(AnalyzeProperty, SyntaxKind.PropertyDeclaration);
+            context.RegisterCompilationStartAction(ctx =>
+            {
+                var analyzerContext = AnalyzerContext.Create(ctx.Compilation);
+
+                ctx.RegisterSyntaxNodeAction(c => AnalyzeDelegate(c, analyzerContext), SyntaxKind.DelegateDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => AnalyzeField(c, analyzerContext), SyntaxKind.FieldDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => AnalyzeIndexer(c, analyzerContext), SyntaxKind.IndexerDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => AnalyzeMethod(c, analyzerContext), SyntaxKind.MethodDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => AnalyzeProperty(c, analyzerContext), SyntaxKind.PropertyDeclaration);
+            });
         }
 
-        private void AnalyzeField(SyntaxNodeAnalysisContext context)
+        private void AnalyzeField(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
         {
             var node = (FieldDeclarationSyntax)context.Node;
             if (node == null)
@@ -48,13 +54,13 @@ namespace Meziantou.Analyzer.Rules
             if (!symbol.IsVisible())
                 return;
 
-            if (IsValidType(context.Compilation, symbol.Type))
+            if (IsValidType(analyzerContext, symbol.Type))
                 return;
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+            context.ReportDiagnostic(Diagnostic.Create(s_rule, node.Declaration.Type.GetLocation()));
         }
 
-        private void AnalyzeDelegate(SyntaxNodeAnalysisContext context)
+        private void AnalyzeDelegate(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
         {
             var node = (DelegateDeclarationSyntax)context.Node;
             if (node == null)
@@ -65,15 +71,15 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = node.ReturnType;
-            if (type != null && !IsValidType(context.Compilation, context.SemanticModel.GetTypeInfo(type).Type))
+            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type).Type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+                context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
             }
 
-            AnalyzeParameters(context, node.ParameterList?.Parameters);
+            AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
         }
 
-        private void AnalyzeIndexer(SyntaxNodeAnalysisContext context)
+        private void AnalyzeIndexer(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
         {
             var node = (IndexerDeclarationSyntax)context.Node;
             if (node == null)
@@ -84,15 +90,15 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = node.Type;
-            if (type != null && !IsValidType(context.Compilation, context.SemanticModel.GetTypeInfo(type).Type))
+            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type).Type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+                context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
             }
 
-            AnalyzeParameters(context, node.ParameterList?.Parameters);
+            AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
         }
 
-        private void AnalyzeProperty(SyntaxNodeAnalysisContext context)
+        private void AnalyzeProperty(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
         {
             var node = (PropertyDeclarationSyntax)context.Node;
             if (node == null)
@@ -103,13 +109,13 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = node.Type;
-            if (type == null || IsValidType(context.Compilation, context.SemanticModel.GetTypeInfo(type).Type))
+            if (type == null || IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type).Type))
                 return;
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+            context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
         }
 
-        private void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+        private void AnalyzeMethod(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
         {
             var node = (MethodDeclarationSyntax)context.Node;
             if (node == null)
@@ -120,56 +126,73 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = node.ReturnType;
-            if (type != null && !IsValidType(context.Compilation, context.SemanticModel.GetTypeInfo(type).Type))
+            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type).Type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+                context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
             }
 
-            AnalyzeParameters(context, node.ParameterList?.Parameters);
+            AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
         }
 
-        private void AnalyzeParameters(SyntaxNodeAnalysisContext context, IEnumerable<ParameterSyntax> parameters)
+        private void AnalyzeParameters(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext, IEnumerable<ParameterSyntax> parameters)
         {
             if (parameters != null)
             {
                 foreach (var parameter in parameters)
                 {
-                    AnalyzeParameter(context, parameter);
+                    AnalyzeParameter(context, analyzerContext, parameter);
                 }
             }
         }
 
-        private void AnalyzeParameter(SyntaxNodeAnalysisContext context, ParameterSyntax parameter)
+        private void AnalyzeParameter(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext, ParameterSyntax parameter)
         {
             var type = parameter.Type;
-            if (type != null && !IsValidType(context.Compilation, context.SemanticModel.GetTypeInfo(type).Type))
+            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type).Type))
             {
                 context.ReportDiagnostic(Diagnostic.Create(s_rule, parameter.GetLocation()));
             }
         }
 
-        private bool IsValidType(Compilation compilation, ITypeSymbol symbol)
+        private bool IsValidType(AnalyzerContext analyzerContext, ITypeSymbol symbol)
         {
             if (symbol == null)
                 return true;
 
-            var list = compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
-            var hashset = compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1");
-            var dictionary = compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2");
-            var collection = compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1");
-            var readonlyCollection = compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1");
-
             var originalDefinition = symbol.OriginalDefinition;
-            if (originalDefinition.IsEqualsTo(list) ||
-                originalDefinition.IsEqualsTo(dictionary) ||
-                originalDefinition.IsEqualsTo(hashset) ||
-                originalDefinition.IsEqualsTo(collection) ||
-                originalDefinition.IsEqualsTo(readonlyCollection))
-            {
+            if (analyzerContext.ConcreteCollectionSymbols.Any(t => t.Equals(originalDefinition)))
                 return false;
+
+            var namedTypeSymbol = symbol as INamedTypeSymbol;
+            if (namedTypeSymbol != null)
+            {
+                if (analyzerContext.TaskSymbols.Any(t => t.Equals(symbol.OriginalDefinition)))
+                {
+                    return IsValidType(analyzerContext, namedTypeSymbol.TypeArguments[0]);
+                }
             }
 
             return true;
+        }
+
+        private class AnalyzerContext
+        {
+            public static AnalyzerContext Create(Compilation compilation)
+            {
+                var context = new AnalyzerContext();
+
+                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"));
+                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
+                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
+                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1"));
+
+                context.TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
+                context.TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
+                return context;
+            }
+
+            public List<ITypeSymbol> ConcreteCollectionSymbols { get; } = new List<ITypeSymbol>();
+            public List<ITypeSymbol> TaskSymbols { get; } = new List<ITypeSymbol>();
         }
     }
 }
