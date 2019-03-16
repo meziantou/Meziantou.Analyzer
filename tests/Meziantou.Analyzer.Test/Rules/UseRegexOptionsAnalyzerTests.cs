@@ -15,8 +15,12 @@ namespace Meziantou.Analyzer.Test.Rules
         protected override string ExpectedDiagnosticMessage => "Add RegexOptions.ExplicitCapture";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
-        [TestMethod]
-        public void IsMatch_RegexOptions()
+        [DataTestMethod]
+        [DataRow("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", false)]
+        [DataRow("([a-z]+)", "RegexOptions.None", false)]
+        [DataRow("([a-z]+)", "RegexOptions.ExplicitCapture", true)]
+        [DataRow("(?<test>[a-z]+)", "RegexOptions.None", true)]
+        public void IsMatch_RegexOptions(string regex, string options, bool isValid)
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Regex))
@@ -25,17 +29,28 @@ class TestClass
 {
     void Test()
     {
-        Regex.IsMatch(""test"", ""[a-z]+"", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, default);
-        Regex.IsMatch(""test"", ""[a-z]+"", RegexOptions.ExplicitCapture, default);
+        Regex.IsMatch(""test"", """ + regex + @""", " + options + @", default);
     }
 }");
 
-            var expected = CreateDiagnosticResult(line: 6, column: 41);
-            VerifyDiagnostic(project, expected);
+            if (isValid)
+            {
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 35 + regex.Length));
+            }
         }
 
-        [TestMethod]
-        public void Ctor_RegexOptions()
+        [DataTestMethod]
+        [DataRow("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", false)]
+        [DataRow("(?<test>[a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", true)]
+        [DataRow("[a-z]+", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", true)]
+        [DataRow("[a-z]+", "RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase", true)]
+        [DataRow("[a-z]+", "RegexOptions.ECMAScript", true)]
+        [DataRow("([a-z]+)", "RegexOptions.ECMAScript", true)]
+        public void Ctor_RegexOptions(string regex, string options, bool isValid)
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Regex))
@@ -44,14 +59,18 @@ class TestClass
 {
     void Test()
     {
-        new Regex(""[a-z]+"", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, default);
-        new Regex(""[a-z]+"", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase, default);
-        new Regex(""[a-z]+"", RegexOptions.ECMAScript, default);
+        new Regex(""" + regex + @""", " + options + @", default);
     }
 }");
 
-            var expected = CreateDiagnosticResult(line: 6, column: 29);
-            VerifyDiagnostic(project, expected);
+            if (isValid)
+            {
+                VerifyDiagnostic(project);
+            }
+            else
+            {
+                VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 23 + regex.Length));
+            }
         }
     }
 }

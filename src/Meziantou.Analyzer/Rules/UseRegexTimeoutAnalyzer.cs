@@ -69,7 +69,7 @@ namespace Meziantou.Analyzer.Rules
                 context.ReportDiagnostic(Diagnostic.Create(s_timeoutRule, op.Syntax.GetLocation()));
             }
 
-            CheckRegexOptionsArgument(context, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
+            CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
         }
 
         private void AnalyzeObjectCreation(OperationAnalysisContext context)
@@ -89,10 +89,10 @@ namespace Meziantou.Analyzer.Rules
                 context.ReportDiagnostic(Diagnostic.Create(s_timeoutRule, op.Syntax.GetLocation()));
             }
 
-            CheckRegexOptionsArgument(context, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
+            CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
         }
 
-        private void CheckRegexOptionsArgument(OperationAnalysisContext context, IEnumerable<IArgumentOperation> arguments, ITypeSymbol regexOptionsSymbol)
+        private void CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol regexOptionsSymbol)
         {
             if (regexOptionsSymbol == null)
                 return;
@@ -104,10 +104,38 @@ namespace Meziantou.Analyzer.Rules
             if (arg.Value.ConstantValue.HasValue)
             {
                 var value = ((RegexOptions)arg.Value.ConstantValue.Value);
-                if (!value.HasFlag(RegexOptions.ExplicitCapture) && !value.HasFlag(RegexOptions.ECMAScript))
+                if (!value.HasFlag(RegexOptions.ExplicitCapture) && !value.HasFlag(RegexOptions.ECMAScript)) // The 2 options are exclusives
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(s_explicitCaptureRule, arg.Syntax.GetLocation()));
+                    if (HasUnnamedGroups(value))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(s_explicitCaptureRule, arg.Syntax.GetLocation()));
+                    }
                 }
+            }
+
+            bool HasUnnamedGroups(RegexOptions options)
+            {
+                if (patternArgumentIndex < arguments.Length)
+                {
+                    var argument = arguments[patternArgumentIndex];
+                    if (argument.Value != null && argument.Value.ConstantValue.HasValue && argument.Value.ConstantValue.Value is string pattern)
+                    {
+                        try
+                        {
+                            var regex1 = new Regex(pattern, options, Regex.InfiniteMatchTimeout);
+                            var regex2 = new Regex(pattern, options | RegexOptions.ExplicitCapture, Regex.InfiniteMatchTimeout);
+
+                            // All groups are named => No need for explicit capture
+                            if (regex1.GetGroupNames().Length == regex2.GetGroupNames().Length)
+                                return false;
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+
+                return true;
             }
         }
     }
