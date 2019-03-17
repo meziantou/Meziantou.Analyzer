@@ -33,7 +33,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
         }
 
-        private void Analyze(OperationAnalysisContext context)
+        private static void Analyze(OperationAnalysisContext context)
         {
             var op = (IObjectCreationOperation)context.Operation;
             if (op == null)

@@ -32,7 +32,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSyntaxTreeAction(AnalyzeTree);
         }
 
-        private void AnalyzeTree(SyntaxTreeAnalysisContext context)
+        private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
         {
             var root = context.Tree.GetCompilationUnitRoot(context.CancellationToken);
             var commentNodes = root.DescendantTrivia().Where(node => node.IsKind(SyntaxKind.MultiLineCommentTrivia) || node.IsKind(SyntaxKind.SingleLineCommentTrivia));

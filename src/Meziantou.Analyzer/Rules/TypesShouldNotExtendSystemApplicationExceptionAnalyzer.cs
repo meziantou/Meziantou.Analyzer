@@ -36,7 +36,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private void Analyze(SymbolAnalysisContext context, INamedTypeSymbol applicationExceptionType)
+        private static void Analyze(SymbolAnalysisContext context, INamedTypeSymbol applicationExceptionType)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
             if (symbol.InheritsFrom(applicationExceptionType))

@@ -64,7 +64,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private bool IsPotentialStatic(INamedTypeSymbol symbol)
+        private static bool IsPotentialStatic(INamedTypeSymbol symbol)
         {
             return !symbol.IsAbstract &&
                 !symbol.IsStatic &&

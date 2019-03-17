@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
         }
 
-        private void AnalyzeInvocation(OperationAnalysisContext context)
+        private static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
             if (string.Equals(operation.TargetMethod.Name, nameof(string.GetHashCode), StringComparison.Ordinal) &&

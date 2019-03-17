@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSymbolAction(Analyze, SymbolKind.Field);
         }
 
-        private void Analyze(SymbolAnalysisContext context)
+        private static void Analyze(SymbolAnalysisContext context)
         {
             var field = (IFieldSymbol)context.Symbol;
             if (field.IsStatic)

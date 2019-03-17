@@ -28,7 +28,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(AnalyzeInvocation, OperationKind.BinaryOperator);
         }
 
-        private void AnalyzeInvocation(OperationAnalysisContext context)
+        private static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IBinaryOperation)context.Operation;
             if (operation.OperatorKind == BinaryOperatorKind.Equals ||

@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
         }
 
-        private void Analyze(SymbolAnalysisContext context)
+        private static void Analyze(SymbolAnalysisContext context)
         {
             var attributeType = context.Compilation.GetTypeByMetadataName("System.Attribute");
             var attributeUsageAttributeType = context.Compilation.GetTypeByMetadataName("System.AttributeUsageAttribute");

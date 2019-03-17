@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSyntaxNodeAction(AnalyzeAwaitExpression, SyntaxKind.AwaitExpression);
         }
 
-        private void AnalyzeAwaitExpression(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeAwaitExpression(SyntaxNodeAnalysisContext context)
         {
             // if expression is of type ConfiguredTaskAwaitable, do nothing
             // If ConfigureAwait(false) somewhere in a method, all following await calls should have ConfigureAwait(false)

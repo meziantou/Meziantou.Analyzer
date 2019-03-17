@@ -61,7 +61,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(Analyze, OperationKind.Invocation);
         }
 
-        private void Analyze(OperationAnalysisContext context)
+        private static void Analyze(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
             if (operation.Arguments.Length == 0)
@@ -83,7 +83,7 @@ namespace Meziantou.Analyzer.Rules
             OptimizeCountUsage(context, operation, enumerableSymbol);
         }
 
-        private void UseCountPropertyInsteadOfMethod(OperationAnalysisContext context, IInvocationOperation operation)
+        private static void UseCountPropertyInsteadOfMethod(OperationAnalysisContext context, IInvocationOperation operation)
         {
             if (operation.Arguments.Length != 1)
                 return;
@@ -123,7 +123,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void UseFindInsteadOfFirstOrDefault(OperationAnalysisContext context, IInvocationOperation operation)
+        private static void UseFindInsteadOfFirstOrDefault(OperationAnalysisContext context, IInvocationOperation operation)
         {
             if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.FirstOrDefault), StringComparison.Ordinal))
                 return;
@@ -138,7 +138,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void UseIndexerInsteadOfElementAt(OperationAnalysisContext context, IInvocationOperation operation)
+        private static void UseIndexerInsteadOfElementAt(OperationAnalysisContext context, IInvocationOperation operation)
         {
             var argCount = -1;
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ElementAt), StringComparison.Ordinal))
@@ -172,7 +172,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void CombineWhereWithNextMethod(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
+        private static void CombineWhereWithNextMethod(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
         {
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
             {
@@ -196,7 +196,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void RemoveTwoConsecutiveOrderBy(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
+        private static void RemoveTwoConsecutiveOrderBy(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
         {
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                 string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal) ||
@@ -215,7 +215,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void OptimizeCountUsage(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
+        private static void OptimizeCountUsage(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
         {
             if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Count), StringComparison.Ordinal))
                 return;

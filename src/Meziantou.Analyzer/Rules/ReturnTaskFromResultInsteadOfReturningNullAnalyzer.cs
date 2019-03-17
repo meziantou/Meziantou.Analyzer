@@ -35,7 +35,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSyntaxNodeAction(AnalyzeAnonymousMethod, SyntaxKind.AnonymousMethodExpression);
         }
 
-        private void AnalyzeAnonymousMethod(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeAnonymousMethod(SyntaxNodeAnalysisContext context)
         {
             var node = (AnonymousMethodExpressionSyntax)context.Node;
             if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
@@ -48,7 +48,7 @@ namespace Meziantou.Analyzer.Rules
             AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body));
         }
 
-        private void AnalyzeLambda(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeLambda(SyntaxNodeAnalysisContext context)
         {
             var node = (LambdaExpressionSyntax)context.Node;
             if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
@@ -72,7 +72,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void AnalyzeLocalFunction(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeLocalFunction(SyntaxNodeAnalysisContext context)
         {
             var node = (LocalFunctionStatementSyntax)context.Node;
             if (node.Modifiers.Any(SyntaxKind.AsyncKeyword))
@@ -86,7 +86,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
         {
             var node = (MethodDeclarationSyntax)context.Node;
             if (node.Modifiers.Any(SyntaxKind.AsyncKeyword))

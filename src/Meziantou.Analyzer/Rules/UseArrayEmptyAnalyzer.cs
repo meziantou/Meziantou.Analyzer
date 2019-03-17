@@ -42,7 +42,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private void AnalyzeArrayCreationOperation(OperationAnalysisContext context)
+        private static void AnalyzeArrayCreationOperation(OperationAnalysisContext context)
         {
             var operation = (IArrayCreationOperation)context.Operation;
             if (IsZeroLengthArrayCreation(operation))

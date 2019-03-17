@@ -32,7 +32,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.MethodDeclaration);
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context)
+        private static void Analyze(SyntaxNodeAnalysisContext context)
         {
             var node = (MethodDeclarationSyntax)context.Node;
             var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node) as IMethodSymbol;

@@ -40,7 +40,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private void Analyze(OperationAnalysisContext context, ISymbol eventSymbol)
+        private static void Analyze(OperationAnalysisContext context, ISymbol eventSymbol)
         {
             var operation = (IPropertyReferenceOperation)context.Operation;
             if (operation.Property.Equals(eventSymbol))

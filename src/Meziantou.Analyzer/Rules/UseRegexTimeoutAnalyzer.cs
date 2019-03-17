@@ -44,7 +44,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
         }
 
-        private void AnalyzeInvocation(OperationAnalysisContext context)
+        private static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var op = (IInvocationOperation)context.Operation;
             if (op == null || op.TargetMethod == null)
@@ -71,7 +71,7 @@ namespace Meziantou.Analyzer.Rules
             CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
         }
 
-        private void AnalyzeObjectCreation(OperationAnalysisContext context)
+        private static void AnalyzeObjectCreation(OperationAnalysisContext context)
         {
             var op = (IObjectCreationOperation)context.Operation;
             if (op == null)
@@ -91,7 +91,7 @@ namespace Meziantou.Analyzer.Rules
             CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
         }
 
-        private void CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol regexOptionsSymbol)
+        private static void CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol regexOptionsSymbol)
         {
             if (regexOptionsSymbol == null)
                 return;
