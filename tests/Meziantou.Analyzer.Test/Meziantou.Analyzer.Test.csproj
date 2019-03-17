@@ -25,6 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="References\Microsoft.AspNetCore.txt" />
+    <None Remove="References\MSTest.txt" />
+    <None Remove="References\NUnit.txt" />
     <None Remove="References\XUnit.txt" />
   </ItemGroup>
 

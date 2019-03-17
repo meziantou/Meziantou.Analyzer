@@ -112,7 +112,13 @@ namespace TestHelper
 
         public ProjectBuilder AddWpfApi() => AddApiReference("System.Windows.Window");
 
+        public ProjectBuilder AddMSTest() => AddApiReference("MSTest");
+
+        public ProjectBuilder AddNUnit() => AddApiReference("NUnit");
+
         public ProjectBuilder AddXUnit() => AddApiReference("XUnit");
+
+        public ProjectBuilder AddMicrosoftAspNetCore() => AddApiReference("Microsoft.AspNetCore");
 
         public ProjectBuilder WithSource(string content)
         {

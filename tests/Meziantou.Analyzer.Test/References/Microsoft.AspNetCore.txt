@@ -1,0 +1,27 @@
+﻿namespace Microsoft.AspNetCore.Builder
+{
+    public interface IApplicationBuilder
+    {
+    }
+}
+
+namespace Microsoft.AspNetCore.Http
+{
+    public delegate System.Threading.Tasks.Task RequestDelegate(HttpContext context);
+
+    public abstract class HttpContext
+    {
+    }
+
+    public interface IMiddleware
+    {
+        System.Threading.Tasks.Task InvokeAsync(Microsoft.AspNetCore.Http.HttpContext context, Microsoft.AspNetCore.Http.RequestDelegate next);
+    }
+}
+
+namespace Microsoft.Extensions.DependencyInjection
+{
+    public interface IServiceCollection
+    {
+    }
+}
