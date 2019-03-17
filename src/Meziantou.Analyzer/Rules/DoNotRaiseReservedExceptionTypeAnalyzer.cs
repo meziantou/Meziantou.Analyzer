@@ -49,7 +49,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private void Analyze(OperationAnalysisContext context, IEnumerable<INamedTypeSymbol> reservedExceptionTypes)
+        private static void Analyze(OperationAnalysisContext context, IEnumerable<INamedTypeSymbol> reservedExceptionTypes)
         {
             var operation = (IThrowOperation)context.Operation;
             if (operation == null || operation.Exception == null)

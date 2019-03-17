@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
         }
 
-        private void AnalyzeInvocation(OperationAnalysisContext context)
+        private static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var stringComparisonType = context.Compilation.GetTypeByMetadataName("System.StringComparison");
             var stringType = context.Compilation.GetSpecialType(SpecialType.System_String);

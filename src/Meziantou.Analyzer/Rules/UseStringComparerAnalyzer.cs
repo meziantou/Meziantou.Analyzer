@@ -53,7 +53,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterCompilationStartAction(AnalyzeMethods);
         }
 
-        private INamedTypeSymbol GetIComparableString(Compilation compilation)
+        private static INamedTypeSymbol GetIComparableString(Compilation compilation)
         {
             var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
             if (equalityComparerInterfaceType == null)
@@ -66,7 +66,7 @@ namespace Meziantou.Analyzer.Rules
             return equalityComparerInterfaceType.Construct(stringType);
         }
 
-        private void AnalyzeConstructors(CompilationStartAnalysisContext compilationContext)
+        private static void AnalyzeConstructors(CompilationStartAnalysisContext compilationContext)
         {
             var stringEqualityComparerInterfaceType = GetIComparableString(compilationContext.Compilation);
             if (stringEqualityComparerInterfaceType == null)
@@ -101,7 +101,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private void AnalyzeMethods(CompilationStartAnalysisContext compilationContext)
+        private static void AnalyzeMethods(CompilationStartAnalysisContext compilationContext)
         {
             var stringEqualityComparerInterfaceType = GetIComparableString(compilationContext.Compilation);
             if (stringEqualityComparerInterfaceType == null)

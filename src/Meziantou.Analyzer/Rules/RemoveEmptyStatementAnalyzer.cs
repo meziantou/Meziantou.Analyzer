@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.EmptyStatement);
         }
 
-        private void Analyze(SyntaxNodeAnalysisContext context)
+        private static void Analyze(SyntaxNodeAnalysisContext context)
         {
             var node = (EmptyStatementSyntax)context.Node;
             if (node == null)

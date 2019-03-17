@@ -35,7 +35,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private void Analyze(SymbolAnalysisContext context)
+        private static void Analyze(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
             if (!symbol.IsValueType)

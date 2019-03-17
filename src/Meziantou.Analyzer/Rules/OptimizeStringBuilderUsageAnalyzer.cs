@@ -30,7 +30,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(Analyze, OperationKind.Invocation);
         }
 
-        private void Analyze(OperationAnalysisContext context)
+        private static void Analyze(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
             if (operation.Arguments.Length == 0)
@@ -87,16 +87,22 @@ namespace Meziantou.Analyzer.Rules
 
             // Check for concatenation and FormattableString
             var value = argument.Value;
-            if (value is IInterpolatedStringOperation interpolationStringOperation)
+            if (value is IInterpolatedStringOperation)
             {
-                if (interpolationStringOperation.Parts.All(p => p is IInterpolatedStringTextOperation))
+                if (IsConstString(value))
                     return false;
 
                 return true;
             }
-            else if (value is IBinaryOperation)
+            else if (value is IBinaryOperation binaryOperation)
             {
-                return true;
+                if (value.Type.IsString())
+                {
+                    if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
+                        return false;
+
+                    return true;
+                }
             }
             else if (value is IInvocationOperation invocationOperation)
             {
@@ -117,6 +123,31 @@ namespace Meziantou.Analyzer.Rules
             }
 
             return false;
+        }
+
+        private static bool IsConstString(IOperation operation)
+        {
+            if (operation == null)
+                return false;
+
+            if (operation is IInterpolatedStringOperation interpolationStringOperation)
+            {
+                if (interpolationStringOperation.Parts.All(p => p is IInterpolatedStringTextOperation || IsConstString(p)))
+                    return true;
+
+                return false;
+            }
+
+            if (operation is IInterpolatedStringContentOperation interpolated)
+            {
+                var op = interpolated.Children.SingleOrDefault();
+                if (op != null)
+                {
+                    return IsConstString(op);
+                }
+            }
+
+            return operation.ConstantValue.HasValue && operation.ConstantValue.Value is string;
         }
     }
 }

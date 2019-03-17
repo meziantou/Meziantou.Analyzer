@@ -28,7 +28,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
         }
 
-        private void Analyze(SymbolAnalysisContext context)
+        private static void Analyze(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
             if (!symbol.IsGenericType)

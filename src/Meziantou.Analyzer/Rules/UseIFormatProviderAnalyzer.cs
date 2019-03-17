@@ -28,7 +28,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
         }
 
-        private void AnalyzeInvocation(OperationAnalysisContext context)
+        private static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var formatProviderType = context.Compilation.GetTypeByMetadataName("System.IFormatProvider");
             var cultureInfoType = context.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");

@@ -32,7 +32,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(Analyze, OperationKind.Throw);
         }
 
-        private void Analyze(OperationAnalysisContext context)
+        private static void Analyze(OperationAnalysisContext context)
         {
             var operation = (IThrowOperation)context.Operation;
             if (operation.Exception == null)

@@ -32,7 +32,7 @@ namespace TestHelper
         /// <param name="language">The language the source classes are in</param>
         /// <param name="analyzer">The analyzer to be run on the sources</param>
         /// <returns>An IEnumerable of Diagnostics that surfaced in the source code, sorted by Location</returns>
-        private Diagnostic[] GetSortedDiagnostics(ProjectBuilder projectBuilder, DiagnosticAnalyzer analyzer)
+        private static Diagnostic[] GetSortedDiagnostics(ProjectBuilder projectBuilder, DiagnosticAnalyzer analyzer)
         {
             return GetSortedDiagnosticsFromDocuments(analyzer, GetDocuments(projectBuilder));
         }
@@ -113,7 +113,7 @@ namespace TestHelper
         /// Given an array of strings as sources and a language, turn them into a project and return the documents and spans of it.
         /// </summary>
         /// <returns>A Tuple containing the Documents produced from the sources and their TextSpans if relevant</returns>
-        private Document[] GetDocuments(ProjectBuilder projectBuilder)
+        private static Document[] GetDocuments(ProjectBuilder projectBuilder)
         {
             var project = CreateProject(projectBuilder);
             var documents = project.Documents.ToArray();
@@ -130,7 +130,7 @@ namespace TestHelper
         /// Create a Document from a string through creating a project that contains it.
         /// </summary>
         /// <returns>A Document created from the source string</returns>
-        protected Document CreateDocument(ProjectBuilder projectBuilder)
+        protected static Document CreateDocument(ProjectBuilder projectBuilder)
         {
             return CreateProject(projectBuilder).Documents.First();
         }
@@ -139,7 +139,7 @@ namespace TestHelper
         /// Create a project using the inputted strings as sources.
         /// </summary>
         /// <returns>A Project created out of the Documents created from the source strings</returns>
-        private Project CreateProject(ProjectBuilder projectBuilder)
+        private static Project CreateProject(ProjectBuilder projectBuilder)
         {
             var fileNamePrefix = DefaultFilePathPrefix;
             var fileExt = CSharpDefaultFileExt;

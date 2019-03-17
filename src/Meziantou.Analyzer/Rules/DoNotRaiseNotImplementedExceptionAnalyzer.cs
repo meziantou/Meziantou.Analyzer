@@ -37,7 +37,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private void Analyze(OperationAnalysisContext context, INamedTypeSymbol reservedExceptionType)
+        private static void Analyze(OperationAnalysisContext context, INamedTypeSymbol reservedExceptionType)
         {
             var operation = (IThrowOperation)context.Operation;
             if (operation == null || operation.Exception == null)

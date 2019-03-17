@@ -30,7 +30,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(Analyze, OperationKind.PropertyReference);
         }
 
-        private void Analyze(OperationAnalysisContext context)
+        private static void Analyze(OperationAnalysisContext context)
         {
             var operation = (IPropertyReferenceOperation)context.Operation;
 #pragma warning disable MA0024 // Use StringComparer.Ordinal

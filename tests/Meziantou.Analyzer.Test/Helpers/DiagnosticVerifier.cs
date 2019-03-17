@@ -73,7 +73,7 @@ namespace TestHelper
         /// <param name="analyzer">The analyzer to be run on the source code</param>
         /// <param name="expected">DiagnosticResults that should appear after the analyzer is run on the sources</param>
         [DebuggerStepThrough]
-        private void VerifyDiagnostics(ProjectBuilder projectBuilder, DiagnosticAnalyzer analyzer, params DiagnosticResult[] expected)
+        private static void VerifyDiagnostics(ProjectBuilder projectBuilder, DiagnosticAnalyzer analyzer, params DiagnosticResult[] expected)
         {
             var diagnostics = GetSortedDiagnostics(projectBuilder, analyzer);
             VerifyDiagnosticResults(diagnostics, analyzer, expected);

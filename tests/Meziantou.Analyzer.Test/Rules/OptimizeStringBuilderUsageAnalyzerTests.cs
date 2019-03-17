@@ -34,6 +34,9 @@ class Test
         [DataRow("10 + 20")]
         [DataRow(@"""abc""")]
         [DataRow(@"$""abc""")]
+        [DataRow(@"$""abc{""test""}""")]
+        [DataRow(@"""abc"" + ""test""")]
+        [DataRow(@"$""abc{""test""}"" + ""test""")]
         public void Append_NoDiagnostic(string text)
         {
             var project = new ProjectBuilder()
