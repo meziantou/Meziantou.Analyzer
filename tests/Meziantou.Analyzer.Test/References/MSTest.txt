@@ -1,0 +1,15 @@
+﻿namespace Microsoft.VisualStudio.TestTools.UnitTesting
+{
+    public class TestMethodAttribute : System.Attribute
+    {
+    }
+
+    public class DataTestMethodAttribute : System.Attribute
+    {
+    }
+
+    public class Assert
+    {
+        public static void AreEqual(object expected, object actual) { }
+    }
+}

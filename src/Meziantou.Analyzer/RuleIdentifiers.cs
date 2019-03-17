@@ -40,6 +40,7 @@ namespace Meziantou.Analyzer
         public const string DontUseDangerousThreadingMethods = "MA0035";
         public const string MakeClassStatic = "MA0036";
         public const string RemoveEmptyStatement = "MA0037";
+        public const string MakeMethodStatic = "MA0038";
 
         public static string GetHelpUri(string idenfifier)
         {

@@ -1,9 +1,5 @@
-﻿namespace Xunit
+﻿namespace NUnit.Framework
 {
-    public class FactAttribute : System.Attribute
-    {
-    }
-
     public class Assert
     {
         public static void AreEqual(object expected, object actual) { }

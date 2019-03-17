@@ -75,7 +75,7 @@ namespace Meziantou.Analyzer.Rules
                 var methodInfo = context.SemanticModel.GetDeclaredSymbol(containingMethod) as IMethodSymbol;
                 if (methodInfo != null)
                 {
-                    if (methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("XUnit.FactAttribute")) ||
+                    if (methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("Xunit.FactAttribute")) ||
                         methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("NUnit.Framework.NUnitAttribute")) ||
                         methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("NUnit.Framework.TheoryAttribute")) ||
                         methodInfo.HasAttribute(context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute")) ||

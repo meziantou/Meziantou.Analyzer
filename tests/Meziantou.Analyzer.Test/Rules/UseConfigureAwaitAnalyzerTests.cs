@@ -220,7 +220,7 @@ class ClassTest
                   .WithSource(@"using System.Threading.Tasks;
 class ClassTest
 {
-    [XUnit.Fact]
+    [Xunit.Fact]
     async Task Test()
     {
         await Task.Delay(1);
