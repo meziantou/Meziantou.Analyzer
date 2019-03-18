@@ -87,6 +87,9 @@ namespace Meziantou.Analyzer.Rules
                                 if (IsMethod(methodSymbol, taskGenericTokenType, nameof(Task.ConfigureAwait)))
                                     return;
 
+                                if (IsMethod(methodSymbol, taskTokenType, nameof(Task.FromResult)))
+                                    return;
+
                                 if (IsMethod(methodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
                                     return;
 

@@ -313,5 +313,22 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
             VerifyDiagnostic(project);
         }
+
+        [TestMethod]
+        public void Task_FromResult_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public void Test()
+    {
+        _ = System.Threading.Tasks.Task.FromResult(true);
+    }
+}
+");
+
+            VerifyDiagnostic(project);
+        }
     }
 }
