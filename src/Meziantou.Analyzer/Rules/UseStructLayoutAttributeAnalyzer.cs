@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer.Rules
         private static void Analyze(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (!symbol.IsValueType)
+            if (!symbol.IsValueType || symbol.EnumUnderlyingType != null) // Only support struct
                 return;
 
             var attributeType = context.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");

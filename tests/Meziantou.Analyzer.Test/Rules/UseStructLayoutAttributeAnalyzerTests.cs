@@ -65,5 +65,18 @@ struct TypeName
 
             VerifyDiagnostic(project);
         }
+
+        [TestMethod]
+        public void Enum_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                .WithSource(@"
+enum TypeName
+{
+    None,
+}");
+
+            VerifyDiagnostic(project);
+        }
     }
 }
