@@ -40,7 +40,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             if (!IsPotentialStatic(methodSymbol) ||
-                IsUnitTestMethod(methodSymbol) ||
+                methodSymbol.IsUnitTestMethod() ||
                 IsAspNetCoreMiddleware(context.Compilation, methodSymbol) ||
                 IsAspNetCoreStartup(context.Compilation, methodSymbol))
             {
@@ -87,41 +87,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-
             return false;
-        }
-
-        private static bool IsUnitTestMethod(IMethodSymbol methodSymbol)
-        {
-            var attributes = methodSymbol.GetAttributes();
-            foreach (var attribute in attributes)
-            {
-                var ns = attribute.AttributeClass.ContainingNamespace;
-                if (IsNamespace(ns, new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" }) ||
-                    IsNamespace(ns, new[] { "NUnit", "Framework" }) ||
-                    IsNamespace(ns, new[] { "Xunit" }))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool IsNamespace(INamespaceSymbol namespaceSymbol, string[] ns)
-        {
-            for (var i = ns.Length - 1; i >= 0; i--)
-            {
-                if (namespaceSymbol == null || namespaceSymbol.IsGlobalNamespace)
-                    return false;
-
-                if (!string.Equals(ns[i], namespaceSymbol.Name, System.StringComparison.Ordinal))
-                    return false;
-
-                namespaceSymbol = namespaceSymbol.ContainingNamespace;
-            }
-
-            return namespaceSymbol == null || namespaceSymbol.IsGlobalNamespace;
         }
 
         private static bool IsAspNetCoreMiddleware(Compilation compilation, IMethodSymbol methodSymbol)
