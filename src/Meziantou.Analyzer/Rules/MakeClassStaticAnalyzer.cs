@@ -39,12 +39,18 @@ namespace Meziantou.Analyzer.Rules
 
                     if (IsPotentialStatic(symbol))
                     {
-                        potentialClasses.Add(symbol);
+                        lock (potentialClasses)
+                        {
+                            potentialClasses.Add(symbol);
+                        }
                     }
 
                     if (symbol.BaseType != null)
                     {
-                        parentClasses.Add(symbol.BaseType);
+                        lock (parentClasses)
+                        {
+                            parentClasses.Add(symbol.BaseType);
+                        }
                     }
                 }, SymbolKind.NamedType);
 
