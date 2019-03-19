@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Test.Rules
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new OptimizeStringBuilderUsageAnalyzer();
         protected override string ExpectedDiagnosticId => "MA0028";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
 
         [TestMethod]
         public void AppendFormat_NoDiagnostic()
@@ -56,6 +56,9 @@ class Test
         [DataRow(@"$""a{1}""")]
         [DataRow(@"""a"" + 10")]
         [DataRow(@"10 + 20 + ""a""")]
+        [DataRow(@"""""")]
+        [DataRow(@""""" + """"")]
+        [DataRow(@""""".Substring(0, 10)")]
         public void Append_ReportDiagnostic(string text)
         {
             var project = new ProjectBuilder()

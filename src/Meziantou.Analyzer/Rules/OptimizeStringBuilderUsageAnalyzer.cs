@@ -13,9 +13,9 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.OptimizeStringBuilderUsage,
             title: "Optimize StringBuilder usage",
-            messageFormat: "Optimize StringBuilder usage",
+            messageFormat: "{0}",
             RuleCategories.Usage,
-            DiagnosticSeverity.Warning,
+            DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeStringBuilderUsage));
@@ -44,12 +44,13 @@ namespace Meziantou.Analyzer.Rules
             if (!method.ContainingType.IsEqualsTo(stringBuilderSymbol))
                 return;
 
+            string reason = null;
             if (string.Equals(method.Name, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
             {
                 if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                     return;
 
-                if (!IsOptimizable(context, operation.Arguments[0]))
+                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason))
                     return;
             }
             else if (string.Equals(method.Name, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
@@ -57,14 +58,14 @@ namespace Meziantou.Analyzer.Rules
                 if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                     return;
 
-                if (!IsOptimizable(context, operation.Arguments[0]))
+                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason))
                     return;
             }
             else if (string.Equals(method.Name, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
             {
                 if (method.Parameters.Length == 2 && method.Parameters[1].Type.IsString())
                 {
-                    if (!IsOptimizable(context, operation.Arguments[1]))
+                    if (!IsOptimizable(context, method.Name, operation.Arguments[1], out reason))
                         return;
                 }
                 else
@@ -77,30 +78,60 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+            context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), reason));
         }
 
-        private static bool IsOptimizable(OperationAnalysisContext context, IArgumentOperation argument)
+        private static bool IsOptimizable(OperationAnalysisContext context, string methodName, IArgumentOperation argument, out string reason)
         {
+            reason = default;
+
             if (argument.ConstantValue.HasValue)
                 return false;
 
-            // Check for concatenation and FormattableString
             var value = argument.Value;
             if (value is IInterpolatedStringOperation)
             {
-                if (IsConstString(value))
+                if (TryGetConstStringValue(value, out var constValue))
+                {
+                    if (constValue.Length == 0)
+                    {
+                        reason = "Remove this no-op call";
+                        return true;
+                    }
+                    else if (constValue.Length == 1)
+                    {
+                        reason = $"Replace {methodName}(string) with {methodName}(char)";
+                        return true;
+                    }
                     return false;
+                }
 
+                reason = $"Replace string interpolation with multiple {methodName} calls";
                 return true;
+            }
+            else if (value.ConstantValue.HasValue && value.ConstantValue.Value is string constValue)
+            {
+                if (constValue.Length == 0)
+                {
+                    reason = "Remove this no-op call";
+                    return true;
+                }
+                else if (constValue.Length == 1)
+                {
+                    reason = $"Replace {methodName}(string) with {methodName}(char)";
+                    return true;
+                }
+
+                return false;
             }
             else if (value is IBinaryOperation binaryOperation)
             {
-                if (value.Type.IsString())
+                if (binaryOperation.OperatorKind == BinaryOperatorKind.Add && value.Type.IsString())
                 {
                     if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
                         return false;
 
+                    reason = $"Replace the string concatenation by multiple {methodName} calls";
                     return true;
                 }
             }
@@ -110,44 +141,86 @@ namespace Meziantou.Analyzer.Rules
                 if (string.Equals(targetMethod.Name, "ToString", System.StringComparison.Ordinal))
                 {
                     if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
+                    {
+                        reason = "Remove the ToString call";
                         return true;
+                    }
 
                     if (targetMethod.Parameters.Length == 2 &&
                         targetMethod.ReturnType.IsString() &&
                         targetMethod.Parameters[0].Type.IsString() &&
                         targetMethod.Parameters[1].Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.IFormatProvider")))
                     {
+                        reason = "Use AppendFormat";
                         return true;
                     }
                 }
+                else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
+                {
+                    reason = $"Use {methodName}(string, int, int) instead of Substring";
+                    return true;
+                }
             }
 
+            reason = default;
             return false;
         }
 
         private static bool IsConstString(IOperation operation)
         {
+            return TryGetConstStringValue(operation, out _);
+        }
+
+        private static bool TryGetConstStringValue(IOperation operation, out string value)
+        {
+            var sb = new StringBuilder();
+            if (TryGetConstStringValue(operation, sb))
+            {
+                value = sb.ToString();
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        private static bool TryGetConstStringValue(IOperation operation, StringBuilder sb)
+        {
             if (operation == null)
                 return false;
 
-            if (operation is IInterpolatedStringOperation interpolationStringOperation)
+            if (operation.ConstantValue.HasValue && operation.ConstantValue.Value is string str)
             {
-                if (interpolationStringOperation.Parts.All(p => p is IInterpolatedStringTextOperation || IsConstString(p)))
-                    return true;
-
-                return false;
+                sb.Append(str);
+                return true;
             }
+            else if (operation is IInterpolatedStringOperation interpolationStringOperation)
+            {
+                foreach (var part in interpolationStringOperation.Parts)
+                {
+                    if (!TryGetConstStringValue(part, sb))
+                        return false;
+                }
 
-            if (operation is IInterpolatedStringContentOperation interpolated)
+                return true;
+            }
+            else if (operation is IInterpolatedStringTextOperation text)
+            {
+                if (!TryGetConstStringValue(text.Text, sb))
+                    return false;
+
+                return true;
+            }
+            else if (operation is IInterpolatedStringContentOperation interpolated)
             {
                 var op = interpolated.Children.SingleOrDefault();
-                if (op != null)
-                {
-                    return IsConstString(op);
-                }
+                if (op == null)
+                    return false;
+
+                return TryGetConstStringValue(op, sb);
             }
 
-            return operation.ConstantValue.HasValue && operation.ConstantValue.Value is string;
+            return false;
         }
     }
 }
