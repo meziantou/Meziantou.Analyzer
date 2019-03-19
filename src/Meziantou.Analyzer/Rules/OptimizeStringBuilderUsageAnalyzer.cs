@@ -44,7 +44,7 @@ namespace Meziantou.Analyzer.Rules
             if (!method.ContainingType.IsEqualsTo(stringBuilderSymbol))
                 return;
 
-            string reason = null;
+            string reason;
             if (string.Equals(method.Name, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
             {
                 if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
