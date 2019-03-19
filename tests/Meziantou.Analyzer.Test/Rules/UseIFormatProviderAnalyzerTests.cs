@@ -147,5 +147,22 @@ class TypeName
             var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'ToLower' that has a 'System.Globalization.CultureInfo' parameter");
             VerifyDiagnostic(project, expected);
         }
+
+        [TestMethod]
+        public void StringBuilderAppendFormat_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class TypeName
+{
+    public void Test()
+    {
+        new System.Text.StringBuilder().AppendFormat(""{0}"", 10);
+    }
+}");
+
+            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "Use an overload of 'AppendFormat' that has a 'System.IFormatProvider' parameter");
+            VerifyDiagnostic(project, expected);
+        }
     }
 }

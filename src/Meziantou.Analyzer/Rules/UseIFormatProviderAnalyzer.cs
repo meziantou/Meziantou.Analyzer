@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -53,8 +54,9 @@ namespace Meziantou.Analyzer.Rules
             else if (!string.Equals(methodName, "Parse", StringComparison.Ordinal) &&
                      !string.Equals(methodName, "TryParse", StringComparison.Ordinal) &&
                      !string.Equals(methodName, "TryFormat", StringComparison.Ordinal) &&
-                     !string.Equals(methodName, "ToLower", StringComparison.Ordinal) &&
-                     !string.Equals(methodName, "ToUpper", StringComparison.Ordinal))
+                     !string.Equals(methodName, nameof(string.ToLower), StringComparison.Ordinal) &&
+                     !string.Equals(methodName, nameof(string.ToUpper), StringComparison.Ordinal) &&
+                     !string.Equals(methodName, nameof(StringBuilder.AppendFormat), StringComparison.Ordinal))
             {
                 return;
             }
