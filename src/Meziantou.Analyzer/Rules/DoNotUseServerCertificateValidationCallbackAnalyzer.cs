@@ -12,8 +12,8 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotUseServerCertificateValidationCallback,
-            title: "Do not use ServerCertificateValidationCallback",
-            messageFormat: "Do not use ServerCertificateValidationCallback",
+            title: "Do not write your own certificate validation method",
+            messageFormat: "Do not write your own certificate validation method",
             RuleCategories.Security,
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
