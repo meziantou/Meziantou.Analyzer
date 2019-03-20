@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -28,22 +29,31 @@ namespace Meziantou.Analyzer.Rules
 
             context.RegisterCompilationStartAction(ctx =>
             {
+                var symbols = new List<ISymbol>();
+
                 var servicePointManagerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.ServicePointManager");
-                if (servicePointManagerSymbol == null)
-                    return;
+                if (servicePointManagerSymbol != null)
+                {
+                    symbols.AddIfNotNull(servicePointManagerSymbol.GetMembers("ServerCertificateValidationCallback").FirstOrDefault());
+                }
 
-                var eventSymbol = servicePointManagerSymbol.GetMembers("ServerCertificateValidationCallback").FirstOrDefault();
-                if (eventSymbol == null)
-                    return;
+                var httpClientHandlerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClientHandler");
+                if (httpClientHandlerSymbol != null)
+                {
+                    symbols.AddIfNotNull(httpClientHandlerSymbol.GetMembers("ServerCertificateCustomValidationCallback").FirstOrDefault());
+                }
 
-                ctx.RegisterOperationAction(c => Analyze(c, eventSymbol), OperationKind.PropertyReference);
+                if (symbols.Any())
+                {
+                    ctx.RegisterOperationAction(c => Analyze(c, symbols), OperationKind.PropertyReference);
+                }
             });
         }
 
-        private static void Analyze(OperationAnalysisContext context, ISymbol eventSymbol)
+        private static void Analyze(OperationAnalysisContext context, List<ISymbol> eventSymbols)
         {
             var operation = (IPropertyReferenceOperation)context.Operation;
-            if (operation.Property.Equals(eventSymbol))
+            if (eventSymbols.Contains(operation.Property))
             {
                 context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
             }
