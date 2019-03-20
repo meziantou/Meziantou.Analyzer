@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Error;
 
         [TestMethod]
-        public void StaticMembers()
+        public void ServicePointManager_ServerCertificateValidationCallback()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
@@ -41,6 +41,32 @@ namespace System.Net.Security
 ");
 
             VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9));
+        }
+
+        [TestMethod]
+        public void HttpClientHandler_ServerCertificateCustomValidationCallback()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    void A()
+    {
+        var handler = new System.Net.Http.HttpClientHandler();
+        handler.ServerCertificateCustomValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
+    }
+}
+
+namespace System.Net.Http
+{
+    public class HttpClientHandler
+    {
+        public Func<object, object, object, object, bool> ServerCertificateCustomValidationCallback { get; set; }
+    }
+}
+");
+
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9));
         }
     }
 }
