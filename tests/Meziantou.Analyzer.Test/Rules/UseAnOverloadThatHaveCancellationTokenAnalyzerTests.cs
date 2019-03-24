@@ -52,20 +52,35 @@ class Test
         }
 
         [TestMethod]
-        public void CallingMethodWithCancellationToken_ShouldReportDiagnosticWithMemberName()
+        public void CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterName()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
 class Test
 {
-    public void A()
+    public void A(System.Threading.CancellationToken cancellationToken)
     {
         MethodWithCancellationToken();
     }
 
-    private System.Threading.CancellationToken _requestAborted { get; }
-    public System.Threading.CancellationToken RequestAborted { get; }
-    public HttpRequest Request { get; }
+    public void MethodWithCancellationToken() => throw null;
+    public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+}");
+
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, message: "Specify a CancellationToken (cancellationToken)"));
+        }
+
+        [TestMethod]
+        public void CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    public void A(HttpRequest request)
+    {
+        MethodWithCancellationToken();
+    }
 
     public void MethodWithCancellationToken() => throw null;
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
@@ -76,7 +91,7 @@ class HttpRequest
     public System.Threading.CancellationToken RequestAborted { get; }
 }");
 
-            VerifyDiagnostic(project);
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, message: "Specify a CancellationToken (request.RequestAborted)"));
         }
     }
 }

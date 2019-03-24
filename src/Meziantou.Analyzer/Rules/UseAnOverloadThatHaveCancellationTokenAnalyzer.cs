@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -15,7 +16,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseAnOverloadThatHaveCancellationToken,
             title: "Use a cancellation token",
-            messageFormat: "{0}",
+            messageFormat: "Specify a CancellationToken ({0})",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
@@ -29,31 +30,37 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterOperationAction(Analyze, OperationKind.Invocation);
+            context.RegisterCompilationStartAction(ctx =>
+            {
+                var analyzerContext = new AnalyzerContext(ctx.Compilation);
+                if (analyzerContext.CancellationTokenSymbol == null)
+                    return;
+
+                ctx.RegisterOperationAction(c => Analyze(c, analyzerContext), OperationKind.Invocation);
+            });
         }
 
-        private static void Analyze(OperationAnalysisContext context)
+        private static void Analyze(OperationAnalysisContext context, AnalyzerContext analyzerContext)
         {
             var operation = (IInvocationOperation)context.Operation;
             var method = operation.TargetMethod;
 
-            var cancellationTokenSymbol = context.Compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
-            if (cancellationTokenSymbol == null)
+            if (operation.Arguments.Any(arg => arg.Type.IsEqualsTo(analyzerContext.CancellationTokenSymbol)))
                 return;
 
-            if (operation.Arguments.Any(arg => arg.Type.IsEqualsTo(cancellationTokenSymbol)))
+            if (!UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, analyzerContext.CancellationTokenSymbol))
                 return;
 
-            if (!UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, cancellationTokenSymbol))
-                return;
+            var cancellationTokens = string.Join(",", FindCancellationTokens(operation, analyzerContext));
+            if (string.IsNullOrEmpty(cancellationTokens))
+            {
+                cancellationTokens = "CancellationToken.None";
+            }
 
-            // TODO Check if there is a cancellation token in the context to improve the message (variable, parameter, property, HttpContext, HttpRequest.RequestAborted)
-            var cancellationTokens = FindCancellationTokens(operation).ToList();
-
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+            context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), cancellationTokens));
         }
 
-        private static IEnumerable<string> FindCancellationTokens(IInvocationOperation operation)
+        private static IEnumerable<string> FindCancellationTokens(IInvocationOperation operation, AnalyzerContext context)
         {
             // Should explore the properties of the objects
             // Should be accessible (operation.SemanticModel.IsAccessible)
@@ -64,79 +71,49 @@ namespace Meziantou.Analyzer.Rules
             // TODO test with CancellationTokenSource, HttpContext
 
             var parameters = GetParameters(operation);
-            var members = GetMembers(operation);
-            foreach (var member in members)
+            foreach (var (parameterName, parameterType) in parameters)
             {
-                if (!operation.SemanticModel.IsAccessible(operation.Syntax.Span.Start, member))
-                    continue;
-            }
-
-
-            yield break;
-        }
-
-        private static IEnumerable<ISymbol> GetMembers(IOperation operation)
-        {
-            var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is ClassDeclarationSyntax || node is StructDeclarationSyntax);
-            if (ancestor == null)
-                yield break;
-
-            var symbol = operation.SemanticModel.GetDeclaredSymbol(ancestor) as INamedTypeSymbol;
-            if (symbol == null)
-                yield break;
-
-            var members = symbol.GetMembers();
-            foreach (var member in members)
-            {
-                if (member.IsImplicitlyDeclared)
-                    continue;
-
-                switch (member)
+                foreach (var member in context.GetMembers(parameterType))
                 {
-                    case IPropertySymbol property:
-                        if (property.GetMethod != null)
-                        {
-                            yield return member;
-                        }
-
-                        break;
-
-                    case IFieldSymbol field:
-                        yield return field;
-                        break;
+                    if (member.All(IsAccessible))
+                    {
+                        yield return ComputeFullPath(parameterName, member);
+                    }
                 }
             }
-        }
 
-        private static IEnumerable<(string memberPrefix, ISymbol symbol)> GetMembers(string memberPrefix, INamedTypeSymbol symbol)
-        {
-            if (symbol == null)
-                yield break;
-
-            var members = symbol.GetMembers();
-            foreach (var member in members)
+            string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
             {
-                if (member.IsImplicitlyDeclared)
-                    continue;
-
-                switch (member)
+                if (prefix == null)
                 {
-                    case IPropertySymbol property:
-                        if (property.GetMethod != null)
-                        {
-                            yield return (memberPrefix, member);
-                        }
-
-                        break;
-
-                    case IFieldSymbol field:
-                        yield return (memberPrefix, field);
-                        break;
+                    return string.Join(".", symbols.Select(symbol => symbol.Name));
                 }
+                else
+                {
+                    var suffix = string.Join(".", symbols.Select(symbol => symbol.Name));
+                    if (string.IsNullOrEmpty(suffix))
+                        return prefix;
+
+                    return prefix + "." + suffix;
+                }
+            }
+
+            bool IsAccessible(ISymbol symbol)
+            {
+                return operation.SemanticModel.IsAccessible(operation.Syntax.Span.Start, symbol);
             }
         }
 
-        private static IEnumerable<(string name, ISymbol type)> GetParameters(IOperation operation)
+        //private static IEnumerable<ISymbol> GetMembers(IOperation operation)
+        //{
+        //    var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is ClassDeclarationSyntax || node is StructDeclarationSyntax);
+        //    if (ancestor == null)
+        //        yield break;
+
+        //    return operation.SemanticModel.GetDeclaredSymbol(ancestor) as INamedTypeSymbol;
+        //}
+
+        private static IEnumerable<(string name, ITypeSymbol type)> GetParameters(IOperation operation)
         {
             var semanticModel = operation.SemanticModel;
             var node = operation.Syntax;
@@ -193,6 +170,75 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 node = node.Parent;
+            }
+        }
+
+        private class AnalyzerContext
+        {
+            private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IEnumerable<ISymbol>>> _membersByType = new ConcurrentDictionary<ITypeSymbol, IEnumerable<IEnumerable<ISymbol>>>();
+
+            public AnalyzerContext(Compilation compilation)
+            {
+                Compilation = compilation;
+                CancellationTokenSymbol = compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
+            }
+
+            public Compilation Compilation { get; }
+            public INamedTypeSymbol CancellationTokenSymbol { get; }
+
+            public IEnumerable<IEnumerable<ISymbol>> GetMembers(ITypeSymbol symbol)
+            {
+                return _membersByType.GetOrAdd(symbol, s =>
+                {
+                    if (s.IsEqualsTo(CancellationTokenSymbol))
+                    {
+                        return new[] { Enumerable.Empty<ISymbol>() };
+                    }
+
+                    var result = new List<IEnumerable<ISymbol>>();
+
+                    var members = s.GetMembers();
+                    foreach (var member in members)
+                    {
+                        ITypeSymbol memberTypeSymbol;
+                        switch (member)
+                        {
+                            case IPropertySymbol propertySymbol:
+                                memberTypeSymbol = propertySymbol.Type;
+                                break;
+
+                            case IFieldSymbol fieldSymbol:
+                                memberTypeSymbol = fieldSymbol.Type;
+                                break;
+
+                            default:
+                                continue;
+                        }
+
+                        if (memberTypeSymbol.IsEqualsTo(CancellationTokenSymbol))
+                        {
+                            result.Add(new ISymbol[] { member });
+                        }
+                        else
+                        {
+                            foreach (var objectMembers in GetMembers(memberTypeSymbol))
+                            {
+                                result.Add(Prepend(member, objectMembers));
+                            }
+                        }
+                    }
+
+                    return result;
+                });
+            }
+
+            private static IEnumerable<T> Prepend<T>(T value, IEnumerable<T> items)
+            {
+                yield return value;
+                foreach (var item in items)
+                {
+                    yield return item;
+                }
             }
         }
     }

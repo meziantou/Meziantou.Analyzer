@@ -10,6 +10,9 @@ namespace Meziantou.Analyzer
             if (method.ExplicitInterfaceImplementations.Length > 0)
                 return true;
 
+            if (method.ContainingType == null)
+                return false;
+
             return method.ContainingType.AllInterfaces
                 .SelectMany(@interface => @interface.GetMembers().OfType<IMethodSymbol>())
                 .Any(interfaceMethod => method.Equals(method.ContainingType.FindImplementationForInterfaceMember(interfaceMethod)));
