@@ -70,7 +70,7 @@ namespace Meziantou.Analyzer.Rules
                 .Concat(new[] { new NameAndType(name: null, GetContainingType(operation)) });
 
             return from item in all
-                   let members = context.GetMembers(item.TypeSymbol)
+                   let members = context.GetMembers(item.TypeSymbol, maxDepth: 1)
                    from member in members
                    where member.All(IsAccessible) && (item.Name != null || !isStatic || (member.FirstOrDefault()?.IsStatic ?? true))
                    let fullPath = ComputeFullPath(item.Name, member)
@@ -235,8 +235,11 @@ namespace Meziantou.Analyzer.Rules
             public Compilation Compilation { get; }
             public INamedTypeSymbol CancellationTokenSymbol { get; }
 
-            public IEnumerable<IEnumerable<ISymbol>> GetMembers(ITypeSymbol symbol)
+            public IEnumerable<IEnumerable<ISymbol>> GetMembers(ITypeSymbol symbol, int maxDepth)
             {
+                if (maxDepth < 0)
+                    return Enumerable.Empty<IEnumerable<ISymbol>>();
+
                 return _membersByType.GetOrAdd(symbol, s =>
                 {
                     if (s.IsEqualsTo(CancellationTokenSymbol))
@@ -273,7 +276,7 @@ namespace Meziantou.Analyzer.Rules
                         }
                         else
                         {
-                            foreach (var objectMembers in GetMembers(memberTypeSymbol))
+                            foreach (var objectMembers in GetMembers(memberTypeSymbol, maxDepth - 1))
                             {
                                 result.Add(Prepend(member, objectMembers));
                             }
