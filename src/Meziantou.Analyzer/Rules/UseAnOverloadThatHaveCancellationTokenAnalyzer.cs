@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -51,7 +52,7 @@ namespace Meziantou.Analyzer.Rules
             if (!UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, analyzerContext.CancellationTokenSymbol))
                 return;
 
-            var cancellationTokens = string.Join(",", FindCancellationTokens(operation, analyzerContext));
+            var cancellationTokens = string.Join(", ", FindCancellationTokens(operation, analyzerContext));
             if (string.IsNullOrEmpty(cancellationTokens))
             {
                 cancellationTokens = "CancellationToken.None";
@@ -62,25 +63,19 @@ namespace Meziantou.Analyzer.Rules
 
         private static IEnumerable<string> FindCancellationTokens(IInvocationOperation operation, AnalyzerContext context)
         {
-            // Should explore the properties of the objects
-            // Should be accessible (operation.SemanticModel.IsAccessible)
+            var isStatic = IsStaticMember(operation);
 
-            // Property of type CancellationToken (static or instance if method is not static)
-            // Variable of type CancellationToken
-            // Parameter of type CancellationToken
-            // TODO test with CancellationTokenSource, HttpContext
+            var all = GetParameters(operation)
+                .Concat(GetVariables(operation))
+                .Concat(new[] { new NameAndType(name: null, GetContainingType(operation)) });
 
-            var parameters = GetParameters(operation);
-            foreach (var (parameterName, parameterType) in parameters)
-            {
-                foreach (var member in context.GetMembers(parameterType))
-                {
-                    if (member.All(IsAccessible))
-                    {
-                        yield return ComputeFullPath(parameterName, member);
-                    }
-                }
-            }
+            return from item in all
+                   let members = context.GetMembers(item.TypeSymbol)
+                   from member in members
+                   where member.All(IsAccessible) && (item.Name != null || !isStatic || (member.FirstOrDefault()?.IsStatic ?? true))
+                   let fullPath = ComputeFullPath(item.Name, member)
+                   orderby fullPath.Count(c => c == '.'), fullPath
+                   select fullPath;
 
             string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
             {
@@ -104,16 +99,29 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        //private static IEnumerable<ISymbol> GetMembers(IOperation operation)
-        //{
-        //    var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is ClassDeclarationSyntax || node is StructDeclarationSyntax);
-        //    if (ancestor == null)
-        //        yield break;
+        private static ITypeSymbol GetContainingType(IOperation operation)
+        {
+            var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is ClassDeclarationSyntax || node is StructDeclarationSyntax);
+            if (ancestor == null)
+                return null;
 
-        //    return operation.SemanticModel.GetDeclaredSymbol(ancestor) as INamedTypeSymbol;
-        //}
+            return operation.SemanticModel.GetDeclaredSymbol(ancestor) as ITypeSymbol;
+        }
 
-        private static IEnumerable<(string name, ITypeSymbol type)> GetParameters(IOperation operation)
+        private static bool IsStaticMember(IOperation operation)
+        {
+            var memberDeclarationSyntax = operation.Syntax.Ancestors().FirstOrDefault(syntax => syntax is MemberDeclarationSyntax);
+            if (memberDeclarationSyntax == null)
+                return false;
+
+            var symbol = operation.SemanticModel.GetDeclaredSymbol(memberDeclarationSyntax);
+            if (symbol == null)
+                return false;
+
+            return symbol.IsStatic;
+        }
+
+        private static IEnumerable<NameAndType> GetParameters(IOperation operation)
         {
             var semanticModel = operation.SemanticModel;
             var node = operation.Syntax;
@@ -129,7 +137,7 @@ namespace Meziantou.Analyzer.Rules
                             var symbol = operation.SemanticModel.GetDeclaredSymbol(property);
                             if (symbol != null)
                             {
-                                yield return ("value", symbol.Type);
+                                yield return new NameAndType("value", symbol.Type);
                             }
                         }
                     }
@@ -142,7 +150,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
                     foreach (var parameter in symbol.Parameters)
-                        yield return (parameter.Name, parameter.Type);
+                        yield return new NameAndType(parameter.Name, parameter.Type);
 
                     yield break;
                 }
@@ -150,7 +158,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
                     foreach (var parameter in symbol.Parameters)
-                        yield return (parameter.Name, parameter.Type);
+                        yield return new NameAndType(parameter.Name, parameter.Type);
 
                     yield break;
                 }
@@ -158,18 +166,59 @@ namespace Meziantou.Analyzer.Rules
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
                     foreach (var parameter in symbol.Parameters)
-                        yield return (parameter.Name, parameter.Type);
+                        yield return new NameAndType(parameter.Name, parameter.Type);
                 }
                 else if (node is ConstructorDeclarationSyntax constructorDeclaration)
                 {
                     var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
                     foreach (var parameter in symbol.Parameters)
-                        yield return (parameter.Name, parameter.Type);
+                        yield return new NameAndType(parameter.Name, parameter.Type);
 
                     yield break;
                 }
 
                 node = node.Parent;
+            }
+        }
+
+        private static IEnumerable<NameAndType> GetVariables(IOperation operation)
+        {
+            var previousOperation = operation;
+            operation = operation.Parent;
+
+            while (operation != null)
+            {
+                if (operation is IBlockOperation blockOperation)
+                {
+                    foreach (var childOperation in blockOperation.Children)
+                    {
+                        if (childOperation == previousOperation)
+                            break;
+
+                        switch (childOperation)
+                        {
+                            case IVariableDeclarationGroupOperation variableDeclarationGroupOperation:
+                                foreach (var declaration in variableDeclarationGroupOperation.Declarations)
+                                {
+                                    foreach (var variable in declaration.GetDeclaredVariables())
+                                    {
+                                        yield return new NameAndType(variable.Name, variable.Type);
+                                    }
+                                }
+                                break;
+
+                            case IVariableDeclarationOperation variableDeclarationOperation:
+                                foreach (var variable in variableDeclarationOperation.GetDeclaredVariables())
+                                {
+                                    yield return new NameAndType(variable.Name, variable.Type);
+                                }
+                                break;
+                        }
+                    }
+                }
+
+                previousOperation = operation;
+                operation = operation.Parent;
             }
         }
 
@@ -200,6 +249,9 @@ namespace Meziantou.Analyzer.Rules
                     var members = s.GetMembers();
                     foreach (var member in members)
                     {
+                        if (member.IsImplicitlyDeclared)
+                            continue;
+
                         ITypeSymbol memberTypeSymbol;
                         switch (member)
                         {
@@ -240,6 +292,19 @@ namespace Meziantou.Analyzer.Rules
                     yield return item;
                 }
             }
+        }
+
+        [StructLayout(LayoutKind.Auto)]
+        private readonly struct NameAndType
+        {
+            public NameAndType(string name, ITypeSymbol typeSymbol)
+            {
+                Name = name;
+                TypeSymbol = typeSymbol;
+            }
+
+            public string Name { get; }
+            public ITypeSymbol TypeSymbol { get; }
         }
     }
 }
