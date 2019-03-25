@@ -89,6 +89,26 @@ class Test
         }
 
         [TestMethod]
+        public void CallingMethodWithATaskOfTInContext_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    public void A(System.Threading.Tasks.Task<int> task)
+    {
+        MethodWithCancellationToken();
+    }
+
+    public void MethodWithCancellationToken() => throw null;
+    public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+}");
+
+            // Should not report MA0040 with task.Factory.CancellationToken
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden));
+        }
+
+        [TestMethod]
         public void CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterName()
         {
             var project = new ProjectBuilder()
