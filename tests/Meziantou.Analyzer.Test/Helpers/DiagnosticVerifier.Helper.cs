@@ -81,7 +81,7 @@ namespace TestHelper
                         for (var i = 0; i < documents.Length; i++)
                         {
                             var document = documents[i];
-                            var tree = document.GetSyntaxTreeAsync().Result;
+                            var tree = document.GetSyntaxTreeAsync(compilationWithAnalyzers.CancellationToken).Result;
                             if (tree == diag.Location.SourceTree)
                             {
                                 diagnostics.Add(diag);
