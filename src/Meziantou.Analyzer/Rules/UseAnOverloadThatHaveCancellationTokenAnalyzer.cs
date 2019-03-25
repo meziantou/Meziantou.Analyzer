@@ -14,17 +14,27 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenRule = new DiagnosticDescriptor(
             RuleIdentifiers.UseAnOverloadThatHaveCancellationToken,
             title: "Use a cancellation token",
-            messageFormat: "Specify a CancellationToken ({0})",
+            messageFormat: "Specify a CancellationToken",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationToken));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule = new DiagnosticDescriptor(
+            RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable,
+            title: "Use a cancellation token",
+            messageFormat: "Specify a CancellationToken ({0})",
+            RuleCategories.Usage,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_useAnOverloadThatHaveCancellationTokenRule, s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -53,12 +63,14 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var cancellationTokens = string.Join(", ", FindCancellationTokens(operation, analyzerContext));
-            if (string.IsNullOrEmpty(cancellationTokens))
+            if (!string.IsNullOrEmpty(cancellationTokens))
             {
-                cancellationTokens = "CancellationToken.None";
+                context.ReportDiagnostic(Diagnostic.Create(s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule, operation.Syntax.GetLocation(), cancellationTokens));
             }
-
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), cancellationTokens));
+            else
+            {
+                context.ReportDiagnostic(Diagnostic.Create(s_useAnOverloadThatHaveCancellationTokenRule, operation.Syntax.GetLocation(), cancellationTokens));
+            }
         }
 
         private static IEnumerable<string> FindCancellationTokens(IInvocationOperation operation, AnalyzerContext context)
