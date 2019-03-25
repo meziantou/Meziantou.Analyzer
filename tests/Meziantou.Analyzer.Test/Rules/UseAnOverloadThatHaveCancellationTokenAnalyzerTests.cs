@@ -10,7 +10,6 @@ namespace Meziantou.Analyzer.Test.Rules
     public class UseAnOverloadThatHaveCancellationTokenAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseAnOverloadThatHaveCancellationTokenAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0032";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
 
         [TestMethod]
@@ -29,7 +28,7 @@ class Test
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0032"));
         }
 
         [TestMethod]
@@ -67,7 +66,7 @@ class Test
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, message: "Specify a CancellationToken (cancellationToken)"));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (cancellationToken)"));
         }
 
         [TestMethod]
@@ -91,7 +90,7 @@ class HttpRequest
     public System.Threading.CancellationToken RequestAborted { get; }
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, message: "Specify a CancellationToken (request.RequestAborted)"));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (request.RequestAborted)"));
         }
 
         [TestMethod]
@@ -118,9 +117,9 @@ class HttpRequest
     public System.Threading.CancellationToken RequestAborted { get; }
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, message: "Specify a CancellationToken (MyCancellationToken, Request.RequestAborted)"));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (MyCancellationToken, Request.RequestAborted)"));
         }
-        
+
         [TestMethod]
         public void CallingMethodWithInstanceProperty_ShouldReportDiagnostic()
         {
@@ -145,9 +144,8 @@ class HttpRequest
     public System.Threading.CancellationToken RequestAborted { get; }
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, message: "Specify a CancellationToken (MyCancellationToken)"));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (MyCancellationToken)"));
         }
-
 
         [TestMethod]
         public void CallingMethod_ShouldReportDiagnosticWithVariables()
@@ -172,7 +170,7 @@ class Test
 }
 ");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 11, column: 9, message: "Specify a CancellationToken (a)"));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 11, column: 9, id: "MA0040", message: "Specify a CancellationToken (a)"));
         }
     }
 }
