@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -19,7 +20,7 @@ namespace Meziantou.Analyzer.Rules
             title: "Use a cancellation token",
             messageFormat: "Specify a CancellationToken",
             RuleCategories.Usage,
-            DiagnosticSeverity.Info,
+            DiagnosticSeverity.Hidden,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationToken));
@@ -56,10 +57,11 @@ namespace Meziantou.Analyzer.Rules
             var operation = (IInvocationOperation)context.Operation;
             var method = operation.TargetMethod;
 
-            if (operation.Arguments.Any(arg => arg.Type.IsEqualsTo(analyzerContext.CancellationTokenSymbol)))
+            if (operation.Arguments.Any(arg => !arg.IsImplicit && arg.Parameter.Type.IsEqualsTo(analyzerContext.CancellationTokenSymbol)))
                 return;
 
-            if (!UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, analyzerContext.CancellationTokenSymbol))
+            var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter.Type.IsEqualsTo(analyzerContext.CancellationTokenSymbol));
+            if (!isImplicitlyDeclared && !UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, analyzerContext.CancellationTokenSymbol))
                 return;
 
             var cancellationTokens = string.Join(", ", FindCancellationTokens(operation, analyzerContext));
@@ -84,7 +86,7 @@ namespace Meziantou.Analyzer.Rules
             return from item in all
                    let members = context.GetMembers(item.TypeSymbol, maxDepth: 1)
                    from member in members
-                   where member.All(IsAccessible) && (item.Name != null || !isStatic || (member.FirstOrDefault()?.IsStatic ?? true))
+                   where member.All(IsSymbolAccessible) && (item.Name != null || !isStatic || (member.FirstOrDefault()?.IsStatic ?? true))
                    let fullPath = ComputeFullPath(item.Name, member)
                    orderby fullPath.Count(c => c == '.'), fullPath
                    select fullPath;
@@ -105,7 +107,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            bool IsAccessible(ISymbol symbol)
+            bool IsSymbolAccessible(ISymbol symbol)
             {
                 return operation.SemanticModel.IsAccessible(operation.Syntax.Span.Start, symbol);
             }
@@ -236,30 +238,35 @@ namespace Meziantou.Analyzer.Rules
 
         private class AnalyzerContext
         {
-            private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IEnumerable<ISymbol>>> _membersByType = new ConcurrentDictionary<ITypeSymbol, IEnumerable<IEnumerable<ISymbol>>>();
+            private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>> _membersByType = new ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>>();
 
             public AnalyzerContext(Compilation compilation)
             {
                 Compilation = compilation;
                 CancellationTokenSymbol = compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
+                TaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
             }
 
             public Compilation Compilation { get; }
             public INamedTypeSymbol CancellationTokenSymbol { get; }
+            private INamedTypeSymbol TaskSymbol { get; }
 
-            public IEnumerable<IEnumerable<ISymbol>> GetMembers(ITypeSymbol symbol, int maxDepth)
+            public IEnumerable<IReadOnlyList<ISymbol>> GetMembers(ITypeSymbol symbol, int maxDepth)
             {
                 if (maxDepth < 0)
-                    return Enumerable.Empty<IEnumerable<ISymbol>>();
+                    return Enumerable.Empty<IReadOnlyList<ISymbol>>();
+
+                if (symbol.IsEqualsTo(TaskSymbol))
+                    return Enumerable.Empty<IReadOnlyList<ISymbol>>();
 
                 return _membersByType.GetOrAdd(symbol, s =>
                 {
                     if (s.IsEqualsTo(CancellationTokenSymbol))
                     {
-                        return new[] { Enumerable.Empty<ISymbol>() };
+                        return new[] { Array.Empty<ISymbol>() };
                     }
 
-                    var result = new List<IEnumerable<ISymbol>>();
+                    var result = new List<IReadOnlyList<ISymbol>>();
 
                     var members = s.GetMembers();
                     foreach (var member in members)
@@ -290,7 +297,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             foreach (var objectMembers in GetMembers(memberTypeSymbol, maxDepth - 1))
                             {
-                                result.Add(Prepend(member, objectMembers));
+                                result.Add(Prepend(member, objectMembers).ToList());
                             }
                         }
                     }

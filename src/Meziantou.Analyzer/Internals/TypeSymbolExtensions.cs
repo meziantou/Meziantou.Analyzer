@@ -124,5 +124,22 @@ namespace Meziantou.Analyzer
                     return false;
             }
         }
+
+        public static bool IsUnitTestClass(this ITypeSymbol typeSymbol)
+        {
+            var attributes = typeSymbol.GetAttributes();
+            foreach (var attribute in attributes)
+            {
+                var ns = attribute.AttributeClass.ContainingNamespace;
+                if (ns.IsNamespace(new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" }) ||
+                    ns.IsNamespace(new[] { "NUnit", "Framework" }) ||
+                    ns.IsNamespace(new[] { "Xunit" }))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

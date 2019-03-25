@@ -142,8 +142,16 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
                     {
-                        reason = "Remove the ToString call";
-                        return true;
+                        if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                        {
+                            reason = "Replace with Append().AppendLine()";
+                            return true;
+                        }
+                        else
+                        {
+                            reason = "Remove the ToString call";
+                            return true;
+                        }
                     }
 
                     if (targetMethod.Parameters.Length == 2 &&
@@ -151,8 +159,16 @@ namespace Meziantou.Analyzer.Rules
                         targetMethod.Parameters[0].Type.IsString() &&
                         targetMethod.Parameters[1].Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.IFormatProvider")))
                     {
-                        reason = "Use AppendFormat";
-                        return true;
+                        if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                        {
+                            reason = "Use AppendFormat().AppendLine()";
+                            return true;
+                        }
+                        else
+                        {
+                            reason = "Use AppendFormat";
+                            return true;
+                        }
                     }
                 }
                 else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
