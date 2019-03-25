@@ -245,18 +245,20 @@ namespace Meziantou.Analyzer.Rules
                 Compilation = compilation;
                 CancellationTokenSymbol = compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
                 TaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+                TaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
             }
 
             public Compilation Compilation { get; }
             public INamedTypeSymbol CancellationTokenSymbol { get; }
             private INamedTypeSymbol TaskSymbol { get; }
+            private INamedTypeSymbol TaskOfTSymbol { get; }
 
             public IEnumerable<IReadOnlyList<ISymbol>> GetMembers(ITypeSymbol symbol, int maxDepth)
             {
                 if (maxDepth < 0)
                     return Enumerable.Empty<IReadOnlyList<ISymbol>>();
 
-                if (symbol.IsEqualsTo(TaskSymbol))
+                if (symbol.IsEqualsTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualsTo(TaskOfTSymbol))
                     return Enumerable.Empty<IReadOnlyList<ISymbol>>();
 
                 return _membersByType.GetOrAdd(symbol, s =>
