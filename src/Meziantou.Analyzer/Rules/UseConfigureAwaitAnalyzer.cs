@@ -52,7 +52,7 @@ namespace Meziantou.Analyzer.Rules
             var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass != null)
             {
-                var symbol = context.SemanticModel.GetDeclaredSymbol(containingClass);
+                var symbol = context.SemanticModel.GetDeclaredSymbol(containingClass, context.CancellationToken);
                 if (symbol != null)
                 {
                     if (symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
@@ -72,7 +72,7 @@ namespace Meziantou.Analyzer.Rules
             var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (containingMethod != null)
             {
-                var methodInfo = context.SemanticModel.GetDeclaredSymbol(containingMethod) as IMethodSymbol;
+                var methodInfo = context.SemanticModel.GetDeclaredSymbol(containingMethod, context.CancellationToken) as IMethodSymbol;
                 if (methodInfo != null && methodInfo.IsUnitTestMethod())
                     return false;
             }
@@ -137,7 +137,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool CanAddConfigureAwait(SyntaxNodeAnalysisContext context, AwaitExpressionSyntax awaitSyntax)
         {
-            var awaitExpressionType = context.SemanticModel.GetTypeInfo(awaitSyntax.Expression).Type;
+            var awaitExpressionType = context.SemanticModel.GetTypeInfo(awaitSyntax.Expression, context.CancellationToken).Type;
             if (awaitExpressionType == null)
                 return false;
 
@@ -147,7 +147,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsConfiguredTaskAwaitable(SyntaxNodeAnalysisContext context, AwaitExpressionSyntax awaitSyntax)
         {
-            var awaitExpressionType = context.SemanticModel.GetTypeInfo(awaitSyntax.Expression).ConvertedType;
+            var awaitExpressionType = context.SemanticModel.GetTypeInfo(awaitSyntax.Expression, context.CancellationToken).ConvertedType;
             if (awaitExpressionType == null)
                 return false;
 

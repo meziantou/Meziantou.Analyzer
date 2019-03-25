@@ -35,7 +35,7 @@ namespace Meziantou.Analyzer.Rules
         private static void Analyze(SyntaxNodeAnalysisContext context)
         {
             var node = (MethodDeclarationSyntax)context.Node;
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node) as IMethodSymbol;
+            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IMethodSymbol;
             if (methodSymbol == null)
                 return;
 
@@ -47,7 +47,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
-            var operation = context.SemanticModel.GetOperation((SyntaxNode)node.Body ?? node.ExpressionBody.Expression);
+            var operation = context.SemanticModel.GetOperation((SyntaxNode)node.Body ?? node.ExpressionBody.Expression, context.CancellationToken);
             if (operation == null || HasInstanceUsages(operation))
                 return;
 

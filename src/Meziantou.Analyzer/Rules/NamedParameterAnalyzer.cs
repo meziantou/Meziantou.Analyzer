@@ -132,7 +132,7 @@ namespace Meziantou.Analyzer.Rules
 
             foreach (var syntaxTree in context.Compilation.SyntaxTrees)
             {
-                var root = syntaxTree.GetRoot();
+                var root = syntaxTree.GetRoot(context.CancellationToken);
                 if (root == null)
                     continue;
 
@@ -145,7 +145,7 @@ namespace Meziantou.Analyzer.Rules
                             if (attribute.ArgumentList?.Arguments.Count != 2)
                                 continue;
 
-                            var attr = context.SemanticModel.GetSymbolInfo(attribute).Symbol;
+                            var attr = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol;
                             if (attr != null && attributeType.Equals(attr.ContainingType))
                             {
                                 var a = GetStringValue(attribute.ArgumentList.Arguments[0]);

@@ -41,11 +41,11 @@ namespace Meziantou.Analyzer.Rules
             if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
                 return;
 
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+            var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
             if (!IsTaskType(context.Compilation, methodSymbol.ReturnType))
                 return;
 
-            AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body));
+            AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
         }
 
         private static void AnalyzeLambda(SyntaxNodeAnalysisContext context)
@@ -54,17 +54,17 @@ namespace Meziantou.Analyzer.Rules
             if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
                 return;
 
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+            var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
             if (!IsTaskType(context.Compilation, methodSymbol.ReturnType))
                 return;
 
             if (node.Body is BlockSyntax)
             {
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body));
+                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
             }
             else if (node.Body is ExpressionSyntax expression)
             {
-                var operation = context.SemanticModel.GetOperation(expression);
+                var operation = context.SemanticModel.GetOperation(expression, context.CancellationToken);
                 if (IsNullValue(operation))
                 {
                     context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
@@ -79,10 +79,10 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = node.ReturnType;
-            if (type != null && IsTaskType(context.Compilation, context.SemanticModel.GetTypeInfo(type).Type))
+            if (type != null && IsTaskType(context.Compilation, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body));
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody));
+                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
+                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken));
             }
         }
 
@@ -93,10 +93,10 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = node.ReturnType;
-            if (type != null && IsTaskType(context.Compilation, context.SemanticModel.GetTypeInfo(type).Type))
+            if (type != null && IsTaskType(context.Compilation, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body));
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody));
+                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
+                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken));
             }
         }
 
