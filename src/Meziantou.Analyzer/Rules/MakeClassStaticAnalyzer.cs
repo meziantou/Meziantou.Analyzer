@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -29,36 +30,67 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterCompilationStartAction(s =>
             {
                 var potentialClasses = new List<ITypeSymbol>();
-                var parentClasses = new HashSet<ITypeSymbol>();
+                var cannotBeStaticClasses = new HashSet<ITypeSymbol>();
+
+                var coClassAttributeSymbol = s.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
 
                 s.RegisterSymbolAction(ctx =>
                 {
                     var symbol = (INamedTypeSymbol)ctx.Symbol;
-                    if (!symbol.IsReferenceType)
-                        return;
-
-                    if (IsPotentialStatic(symbol))
+                    switch (symbol.TypeKind)
                     {
-                        lock (potentialClasses)
-                        {
-                            potentialClasses.Add(symbol);
-                        }
-                    }
+                        case TypeKind.Class:
+                            if (IsPotentialStatic(symbol))
+                            {
+                                lock (potentialClasses)
+                                {
+                                    potentialClasses.Add(symbol);
+                                }
+                            }
 
-                    if (symbol.BaseType != null)
-                    {
-                        lock (parentClasses)
-                        {
-                            parentClasses.Add(symbol.BaseType);
-                        }
+                            if (symbol.BaseType != null)
+                            {
+                                lock (cannotBeStaticClasses)
+                                {
+                                    cannotBeStaticClasses.Add(symbol.BaseType);
+                                }
+                            }
+
+                            break;
+
+                        case TypeKind.Interface:
+                            foreach (var attribute in symbol.GetAttributes().Where(attr => attr.AttributeClass.IsEqualsTo(coClassAttributeSymbol)))
+                            {
+                                var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
+                                if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol type)
+                                {
+                                    lock (cannotBeStaticClasses)
+                                    {
+                                        cannotBeStaticClasses.Add(type);
+                                    }
+                                }
+                            }
+
+                            break;
                     }
                 }, SymbolKind.NamedType);
+
+                s.RegisterOperationAction(ctx =>
+                {
+                    var operation = (IObjectCreationOperation)ctx.Operation;
+
+                    lock (cannotBeStaticClasses)
+                    {
+                        cannotBeStaticClasses.Add(operation.Constructor.ContainingType);
+                    }
+
+                }, OperationKind.ObjectCreation);
 
                 s.RegisterCompilationEndAction(ctx =>
                 {
                     foreach (var c in potentialClasses)
                     {
-                        if (parentClasses.Contains(c))
+                        if (cannotBeStaticClasses.Contains(c))
                             continue;
 
                         foreach (var location in c.Locations)
@@ -75,8 +107,24 @@ namespace Meziantou.Analyzer.Rules
             return !symbol.IsAbstract &&
                 !symbol.IsStatic &&
                 !symbol.Interfaces.Any() &&
-                (symbol.BaseType == null || symbol.BaseType.SpecialType == SpecialType.System_Object) &&
-                symbol.GetMembers().All(member => member.IsStatic || member.IsImplicitlyDeclared);
+                !HasBaseClass() &&
+                !symbol.IsUnitTestClass() &&
+                symbol.GetMembers().All(member => (member.IsStatic || member.IsImplicitlyDeclared) && !IsOperator(member));
+
+            bool HasBaseClass()
+            {
+                return symbol.BaseType != null && symbol.BaseType.SpecialType != SpecialType.System_Object;
+            }
+        }
+
+        private static bool IsOperator(ISymbol symbol)
+        {
+            if (symbol is IMethodSymbol methodSymbol)
+            {
+                return methodSymbol.MethodKind == MethodKind.UserDefinedOperator || methodSymbol.MethodKind == MethodKind.Conversion;
+            }
+
+            return false;
         }
     }
 }

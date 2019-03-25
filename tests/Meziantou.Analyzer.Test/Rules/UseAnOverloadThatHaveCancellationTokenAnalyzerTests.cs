@@ -28,7 +28,25 @@ class Test
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0032"));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden));
+        }
+
+        [TestMethod]
+        public void CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    public void A()
+    {
+        MethodWithCancellationToken();
+    }
+
+    public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
+}");
+
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden));
         }
 
         [TestMethod]
@@ -48,6 +66,26 @@ class Test
 }");
 
             VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void CallingMethodWithATaskInContext_ShouldReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    public void A(System.Threading.Tasks.Task task)
+    {
+        MethodWithCancellationToken();
+    }
+
+    public void MethodWithCancellationToken() => throw null;
+    public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+}");
+
+            // Should not report MA0040 with task.Factory.CancellationToken
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden));
         }
 
         [TestMethod]
@@ -106,18 +144,18 @@ class Test
     }
 
     public System.Threading.CancellationToken MyCancellationToken { get; }
-    public HttpRequest Request { get; }
+    public HttpContext Context { get; }
 
     public void MethodWithCancellationToken() => throw null;
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }
 
-class HttpRequest
+class HttpContext
 {
     public System.Threading.CancellationToken RequestAborted { get; }
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (MyCancellationToken, Request.RequestAborted)"));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (MyCancellationToken, Context.RequestAborted)"));
         }
 
         [TestMethod]
@@ -133,13 +171,13 @@ class Test
     }
 
     public static System.Threading.CancellationToken MyCancellationToken { get; }
-    public HttpRequest Request { get; }
+    public HttpContext Context { get; }
 
     public static void MethodWithCancellationToken() => throw null;
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }
 
-class HttpRequest
+class HttpContext
 {
     public System.Threading.CancellationToken RequestAborted { get; }
 }");
@@ -165,8 +203,7 @@ class Test
         System.Threading.CancellationToken unaccessible2 = default;
     }
 
-    public static void MethodWithCancellationToken() => throw null;
-    public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+    public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
 }
 ");
 

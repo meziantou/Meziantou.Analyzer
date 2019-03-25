@@ -74,7 +74,7 @@ interface ITest { }
         }
 
         [TestMethod]
-        public void Diagnostic()
+        public void StaticMethodAndConstField_Diagnostic()
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
@@ -85,6 +85,78 @@ class Test
 }");
 
             VerifyDiagnostic(project, CreateDiagnosticResult(line: 2, column: 7));
+        }
+
+        [TestMethod]
+        public void ConversionOperator_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    public static implicit operator int(Test _) => 1;
+}");
+
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void AddOperator_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    public static Test operator +(Test a, Test b) => throw null;
+}");
+
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void ComImport_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+[System.Runtime.InteropServices.CoClass(typeof(Test))]
+interface ITest
+{
+}
+
+class Test
+{
+}");
+
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void Instantiation_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+class Test
+{
+    public static void A() => new Test();
+}
+");
+
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void MsTestClass_NoDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .AddMSTest()
+                  .WithSource(@"
+[Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
+class Test
+{
+}
+");
+
+            VerifyDiagnostic(project);
         }
     }
 }
