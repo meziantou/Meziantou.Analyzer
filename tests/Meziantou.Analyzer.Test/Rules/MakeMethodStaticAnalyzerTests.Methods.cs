@@ -550,5 +550,17 @@ public class CustomMiddleware : IMiddleware
 }");
             VerifyDiagnostic(project);
         }
+
+        [TestMethod]
+        public void AbstractMethod_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                  .WithSource(@"
+abstract class Test
+{
+    protected abstract void A();
+}");
+            VerifyDiagnostic(project);
+        }
     }
 }
