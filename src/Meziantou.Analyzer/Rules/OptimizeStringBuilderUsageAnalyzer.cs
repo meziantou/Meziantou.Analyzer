@@ -95,7 +95,15 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (constValue.Length == 0)
                     {
-                        reason = "Remove this no-op call";
+                        if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                        {
+                            reason = "Remove the useless argument";
+                        }
+                        else
+                        {
+                            reason = "Remove this no-op call";
+                        }
+
                         return true;
                     }
                     else if (constValue.Length == 1)
@@ -118,8 +126,11 @@ namespace Meziantou.Analyzer.Rules
                 }
                 else if (constValue.Length == 1)
                 {
-                    reason = $"Replace {methodName}(string) with {methodName}(char)";
-                    return true;
+                    if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
+                    {
+                        reason = $"Replace {methodName}(string) with {methodName}(char)";
+                        return true;
+                    }
                 }
 
                 return false;
