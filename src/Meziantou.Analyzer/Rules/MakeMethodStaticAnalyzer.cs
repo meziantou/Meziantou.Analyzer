@@ -59,7 +59,11 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
-            var operation = context.SemanticModel.GetOperation((SyntaxNode)node.Body ?? node.ExpressionBody.Expression, context.CancellationToken);
+            var body = (SyntaxNode)node.Body ?? node.ExpressionBody;
+            if (body == null)
+                return;
+
+            var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
             if (operation == null || HasInstanceUsages(operation))
                 return;
 
