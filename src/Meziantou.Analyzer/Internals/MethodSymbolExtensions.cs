@@ -10,12 +10,26 @@ namespace Meziantou.Analyzer
             if (method.ExplicitInterfaceImplementations.Length > 0)
                 return true;
 
-            if (method.ContainingType == null)
+            return IsInterfaceImplementation((ISymbol)method);
+        }
+
+        public static bool IsInterfaceImplementation(this IPropertySymbol property)
+        {
+            if (property.ExplicitInterfaceImplementations.Length > 0)
+                return true;
+
+            return IsInterfaceImplementation((ISymbol)property);
+        }
+
+
+        private static bool IsInterfaceImplementation(this ISymbol symbol)
+        {
+            if (symbol.ContainingType == null)
                 return false;
 
-            return method.ContainingType.AllInterfaces
-                .SelectMany(@interface => @interface.GetMembers().OfType<IMethodSymbol>())
-                .Any(interfaceMethod => method.Equals(method.ContainingType.FindImplementationForInterfaceMember(interfaceMethod)));
+            return symbol.ContainingType.AllInterfaces
+                .SelectMany(@interface => @interface.GetMembers())
+                .Any(interfaceMember => symbol.Equals(symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMember)));
         }
 
         public static bool IsUnitTestMethod(this IMethodSymbol methodSymbol)

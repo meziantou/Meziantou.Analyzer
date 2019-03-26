@@ -44,6 +44,7 @@ namespace Meziantou.Analyzer
         public const string MakeMethodStatic = "MA0038";
         public const string DoNotUseServerCertificateValidationCallback = "MA0039";
         public const string UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable = "MA0040";
+        public const string MakePropertyStatic = "MA0041";
 
         public static string GetHelpUri(string idenfifier)
         {

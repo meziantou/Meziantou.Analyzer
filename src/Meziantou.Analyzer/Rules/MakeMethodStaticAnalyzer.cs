@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_methodRule = new DiagnosticDescriptor(
             RuleIdentifiers.MakeMethodStatic,
             title: "Make method static",
             messageFormat: "Make method static",
@@ -22,17 +22,29 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeMethodStatic));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        private static readonly DiagnosticDescriptor s_propertyRule = new DiagnosticDescriptor(
+         RuleIdentifiers.MakePropertyStatic,
+         title: "Make property static",
+         messageFormat: "Make property static",
+         RuleCategories.Design,
+         DiagnosticSeverity.Info,
+         isEnabledByDefault: true,
+         description: "",
+         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakePropertyStatic));
+
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_methodRule, s_propertyRule);
 
         public override void Initialize(AnalysisContext context)
         {
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.MethodDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeProperty, SyntaxKind.PropertyDeclaration);
         }
 
-        private static void Analyze(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
         {
             var node = (MethodDeclarationSyntax)context.Node;
             var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IMethodSymbol;
@@ -51,10 +63,54 @@ namespace Meziantou.Analyzer.Rules
             if (operation == null || HasInstanceUsages(operation))
                 return;
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, node.Identifier.GetLocation()));
+            context.ReportDiagnostic(Diagnostic.Create(s_methodRule, node.Identifier.GetLocation()));
+        }
+
+        private static void AnalyzeProperty(SyntaxNodeAnalysisContext context)
+        {
+            var node = (PropertyDeclarationSyntax)context.Node;
+            var propertySymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IPropertySymbol;
+            if (propertySymbol == null)
+                return;
+
+            if (!IsPotentialStatic(propertySymbol))
+                return;
+
+            if (node.ExpressionBody != null)
+            {
+                var operation = context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken);
+                if (operation == null || HasInstanceUsages(operation))
+                    return;
+            }
+
+            if (node.AccessorList != null)
+            {
+                foreach (var accessor in node.AccessorList.Accessors)
+                {
+                    var body = (SyntaxNode)accessor.Body ?? accessor.ExpressionBody;
+                    if (body == null)
+                        return;
+
+                    var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
+                    if (operation == null || HasInstanceUsages(operation))
+                        return;
+                }
+            }
+
+            context.ReportDiagnostic(Diagnostic.Create(s_propertyRule, node.Identifier.GetLocation()));
         }
 
         private static bool IsPotentialStatic(IMethodSymbol symbol)
+        {
+            return
+                !symbol.IsAbstract &&
+                !symbol.IsVirtual &&
+                !symbol.IsOverride &&
+                !symbol.IsStatic &&
+                !symbol.IsInterfaceImplementation();
+        }
+
+        private static bool IsPotentialStatic(IPropertySymbol symbol)
         {
             return
                 !symbol.IsAbstract &&
