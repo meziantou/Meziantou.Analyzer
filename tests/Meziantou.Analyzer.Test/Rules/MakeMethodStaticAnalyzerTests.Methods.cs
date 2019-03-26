@@ -9,7 +9,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MakeMethodStaticAnalyzerTests : CodeFixVerifier
+    public class MakeMethodStaticAnalyzerTests_Methods : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new MakeMethodStaticAnalyzer();
         protected override string ExpectedDiagnosticId => "MA0038";
@@ -39,7 +39,7 @@ class TestClass
 {
     void A() { _ = this.TestProperty; }
 
-    public int TestProperty => 0;    
+    public int TestProperty { get; }    
 }
 ");
 
