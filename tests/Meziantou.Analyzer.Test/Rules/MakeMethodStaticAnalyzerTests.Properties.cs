@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Meziantou.Analyzer.Rules;
+﻿using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -12,6 +11,7 @@ namespace Meziantou.Analyzer.Test.Rules
     public class MakeMethodStaticAnalyzerTests_Properties : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new MakeMethodStaticAnalyzer();
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new MakeMethodStaticFixer();
         protected override string ExpectedDiagnosticId => "MA0041";
         protected override string ExpectedDiagnosticMessage => "Make property static";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
@@ -106,6 +106,16 @@ class TestClass
 ");
 
             VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 9));
+
+            var fix = @"
+class TestClass
+{
+    static int A => _a;
+
+    static int _a;
+}
+";
+            VerifyFix(project, fix);
         }
 
         [TestMethod]
