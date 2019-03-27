@@ -1,5 +1,6 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -10,6 +11,7 @@ namespace Meziantou.Analyzer.Test.Rules
     public class MakeClassStaticAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new MakeClassStaticAnalyzer();
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new MakeClassStaticFixer();
         protected override string ExpectedDiagnosticId => "MA0036";
         protected override string ExpectedDiagnosticMessage => "Make class static";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
@@ -78,13 +80,21 @@ interface ITest { }
         {
             var project = new ProjectBuilder()
                   .WithSource(@"
-class Test
+public class Test
 {
     const int a = 10;
     static void A() { }
 }");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 2, column: 7));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 2, column: 14));
+
+            var fix = @"
+public static class Test
+{
+    const int a = 10;
+    static void A() { }
+}";
+            VerifyFix(project, fix);
         }
 
         [TestMethod]
