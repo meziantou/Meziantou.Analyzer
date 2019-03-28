@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer
 {
@@ -13,6 +15,18 @@ namespace Meziantou.Analyzer
                 yield return operation;
                 operation = operation.Parent;
             }
+        }
+
+        public static bool IsInQueryableExpressionArgument(this IOperation operation)
+        {
+            foreach (var invocationOperation in operation.Ancestors().OfType<IInvocationOperation>())
+            {
+                var type = invocationOperation.TargetMethod.ContainingType;
+                if (type.IsEqualsTo(operation.SemanticModel.Compilation.GetTypeByMetadataName("System.Linq.Queryable")))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

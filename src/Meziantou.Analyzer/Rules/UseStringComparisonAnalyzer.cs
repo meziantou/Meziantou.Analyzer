@@ -50,6 +50,11 @@ namespace Meziantou.Analyzer.Rules
 
             if (!HasArgumentOfType(operation, stringComparisonType))
             {
+                // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
+                // https://github.com/aspnet/EntityFrameworkCore/issues/1222
+                if (operation.IsInQueryableExpressionArgument())
+                    return;
+
                 // Check if there is an overload with a StringComparison
                 if (HasOverloadWithAdditionalParameterOfType(operation, stringComparisonType))
                 {
