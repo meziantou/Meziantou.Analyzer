@@ -1,5 +1,6 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -10,6 +11,7 @@ namespace Meziantou.Analyzer.Test.Rules
     public class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests : CodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer();
+        protected override CodeFixProvider GetCSharpCodeFixProvider() => new DoNotRemoveOriginalExceptionFromThrowStatementFixer();
         protected override string ExpectedDiagnosticId => "MA0027";
         protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
 
@@ -53,13 +55,30 @@ class Test
         }
         catch (System.Exception ex)
         {
+            _ = ex;
             throw ex;
         }
     }
 }
 ");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 11, column: 13));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 12, column: 13));
+            VerifyFix(project, @"
+class Test
+{
+    internal void Sample()
+    {
+        try
+        {
+        }
+        catch (System.Exception ex)
+        {
+            _ = ex;
+            throw;
+        }
+    }
+}
+");
         }
     }
 }
