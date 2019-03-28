@@ -39,6 +39,11 @@ namespace Meziantou.Analyzer.Rules
                     if (IsNull(operation.LeftOperand) || IsNull(operation.RightOperand))
                         return;
 
+                    // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
+                    // https://github.com/aspnet/EntityFrameworkCore/issues/1222
+                    if (operation.IsInQueryableExpressionArgument())
+                        return;
+
                     context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), $"{operation.OperatorKind} operator"));
                 }
             }

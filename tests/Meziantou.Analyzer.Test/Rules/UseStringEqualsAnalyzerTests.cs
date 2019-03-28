@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Linq;
+using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -132,6 +133,24 @@ class TypeName
     {
         var a = """" == null;
         var b = null == """";
+    }
+}");
+
+            VerifyDiagnostic(project);
+        }
+
+        [TestMethod]
+        public void Equals_InIQueryableMethod_ShouldNotReportDiagnostic()
+        {
+            var project = new ProjectBuilder()
+                .AddReference(typeof(IQueryable<>))
+                .WithSource(@"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        IQueryable<string> query = null;
+        query = query.Where(i => i == ""test"");
     }
 }");
 

@@ -47,6 +47,14 @@ namespace TestHelper
             else if (type == typeof(Enumerable))
             {
                 AddReferenceByName("System.Linq");
+                AddReferenceByName("System.Runtime");
+            }
+            else if (type == typeof(IQueryable<>))
+            {
+                AddReferenceByName("System.Linq");
+                AddReferenceByName("System.Linq.Expressions");
+                AddReferenceByName("System.Linq.Queryable");
+                AddReferenceByName("System.Runtime");
             }
             else if (type == typeof(HashSet<>))
             {
