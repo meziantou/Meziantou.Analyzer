@@ -396,7 +396,7 @@ class TestClass2
         public void MSTest_TestMethod()
         {
             var project = new ProjectBuilder()
-                  .AddMSTest()
+                  .AddMSTestApi()
                   .WithSource(@"
 class TestClass
 {
@@ -414,7 +414,7 @@ class TestClass
         public void MSTest_DataTestMethod()
         {
             var project = new ProjectBuilder()
-                  .AddMSTest()
+                  .AddMSTestApi()
                   .WithSource(@"
 class TestClass
 {
@@ -432,7 +432,7 @@ class TestClass
         public void XUnit_TestMethod()
         {
             var project = new ProjectBuilder()
-                  .AddXUnit()
+                  .AddXUnitApi()
                   .WithSource(@"
 class TestClass
 {
@@ -450,7 +450,7 @@ class TestClass
         public void AspNetCore_Startup()
         {
             var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCore()
+                  .AddMicrosoftAspNetCoreApi()
                   .WithSource(@"
 using System;
 using System.Threading.Tasks;
@@ -476,7 +476,7 @@ public class Startup
         public void AspNetCore_Middleware_Convention_Invoke()
         {
             var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCore()
+                  .AddMicrosoftAspNetCoreApi()
                   .WithSource(@"
 using System;
 using System.Threading.Tasks;
@@ -501,7 +501,7 @@ public class CustomMiddleware
         public void AspNetCore_Middleware_Convention_InvokeAsync()
         {
             var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCore()
+                  .AddMicrosoftAspNetCoreApi()
                   .WithSource(@"
 using System;
 using System.Threading.Tasks;
@@ -526,7 +526,7 @@ public class CustomMiddleware
         public void AspNetCore_Middleware_Convention_Interface()
         {
             var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCore()
+                  .AddMicrosoftAspNetCoreApi()
                   .WithSource(@"
 using System;
 using System.Threading.Tasks;
@@ -546,7 +546,7 @@ public class CustomMiddleware : IMiddleware
         public void AspNetCore_Middleware_Convention_ExplicitInterface()
         {
             var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCore()
+                  .AddMicrosoftAspNetCoreApi()
                   .WithSource(@"
 using System;
 using System.Threading.Tasks;

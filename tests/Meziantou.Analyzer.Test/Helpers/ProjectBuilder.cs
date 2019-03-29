@@ -23,7 +23,6 @@ namespace TestHelper
 
         public string SourceCode { get; private set; } = "";
         public string EditorConfig { get; private set; }
-        public bool IsStatements { get; private set; }
 
         public bool IsValidCode { get; private set; } = true;
 
@@ -121,25 +120,17 @@ namespace TestHelper
 
         public ProjectBuilder AddWpfApi() => AddApiReference("System.Windows.Window");
 
-        public ProjectBuilder AddMSTest() => AddApiReference("MSTest");
+        public ProjectBuilder AddMSTestApi() => AddApiReference("MSTest");
 
-        public ProjectBuilder AddNUnit() => AddApiReference("NUnit");
+        public ProjectBuilder AddNUnitApi() => AddApiReference("NUnit");
 
-        public ProjectBuilder AddXUnit() => AddApiReference("XUnit");
+        public ProjectBuilder AddXUnitApi() => AddApiReference("XUnit");
 
-        public ProjectBuilder AddMicrosoftAspNetCore() => AddApiReference("Microsoft.AspNetCore");
+        public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
 
         public ProjectBuilder WithSource(string content)
         {
             SourceCode = content;
-            IsStatements = false;
-            return this;
-        }
-
-        public ProjectBuilder WithStatement(string content)
-        {
-            SourceCode = "class Test{void Method(){" + content + "}}";
-            IsStatements = true;
             return this;
         }
 

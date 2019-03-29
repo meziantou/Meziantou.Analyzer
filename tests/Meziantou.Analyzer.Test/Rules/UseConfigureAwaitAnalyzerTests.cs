@@ -216,7 +216,7 @@ class ClassTest
         public void XUnitAttribute_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .AddXUnit()
+                  .AddXUnitApi()
                   .WithSource(@"using System.Threading.Tasks;
 class ClassTest
 {

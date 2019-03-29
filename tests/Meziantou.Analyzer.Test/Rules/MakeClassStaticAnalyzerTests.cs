@@ -158,7 +158,7 @@ class Test
         public void MsTestClass_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .AddMSTest()
+                  .AddMSTestApi()
                   .WithSource(@"
 [Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
 class Test

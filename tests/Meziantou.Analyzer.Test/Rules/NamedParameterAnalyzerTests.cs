@@ -219,7 +219,7 @@ class TypeName
         public void MSTestAssert_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .AddMSTest()
+                  .AddMSTestApi()
                   .WithSource(@"
 class TypeName
 {
@@ -233,7 +233,7 @@ class TypeName
         public void NunitAssert_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .AddNUnit()
+                  .AddNUnitApi()
                   .WithSource(@"
 class TypeName
 {
@@ -247,7 +247,7 @@ class TypeName
         public void XunitAssert_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .AddXUnit()
+                  .AddXUnitApi()
                   .WithSource(@"
 class TypeName
 {
