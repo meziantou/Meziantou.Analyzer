@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void StaticMembers()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test<T>
 {
     static string field;

@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Task_ConfigureAwait_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
@@ -43,7 +43,7 @@ class TypeName
         public void Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
@@ -59,7 +59,7 @@ class TypeName
         public void NamedParameter_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -75,7 +75,7 @@ class TypeName
         public void True_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -103,7 +103,7 @@ class TypeName
         public void False_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -119,7 +119,7 @@ class TypeName
         public void Null_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -135,7 +135,7 @@ class TypeName
         public void MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -151,7 +151,7 @@ class TypeName
         public void MethodBaseInvoke_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -178,7 +178,7 @@ class TypeName
         public void Attribute_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 [assembly: SkipNamedAttribute(""TypeName"", ""Test"")]
 internal class SkipNamedAttribute : System.Attribute
 {
@@ -199,7 +199,7 @@ class TypeName
         public void AttributeWithWildcard_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 [assembly: SkipNamedAttribute(""TypeName"", ""*"")]
 internal class SkipNamedAttribute : System.Attribute
 {
@@ -220,7 +220,7 @@ class TypeName
         {
             var project = new ProjectBuilder()
                   .AddMSTestApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
@@ -234,7 +234,7 @@ class TypeName
         {
             var project = new ProjectBuilder()
                   .AddNUnitApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
@@ -248,7 +248,7 @@ class TypeName
         {
             var project = new ProjectBuilder()
                   .AddXUnitApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test() => Xunit.Assert.AreEqual(null, true);
@@ -261,7 +261,7 @@ class TypeName
         public void Ctor_ShouldUseTheRightParameterName()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -293,7 +293,7 @@ class TypeName
         public void PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
@@ -318,7 +318,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         public void Task_FromResult_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()

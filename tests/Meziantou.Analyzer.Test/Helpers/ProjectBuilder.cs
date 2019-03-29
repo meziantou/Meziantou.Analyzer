@@ -128,7 +128,7 @@ namespace TestHelper
 
         public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
 
-        public ProjectBuilder WithSource(string content)
+        public ProjectBuilder WithSourceCode(string content)
         {
             SourceCode = content;
             return this;

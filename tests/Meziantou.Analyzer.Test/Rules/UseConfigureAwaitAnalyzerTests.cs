@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void MissingConfigureAwait_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -54,7 +54,7 @@ class ClassTest
         public void ConfigureAwaitIsPresent_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -69,7 +69,7 @@ class ClassTest
         public void ConfigureAwaitOfTIsPresent_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -85,7 +85,7 @@ class ClassTest
         {
             var project = new ProjectBuilder()
                   .AddWpfApi()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -102,7 +102,7 @@ class MyClass : System.Windows.Window
         {
             var project = new ProjectBuilder()
                   .AddWpfApi()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class MyClass : System.Windows.Input.ICommand
 {
     async Task Test()
@@ -119,7 +119,7 @@ class MyClass : System.Windows.Input.ICommand
         {
             var project = new ProjectBuilder()
                   .AddWpfApi()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -151,7 +151,7 @@ class MyClass : System.Windows.Window
         {
             var project = new ProjectBuilder()
                   .AddWpfApi()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -175,7 +175,7 @@ class MyClass : System.Windows.Window
         {
             var project = new ProjectBuilder()
                   .AddWpfApi()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -200,7 +200,7 @@ class MyClass : System.Windows.Window
         public void TaskYield_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -217,7 +217,7 @@ class ClassTest
         {
             var project = new ProjectBuilder()
                   .AddXUnitApi()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class ClassTest
 {
     [Xunit.Fact]

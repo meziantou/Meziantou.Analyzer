@@ -26,7 +26,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecified()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -43,7 +43,7 @@ class TypeName
         public void Equals_String_string_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -69,7 +69,7 @@ class TypeName
         public void Equals_String_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -96,7 +96,7 @@ class TypeName
         public void IndexOf_Char_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -123,7 +123,7 @@ class TypeName
         public void IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -138,7 +138,7 @@ class TypeName
         public void IndexOf_String_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -165,7 +165,7 @@ class TypeName
         public void StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -180,7 +180,7 @@ class TypeName
         public void StartsWith_String_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -206,7 +206,7 @@ class TypeName
         public void Compare_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -232,7 +232,7 @@ class TypeName
         public void Compare_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()

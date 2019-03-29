@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void EmptyStatement()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A()
@@ -33,7 +33,7 @@ class Test
         public void EmptyStatementInALabel()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A()

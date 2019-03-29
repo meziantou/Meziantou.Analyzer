@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Test()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;
+                  .WithSourceCode(@"using System.Collections.Generic;
 class Test
 {
     internal void Sample()

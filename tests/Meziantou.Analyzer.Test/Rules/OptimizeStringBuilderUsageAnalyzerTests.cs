@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void AppendFormat_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
@@ -40,7 +40,7 @@ class Test
         public void Append_NoDiagnostic(string text)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
@@ -62,7 +62,7 @@ class Test
         public void Append_ReportDiagnostic(string text)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
@@ -80,7 +80,7 @@ class Test
         public void AppendLine_NoDiagnostic(string text)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
@@ -100,7 +100,7 @@ class Test
         public void AppendLine_ReportDiagnostic(string text)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
@@ -118,7 +118,7 @@ class Test
         public void Insert_NoDiagnostic(string text)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
@@ -138,7 +138,7 @@ class Test
         public void Insert_ReportDiagnostic(string text)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()

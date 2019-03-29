@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Fields(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @"
@@ -68,7 +68,7 @@ public class Test
         public void Delegates(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @" delegate
@@ -90,7 +90,7 @@ public class Test
         public void Delegates_Parameters(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @" delegate void A(
@@ -112,7 +112,7 @@ public class Test
         public void Indexers(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @"
@@ -134,7 +134,7 @@ public class Test
         public void Indexers_Parameters(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @" int this[
@@ -156,7 +156,7 @@ public class Test
         public void Properties(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @"
@@ -178,7 +178,7 @@ public class Test
         public void Methods(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @"
@@ -200,7 +200,7 @@ public class Test
         public void Methods_Parameters(string visibility, string type, bool isValid)
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Collections.Generic;using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
     " + visibility + @" void A(
@@ -221,7 +221,7 @@ public class Test
         public void PrivateContainer()
         {
             var project = new ProjectBuilder()
-                 .WithSource(@"using System.Collections.Generic;
+                 .WithSourceCode(@"using System.Collections.Generic;
 internal class Test
 {
     public delegate List<int> B();

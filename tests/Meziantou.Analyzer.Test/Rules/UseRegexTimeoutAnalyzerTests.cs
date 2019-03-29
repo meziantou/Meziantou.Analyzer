@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Regex))
-                  .WithSource(@"using System.Text.RegularExpressions;
+                  .WithSourceCode(@"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
@@ -38,7 +38,7 @@ class TestClass
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Regex))
-                  .WithSource(@"using System.Text.RegularExpressions;
+                  .WithSourceCode(@"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
@@ -55,7 +55,7 @@ class TestClass
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Regex))
-                  .WithSource(@"using System.Text.RegularExpressions;
+                  .WithSourceCode(@"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
@@ -73,7 +73,7 @@ class TestClass
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Regex))
-                  .WithSource(@"using System.Text.RegularExpressions;
+                  .WithSourceCode(@"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
@@ -90,7 +90,7 @@ class TestClass
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Regex))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void Test()

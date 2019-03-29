@@ -22,7 +22,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(Thread))
-                  .WithSource(@"using System.Threading;
+                  .WithSourceCode(@"using System.Threading;
 public class Test
 {
     public void A()

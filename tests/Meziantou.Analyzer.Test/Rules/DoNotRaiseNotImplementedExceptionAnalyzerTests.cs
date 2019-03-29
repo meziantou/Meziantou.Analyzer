@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void RaiseNotReservedException_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System;
+                  .WithSourceCode(@"using System;
 class TestAttribute
 {
     void Test()
@@ -42,7 +42,7 @@ class TestAttribute
         public void RaiseNotImplementedException_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System;
+                  .WithSourceCode(@"using System;
 class TestAttribute
 {
     void Test()

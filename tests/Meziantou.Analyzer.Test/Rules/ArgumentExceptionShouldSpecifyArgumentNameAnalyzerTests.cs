@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(InvalidEnumArgumentException))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Sample
 {
     string Prop
@@ -64,7 +64,7 @@ class Sample
         public void ArgumentNameDoesNotMatchAParameter_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestAttribute
 {
     string Prop
@@ -88,7 +88,7 @@ class TestAttribute
         public void OverloadWithoutParameterName_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestAttribute
 {
     string Prop

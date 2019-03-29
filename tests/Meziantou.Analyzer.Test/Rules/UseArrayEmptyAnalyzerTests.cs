@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void EmptyArray_ShouldReportError(string code)
         {
             var project = new ProjectBuilder()
-                  .WithSource($@"
+                  .WithSourceCode($@"
 class TestClass
 {{
     void Test()
@@ -58,7 +58,7 @@ class TestClass
         public void NonEmptyArray_ShouldReportError(string code)
         {
             var project = new ProjectBuilder()
-                  .WithSource($@"
+                  .WithSourceCode($@"
 class TestClass
 {{
     void Test()
@@ -74,7 +74,7 @@ class TestClass
         public void Length_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void Test()
@@ -91,7 +91,7 @@ class TestClass
         public void ParamsMethod_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 public class TestClass
 {
     public void Test(params string[] values)
@@ -111,7 +111,7 @@ public class TestClass
         public void EmptyArrayInAttribute_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 [Test(new int[0])]
 class TestAttribute : System.Attribute
 {

@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Ctor()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 abstract class Test
 {
     protected Test(int a) { }
@@ -42,7 +42,7 @@ class Test2
         public void PublicCtor()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 abstract class Test
 {
     public Test() { }
@@ -60,7 +60,7 @@ abstract class Test
         public void InternalCtor()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 abstract class Test
 {
     internal Test() { }

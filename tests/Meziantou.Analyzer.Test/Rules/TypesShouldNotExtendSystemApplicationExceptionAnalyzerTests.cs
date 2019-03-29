@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void InheritFromException_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource("class Test : System.Exception { }");
+                  .WithSourceCode("class Test : System.Exception { }");
 
             VerifyDiagnostic(project);
         }
@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void InheritFromApplicationException_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource("class Test : System.ApplicationException { }");
+                  .WithSourceCode("class Test : System.ApplicationException { }");
 
             var expected = CreateDiagnosticResult(line: 1, column: 7);
             VerifyDiagnostic(project, expected);

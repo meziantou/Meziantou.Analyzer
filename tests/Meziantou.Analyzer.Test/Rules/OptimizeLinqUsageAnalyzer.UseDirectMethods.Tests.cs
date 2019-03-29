@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Test.Rules
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -45,7 +45,7 @@ class Test
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -65,7 +65,7 @@ class Test
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -86,7 +86,7 @@ class Test
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,7 +123,7 @@ class Test
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -144,7 +144,7 @@ class Test
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -165,7 +165,7 @@ class Test
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -186,7 +186,7 @@ class Test
             var project = new ProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()

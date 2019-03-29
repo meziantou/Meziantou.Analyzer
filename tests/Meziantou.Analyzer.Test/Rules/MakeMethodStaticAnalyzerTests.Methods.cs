@@ -22,7 +22,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void ExpressionBody()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A() => throw null;
@@ -45,7 +45,7 @@ class TestClass
         public void AccessInstanceProperty_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A() { _ = this.TestProperty; }
@@ -63,7 +63,7 @@ class TestClass
             var project = new ProjectBuilder()
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System.Linq;
 class TestClass
 {
@@ -87,7 +87,7 @@ class TestClass
             var project = new ProjectBuilder()
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System.Linq;
 class TestClass
 {
@@ -110,7 +110,7 @@ class TestClass
             var project = new ProjectBuilder()
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System.Linq;
 class TestClass
 {
@@ -133,7 +133,7 @@ class TestClass
             var project = new ProjectBuilder()
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System.Linq;
 class TestClass
 {
@@ -157,7 +157,7 @@ class TestClass
             var project = new ProjectBuilder()
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System.Linq;
 class TestClass
 {
@@ -178,7 +178,7 @@ class TestClass
             var project = new ProjectBuilder()
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System.Linq;
 class TestClass
 {
@@ -200,7 +200,7 @@ class TestClass
         public void AccessStaticProperty()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A() { _ = TestProperty; }
@@ -216,7 +216,7 @@ class TestClass
         public void AccessStaticMethod()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A() { TestMethod(); }
@@ -232,7 +232,7 @@ class TestClass
         public void AccessStaticField()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A() { _ = _a; }
@@ -248,7 +248,7 @@ class TestClass
         public void AccessInstanceField()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A() { _ = _a; }
@@ -264,7 +264,7 @@ class TestClass
         public void MethodImplementAnInterface()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass : ITest
 {
     public void A() { }
@@ -283,7 +283,7 @@ interface ITest
         public void MethodExplicitlyImplementAnInterface()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass : ITest
 {
     void ITest.A() { }
@@ -302,7 +302,7 @@ interface ITest
         public void MethodImplementAGenericInterface()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass : ITest<int>
 {
     public int A() => 0;
@@ -321,7 +321,7 @@ interface ITest<T>
         public void MethodImplementAGenericInterfaceInAGenericClass()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass<T> : ITest<T>
 {
     public T A() => throw null;
@@ -340,7 +340,7 @@ interface ITest<T>
         public void MethodUseAnAnonymousObject()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A()
@@ -358,7 +358,7 @@ class TestClass
         public void CreateInstance()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A()
@@ -375,7 +375,7 @@ class TestClass
         public void CreateInstanceOfAnotherType()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     void A()
@@ -397,7 +397,7 @@ class TestClass2
         {
             var project = new ProjectBuilder()
                   .AddMSTestApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]
@@ -415,7 +415,7 @@ class TestClass
         {
             var project = new ProjectBuilder()
                   .AddMSTestApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     [Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethod]
@@ -433,7 +433,7 @@ class TestClass
         {
             var project = new ProjectBuilder()
                   .AddXUnitApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     [Xunit.Fact]
@@ -451,7 +451,7 @@ class TestClass
         {
             var project = new ProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -477,7 +477,7 @@ public class Startup
         {
             var project = new ProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -502,7 +502,7 @@ public class CustomMiddleware
         {
             var project = new ProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -527,7 +527,7 @@ public class CustomMiddleware
         {
             var project = new ProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -547,7 +547,7 @@ public class CustomMiddleware : IMiddleware
         {
             var project = new ProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -566,7 +566,7 @@ public class CustomMiddleware : IMiddleware
         public void AbstractMethod_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 abstract class Test
 {
     protected abstract void A();

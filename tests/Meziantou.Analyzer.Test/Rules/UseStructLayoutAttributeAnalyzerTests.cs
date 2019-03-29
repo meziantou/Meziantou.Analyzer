@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void MissingAttribute_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                .WithSource("struct TypeName { }");
+                .WithSourceCode("struct TypeName { }");
 
             var expected = CreateDiagnosticResult(line: 1, column: 8);
 
@@ -42,7 +42,7 @@ struct TypeName { }";
         public void AddAttributeShouldUseShortname()
         {
             var project = new ProjectBuilder()
-                .WithSource(@"using System.Runtime.InteropServices;
+                .WithSourceCode(@"using System.Runtime.InteropServices;
 struct TypeName { }");
 
             var fix = @"using System.Runtime.InteropServices;
@@ -57,7 +57,7 @@ struct TypeName { }";
         public void WithAttribute_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                .WithSource(@"using System.Runtime.InteropServices;
+                .WithSourceCode(@"using System.Runtime.InteropServices;
 [StructLayout(LayoutKind.Sequential)]
 struct TypeName
 {
@@ -70,7 +70,7 @@ struct TypeName
         public void Enum_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                .WithSource(@"
+                .WithSourceCode(@"
 enum TypeName
 {
     None,

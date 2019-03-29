@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     internal void Sample()
@@ -45,7 +45,7 @@ class Test
         public void ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     internal void Sample()

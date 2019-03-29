@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void DontReport()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test2
 {
     int _a;
@@ -32,7 +32,7 @@ class Test2
         public void Report()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test2
 {
     [System.ThreadStatic]

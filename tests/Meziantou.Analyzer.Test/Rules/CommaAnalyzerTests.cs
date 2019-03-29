@@ -26,7 +26,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void OneLineDeclarationWithMissingTrailingComma_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public int A { get; set; }
@@ -45,7 +45,7 @@ class TypeName
         public void MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public int A { get; set; }
@@ -68,7 +68,7 @@ class TypeName
         public void MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public int A { get; set; }

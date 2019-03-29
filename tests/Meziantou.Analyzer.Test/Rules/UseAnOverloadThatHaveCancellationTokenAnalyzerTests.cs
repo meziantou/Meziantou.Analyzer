@@ -16,7 +16,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void CallingMethodWithoutCancellationToken_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A()
@@ -35,7 +35,7 @@ class Test
         public void CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A()
@@ -53,7 +53,7 @@ class Test
         public void CallingMethodWithCancellationToken_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A()
@@ -72,7 +72,7 @@ class Test
         public void CallingMethodWithATaskInContext_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A(System.Threading.Tasks.Task task)
@@ -92,7 +92,7 @@ class Test
         public void CallingMethodWithATaskOfTInContext_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A(System.Threading.Tasks.Task<int> task)
@@ -112,7 +112,7 @@ class Test
         public void CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterName()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A(System.Threading.CancellationToken cancellationToken)
@@ -131,7 +131,7 @@ class Test
         public void CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public static void A(HttpRequest request)
@@ -155,7 +155,7 @@ class HttpRequest
         public void CallingMethodWithProperty_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public void A()
@@ -182,7 +182,7 @@ class HttpContext
         public void CallingMethodWithInstanceProperty_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public static void A()
@@ -209,7 +209,7 @@ class HttpContext
         public void CallingMethod_ShouldReportDiagnosticWithVariables()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public static void A()

@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void AbstractClass_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 abstract class AbstractClass
 {
     static void A() { }
@@ -34,7 +34,7 @@ abstract class AbstractClass
         public void Inherited_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     static void A() { }
@@ -50,7 +50,7 @@ class Test2 : Test { }
         public void InstanceField_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test4
 {
     int _a;
@@ -64,7 +64,7 @@ class Test4
         public void ImplementInterface_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test : ITest
 {
 }
@@ -79,7 +79,7 @@ interface ITest { }
         public void StaticMethodAndConstField_Diagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 public class Test
 {
     const int a = 10;
@@ -101,7 +101,7 @@ public static class Test
         public void ConversionOperator_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public static implicit operator int(Test _) => 1;
@@ -114,7 +114,7 @@ class Test
         public void AddOperator_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public static Test operator +(Test a, Test b) => throw null;
@@ -127,7 +127,7 @@ class Test
         public void ComImport_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 [System.Runtime.InteropServices.CoClass(typeof(Test))]
 interface ITest
 {
@@ -144,7 +144,7 @@ class Test
         public void Instantiation_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     public static void A() => new Test();
@@ -159,7 +159,7 @@ class Test
         {
             var project = new ProjectBuilder()
                   .AddMSTestApi()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 [Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
 class Test
 {

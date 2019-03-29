@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void ExpressionBody()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     int A => throw null;
@@ -40,7 +40,7 @@ class TestClass
         public void AccessInstanceProperty_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     int A => TestProperty;
@@ -56,7 +56,7 @@ class TestClass
         public void AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     int A { get; set; }
@@ -70,7 +70,7 @@ class TestClass
         public void AccessStaticProperty()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     public int A => TestProperty;
@@ -94,7 +94,7 @@ class TestClass
         public void AccessStaticMethod()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     int A => TestMethod();
@@ -110,7 +110,7 @@ class TestClass
         public void AccessStaticField()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     int A => _a;
@@ -136,7 +136,7 @@ class TestClass
         public void AccessInstanceField()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass
 {
     int A => _a;
@@ -152,7 +152,7 @@ class TestClass
         public void MethodImplementAnInterface()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass : ITest
 {
     public int A { get; }
@@ -171,7 +171,7 @@ interface ITest
         public void MethodExplicitlyImplementAnInterface()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TestClass : ITest
 {
     int ITest.A { get; }

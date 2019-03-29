@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Int32ToStringWithCultureInfo_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -33,7 +33,7 @@ class TypeName
         public void Int32ToStringWithoutCultureInfo_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -49,7 +49,7 @@ class TypeName
         public void BooleanToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -65,7 +65,7 @@ class TypeName
         public void SystemGuidToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -82,7 +82,7 @@ class TypeName
         public void Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -101,7 +101,7 @@ class TypeName
         public void SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -118,7 +118,7 @@ class TypeName
         public void DateTimeTryParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -135,7 +135,7 @@ class TypeName
         public void StringToLower_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -152,7 +152,7 @@ class TypeName
         public void StringBuilderAppendFormat_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()

@@ -24,7 +24,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(HashSet<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -41,7 +41,7 @@ class TypeName
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(HashSet<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -69,7 +69,7 @@ class TypeName
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(HashSet<>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -85,7 +85,7 @@ class TypeName
         public void Dictionary_String_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -113,7 +113,7 @@ class TypeName
         {
             var project = new ProjectBuilder()
                   .AddReference(typeof(ConcurrentDictionary<,>))
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -142,7 +142,7 @@ class TypeName
             var project = new ProjectBuilder()
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -174,7 +174,7 @@ class TypeName
                   .AddReference(typeof(Dictionary<,>))
                   .AddReference(typeof(Enumerable))
                   .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"using System.Linq;
+                  .WithSourceCode(@"using System.Linq;
 class TypeName
 {
     public void Test()

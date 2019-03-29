@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void GetHashCode_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class TypeName
 {
     public void Test()

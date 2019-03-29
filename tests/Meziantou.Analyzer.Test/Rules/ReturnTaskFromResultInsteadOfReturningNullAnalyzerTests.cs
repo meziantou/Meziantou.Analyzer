@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Method()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     Task A() { return null; }
@@ -40,7 +40,7 @@ class Test
         public void LocalFunction()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -67,7 +67,7 @@ class Test
         public void LambdaExpression()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -94,7 +94,7 @@ class Test
         public void AnonymousMethods()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"using System.Threading.Tasks;
+                  .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     void A()

@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void ServicePointManager_ServerCertificateValidationCallback()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     void A()
@@ -47,7 +47,7 @@ namespace System.Net.Security
         public void HttpClientHandler_ServerCertificateCustomValidationCallback()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 class Test
 {
     void A()

@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void Equals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-                .WithSource(@"
+                .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -53,7 +53,7 @@ class TypeName
         public void NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-    .WithSource(@"
+    .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -80,7 +80,7 @@ class TypeName
         public void Equals_StringVariable_stringLiteral_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-    .WithSource(@"
+    .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -109,7 +109,7 @@ class TypeName
         public void Equals_ObjectVariable_stringLiteral_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-    .WithSource(@"
+    .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -126,7 +126,7 @@ class TypeName
         public void Equals_stringLiteral_null_ShouldReportDiagnostic()
         {
             var project = new ProjectBuilder()
-    .WithSource(@"
+    .WithSourceCode(@"
 class TypeName
 {
     public void Test()
@@ -144,7 +144,7 @@ class TypeName
         {
             var project = new ProjectBuilder()
                 .AddReference(typeof(IQueryable<>))
-                .WithSource(@"using System.Linq;
+                .WithSourceCode(@"using System.Linq;
 class TypeName
 {
     public void Test()

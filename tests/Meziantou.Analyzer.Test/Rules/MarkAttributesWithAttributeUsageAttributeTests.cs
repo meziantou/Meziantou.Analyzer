@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource("class TestAttribute : System.Attribute { }");
+                  .WithSourceCode("class TestAttribute : System.Attribute { }");
 
             var expected = CreateDiagnosticResult(line: 1, column: 7);
             VerifyDiagnostic(project, expected);
@@ -33,7 +33,7 @@ class TestAttribute : System.Attribute { }");
         public void ClassDoesNotInheritsFromAttribute_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource("class TestAttribute : System.Object { }");
+                  .WithSourceCode("class TestAttribute : System.Object { }");
 
             VerifyDiagnostic(project);
         }
@@ -42,7 +42,7 @@ class TestAttribute : System.Attribute { }");
         public void ClassHasAttribute_ShouldNotReportError()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
 class TestAttribute : System.Attribute { }");
 

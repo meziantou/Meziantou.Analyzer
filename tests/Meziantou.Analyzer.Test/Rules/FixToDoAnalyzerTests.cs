@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void SingleLineCommentWithoutTodo(string comment)
         {
             var project = new ProjectBuilder()
-                  .WithSource(comment);
+                  .WithSourceCode(comment);
 
             VerifyDiagnostic(project);
         }
@@ -34,7 +34,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void SingleLineComment(string comment, string todo, int column)
         {
             var project = new ProjectBuilder()
-                  .WithSource(comment);
+                  .WithSourceCode(comment);
 
             var expected = new[]
             {
@@ -54,7 +54,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void MultiLinesComment(string comment, string todo, int line, int column)
         {
             var project = new ProjectBuilder()
-                  .WithSource(comment);
+                  .WithSourceCode(comment);
 
             var expected = new[]
             {
@@ -68,7 +68,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public void MultiTodoComment()
         {
             var project = new ProjectBuilder()
-                  .WithSource(@"
+                  .WithSourceCode(@"
 /*
  * TODO a
  * TODO b
