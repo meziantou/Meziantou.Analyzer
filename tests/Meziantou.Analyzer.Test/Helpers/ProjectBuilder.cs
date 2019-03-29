@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace TestHelper
 {
-    public class ProjectBuilder
+    public partial class ProjectBuilder
     {
         public ProjectBuilder()
         {
@@ -22,6 +22,7 @@ namespace TestHelper
         }
 
         public string SourceCode { get; private set; } = "";
+        public string EditorConfig { get; private set; }
         public bool IsStatements { get; private set; }
 
         public bool IsValidCode { get; private set; } = true;
@@ -139,6 +140,12 @@ namespace TestHelper
         {
             SourceCode = "class Test{void Method(){" + content + "}}";
             IsStatements = true;
+            return this;
+        }
+
+        public ProjectBuilder WithEditorConfig(string content)
+        {
+            EditorConfig = content;
             return this;
         }
 

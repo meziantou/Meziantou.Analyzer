@@ -57,6 +57,9 @@ namespace TestHelper
             foreach (var project in projects)
             {
                 var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+                //options.WithSpecificDiagnosticOptions(ImmutableDictionary.Create<string, ReportDiagnostic>()
+                //    .Add("", ReportDiagnostic.Info));
+                //project.AddAdditionalDocument("")
                 var compilation = project.GetCompilationAsync().Result.WithOptions(options);
 
                 using (var ms = new MemoryStream())
