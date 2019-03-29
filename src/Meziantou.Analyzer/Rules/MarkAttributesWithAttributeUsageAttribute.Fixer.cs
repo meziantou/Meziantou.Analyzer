@@ -55,7 +55,7 @@ namespace Meziantou.Analyzer.Rules
                     generator.AttributeArgument(
                         generator.MemberAccessExpression(
                             generator.TypeExpression(attributeTargets, addImport: true),
-                            nameof(AttributeTargets.All)))
+                            nameof(AttributeTargets.All))),
                 });
 
             editor.AddAttribute(classNode, attribute);

@@ -28,6 +28,12 @@ class TestClass
 ");
 
             VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 9));
+            VerifyFix(project, @"
+class TestClass
+{
+    static int A => throw null;
+}
+");
         }
 
         [TestMethod]
@@ -67,13 +73,21 @@ class TestClass
                   .WithSource(@"
 class TestClass
 {
-    int A => TestProperty;
+    public int A => TestProperty;
 
     public static int TestProperty => 0;
 }
 ");
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 9));
+            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 16));
+            VerifyFix(project, @"
+class TestClass
+{
+    public static int A => TestProperty;
+
+    public static int TestProperty => 0;
+}
+");
         }
 
         [TestMethod]
