@@ -1,93 +1,82 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class NamedParameterAnalyzerTests : CodeFixVerifier
+    public class NamedParameterAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new NamedParameterAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new NamedParameterFixer();
-        protected override string ExpectedDiagnosticId => "MA0003";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
-        protected override string ExpectedDiagnosticMessage => "Name the parameter to improve the readability of the code";
-
-        [TestMethod]
-        public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
+        private static ProjectBuilder CreateProjectBuilder()
         {
-            var project = new ProjectBuilder();
-            VerifyDiagnostic(project);
+            return new ProjectBuilder()
+                .WithAnalyzer<NamedParameterAnalyzer>()
+                .WithCodeFixProvider<NamedParameterFixer>();
         }
 
         [TestMethod]
-        public void Task_ConfigureAwait_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task Task_ConfigureAwait_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
     {
         await System.Threading.Tasks.Task.Run(()=>{}).ConfigureAwait(false);
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task Task_T_ConfigureAwait_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
     {
         await System.Threading.Tasks.Task.Run(() => 10).ConfigureAwait(true);
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void NamedParameter_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task NamedParameter_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         object.Equals(objA: true, """");
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void True_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task True_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         var a = string.Compare("""", """", true);
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 40);
-            VerifyDiagnostic(project, expected);
-
-            var fix = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -95,75 +84,76 @@ class TypeName
         var a = string.Compare("""", """", ignoreCase: true);
     }
 }";
-
-            VerifyFix(project, fix);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 40)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void False_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task False_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         object.Equals(false, """");
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Null_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task Null_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         object.Equals(null, """");
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         typeof(TypeName).GetMethod("""").Invoke(null, new object[0]);
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodBaseInvoke_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task MethodBaseInvoke_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         typeof(TypeName).GetMethod("""").Invoke(null, null);
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 53);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -171,14 +161,17 @@ class TypeName
         typeof(TypeName).GetMethod("""").Invoke(null, parameters: null);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 53)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Attribute_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task Attribute_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 [assembly: SkipNamedAttribute(""TypeName"", ""Test"")]
 internal class SkipNamedAttribute : System.Attribute
 {
@@ -189,17 +182,17 @@ class TypeName
 {
     public void Test(string name) => Test(null);
     public void Test2(string name) => Test2(null);
-}");
-
-            var expected = CreateDiagnosticResult(line: 11, column: 45);
-            VerifyDiagnostic(project, expected);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 11, column: 45)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AttributeWithWildcard_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task AttributeWithWildcard_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 [assembly: SkipNamedAttribute(""TypeName"", ""*"")]
 internal class SkipNamedAttribute : System.Attribute
 {
@@ -210,58 +203,62 @@ class TypeName
 {
     public void Test(string name) => Test(null);
     public void Test2(string name) => Test2(null);
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MSTestAssert_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task MSTestAssert_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddMSTest()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddMSTestApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void NunitAssert_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task NunitAssert_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddNUnit()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddNUnitApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void XunitAssert_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task XunitAssert_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddXUnit()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test() => Xunit.Assert.AreEqual(null, true);
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddXUnitApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Ctor_ShouldUseTheRightParameterName()
+        public async System.Threading.Tasks.Task Ctor_ShouldUseTheRightParameterNameAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -270,12 +267,8 @@ class TypeName
     }
 
     TypeName(string a) { }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 22);
-            VerifyDiagnostic(project, expected);
-
-            var fix = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -285,15 +278,17 @@ class TypeName
 
     TypeName(string a) { }
 }";
-
-            VerifyFix(project, fix);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 22)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
@@ -309,16 +304,17 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         public bool IsUnicode(bool value) => throw null;
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Task_FromResult_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task Task_FromResult_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -326,9 +322,11 @@ class TypeName
         _ = System.Threading.Tasks.Task.FromResult(true);
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
     }
 }

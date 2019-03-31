@@ -1,80 +1,67 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseArrayEmptyAnalyzerTests : CodeFixVerifier
+    public class UseArrayEmptyAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseArrayEmptyAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseArrayEmptyFixer();
-        protected override string ExpectedDiagnosticId => "MA0005";
-        protected override string ExpectedDiagnosticMessage => "Use Array.Empty<T>()";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-
-        [TestMethod]
-        public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
+        private static ProjectBuilder CreateProjectBuilder()
         {
-            var project = new ProjectBuilder();
-            VerifyDiagnostic(project);
+            return new ProjectBuilder()
+                .WithAnalyzer<UseArrayEmptyAnalyzer>()
+                .WithCodeFixProvider<UseArrayEmptyFixer>();
         }
 
         [DataTestMethod]
         [DataRow("new int[0]")]
         [DataRow("new int[] { }")]
-        public void EmptyArray_ShouldReportError(string code)
+        public async System.Threading.Tasks.Task EmptyArray_ShouldReportErrorAsync(string code)
         {
-            var project = new ProjectBuilder()
-                  .WithSource($@"
+            await CreateProjectBuilder()
+                  .WithSourceCode($@"
 class TestClass
 {{
     void Test()
     {{
         var a = {code};
     }}
-}}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 17);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}}")
+                  .ShouldFixCodeWith(@"
 class TestClass
 {
     void Test()
     {
         var a = System.Array.Empty<int>();
     }
-}";
-            VerifyFix(project, fixtest);
+}")
+                  .ShouldReportDiagnostic(line: 6, column: 17)
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
         [DataRow("new int[1]")]
         [DataRow("new int[] { 0 }")]
-        public void NonEmptyArray_ShouldReportError(string code)
+        public async System.Threading.Tasks.Task NonEmptyArray_ShouldReportErrorAsync(string code)
         {
-            var project = new ProjectBuilder()
-                  .WithSource($@"
+            await CreateProjectBuilder()
+                  .WithSourceCode($@"
 class TestClass
 {{
     void Test()
     {{
         var a = {code};
     }}
-}}");
-
-            VerifyDiagnostic(project);
+}}")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Length_ShouldNotReportError()
+        public async System.Threading.Tasks.Task Length_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -82,16 +69,17 @@ class TestClass
         int length = 0;
         var a = new int[length];
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void ParamsMethod_ShouldNotReportError()
+        public async System.Threading.Tasks.Task ParamsMethod_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 public class TestClass
 {
     public void Test(params string[] values)
@@ -102,23 +90,26 @@ public class TestClass
     {
         Test();
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void EmptyArrayInAttribute_ShouldNotReportError()
+        public async System.Threading.Tasks.Task EmptyArrayInAttribute_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 [Test(new int[0])]
 class TestAttribute : System.Attribute
 {
     public TestAttribute(int[] data) { }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
     }
 }

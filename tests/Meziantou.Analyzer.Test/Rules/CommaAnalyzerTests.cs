@@ -1,32 +1,24 @@
-﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class CommaAnalyzerTests : CodeFixVerifier
+    public class CommaAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new CommaAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new CommaFixer();
-        protected override string ExpectedDiagnosticId => "MA0007";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
-
-        [TestMethod]
-        public void EmptyString_ShouldNotReportDiagnosticForEmptyString()
+        private static ProjectBuilder CreateProjectBuilder()
         {
-            var project = new ProjectBuilder();
-            VerifyDiagnostic(project);
+            return new ProjectBuilder()
+                .WithAnalyzer<CommaAnalyzer>()
+                .WithCodeFixProvider<CommaFixer>();
         }
 
         [TestMethod]
-        public void OneLineDeclarationWithMissingTrailingComma_ShouldNotReportDiagnostic()
+        public async Task OneLineDeclarationWithMissingTrailingComma_ShouldNotReportDiagnostic()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public int A { get; set; }
@@ -36,58 +28,17 @@ class TypeName
     {
         new TypeName() { A = 1 };
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnostic()
+        public async Task MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public async System.Threading.Tasks.Task Test()
-    {
-        new TypeName()
-        {
-            A = 1,
-            B = 2,
-        };
-    }
-}");
-
-            VerifyDiagnostic(project);
-        }
-
-        [TestMethod]
-        public void MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnostic()
-        {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public async System.Threading.Tasks.Task Test()
-    {
-        new TypeName()
-        {
-            A = 1,
-            B = 2
-        };
-    }
-}");
-
-            var expected = CreateDiagnosticResult(line: 12, column: 13, message: "Add comma after the last property");
-            VerifyDiagnostic(project, expected);
-
-            var fix = @"
+            const string SourceCode = @"
 class TypeName
 {
     public int A { get; set; }
@@ -102,7 +53,50 @@ class TypeName
         };
     }
 }";
-            VerifyFix(project, fix);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnosticAsync()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public int A { get; set; }
+    public int B { get; set; }
+
+    public async System.Threading.Tasks.Task Test()
+    {
+        new TypeName()
+        {
+            A = 1,
+            B = 2
+        };
+    }
+}";
+            const string CodeFix = @"
+class TypeName
+{
+    public int A { get; set; }
+    public int B { get; set; }
+
+    public async System.Threading.Tasks.Task Test()
+    {
+        new TypeName()
+        {
+            A = 1,
+            B = 2,
+        };
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 12, column: 13, message: "Add comma after the last property")
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
@@ -8,21 +6,23 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class FixToDoAnalyzerTests : CodeFixVerifier
+    public class FixToDoAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new FixToDoAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0026";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<FixToDoAnalyzer>();
+        }
 
         [DataTestMethod]
         [DataRow("//TODOA")]
         [DataRow("// (TODO)")]
-        public void SingleLineCommentWithoutTodo(string comment)
+        public async System.Threading.Tasks.Task SingleLineCommentWithoutTodoAsync(string comment)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(comment);
-
-            VerifyDiagnostic(project);
+            await CreateProjectBuilder()
+                  .WithSourceCode(comment)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
@@ -31,17 +31,12 @@ namespace Meziantou.Analyzer.Test.Rules
         [DataRow("//TODO test", "test", 3)]
         [DataRow("// TODO test", "test", 4)]
         [DataRow("  // TODO test", "test", 6)]
-        public void SingleLineComment(string comment, string todo, int column)
+        public async System.Threading.Tasks.Task SingleLineCommentAsync(string comment, string todo, int column)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(comment);
-
-            var expected = new[]
-            {
-                CreateDiagnosticResult(line: 1, column: column, message: $"TODO {todo}"),
-            };
-
-            VerifyDiagnostic(project, expected);
+            await CreateProjectBuilder()
+                  .WithSourceCode(comment)
+                  .ShouldReportDiagnostic(line: 1, column: column, message: $"TODO {todo}")
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
@@ -51,36 +46,26 @@ namespace Meziantou.Analyzer.Test.Rules
         [DataRow("/* TODO test*/", "test", 1, 4)]
         [DataRow("  /* TODO test*/", "test", 1, 6)]
         [DataRow("/*\n* TODO test\r\n*/", "test", 2, 3)]
-        public void MultiLinesComment(string comment, string todo, int line, int column)
+        public async System.Threading.Tasks.Task MultiLinesCommentAsync(string comment, string todo, int line, int column)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(comment);
-
-            var expected = new[]
-            {
-                CreateDiagnosticResult(line: line, column: column, message: $"TODO {todo}"),
-            };
-
-            VerifyDiagnostic(project, expected);
+            await CreateProjectBuilder()
+                  .WithSourceCode(comment)
+                  .ShouldReportDiagnostic(line: line, column: column, message: $"TODO {todo}")
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MultiTodoComment()
+        public async System.Threading.Tasks.Task MultiTodoCommentAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
 /*
  * TODO a
  * TODO b
- */");
-
-            var expected = new[]
-            {
-                CreateDiagnosticResult(line: 3, column: 4, message: "TODO a"),
-                CreateDiagnosticResult(line: 4, column: 4, message: "TODO b"),
-            };
-
-            VerifyDiagnostic(project, expected);
+ */")
+                  .ShouldReportDiagnostic(line: 3, column: 4, message: "TODO a")
+                  .ShouldReportDiagnostic(line: 4, column: 4, message: "TODO b")
+                  .ValidateAsync();
         }
     }
 }

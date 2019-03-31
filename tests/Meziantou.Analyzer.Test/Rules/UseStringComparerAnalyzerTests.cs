@@ -2,58 +2,51 @@
 using System.Collections.Generic;
 using System.Linq;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseStringComparerAnalyzerTests : CodeFixVerifier
+    public class UseStringComparerAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringComparerAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringComparerFixer();
-        protected override string ExpectedDiagnosticId => "MA0002";
-        protected override string ExpectedDiagnosticMessage => "Use an overload that has a IEqualityComparer<string> parameter";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<UseStringComparerAnalyzer>()
+                .WithCodeFixProvider<UseStringComparerFixer>();
+        }
 
         [TestMethod]
-        public void HashSet_Int32_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task HashSet_Int32_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(HashSet<>))
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.HashSet<int>();
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(HashSet<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void HashSet_String_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task HashSet_String_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(HashSet<>))
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.HashSet<string>();
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 9);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -61,43 +54,44 @@ class TypeName
         new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                  .AddReference(typeof(HashSet<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(HashSet<>))
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(HashSet<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Dictionary_String_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task Dictionary_String_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Generic.Dictionary<string, int>();
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 9);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -105,27 +99,25 @@ class TypeName
         new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void ConcurrentDictionary_String_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task ConcurrentDictionary_String_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(ConcurrentDictionary<,>))
-                  .WithSource(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 9);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -133,16 +125,18 @@ class TypeName
         new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                  .AddReference(typeof(ConcurrentDictionary<,>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void EnumerableContains_String_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task EnumerableContains_String_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -150,12 +144,8 @@ class TypeName
         System.Collections.Generic.IEnumerable<string> obj = null;
         obj.Contains("""");
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 7, column: 9);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"using System.Linq;
+}";
+            const string CodeFix = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -164,17 +154,19 @@ class TypeName
         obj.Contains("""", System.StringComparer.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void EnumerableToDictionary_String_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task EnumerableToDictionary_String_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Dictionary<,>))
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSource(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -182,12 +174,8 @@ class TypeName
         System.Collections.Generic.IEnumerable<string> obj = null;
         obj.ToDictionary(p => p);
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 7, column: 9);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"using System.Linq;
+}";
+            const string CodeFix = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -196,7 +184,14 @@ class TypeName
         obj.ToDictionary(p => p, System.StringComparer.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Dictionary<,>))
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
     }
 }

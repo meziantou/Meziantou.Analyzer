@@ -31,4 +31,8 @@
     <None Remove="References\XUnit.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Configurations\" />
+  </ItemGroup>
+
 </Project>

@@ -1,25 +1,23 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests : CodeFixVerifier
+    public class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new DoNotRemoveOriginalExceptionFromThrowStatementFixer();
-        protected override string ExpectedDiagnosticId => "MA0027";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer>()
+                .WithCodeFixProvider<DoNotRemoveOriginalExceptionFromThrowStatementFixer>();
+        }
 
         [TestMethod]
-        public void NoDiagnostic()
+        public async System.Threading.Tasks.Task NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class Test
 {
     internal void Sample()
@@ -36,16 +34,17 @@ class Test
         }
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class Test
 {
     internal void Sample()
@@ -60,10 +59,8 @@ class Test
         }
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 12, column: 13));
-            VerifyFix(project, @"
+";
+            const string CodeFix = @"
 class Test
 {
     internal void Sample()
@@ -78,7 +75,12 @@ class Test
         }
     }
 }
-");
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 12, column: 13)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
     }
 }

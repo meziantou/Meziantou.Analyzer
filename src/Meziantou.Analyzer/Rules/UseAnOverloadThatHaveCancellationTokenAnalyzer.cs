@@ -255,7 +255,7 @@ namespace Meziantou.Analyzer.Rules
 
             public IEnumerable<IReadOnlyList<ISymbol>> GetMembers(ITypeSymbol symbol, int maxDepth)
             {
-                if (maxDepth < 0)
+                if (maxDepth < 0 || symbol == null)
                     return Enumerable.Empty<IReadOnlyList<ISymbol>>();
 
                 if (symbol.IsEqualsTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualsTo(TaskOfTSymbol))

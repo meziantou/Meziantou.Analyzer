@@ -1,52 +1,54 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MarkAttributesWithAttributeUsageAttributeTests : CodeFixVerifier
+    public class MarkAttributesWithAttributeUsageAttributeTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new MarkAttributesWithAttributeUsageAttribute();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new MarkAttributesWithAttributeUsageAttributeFixer();
-        protected override string ExpectedDiagnosticId => "MA0010";
-        protected override string ExpectedDiagnosticMessage => "Mark attributes with AttributeUsageAttribute";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-
-        [TestMethod]
-        public void ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
+        private static ProjectBuilder CreateProjectBuilder()
         {
-            var project = new ProjectBuilder()
-                  .WithSource("class TestAttribute : System.Attribute { }");
-
-            var expected = CreateDiagnosticResult(line: 1, column: 7);
-            VerifyDiagnostic(project, expected);
-
-            VerifyFix(project, @"[System.AttributeUsage(System.AttributeTargets.All)]
-class TestAttribute : System.Attribute { }");
+            return new ProjectBuilder()
+                .WithAnalyzer<MarkAttributesWithAttributeUsageAttribute>()
+                .WithCodeFixProvider<MarkAttributesWithAttributeUsageAttributeFixer>();
         }
 
         [TestMethod]
-        public void ClassDoesNotInheritsFromAttribute_ShouldNotReportError()
+        public async System.Threading.Tasks.Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource("class TestAttribute : System.Object { }");
+            const string SourceCode = "class TestAttribute : System.Attribute { }";
 
-            VerifyDiagnostic(project);
+            const string CodeFix = @"[System.AttributeUsage(System.AttributeTargets.All)]
+class TestAttribute : System.Attribute { }";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 1, column: 7)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void ClassHasAttribute_ShouldNotReportError()
+        public async System.Threading.Tasks.Task ClassDoesNotInheritsFromAttribute_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            await CreateProjectBuilder()
+                  .WithSourceCode("class TestAttribute : System.Object { }")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task ClassHasAttribute_ShouldNotReportErrorAsync()
+        {
+            const string SourceCode = @"
 [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
-class TestAttribute : System.Attribute { }");
+class TestAttribute : System.Attribute { }";
 
-            VerifyDiagnostic(project);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
     }
 }
