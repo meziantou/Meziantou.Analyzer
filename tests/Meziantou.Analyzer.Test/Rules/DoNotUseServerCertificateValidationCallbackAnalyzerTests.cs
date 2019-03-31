@@ -1,23 +1,22 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseServerCertificateValidationCallbackAnalyzerTests : CodeFixVerifier
+    public class DoNotUseServerCertificateValidationCallbackAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotUseServerCertificateValidationCallbackAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0039";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Error;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<DoNotUseServerCertificateValidationCallbackAnalyzer>();
+        }
 
         [TestMethod]
-        public void ServicePointManager_ServerCertificateValidationCallback()
+        public async System.Threading.Tasks.Task ServicePointManager_ServerCertificateValidationCallbackAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class Test
 {
     void A()
@@ -38,16 +37,17 @@ namespace System.Net.Security
 {
     public delegate bool RemoteCertificateValidationCallback(object sender, object certificate, object chain, object sslPolicyErrors);
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void HttpClientHandler_ServerCertificateCustomValidationCallback()
+        public async System.Threading.Tasks.Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class Test
 {
     void A()
@@ -64,9 +64,11 @@ namespace System.Net.Http
         public Func<object, object, object, object, bool> ServerCertificateCustomValidationCallback { get; set; }
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9)
+                  .ValidateAsync();
         }
     }
 }

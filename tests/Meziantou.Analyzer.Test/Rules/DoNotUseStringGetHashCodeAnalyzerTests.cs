@@ -1,26 +1,23 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseStringGetHashCodeAnalyzerTests : CodeFixVerifier
+    public class DoNotUseStringGetHashCodeAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotUseStringGetHashCodeAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new DoNotUseStringGetHashCodeFixer();
-        protected override string ExpectedDiagnosticId => "MA0021";
-        protected override string ExpectedDiagnosticMessage => "Use StringComparer.GetHashCode";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<DoNotUseStringGetHashCodeAnalyzer>()
+                .WithCodeFixProvider<DoNotUseStringGetHashCodeFixer>();
+        }
 
         [TestMethod]
-        public void GetHashCode_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task GetHashCode_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -29,11 +26,8 @@ class TypeName
         System.StringComparer.Ordinal.GetHashCode(""a"");
         new object().GetHashCode();
     }
-}");
-            var expected = CreateDiagnosticResult(line: 6, column: 9);
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -43,7 +37,11 @@ class TypeName
         new object().GetHashCode();
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
     }
 }

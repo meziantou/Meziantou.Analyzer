@@ -1,25 +1,24 @@
 ﻿using System.ComponentModel;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests : CodeFixVerifier
+    public class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new ArgumentExceptionShouldSpecifyArgumentNameAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0015";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>();
+        }
 
         [TestMethod]
-        public void ArgumentNameIsSpecified_ShouldNotReportError()
+        public async Task ArgumentNameIsSpecified_ShouldNotReportError()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(InvalidEnumArgumentException))
-                  .WithSourceCode(@"
+            var sourceCode = @"
 class Sample
 {
     string Prop
@@ -55,16 +54,19 @@ class Sample
             throw new System.ArgumentNullException(nameof(a));
         }
     }
-}");
+}";
 
-            VerifyDiagnostic(project);
+            await CreateProjectBuilder()
+                  .AddReference(typeof(InvalidEnumArgumentException))
+                  .WithSourceCode(sourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
-
+        
         [TestMethod]
-        public void ArgumentNameDoesNotMatchAParameter_ShouldReportError()
+        public async Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestAttribute
 {
     string Prop
@@ -72,23 +74,34 @@ class TestAttribute
         get { throw null; }
         set { throw new System.ArgumentNullException(""unknown""); }
     }
-
-    void Test(string test)
-    {
-        throw new System.ArgumentException(""message"", ""unknown"");
-    }    
-}");
-
-            var expected1 = CreateDiagnosticResult(line: 7, column: 21, message: "'unknown' is not a valid parameter name");
-            var expected2 = CreateDiagnosticResult(line: 12, column: 15, message: "'unknown' is not a valid parameter name");
-            VerifyDiagnostic(project, expected1, expected2);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 21, message: "'unknown' is not a valid parameter name")
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void OverloadWithoutParameterName_ShouldReportError()
+        public async Task ArgumentNameDoesNotMatchAParameter_Methods_ShouldReportError()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        throw new System.ArgumentException(""message"", ""unknown"");
+    }  
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 15, message: "'unknown' is not a valid parameter name")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task OverloadWithoutParameterName_Properties_ShouldReportError()
+        {
+            const string SourceCode = @"
 class TestAttribute
 {
     string Prop
@@ -96,16 +109,28 @@ class TestAttribute
         get { throw null; }
         set { throw new System.ArgumentNullException(); }
     }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 21, message: "Use an overload of 'System.ArgumentNullException' with the parameter name")
+                  .ValidateAsync();
+        }
 
+        [TestMethod]
+        public async Task OverloadWithoutParameterName_Methods_ShouldReportError()
+        {
+            const string SourceCode = @"
+class TestAttribute
+{
     void Test(string test)
     {
         throw new System.ArgumentException(""message"");
     }    
-}");
-
-            var expected1 = CreateDiagnosticResult(line: 7, column: 21, message: "Use an overload of 'System.ArgumentNullException' with the parameter name");
-            var expected2 = CreateDiagnosticResult(line: 12, column: 15, message: "Use an overload of 'System.ArgumentException' with the parameter name");
-            VerifyDiagnostic(project, expected1, expected2);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 15, message: "Use an overload of 'System.ArgumentException' with the parameter name")
+                  .ValidateAsync();
         }
     }
 }

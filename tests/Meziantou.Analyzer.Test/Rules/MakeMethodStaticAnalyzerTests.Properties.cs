@@ -1,127 +1,128 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MakeMethodStaticAnalyzerTests_Properties : CodeFixVerifier
+    public class MakeMethodStaticAnalyzerTests_Properties
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new MakeMethodStaticAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new MakeMethodStaticFixer();
-        protected override string ExpectedDiagnosticId => "MA0041";
-        protected override string ExpectedDiagnosticMessage => "Make property static";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<MakeMethodStaticAnalyzer>(id: "MA0041")
+                .WithCodeFixProvider<MakeMethodStaticFixer>();
+        }
 
         [TestMethod]
-        public void ExpressionBody()
+        public async System.Threading.Tasks.Task ExpressionBodyAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     int A => throw null;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 9));
-            VerifyFix(project, @"
+";
+            const string CodeFix = @"
 class TestClass
 {
     static int A => throw null;
 }
-");
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceProperty_NoDiagnostic()
+        public async System.Threading.Tasks.Task AccessInstanceProperty_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     int A => TestProperty;
 
     public int TestProperty { get; }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
+        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Where_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     int A { get; set; }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessStaticProperty()
+        public async System.Threading.Tasks.Task AccessStaticPropertyAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     public int A => TestProperty;
 
     public static int TestProperty => 0;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 16));
-            VerifyFix(project, @"
+";
+            const string CodeFix = @"
 class TestClass
 {
     public static int A => TestProperty;
 
     public static int TestProperty => 0;
 }
-");
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 16)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessStaticMethod()
+        public async System.Threading.Tasks.Task AccessStaticMethodAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     int A => TestMethod();
 
     public static int TestMethod() => 0;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 9));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 9)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessStaticField()
+        public async System.Threading.Tasks.Task AccessStaticFieldAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     int A => _a;
 
     static int _a;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 9));
-
-            var fix = @"
+";
+            const string CodeFix = @"
 class TestClass
 {
     static int A => _a;
@@ -129,30 +130,34 @@ class TestClass
     static int _a;
 }
 ";
-            VerifyFix(project, fix);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 9)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceField()
+        public async System.Threading.Tasks.Task AccessInstanceFieldAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     int A => _a;
 
     public int _a;
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodImplementAnInterface()
+        public async System.Threading.Tasks.Task MethodImplementAnInterfaceAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass : ITest
 {
     public int A { get; }
@@ -162,16 +167,17 @@ interface ITest
 {
     int A { get; }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodExplicitlyImplementAnInterface()
+        public async System.Threading.Tasks.Task MethodExplicitlyImplementAnInterfaceAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass : ITest
 {
     int ITest.A { get; }
@@ -181,9 +187,11 @@ interface ITest
 {
     int A { get; }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
     }
 }

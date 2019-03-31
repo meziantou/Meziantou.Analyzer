@@ -1,45 +1,47 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests : CodeFixVerifier
+    public class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0033";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer>();
+        }
 
         [TestMethod]
-        public void DontReport()
+        public async System.Threading.Tasks.Task DontReportAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class Test2
 {
     int _a;
     [System.ThreadStatic]
     static int _b;
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Report()
+        public async System.Threading.Tasks.Task ReportAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class Test2
 {
     [System.ThreadStatic]
     int _a;
-}");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 9));
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 5, column: 9)
+                  .ValidateAsync();
         }
     }
 }

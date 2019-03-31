@@ -1,69 +1,64 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MakeMethodStaticAnalyzerTests_Methods : CodeFixVerifier
+    public class MakeMethodStaticAnalyzerTests_Methods
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new MakeMethodStaticAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new MakeMethodStaticFixer();
-        protected override string ExpectedDiagnosticId => "MA0038";
-        protected override string ExpectedDiagnosticMessage => "Make method static";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<MakeMethodStaticAnalyzer>(id: "MA0038")
+                .WithCodeFixProvider<MakeMethodStaticFixer>();
+        }
 
         [TestMethod]
-        public void ExpressionBody()
+        public async System.Threading.Tasks.Task ExpressionBodyAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A() => throw null;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 10));
-
-            var fix = @"
+";
+            const string CodeFix = @"
 class TestClass
 {
     static void A() => throw null;
 }
 ";
-
-            VerifyFix(project, fix);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 10)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceProperty_NoDiagnostic()
+        public async System.Threading.Tasks.Task AccessInstanceProperty_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A() { _ = this.TestProperty; }
 
     public int TestProperty { get; }    
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
+        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Where_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
@@ -76,18 +71,19 @@ class TestClass
 
     public virtual bool Test(int item) => 0 > 0;
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceMethodInLinqQuery_Select_NoDiagnostic()
+        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Select_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
@@ -99,18 +95,19 @@ class TestClass
 
     public virtual bool Test(int item) => 0 > 0;
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceMethodInLinqQuery_From_NoDiagnostic()
+        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_From_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
@@ -122,18 +119,19 @@ class TestClass
 
     public virtual int[] Test() => new [] { 1, 2 };
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceMethodInLinqQuery_Let_NoDiagnostic()
+        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Let_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
@@ -146,18 +144,19 @@ class TestClass
 
     public virtual int[] Test() => new [] { 1, 2 };
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void LinqQuery_Diagnostic()
+        public async System.Threading.Tasks.Task LinqQuery_DiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
@@ -167,18 +166,19 @@ class TestClass
             select item;
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 10));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 5, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessStaticMethodInLinqQuery_Let_Diagnostic()
+        public async System.Threading.Tasks.Task AccessStaticMethodInLinqQuery_Let_DiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
@@ -191,80 +191,87 @@ class TestClass
 
     public static int[] Test() => new [] { 1, 2 };
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 10));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Enumerable))
+                  .AddReference(typeof(IEnumerable<>))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 5, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessStaticProperty()
+        public async System.Threading.Tasks.Task AccessStaticPropertyAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A() { _ = TestProperty; }
 
     public static int TestProperty => 0;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 10));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessStaticMethod()
+        public async System.Threading.Tasks.Task AccessStaticMethodAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A() { TestMethod(); }
 
     public static int TestMethod() => 0;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 10));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessStaticField()
+        public async System.Threading.Tasks.Task AccessStaticFieldAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A() { _ = _a; }
 
     public static int _a;
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 10));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AccessInstanceField()
+        public async System.Threading.Tasks.Task AccessInstanceFieldAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A() { _ = _a; }
 
     public int _a;
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodImplementAnInterface()
+        public async System.Threading.Tasks.Task MethodImplementAnInterfaceAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass : ITest
 {
     public void A() { }
@@ -274,16 +281,17 @@ interface ITest
 {
     void A();
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodExplicitlyImplementAnInterface()
+        public async System.Threading.Tasks.Task MethodExplicitlyImplementAnInterfaceAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass : ITest
 {
     void ITest.A() { }
@@ -293,16 +301,17 @@ interface ITest
 {
     void A();
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodImplementAGenericInterface()
+        public async System.Threading.Tasks.Task MethodImplementAGenericInterfaceAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass : ITest<int>
 {
     public int A() => 0;
@@ -312,16 +321,17 @@ interface ITest<T>
 {
     T A();
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodImplementAGenericInterfaceInAGenericClass()
+        public async System.Threading.Tasks.Task MethodImplementAGenericInterfaceInAGenericClassAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass<T> : ITest<T>
 {
     public T A() => throw null;
@@ -331,16 +341,17 @@ interface ITest<T>
 {
     T A();
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MethodUseAnAnonymousObject()
+        public async System.Threading.Tasks.Task MethodUseAnAnonymousObjectAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A()
@@ -349,16 +360,17 @@ class TestClass
         _ = obj.Prop;
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 10));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void CreateInstance()
+        public async System.Threading.Tasks.Task CreateInstanceAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A()
@@ -366,16 +378,17 @@ class TestClass
         _ = new TestClass();
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 10));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void CreateInstanceOfAnotherType()
+        public async System.Threading.Tasks.Task CreateInstanceOfAnotherTypeAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void A()
@@ -387,17 +400,17 @@ class TestClass
 class TestClass2
 {
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 10));
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 10)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MSTest_TestMethod()
+        public async System.Threading.Tasks.Task MSTest_TestMethodAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddMSTestApi()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]
@@ -405,17 +418,18 @@ class TestClass
     {
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddMSTestApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void MSTest_DataTestMethod()
+        public async System.Threading.Tasks.Task MSTest_DataTestMethodAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddMSTestApi()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     [Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethod]
@@ -423,17 +437,18 @@ class TestClass
     {
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddMSTestApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void XUnit_TestMethod()
+        public async System.Threading.Tasks.Task XUnit_TestMethodAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddXUnitApi()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     [Xunit.Fact]
@@ -441,17 +456,18 @@ class TestClass
     {
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddXUnitApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AspNetCore_Startup()
+        public async System.Threading.Tasks.Task AspNetCore_StartupAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCoreApi()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -467,17 +483,18 @@ public class Startup
     {
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddMicrosoftAspNetCoreApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AspNetCore_Middleware_Convention_Invoke()
+        public async System.Threading.Tasks.Task AspNetCore_Middleware_Convention_InvokeAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCoreApi()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -492,42 +509,18 @@ public class CustomMiddleware
     {
         throw null;
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddMicrosoftAspNetCoreApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AspNetCore_Middleware_Convention_InvokeAsync()
+        public async System.Threading.Tasks.Task AspNetCore_Middleware_Convention_InterfaceAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCoreApi()
-                  .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-
-public class CustomMiddleware
-{
-    public CustomMiddleware(RequestDelegate next)
-    {
-    }
-
-    public Task InvokeAsync(HttpContext httpContext)
-    {
-        throw null;
-    }
-}");
-
-            VerifyDiagnostic(project);
-        }
-
-        [TestMethod]
-        public void AspNetCore_Middleware_Convention_Interface()
-        {
-            var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCoreApi()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -538,16 +531,18 @@ public class CustomMiddleware : IMiddleware
     {
         throw null;
     }
-}");
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddMicrosoftAspNetCoreApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AspNetCore_Middleware_Convention_ExplicitInterface()
+        public async System.Threading.Tasks.Task AspNetCore_Middleware_Convention_ExplicitInterfaceAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddMicrosoftAspNetCoreApi()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -558,20 +553,26 @@ public class CustomMiddleware : IMiddleware
     {
         throw null;
     }
-}");
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddMicrosoftAspNetCoreApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AbstractMethod_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task AbstractMethod_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 abstract class Test
 {
     protected abstract void A();
-}");
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
     }
 }

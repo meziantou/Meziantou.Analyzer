@@ -1,36 +1,34 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests : CodeFixVerifier
+    public class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new TypesShouldNotExtendSystemApplicationExceptionAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0013";
-        protected override string ExpectedDiagnosticMessage => "Types should not extend System.ApplicationException";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-
-        [TestMethod]
-        public void InheritFromException_ShouldNotReportError()
+        private static ProjectBuilder CreateProjectBuilder()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode("class Test : System.Exception { }");
-
-            VerifyDiagnostic(project);
+            return new ProjectBuilder()
+                .WithAnalyzer<TypesShouldNotExtendSystemApplicationExceptionAnalyzer>();
         }
 
         [TestMethod]
-        public void InheritFromApplicationException_ShouldReportError()
+        public async System.Threading.Tasks.Task InheritFromException_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode("class Test : System.ApplicationException { }");
+            await CreateProjectBuilder()
+                  .WithSourceCode("class Test : System.Exception { }")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
+        }
 
-            var expected = CreateDiagnosticResult(line: 1, column: 7);
-            VerifyDiagnostic(project, expected);
+        [TestMethod]
+        public async System.Threading.Tasks.Task InheritFromApplicationException_ShouldReportErrorAsync()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode("class Test : System.ApplicationException { }")
+                  .ShouldReportDiagnostic(line: 1, column: 7)
+                  .ValidateAsync();
         }
     }
 }

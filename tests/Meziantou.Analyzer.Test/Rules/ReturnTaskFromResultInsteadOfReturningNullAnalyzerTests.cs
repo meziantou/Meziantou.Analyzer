@@ -1,46 +1,41 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests : CodeFixVerifier
+    public class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new ReturnTaskFromResultInsteadOfReturningNullAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0022";
-        protected override string ExpectedDiagnosticMessage => "Return Task.FromResult instead of returning null";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<ReturnTaskFromResultInsteadOfReturningNullAnalyzer>();
+        }
 
         [TestMethod]
-        public void Method()
+        public async System.Threading.Tasks.Task MethodAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+            const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     Task A() { return null; }
     Task B() => null;
     Task C() { return ((Test)null)?.A(); }
     async Task<object> Valid() { return null; }
-}");
-
-            var expected = new[]
-            {
-                CreateDiagnosticResult(line: 4, column: 16),
-                CreateDiagnosticResult(line: 5, column: 17),
-                CreateDiagnosticResult(line: 6, column: 16),
-            };
-            VerifyDiagnostic(project, expected);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 4, column: 16)
+                  .ShouldReportDiagnostic(line: 5, column: 17)
+                  .ShouldReportDiagnostic(line: 6, column: 16)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void LocalFunction()
+        public async System.Threading.Tasks.Task LocalFunctionAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+            const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -52,22 +47,20 @@ class Test
         Task<object> C() => null;
         object       D() => null;
     }
-}");
+}";
 
-            var expected = new[]
-            {
-                CreateDiagnosticResult(line: 8, column: 20),
-                CreateDiagnosticResult(line: 9, column: 28),
-                CreateDiagnosticResult(line: 10, column: 29),
-            };
-            VerifyDiagnostic(project, expected);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 8, column: 20)
+                  .ShouldReportDiagnostic(line: 9, column: 28)
+                  .ShouldReportDiagnostic(line: 10, column: 29)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void LambdaExpression()
+        public async System.Threading.Tasks.Task LambdaExpressionAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+            const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -79,22 +72,20 @@ class Test
         System.Func<Task<object>> valid2 = async () => null;
         System.Func<object>       valid3 = () => null;
     }
-}");
+}";
 
-            var expected = new[]
-            {
-                CreateDiagnosticResult(line: 6, column: 45),
-                CreateDiagnosticResult(line: 7, column: 45),
-                CreateDiagnosticResult(line: 8, column: 47),
-            };
-            VerifyDiagnostic(project, expected);
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 45)
+                  .ShouldReportDiagnostic(line: 7, column: 45)
+                  .ShouldReportDiagnostic(line: 8, column: 47)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void AnonymousMethods()
+        public async System.Threading.Tasks.Task AnonymousMethodsAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+            const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -105,37 +96,13 @@ class Test
         System.Func<Task<object>> d = async delegate () { return null; };
         System.Func<object> e = delegate () { return null; };
     }
-}");
-
-            var expected = new[]
-            {
-                CreateDiagnosticResult(line: 6, column: 45),
-                CreateDiagnosticResult(line: 7, column: 53),
-            };
-            VerifyDiagnostic(project, expected);
+}";
+            
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 45)
+                  .ShouldReportDiagnostic(line: 7, column: 53)
+                  .ValidateAsync();
         }
-
-        //        [TestMethod]
-        //        public void Properties()
-        //        {
-        //            var project = new ProjectBuilder()
-        //                  .WithSource(@"using System.Threading.Tasks;
-        //class Test
-        //{
-        //    Task A { get { return null; } }
-        //    Task B => null;
-        //    Task<object> B => null;
-        //    object Valid => null;
-        //    object Valid { get { return null; } }
-        //}");
-
-        //            var expected = new[]
-        //            {
-        //                CreateDiagnosticResult(line: 4, column: 20),
-        //                CreateDiagnosticResult(line: 5, column: 21),
-        //                CreateDiagnosticResult(line: 6, column: 23),
-        //            };
-        //            VerifyDiagnostic(project, expected);
-        //        }
     }
 }

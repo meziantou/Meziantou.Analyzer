@@ -1,82 +1,76 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseStructLayoutAttributeAnalyzerTests : CodeFixVerifier
+    public class UseStructLayoutAttributeAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStructLayoutAttributeAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStructLayoutAttributeFixer();
-        protected override string ExpectedDiagnosticId => "MA0008";
-        protected override string ExpectedDiagnosticMessage => "Add StructLayoutAttribute";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-
-        [TestMethod]
-        public void ShouldNotReportDiagnosticForEmptyString()
+        private static ProjectBuilder CreateProjectBuilder()
         {
-            var test = new ProjectBuilder();
-            VerifyDiagnostic(test);
+            return new ProjectBuilder()
+                .WithAnalyzer<UseStructLayoutAttributeAnalyzer>()
+                .WithCodeFixProvider<UseStructLayoutAttributeFixer>();
         }
 
         [TestMethod]
-        public void MissingAttribute_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task MissingAttribute_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                .WithSourceCode("struct TypeName { }");
-
-            var expected = CreateDiagnosticResult(line: 1, column: 8);
-
-            VerifyDiagnostic(project, expected);
-
-            var fix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
+            const string SourceCode = "struct TypeName { }";
+            const string CodeFix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
 struct TypeName { }";
-            VerifyFix(project, fix);
+
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldReportDiagnostic(line: 1, column: 8)
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void AddAttributeShouldUseShortname()
+        public async System.Threading.Tasks.Task AddAttributeShouldUseShortnameAsync()
         {
-            var project = new ProjectBuilder()
-                .WithSourceCode(@"using System.Runtime.InteropServices;
-struct TypeName { }");
-
-            var fix = @"using System.Runtime.InteropServices;
+            const string SourceCode = @"using System.Runtime.InteropServices;
+struct TypeName { }";
+            const string CodeFix = @"using System.Runtime.InteropServices;
 
 [StructLayout(LayoutKind.Auto)]
 struct TypeName { }";
 
-            VerifyFix(project, fix);
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldReportDiagnostic(line: 2, column: 8)
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void WithAttribute_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task WithAttribute_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                .WithSourceCode(@"using System.Runtime.InteropServices;
+            const string SourceCode = @"using System.Runtime.InteropServices;
 [StructLayout(LayoutKind.Sequential)]
 struct TypeName
 {
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldNotReportDiagnostic()
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void Enum_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task Enum_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                .WithSourceCode(@"
+            const string SourceCode = @"
 enum TypeName
 {
     None,
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldNotReportDiagnostic()
+                .ValidateAsync();
         }
     }
 }

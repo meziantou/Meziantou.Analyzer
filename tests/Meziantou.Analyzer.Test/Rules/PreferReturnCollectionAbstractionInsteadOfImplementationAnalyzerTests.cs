@@ -1,19 +1,18 @@
 ﻿using System.Collections.Generic;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzerTests : CodeFixVerifier
+    public class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0016";
-        protected override string ExpectedDiagnosticMessage => "Prefer return collection abstraction instead of implementation";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer>();
+        }
 
         private static IEnumerable<object[]> ReturnTypeValues
         {
@@ -43,9 +42,9 @@ namespace Meziantou.Analyzer.Test.Rules
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public void Fields(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task FieldsAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -55,19 +54,21 @@ public class Test
 
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public void Delegates(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task DelegatesAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -77,19 +78,21 @@ public class Test
 
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [DataTestMethod]
         [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
-        public void Delegates_Parameters(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task Delegates_ParametersAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -99,19 +102,21 @@ public class Test
 
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public void Indexers(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task IndexersAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -119,21 +124,24 @@ public class Test
     " + type + @" this[int value] => throw null;
 }");
 
+
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [DataTestMethod]
         [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
-        public void Indexers_Parameters(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task Indexers_ParametersAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -141,21 +149,24 @@ public class Test
     " + type + @" value] => throw null;
 }");
 
+
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public void Properties(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task PropertiesAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -165,19 +176,21 @@ public class Test
 
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public void Methods(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task MethodsAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -187,19 +200,21 @@ public class Test
 
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [DataTestMethod]
         [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
-        public void Methods_Parameters(string visibility, string type, bool isValid)
+        public async System.Threading.Tasks.Task Methods_ParametersAsync(string visibility, string type, bool isValid)
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
 public class Test
 {
@@ -209,28 +224,31 @@ public class Test
 
             if (isValid)
             {
-                VerifyDiagnostic(project);
+                project.ShouldNotReportDiagnostic();
             }
             else
             {
-                VerifyDiagnostic(project, CreateDiagnosticResult(line: 5, column: 5));
+                project.ShouldReportDiagnostic(line: 5, column: 5);
             }
+
+            await project.ValidateAsync();
         }
 
         [TestMethod]
-        public void PrivateContainer()
+        public async System.Threading.Tasks.Task PrivateContainerAsync()
         {
-            var project = new ProjectBuilder()
-                 .WithSourceCode(@"using System.Collections.Generic;
+            const string SourceCode = @"using System.Collections.Generic;
 internal class Test
 {
     public delegate List<int> B();
     public List<int> _a;
     protected List<int> _b;
     public List<int> A() => throw null;
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                 .WithSourceCode(SourceCode)
+                 .ShouldNotReportDiagnostic()
+                 .ValidateAsync();
         }
     }
 }

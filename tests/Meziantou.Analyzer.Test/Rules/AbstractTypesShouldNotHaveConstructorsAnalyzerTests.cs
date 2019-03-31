@@ -1,25 +1,25 @@
-﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class AbstractTypesShouldNotHaveConstructorsAnalyzerTests : CodeFixVerifier
+    public class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new AbstractTypesShouldNotHaveConstructorsAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new AbstractTypesShouldNotHaveConstructorsFixer();
-        protected override string ExpectedDiagnosticId => "MA0017";
-        protected override string ExpectedDiagnosticMessage => "Abstract types should not have public or internal constructors";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<AbstractTypesShouldNotHaveConstructorsAnalyzer>()
+                .WithCodeFixProvider<AbstractTypesShouldNotHaveConstructorsFixer>();
+        }
 
         [TestMethod]
-        public void Ctor()
+        public async Task Ctor()
         {
-            var project = new ProjectBuilder()
+            var project = CreateProjectBuilder()
+                  .ShouldNotReportDiagnostic()
                   .WithSourceCode(@"
 abstract class Test
 {
@@ -34,44 +34,51 @@ class Test2
     protected Test2(int a) { }
     private Test2(object a) { }
 }");
-
-            VerifyDiagnostic(project);
+            await project.ValidateAsync();
         }
 
         [TestMethod]
-        public void PublicCtor()
+        public async Task PublicCtor()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            var sourceCode = @"
 abstract class Test
 {
     public Test() { }
-}");
+}";
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 5));
-            VerifyFix(project, @"
+            var expectedCodeFix = @"
 abstract class Test
 {
     protected Test() { }
-}");
+}";
+
+            await CreateProjectBuilder()
+                    .WithSourceCode(sourceCode)
+                    .ShouldReportDiagnostic(line: 4, column: 5)
+                    .ShouldFixCodeWith(expectedCodeFix)
+                    .ValidateAsync();
         }
 
         [TestMethod]
-        public void InternalCtor()
+        public async Task InternalCtor()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"
+            var sourceCode = @"
 abstract class Test
 {
     internal Test() { }
-}");
+}";
 
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 4, column: 5));
-            VerifyFix(project, @"
+            var codeFix = @"
 abstract class Test
 {
     protected Test() { }
-}");
+}";
+
+            await CreateProjectBuilder()
+                    .WithSourceCode(sourceCode)
+                    .ShouldReportDiagnostic(line: 4, column: 5)
+                    .ShouldFixCodeWith(codeFix)
+                    .ValidateAsync();
         }
     }
 }

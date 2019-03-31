@@ -1,44 +1,32 @@
 ﻿using System.Linq;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseStringEqualsAnalyzerTests : CodeFixVerifier
+    public class UseStringEqualsAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseStringEqualsAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new UseStringEqualsFixer();
-        protected override string ExpectedDiagnosticId => "MA0006";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
-
-        [TestMethod]
-        public void Equals_ShouldNotReportDiagnosticForEmptyString()
+        private static ProjectBuilder CreateProjectBuilder()
         {
-            var project = new ProjectBuilder();
-            VerifyDiagnostic(project);
+            return new ProjectBuilder()
+                .WithAnalyzer<UseStringEqualsAnalyzer>()
+                .WithCodeFixProvider<UseStringEqualsFixer>();
         }
 
         [TestMethod]
-        public void Equals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task Equals_StringLiteral_stringLiteral_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                .WithSourceCode(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         var a = ""a"" == ""v"";
     }
-}");
-            var expected = CreateDiagnosticResult(line: 6, column: 17, message: "Use string.Equals instead of Equals operator");
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -46,26 +34,25 @@ class TypeName
         var a = string.Equals(""a"", ""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldReportDiagnostic(line: 6, column: 17, message: "Use string.Equals instead of Equals operator")
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-    .WithSourceCode(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
         var a = ""a"" != ""v"";
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 17, message: "Use string.Equals instead of NotEquals operator");
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -73,14 +60,17 @@ class TypeName
         var a = !string.Equals(""a"", ""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldReportDiagnostic(line: 6, column: 17, message: "Use string.Equals instead of NotEquals operator")
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void Equals_StringVariable_stringLiteral_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task Equals_StringVariable_stringLiteral_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-    .WithSourceCode(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -88,12 +78,8 @@ class TypeName
         string str = """";
         var a = str == ""v"";
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 7, column: 17, message: "Use string.Equals instead of Equals operator");
-            VerifyDiagnostic(project, expected);
-
-            var fixtest = @"
+}";
+            const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -102,14 +88,17 @@ class TypeName
         var a = string.Equals(str, ""v"", System.StringComparison.Ordinal);
     }
 }";
-            VerifyFix(project, fixtest);
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldReportDiagnostic(line: 7, column: 17, message: "Use string.Equals instead of Equals operator")
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void Equals_ObjectVariable_stringLiteral_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task Equals_ObjectVariable_stringLiteral_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-    .WithSourceCode(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -117,16 +106,17 @@ class TypeName
         object str = """";
         var a = str == ""v"";
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldNotReportDiagnostic()
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void Equals_stringLiteral_null_ShouldReportDiagnostic()
+        public async System.Threading.Tasks.Task Equals_stringLiteral_null_ShouldReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-    .WithSourceCode(@"
+            const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -134,17 +124,17 @@ class TypeName
         var a = """" == null;
         var b = null == """";
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldNotReportDiagnostic()
+                .ValidateAsync();
         }
 
         [TestMethod]
-        public void Equals_InIQueryableMethod_ShouldNotReportDiagnostic()
+        public async System.Threading.Tasks.Task Equals_InIQueryableMethod_ShouldNotReportDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                .AddReference(typeof(IQueryable<>))
-                .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -152,9 +142,12 @@ class TypeName
         IQueryable<string> query = null;
         query = query.Where(i => i == ""test"");
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                .AddReference(typeof(IQueryable<>))
+                .WithSourceCode(SourceCode)
+                .ShouldNotReportDiagnostic()
+                .ValidateAsync();
         }
     }
 }

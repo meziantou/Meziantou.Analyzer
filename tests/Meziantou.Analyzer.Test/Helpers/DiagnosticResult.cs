@@ -18,7 +18,7 @@ namespace TestHelper
             set => _locations = value;
         }
 
-        public DiagnosticSeverity Severity { get; set; }
+        public DiagnosticSeverity? Severity { get; set; }
 
         public string Id { get; set; }
 

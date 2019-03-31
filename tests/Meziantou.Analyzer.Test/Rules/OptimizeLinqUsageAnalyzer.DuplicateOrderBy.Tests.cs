@@ -1,28 +1,28 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class OptimizeLinqUsageAnalyzerDuplicateOrderByTests : CodeFixVerifier
+    public class OptimizeLinqUsageAnalyzerDuplicateOrderByTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new OptimizeLinqUsageAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0030";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: "MA0030");
+        }
 
         [DataTestMethod]
         [DataRow("OrderBy", "OrderBy", "ThenBy")]
         [DataRow("OrderBy", "OrderByDescending", "ThenByDescending")]
         [DataRow("OrderByDescending", "OrderBy", "ThenBy")]
         [DataRow("OrderByDescending", "OrderByDescending", "ThenByDescending")]
-        public void TwoOrderBy(string a, string b, string expectedMethod)
+        public async System.Threading.Tasks.Task TwoOrderByAsync(string a, string b, string expectedMethod)
         {
-            var project = new ProjectBuilder()
+            await CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
@@ -34,9 +34,9 @@ class Test
         enumerable." + a + @"(x => x)." + b + @"(x => x);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'"));
+")
+                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'")
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
@@ -44,9 +44,9 @@ class Test
         [DataRow("ThenByDescending", "OrderBy", "ThenBy")]
         [DataRow("ThenBy", "OrderByDescending", "ThenByDescending")]
         [DataRow("ThenByDescending", "OrderByDescending", "ThenByDescending")]
-        public void ThenByFollowedByOrderBy(string a, string b, string expectedMethod)
+        public async System.Threading.Tasks.Task ThenByFollowedByOrderByAsync(string a, string b, string expectedMethod)
         {
-            var project = new ProjectBuilder()
+            await CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
                   .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
@@ -58,9 +58,9 @@ class Test
         enumerable.OrderBy(x => x)." + a + @"(x => x)." + b + @"(x => x);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'"));
+")
+                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'")
+                  .ValidateAsync();
         }
     }
 }

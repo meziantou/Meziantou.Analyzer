@@ -1,27 +1,24 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class OptimizeLinqUsageAnalyzerUseDirectMethodsTests : CodeFixVerifier
+    public class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new OptimizeLinqUsageAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0020";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: "MA0020");
+        }
 
         [TestMethod]
-        public void FirstOrDefault()
+        public async System.Threading.Tasks.Task FirstOrDefaultAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -34,18 +31,19 @@ class Test
         enumerable.FirstOrDefault(x => x == 0);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 9, column: 9, message: "Use 'Find()' instead of 'FirstOrDefault()'"));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 9, column: 9, message: "Use 'Find()' instead of 'FirstOrDefault()'")
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Count_IEnumerable()
+        public async System.Threading.Tasks.Task Count_IEnumerableAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -54,18 +52,19 @@ class Test
         enumerable.Count();
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Count_List()
+        public async System.Threading.Tasks.Task Count_ListAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -75,18 +74,19 @@ class Test
         list.Count(x => x == 0);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: "Use 'Count' instead of 'Count()'"));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9, message: "Use 'Count' instead of 'Count()'")
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Count_ICollectionExplicitImplementation()
+        public async System.Threading.Tasks.Task Count_ICollectionExplicitImplementationAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -112,18 +112,19 @@ class Test
         bool ICollection<T>.Remove(T item) => throw null;
     }
 }
-");
-
-            VerifyDiagnostic(project);
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Count_Array()
+        public async System.Threading.Tasks.Task Count_ArrayAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -133,18 +134,19 @@ class Test
         list.Count(x => x == 0);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: "Use 'Length' instead of 'Count()'"));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9, message: "Use 'Length' instead of 'Count()'")
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void ElementAt_List()
+        public async System.Threading.Tasks.Task ElementAt_ListAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -154,18 +156,19 @@ class Test
         list.ElementAtOrDefault(10);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: "Use '[]' instead of 'ElementAt()'"));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9, message: "Use '[]' instead of 'ElementAt()'")
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void ElementAt_Array()
+        public async System.Threading.Tasks.Task ElementAt_ArrayAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -175,18 +178,19 @@ class Test
         list.ElementAtOrDefault(10);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: "Use '[]' instead of 'ElementAt()'"));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9, message: "Use '[]' instead of 'ElementAt()'")
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void First_Array()
+        public async System.Threading.Tasks.Task First_ArrayAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
+            const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -196,9 +200,13 @@ class Test
         list.First(x=> x == 0);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 9, message: "Use '[]' instead of 'First()'"));
+";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 9, message: "Use '[]' instead of 'First()'")
+                  .ValidateAsync();
         }
     }
 }

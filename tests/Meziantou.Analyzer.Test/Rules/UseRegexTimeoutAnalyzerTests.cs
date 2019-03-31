@@ -1,105 +1,107 @@
 ﻿using System.Text.RegularExpressions;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseRegexTimeoutAnalyzerTests : CodeFixVerifier
+    public class UseRegexTimeoutAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new UseRegexTimeoutAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0009";
-        protected override string ExpectedDiagnosticMessage => "Regular expressions should not be vulnerable to Denial of Service attacks";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<UseRegexTimeoutAnalyzer>();
+        }
 
         [TestMethod]
-        public void IsMatch_MissingTimeout_ShouldReportError()
+        public async System.Threading.Tasks.Task IsMatch_MissingTimeout_ShouldReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Regex))
-                  .WithSourceCode(@"using System.Text.RegularExpressions;
+            const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
     {
         Regex.IsMatch(""test"", ""[a-z]+"");
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 9);
-            VerifyDiagnostic(project, expected);
+}";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Regex))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void IsMatch_WithTimeout_ShouldNotReportError()
+        public async System.Threading.Tasks.Task IsMatch_WithTimeout_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Regex))
-                  .WithSourceCode(@"using System.Text.RegularExpressions;
+            const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
     {
         Regex.IsMatch(""test"", ""[a-z]+"", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Regex))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Ctor_MissingTimeout_ShouldReportError()
+        public async System.Threading.Tasks.Task Ctor_MissingTimeout_ShouldReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Regex))
-                  .WithSourceCode(@"using System.Text.RegularExpressions;
+            const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
     {
         new Regex(""[a-z]+"");
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 9);
-            VerifyDiagnostic(project, expected);
+}";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Regex))
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void Ctor_WithTimeout_ShouldNotReportError()
+        public async System.Threading.Tasks.Task Ctor_WithTimeout_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Regex))
-                  .WithSourceCode(@"using System.Text.RegularExpressions;
+            const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
 {
     void Test()
     {
         new Regex(""[a-z]+"", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Regex))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void NonRegexCtor_ShouldNotReportError()
+        public async System.Threading.Tasks.Task NonRegexCtor_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .AddReference(typeof(Regex))
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 class TestClass
 {
     void Test()
     {
         new System.Exception("""");
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .AddReference(typeof(Regex))
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
     }
 }

@@ -1,23 +1,23 @@
-﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotRaiseReservedExceptionTypeAnalyzerTests : CodeFixVerifier
+    public class DoNotRaiseReservedExceptionTypeAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotRaiseReservedExceptionTypeAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0012";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<DoNotRaiseReservedExceptionTypeAnalyzer>();
+        }
 
         [TestMethod]
-        public void RaiseNotReservedException_ShouldNotReportError()
+        public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System;
+            const string SourceCode = @"using System;
 class TestAttribute
 {
     void Test()
@@ -25,26 +25,28 @@ class TestAttribute
         throw new Exception();
         throw new ArgumentException();
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void RaiseReservedException_ShouldReportError()
+        public async Task RaiseReservedException_ShouldReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System;
+            const string SourceCode = @"using System;
 class TestAttribute
 {
     void Test()
     {
         throw new IndexOutOfRangeException();
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 9, message: "'System.IndexOutOfRangeException' is a reserved exception type");
-            VerifyDiagnostic(project, expected);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9, message: "'System.IndexOutOfRangeException' is a reserved exception type")
+                  .ValidateAsync();
         }
     }
 }

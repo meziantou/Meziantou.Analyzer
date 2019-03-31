@@ -1,26 +1,23 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests : CodeFixVerifier
+    public class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotUseEqualityComparerDefaultOfStringAnalyzer();
-        protected override CodeFixProvider GetCSharpCodeFixProvider() => new DoNotUseEqualityComparerDefaultOfStringFixer();
-        protected override string ExpectedDiagnosticId => "MA0024";
-        protected override string ExpectedDiagnosticMessage => "Use StringComparer.Ordinal";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<DoNotUseEqualityComparerDefaultOfStringAnalyzer>()
+                .WithCodeFixProvider<DoNotUseEqualityComparerDefaultOfStringFixer>();
+        }
 
         [TestMethod]
-        public void Test()
+        public async System.Threading.Tasks.Task TestAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System.Collections.Generic;
+            const string SourceCode = @"using System.Collections.Generic;
 class Test
 {
     internal void Sample()
@@ -29,10 +26,8 @@ class Test
         _ = EqualityComparer<string>.Default.Equals(null, null);
     }
 }
-");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 7, column: 13));
-            VerifyFix(project, @"using System.Collections.Generic;
+";
+            const string CodeFix = @"using System.Collections.Generic;
 class Test
 {
     internal void Sample()
@@ -41,7 +36,12 @@ class Test
         _ = System.StringComparer.Ordinal.Equals(null, null);
     }
 }
-");
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 7, column: 13)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -42,10 +41,9 @@ namespace Meziantou.Analyzer.Rules
                     if (member is IMethodSymbol method && (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet))
                         continue;
 
-                    var syntax = member.DeclaringSyntaxReferences.FirstOrDefault();
-                    if (syntax != null)
+                    foreach (var location in member.Locations)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, Location.Create(syntax.SyntaxTree, syntax.Span)));
+                        context.ReportDiagnostic(Diagnostic.Create(s_rule, location));
                     }
                 }
             }

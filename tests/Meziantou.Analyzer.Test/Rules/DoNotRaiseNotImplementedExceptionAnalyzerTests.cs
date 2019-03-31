@@ -1,24 +1,23 @@
-﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotRaiseNotImplementedExceptionAnalyzerTests : CodeFixVerifier
+    public class DoNotRaiseNotImplementedExceptionAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new DoNotRaiseNotImplementedExceptionAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0025";
-        protected override string ExpectedDiagnosticMessage => "Do not raise System.NotImplementedException";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Warning;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<DoNotRaiseNotImplementedExceptionAnalyzer>();
+        }
 
         [TestMethod]
-        public void RaiseNotReservedException_ShouldNotReportError()
+        public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System;
+            const string SourceCode = @"using System;
 class TestAttribute
 {
     void Test()
@@ -33,26 +32,28 @@ class TestAttribute
             throw;
         }
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void RaiseNotImplementedException_ShouldReportError()
+        public async Task RaiseNotImplementedException_ShouldReportErrorAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSourceCode(@"using System;
+            const string SourceCode = @"using System;
 class TestAttribute
 {
     void Test()
     {
         throw new NotImplementedException();
     }
-}");
-
-            var expected = CreateDiagnosticResult(line: 6, column: 9);
-            VerifyDiagnostic(project, expected);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
     }
 }
