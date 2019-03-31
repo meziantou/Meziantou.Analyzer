@@ -1,39 +1,39 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class RemoveEmptyStatementAnalyzerTests : CodeFixVerifier
+    public class RemoveEmptyStatementAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new RemoveEmptyStatementAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0037";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Error;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<RemoveEmptyStatementAnalyzer>();
+        }
 
         [TestMethod]
-        public void EmptyStatement()
+        public async System.Threading.Tasks.Task EmptyStatementAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class Test
 {
     public void A()
     {
         ;
     }
-}");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9));
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
 
         [TestMethod]
-        public void EmptyStatementInALabel()
+        public async System.Threading.Tasks.Task EmptyStatementInALabelAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"
+            const string SourceCode = @"
 class Test
 {
     public void A()
@@ -41,9 +41,11 @@ class Test
 test:
         ;
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
     }
 }

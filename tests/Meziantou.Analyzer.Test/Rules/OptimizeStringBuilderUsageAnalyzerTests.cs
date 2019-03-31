@@ -1,32 +1,33 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class OptimizeStringBuilderUsageAnalyzerTests : CodeFixVerifier
+    public class OptimizeStringBuilderUsageAnalyzerTests
     {
-        protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() => new OptimizeStringBuilderUsageAnalyzer();
-        protected override string ExpectedDiagnosticId => "MA0028";
-        protected override DiagnosticSeverity ExpectedDiagnosticSeverity => DiagnosticSeverity.Info;
+        private static ProjectBuilder CreateProjectBuilder()
+        {
+            return new ProjectBuilder()
+                .WithAnalyzer<OptimizeStringBuilderUsageAnalyzer>(id: "MA0028");
+        }
 
         [TestMethod]
-        public void AppendFormat_NoDiagnostic()
+        public async System.Threading.Tasks.Task AppendFormat_NoDiagnosticAsync()
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+            const string SourceCode = @"using System.Text;
 class Test
 {
     void A()
     {
         new StringBuilder().AppendFormat(""{10}"", 10);
     }
-}");
-
-            VerifyDiagnostic(project);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
@@ -37,19 +38,19 @@ class Test
         [DataRow(@"$""abc{""test""}""")]
         [DataRow(@"""abc"" + ""test""")]
         [DataRow(@"$""abc{""test""}"" + ""test""")]
-        public void Append_NoDiagnostic(string text)
+        public async System.Threading.Tasks.Task Append_NoDiagnosticAsync(string text)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
     {
         new StringBuilder().Append(" + text + @");
     }
-}");
-
-            VerifyDiagnostic(project);
+}")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
@@ -59,37 +60,37 @@ class Test
         [DataRow(@"""""")]
         [DataRow(@""""" + """"")]
         [DataRow(@""""".Substring(0, 10)")]
-        public void Append_ReportDiagnostic(string text)
+        public async System.Threading.Tasks.Task Append_ReportDiagnosticAsync(string text)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
     {
         new StringBuilder().Append(" + text + @");
     }
-}");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9));
+}")
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
         [DataRow(@"""abc""")]
         [DataRow(@"$""abc""")]
-        public void AppendLine_NoDiagnostic(string text)
+        public async System.Threading.Tasks.Task AppendLine_NoDiagnosticAsync(string text)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
     {
         new StringBuilder().AppendLine(" + text + @");
     }
-}");
-
-            VerifyDiagnostic(project);
+}")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
@@ -97,37 +98,37 @@ class Test
         [DataRow(@"""a"" + 10")]
         [DataRow(@"10 + 20 + ""a""")]
         [DataRow(@"10.ToString()")]
-        public void AppendLine_ReportDiagnostic(string text)
+        public async System.Threading.Tasks.Task AppendLine_ReportDiagnosticAsync(string text)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
     {
         new StringBuilder().AppendLine(" + text + @");
     }
-}");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9));
+}")
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
         [DataRow(@"""abc""")]
         [DataRow(@"$""abc""")]
-        public void Insert_NoDiagnostic(string text)
+        public async System.Threading.Tasks.Task Insert_NoDiagnosticAsync(string text)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
     {
         new StringBuilder().Insert(0, " + text + @");
     }
-}");
-
-            VerifyDiagnostic(project);
+}")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
         }
 
         [DataTestMethod]
@@ -135,19 +136,19 @@ class Test
         [DataRow(@"""a"" + 10")]
         [DataRow(@"10 + 20 + ""a""")]
         [DataRow(@"10.ToString()")]
-        public void Insert_ReportDiagnostic(string text)
+        public async System.Threading.Tasks.Task Insert_ReportDiagnosticAsync(string text)
         {
-            var project = new ProjectBuilder()
-                  .WithSource(@"using System.Text;
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
 class Test
 {
     void A()
     {
         new StringBuilder().Insert(0, " + text + @");
     }
-}");
-
-            VerifyDiagnostic(project, CreateDiagnosticResult(line: 6, column: 9));
+}")
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
         }
     }
 }

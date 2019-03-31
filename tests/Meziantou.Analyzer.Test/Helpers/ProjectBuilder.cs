@@ -1,5 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace TestHelper
 {
-    public class ProjectBuilder
+    public partial class ProjectBuilder
     {
         public ProjectBuilder()
         {
@@ -22,15 +24,17 @@ namespace TestHelper
         }
 
         public string SourceCode { get; private set; } = "";
-        public bool IsStatements { get; private set; }
-
+        public string EditorConfig { get; private set; }
         public bool IsValidCode { get; private set; } = true;
-
         public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
-
         public IList<MetadataReference> References { get; }
-
         public IList<string> ApiReferences { get; } = new List<string>();
+        public DiagnosticAnalyzer DiagnosticAnalyzer { get; private set; }
+        public CodeFixProvider CodeFixProvider { get; private set; }
+        public IList<DiagnosticResult> ExpectedDiagnosticResults { get; private set; }
+        public string ExpectedFixedCode { get; private set; }
+        public string DefaultAnalyzerId { get; set; }
+        public string DefaultAnalyzerMessage { get; set; }
 
         public ProjectBuilder AddReference(Type type)
         {
@@ -120,25 +124,23 @@ namespace TestHelper
 
         public ProjectBuilder AddWpfApi() => AddApiReference("System.Windows.Window");
 
-        public ProjectBuilder AddMSTest() => AddApiReference("MSTest");
+        public ProjectBuilder AddMSTestApi() => AddApiReference("MSTest");
 
-        public ProjectBuilder AddNUnit() => AddApiReference("NUnit");
+        public ProjectBuilder AddNUnitApi() => AddApiReference("NUnit");
 
-        public ProjectBuilder AddXUnit() => AddApiReference("XUnit");
+        public ProjectBuilder AddXUnitApi() => AddApiReference("XUnit");
 
-        public ProjectBuilder AddMicrosoftAspNetCore() => AddApiReference("Microsoft.AspNetCore");
+        public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
 
-        public ProjectBuilder WithSource(string content)
+        public ProjectBuilder WithSourceCode(string sourceCode)
         {
-            SourceCode = content;
-            IsStatements = false;
+            SourceCode = sourceCode;
             return this;
         }
 
-        public ProjectBuilder WithStatement(string content)
+        public ProjectBuilder WithEditorConfig(string editorConfig)
         {
-            SourceCode = "class Test{void Method(){" + content + "}}";
-            IsStatements = true;
+            EditorConfig = editorConfig;
             return this;
         }
 
@@ -157,6 +159,75 @@ namespace TestHelper
         public ProjectBuilder WithNoCompilation()
         {
             IsValidCode = false;
+            return this;
+        }
+
+        public ProjectBuilder WithAnalyzer(DiagnosticAnalyzer diagnosticAnalyzer, string id = null, string message = null)
+        {
+            DiagnosticAnalyzer = diagnosticAnalyzer;
+            DefaultAnalyzerId = id;
+            DefaultAnalyzerMessage = message;
+            return this;
+        }
+
+        public ProjectBuilder WithAnalyzer<T>(string id = null, string message = null) where T : DiagnosticAnalyzer, new()
+        {
+            return WithAnalyzer(new T(), id, message);
+        }
+
+        public ProjectBuilder WithCodeFixProvider(CodeFixProvider codeFixProvider)
+        {
+            CodeFixProvider = codeFixProvider;
+            return this;
+        }
+
+        public ProjectBuilder WithCodeFixProvider<T>() where T : CodeFixProvider, new()
+        {
+            return WithCodeFixProvider(new T());
+        }
+
+        public ProjectBuilder ShouldReportDiagnostic(int line, int column, string id = null, string message = null, DiagnosticSeverity? severity = null)
+        {
+            return ShouldReportDiagnostic(new DiagnosticResult
+            {
+                Id = id ?? DefaultAnalyzerId,
+                Message = message ?? DefaultAnalyzerMessage,
+                Severity = severity,
+                Locations = new[]
+                {
+                    new DiagnosticResultLocation("Test0.cs", line, column),
+                },
+            });
+        }
+
+        public ProjectBuilder ShouldNotReportDiagnostic()
+        {
+            return ShouldReportDiagnostic();
+        }
+
+        public ProjectBuilder ShouldReportDiagnostic(params DiagnosticResult[] expectedDiagnosticResults)
+        {
+            if (ExpectedDiagnosticResults == null)
+            {
+                ExpectedDiagnosticResults = new List<DiagnosticResult>();
+            }
+
+            foreach (var diagnostic in expectedDiagnosticResults)
+            {
+                ExpectedDiagnosticResults.Add(diagnostic);
+            }
+
+            return this;
+        }
+
+        public ProjectBuilder ShouldFixCodeWith(string codeFix)
+        {
+            if (ExpectedDiagnosticResults == null)
+            {
+                ExpectedDiagnosticResults = new List<DiagnosticResult>();
+            }
+
+            ExpectedFixedCode = codeFix;
             return this;
         }
     }

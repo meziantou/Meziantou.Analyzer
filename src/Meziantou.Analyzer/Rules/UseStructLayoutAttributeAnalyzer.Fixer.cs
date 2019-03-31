@@ -47,11 +47,11 @@ namespace Meziantou.Analyzer.Rules
 
             var newExpression = structNode.AddAttributeLists(
                 AttributeList(
-                    SingletonSeparatedList<AttributeSyntax>(
+                    SingletonSeparatedList(
                         Attribute(StructLayoutAttribute())
                         .WithArgumentList(
                             AttributeArgumentList(
-                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                SingletonSeparatedList(
                                     AttributeArgument(
                                         MemberAccessExpression(
                                             SyntaxKind.SimpleMemberAccessExpression,
