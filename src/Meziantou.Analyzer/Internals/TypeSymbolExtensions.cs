@@ -68,6 +68,14 @@ namespace Meziantou.Analyzer
             return expectedType.Equals(symbol);
         }
 
+        public static bool IsEqualsToAny(this ITypeSymbol symbol, params ITypeSymbol[] expectedTypes)
+        {
+            if (symbol == null || expectedTypes == null)
+                return false;
+
+            return expectedTypes.Any(t => IsEqualsTo(t, symbol));
+        }
+
         public static bool IsString(this ITypeSymbol symbol)
         {
             if (symbol == null)
