@@ -41,6 +41,14 @@ namespace Meziantou.Analyzer.Rules
                     if (member is IMethodSymbol method && (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet))
                         continue;
 
+                    // skip operators
+                    if (member.IsOperator())
+                        continue;
+
+                    // only public methods
+                    if (!member.IsVisibleOutsideOfAssembly())
+                        continue;
+
                     foreach (var location in member.Locations)
                     {
                         context.ReportDiagnostic(Diagnostic.Create(s_rule, location));

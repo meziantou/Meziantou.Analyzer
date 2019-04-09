@@ -109,22 +109,12 @@ namespace Meziantou.Analyzer.Rules
                 !symbol.Interfaces.Any() &&
                 !HasBaseClass() &&
                 !symbol.IsUnitTestClass() &&
-                symbol.GetMembers().All(member => (member.IsStatic || member.IsImplicitlyDeclared) && !IsOperator(member));
+                symbol.GetMembers().All(member => (member.IsStatic || member.IsImplicitlyDeclared) && !member.IsOperator());
 
             bool HasBaseClass()
             {
                 return symbol.BaseType != null && symbol.BaseType.SpecialType != SpecialType.System_Object;
             }
-        }
-
-        private static bool IsOperator(ISymbol symbol)
-        {
-            if (symbol is IMethodSymbol methodSymbol)
-            {
-                return methodSymbol.MethodKind == MethodKind.UserDefinedOperator || methodSymbol.MethodKind == MethodKind.Conversion;
-            }
-
-            return false;
         }
     }
 }

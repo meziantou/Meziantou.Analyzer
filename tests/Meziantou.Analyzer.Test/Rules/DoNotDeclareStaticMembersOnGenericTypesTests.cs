@@ -18,15 +18,15 @@ namespace Meziantou.Analyzer.Test.Rules
         public async Task StaticMembersInNonGenericClass_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
-class Test
+public class Test
 {
-    static string field;
-    static string Prop => throw null;
-    static string Method() => throw null;
+    public static string field;
+    public static string Prop => throw null;
+    public static string Method() => throw null;
 
-    string field2;
-    string Prop2 => throw null;
-    string Method2() => throw null;
+    public string field2;
+    public string Prop2 => throw null;
+    public string Method2() => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
@@ -38,11 +38,11 @@ class Test
         public async Task StaticMembersInGenericClass_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
-class Test<T>
+public class Test<T>
 {
-    string field2;
-    string Prop2 => throw null;
-    string Method2() => throw null;
+    public string field2;
+    public string Prop2 => throw null;
+    public string Method2() => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
@@ -54,13 +54,13 @@ class Test<T>
         public async Task StaticMembers_Field_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
-class Test<T>
+public class Test<T>
 {
-    static string field;
+    public static string field;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 19)
+                  .ShouldReportDiagnostic(line: 4, column: 26)
                   .ValidateAsync();
         }
 
@@ -68,13 +68,13 @@ class Test<T>
         public async Task StaticMembers_Property_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
-class Test<T>
+public class Test<T>
 {
-    static string Prop => throw null;
+    public static string Prop => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 19)
+                  .ShouldReportDiagnostic(line: 4, column: 26)
                   .ValidateAsync();
         }
 
@@ -82,13 +82,27 @@ class Test<T>
         public async Task StaticMembers_Method_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
-class Test<T>
+public class Test<T>
 {
-    static string Method() => throw null;
+    public static string Method() => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 19)
+                  .ShouldReportDiagnostic(line: 4, column: 26)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task StaticMembers_Operator_ShouldReportDiagnosticAsync()
+        {
+            const string SourceCode = @"
+public class Test<T>
+{
+    public static implicit operator Test<T>(int i) => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }
