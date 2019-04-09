@@ -51,7 +51,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) as IFieldSymbol;
-            if (!symbol.IsVisible())
+            if (!symbol.IsVisibleOutsideOfAssembly())
                 return;
 
             if (IsValidType(analyzerContext, symbol.Type))
@@ -67,7 +67,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisible())
+            if (!symbol.IsVisibleOutsideOfAssembly())
                 return;
 
             var type = node.ReturnType;
@@ -86,7 +86,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisible())
+            if (!symbol.IsVisibleOutsideOfAssembly())
                 return;
 
             var type = node.Type;
@@ -105,7 +105,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisible())
+            if (!symbol.IsVisibleOutsideOfAssembly())
                 return;
 
             var type = node.Type;
@@ -122,7 +122,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisible())
+            if (!symbol.IsVisibleOutsideOfAssembly())
                 return;
 
             var type = node.ReturnType;
