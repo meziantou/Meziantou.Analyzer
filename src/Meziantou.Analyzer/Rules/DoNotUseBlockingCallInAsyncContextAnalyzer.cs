@@ -95,17 +95,16 @@ namespace Meziantou.Analyzer.Rules
                         context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'"));
                     }
 
-                    bool IsPotentialMember(ISymbol symbol)
+                    bool IsPotentialMember(ISymbol memberSymbol)
                     {
-                        if (symbol.Equals(targetMethod))
+                        if (memberSymbol.Equals(targetMethod))
                             return false;
 
-                        if (symbol is IMethodSymbol methodSymbol)
+                        if (memberSymbol is IMethodSymbol methodSymbol)
                         {
                             return
                                 (!targetMethod.IsStatic || methodSymbol.IsStatic) &&
-                                string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) ||
-                                string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal) &&
+                                (string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) || string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal)) &&
                                 methodSymbol.ReturnType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol);
                         }
 

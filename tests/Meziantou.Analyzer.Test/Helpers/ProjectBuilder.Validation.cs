@@ -43,7 +43,7 @@ namespace TestHelper
 
             if (ExpectedFixedCode != null)
             {
-                await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, null, allowNewCompilerDiagnostics: false).ConfigureAwait(false);
+                await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, null, allowNewCompilerDiagnostics: AllowNewCompilerDiagnostics).ConfigureAwait(false);
             }
         }
 
@@ -131,7 +131,7 @@ namespace TestHelper
 
         private Task<Diagnostic[]> GetSortedDiagnostics(DiagnosticAnalyzer analyzer)
         {
-            return GetSortedDiagnosticsFromDocuments(analyzer, GetDocuments());
+            return GetSortedDiagnosticsFromDocuments(analyzer, GetDocuments(), compileSolution: true);
         }
 
         private Document[] GetDocuments()
@@ -173,7 +173,7 @@ namespace TestHelper
         }
 
         [DebuggerStepThrough]
-        private static async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents)
+        private static async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
         {
             var projects = new HashSet<Project>();
             foreach (var document in documents)
@@ -190,12 +190,22 @@ namespace TestHelper
                 //project.AddAdditionalDocument("")
                 var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
 
-                using (var ms = new MemoryStream())
+                if (compileSolution)
                 {
-                    var result = compilation.Emit(ms);
-                    if (!result.Success)
+                    using (var ms = new MemoryStream())
                     {
-                        Assert.Fail("The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
+                        var result = compilation.Emit(ms);
+                        if (!result.Success)
+                        {
+                            string sourceCode = null;
+                            var document = project.Documents.FirstOrDefault();
+                            if (document != null)
+                            {
+                                sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
+                            }
+
+                            Assert.Fail("The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
+                        }
                     }
                 }
 
@@ -315,11 +325,6 @@ namespace TestHelper
             }
         }
 
-        private Document CreateDocument()
-        {
-            return CreateProject().Documents.First();
-        }
-
         private async static Task<IEnumerable<Diagnostic>> GetCompilerDiagnostics(Document document)
         {
             var semanticModel = await document.GetSemanticModelAsync().ConfigureAwait(false);
@@ -333,12 +338,11 @@ namespace TestHelper
                 Assert.Fail("The CodeFixProvider is not valid for the DiagnosticAnalyzer");
             }
 
-            var document = CreateDocument();
-            var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }).ConfigureAwait(false);
+            var document = CreateProject().Documents.First();
+            var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
             var compilerDiagnostics = await GetCompilerDiagnostics(document).ConfigureAwait(false);
-            var attempts = analyzerDiagnostics.Length;
 
-            for (var i = 0; i < attempts; ++i)
+            for (var i = 0; i < analyzerDiagnostics.Length; ++i)
             {
                 var actions = new List<CodeAction>();
                 var context = new CodeFixContext(document, analyzerDiagnostics[0], (a, _) => actions.Add(a), CancellationToken.None);
@@ -356,7 +360,7 @@ namespace TestHelper
                 }
 
                 document = await ApplyFix(document, actions[0]).ConfigureAwait(false);
-                analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }).ConfigureAwait(false);
+                analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
 
                 var newCompilerDiagnostics = GetNewDiagnostics(compilerDiagnostics, await GetCompilerDiagnostics(document).ConfigureAwait(false));
 

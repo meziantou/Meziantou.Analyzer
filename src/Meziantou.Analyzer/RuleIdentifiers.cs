@@ -46,6 +46,7 @@ namespace Meziantou.Analyzer
         public const string UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable = "MA0040";
         public const string MakePropertyStatic = "MA0041";
         public const string DoNotUseBlockingCallInAsyncContext = "MA0042";
+        public const string UseNameofOperator = "MA0043";
 
         public static string GetHelpUri(string idenfifier)
         {

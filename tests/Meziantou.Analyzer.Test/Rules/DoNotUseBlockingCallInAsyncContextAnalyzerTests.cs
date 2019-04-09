@@ -177,5 +177,25 @@ class Test
                   .ShouldReportDiagnostic(line: 8, column: 31)
                   .ValidateAsync();
         }
+
+
+        [TestMethod]
+        public async Task Method_NoOverload_NoDiagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        Write();
+    }
+
+    public void Write() => throw null;
+    public void Write(int a) => throw null;
+}")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
+        }
     }
 }

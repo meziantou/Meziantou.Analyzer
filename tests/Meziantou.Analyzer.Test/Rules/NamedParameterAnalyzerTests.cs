@@ -15,6 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
+
         public async System.Threading.Tasks.Task Task_ConfigureAwait_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"

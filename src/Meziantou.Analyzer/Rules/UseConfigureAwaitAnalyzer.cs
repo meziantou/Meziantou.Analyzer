@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -49,33 +50,25 @@ namespace Meziantou.Analyzer.Rules
             if (HasPreviousConfigureAwait(context, node))
                 return true;
 
-            var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            var containingClass = GetParentSymbol<INamedTypeSymbol>(context.SemanticModel, node, context.CancellationToken);
             if (containingClass != null)
             {
-                var symbol = context.SemanticModel.GetDeclaredSymbol(containingClass, context.CancellationToken);
-                if (symbol != null)
+                if (containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
+                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
+                    containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
+                    containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
+                    containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase")) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
+                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
+                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")))  // ASP.NET Core
                 {
-                    if (symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
-                        symbol.Implements(context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
-                        symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
-                        symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
-                        symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase")) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
-                        symbol.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
-                        symbol.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
-                        symbol.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")))  // ASP.NET Core
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
 
-            var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-            if (containingMethod != null)
-            {
-                var methodInfo = context.SemanticModel.GetDeclaredSymbol(containingMethod, context.CancellationToken) as IMethodSymbol;
-                if (methodInfo != null && methodInfo.IsUnitTestMethod())
-                    return false;
-            }
+            var containingMethod = GetParentSymbol<IMethodSymbol>(context.SemanticModel, node, context.CancellationToken);
+            if (containingMethod != null && containingMethod.IsUnitTestMethod())
+                return false;
 
             return true;
         }
@@ -155,6 +148,20 @@ namespace Meziantou.Analyzer.Rules
             var configuredTaskAwaitableOfTType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
             return (configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType)) ||
                    (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.Equals(awaitExpressionType.OriginalDefinition));
+        }
+
+        private static T GetParentSymbol<T>(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken) where T : ISymbol
+        {
+            var symbol = semanticModel.GetEnclosingSymbol(node.SpanStart, cancellationToken);
+            while (symbol != null)
+            {
+                if (symbol is T expectedSymbol)
+                    return expectedSymbol;
+
+                symbol = symbol.ContainingSymbol;
+            }
+
+            return default;
         }
     }
 }
