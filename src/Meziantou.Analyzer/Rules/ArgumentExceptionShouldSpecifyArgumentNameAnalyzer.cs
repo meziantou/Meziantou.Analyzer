@@ -13,9 +13,11 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
     {
+        internal const string ArgumentNameKey = "ArgumentName";
+
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName,
-            title: "Should specify the parameter name",
+            title: "Specify the parameter name",
             messageFormat: "{0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
@@ -23,7 +25,17 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        private static readonly DiagnosticDescriptor s_nameofRule = new DiagnosticDescriptor(
+            RuleIdentifiers.UseNameofOperator,
+            title: "Use nameof operator",
+            messageFormat: "Use nameof operator",
+            RuleCategories.Usage,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNameofOperator));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_nameofRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -67,7 +79,15 @@ namespace Meziantou.Analyzer.Rules
                     {
                         var parameterNames = GetParameterNames(op);
                         if (parameterNames.Contains(value, StringComparer.Ordinal))
+                        {
+                            if (!(argument.Value is INameOfOperation))
+                            {
+                                var properties = ImmutableDictionary<string, string>.Empty.Add(ArgumentNameKey, value);
+                                context.ReportDiagnostic(Diagnostic.Create(s_nameofRule, argument.Value.Syntax.GetLocation(), properties));
+                            }
+
                             return;
+                        }
 
                         context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"'{value}' is not a valid parameter name"));
                         return;

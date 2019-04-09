@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>();
+                .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0015");
         }
 
         [TestMethod]
@@ -36,7 +36,6 @@ class Sample
     Sample(string test)
     {
         throw new System.Exception();
-        throw new System.ArgumentException(""message"", ""test"");
         throw new System.ArgumentException(""message"", nameof(test));
         throw new System.ArgumentNullException(nameof(test));
     }
@@ -44,7 +43,6 @@ class Sample
     void Test(string test)
     {
         throw new System.Exception();
-        throw new System.ArgumentException(""message"", ""test"");
         throw new System.ArgumentException(""message"", nameof(test));
         throw new System.ArgumentNullException(nameof(test));
         throw new System.ComponentModel.InvalidEnumArgumentException(nameof(test), 0, typeof(System.Enum));
@@ -62,7 +60,7 @@ class Sample
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
-        
+
         [TestMethod]
         public async Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
         {

@@ -26,7 +26,7 @@ namespace TestHelper
         public string SourceCode { get; private set; } = "";
         public string EditorConfig { get; private set; }
         public bool IsValidCode { get; private set; } = true;
-        public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
+        public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.CSharp7_3;
         public IList<MetadataReference> References { get; }
         public IList<string> ApiReferences { get; } = new List<string>();
         public DiagnosticAnalyzer DiagnosticAnalyzer { get; private set; }
@@ -35,6 +35,7 @@ namespace TestHelper
         public string ExpectedFixedCode { get; private set; }
         public string DefaultAnalyzerId { get; set; }
         public string DefaultAnalyzerMessage { get; set; }
+        public bool AllowNewCompilerDiagnostics { get; set; }
 
         public ProjectBuilder AddReference(Type type)
         {
@@ -228,6 +229,12 @@ namespace TestHelper
             }
 
             ExpectedFixedCode = codeFix;
+            return this;
+        }
+
+        public ProjectBuilder CodeFixAllowNewCompilerDiagnostics()
+        {
+            AllowNewCompilerDiagnostics = true;
             return this;
         }
     }
