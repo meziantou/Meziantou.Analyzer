@@ -48,6 +48,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseBlockingCallInAsyncContext = "MA0042";
         public const string UseNameofOperator = "MA0043";
         public const string RemoveUselessToString = "MA0044";
+        public const string DoNotUseBlockingCall = "MA0045";
 
         public static string GetHelpUri(string idenfifier)
         {
