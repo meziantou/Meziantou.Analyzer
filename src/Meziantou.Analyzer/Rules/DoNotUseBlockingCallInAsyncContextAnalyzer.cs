@@ -22,7 +22,17 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        private static readonly DiagnosticDescriptor s_rule2 = new DiagnosticDescriptor(
+            RuleIdentifiers.DoNotUseBlockingCall,
+            title: "Do not use blocking call (make method async)",
+            messageFormat: "{0}",
+            RuleCategories.Design,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBlockingCall));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_rule2);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -67,9 +77,9 @@ namespace Meziantou.Analyzer.Rules
                 // Task`1.Wait()
                 if (string.Equals(targetMethod.Name, nameof(Task.Wait), StringComparison.Ordinal))
                 {
-                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol) && IsAsyncContext(operation))
+                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), "Use await instead of 'Wait()'"));
+                        ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'Wait()'");
                     }
 
                     return;
@@ -78,21 +88,21 @@ namespace Meziantou.Analyzer.Rules
                 // Task.GetAwaiter().GetResult()
                 if (string.Equals(targetMethod.Name, nameof(TaskAwaiter.GetResult), StringComparison.Ordinal))
                 {
-                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualsTo(TaskAwaiterSymbol) && IsAsyncContext(operation))
+                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualsTo(TaskAwaiterSymbol))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), "Use await instead of 'Result'"));
+                        ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'GetResult()'");
                     }
 
                     return;
                 }
 
                 // Search async equivalent: sample.Write() => sample.WriteAsync()
-                if (!targetMethod.ReturnType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol) && IsAsyncContext(operation))
+                if (!targetMethod.ReturnType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol))
                 {
                     var potentialMethod = targetMethod.ContainingType.GetMembers().FirstOrDefault(IsPotentialMember);
                     if (potentialMethod != null)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'"));
+                        ReportDiagnosticIfNeeded(context, operation, $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'");
                     }
 
                     bool IsPotentialMember(ISymbol memberSymbol)
@@ -120,10 +130,22 @@ namespace Meziantou.Analyzer.Rules
                 // Task`1.Result
                 if (string.Equals(operation.Property.Name, nameof(Task<int>.Result), StringComparison.Ordinal))
                 {
-                    if (operation.Member.ContainingType.OriginalDefinition.IsEqualsTo(TaskOfTSymbol) && IsAsyncContext(operation))
+                    if (operation.Member.ContainingType.OriginalDefinition.IsEqualsTo(TaskOfTSymbol))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                        ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'Result'");
                     }
+                }
+            }
+
+            private void ReportDiagnosticIfNeeded(OperationAnalysisContext context, IOperation operation, string message)
+            {
+                if (IsAsyncContext(operation))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), message));
+                }
+                else if (CanChangeParentMethodSignature(operation))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(s_rule2, operation.Syntax.GetLocation(), message + " and make method async"));
                 }
             }
 
@@ -135,6 +157,19 @@ namespace Meziantou.Analyzer.Rules
                 if (methodSymbol != null)
                 {
                     return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol);
+                }
+
+                return false;
+            }
+
+            private static bool CanChangeParentMethodSignature(IOperation operation)
+            {
+                var symbol = operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart);
+                if (symbol is IMethodSymbol methodSymbol)
+                {
+                    return !methodSymbol.IsOverride
+                        && !methodSymbol.IsInterfaceImplementation()
+                        && !methodSymbol.IsVisibleOutsideOfAssembly();
                 }
 
                 return false;

@@ -173,7 +173,7 @@ namespace TestHelper
         }
 
         [DebuggerStepThrough]
-        private static async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
+        private async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
         {
             var projects = new HashSet<Project>();
             foreach (var document in documents)
@@ -185,8 +185,12 @@ namespace TestHelper
             foreach (var project in projects)
             {
                 var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-                //options.WithSpecificDiagnosticOptions(ImmutableDictionary.Create<string, ReportDiagnostic>()
-                //    .Add("", ReportDiagnostic.Info));
+                //if (DefaultAnalyzerId != null)
+                //{
+                //    options.WithSpecificDiagnosticOptions(ImmutableDictionary.Create<string, ReportDiagnostic>()
+                //        .Add("", ReportDiagnostic.Info));
+                //}
+
                 //project.AddAdditionalDocument("")
                 var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
 

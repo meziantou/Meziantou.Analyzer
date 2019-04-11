@@ -6,28 +6,12 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseBlockingCallInAsyncContextAnalyzerTests
+    public class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>();
-        }
-
-        [TestMethod]
-        public async Task NonAsync_Wait_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .ShouldNotReportDiagnostic()
-                  .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public void A()
-    {
-        Task.Delay(1).Wait();
-    }
-}")
-                  .ValidateAsync();
+                .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042");
         }
 
         [TestMethod]
@@ -78,25 +62,6 @@ class Test
     public Task Write(int a) => throw null;
 }")
                   .ShouldReportDiagnostic(line: 6, column: 9)
-                  .ValidateAsync();
-        }
-
-        [TestMethod]
-        public async Task NonAsync_AsyncSuffix_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public void A()
-    {
-        Write();
-    }
-
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
