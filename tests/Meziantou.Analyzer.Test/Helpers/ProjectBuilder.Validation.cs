@@ -333,19 +333,20 @@ namespace TestHelper
 
         private async Task VerifyFix(DiagnosticAnalyzer analyzer, CodeFixProvider codeFixProvider, string newSource, int? codeFixIndex, bool allowNewCompilerDiagnostics)
         {
-            if (!codeFixProvider.FixableDiagnosticIds.Any(id => analyzer.SupportedDiagnostics.Any(descriptor => string.Equals(descriptor.Id, id, StringComparison.Ordinal))))
-            {
-                Assert.Fail("The CodeFixProvider is not valid for the DiagnosticAnalyzer");
-            }
-
             var document = CreateProject().Documents.First();
             var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
             var compilerDiagnostics = await GetCompilerDiagnostics(document).ConfigureAwait(false);
 
             for (var i = 0; i < analyzerDiagnostics.Length; ++i)
             {
+                var diagnostic = analyzerDiagnostics[0];
+                if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
+                {
+                    Assert.Fail("The CodeFixProvider is not valid for the DiagnosticAnalyzer");
+                }
+
                 var actions = new List<CodeAction>();
-                var context = new CodeFixContext(document, analyzerDiagnostics[0], (a, _) => actions.Add(a), CancellationToken.None);
+                var context = new CodeFixContext(document, diagnostic, (a, _) => actions.Add(a), CancellationToken.None);
                 await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
 
                 if (actions.Count == 0)
