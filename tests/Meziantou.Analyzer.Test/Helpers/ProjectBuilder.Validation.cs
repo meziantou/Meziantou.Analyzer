@@ -346,7 +346,7 @@ namespace TestHelper
             {
                 var actions = new List<CodeAction>();
                 var context = new CodeFixContext(document, analyzerDiagnostics[0], (a, _) => actions.Add(a), CancellationToken.None);
-                codeFixProvider.RegisterCodeFixesAsync(context).Wait(context.CancellationToken);
+                await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
 
                 if (actions.Count == 0)
                 {
@@ -368,7 +368,9 @@ namespace TestHelper
                 if (!allowNewCompilerDiagnostics && newCompilerDiagnostics.Any())
                 {
                     // Format and get the compiler diagnostics again so that the locations make sense in the output
-                    document = document.WithSyntaxRoot(Formatter.Format(await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false), Formatter.Annotation, document.Project.Solution.Workspace, cancellationToken: context.CancellationToken));
+                    var syntaxRoot = await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+                    var formattedDocument = Formatter.Format(syntaxRoot, Formatter.Annotation, document.Project.Solution.Workspace, cancellationToken: context.CancellationToken);
+                    document = document.WithSyntaxRoot(formattedDocument);
                     newCompilerDiagnostics = GetNewDiagnostics(compilerDiagnostics, await GetCompilerDiagnostics(document).ConfigureAwait(false));
 
                     Assert.IsTrue(false,
