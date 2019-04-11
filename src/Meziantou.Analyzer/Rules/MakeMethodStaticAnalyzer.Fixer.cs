@@ -15,7 +15,7 @@ namespace Meziantou.Analyzer.Rules
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
     public sealed class MakeMethodStaticFixer : CodeFixProvider
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.MakeMethodStatic);
+        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.MakeMethodStatic, RuleIdentifiers.MakePropertyStatic);
 
         public override FixAllProvider GetFixAllProvider()
         {
