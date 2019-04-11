@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -44,14 +46,30 @@ namespace Meziantou.Analyzer.Configurations
         private static readonly ImmutableHashSet<string> s_reservedValues
             = ImmutableHashSet.CreateRange(s_keyComparer, new[] { "unset" });
 
+        public static EditorConfigFile Load(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                var lines = File.ReadAllLines(filePath);
+                return Parse(lines);
+            }
+
+            return EditorConfigFile.Empty;
+        }
+
         public static EditorConfigFile Parse(SourceText text)
         {
             var parsedOptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var textLine in text.Lines)
-            {
-                var line = textLine.ToString();
+            return Parse(text.Lines.Select(line => line.ToString()));
+        }
 
+        private static EditorConfigFile Parse(IEnumerable<string> lines)
+        {
+            var parsedOptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var line in lines)
+            {
                 if (string.IsNullOrWhiteSpace(line) || IsComment(line))
                 {
                     continue;

@@ -1,49 +1,33 @@
 ﻿using System;
-using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Threading;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Configurations
 {
     public static class AnalyzerOptionsExtensions
     {
-        private static readonly ConditionalWeakTable<AnalyzerOptions, EditorConfigFile> s_cachedOptions
-            = new ConditionalWeakTable<AnalyzerOptions, EditorConfigFile>();
+        private static readonly ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy> s_cachedOptions
+            = new ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy>();
 
-        private static bool TryGetConfigurationValue(this AnalyzerOptions options, string key, out string value)
+        public static bool TryGetConfigurationValue(this AnalyzerOptions options, string filePath, string key, out string value)
         {
-            var configuration = GetOrComputeEditorConfigFile(options, CancellationToken.None);
-            return configuration.TryGetValue(key, out value);
+            var configuration = GetConfigurationHierarchy(options);
+            return configuration.TryGetValue(filePath, key, out value);
         }
 
-        public static string GetConfigurationValue(this AnalyzerOptions options, string key, string defaultValue)
+        public static bool TryGetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, out string value)
         {
-            if (TryGetConfigurationValue(options, key, out var result))
-                return result;
-
-            return defaultValue;
+            return TryGetConfigurationValue(options, operation.Syntax, key, out value);
         }
 
-        public static T GetConfigurationValue<T>(this AnalyzerOptions options, string key, T defaultValue)
+        public static bool TryGetConfigurationValue(this AnalyzerOptions options, SyntaxNode syntaxNode, string key, out string value)
         {
-            if (TryGetConfigurationValue(options, key, out var result))
-            {
-                try
-                {
-                    return (T)Convert.ChangeType(result, typeof(T), CultureInfo.InvariantCulture);
-                }
-                catch
-                {
-                    return defaultValue;
-                }
-            }
-
-            return defaultValue;
+            return TryGetConfigurationValue(options, syntaxNode.SyntaxTree.FilePath, key, out value);
         }
 
-        private static EditorConfigFile GetOrComputeEditorConfigFile(this AnalyzerOptions options, CancellationToken cancellationToken)
+        private static ConfigurationHierarchy GetConfigurationHierarchy(this AnalyzerOptions options)
         {
             // TryGetValue upfront to avoid allocating createValueCallback if the entry already exists. 
             if (s_cachedOptions.TryGetValue(options, out var categorizedAnalyzerConfigOptions))
@@ -51,18 +35,17 @@ namespace Meziantou.Analyzer.Configurations
                 return categorizedAnalyzerConfigOptions;
             }
 
-            var createValueCallback = new ConditionalWeakTable<AnalyzerOptions, EditorConfigFile>.CreateValueCallback(_ => ComputeCategorizedAnalyzerConfigOptions());
+            var createValueCallback = new ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy>.CreateValueCallback(_ => new ConfigurationHierarchy(GetFromAdditionalFiles()));
             return s_cachedOptions.GetValue(options, createValueCallback);
 
-            // Local functions.
-            EditorConfigFile ComputeCategorizedAnalyzerConfigOptions()
+            EditorConfigFile GetFromAdditionalFiles()
             {
                 foreach (var additionalFile in options.AdditionalFiles)
                 {
                     var fileName = Path.GetFileName(additionalFile.Path);
                     if (fileName.Equals(".editorconfig", StringComparison.OrdinalIgnoreCase))
                     {
-                        var text = additionalFile.GetText(cancellationToken);
+                        var text = additionalFile.GetText();
                         return EditorConfigFileParser.Parse(text);
                     }
                 }
