@@ -10,8 +10,8 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotRaiseNotImplementedException,
-            title: "Do not raise System.NotImplementedException",
-            messageFormat: "Do not raise System.NotImplementedException",
+            title: "TODO Implement the functionality",
+            messageFormat: "TODO Implement the functionality (or raise NotSupportedException or PlatformNotSupportedException)",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
