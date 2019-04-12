@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -10,7 +9,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules
 {
-    // TODO use operation
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NamedParameterAnalyzer : DiagnosticAnalyzer
     {
@@ -70,9 +68,6 @@ namespace Meziantou.Analyzer.Rules
                             {
                                 var argumentIndex = ArgumentIndex(argument);
 
-                                if (MustSkip(syntaxContext, attributeTokenType, methodSymbol))
-                                    return;
-
                                 if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
                                     return;
 
@@ -124,54 +119,6 @@ namespace Meziantou.Analyzer.Rules
                     }
                 }, SyntaxKind.Argument);
             });
-        }
-
-        private static bool MustSkip(SyntaxNodeAnalysisContext context, ITypeSymbol attributeType, IMethodSymbol methodSymbol)
-        {
-            if (attributeType == null)
-                return false;
-
-            foreach (var syntaxTree in context.Compilation.SyntaxTrees)
-            {
-                var root = syntaxTree.GetRoot(context.CancellationToken);
-                if (root == null)
-                    continue;
-
-                foreach (var list in root.DescendantNodesAndSelf().OfType<AttributeListSyntax>())
-                {
-                    if (list.Target != null && list.Target?.Identifier.IsKind(SyntaxKind.AssemblyKeyword) == true)
-                    {
-                        foreach (var attribute in list.Attributes)
-                        {
-                            if (attribute.ArgumentList?.Arguments.Count != 2)
-                                continue;
-
-                            var attr = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol;
-                            if (attr != null && attributeType.Equals(attr.ContainingType))
-                            {
-                                var a = GetStringValue(attribute.ArgumentList.Arguments[0]);
-                                var b = GetStringValue(attribute.ArgumentList.Arguments[1]);
-
-                                var type = context.Compilation.GetTypeByMetadataName(a);
-                                return IsMethod(methodSymbol, type, b);
-                            }
-                        }
-                    }
-                }
-
-                var model = context.Compilation.GetSemanticModel(syntaxTree);
-            }
-
-            return false;
-
-            string GetStringValue(AttributeArgumentSyntax argument)
-            {
-                var expression = argument.Expression;
-                if (expression.IsKind(SyntaxKind.StringLiteralExpression))
-                    return ((LiteralExpressionSyntax)expression).Token.ValueText;
-
-                return null;
-            }
         }
 
         private static bool IsMethod(IMethodSymbol method, ITypeSymbol type, string name)

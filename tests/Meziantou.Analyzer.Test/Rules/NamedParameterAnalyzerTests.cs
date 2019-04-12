@@ -170,48 +170,6 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Attribute_ShouldNotReportDiagnosticAsync()
-        {
-            const string SourceCode = @"
-[assembly: SkipNamedAttribute(""TypeName"", ""Test"")]
-internal class SkipNamedAttribute : System.Attribute
-{
-    public SkipNamedAttribute(string typeName, string methodName) { }
-}
-
-class TypeName
-{
-    public void Test(string name) => Test(null);
-    public void Test2(string name) => Test2(null);
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 11, column: 45)
-                  .ValidateAsync();
-        }
-
-        [TestMethod]
-        public async System.Threading.Tasks.Task AttributeWithWildcard_ShouldNotReportDiagnosticAsync()
-        {
-            const string SourceCode = @"
-[assembly: SkipNamedAttribute(""TypeName"", ""*"")]
-internal class SkipNamedAttribute : System.Attribute
-{
-    public SkipNamedAttribute(string typeName, string methodName) { }
-}
-
-class TypeName
-{
-    public void Test(string name) => Test(null);
-    public void Test2(string name) => Test2(null);
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
-                  .ValidateAsync();
-        }
-
-        [TestMethod]
         public async System.Threading.Tasks.Task MSTestAssert_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
