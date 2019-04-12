@@ -51,7 +51,7 @@ namespace Meziantou.Analyzer.Rules
 
             if (initializer.Members.Count != initializer.Members.SeparatorCount)
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, lastMember.GetLocation()));
+                context.ReportDiagnostic(s_rule, lastMember);
             }
         }
 
@@ -59,13 +59,11 @@ namespace Meziantou.Analyzer.Rules
         {
             var initializer = (InitializerExpressionSyntax)context.Node;
             if (initializer == null || !initializer.SpansMultipleLines())
-            {
                 return;
-            }
 
             if (initializer.Expressions.SeparatorCount < initializer.Expressions.Count)
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, initializer.Expressions.Last().GetLocation()));
+                context.ReportDiagnostic(s_rule, initializer.Expressions.Last());
             }
         }
 
@@ -73,13 +71,11 @@ namespace Meziantou.Analyzer.Rules
         {
             var initializer = (AnonymousObjectCreationExpressionSyntax)context.Node;
             if (initializer == null || !initializer.SpansMultipleLines())
-            {
                 return;
-            }
 
             if (initializer.Initializers.SeparatorCount < initializer.Initializers.Count)
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, initializer.Initializers.Last().GetLocation()));
+                context.ReportDiagnostic(s_rule, initializer.Initializers.Last());
             }
         }
     }

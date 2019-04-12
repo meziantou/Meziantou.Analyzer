@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules
 {
+    // TODO use class
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class MakeClassStaticAnalyzer : DiagnosticAnalyzer
     {
@@ -88,15 +89,12 @@ namespace Meziantou.Analyzer.Rules
 
                 s.RegisterCompilationEndAction(ctx =>
                 {
-                    foreach (var c in potentialClasses)
+                    foreach (var @class in potentialClasses)
                     {
-                        if (cannotBeStaticClasses.Contains(c))
+                        if (cannotBeStaticClasses.Contains(@class))
                             continue;
 
-                        foreach (var location in c.Locations)
-                        {
-                            ctx.ReportDiagnostic(Diagnostic.Create(s_rule, location));
-                        }
+                        ctx.ReportDiagnostic(s_rule, @class);
                     }
                 });
             });

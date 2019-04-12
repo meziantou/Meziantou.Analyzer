@@ -98,7 +98,7 @@ namespace Meziantou.Analyzer.Rules
                 var actualType = GetActualType(operation.Arguments[0]);
                 if (actualType.TypeKind == TypeKind.Array)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(s_listMethodsRule, operation.Syntax.GetLocation(), "Length", operation.TargetMethod.Name));
+                    context.ReportDiagnostic(s_listMethodsRule, operation, "Length", operation.TargetMethod.Name);
                     return;
                 }
 
@@ -108,7 +108,7 @@ namespace Meziantou.Analyzer.Rules
                     var count = actualType.GetMembers("Count").OfType<IPropertySymbol>().FirstOrDefault(m => m.ExplicitInterfaceImplementations.Length == 0);
                     if (count != null)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_listMethodsRule, operation.Syntax.GetLocation(), "Count", operation.TargetMethod.Name));
+                        context.ReportDiagnostic(s_listMethodsRule, operation, "Count", operation.TargetMethod.Name);
                         return;
                     }
                 }
@@ -118,7 +118,7 @@ namespace Meziantou.Analyzer.Rules
                 var actualType = GetActualType(operation.Arguments[0]);
                 if (actualType.TypeKind == TypeKind.Array)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(s_listMethodsRule, operation.Syntax.GetLocation(), "LongLength", operation.TargetMethod.Name));
+                    context.ReportDiagnostic(s_listMethodsRule, operation, "LongLength", operation.TargetMethod.Name);
                 }
             }
         }
@@ -134,7 +134,7 @@ namespace Meziantou.Analyzer.Rules
             var listSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
             if (GetActualType(operation.Arguments[0]).OriginalDefinition.IsEqualsTo(listSymbol))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_listMethodsRule, operation.Syntax.GetLocation(), "Find()", operation.TargetMethod.Name));
+                context.ReportDiagnostic(s_listMethodsRule, operation, "Find()", operation.TargetMethod.Name);
             }
         }
 
@@ -168,7 +168,7 @@ namespace Meziantou.Analyzer.Rules
             var actualType = GetActualType(operation.Arguments[0]);
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.Equals(listSymbol) || i.OriginalDefinition.Equals(readOnlyListSymbol)))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_listMethodsRule, operation.Syntax.GetLocation(), "[]", operation.TargetMethod.Name));
+                context.ReportDiagnostic(s_listMethodsRule, operation, "[]", operation.TargetMethod.Name);
             }
         }
 
@@ -190,7 +190,7 @@ namespace Meziantou.Analyzer.Rules
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.LongCount), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_combineLinqMethodsRule, parent.Syntax.GetLocation(), operation.TargetMethod.Name, parent.TargetMethod.Name));
+                        context.ReportDiagnostic(s_combineLinqMethodsRule, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
                     }
                 }
             }
@@ -209,7 +209,7 @@ namespace Meziantou.Analyzer.Rules
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_duplicateOrderByMethodsRule, parent.Syntax.GetLocation(), operation.TargetMethod.Name, parent.TargetMethod.Name.Replace("OrderBy", "ThenBy")));
+                        context.ReportDiagnostic(s_duplicateOrderByMethodsRule, parent, operation.TargetMethod.Name, parent.TargetMethod.Name.Replace("OrderBy", "ThenBy"));
                     }
                 }
             }
@@ -363,7 +363,7 @@ namespace Meziantou.Analyzer.Rules
 
                 if (message != null)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(s_optimizeCountRule, binaryOperation.Syntax.GetLocation(), message));
+                    context.ReportDiagnostic(s_optimizeCountRule, binaryOperation, message);
                 }
             }
             else
@@ -412,7 +412,7 @@ namespace Meziantou.Analyzer.Rules
 
                 if (message != null)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(s_optimizeCountRule, binaryOperation.Syntax.GetLocation(), message));
+                    context.ReportDiagnostic(s_optimizeCountRule, binaryOperation, message);
                 }
             }
 

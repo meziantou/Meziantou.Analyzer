@@ -7,15 +7,18 @@ namespace Meziantou.Analyzer.Configurations
     internal class ConfigurationHierarchy
     {
         private readonly ConcurrentDictionary<string, EditorConfigFile> _configurationFiles = new ConcurrentDictionary<string, EditorConfigFile>(StringComparer.OrdinalIgnoreCase);
-        private readonly EditorConfigFile _rootEditorConfigFile;
+        private readonly EditorConfigFile _projectEditorConfigFile;
 
         public ConfigurationHierarchy(EditorConfigFile rootEditorConfigFile)
         {
-            _rootEditorConfigFile = rootEditorConfigFile;
+            _projectEditorConfigFile = rootEditorConfigFile;
         }
 
         public bool TryGetValue(string filePath, string key, out string result)
         {
+            if (_projectEditorConfigFile.TryGetValue(key, out result))
+                return true;
+
             var directory = Path.GetDirectoryName(filePath);
             while (!string.IsNullOrEmpty(directory))
             {
@@ -28,9 +31,6 @@ namespace Meziantou.Analyzer.Configurations
 
                 directory = Path.GetDirectoryName(directory);
             }
-
-            if (_rootEditorConfigFile.TryGetValue(key, out result))
-                return true;
 
             result = default;
             return false;

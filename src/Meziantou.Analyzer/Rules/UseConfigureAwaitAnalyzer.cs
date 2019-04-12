@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer.Rules
 
             if (MustUseConfigureAwait(context, node))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, context.Node.GetLocation()));
+                context.ReportDiagnostic(s_rule, context.Node);
             }
         }
 

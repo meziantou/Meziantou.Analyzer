@@ -65,7 +65,7 @@ namespace Meziantou.Analyzer.Rules
             var arg = op.Arguments.Last();
             if (arg.Value == null || !arg.Value.Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_timeoutRule, op.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_timeoutRule, op);
             }
 
             CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
@@ -85,7 +85,7 @@ namespace Meziantou.Analyzer.Rules
 
             if (!op.Arguments.Last().Value.Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_timeoutRule, op.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_timeoutRule, op);
             }
 
             CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
@@ -107,7 +107,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (HasUnnamedGroups(value))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_explicitCaptureRule, arg.Syntax.GetLocation()));
+                        context.ReportDiagnostic(s_explicitCaptureRule, arg);
                     }
                 }
             }

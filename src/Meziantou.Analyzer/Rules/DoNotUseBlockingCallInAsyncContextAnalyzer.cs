@@ -141,11 +141,11 @@ namespace Meziantou.Analyzer.Rules
             {
                 if (IsAsyncContext(operation))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), message));
+                    context.ReportDiagnostic(s_rule, operation, message);
                 }
                 else if (CanChangeParentMethodSignature(operation))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(s_rule2, operation.Syntax.GetLocation(), message + " and make method async"));
+                    context.ReportDiagnostic(s_rule2, operation, message + " and make method async");
                 }
             }
 

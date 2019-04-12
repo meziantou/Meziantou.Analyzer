@@ -49,10 +49,7 @@ namespace Meziantou.Analyzer.Rules
                     if (!member.IsVisibleOutsideOfAssembly())
                         continue;
 
-                    foreach (var location in member.Locations)
-                    {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, location));
-                    }
+                    context.ReportDiagnostic(s_rule, member);
                 }
             }
         }

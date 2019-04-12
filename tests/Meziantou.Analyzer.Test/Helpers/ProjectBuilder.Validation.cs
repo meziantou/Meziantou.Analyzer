@@ -173,7 +173,7 @@ namespace TestHelper
         }
 
         [DebuggerStepThrough]
-        private async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
+        private async static Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
         {
             var projects = new HashSet<Project>();
             foreach (var document in documents)

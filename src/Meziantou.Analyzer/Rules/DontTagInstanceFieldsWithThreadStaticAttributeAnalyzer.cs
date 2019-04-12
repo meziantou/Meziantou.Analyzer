@@ -35,10 +35,7 @@ namespace Meziantou.Analyzer.Rules
 
             if (field.HasAttribute(context.Compilation.GetTypeByMetadataName("System.ThreadStaticAttribute")))
             {
-                foreach (var location in field.Locations)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(s_rule, location));
-                }
+                context.ReportDiagnostic(s_rule, field);
             }
         }
     }

@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer.Rules
             var exceptionType = operation.Exception.Type;
             if (exceptionType.IsEqualsTo(reservedExceptionType))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
     }

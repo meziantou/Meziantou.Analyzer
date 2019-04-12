@@ -54,7 +54,7 @@ namespace Meziantou.Analyzer.Rules
                 if (IsCompilerGeneratedParamsArray(operation, context))
                     return;
 
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
 

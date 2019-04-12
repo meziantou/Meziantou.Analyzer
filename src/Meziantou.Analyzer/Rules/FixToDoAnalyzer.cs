@@ -34,6 +34,9 @@ namespace Meziantou.Analyzer.Rules
 
         private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
         {
+            if (!context.Options.IsEnabled(s_rule, context.Tree.FilePath))
+                return;
+
             var root = context.Tree.GetCompilationUnitRoot(context.CancellationToken);
             var commentNodes = root.DescendantTrivia().Where(node => node.IsKind(SyntaxKind.MultiLineCommentTrivia) || node.IsKind(SyntaxKind.SingleLineCommentTrivia));
 
@@ -64,7 +67,7 @@ namespace Meziantou.Analyzer.Rules
                         line.Text.StartsWith("TODO:", StringComparison.OrdinalIgnoreCase))
                     {
                         var location = node.SyntaxTree.GetLocation(new Microsoft.CodeAnalysis.Text.TextSpan(node.SpanStart + line.SpanStart, line.Text.Length));
-
+                        
                         var diagnostic = Diagnostic.Create(s_rule, location, line.Text.Substring(4).Trim());
                         context.ReportDiagnostic(diagnostic);
                     }

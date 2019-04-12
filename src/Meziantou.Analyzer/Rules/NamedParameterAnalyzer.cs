@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules
 {
+    // TODO use operation
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NamedParameterAnalyzer : DiagnosticAnalyzer
     {
@@ -46,9 +47,9 @@ namespace Meziantou.Analyzer.Rules
                 var keyValuePairTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
                 var propertyBuilderType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
 
-                compilationContext.RegisterSyntaxNodeAction(symbolContext =>
+                compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
                 {
-                    var argument = (ArgumentSyntax)symbolContext.Node;
+                    var argument = (ArgumentSyntax)syntaxContext.Node;
                     if (argument.NameColon != null)
                         return;
 
@@ -64,12 +65,12 @@ namespace Meziantou.Analyzer.Rules
                         var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
                         if (invocationExpression != null)
                         {
-                            var methodSymbol = (IMethodSymbol)symbolContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                            var methodSymbol = (IMethodSymbol)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
                             if (methodSymbol != null)
                             {
                                 var argumentIndex = ArgumentIndex(argument);
 
-                                if (MustSkip(symbolContext, attributeTokenType, methodSymbol))
+                                if (MustSkip(syntaxContext, attributeTokenType, methodSymbol))
                                     return;
 
                                 if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
@@ -119,7 +120,7 @@ namespace Meziantou.Analyzer.Rules
                             }
                         }
 
-                        symbolContext.ReportDiagnostic(Diagnostic.Create(s_rule, symbolContext.Node.GetLocation()));
+                        syntaxContext.ReportDiagnostic(s_rule, syntaxContext.Node);
                     }
                 }, SyntaxKind.Argument);
             });

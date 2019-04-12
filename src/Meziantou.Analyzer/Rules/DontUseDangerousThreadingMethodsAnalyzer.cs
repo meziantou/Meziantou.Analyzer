@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (op.TargetMethod.ContainingType.IsEqualsTo(type))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation()));
+                        context.ReportDiagnostic(s_rule, op);
                     }
                 }
             }

@@ -38,11 +38,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 if (ctor.DeclaredAccessibility == Accessibility.Public || ctor.DeclaredAccessibility == Accessibility.Internal)
                 {
-                    var syntax = ctor.DeclaringSyntaxReferences.FirstOrDefault();
-                    if (syntax != null)
-                    {
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, Location.Create(syntax.SyntaxTree, syntax.Span)));
-                    }
+                    context.ReportDiagnostic(s_rule, ctor);
                 }
             }
         }

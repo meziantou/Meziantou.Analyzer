@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.Editing;
 
 namespace Meziantou.Analyzer.Rules
 {
+    // TODO suggest GetHashCode(StringComparison) if available
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
     public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
     {

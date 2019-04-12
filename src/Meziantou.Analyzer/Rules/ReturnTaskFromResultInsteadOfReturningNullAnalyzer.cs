@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules
 {
+    // TODO check if possible with Symbol
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : DiagnosticAnalyzer
     {

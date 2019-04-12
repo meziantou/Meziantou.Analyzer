@@ -36,10 +36,7 @@ namespace Meziantou.Analyzer.Rules
             var type = context.Compilation.GetTypeByMetadataName("System.Threading.AsyncLocal`1");
             if (field.Type.OriginalDefinition.IsEqualsTo(type))
             {
-                foreach (var location in field.Locations)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(s_rule, location));
-                }
+                    context.ReportDiagnostic(s_rule, field);
             }
         }
     }
