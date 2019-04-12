@@ -49,6 +49,7 @@ namespace Meziantou.Analyzer
         public const string UseNameofOperator = "MA0043";
         public const string RemoveUselessToString = "MA0044";
         public const string DoNotUseBlockingCall = "MA0045";
+        public const string UseEventHandlerOfT = "MA0046";
 
         public static string GetHelpUri(string idenfifier)
         {
