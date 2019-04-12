@@ -50,6 +50,7 @@ namespace Meziantou.Analyzer
         public const string RemoveUselessToString = "MA0044";
         public const string DoNotUseBlockingCall = "MA0045";
         public const string UseEventHandlerOfT = "MA0046";
+        public const string DeclareTypesInNamespaces = "MA0047";
 
         public static string GetHelpUri(string idenfifier)
         {
