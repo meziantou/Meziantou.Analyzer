@@ -21,6 +21,13 @@ namespace Meziantou.Analyzer
             return IsInterfaceImplementation((ISymbol)property);
         }
 
+        public static bool IsInterfaceImplementation(this IEventSymbol method)
+        {
+            if (method.ExplicitInterfaceImplementations.Length > 0)
+                return true;
+
+            return IsInterfaceImplementation((ISymbol)method);
+        }
 
         private static bool IsInterfaceImplementation(this ISymbol symbol)
         {
