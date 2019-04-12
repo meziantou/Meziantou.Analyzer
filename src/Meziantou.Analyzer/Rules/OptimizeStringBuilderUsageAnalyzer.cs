@@ -240,7 +240,7 @@ namespace Meziantou.Analyzer.Rules
             }
             else if (operation is IInterpolatedStringContentOperation interpolated)
             {
-                var op = interpolated.Children.SingleOrDefault();
+                var op = interpolated.Children.SingleOrDefaultIfMultiple();
                 if (op == null)
                     return false;
 
