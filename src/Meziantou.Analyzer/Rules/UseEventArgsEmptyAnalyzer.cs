@@ -40,7 +40,7 @@ namespace Meziantou.Analyzer.Rules
             var type = context.Compilation.GetTypeByMetadataName("System.EventArgs");
             if (operation.Constructor.ContainingType.IsEqualsTo(type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
     }

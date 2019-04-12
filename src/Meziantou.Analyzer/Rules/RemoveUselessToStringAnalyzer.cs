@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer.Rules
             if (string.Equals(operation.TargetMethod.Name, nameof(string.ToString), StringComparison.Ordinal) &&
                operation.TargetMethod.ContainingType.IsString())
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
     }

@@ -58,8 +58,7 @@ namespace Meziantou.Analyzer.Rules
                 // Check if there is an overload with a StringComparison
                 if (HasOverloadWithAdditionalParameterOfType(operation, stringComparisonType))
                 {
-                    var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name);
-                    context.ReportDiagnostic(diagnostic);
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name);
                 }
             }
         }

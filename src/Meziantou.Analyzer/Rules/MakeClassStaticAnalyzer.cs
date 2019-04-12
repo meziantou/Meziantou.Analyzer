@@ -27,78 +27,13 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze);
 
-            context.RegisterCompilationStartAction(s =>
+            context.RegisterCompilationStartAction(ctx =>
             {
-                var potentialClasses = new List<ITypeSymbol>();
-                var cannotBeStaticClasses = new HashSet<ITypeSymbol>();
+                var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
-                var coClassAttributeSymbol = s.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
-
-                s.RegisterSymbolAction(ctx =>
-                {
-                    var symbol = (INamedTypeSymbol)ctx.Symbol;
-                    switch (symbol.TypeKind)
-                    {
-                        case TypeKind.Class:
-                            if (IsPotentialStatic(symbol))
-                            {
-                                lock (potentialClasses)
-                                {
-                                    potentialClasses.Add(symbol);
-                                }
-                            }
-
-                            if (symbol.BaseType != null)
-                            {
-                                lock (cannotBeStaticClasses)
-                                {
-                                    cannotBeStaticClasses.Add(symbol.BaseType);
-                                }
-                            }
-
-                            break;
-
-                        case TypeKind.Interface:
-                            foreach (var attribute in symbol.GetAttributes().Where(attr => attr.AttributeClass.IsEqualsTo(coClassAttributeSymbol)))
-                            {
-                                var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
-                                if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol type)
-                                {
-                                    lock (cannotBeStaticClasses)
-                                    {
-                                        cannotBeStaticClasses.Add(type);
-                                    }
-                                }
-                            }
-
-                            break;
-                    }
-                }, SymbolKind.NamedType);
-
-                s.RegisterOperationAction(ctx =>
-                {
-                    var operation = (IObjectCreationOperation)ctx.Operation;
-
-                    lock (cannotBeStaticClasses)
-                    {
-                        cannotBeStaticClasses.Add(operation.Constructor.ContainingType);
-                    }
-
-                }, OperationKind.ObjectCreation);
-
-                s.RegisterCompilationEndAction(ctx =>
-                {
-                    foreach (var c in potentialClasses)
-                    {
-                        if (cannotBeStaticClasses.Contains(c))
-                            continue;
-
-                        foreach (var location in c.Locations)
-                        {
-                            ctx.ReportDiagnostic(Diagnostic.Create(s_rule, location));
-                        }
-                    }
-                });
+                ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
+                ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
             });
         }
 
@@ -114,6 +49,80 @@ namespace Meziantou.Analyzer.Rules
             bool HasBaseClass()
             {
                 return symbol.BaseType != null && symbol.BaseType.SpecialType != SpecialType.System_Object;
+            }
+        }
+
+        private class AnalyzerContext
+        {
+            private readonly List<ITypeSymbol> potentialClasses = new List<ITypeSymbol>();
+            private readonly HashSet<ITypeSymbol> cannotBeStaticClasses = new HashSet<ITypeSymbol>();
+
+            public AnalyzerContext(Compilation compilation)
+            {
+                CoClassAttributeSymbol = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
+            }
+
+            public INamedTypeSymbol CoClassAttributeSymbol { get; }
+
+            public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
+            {
+                var symbol = (INamedTypeSymbol)context.Symbol;
+                switch (symbol.TypeKind)
+                {
+                    case TypeKind.Class:
+                        if (IsPotentialStatic(symbol))
+                        {
+                            lock (potentialClasses)
+                            {
+                                potentialClasses.Add(symbol);
+                            }
+                        }
+
+                        if (symbol.BaseType != null)
+                        {
+                            lock (cannotBeStaticClasses)
+                            {
+                                cannotBeStaticClasses.Add(symbol.BaseType);
+                            }
+                        }
+
+                        break;
+
+                    case TypeKind.Interface:
+                        foreach (var attribute in symbol.GetAttributes().Where(attr => attr.AttributeClass.IsEqualsTo(CoClassAttributeSymbol)))
+                        {
+                            var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
+                            if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol type)
+                            {
+                                lock (cannotBeStaticClasses)
+                                {
+                                    cannotBeStaticClasses.Add(type);
+                                }
+                            }
+                        }
+
+                        break;
+                }
+            }
+
+            public void AnalyzeObjectCreation(OperationAnalysisContext context)
+            {
+                var operation = (IObjectCreationOperation)context.Operation;
+                lock (cannotBeStaticClasses)
+                {
+                    cannotBeStaticClasses.Add(operation.Constructor.ContainingType);
+                }
+            }
+
+            public void AnalyzeCompilationEnd(CompilationAnalysisContext context)
+            {
+                foreach (var @class in potentialClasses)
+                {
+                    if (cannotBeStaticClasses.Contains(@class))
+                        continue;
+
+                    context.ReportDiagnostic(s_rule, @class);
+                }
             }
         }
     }

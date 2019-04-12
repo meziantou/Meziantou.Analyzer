@@ -78,7 +78,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), reason));
+            context.ReportDiagnostic(s_rule, operation, reason);
         }
 
         private static bool IsOptimizable(OperationAnalysisContext context, string methodName, IArgumentOperation argument, out string reason)

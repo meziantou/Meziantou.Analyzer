@@ -64,14 +64,14 @@ namespace Meziantou.Analyzer.Rules
             if (!isImplicitlyDeclared && !UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, analyzerContext.CancellationTokenSymbol))
                 return;
 
-            var cancellationTokens = string.Join(", ", FindCancellationTokens(operation, analyzerContext));
-            if (!string.IsNullOrEmpty(cancellationTokens))
+            var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(operation, analyzerContext));
+            if (!string.IsNullOrEmpty(possibleCancellationTokens))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule, operation.Syntax.GetLocation(), cancellationTokens));
+                context.ReportDiagnostic(s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule, operation, possibleCancellationTokens);
             }
             else
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_useAnOverloadThatHaveCancellationTokenRule, operation.Syntax.GetLocation(), cancellationTokens));
+                context.ReportDiagnostic(s_useAnOverloadThatHaveCancellationTokenRule, operation, possibleCancellationTokens);
             }
         }
 

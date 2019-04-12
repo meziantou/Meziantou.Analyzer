@@ -83,13 +83,13 @@ namespace Meziantou.Analyzer.Rules
                             if (!(argument.Value is INameOfOperation))
                             {
                                 var properties = ImmutableDictionary<string, string>.Empty.Add(ArgumentNameKey, value);
-                                context.ReportDiagnostic(Diagnostic.Create(s_nameofRule, argument.Value.Syntax.GetLocation(), properties));
+                                context.ReportDiagnostic(s_nameofRule, argument.Value, properties);
                             }
 
                             return;
                         }
 
-                        context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"'{value}' is not a valid parameter name"));
+                        context.ReportDiagnostic(s_rule, op, $"'{value}' is not a valid parameter name");
                         return;
                     }
                     else

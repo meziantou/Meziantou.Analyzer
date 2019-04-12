@@ -29,16 +29,22 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var title = "Use String.Equals";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => Refactor(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+            RegisterCodeFix(nameof(StringComparison.Ordinal));
+            RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+            void RegisterCodeFix(string comparisonMode)
+            {
+                var title = "Use String.Equals " + comparisonMode;
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => Refactor(context.Document, nodeToFix, comparisonMode, ct),
+                    equivalenceKey: title);
+
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
         }
 
-        private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, string comparisonMode, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
@@ -55,7 +61,7 @@ namespace Meziantou.Analyzer.Rules
                 generator.MemberAccessExpression(generator.TypeExpression(SpecialType.System_String), nameof(string.Equals)),
                 operation.LeftOperand.Syntax,
                 operation.RightOperand.Syntax,
-                generator.MemberAccessExpression(generator.TypeExpression(stringComparison, addImport: true), nameof(StringComparison.Ordinal)));
+                generator.MemberAccessExpression(generator.TypeExpression(stringComparison, addImport: true), comparisonMode));
 
             if (operation.OperatorKind == BinaryOperatorKind.NotEquals)
             {

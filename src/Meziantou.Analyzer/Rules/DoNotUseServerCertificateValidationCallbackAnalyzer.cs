@@ -55,7 +55,7 @@ namespace Meziantou.Analyzer.Rules
             var operation = (IPropertyReferenceOperation)context.Operation;
             if (eventSymbols.Contains(operation.Property))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
     }

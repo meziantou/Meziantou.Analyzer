@@ -57,7 +57,7 @@ namespace Meziantou.Analyzer.Rules
             if (IsValidType(analyzerContext, symbol.Type))
                 return;
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, node.Declaration.Type.GetLocation()));
+            context.ReportDiagnostic(s_rule, node.Declaration.Type);
         }
 
         private void AnalyzeDelegate(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
@@ -73,7 +73,7 @@ namespace Meziantou.Analyzer.Rules
             var type = node.ReturnType;
             if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
+                context.ReportDiagnostic(s_rule, type);
             }
 
             AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
@@ -92,7 +92,7 @@ namespace Meziantou.Analyzer.Rules
             var type = node.Type;
             if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
+                context.ReportDiagnostic(s_rule, type);
             }
 
             AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
@@ -112,7 +112,7 @@ namespace Meziantou.Analyzer.Rules
             if (type == null || IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
                 return;
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
+            context.ReportDiagnostic(s_rule, type);
         }
 
         private void AnalyzeMethod(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
@@ -128,7 +128,7 @@ namespace Meziantou.Analyzer.Rules
             var type = node.ReturnType;
             if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, type.GetLocation()));
+                context.ReportDiagnostic(s_rule, type);
             }
 
             AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
@@ -150,7 +150,7 @@ namespace Meziantou.Analyzer.Rules
             var type = parameter.Type;
             if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, parameter.GetLocation()));
+                context.ReportDiagnostic(s_rule, parameter);
             }
         }
 

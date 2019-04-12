@@ -25,16 +25,22 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var title = "Use StringComparer.Ordinal";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => MakeConstructorProtected(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+            RegisterCodeFix(nameof(StringComparer.Ordinal));
+            RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
+            
+            void RegisterCodeFix(string comparerName)
+            {
+                var title = "Use StringComparer." + comparerName;
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => MakeConstructorProtected(context.Document, nodeToFix, comparerName, ct),
+                    equivalenceKey: title);
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
         }
 
-        private static async Task<Document> MakeConstructorProtected(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> MakeConstructorProtected(Document document, SyntaxNode nodeToFix, string comparerName, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
@@ -46,7 +52,7 @@ namespace Meziantou.Analyzer.Rules
 
             var newSyntax = generator.MemberAccessExpression(
                 generator.TypeExpression(stringComparer),
-                nameof(StringComparer.Ordinal));
+                comparerName);
 
             editor.ReplaceNode(syntax, newSyntax);
             return editor.GetChangedDocument();

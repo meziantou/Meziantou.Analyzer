@@ -42,7 +42,7 @@ namespace Meziantou.Analyzer.Rules
             if (parent.IsKind(SyntaxKind.LabeledStatement))
                 return;
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, node.GetLocation()));
+            context.ReportDiagnostic(s_rule, node);
         }
     }
 }

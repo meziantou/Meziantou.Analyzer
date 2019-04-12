@@ -94,7 +94,7 @@ namespace Meziantou.Analyzer.Rules
 
                         if (!HasEqualityComparerArgument(stringEqualityComparerInterfaceType, operation.Arguments))
                         {
-                            operationContext.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                            operationContext.ReportDiagnostic(s_rule, operation);
                         }
                     }
                 }, OperationKind.ObjectCreation);
@@ -146,7 +146,7 @@ namespace Meziantou.Analyzer.Rules
 
                 if (!HasEqualityComparerArgument(stringEqualityComparerInterfaceType, operation.Arguments))
                 {
-                    operationContext.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                    operationContext.ReportDiagnostic(s_rule, operation);
                 }
             }, OperationKind.Invocation);
         }

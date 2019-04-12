@@ -48,7 +48,7 @@ namespace Meziantou.Analyzer.Rules
 
             if (catchOperation.Locals.Contains(localReferenceOperation.Local))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
     }
