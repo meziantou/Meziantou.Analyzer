@@ -67,7 +67,7 @@ namespace Meziantou.Analyzer.Rules
             if (operation == null || HasInstanceUsages(operation))
                 return;
 
-            context.ReportDiagnostic(Diagnostic.Create(s_methodRule, node.Identifier.GetLocation()));
+            context.ReportDiagnostic(s_methodRule, methodSymbol);
         }
 
         private static void AnalyzeProperty(SyntaxNodeAnalysisContext context)
@@ -101,7 +101,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(s_propertyRule, node.Identifier.GetLocation()));
+            context.ReportDiagnostic(s_propertyRule, propertySymbol);
         }
 
         private static bool IsPotentialStatic(IMethodSymbol symbol)

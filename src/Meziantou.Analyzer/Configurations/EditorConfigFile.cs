@@ -19,5 +19,7 @@ namespace Meziantou.Analyzer.Configurations
         {
             return _configurations.TryGetValue(key, out result);
         }
+
+        public bool IsRoot => TryGetValue("root", out var value) && bool.TryParse(value, out var result) && result;
     }
 }

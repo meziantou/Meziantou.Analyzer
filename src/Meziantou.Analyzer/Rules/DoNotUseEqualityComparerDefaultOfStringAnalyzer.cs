@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -33,9 +34,7 @@ namespace Meziantou.Analyzer.Rules
         private static void Analyze(OperationAnalysisContext context)
         {
             var operation = (IPropertyReferenceOperation)context.Operation;
-#pragma warning disable MA0024 // Use StringComparer.Ordinal
             if (!string.Equals(operation.Member.Name, nameof(EqualityComparer<string>.Default), StringComparison.Ordinal))
-#pragma warning restore MA0024 // Use StringComparer.Ordinal
                 return;
 
             var equalityComparerSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
@@ -45,7 +44,10 @@ namespace Meziantou.Analyzer.Rules
             var equalityComparerStringSymbol = equalityComparerSymbol.Construct(context.Compilation.GetSpecialType(SpecialType.System_String));
             if (operation.Member.ContainingType.IsEqualsTo(equalityComparerStringSymbol))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                if (operation.Ancestors().OfType<INameOfOperation>().Any())
+                    return;
+
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
     }

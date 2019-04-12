@@ -28,7 +28,6 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterCompilationStartAction(ctx =>
             {
                 var reservedExceptionType = ctx.Compilation.GetTypeByMetadataName("System.ApplicationException");
-
                 if (reservedExceptionType != null)
                 {
                     ctx.RegisterOperationAction(_ => Analyze(_, reservedExceptionType), OperationKind.Throw);
@@ -45,7 +44,7 @@ namespace Meziantou.Analyzer.Rules
             var exceptionType = operation.Exception.Type;
             if (exceptionType.IsEqualsTo(reservedExceptionType))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation()));
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
     }

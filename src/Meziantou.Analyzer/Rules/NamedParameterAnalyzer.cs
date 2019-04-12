@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -46,9 +45,9 @@ namespace Meziantou.Analyzer.Rules
                 var keyValuePairTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
                 var propertyBuilderType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
 
-                compilationContext.RegisterSyntaxNodeAction(symbolContext =>
+                compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
                 {
-                    var argument = (ArgumentSyntax)symbolContext.Node;
+                    var argument = (ArgumentSyntax)syntaxContext.Node;
                     if (argument.NameColon != null)
                         return;
 
@@ -64,13 +63,10 @@ namespace Meziantou.Analyzer.Rules
                         var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
                         if (invocationExpression != null)
                         {
-                            var methodSymbol = (IMethodSymbol)symbolContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                            var methodSymbol = (IMethodSymbol)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
                             if (methodSymbol != null)
                             {
                                 var argumentIndex = ArgumentIndex(argument);
-
-                                if (MustSkip(symbolContext, attributeTokenType, methodSymbol))
-                                    return;
 
                                 if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
                                     return;
@@ -119,58 +115,10 @@ namespace Meziantou.Analyzer.Rules
                             }
                         }
 
-                        symbolContext.ReportDiagnostic(Diagnostic.Create(s_rule, symbolContext.Node.GetLocation()));
+                        syntaxContext.ReportDiagnostic(s_rule, syntaxContext.Node);
                     }
                 }, SyntaxKind.Argument);
             });
-        }
-
-        private static bool MustSkip(SyntaxNodeAnalysisContext context, ITypeSymbol attributeType, IMethodSymbol methodSymbol)
-        {
-            if (attributeType == null)
-                return false;
-
-            foreach (var syntaxTree in context.Compilation.SyntaxTrees)
-            {
-                var root = syntaxTree.GetRoot(context.CancellationToken);
-                if (root == null)
-                    continue;
-
-                foreach (var list in root.DescendantNodesAndSelf().OfType<AttributeListSyntax>())
-                {
-                    if (list.Target != null && list.Target?.Identifier.IsKind(SyntaxKind.AssemblyKeyword) == true)
-                    {
-                        foreach (var attribute in list.Attributes)
-                        {
-                            if (attribute.ArgumentList?.Arguments.Count != 2)
-                                continue;
-
-                            var attr = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol;
-                            if (attr != null && attributeType.Equals(attr.ContainingType))
-                            {
-                                var a = GetStringValue(attribute.ArgumentList.Arguments[0]);
-                                var b = GetStringValue(attribute.ArgumentList.Arguments[1]);
-
-                                var type = context.Compilation.GetTypeByMetadataName(a);
-                                return IsMethod(methodSymbol, type, b);
-                            }
-                        }
-                    }
-                }
-
-                var model = context.Compilation.GetSemanticModel(syntaxTree);
-            }
-
-            return false;
-
-            string GetStringValue(AttributeArgumentSyntax argument)
-            {
-                var expression = argument.Expression;
-                if (expression.IsKind(SyntaxKind.StringLiteralExpression))
-                    return ((LiteralExpressionSyntax)expression).Token.ValueText;
-
-                return null;
-            }
         }
 
         private static bool IsMethod(IMethodSymbol method, ITypeSymbol type, string name)

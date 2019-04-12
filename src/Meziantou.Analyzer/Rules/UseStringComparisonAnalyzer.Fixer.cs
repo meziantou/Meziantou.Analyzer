@@ -27,16 +27,22 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var title = "Add StringComparison.Ordinal";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => AddStringComparison(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+            AddCodeFix(nameof(StringComparison.Ordinal));
+            AddCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+            void AddCodeFix(string comparisonMode)
+            {
+                var title = "Add StringComparison." + comparisonMode;
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => AddStringComparison(context.Document, nodeToFix, comparisonMode, ct),
+                    equivalenceKey: title);
+
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
         }
 
-        private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, string stringComparisonMode, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
@@ -51,7 +57,7 @@ namespace Meziantou.Analyzer.Rules
             var newArgument = (ArgumentSyntax)generator.Argument(
                 generator.MemberAccessExpression(
                     generator.TypeExpression(stringComparison, addImport: true),
-                    nameof(StringComparison.Ordinal)));
+                    stringComparisonMode));
 
             editor.ReplaceNode(invocationExpression, invocationExpression.AddArgumentListArguments(newArgument));
             return editor.GetChangedDocument();

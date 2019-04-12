@@ -54,7 +54,7 @@ abstract class Test
 
             await CreateProjectBuilder()
                     .WithSourceCode(sourceCode)
-                    .ShouldReportDiagnostic(line: 4, column: 5)
+                    .ShouldReportDiagnostic(line: 4, column: 12)
                     .ShouldFixCodeWith(expectedCodeFix)
                     .ValidateAsync();
         }
@@ -76,7 +76,7 @@ abstract class Test
 
             await CreateProjectBuilder()
                     .WithSourceCode(sourceCode)
-                    .ShouldReportDiagnostic(line: 4, column: 5)
+                    .ShouldReportDiagnostic(line: 4, column: 14)
                     .ShouldFixCodeWith(codeFix)
                     .ValidateAsync();
         }

@@ -44,7 +44,7 @@ namespace Meziantou.Analyzer.Rules
                     if (operation.IsInQueryableExpressionArgument())
                         return;
 
-                    context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), $"{operation.OperatorKind} operator"));
+                    context.ReportDiagnostic(s_rule, operation, $"{operation.OperatorKind} operator");
                 }
             }
         }

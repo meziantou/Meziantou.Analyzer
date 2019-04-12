@@ -27,16 +27,22 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var title = "Add StringComparer.Ordinal";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => AddStringComparer(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+            RegisterCodeFix(nameof(StringComparer.Ordinal));
+            RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+            void RegisterCodeFix(string comparerName)
+            {
+                var title = "Add StringComparer." + comparerName;
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => AddStringComparer(context.Document, nodeToFix, comparerName, ct),
+                    equivalenceKey: title);
+
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
         }
 
-        private static async Task<Document> AddStringComparer(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> AddStringComparer(Document document, SyntaxNode nodeToFix, string comparerName, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
@@ -47,7 +53,7 @@ namespace Meziantou.Analyzer.Rules
             var newArgument = (ArgumentSyntax)generator.Argument(
                 generator.MemberAccessExpression(
                     generator.TypeExpression(stringComparer, addImport: true),
-                    nameof(StringComparer.Ordinal)));
+                    comparerName));
 
             switch (nodeToFix)
             {

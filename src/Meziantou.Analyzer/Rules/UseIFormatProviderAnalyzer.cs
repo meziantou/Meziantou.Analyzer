@@ -67,8 +67,7 @@ namespace Meziantou.Analyzer.Rules
                     (operation.TargetMethod.ContainingType.IsNumberType() && UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, numberStyleType)) ||
                     (operation.TargetMethod.ContainingType.IsDateTime() && UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, dateTimeStyleType)))
                 {
-                    var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name, formatProviderType.ToDisplayString());
-                    context.ReportDiagnostic(diagnostic);
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
                     return;
                 }
             }
@@ -77,8 +76,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 if (UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, cultureInfoType))
                 {
-                    var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name, cultureInfoType.ToDisplayString());
-                    context.ReportDiagnostic(diagnostic);
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, cultureInfoType.ToDisplayString());
                     return;
                 }
             }

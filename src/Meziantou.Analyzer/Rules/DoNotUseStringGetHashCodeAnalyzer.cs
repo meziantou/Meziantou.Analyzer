@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer.Rules
                 if (UseStringComparisonAnalyzer.HasArgumentOfType(operation, context.Compilation.GetTypeByMetadataName("System.StringComparison")))
                     return;
 
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), operation.TargetMethod.Name));
+                context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name);
             }
         }
     }
