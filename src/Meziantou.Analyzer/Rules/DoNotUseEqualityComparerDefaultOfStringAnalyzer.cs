@@ -42,7 +42,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var equalityComparerStringSymbol = equalityComparerSymbol.Construct(context.Compilation.GetSpecialType(SpecialType.System_String));
-            if (operation.Member.ContainingType.IsEqualsTo(equalityComparerStringSymbol))
+            if (operation.Member.ContainingType.IsEqualTo(equalityComparerStringSymbol))
             {
                 if (operation.Ancestors().OfType<INameOfOperation>().Any())
                     return;

@@ -60,7 +60,7 @@ namespace Meziantou.Analyzer
             return false;
         }
 
-        public static bool IsEqualsTo(this ITypeSymbol symbol, ITypeSymbol expectedType)
+        public static bool IsEqualTo(this ITypeSymbol symbol, ITypeSymbol expectedType)
         {
             if (symbol == null || expectedType == null)
                 return false;
@@ -68,12 +68,12 @@ namespace Meziantou.Analyzer
             return expectedType.Equals(symbol);
         }
 
-        public static bool IsEqualsToAny(this ITypeSymbol symbol, params ITypeSymbol[] expectedTypes)
+        public static bool IsEqualToAny(this ITypeSymbol symbol, params ITypeSymbol[] expectedTypes)
         {
             if (symbol == null || expectedTypes == null)
                 return false;
 
-            return expectedTypes.Any(t => IsEqualsTo(t, symbol));
+            return expectedTypes.Any(t => IsEqualTo(t, symbol));
         }
 
         public static bool IsString(this ITypeSymbol symbol)

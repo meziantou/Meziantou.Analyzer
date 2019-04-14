@@ -133,8 +133,8 @@ namespace Meziantou.Analyzer.Rules
         private static bool IsTaskType(Compilation compilation, ITypeSymbol typeSyntax)
         {
             return typeSyntax != null &&
-                   typeSyntax.IsEqualsTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task")) ||
-                   typeSyntax.OriginalDefinition.IsEqualsTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
+                   typeSyntax.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task")) ||
+                   typeSyntax.OriginalDefinition.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
         }
     }
 }

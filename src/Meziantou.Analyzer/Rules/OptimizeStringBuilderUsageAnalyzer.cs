@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var method = operation.TargetMethod;
-            if (!method.ContainingType.IsEqualsTo(stringBuilderSymbol))
+            if (!method.ContainingType.IsEqualTo(stringBuilderSymbol))
                 return;
 
             string reason;
@@ -168,7 +168,7 @@ namespace Meziantou.Analyzer.Rules
                     if (targetMethod.Parameters.Length == 2 &&
                         targetMethod.ReturnType.IsString() &&
                         targetMethod.Parameters[0].Type.IsString() &&
-                        targetMethod.Parameters[1].Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.IFormatProvider")))
+                        targetMethod.Parameters[1].Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.IFormatProvider")))
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {

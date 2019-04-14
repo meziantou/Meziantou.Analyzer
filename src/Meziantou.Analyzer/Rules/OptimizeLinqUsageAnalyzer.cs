@@ -72,7 +72,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var method = operation.TargetMethod;
-            if (!method.ContainingType.IsEqualsTo(enumerableSymbol))
+            if (!method.ContainingType.IsEqualTo(enumerableSymbol))
                 return;
 
             UseFindInsteadOfFirstOrDefault(context, operation);
@@ -132,7 +132,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var listSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
-            if (GetActualType(operation.Arguments[0]).OriginalDefinition.IsEqualsTo(listSymbol))
+            if (GetActualType(operation.Arguments[0]).OriginalDefinition.IsEqualTo(listSymbol))
             {
                 context.ReportDiagnostic(s_listMethodsRule, operation, "Find()", operation.TargetMethod.Name);
             }
@@ -177,7 +177,7 @@ namespace Meziantou.Analyzer.Rules
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && parent.TargetMethod.ContainingType.IsEqualsTo(enumerableSymbol))
+                if (parent != null && parent.TargetMethod.ContainingType.IsEqualTo(enumerableSymbol))
                 {
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.First), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.FirstOrDefault), StringComparison.Ordinal) ||
@@ -204,7 +204,7 @@ namespace Meziantou.Analyzer.Rules
                 string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ThenByDescending), StringComparison.Ordinal))
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && parent.TargetMethod.ContainingType.IsEqualsTo(enumerableSymbol))
+                if (parent != null && parent.TargetMethod.ContainingType.IsEqualTo(enumerableSymbol))
                 {
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))

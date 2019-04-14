@@ -39,7 +39,7 @@ namespace Meziantou.Analyzer.Rules
                 var types = context.Compilation.GetTypesByMetadataName("System.Threading.Thread");
                 foreach (var type in types)
                 {
-                    if (op.TargetMethod.ContainingType.IsEqualsTo(type))
+                    if (op.TargetMethod.ContainingType.IsEqualTo(type))
                     {
                         context.ReportDiagnostic(s_rule, op);
                     }

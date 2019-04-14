@@ -56,14 +56,14 @@ namespace Meziantou.Analyzer.Rules
             if (!s_methodNames.Contains(op.TargetMethod.Name, StringComparer.Ordinal))
                 return;
 
-            if (!op.TargetMethod.ContainingType.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
+            if (!op.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
                 return;
 
             if (op.Arguments.Length == 0)
                 return;
 
             var arg = op.Arguments.Last();
-            if (arg.Value == null || !arg.Value.Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
+            if (arg.Value == null || !arg.Value.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
             {
                 context.ReportDiagnostic(s_timeoutRule, op);
             }
@@ -80,10 +80,10 @@ namespace Meziantou.Analyzer.Rules
             if (op.Arguments.Length == 0)
                 return;
 
-            if (!op.Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
+            if (!op.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
                 return;
 
-            if (!op.Arguments.Last().Value.Type.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
+            if (!op.Arguments.Last().Value.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
             {
                 context.ReportDiagnostic(s_timeoutRule, op);
             }
@@ -96,7 +96,7 @@ namespace Meziantou.Analyzer.Rules
             if (regexOptionsSymbol == null)
                 return;
 
-            var arg = arguments.FirstOrDefault(a => a.Parameter.Type.IsEqualsTo(regexOptionsSymbol));
+            var arg = arguments.FirstOrDefault(a => a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
             if (arg == null || arg.Value == null)
                 return;
 

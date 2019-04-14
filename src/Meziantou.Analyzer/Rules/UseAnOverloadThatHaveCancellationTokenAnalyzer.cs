@@ -57,10 +57,10 @@ namespace Meziantou.Analyzer.Rules
             var operation = (IInvocationOperation)context.Operation;
             var method = operation.TargetMethod;
 
-            if (operation.Arguments.Any(arg => !arg.IsImplicit && arg.Parameter.Type.IsEqualsTo(analyzerContext.CancellationTokenSymbol)))
+            if (operation.Arguments.Any(arg => !arg.IsImplicit && arg.Parameter.Type.IsEqualTo(analyzerContext.CancellationTokenSymbol)))
                 return;
 
-            var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter.Type.IsEqualsTo(analyzerContext.CancellationTokenSymbol));
+            var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter.Type.IsEqualTo(analyzerContext.CancellationTokenSymbol));
             if (!isImplicitlyDeclared && !UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, analyzerContext.CancellationTokenSymbol))
                 return;
 
@@ -258,12 +258,12 @@ namespace Meziantou.Analyzer.Rules
                 if (maxDepth < 0 || symbol == null)
                     return Enumerable.Empty<IReadOnlyList<ISymbol>>();
 
-                if (symbol.IsEqualsTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualsTo(TaskOfTSymbol))
+                if (symbol.IsEqualTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualTo(TaskOfTSymbol))
                     return Enumerable.Empty<IReadOnlyList<ISymbol>>();
 
                 return _membersByType.GetOrAdd(symbol, s =>
                 {
-                    if (s.IsEqualsTo(CancellationTokenSymbol))
+                    if (s.IsEqualTo(CancellationTokenSymbol))
                     {
                         return new[] { Array.Empty<ISymbol>() };
                     }
@@ -291,7 +291,7 @@ namespace Meziantou.Analyzer.Rules
                                 continue;
                         }
 
-                        if (memberTypeSymbol.IsEqualsTo(CancellationTokenSymbol))
+                        if (memberTypeSymbol.IsEqualTo(CancellationTokenSymbol))
                         {
                             result.Add(new ISymbol[] { member });
                         }
