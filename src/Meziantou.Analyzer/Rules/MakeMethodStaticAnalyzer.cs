@@ -156,7 +156,7 @@ namespace Meziantou.Analyzer.Rules
                 string.Equals(methodSymbol.Name, "InvokeAsync", System.StringComparison.Ordinal))
             {
                 var httpContextSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
-                if (methodSymbol.Parameters.Length == 0 || !methodSymbol.Parameters[0].Type.IsEqualsTo(httpContextSymbol))
+                if (methodSymbol.Parameters.Length == 0 || !methodSymbol.Parameters[0].Type.IsEqualTo(httpContextSymbol))
                     return false;
 
                 return true;
@@ -186,7 +186,7 @@ namespace Meziantou.Analyzer.Rules
             if (string.Equals(methodSymbol.Name, "ConfigureServices", System.StringComparison.Ordinal))
             {
                 var iserviceCollectionSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
-                if (methodSymbol.ReturnsVoid && methodSymbol.Parameters.Length == 1 && methodSymbol.Parameters[0].Type.IsEqualsTo(iserviceCollectionSymbol))
+                if (methodSymbol.ReturnsVoid && methodSymbol.Parameters.Length == 1 && methodSymbol.Parameters[0].Type.IsEqualTo(iserviceCollectionSymbol))
                     return true;
 
                 return false;
@@ -196,7 +196,7 @@ namespace Meziantou.Analyzer.Rules
             if (string.Equals(methodSymbol.Name, "Configure", System.StringComparison.Ordinal))
             {
                 var iapplicationBuilder = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
-                if (methodSymbol.Parameters.Length > 0 && methodSymbol.Parameters[0].Type.IsEqualsTo(iapplicationBuilder))
+                if (methodSymbol.Parameters.Length > 0 && methodSymbol.Parameters[0].Type.IsEqualTo(iapplicationBuilder))
                     return true;
 
                 return false;
