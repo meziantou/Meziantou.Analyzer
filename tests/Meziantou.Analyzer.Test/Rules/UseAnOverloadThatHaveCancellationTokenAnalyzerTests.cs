@@ -241,5 +241,25 @@ class Test
                   .ShouldReportDiagnostic(line: 11, column: 9, id: "MA0040", message: "Specify a CancellationToken (a)")
                   .ValidateAsync();
         }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task CancellationTokenSourceCreate_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"using System.Threading;
+class Test
+{
+    public static void A()
+    {
+        {
+            _ = CancellationTokenSource.CreateLinkedTokenSource(CancellationToken.None);
+        }
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
+        }
     }
 }
