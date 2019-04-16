@@ -34,7 +34,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = context.Compilation.GetTypeByMetadataName("System.Threading.AsyncLocal`1");
-            if (field.Type.OriginalDefinition.IsEqualsTo(type))
+            if (field.Type.OriginalDefinition.IsEqualTo(type))
             {
                     context.ReportDiagnostic(s_rule, field);
             }

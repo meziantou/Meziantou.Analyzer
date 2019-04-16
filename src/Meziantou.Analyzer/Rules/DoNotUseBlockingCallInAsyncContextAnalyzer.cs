@@ -60,11 +60,13 @@ namespace Meziantou.Analyzer.Rules
                 TaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 TaskOfTSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
                 TaskAwaiterSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
+                ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
             }
 
             private INamedTypeSymbol TaskSymbol { get; }
             private INamedTypeSymbol TaskOfTSymbol { get; }
             private INamedTypeSymbol TaskAwaiterSymbol { get; }
+            private INamedTypeSymbol[] ThreadSymbols { get; }
 
             public bool IsValid => TaskSymbol != null && TaskOfTSymbol != null && TaskAwaiterSymbol != null;
 
@@ -77,27 +79,35 @@ namespace Meziantou.Analyzer.Rules
                 // Task`1.Wait()
                 if (string.Equals(targetMethod.Name, nameof(Task.Wait), StringComparison.Ordinal))
                 {
-                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol))
+                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
                     {
                         ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'Wait()'");
+                        return;
                     }
-
-                    return;
                 }
 
                 // Task.GetAwaiter().GetResult()
                 if (string.Equals(targetMethod.Name, nameof(TaskAwaiter.GetResult), StringComparison.Ordinal))
                 {
-                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualsTo(TaskAwaiterSymbol))
+                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualTo(TaskAwaiterSymbol))
                     {
                         ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'GetResult()'");
+                        return;
                     }
+                }
 
-                    return;
+                // Thread.Sleep => Task.Delay
+                if(string.Equals(targetMethod.Name, "Sleep", StringComparison.Ordinal))
+                {
+                    if (targetMethod.ContainingType.IsEqualToAny(ThreadSymbols))
+                    {
+                        ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'GetResult()'");
+                        return;
+                    }
                 }
 
                 // Search async equivalent: sample.Write() => sample.WriteAsync()
-                if (!targetMethod.ReturnType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol))
+                if (!targetMethod.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
                 {
                     var potentialMethod = targetMethod.ContainingType.GetMembers().FirstOrDefault(IsPotentialMember);
                     if (potentialMethod != null)
@@ -115,7 +125,7 @@ namespace Meziantou.Analyzer.Rules
                             return
                                 (!targetMethod.IsStatic || methodSymbol.IsStatic) &&
                                 (string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) || string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal)) &&
-                                methodSymbol.ReturnType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol);
+                                methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol);
                         }
 
                         return false;
@@ -130,7 +140,7 @@ namespace Meziantou.Analyzer.Rules
                 // Task`1.Result
                 if (string.Equals(operation.Property.Name, nameof(Task<int>.Result), StringComparison.Ordinal))
                 {
-                    if (operation.Member.ContainingType.OriginalDefinition.IsEqualsTo(TaskOfTSymbol))
+                    if (operation.Member.ContainingType.OriginalDefinition.IsEqualTo(TaskOfTSymbol))
                     {
                         ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'Result'");
                     }
@@ -156,7 +166,7 @@ namespace Meziantou.Analyzer.Rules
                 var methodSymbol = operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart) as IMethodSymbol;
                 if (methodSymbol != null)
                 {
-                    return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualsToAny(TaskSymbol, TaskOfTSymbol);
+                    return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol);
                 }
 
                 return false;
