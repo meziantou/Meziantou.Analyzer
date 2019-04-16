@@ -56,10 +56,20 @@ namespace Meziantou.Analyzer
         {
             foreach (var location in symbol.Locations)
             {
-                if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(descriptor, location, properties, messageArgs));
-                }
+                ReportDiagnostic(context, descriptor, location, properties, messageArgs);
+            }
+        }
+
+        public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, Location location, params string[] messageArgs)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(descriptor, location, ImmutableDictionary<string, string>.Empty, messageArgs));
+        }
+
+        public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, Location location, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        {
+            if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, location, properties, messageArgs));
             }
         }
 

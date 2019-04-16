@@ -51,6 +51,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseBlockingCall = "MA0045";
         public const string UseEventHandlerOfT = "MA0046";
         public const string DeclareTypesInNamespaces = "MA0047";
+        public const string FileNameMustMatchTypeName = "MA0048";
 
         public static string GetHelpUri(string idenfifier)
         {

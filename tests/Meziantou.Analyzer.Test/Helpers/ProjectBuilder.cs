@@ -23,6 +23,7 @@ namespace TestHelper
             };
         }
 
+        public string FileName { get; private set; }
         public string SourceCode { get; private set; } = "";
         public string EditorConfig { get; private set; }
         public bool IsValidCode { get; private set; } = true;
@@ -135,6 +136,12 @@ namespace TestHelper
 
         public ProjectBuilder WithSourceCode(string sourceCode)
         {
+            return WithSourceCode(fileName: null, sourceCode);
+        }
+
+        public ProjectBuilder WithSourceCode(string fileName, string sourceCode)
+        {
+            FileName = fileName;
             SourceCode = sourceCode;
             return this;
         }
@@ -196,7 +203,7 @@ namespace TestHelper
                 Severity = severity,
                 Locations = new[]
                 {
-                    new DiagnosticResultLocation("Test0.cs", line, column),
+                    new DiagnosticResultLocation(FileName ?? "Test0.cs", line, column),
                 },
             });
         }
