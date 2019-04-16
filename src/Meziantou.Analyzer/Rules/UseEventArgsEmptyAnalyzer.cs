@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = context.Compilation.GetTypeByMetadataName("System.EventArgs");
-            if (operation.Constructor.ContainingType.IsEqualsTo(type))
+            if (operation.Constructor.ContainingType.IsEqualTo(type))
             {
                 context.ReportDiagnostic(s_rule, operation);
             }

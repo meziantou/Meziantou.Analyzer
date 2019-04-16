@@ -48,7 +48,7 @@ namespace Meziantou.Analyzer.Rules
                     return;
 
                 // Guid.ToString(IFormatProvider) should not be used
-                if (operation.TargetMethod.ContainingType.IsEqualsTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
+                if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
                     return;
             }
             else if (!string.Equals(methodName, "Parse", StringComparison.Ordinal) &&

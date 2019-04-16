@@ -22,7 +22,7 @@ namespace Meziantou.Analyzer
             foreach (var invocationOperation in operation.Ancestors().OfType<IInvocationOperation>())
             {
                 var type = invocationOperation.TargetMethod.ContainingType;
-                if (type.IsEqualsTo(operation.SemanticModel.Compilation.GetTypeByMetadataName("System.Linq.Queryable")))
+                if (type.IsEqualTo(operation.SemanticModel.Compilation.GetTypeByMetadataName("System.Linq.Queryable")))
                     return true;
             }
 

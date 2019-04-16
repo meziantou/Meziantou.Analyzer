@@ -45,6 +45,23 @@ class Test
                   .ShouldReportDiagnostic(line: 6, column: 13)
                   .ValidateAsync();
         }
+        
+        [TestMethod]
+        public async Task Async_ThreadSleep_Diagnostic()
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(System.Threading.Thread))
+                  .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        System.Threading.Thread.Sleep(1);
+    }
+}")
+                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
+        }
 
         [TestMethod]
         public async Task Async_SuggestOverload_Diagnostic()

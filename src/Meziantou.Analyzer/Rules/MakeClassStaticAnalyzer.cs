@@ -89,7 +89,7 @@ namespace Meziantou.Analyzer.Rules
                         break;
 
                     case TypeKind.Interface:
-                        foreach (var attribute in symbol.GetAttributes().Where(attr => attr.AttributeClass.IsEqualsTo(CoClassAttributeSymbol)))
+                        foreach (var attribute in symbol.GetAttributes().Where(attr => attr.AttributeClass.IsEqualTo(CoClassAttributeSymbol)))
                         {
                             var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
                             if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol type)

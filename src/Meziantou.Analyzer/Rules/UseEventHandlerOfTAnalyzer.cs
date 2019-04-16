@@ -45,7 +45,7 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeSymbol(SymbolAnalysisContext context)
             {
                 var symbol = (IEventSymbol)context.Symbol;
-                if (symbol.Type.OriginalDefinition.IsEqualsTo(EventHandlerOfTSymbol) || symbol.Type.OriginalDefinition.IsEqualsTo(EventHandlerSymbol))
+                if (symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerOfTSymbol) || symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerSymbol))
                     return;
 
                 if (symbol.IsInterfaceImplementation())
