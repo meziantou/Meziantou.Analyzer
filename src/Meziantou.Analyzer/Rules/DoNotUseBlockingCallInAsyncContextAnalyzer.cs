@@ -75,6 +75,9 @@ namespace Meziantou.Analyzer.Rules
                 var operation = (IInvocationOperation)context.Operation;
                 var targetMethod = operation.TargetMethod;
 
+                if (operation.IsInNameofOperation())
+                    return;
+
                 // Task.Wait()
                 // Task`1.Wait()
                 if (string.Equals(targetMethod.Name, nameof(Task.Wait), StringComparison.Ordinal))
@@ -97,7 +100,7 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 // Thread.Sleep => Task.Delay
-                if(string.Equals(targetMethod.Name, "Sleep", StringComparison.Ordinal))
+                if (string.Equals(targetMethod.Name, "Sleep", StringComparison.Ordinal))
                 {
                     if (targetMethod.ContainingType.IsEqualToAny(ThreadSymbols))
                     {
@@ -136,6 +139,9 @@ namespace Meziantou.Analyzer.Rules
             internal void AnalyzePropertyReference(OperationAnalysisContext context)
             {
                 var operation = (IPropertyReferenceOperation)context.Operation;
+
+                if (operation.IsInNameofOperation())
+                    return;
 
                 // Task`1.Result
                 if (string.Equals(operation.Property.Name, nameof(Task<int>.Result), StringComparison.Ordinal))
