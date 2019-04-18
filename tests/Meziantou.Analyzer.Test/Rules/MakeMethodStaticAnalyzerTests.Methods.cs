@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -569,6 +570,34 @@ abstract class Test
 {
     protected abstract void A();
 }";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
+        }
+
+
+        [TestMethod]
+        public async Task XamlEventHandler_ShouldNotReportDiagnosticAsync()
+        {
+            const string SourceCode = @"
+#pragma checksum ""..\..\MainWindow.xaml"" ""{8829d00f-11b8-4213-878b-770e8597ac16}"" ""25B36A30BAFC7BB7D58C2E7472CEB827253914A46567E515A46D7429205241EB""
+
+partial class Test
+{
+    event System.EventHandler<System.EventArgs> TestEvent;
+    void Initialize()
+    {
+        TestEvent += Handler;
+    }
+}
+
+partial class Test
+{
+    void Handler(object sender, System.EventArgs e) => throw null;
+}
+
+";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
