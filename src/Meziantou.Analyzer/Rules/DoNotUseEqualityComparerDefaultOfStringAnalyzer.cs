@@ -44,7 +44,7 @@ namespace Meziantou.Analyzer.Rules
             var equalityComparerStringSymbol = equalityComparerSymbol.Construct(context.Compilation.GetSpecialType(SpecialType.System_String));
             if (operation.Member.ContainingType.IsEqualTo(equalityComparerStringSymbol))
             {
-                if (operation.Ancestors().OfType<INameOfOperation>().Any())
+                if (operation.IsInNameofOperation())
                     return;
 
                 context.ReportDiagnostic(s_rule, operation);
