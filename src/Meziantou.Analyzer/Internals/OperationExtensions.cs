@@ -28,5 +28,10 @@ namespace Meziantou.Analyzer
 
             return false;
         }
+
+        public static bool IsInNameofOperation(this IOperation operation)
+        {
+            return operation.Ancestors().OfType<INameOfOperation>().Any();
+        }
     }
 }
