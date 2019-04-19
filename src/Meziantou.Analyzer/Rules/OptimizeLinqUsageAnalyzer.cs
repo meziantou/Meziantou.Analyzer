@@ -98,7 +98,8 @@ namespace Meziantou.Analyzer.Rules
                 var actualType = GetActualType(operation.Arguments[0]);
                 if (actualType.TypeKind == TypeKind.Array)
                 {
-                    context.ReportDiagnostic(s_listMethodsRule, operation, "Length", operation.TargetMethod.Name);
+                    var properties = DiagnosticProperties.Create(new OptimizeLinqUsageData { NewPropertyName = "Length" });
+                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Length", operation.TargetMethod.Name);
                     return;
                 }
 

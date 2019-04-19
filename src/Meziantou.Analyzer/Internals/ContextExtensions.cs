@@ -20,10 +20,10 @@ namespace Meziantou.Analyzer
 
         public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxNode syntaxNode, params string[] messageArgs)
         {
-            ReportDiagnostic(context, descriptor, syntaxNode, ImmutableDictionary<string, string>.Empty, messageArgs);
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, syntaxNode, messageArgs);
         }
 
-        public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxNode syntaxNode, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, SyntaxNode syntaxNode, params string[] messageArgs)
         {
             if (IsEnabled(context.Options, descriptor, syntaxNode.SyntaxTree.FilePath))
             {
@@ -33,10 +33,10 @@ namespace Meziantou.Analyzer
 
         public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, params string[] messageArgs)
         {
-            ReportDiagnostic(context, descriptor, symbol, ImmutableDictionary<string, string>.Empty, messageArgs);
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, symbol, messageArgs);
         }
 
-        public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, ISymbol symbol, params string[] messageArgs)
         {
             foreach (var location in symbol.Locations)
             {
@@ -49,14 +49,14 @@ namespace Meziantou.Analyzer
 
         public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, params string[] messageArgs)
         {
-            ReportDiagnostic(context, descriptor, symbol, ImmutableDictionary<string, string>.Empty, messageArgs);
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, symbol, messageArgs);
         }
 
-        public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, ISymbol symbol, params string[] messageArgs)
         {
             foreach (var location in symbol.Locations)
             {
-                ReportDiagnostic(context, descriptor, location, properties, messageArgs);
+                ReportDiagnostic(context, descriptor, properties, location, messageArgs);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Meziantou.Analyzer
             context.ReportDiagnostic(Diagnostic.Create(descriptor, location, ImmutableDictionary<string, string>.Empty, messageArgs));
         }
 
-        public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, Location location, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, Location location, params string[] messageArgs)
         {
             if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
             {
@@ -75,10 +75,10 @@ namespace Meziantou.Analyzer
 
         public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, IOperation operation, params string[] messageArgs)
         {
-            ReportDiagnostic(context, descriptor, operation, ImmutableDictionary<string, string>.Empty, messageArgs);
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, operation, messageArgs);
         }
 
-        public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, IOperation operation, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, IOperation operation, params string[] messageArgs)
         {
             if (IsEnabled(context.Options, descriptor, operation.Syntax.SyntaxTree.FilePath))
             {
@@ -88,10 +88,10 @@ namespace Meziantou.Analyzer
 
         public static void ReportDiagnostic(this CompilationAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, params string[] messageArgs)
         {
-            ReportDiagnostic(context, descriptor, symbol, ImmutableDictionary<string, string>.Empty, messageArgs);
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, symbol, messageArgs);
         }
 
-        public static void ReportDiagnostic(this CompilationAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        public static void ReportDiagnostic(this CompilationAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, ISymbol symbol, params string[] messageArgs)
         {
             foreach (var location in symbol.Locations)
             {

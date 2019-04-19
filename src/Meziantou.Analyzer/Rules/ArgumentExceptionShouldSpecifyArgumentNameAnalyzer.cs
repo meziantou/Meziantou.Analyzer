@@ -83,7 +83,7 @@ namespace Meziantou.Analyzer.Rules
                             if (!(argument.Value is INameOfOperation))
                             {
                                 var properties = ImmutableDictionary<string, string>.Empty.Add(ArgumentNameKey, value);
-                                context.ReportDiagnostic(s_nameofRule, argument.Value, properties);
+                                context.ReportDiagnostic(s_nameofRule, properties, argument.Value);
                             }
 
                             return;
