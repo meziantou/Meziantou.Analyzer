@@ -37,16 +37,22 @@ namespace Meziantou.Analyzer.Rules
             {
                 EventHandlerSymbol = compilation.GetTypeByMetadataName("System.EventHandler");
                 EventHandlerOfTSymbol = compilation.GetTypeByMetadataName("System.EventHandler`1");
+                RoutedPropertyChangedEventHandlerOfTSymbol = compilation.GetTypeByMetadataName("System.Windows.RoutedPropertyChangedEventHandler`1");
             }
 
             public INamedTypeSymbol EventHandlerSymbol { get; }
             public INamedTypeSymbol EventHandlerOfTSymbol { get; }
+            public INamedTypeSymbol RoutedPropertyChangedEventHandlerOfTSymbol { get; }
 
             public void AnalyzeSymbol(SymbolAnalysisContext context)
             {
                 var symbol = (IEventSymbol)context.Symbol;
-                if (symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerOfTSymbol) || symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerSymbol))
+                if (symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerOfTSymbol) ||
+                    symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerSymbol) ||
+                    symbol.Type.OriginalDefinition.IsEqualTo(RoutedPropertyChangedEventHandlerOfTSymbol))
+                {
                     return;
+                }
 
                 if (symbol.IsInterfaceImplementation())
                     return;
