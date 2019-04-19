@@ -38,6 +38,10 @@ namespace Meziantou.Analyzer.Rules
                 if (!location.IsInSource || string.IsNullOrEmpty(location.SourceTree?.FilePath))
                     continue;
 
+                // Nested type
+                if (symbol.ContainingType != null)
+                    continue;
+
                 var fileName = GetFileName(location.SourceTree.FilePath);
                 var symbolName = symbol.Name;
                 if (string.Equals(fileName, symbolName, StringComparison.OrdinalIgnoreCase))

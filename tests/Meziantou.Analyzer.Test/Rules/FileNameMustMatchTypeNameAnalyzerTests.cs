@@ -73,5 +73,20 @@ class Test0<T>
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
+
+        [TestMethod]
+        public async Task NestedTypeDoesMatchFileName_Ok()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(fileName: "Test0.cs", @"
+class Test0
+{
+    class Test1
+    {
+    }
+}")
+                  .ShouldNotReportDiagnostic()
+                  .ValidateAsync();
+        }
     }
 }
