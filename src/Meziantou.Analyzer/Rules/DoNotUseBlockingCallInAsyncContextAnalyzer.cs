@@ -104,7 +104,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (targetMethod.ContainingType.IsEqualToAny(ThreadSymbols))
                     {
-                        ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'GetResult()'");
+                        ReportDiagnosticIfNeeded(context, operation, "Use await and 'Task.Delay()' instead of 'Thread.Sleep()'");
                         return;
                     }
                 }
