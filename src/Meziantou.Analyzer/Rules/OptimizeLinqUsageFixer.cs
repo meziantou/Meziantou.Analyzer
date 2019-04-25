@@ -93,7 +93,45 @@ namespace Meziantou.Analyzer.Rules
                 case OptimizeLinqUsageData.UseFalse:
                     context.RegisterCodeFix(CodeAction.Create(title, ct => UseConstantValue(context.Document, nodeToFix, false, ct), equivalenceKey: title), context.Diagnostics);
                     break;
+
+                case OptimizeLinqUsageData.UseNotAny:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, false, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeLinqUsageData.UseAny:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, true, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
             }
+        }
+
+        private static async Task<Document> UseAny(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)
+        {
+            var countOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var countNode = root.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
+            if (countNode == null)
+                return document;
+
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
+            if (countOperation == null)
+                return document;
+
+            var generator = editor.Generator;
+            var newExpression = generator.InvocationExpression(
+                generator.MemberAccessExpression(countOperation.Arguments[0].Syntax, "Any"),
+                countOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
+
+            if (!constantValue)
+            {
+                newExpression = generator.LogicalNotExpression(newExpression);
+            }
+
+            editor.ReplaceNode(nodeToFix, newExpression);
+            return editor.GetChangedDocument();
         }
 
         private static async Task<Document> UseConstantValue(Document document, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)

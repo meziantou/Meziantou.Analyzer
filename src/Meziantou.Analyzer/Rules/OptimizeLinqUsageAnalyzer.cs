@@ -266,10 +266,10 @@ namespace Meziantou.Analyzer.Rules
             if (otherOperand == null)
                 return;
 
+            string message = null;
+            ImmutableDictionary<string, string> properties = ImmutableDictionary<string, string>.Empty;
             if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
             {
-                string message = null;
-                ImmutableDictionary<string, string> properties = null;
                 switch (opKind)
                 {
                     case BinaryOperatorKind.Equals:
@@ -283,6 +283,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() == 0
                             message = "Replace 'Count() == 0' with 'Any() == false'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseNotAny);
                         }
                         else
                         {
@@ -306,6 +307,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() != 0
                             message = "Replace 'Count() != 0' with 'Any()'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseAny);
                         }
                         else
                         {
@@ -329,6 +331,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() < 1 ==> expr.Count() == 0
                             message = "Replace 'Count() < 1' with 'Any() == false'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseNotAny);
                         }
                         else
                         {
@@ -349,6 +352,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() <= 0
                             message = "Replace 'Count() <= 0' with 'Any() == false'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseNotAny);
                         }
                         else
                         {
@@ -369,6 +373,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() > 0
                             message = "Replace 'Count() > 0' with 'Any()'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseAny);
                         }
                         else
                         {
@@ -389,6 +394,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() >= 1
                             message = "Replace 'Count() >= 1' with 'Any()'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseAny);
                         }
                         else
                         {
@@ -398,15 +404,9 @@ namespace Meziantou.Analyzer.Rules
 
                         break;
                 }
-
-                if (message != null)
-                {
-                    context.ReportDiagnostic(s_optimizeCountRule, properties, binaryOperation, message);
-                }
             }
             else
             {
-                string message = null;
                 switch (opKind)
                 {
                     case BinaryOperatorKind.Equals:
@@ -447,11 +447,17 @@ namespace Meziantou.Analyzer.Rules
                         message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
                         break;
                 }
+            }
 
-                if (message != null)
-                {
-                    context.ReportDiagnostic(s_optimizeCountRule, binaryOperation, message);
-                }
+            if (message != null)
+            {
+                properties = properties
+                       .Add("OperandOperationStart", otherOperand.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add("OperandOperationLength", otherOperand.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                       .Add("CountOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add("CountOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+
+                context.ReportDiagnostic(s_optimizeCountRule, properties, binaryOperation, message);
             }
 
             static bool IsSupportedOperator(BinaryOperatorKind operatorKind)

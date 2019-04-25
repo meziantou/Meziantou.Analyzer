@@ -90,6 +90,71 @@ class Test
 
         [DataTestMethod]
         [DataRow("Count() == 0", "Replace 'Count() == 0' with 'Any() == false'")]
+        [DataRow("Count() < 1", "Replace 'Count() < 1' with 'Any() == false'")]
+        [DataRow("Count() <= 0", "Replace 'Count() <= 0' with 'Any() == false'")]
+        public async Task Count_AnyFalse(string text, string expectedMessage)
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        _ = enumerable." + text + @";
+    }
+}
+")
+                   .ShouldReportDiagnostic(line: 7, column: 13, message: expectedMessage)
+                   .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        _ = !enumerable.Any();
+    }
+}
+")
+                   .ValidateAsync();
+        }
+
+        [DataTestMethod]
+        [DataRow("Count() != 0", "Replace 'Count() != 0' with 'Any()'")]
+        [DataRow("Count() > 0", "Replace 'Count() > 0' with 'Any()'")]
+        [DataRow("Count() >= 1", "Replace 'Count() >= 1' with 'Any()'")]
+        public async Task Count_AnyTrue(string text, string expectedMessage)
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        _ = enumerable." + text + @";
+    }
+}
+")
+                   .ShouldReportDiagnostic(line: 7, column: 13, message: expectedMessage)
+                   .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        _ = enumerable.Any();
+    }
+}
+")
+                   .ValidateAsync();
+        }
+
+        [DataTestMethod]
         [DataRow("Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
         [DataRow("Take(10).Count() == 1", null)]
         public async Task Count_Equals(string text, string expectedMessage)
@@ -121,7 +186,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() != 0", "Replace 'Count() != 0' with 'Any()'")]
         [DataRow("Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
         [DataRow("Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
         [DataRow("Take(1).Count() != n", null)]
@@ -155,7 +219,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() < 1", "Replace 'Count() < 1' with 'Any() == false'")]
         [DataRow("Count() < 2", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
         [DataRow("Count() < n", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
         public async Task Count_LessThan(string text, string expectedMessage)
@@ -179,7 +242,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() <= 0", "Replace 'Count() <= 0' with 'Any() == false'")]
         [DataRow("Count() <= 1", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
         [DataRow("Count() <= 2", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
         [DataRow("Count() <= n", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
@@ -204,7 +266,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() > 0", "Replace 'Count() > 0' with 'Any()'")]
         [DataRow("Count() > 1", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
         [DataRow("Count() > 2", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
         [DataRow("Count() > n", "Replace 'Count() > n' with 'Skip(n).Any()'")]
@@ -229,7 +290,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("enumerable.Count() >= 1", "Replace 'Count() >= 1' with 'Any()'")]
         [DataRow("enumerable.Count() >= 2", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
         [DataRow("enumerable.Count() >= n", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
         public async Task Count_GreaterThanOrEqual(string text, string expectedMessage)

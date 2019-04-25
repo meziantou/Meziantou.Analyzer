@@ -14,5 +14,7 @@
         CombineWhereWithNextMethod,
         UseFalse,
         UseTrue,
+        UseAny,
+        UseNotAny,
     }
 }
