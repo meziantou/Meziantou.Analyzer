@@ -12,5 +12,7 @@
         UseIndexerLast,
         DuplicatedOrderBy,
         CombineWhereWithNextMethod,
+        UseFalse,
+        UseTrue,
     }
 }

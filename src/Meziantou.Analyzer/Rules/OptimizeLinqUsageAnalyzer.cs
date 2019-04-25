@@ -269,6 +269,7 @@ namespace Meziantou.Analyzer.Rules
             if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
             {
                 string message = null;
+                ImmutableDictionary<string, string> properties = null;
                 switch (opKind)
                 {
                     case BinaryOperatorKind.Equals:
@@ -276,6 +277,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() == -1
                             message = "Expression is always false";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseFalse);
                         }
                         else if (value == 0)
                         {
@@ -298,6 +300,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() != -1 is always true
                             message = "Expression is always true";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTrue);
                         }
                         else if (value == 0)
                         {
@@ -320,6 +323,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() < 0
                             message = "Expression is always false";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseFalse);
                         }
                         else if (value == 1)
                         {
@@ -339,6 +343,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() <= -1
                             message = "Expression is always false";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseFalse);
                         }
                         else if (value == 0)
                         {
@@ -358,6 +363,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() > -1
                             message = "Expression is always true";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTrue);
                         }
                         else if (value == 0)
                         {
@@ -377,6 +383,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() >= 0
                             message = "Expression is always true";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTrue);
                         }
                         else if (value == 1)
                         {
@@ -394,7 +401,7 @@ namespace Meziantou.Analyzer.Rules
 
                 if (message != null)
                 {
-                    context.ReportDiagnostic(s_optimizeCountRule, binaryOperation, message);
+                    context.ReportDiagnostic(s_optimizeCountRule, properties, binaryOperation, message);
                 }
             }
             else
@@ -447,7 +454,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            bool IsSupportedOperator(BinaryOperatorKind operatorKind)
+            static bool IsSupportedOperator(BinaryOperatorKind operatorKind)
             {
                 switch (operatorKind)
                 {

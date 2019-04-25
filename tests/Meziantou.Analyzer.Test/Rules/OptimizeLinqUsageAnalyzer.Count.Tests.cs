@@ -13,11 +13,82 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: "MA0031");
+                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: "MA0031")
+                .WithCodeFixProvider<OptimizeLinqUsageFixer>();
         }
 
         [DataTestMethod]
-        [DataRow("Count() == -1", "Expression is always false")]
+        [DataRow("enumerable.Count() < 0")]
+        [DataRow("enumerable.Count() <= -1")]
+        [DataRow("enumerable.Count() <= -2")]
+        [DataRow("enumerable.Count() == -1")]
+        [DataRow("-1 == enumerable.Count()")]
+        public async Task Count_AlwaysFalse(string text)
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = Enumerable.Empty<int>();
+        _ = " + text + @";
+    }
+}
+")
+                .ShouldReportDiagnostic(line: 7, column: 13, message: "Expression is always false")
+                .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = Enumerable.Empty<int>();
+        _ = false;
+    }
+}
+")
+                .ValidateAsync();
+        }
+
+        [DataTestMethod]
+        [DataRow("enumerable.Count() != -2")]
+        [DataRow("enumerable.Count() > -1")]
+        [DataRow("enumerable.Count() >= 0")]
+        [DataRow("-10 <= enumerable.Count()")]
+        public async Task Count_AlwaysTrue(string text)
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = Enumerable.Empty<int>();
+        _ = " + text + @";
+    }
+}
+")
+                  .ShouldReportDiagnostic(line: 8, column: 13, message: "Expression is always true")
+                  .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = Enumerable.Empty<int>();
+        _ = true;
+    }
+}
+")
+                  .ValidateAsync();
+        }
+
+        [DataTestMethod]
         [DataRow("Count() == 0", "Replace 'Count() == 0' with 'Any() == false'")]
         [DataRow("Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
         [DataRow("Take(10).Count() == 1", null)]
@@ -50,7 +121,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() != -2", "Expression is always true")]
         [DataRow("Count() != 0", "Replace 'Count() != 0' with 'Any()'")]
         [DataRow("Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
         [DataRow("Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
@@ -85,8 +155,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() < -1", "Expression is always false")]
-        [DataRow("Count() < 0", "Expression is always false")]
         [DataRow("Count() < 1", "Replace 'Count() < 1' with 'Any() == false'")]
         [DataRow("Count() < 2", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
         [DataRow("Count() < n", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
@@ -111,7 +179,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() <= -1", "Expression is always false")]
         [DataRow("Count() <= 0", "Replace 'Count() <= 0' with 'Any() == false'")]
         [DataRow("Count() <= 1", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
         [DataRow("Count() <= 2", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
@@ -137,7 +204,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() > -1", "Expression is always true")]
         [DataRow("Count() > 0", "Replace 'Count() > 0' with 'Any()'")]
         [DataRow("Count() > 1", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
         [DataRow("Count() > 2", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
@@ -163,9 +229,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("enumerable.Count() >= -1", "Expression is always true")]
-        [DataRow("-1 <= enumerable.Count()", "Expression is always true")]
-        [DataRow("enumerable.Count() >= 0", "Expression is always true")]
         [DataRow("enumerable.Count() >= 1", "Replace 'Count() >= 1' with 'Any()'")]
         [DataRow("enumerable.Count() >= 2", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
         [DataRow("enumerable.Count() >= n", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]

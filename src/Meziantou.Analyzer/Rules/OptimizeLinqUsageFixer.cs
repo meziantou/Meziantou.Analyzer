@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Globalization;
@@ -13,7 +12,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
-using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Rules
@@ -24,7 +22,8 @@ namespace Meziantou.Analyzer.Rules
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
             RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,
             RuleIdentifiers.DuplicateEnumerable_OrderBy,
-            RuleIdentifiers.OptimizeLinqUsage);
+            RuleIdentifiers.OptimizeLinqUsage,
+            RuleIdentifiers.OptimizeEnumerable_Count);
 
         public override FixAllProvider GetFixAllProvider()
         {
@@ -87,7 +86,24 @@ namespace Meziantou.Analyzer.Rules
                     context.RegisterCodeFix(CodeAction.Create(title, ct => CombineWhereWithNextMethod(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
                     break;
 
+                case OptimizeLinqUsageData.UseTrue:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseConstantValue(context.Document, nodeToFix, true, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeLinqUsageData.UseFalse:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseConstantValue(context.Document, nodeToFix, false, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
             }
+        }
+
+        private static async Task<Document> UseConstantValue(Document document, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)
+        {
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var literalNode = constantValue ? generator.TrueLiteralExpression() : generator.FalseLiteralExpression();
+
+            editor.ReplaceNode(nodeToFix, literalNode);
+            return editor.GetChangedDocument();
         }
 
         private async static Task<Document> UseLengthProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
@@ -355,6 +371,24 @@ namespace Meziantou.Analyzer.Rules
             return new ParameterRewriter(semanticModel, parameterSymbol, newParameterName).Visit(method.Body.Syntax);
         }
 
+        private static MemberAccessExpressionSyntax GetMemberAccessExpression(SyntaxNode invocationExpressionSyntax)
+        {
+            var invocationExpression = invocationExpressionSyntax as InvocationExpressionSyntax;
+            if (invocationExpression == null)
+                return null;
+
+            return invocationExpression.Expression as MemberAccessExpressionSyntax;
+        }
+
+        private static SyntaxNode GetParentMemberExpression(SyntaxNode invocationExpressionSyntax)
+        {
+            var memberAccessExpression = GetMemberAccessExpression(invocationExpressionSyntax);
+            if (memberAccessExpression == null)
+                return null;
+
+            return memberAccessExpression.Expression;
+        }
+
         private class ParameterRewriter : CSharpSyntaxRewriter
         {
             private readonly SemanticModel _semanticModel;
@@ -378,24 +412,6 @@ namespace Meziantou.Analyzer.Rules
 
                 return base.VisitIdentifierName(node);
             }
-        }
-
-        private static MemberAccessExpressionSyntax GetMemberAccessExpression(SyntaxNode invocationExpressionSyntax)
-        {
-            var invocationExpression = invocationExpressionSyntax as InvocationExpressionSyntax;
-            if (invocationExpression == null)
-                return null;
-
-            return invocationExpression.Expression as MemberAccessExpressionSyntax;
-        }
-
-        private static SyntaxNode GetParentMemberExpression(SyntaxNode invocationExpressionSyntax)
-        {
-            var memberAccessExpression = GetMemberAccessExpression(invocationExpressionSyntax);
-            if (memberAccessExpression == null)
-                return null;
-
-            return memberAccessExpression.Expression;
         }
     }
 }

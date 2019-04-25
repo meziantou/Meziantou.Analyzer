@@ -169,7 +169,7 @@ namespace Meziantou.Analyzer.Rules
                        orderby fullPath.Count(c => c == '.'), fullPath
                        select fullPath;
 
-                string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
+                static string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
                 {
                     if (prefix == null)
                     {
