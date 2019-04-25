@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task ExpressionBodyAsync()
+        public async Task ExpressionBodyAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -40,7 +40,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessInstanceProperty_NoDiagnosticAsync()
+        public async Task AccessInstanceProperty_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -57,7 +57,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Where_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_Where_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -82,7 +82,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Select_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_Select_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -106,7 +106,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_From_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_From_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -130,7 +130,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Let_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_Let_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -155,7 +155,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task LinqQuery_DiagnosticAsync()
+        public async Task LinqQuery_DiagnosticAsync()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -177,7 +177,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessStaticMethodInLinqQuery_Let_DiagnosticAsync()
+        public async Task AccessStaticMethodInLinqQuery_Let_DiagnosticAsync()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -202,7 +202,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessStaticPropertyAsync()
+        public async Task AccessStaticPropertyAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -219,7 +219,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessStaticMethodAsync()
+        public async Task AccessStaticMethodAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -236,7 +236,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessStaticFieldAsync()
+        public async Task AccessStaticFieldAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -253,7 +253,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AccessInstanceFieldAsync()
+        public async Task AccessInstanceFieldAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -270,7 +270,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MethodImplementAnInterfaceAsync()
+        public async Task MethodImplementAnInterfaceAsync()
         {
             const string SourceCode = @"
 class TestClass : ITest
@@ -290,7 +290,7 @@ interface ITest
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MethodExplicitlyImplementAnInterfaceAsync()
+        public async Task MethodExplicitlyImplementAnInterfaceAsync()
         {
             const string SourceCode = @"
 class TestClass : ITest
@@ -310,7 +310,7 @@ interface ITest
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MethodImplementAGenericInterfaceAsync()
+        public async Task MethodImplementAGenericInterfaceAsync()
         {
             const string SourceCode = @"
 class TestClass : ITest<int>
@@ -330,7 +330,7 @@ interface ITest<T>
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MethodImplementAGenericInterfaceInAGenericClassAsync()
+        public async Task MethodImplementAGenericInterfaceInAGenericClassAsync()
         {
             const string SourceCode = @"
 class TestClass<T> : ITest<T>
@@ -350,7 +350,7 @@ interface ITest<T>
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MethodUseAnAnonymousObjectAsync()
+        public async Task MethodUseAnAnonymousObjectAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -369,7 +369,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CreateInstanceAsync()
+        public async Task CreateInstanceAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -387,7 +387,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CreateInstanceOfAnotherTypeAsync()
+        public async Task CreateInstanceOfAnotherTypeAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -409,7 +409,7 @@ class TestClass2
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MSTest_TestMethodAsync()
+        public async Task MSTest_TestMethodAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -428,7 +428,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MSTest_DataTestMethodAsync()
+        public async Task MSTest_DataTestMethodAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -447,7 +447,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task XUnit_TestMethodAsync()
+        public async Task XUnit_TestMethodAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -466,7 +466,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AspNetCore_StartupAsync()
+        public async Task AspNetCore_StartupAsync()
         {
             const string SourceCode = @"
 using System;
@@ -493,7 +493,7 @@ public class Startup
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AspNetCore_Middleware_Convention_InvokeAsync()
+        public async Task AspNetCore_Middleware_Convention_InvokeAsync()
         {
             const string SourceCode = @"
 using System;
@@ -519,7 +519,7 @@ public class CustomMiddleware
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AspNetCore_Middleware_Convention_InterfaceAsync()
+        public async Task AspNetCore_Middleware_Convention_InterfaceAsync()
         {
             const string SourceCode = @"
 using System;
@@ -541,7 +541,7 @@ public class CustomMiddleware : IMiddleware
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AspNetCore_Middleware_Convention_ExplicitInterfaceAsync()
+        public async Task AspNetCore_Middleware_Convention_ExplicitInterfaceAsync()
         {
             const string SourceCode = @"
 using System;
@@ -563,7 +563,7 @@ public class CustomMiddleware : IMiddleware
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AbstractMethod_ShouldNotReportDiagnosticAsync()
+        public async Task AbstractMethod_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
 abstract class Test

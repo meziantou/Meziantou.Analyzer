@@ -1,8 +1,14 @@
 ﻿namespace Meziantou.Analyzer.Rules
 {
-    internal class OptimizeLinqUsageData
+    internal enum OptimizeLinqUsageData
     {
-        public string NewMethodName { get; set; }
-        public string NewPropertyName { get; set; }
+        None,
+        UseLengthProperty,
+        UseLongLengthProperty,
+        UseCountProperty,
+        UseFindMethod,
+        UseIndexer,
+        UseIndexerFirst,
+        UseIndexerLast,
     }
 }
