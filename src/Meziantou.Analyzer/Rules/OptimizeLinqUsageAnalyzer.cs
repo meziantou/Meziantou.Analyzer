@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -204,7 +205,14 @@ namespace Meziantou.Analyzer.Rules
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.LongCount), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(s_combineLinqMethodsRule, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
+                        var properties = CreateProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod)
+                           .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                           .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                           .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                           .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                           .Add("MethodName", parent.TargetMethod.Name);
+
+                        context.ReportDiagnostic(s_combineLinqMethodsRule, properties, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
                     }
                 }
             }
@@ -223,7 +231,16 @@ namespace Meziantou.Analyzer.Rules
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(s_duplicateOrderByMethodsRule, parent, operation.TargetMethod.Name, parent.TargetMethod.Name.Replace("OrderBy", "ThenBy"));
+                        var expectedMethodName = parent.TargetMethod.Name.Replace("OrderBy", "ThenBy");
+                        var properties = CreateProperties(OptimizeLinqUsageData.DuplicatedOrderBy)
+                            .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                            .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                            .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                            .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                            .Add("ExpectedMethodName", expectedMethodName)
+                            .Add("MethodName", parent.TargetMethod.Name);
+
+                        context.ReportDiagnostic(s_duplicateOrderByMethodsRule, properties, parent, operation.TargetMethod.Name, expectedMethodName);
                     }
                 }
             }

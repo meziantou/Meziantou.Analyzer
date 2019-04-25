@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -20,7 +21,7 @@ namespace Meziantou.Analyzer.Test.Rules
         [DataRow("Count() == 0", "Replace 'Count() == 0' with 'Any() == false'")]
         [DataRow("Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
         [DataRow("Take(10).Count() == 1", null)]
-        public async System.Threading.Tasks.Task Count_EqualsAsync(string text, string expectedMessage)
+        public async Task Count_Equals(string text, string expectedMessage)
         {
             var project = CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
@@ -54,7 +55,7 @@ class Test
         [DataRow("Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
         [DataRow("Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
         [DataRow("Take(1).Count() != n", null)]
-        public async System.Threading.Tasks.Task Count_NotEqualsAsync(string text, string expectedMessage)
+        public async Task Count_NotEquals(string text, string expectedMessage)
         {
             var project = CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
@@ -89,7 +90,7 @@ class Test
         [DataRow("Count() < 1", "Replace 'Count() < 1' with 'Any() == false'")]
         [DataRow("Count() < 2", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
         [DataRow("Count() < n", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
-        public async System.Threading.Tasks.Task Count_LessThanAsync(string text, string expectedMessage)
+        public async Task Count_LessThan(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
@@ -115,7 +116,7 @@ class Test
         [DataRow("Count() <= 1", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
         [DataRow("Count() <= 2", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
         [DataRow("Count() <= n", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
-        public async System.Threading.Tasks.Task Count_LessThanOrEqualAsync(string text, string expectedMessage)
+        public async Task Count_LessThanOrEqual(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
@@ -141,7 +142,7 @@ class Test
         [DataRow("Count() > 1", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
         [DataRow("Count() > 2", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
         [DataRow("Count() > n", "Replace 'Count() > n' with 'Skip(n).Any()'")]
-        public async System.Threading.Tasks.Task Count_GreaterThanAsync(string text, string expectedMessage)
+        public async Task Count_GreaterThan(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))
@@ -168,7 +169,7 @@ class Test
         [DataRow("enumerable.Count() >= 1", "Replace 'Count() >= 1' with 'Any()'")]
         [DataRow("enumerable.Count() >= 2", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
         [DataRow("enumerable.Count() >= n", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
-        public async System.Threading.Tasks.Task Count_GreaterThanOrEqualAsync(string text, string expectedMessage)
+        public async Task Count_GreaterThanOrEqual(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
                   .AddReference(typeof(IEnumerable<>))

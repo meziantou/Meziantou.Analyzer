@@ -43,7 +43,7 @@ namespace TestHelper
 
             if (ExpectedFixedCode != null)
             {
-                await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, null, allowNewCompilerDiagnostics: AllowNewCompilerDiagnostics).ConfigureAwait(false);
+                await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, CodeFixIndex, allowNewCompilerDiagnostics: AllowNewCompilerDiagnostics).ConfigureAwait(false);
             }
         }
 
