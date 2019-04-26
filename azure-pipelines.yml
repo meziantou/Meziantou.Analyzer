@@ -23,7 +23,6 @@ steps:
   inputs:
     solution: '**\*.sln'
     maximumCpuCount: true
-    restoreNugetPackages: true
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
