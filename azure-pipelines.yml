@@ -17,7 +17,9 @@ variables:
 steps:
 - task: VSBuild@1
   inputs:
-    solution: '$(solution)'
+    solution: '**\*.sln'
+    maximumCpuCount: true
+    restoreNugetPackages: true
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
