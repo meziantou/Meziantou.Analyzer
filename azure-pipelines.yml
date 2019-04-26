@@ -14,11 +14,6 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
-- task: DotNetCoreInstaller@0
-  displayName: 'Use .NET Core sdk 2.2.105'
-  inputs:
-    version: 2.2.105
-
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
