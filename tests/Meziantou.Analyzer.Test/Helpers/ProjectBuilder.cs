@@ -34,6 +34,7 @@ namespace TestHelper
         public CodeFixProvider CodeFixProvider { get; private set; }
         public IList<DiagnosticResult> ExpectedDiagnosticResults { get; private set; }
         public string ExpectedFixedCode { get; private set; }
+        public int? CodeFixIndex { get; private set; }
         public string DefaultAnalyzerId { get; set; }
         public string DefaultAnalyzerMessage { get; set; }
         public bool AllowNewCompilerDiagnostics { get; set; }
@@ -230,12 +231,18 @@ namespace TestHelper
 
         public ProjectBuilder ShouldFixCodeWith(string codeFix)
         {
+            return ShouldFixCodeWith(index: null, codeFix);
+        }
+
+        public ProjectBuilder ShouldFixCodeWith(int? index, string codeFix)
+        {
             if (ExpectedDiagnosticResults == null)
             {
                 ExpectedDiagnosticResults = new List<DiagnosticResult>();
             }
 
             ExpectedFixedCode = codeFix;
+            CodeFixIndex = index;
             return this;
         }
 
@@ -246,4 +253,3 @@ namespace TestHelper
         }
     }
 }
-
