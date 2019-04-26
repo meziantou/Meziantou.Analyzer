@@ -14,6 +14,10 @@ steps:
 - task: CmdLine@2
   inputs:
     script: 'echo %VSInstallDir%'
+    
+- task: CmdLine@2
+  inputs:
+    script: 'where VsixPublisher'
 
 - task: NuGetCommand@2
   inputs:
