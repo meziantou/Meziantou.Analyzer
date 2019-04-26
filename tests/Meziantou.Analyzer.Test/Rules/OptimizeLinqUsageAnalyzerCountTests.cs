@@ -26,8 +26,6 @@ namespace Meziantou.Analyzer.Test.Rules
         public async Task Count_AlwaysFalse(string text)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -60,8 +58,6 @@ class Test
         public async Task Count_AlwaysTrue(string text)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -95,8 +91,6 @@ class Test
         public async Task Count_AnyFalse(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -128,8 +122,6 @@ class Test
         public async Task Count_AnyTrue(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -162,8 +154,6 @@ class Test
         public async Task Count_TakeAndCount(string text, string fix, string expectedMessage)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -199,8 +189,6 @@ class Test
         public async Task Count_SkipAndAny(string text, string fix, string expectedMessage)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -237,8 +225,6 @@ class Test
         public async Task Count_NotSkipAndAny(string text, string fix, string expectedMessage)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -270,8 +256,6 @@ class Test
         public async Task Count_Equals(string text, string expectedMessage)
         {
             var project = CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -300,8 +284,6 @@ class Test
         public async Task Count_NotEquals(string text, string expectedMessage)
         {
             var project = CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFrameworks>net461;netcoreapp2.2</TargetFrameworks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
@@ -22,17 +22,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="References\*.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="References\Microsoft.AspNetCore.txt" />
-    <None Remove="References\MSTest.txt" />
-    <None Remove="References\NUnit.txt" />
-    <None Remove="References\XUnit.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Configurations\" />
+    <None Remove="References\*.txt" />
   </ItemGroup>
 
 </Project>

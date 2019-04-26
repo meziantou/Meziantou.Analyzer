@@ -50,7 +50,6 @@ class Test
         public async Task Async_ThreadSleep_Diagnostic()
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(System.Threading.Thread))
                   .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {

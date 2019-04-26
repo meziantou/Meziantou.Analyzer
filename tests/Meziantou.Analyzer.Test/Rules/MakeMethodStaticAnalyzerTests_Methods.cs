@@ -74,8 +74,6 @@ class TestClass
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -98,8 +96,6 @@ class TestClass
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -122,8 +118,6 @@ class TestClass
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -147,8 +141,6 @@ class TestClass
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -169,8 +161,6 @@ class TestClass
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 5, column: 10)
                   .ValidateAsync();
@@ -194,8 +184,6 @@ class TestClass
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 5, column: 10)
                   .ValidateAsync();

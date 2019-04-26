@@ -3,11 +3,9 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace TestHelper
 {
@@ -15,19 +13,14 @@ namespace TestHelper
     {
         public ProjectBuilder()
         {
-            References = new List<MetadataReference>
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(CSharpCompilation).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Compilation).Assembly.Location),
-            };
+            References = new List<MetadataReference>(Initialize.NetStandard2_0.Select(file => MetadataReference.CreateFromFile(file)));
         }
 
         public string FileName { get; private set; }
         public string SourceCode { get; private set; } = "";
         public string EditorConfig { get; private set; }
         public bool IsValidCode { get; private set; } = true;
-        public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.CSharp7_3;
+        public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
         public IList<MetadataReference> References { get; }
         public IList<string> ApiReferences { get; } = new List<string>();
         public DiagnosticAnalyzer DiagnosticAnalyzer { get; private set; }
@@ -38,72 +31,6 @@ namespace TestHelper
         public string DefaultAnalyzerId { get; set; }
         public string DefaultAnalyzerMessage { get; set; }
         public bool AllowNewCompilerDiagnostics { get; set; }
-
-        public ProjectBuilder AddReference(Type type)
-        {
-            if (type == typeof(ConcurrentDictionary<,>))
-            {
-                AddReferenceByName("System.Collections.Concurrent");
-                AddReferenceByName("System.Runtime");
-            }
-            else if (type == typeof(Dictionary<,>))
-            {
-                AddReferenceByName("System.Collections");
-                AddReferenceByName("System.Runtime");
-            }
-            else if (type == typeof(Enumerable))
-            {
-                AddReferenceByName("System.Linq");
-                AddReferenceByName("System.Runtime");
-            }
-            else if (type == typeof(IQueryable<>))
-            {
-                AddReferenceByName("System.Linq");
-                AddReferenceByName("System.Linq.Expressions");
-                AddReferenceByName("System.Linq.Queryable");
-                AddReferenceByName("System.Runtime");
-            }
-            else if (type == typeof(HashSet<>))
-            {
-                AddReferenceByName("System.Collections");
-            }
-            else if (type == typeof(IEnumerable<>))
-            {
-                AddReferenceByName("System.Runtime");
-            }
-            else if (type == typeof(Regex))
-            {
-                AddReferenceByName("System.Runtime");
-                AddReferenceByName("System.Text.RegularExpressions");
-            }
-            else if (type == typeof(System.Threading.Thread))
-            {
-                AddReferenceByName("System.Threading.Thread");
-            }
-            else if (type == typeof(System.ComponentModel.InvalidEnumArgumentException))
-            {
-                AddReferenceByName("System.Runtime");
-                AddReferenceByName("System.ComponentModel.Primitives");
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException(nameof(type));
-            }
-
-            return this;
-        }
-
-        private void AddReferenceByName(string name)
-        {
-            var trustedAssembliesPaths = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator);
-            AddReference(trustedAssembliesPaths.Single(p => string.Equals(Path.GetFileNameWithoutExtension(p), name, StringComparison.Ordinal)));
-        }
-
-        private ProjectBuilder AddReference(string location)
-        {
-            References.Add(MetadataReference.CreateFromFile(location));
-            return this;
-        }
 
         private ProjectBuilder AddApiReference(string name)
         {

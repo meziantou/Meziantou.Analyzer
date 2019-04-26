@@ -22,7 +22,6 @@ namespace Meziantou.Analyzer.Test.Rules
         public async System.Threading.Tasks.Task IsMatch_RegexOptionsAsync(string regex, string options, bool isValid)
         {
             var project = CreateProjectBuilder()
-                  .AddReference(typeof(Regex))
                   .WithSourceCode(@"using System.Text.RegularExpressions;
 class TestClass
 {
@@ -54,7 +53,6 @@ class TestClass
         public async System.Threading.Tasks.Task Ctor_RegexOptionsAsync(string regex, string options, bool isValid)
         {
             var project = CreateProjectBuilder()
-                  .AddReference(typeof(Regex))
                   .WithSourceCode(@"using System.Text.RegularExpressions;
 class TestClass
 {

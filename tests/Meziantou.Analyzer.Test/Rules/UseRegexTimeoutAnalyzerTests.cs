@@ -26,7 +26,6 @@ class TestClass
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Regex))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
@@ -44,7 +43,6 @@ class TestClass
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Regex))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -62,7 +60,6 @@ class TestClass
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Regex))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
@@ -80,7 +77,6 @@ class TestClass
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Regex))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -98,7 +94,6 @@ class TestClass
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Regex))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();

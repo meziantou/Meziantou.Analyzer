@@ -29,7 +29,6 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(HashSet<>))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -55,7 +54,6 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(HashSet<>))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 6, column: 9)
                   .ShouldFixCodeWith(CodeFix)
@@ -74,7 +72,6 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(HashSet<>))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -126,7 +123,6 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(ConcurrentDictionary<,>))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 6, column: 9)
                   .ShouldFixCodeWith(CodeFix)
@@ -155,8 +151,6 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 9)
                   .ShouldFixCodeWith(CodeFix)
@@ -185,9 +179,6 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .AddReference(typeof(Dictionary<,>))
-                  .AddReference(typeof(Enumerable))
-                  .AddReference(typeof(IEnumerable<>))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 9)
                   .ShouldFixCodeWith(CodeFix)
