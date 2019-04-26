@@ -50,8 +50,6 @@ class Test
 ";
 
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 9, column: 9, message: "Use 'Find()' instead of 'FirstOrDefault()'")
                   .ShouldFixCodeWith(CodeFix)
@@ -72,8 +70,6 @@ class Test
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -107,8 +103,6 @@ class Test
 ";
 
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 13, message: "Use 'Count' instead of 'Count()'")
                   .ShouldFixCodeWith(CodeFix)
@@ -146,8 +140,6 @@ class Test
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();
@@ -180,8 +172,6 @@ class Test
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 13, message: "Use 'Length' instead of 'Count()'")
                   .ShouldFixCodeWith(Fix)
@@ -215,8 +205,6 @@ class Test
 ";
 
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'ElementAt()'")
                   .ShouldFixCodeWith(CodeFix)
@@ -249,8 +237,6 @@ class Test
 }
 ";
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'ElementAt()'")
                   .ShouldFixCodeWith(CodeFix)
@@ -284,8 +270,6 @@ class Test
 ";
 
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'First()'")
                   .ShouldFixCodeWith(CodeFix)
@@ -319,8 +303,6 @@ class Test
 ";
 
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'Last()'")
                   .ShouldFixCodeWith(CodeFix)
@@ -354,8 +336,6 @@ class Test
 ";
 
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'Last()'")
                   .ShouldFixCodeWith(CodeFix)

@@ -25,7 +25,6 @@ namespace Meziantou.Analyzer.Test.Rules
         public async Task IQueryable_TwoOrderBy_FixRemoveDuplicate(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IQueryable<>))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -58,8 +57,6 @@ class Test
         public async Task TwoOrderBy_FixRemoveDuplicate(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -92,8 +89,6 @@ class Test
         public async Task TwoOrderBy_FixWithThenBy(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -126,8 +121,6 @@ class Test
         public async Task ThenByFollowedByOrderBy(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {

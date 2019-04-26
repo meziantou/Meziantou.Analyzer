@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public async System.Threading.Tasks.Task ReportDiagnosticAsync(string text)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(Thread))
+
                   .WithSourceCode(@"using System.Threading;
 public class Test
 {

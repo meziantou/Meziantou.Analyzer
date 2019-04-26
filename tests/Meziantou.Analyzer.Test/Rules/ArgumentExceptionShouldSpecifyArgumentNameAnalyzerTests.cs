@@ -55,7 +55,6 @@ class Sample
 }";
 
             await CreateProjectBuilder()
-                  .AddReference(typeof(InvalidEnumArgumentException))
                   .WithSourceCode(sourceCode)
                   .ShouldNotReportDiagnostic()
                   .ValidateAsync();

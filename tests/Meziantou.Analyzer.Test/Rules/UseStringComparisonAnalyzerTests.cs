@@ -85,32 +85,6 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task IndexOf_Char_ShouldReportDiagnosticAsync()
-        {
-            const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        ""a"".IndexOf('v');
-    }
-}";
-            const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        ""a"".IndexOf('v', System.StringComparison.Ordinal);
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "Use an overload of 'IndexOf' that has a StringComparison parameter")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
-
-        [TestMethod]
         public async System.Threading.Tasks.Task IndexOf_String_StringComparison_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"

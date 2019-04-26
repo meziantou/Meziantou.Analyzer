@@ -30,8 +30,6 @@ namespace Meziantou.Analyzer.Test.Rules
         public async Task CombineWhereWithTheFollowingMethod(string methodName)
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -61,8 +59,6 @@ class Test
         public async Task CombineWhereWithTheFollowingMethod()
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -91,8 +87,6 @@ class Test
         public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithNothing()
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -121,8 +115,6 @@ class Test
         public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithLambda()
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -151,8 +143,6 @@ class Test
         public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithNothing()
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -185,8 +175,6 @@ class Test
         public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithMethodGroup()
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {
@@ -219,8 +207,6 @@ class Test
         public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithLambda()
         {
             await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
                   .WithSourceCode(@"using System.Linq;
 class Test
 {

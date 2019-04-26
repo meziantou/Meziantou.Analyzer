@@ -144,7 +144,6 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                .AddReference(typeof(IQueryable<>))
                 .WithSourceCode(SourceCode)
                 .ShouldNotReportDiagnostic()
                 .ValidateAsync();
