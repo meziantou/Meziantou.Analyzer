@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
@@ -68,20 +69,22 @@ namespace Meziantou.Analyzer.Rules
             if (operation.Arguments.Length == 0)
                 return;
 
-            var enumerableSymbol = context.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
-            if (enumerableSymbol == null)
+            var symbols = new List<INamedTypeSymbol>();
+            symbols.AddIfNotNull(context.Compilation.GetTypeByMetadataName("System.Linq.Enumerable"));
+            symbols.AddIfNotNull(context.Compilation.GetTypeByMetadataName("System.Linq.Queryable"));
+            if (!symbols.Any())
                 return;
 
             var method = operation.TargetMethod;
-            if (!method.ContainingType.IsEqualTo(enumerableSymbol))
+            if (!symbols.Contains(method.ContainingType))
                 return;
 
             UseFindInsteadOfFirstOrDefault(context, operation);
             UseCountPropertyInsteadOfMethod(context, operation);
             UseIndexerInsteadOfElementAt(context, operation);
-            CombineWhereWithNextMethod(context, operation, enumerableSymbol);
-            RemoveTwoConsecutiveOrderBy(context, operation, enumerableSymbol);
-            OptimizeCountUsage(context, operation, enumerableSymbol);
+            CombineWhereWithNextMethod(context, operation, symbols);
+            RemoveTwoConsecutiveOrderBy(context, operation, symbols);
+            OptimizeCountUsage(context, operation, symbols);
         }
 
         private static ImmutableDictionary<string, string> CreateProperties(OptimizeLinqUsageData data)
@@ -187,12 +190,12 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static void CombineWhereWithNextMethod(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
+        private static void CombineWhereWithNextMethod(OperationAnalysisContext context, IInvocationOperation operation, IReadOnlyCollection<INamedTypeSymbol> enumerableSymbols)
         {
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && parent.TargetMethod.ContainingType.IsEqualTo(enumerableSymbol))
+                if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType))
                 {
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.First), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.FirstOrDefault), StringComparison.Ordinal) ||
@@ -218,7 +221,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static void RemoveTwoConsecutiveOrderBy(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
+        private static void RemoveTwoConsecutiveOrderBy(OperationAnalysisContext context, IInvocationOperation operation, IReadOnlyCollection<INamedTypeSymbol> enumerableSymbols)
         {
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                 string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal) ||
@@ -226,7 +229,7 @@ namespace Meziantou.Analyzer.Rules
                 string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ThenByDescending), StringComparison.Ordinal))
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && parent.TargetMethod.ContainingType.IsEqualTo(enumerableSymbol))
+                if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType))
                 {
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
@@ -246,7 +249,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static void OptimizeCountUsage(OperationAnalysisContext context, IInvocationOperation operation, ITypeSymbol enumerableSymbol)
+        private static void OptimizeCountUsage(OperationAnalysisContext context, IInvocationOperation operation, IReadOnlyCollection<INamedTypeSymbol> enumerableSymbols)
         {
             if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Count), StringComparison.Ordinal))
                 return;
@@ -519,7 +522,7 @@ namespace Meziantou.Analyzer.Rules
                 if (op == null)
                     return false;
 
-                return string.Equals(op.TargetMethod.Name, nameof(Enumerable.Take), StringComparison.Ordinal) && op.TargetMethod.ContainingType.Equals(enumerableSymbol);
+                return string.Equals(op.TargetMethod.Name, nameof(Enumerable.Take), StringComparison.Ordinal) && enumerableSymbols.Contains(op.TargetMethod.ContainingType);
             }
         }
 
