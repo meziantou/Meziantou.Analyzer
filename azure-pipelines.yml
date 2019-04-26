@@ -36,4 +36,5 @@ steps:
   inputs:
     UploadTo: 'Marketplace'
     PublishManifest: 'publishManifest.json'
-    PersonalAccessToken: '$(MarketplacePAT)'
+    PersonalAccessToken: '$(MarketplacePAT)'  
+  #condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
