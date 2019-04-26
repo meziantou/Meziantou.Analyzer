@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -83,6 +84,11 @@ namespace Meziantou.Analyzer.Rules
             OptimizeCountUsage(context, operation, enumerableSymbol);
         }
 
+        private static ImmutableDictionary<string, string> CreateProperties(OptimizeLinqUsageData data)
+        {
+            return ImmutableDictionary.Create<string, string>().Add("Data", data.ToString());
+        }
+
         private static void UseCountPropertyInsteadOfMethod(OperationAnalysisContext context, IInvocationOperation operation)
         {
             if (operation.Arguments.Length != 1)
@@ -98,7 +104,8 @@ namespace Meziantou.Analyzer.Rules
                 var actualType = GetActualType(operation.Arguments[0]);
                 if (actualType.TypeKind == TypeKind.Array)
                 {
-                    context.ReportDiagnostic(s_listMethodsRule, operation, "Length", operation.TargetMethod.Name);
+                    var properties = CreateProperties(OptimizeLinqUsageData.UseLengthProperty);
+                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Length", operation.TargetMethod.Name);
                     return;
                 }
 
@@ -108,7 +115,8 @@ namespace Meziantou.Analyzer.Rules
                     var count = actualType.GetMembers("Count").OfType<IPropertySymbol>().FirstOrDefault(m => m.ExplicitInterfaceImplementations.Length == 0);
                     if (count != null)
                     {
-                        context.ReportDiagnostic(s_listMethodsRule, operation, "Count", operation.TargetMethod.Name);
+                        var properties = CreateProperties(OptimizeLinqUsageData.UseCountProperty);
+                        context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Count", operation.TargetMethod.Name);
                         return;
                     }
                 }
@@ -118,7 +126,8 @@ namespace Meziantou.Analyzer.Rules
                 var actualType = GetActualType(operation.Arguments[0]);
                 if (actualType.TypeKind == TypeKind.Array)
                 {
-                    context.ReportDiagnostic(s_listMethodsRule, operation, "LongLength", operation.TargetMethod.Name);
+                    var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
+                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, "LongLength", operation.TargetMethod.Name);
                 }
             }
         }
@@ -134,23 +143,29 @@ namespace Meziantou.Analyzer.Rules
             var listSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
             if (GetActualType(operation.Arguments[0]).OriginalDefinition.IsEqualTo(listSymbol))
             {
-                context.ReportDiagnostic(s_listMethodsRule, operation, "Find()", operation.TargetMethod.Name);
+                var properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Find()", operation.TargetMethod.Name);
             }
         }
 
         private static void UseIndexerInsteadOfElementAt(OperationAnalysisContext context, IInvocationOperation operation)
         {
+            ImmutableDictionary<string, string> properties = default;
+
             var argCount = -1;
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ElementAt), StringComparison.Ordinal))
             {
+                properties = CreateProperties(OptimizeLinqUsageData.UseIndexer);
                 argCount = 2;
             }
             else if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.First), StringComparison.Ordinal))
             {
+                properties = CreateProperties(OptimizeLinqUsageData.UseIndexerFirst);
                 argCount = 1;
             }
             else if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Last), StringComparison.Ordinal))
             {
+                properties = CreateProperties(OptimizeLinqUsageData.UseIndexerLast);
                 argCount = 1;
             }
 
@@ -168,7 +183,7 @@ namespace Meziantou.Analyzer.Rules
             var actualType = GetActualType(operation.Arguments[0]);
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.Equals(listSymbol) || i.OriginalDefinition.Equals(readOnlyListSymbol)))
             {
-                context.ReportDiagnostic(s_listMethodsRule, operation, "[]", operation.TargetMethod.Name);
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, "[]", operation.TargetMethod.Name);
             }
         }
 
@@ -190,7 +205,14 @@ namespace Meziantou.Analyzer.Rules
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.LongCount), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(s_combineLinqMethodsRule, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
+                        var properties = CreateProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod)
+                           .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                           .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                           .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                           .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                           .Add("MethodName", parent.TargetMethod.Name);
+
+                        context.ReportDiagnostic(s_combineLinqMethodsRule, properties, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
                     }
                 }
             }
@@ -209,7 +231,16 @@ namespace Meziantou.Analyzer.Rules
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(s_duplicateOrderByMethodsRule, parent, operation.TargetMethod.Name, parent.TargetMethod.Name.Replace("OrderBy", "ThenBy"));
+                        var expectedMethodName = parent.TargetMethod.Name.Replace("OrderBy", "ThenBy");
+                        var properties = CreateProperties(OptimizeLinqUsageData.DuplicatedOrderBy)
+                            .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                            .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                            .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                            .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                            .Add("ExpectedMethodName", expectedMethodName)
+                            .Add("MethodName", parent.TargetMethod.Name);
+
+                        context.ReportDiagnostic(s_duplicateOrderByMethodsRule, properties, parent, operation.TargetMethod.Name, expectedMethodName);
                     }
                 }
             }
@@ -235,9 +266,10 @@ namespace Meziantou.Analyzer.Rules
             if (otherOperand == null)
                 return;
 
+            string message = null;
+            var properties = ImmutableDictionary<string, string>.Empty;
             if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
             {
-                string message = null;
                 switch (opKind)
                 {
                     case BinaryOperatorKind.Equals:
@@ -245,11 +277,13 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() == -1
                             message = "Expression is always false";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseFalse);
                         }
                         else if (value == 0)
                         {
                             // expr.Count() == 0
                             message = "Replace 'Count() == 0' with 'Any() == false'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseNotAny);
                         }
                         else
                         {
@@ -257,6 +291,7 @@ namespace Meziantou.Analyzer.Rules
                             if (!HasTake())
                             {
                                 message = Invariant($"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                             }
                         }
 
@@ -267,11 +302,13 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() != -1 is always true
                             message = "Expression is always true";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTrue);
                         }
                         else if (value == 0)
                         {
                             // expr.Count() != 0
                             message = "Replace 'Count() != 0' with 'Any()'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseAny);
                         }
                         else
                         {
@@ -279,6 +316,7 @@ namespace Meziantou.Analyzer.Rules
                             if (!HasTake())
                             {
                                 message = Invariant($"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                             }
                         }
 
@@ -289,16 +327,20 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() < 0
                             message = "Expression is always false";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseFalse);
                         }
                         else if (value == 1)
                         {
                             // expr.Count() < 1 ==> expr.Count() == 0
                             message = "Replace 'Count() < 1' with 'Any() == false'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseNotAny);
                         }
                         else
                         {
                             // expr.Count() < 10
                             message = Invariant($"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
+                                .Add("SkipMinusOne", null);
                         }
 
                         break;
@@ -308,16 +350,19 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() <= -1
                             message = "Expression is always false";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseFalse);
                         }
                         else if (value == 0)
                         {
                             // expr.Count() <= 0
                             message = "Replace 'Count() <= 0' with 'Any() == false'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseNotAny);
                         }
                         else
                         {
                             // expr.Count() < 10
                             message = Invariant($"Replace 'Count() <= {value}' with 'Skip({value}).Any() == false'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny);
                         }
 
                         break;
@@ -327,16 +372,19 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() > -1
                             message = "Expression is always true";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTrue);
                         }
                         else if (value == 0)
                         {
                             // expr.Count() > 0
                             message = "Replace 'Count() > 0' with 'Any()'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseAny);
                         }
                         else
                         {
                             // expr.Count() > 1
                             message = Invariant($"Replace 'Count() > {value}' with 'Skip({value}).Any()'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny);
                         }
 
                         break;
@@ -346,29 +394,27 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() >= 0
                             message = "Expression is always true";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTrue);
                         }
                         else if (value == 1)
                         {
                             // expr.Count() >= 1
                             message = "Replace 'Count() >= 1' with 'Any()'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseAny);
                         }
                         else
                         {
                             // expr.Count() >= 2
                             message = Invariant($"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
+                                .Add("SkipMinusOne", null);
                         }
 
                         break;
                 }
-
-                if (message != null)
-                {
-                    context.ReportDiagnostic(s_optimizeCountRule, binaryOperation, message);
-                }
             }
             else
             {
-                string message = null;
                 switch (opKind)
                 {
                     case BinaryOperatorKind.Equals:
@@ -376,6 +422,7 @@ namespace Meziantou.Analyzer.Rules
                         if (!HasTake())
                         {
                             message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                         }
 
                         break;
@@ -385,6 +432,7 @@ namespace Meziantou.Analyzer.Rules
                         if (!HasTake())
                         {
                             message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                         }
 
                         break;
@@ -392,31 +440,43 @@ namespace Meziantou.Analyzer.Rules
                     case BinaryOperatorKind.LessThan:
                         // expr.Count() < 10
                         message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
+                            .Add("SkipMinusOne", null);
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
                         // expr.Count() <= 10
                         message = "Replace 'Count() <= n' with 'Skip(n).Any() == false'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny);
                         break;
 
                     case BinaryOperatorKind.GreaterThan:
                         // expr.Count() > 1
                         message = "Replace 'Count() > n' with 'Skip(n).Any()'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny);
                         break;
 
                     case BinaryOperatorKind.GreaterThanOrEqual:
                         // expr.Count() >= 2
                         message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
+                            .Add("SkipMinusOne", null);
                         break;
-                }
-
-                if (message != null)
-                {
-                    context.ReportDiagnostic(s_optimizeCountRule, binaryOperation, message);
                 }
             }
 
-            bool IsSupportedOperator(BinaryOperatorKind operatorKind)
+            if (message != null)
+            {
+                properties = properties
+                       .Add("OperandOperationStart", otherOperand.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add("OperandOperationLength", otherOperand.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                       .Add("CountOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add("CountOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+
+                context.ReportDiagnostic(s_optimizeCountRule, properties, binaryOperation, message);
+            }
+
+            static bool IsSupportedOperator(BinaryOperatorKind operatorKind)
             {
                 switch (operatorKind)
                 {
@@ -465,13 +525,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static ITypeSymbol GetActualType(IArgumentOperation argument)
         {
-            var value = argument.Value;
-            if (value is IConversionOperation conversionOperation)
-            {
-                value = conversionOperation.Operand;
-            }
-
-            return value.Type;
+            return argument.Value.GetActualType();
         }
 
         private static IInvocationOperation GetParentLinqOperation(IOperation op)
