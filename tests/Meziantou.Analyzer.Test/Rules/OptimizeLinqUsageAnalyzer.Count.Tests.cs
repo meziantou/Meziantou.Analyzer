@@ -155,7 +155,117 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
+        [DataRow("Count() == 1", "Take(2).Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
+        [DataRow("Count() != 10", "Take(11).Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
+        [DataRow("Count() != n", "Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
+        [DataRow("Count(x => x > 1) != n", "Where(x => x > 1).Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
+        public async Task Count_TakeAndCount(string text, string fix, string expectedMessage)
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        _ = enumerable." + text + @";
+    }
+}
+")
+                   .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
+                   .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        _ = enumerable." + fix + @";
+    }
+}
+")
+                   .ValidateAsync();
+        }
+
+        [DataTestMethod]
+        [DataRow("Count() > 1", "Skip(1).Any()", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
+        [DataRow("Count() > 2", "Skip(2).Any()", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
+        [DataRow("Count() > n", "Skip(n).Any()", "Replace 'Count() > n' with 'Skip(n).Any()'")]
+        [DataRow("Count() >= 2", "Skip(1).Any()", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
+        [DataRow("Count() >= n", "Skip(n - 1).Any()", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
+        public async Task Count_SkipAndAny(string text, string fix, string expectedMessage)
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = Enumerable.Empty<int>();
+        _ = enumerable." + text + @";
+    }
+}
+")
+                   .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
+                   .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = Enumerable.Empty<int>();
+        _ = enumerable." + fix + @";
+    }
+}
+")
+                   .ValidateAsync();
+        }
+
+        [DataTestMethod]
+        [DataRow("Count() < 2", "Skip(1).Any()", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
+        [DataRow("Count() < n", "Skip(n - 1).Any()", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
+        [DataRow("Count() <= 1", "Skip(1).Any()", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
+        [DataRow("Count() <= 2", "Skip(2).Any()", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
+        [DataRow("Count() <= n", "Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
+        [DataRow("Count(x => true) <= n", "Where(x => true).Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
+        public async Task Count_NotSkipAndAny(string text, string fix, string expectedMessage)
+        {
+            await CreateProjectBuilder()
+                  .AddReference(typeof(IEnumerable<>))
+                  .AddReference(typeof(Enumerable))
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = Enumerable.Empty<int>();
+        _ = enumerable." + text + @";
+    }
+}
+")
+                   .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
+                   .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        int n = 10;
+        var enumerable = Enumerable.Empty<int>();
+        _ = !enumerable." + fix + @";
+    }
+}
+")
+                   .ValidateAsync();
+        }
+
+        [DataTestMethod]
         [DataRow("Take(10).Count() == 1", null)]
         public async Task Count_Equals(string text, string expectedMessage)
         {
@@ -186,8 +296,6 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
-        [DataRow("Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
         [DataRow("Take(1).Count() != n", null)]
         public async Task Count_NotEquals(string text, string expectedMessage)
         {
@@ -216,100 +324,6 @@ class Test
             }
 
             await project.ValidateAsync();
-        }
-
-        [DataTestMethod]
-        [DataRow("Count() < 2", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
-        [DataRow("Count() < n", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
-        public async Task Count_LessThan(string text, string expectedMessage)
-        {
-            await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
-    }
-}
-")
-                  .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
-                  .ValidateAsync();
-        }
-
-        [DataTestMethod]
-        [DataRow("Count() <= 1", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
-        [DataRow("Count() <= 2", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
-        [DataRow("Count() <= n", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
-        public async Task Count_LessThanOrEqual(string text, string expectedMessage)
-        {
-            await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
-    }
-}
-")
-                  .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
-                  .ValidateAsync();
-        }
-
-        [DataTestMethod]
-        [DataRow("Count() > 1", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
-        [DataRow("Count() > 2", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
-        [DataRow("Count() > n", "Replace 'Count() > n' with 'Skip(n).Any()'")]
-        public async Task Count_GreaterThan(string text, string expectedMessage)
-        {
-            await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
-    }
-}
-")
-                  .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
-                  .ValidateAsync();
-        }
-
-        [DataTestMethod]
-        [DataRow("enumerable.Count() >= 2", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
-        [DataRow("enumerable.Count() >= n", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
-        public async Task Count_GreaterThanOrEqual(string text, string expectedMessage)
-        {
-            await CreateProjectBuilder()
-                  .AddReference(typeof(IEnumerable<>))
-                  .AddReference(typeof(Enumerable))
-                  .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = " + text + @";
-    }
-}
-")
-                  .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
-                  .ValidateAsync();
         }
     }
 }

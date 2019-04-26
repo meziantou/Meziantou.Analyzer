@@ -16,5 +16,8 @@
         UseTrue,
         UseAny,
         UseNotAny,
+        UseTakeAndCount,
+        UseSkipAndNotAny,
+        UseSkipAndAny,
     }
 }

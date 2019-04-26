@@ -267,7 +267,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             string message = null;
-            ImmutableDictionary<string, string> properties = ImmutableDictionary<string, string>.Empty;
+            var properties = ImmutableDictionary<string, string>.Empty;
             if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
             {
                 switch (opKind)
@@ -291,6 +291,7 @@ namespace Meziantou.Analyzer.Rules
                             if (!HasTake())
                             {
                                 message = Invariant($"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                             }
                         }
 
@@ -315,6 +316,7 @@ namespace Meziantou.Analyzer.Rules
                             if (!HasTake())
                             {
                                 message = Invariant($"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                             }
                         }
 
@@ -337,6 +339,8 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() < 10
                             message = Invariant($"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
+                                .Add("SkipMinusOne", null);
                         }
 
                         break;
@@ -358,6 +362,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() < 10
                             message = Invariant($"Replace 'Count() <= {value}' with 'Skip({value}).Any() == false'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny);
                         }
 
                         break;
@@ -379,6 +384,7 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() > 1
                             message = Invariant($"Replace 'Count() > {value}' with 'Skip({value}).Any()'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny);
                         }
 
                         break;
@@ -400,6 +406,8 @@ namespace Meziantou.Analyzer.Rules
                         {
                             // expr.Count() >= 2
                             message = Invariant($"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
+                            properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
+                                .Add("SkipMinusOne", null);
                         }
 
                         break;
@@ -414,6 +422,7 @@ namespace Meziantou.Analyzer.Rules
                         if (!HasTake())
                         {
                             message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                         }
 
                         break;
@@ -423,6 +432,7 @@ namespace Meziantou.Analyzer.Rules
                         if (!HasTake())
                         {
                             message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
+                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                         }
 
                         break;
@@ -430,21 +440,27 @@ namespace Meziantou.Analyzer.Rules
                     case BinaryOperatorKind.LessThan:
                         // expr.Count() < 10
                         message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
+                            .Add("SkipMinusOne", null);
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
                         // expr.Count() <= 10
                         message = "Replace 'Count() <= n' with 'Skip(n).Any() == false'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny);
                         break;
 
                     case BinaryOperatorKind.GreaterThan:
                         // expr.Count() > 1
                         message = "Replace 'Count() > n' with 'Skip(n).Any()'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny);
                         break;
 
                     case BinaryOperatorKind.GreaterThanOrEqual:
                         // expr.Count() >= 2
                         message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
+                            .Add("SkipMinusOne", null);
                         break;
                 }
             }

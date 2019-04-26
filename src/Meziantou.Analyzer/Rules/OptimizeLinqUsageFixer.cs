@@ -101,6 +101,18 @@ namespace Meziantou.Analyzer.Rules
                 case OptimizeLinqUsageData.UseAny:
                     context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, true, ct), equivalenceKey: title), context.Diagnostics);
                     break;
+
+                case OptimizeLinqUsageData.UseTakeAndCount:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseTakeAndCount(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeLinqUsageData.UseSkipAndAny:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, true, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeLinqUsageData.UseSkipAndNotAny:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, false, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
             }
         }
 
@@ -126,6 +138,126 @@ namespace Meziantou.Analyzer.Rules
                 countOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
 
             if (!constantValue)
+            {
+                newExpression = generator.LogicalNotExpression(newExpression);
+            }
+
+            editor.ReplaceNode(nodeToFix, newExpression);
+            return editor.GetChangedDocument();
+        }
+
+        private static async Task<Document> UseTakeAndCount(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+        {
+            var countOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var countNode = root.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
+            var operandNode = root.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
+            if (countNode == null || operandNode == null)
+                return document;
+
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
+            var operandOperation = semanticModel.GetOperation(operandNode, cancellationToken);
+            if (countOperation == null || operandOperation == null)
+                return document;
+
+            var generator = editor.Generator;
+
+            var newExpression = countOperation.Arguments[0].Syntax;
+            if (countOperation.Arguments.Length > 1)
+            {
+                newExpression = generator.InvocationExpression(
+                    generator.MemberAccessExpression(newExpression, "Where"),
+                    countOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
+            }
+
+            SyntaxNode takeArgument;
+            if (operandOperation.ConstantValue.Value is int value)
+            {
+                takeArgument = generator.LiteralExpression(value + 1);
+            }
+            else
+            {
+                takeArgument = generator.AddExpression(operandOperation.Syntax, generator.LiteralExpression(1));
+            }
+
+            newExpression = generator.InvocationExpression(
+                    generator.MemberAccessExpression(newExpression, "Take"),
+                    takeArgument);
+
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Count"));
+
+            editor.ReplaceNode(countOperation.Syntax, newExpression);
+            return editor.GetChangedDocument();
+        }
+
+        private static async Task<Document> UseSkipAndAny(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, bool comparandValue, CancellationToken cancellationToken)
+        {
+            var countOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var skipMinusOne = diagnostic.Properties.ContainsKey("SkipMinusOne");
+
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var countNode = root.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
+            var operandNode = root.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
+            if (countNode == null || operandNode == null)
+                return document;
+
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
+            var operandOperation = semanticModel.GetOperation(operandNode, cancellationToken);
+            if (countOperation == null || operandOperation == null)
+                return document;
+
+            var generator = editor.Generator;
+
+            var newExpression = countOperation.Arguments[0].Syntax;
+            if (countOperation.Arguments.Length > 1)
+            {
+                newExpression = generator.InvocationExpression(
+                    generator.MemberAccessExpression(newExpression, "Where"),
+                    countOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
+            }
+
+            SyntaxNode skipArgument;
+            if (operandOperation.ConstantValue.Value is int value)
+            {
+                if (skipMinusOne)
+                {
+                    skipArgument = generator.LiteralExpression(value - 1);
+                }
+                else
+                {
+                    skipArgument = generator.LiteralExpression(value);
+                }
+            }
+            else
+            {
+                if (skipMinusOne)
+                {
+                    skipArgument = generator.SubtractExpression(operandOperation.Syntax, generator.LiteralExpression(1));
+                }
+                else
+                {
+                    skipArgument = operandOperation.Syntax;
+                }
+            }
+
+            newExpression = generator.InvocationExpression(
+                    generator.MemberAccessExpression(newExpression, "Skip"),
+                    skipArgument);
+
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Any"));
+
+            if (!comparandValue)
             {
                 newExpression = generator.LogicalNotExpression(newExpression);
             }
