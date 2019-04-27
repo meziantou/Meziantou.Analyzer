@@ -24,7 +24,6 @@ class Test2
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 

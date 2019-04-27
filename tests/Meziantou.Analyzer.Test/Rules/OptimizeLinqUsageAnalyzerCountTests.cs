@@ -267,11 +267,7 @@ class Test
 }
 ");
 
-            if (expectedMessage == null)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (expectedMessage != null)
             {
                 project.ShouldReportDiagnostic(line: 7, column: 13, message: expectedMessage);
             }
@@ -296,11 +292,7 @@ class Test
 }
 ");
 
-            if (expectedMessage == null)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (expectedMessage != null)
             {
                 project.ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage);
             }

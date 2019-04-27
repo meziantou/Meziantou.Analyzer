@@ -115,7 +115,6 @@ class Test
     public void Write() => throw null;
     public void WriteAsync() => throw null;
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -175,7 +174,6 @@ class Test
     public void Write() => throw null;
     public void Write(int a) => throw null;
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }

@@ -53,7 +53,6 @@ class ClassTest
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -70,7 +69,6 @@ class ClassTest
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -88,7 +86,6 @@ class MyClass : System.Windows.Window
             await CreateProjectBuilder()
                   .AddWpfApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -106,7 +103,6 @@ class MyClass : System.Windows.Input.ICommand
             await CreateProjectBuilder()
                   .AddWpfApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -162,7 +158,6 @@ class MyClass : System.Windows.Window
             await CreateProjectBuilder()
                   .AddWpfApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -205,7 +200,6 @@ class ClassTest
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -224,7 +218,6 @@ class ClassTest
             await CreateProjectBuilder()
                   .AddXUnitApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }

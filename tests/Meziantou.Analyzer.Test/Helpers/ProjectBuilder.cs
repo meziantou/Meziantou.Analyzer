@@ -11,6 +11,8 @@ namespace TestHelper
 {
     public partial class ProjectBuilder
     {
+        private int _diagnosticMessageIndex = 0;
+
         public ProjectBuilder()
         {
             References = new List<MetadataReference>(Initialize.NetStandard2_0.Select(file => MetadataReference.CreateFromFile(file)));
@@ -25,7 +27,7 @@ namespace TestHelper
         public IList<string> ApiReferences { get; } = new List<string>();
         public DiagnosticAnalyzer DiagnosticAnalyzer { get; private set; }
         public CodeFixProvider CodeFixProvider { get; private set; }
-        public IList<DiagnosticResult> ExpectedDiagnosticResults { get; private set; }
+        public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = new List<DiagnosticResult>();
         public string ExpectedFixedCode { get; private set; }
         public int? CodeFixIndex { get; private set; }
         public string DefaultAnalyzerId { get; set; }
@@ -70,8 +72,37 @@ namespace TestHelper
         public ProjectBuilder WithSourceCode(string fileName, string sourceCode)
         {
             FileName = fileName;
-            SourceCode = sourceCode;
+            ParseSourceCode(sourceCode);
             return this;
+        }
+
+        private void ParseSourceCode(string sourceCode)
+        {
+            const string Pattern = "[|]";
+            SourceCode = sourceCode.Replace(Pattern, "");
+
+            using (var sr = new StringReader(sourceCode))
+            {
+                int lineIndex = 0;
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    lineIndex++;
+
+                    int startIndex = 0;
+                    while (true)
+                    {
+                        var index = line.IndexOf(Pattern, startIndex, StringComparison.Ordinal);
+                        if (index < 0)
+                            break;
+
+                        ShouldReportDiagnostic(lineIndex, index + 1);
+                        startIndex = index + 1;
+                    }
+
+                }
+            }
+
         }
 
         public ProjectBuilder WithEditorConfig(string editorConfig)
@@ -136,23 +167,20 @@ namespace TestHelper
             });
         }
 
-        public ProjectBuilder ShouldNotReportDiagnostic()
-        {
-            return ShouldReportDiagnostic();
-        }
-
         public ProjectBuilder ShouldReportDiagnostic(params DiagnosticResult[] expectedDiagnosticResults)
         {
-            if (ExpectedDiagnosticResults == null)
-            {
-                ExpectedDiagnosticResults = new List<DiagnosticResult>();
-            }
-
             foreach (var diagnostic in expectedDiagnosticResults)
             {
                 ExpectedDiagnosticResults.Add(diagnostic);
             }
 
+            return this;
+        }
+
+        public ProjectBuilder ShouldReportDiagnosticWithMessage(string message)
+        {
+            ExpectedDiagnosticResults[_diagnosticMessageIndex].Message = message;
+            _diagnosticMessageIndex++;
             return this;
         }
 
@@ -163,11 +191,6 @@ namespace TestHelper
 
         public ProjectBuilder ShouldFixCodeWith(int? index, string codeFix)
         {
-            if (ExpectedDiagnosticResults == null)
-            {
-                ExpectedDiagnosticResults = new List<DiagnosticResult>();
-            }
-
             ExpectedFixedCode = codeFix;
             CodeFixIndex = index;
             return this;

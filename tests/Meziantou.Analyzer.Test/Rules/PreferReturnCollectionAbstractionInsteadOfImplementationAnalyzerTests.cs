@@ -52,11 +52,7 @@ public class Test
     " + type + @" _a;
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -76,11 +72,7 @@ public class Test
     " + type + @" A();
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -100,11 +92,7 @@ public class Test
     " + type + @" p);
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -125,11 +113,7 @@ public class Test
 }");
 
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -150,11 +134,7 @@ public class Test
 }");
 
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -174,11 +154,7 @@ public class Test
     " + type + @" A => throw null;
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -198,11 +174,7 @@ public class Test
     " + type + @" A() => throw null;
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -222,11 +194,7 @@ public class Test
     " + type + @" p) => throw null;
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 5, column: 5);
             }
@@ -247,7 +215,6 @@ internal class Test
 }";
             await CreateProjectBuilder()
                  .WithSourceCode(SourceCode)
-                 .ShouldNotReportDiagnostic()
                  .ValidateAsync();
         }
     }

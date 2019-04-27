@@ -44,7 +44,6 @@ class TestClass
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -78,7 +77,6 @@ class TestClass
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -95,7 +93,6 @@ class TestClass
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }

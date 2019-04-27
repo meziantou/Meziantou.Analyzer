@@ -52,6 +52,7 @@ namespace Meziantou.Analyzer
         public const string UseEventHandlerOfT = "MA0046";
         public const string DeclareTypesInNamespaces = "MA0047";
         public const string FileNameMustMatchTypeName = "MA0048";
+        public const string TypeNameMustNotMatchNamespace = "MA0049";
 
         public static string GetHelpUri(string idenfifier)
         {

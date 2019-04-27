@@ -25,7 +25,7 @@ class Sample
                   .ShouldReportDiagnostic(line: 2, column: 7)
                   .ValidateAsync();
         }
-        
+
         [TestMethod]
         public async Task DoesMatchFileName()
         {
@@ -34,10 +34,9 @@ class Sample
 class Test0
 {
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
-        
+
         [TestMethod]
         public async Task DoesMatchFileName_Generic()
         {
@@ -46,7 +45,6 @@ class Test0
 class Test0<T>
 {
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -58,10 +56,9 @@ class Test0<T>
 class Test0<T>
 {
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
-        
+
         [TestMethod]
         public async Task DoesMatchFileName_GenericUsingOfT()
         {
@@ -70,7 +67,6 @@ class Test0<T>
 class Test0<T>
 {
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -85,7 +81,6 @@ class Test0
     {
     }
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }

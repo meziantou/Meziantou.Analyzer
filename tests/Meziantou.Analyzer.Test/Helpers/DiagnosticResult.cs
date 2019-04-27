@@ -1,14 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 using System;
-using System.Runtime.InteropServices;
 
 namespace TestHelper
 {
-    /// <summary>
-    /// Struct that stores information about a Diagnostic appearing in a source
-    /// </summary>
-    [StructLayout(LayoutKind.Auto)]
-    public struct DiagnosticResult
+    public class DiagnosticResult
     {
         private DiagnosticResultLocation[] _locations;
 

@@ -54,7 +54,6 @@ class TestClass
         var a = {code};
     }}
 }}")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -72,7 +71,6 @@ class TestClass
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -93,7 +91,6 @@ public class TestClass
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -108,7 +105,6 @@ class TestAttribute : System.Attribute
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }

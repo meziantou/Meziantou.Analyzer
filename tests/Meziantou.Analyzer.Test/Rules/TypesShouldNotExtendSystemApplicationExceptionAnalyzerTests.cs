@@ -18,7 +18,6 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             await CreateProjectBuilder()
                   .WithSourceCode("class Test : System.Exception { }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 

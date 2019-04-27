@@ -26,7 +26,6 @@ public class Test
         Task.Delay(1).Wait();
     }
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -45,7 +44,6 @@ public class Test
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
