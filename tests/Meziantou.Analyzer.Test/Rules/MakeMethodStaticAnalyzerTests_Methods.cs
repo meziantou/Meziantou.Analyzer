@@ -52,7 +52,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -75,7 +74,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -97,7 +95,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -119,7 +116,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -142,7 +138,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -253,7 +248,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -273,7 +267,6 @@ interface ITest
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -293,7 +286,6 @@ interface ITest
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -313,7 +305,6 @@ interface ITest<T>
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -333,7 +324,6 @@ interface ITest<T>
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -411,7 +401,6 @@ class TestClass
             await CreateProjectBuilder()
                   .AddMSTestApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -430,7 +419,6 @@ class TestClass
             await CreateProjectBuilder()
                   .AddMSTestApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -449,7 +437,6 @@ class TestClass
             await CreateProjectBuilder()
                   .AddXUnitApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -476,7 +463,6 @@ public class Startup
             await CreateProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -502,7 +488,6 @@ public class CustomMiddleware
             await CreateProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -524,7 +509,6 @@ public class CustomMiddleware : IMiddleware
             await CreateProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -546,7 +530,6 @@ public class CustomMiddleware : IMiddleware
             await CreateProjectBuilder()
                   .AddMicrosoftAspNetCoreApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -560,7 +543,6 @@ abstract class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -588,7 +570,6 @@ partial class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }

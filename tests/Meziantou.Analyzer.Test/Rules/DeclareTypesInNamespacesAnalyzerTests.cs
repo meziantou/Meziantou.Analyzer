@@ -25,7 +25,6 @@ namespace Test
     {
     }
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 

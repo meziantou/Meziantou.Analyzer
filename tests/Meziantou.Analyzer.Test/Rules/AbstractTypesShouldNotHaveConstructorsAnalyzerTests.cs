@@ -18,9 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         [TestMethod]
         public async Task Ctor()
         {
-            var project = CreateProjectBuilder()
-                  .ShouldNotReportDiagnostic()
-                  .WithSourceCode(@"
+            const string SourceCode = @"
 abstract class Test
 {
     protected Test(int a) { }
@@ -33,8 +31,10 @@ class Test2
     internal Test2(long a) { }
     protected Test2(int a) { }
     private Test2(object a) { }
-}");
-            await project.ValidateAsync();
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
         }
 
         [TestMethod]
@@ -43,7 +43,7 @@ class Test2
             var sourceCode = @"
 abstract class Test
 {
-    public Test() { }
+    public [|]Test() { }
 }";
 
             var expectedCodeFix = @"
@@ -54,7 +54,6 @@ abstract class Test
 
             await CreateProjectBuilder()
                     .WithSourceCode(sourceCode)
-                    .ShouldReportDiagnostic(line: 4, column: 12)
                     .ShouldFixCodeWith(expectedCodeFix)
                     .ValidateAsync();
         }
@@ -65,7 +64,7 @@ abstract class Test
             var sourceCode = @"
 abstract class Test
 {
-    internal Test() { }
+    internal [|]Test() { }
 }";
 
             var codeFix = @"
@@ -76,7 +75,6 @@ abstract class Test
 
             await CreateProjectBuilder()
                     .WithSourceCode(sourceCode)
-                    .ShouldReportDiagnostic(line: 4, column: 14)
                     .ShouldFixCodeWith(codeFix)
                     .ValidateAsync();
         }

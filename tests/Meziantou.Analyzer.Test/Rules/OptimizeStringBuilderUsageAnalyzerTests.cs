@@ -26,7 +26,6 @@ class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -49,7 +48,6 @@ class Test
         new StringBuilder().Append(" + text + @");
     }
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -89,7 +87,6 @@ class Test
         new StringBuilder().AppendLine(" + text + @");
     }
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -127,7 +124,6 @@ class Test
         new StringBuilder().Insert(0, " + text + @");
     }
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 

@@ -23,7 +23,6 @@ class Test
 {
     event System.EventHandler<string> myevent;
 }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 

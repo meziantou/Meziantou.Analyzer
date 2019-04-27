@@ -6,31 +6,22 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotRaiseNotImplementedExceptionAnalyzerTests
+    public class TypeNameMustNotMatchNamespaceAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<DoNotRaiseNotImplementedExceptionAnalyzer>();
+                .WithAnalyzer<TypeNameMustNotMatchNamespaceAnalyzer>();
         }
 
         [TestMethod]
-        public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
+        public async Task DifferentName()
         {
-            const string SourceCode = @"using System;
-class TestAttribute
+            const string SourceCode = @"
+namespace TestNamespace
 {
-    void Test()
+    class TestClass
     {
-        throw new Exception();
-
-        try
-        {
-        }
-        catch (NotImplementedException)
-        {
-            throw;
-        }
     }
 }";
             await CreateProjectBuilder()
@@ -39,19 +30,35 @@ class TestAttribute
         }
 
         [TestMethod]
-        public async Task RaiseNotImplementedException_ShouldReportErrorAsync()
+        public async Task SameName()
         {
-            const string SourceCode = @"using System;
-class TestAttribute
+            const string SourceCode = @"
+namespace Test
 {
-    void Test()
+    class [|]Test
     {
-        throw new NotImplementedException();
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task SameNameInNestedType()
+        {
+            const string SourceCode = @"
+namespace Test
+{
+    class TestClass
+    {
+        class Test
+        {
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
     }

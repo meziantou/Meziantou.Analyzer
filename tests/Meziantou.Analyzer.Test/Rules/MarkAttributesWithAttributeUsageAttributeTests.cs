@@ -34,7 +34,6 @@ class TestAttribute : System.Attribute { }";
         {
             await CreateProjectBuilder()
                   .WithSourceCode("class TestAttribute : System.Object { }")
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -47,7 +46,6 @@ class TestAttribute : System.Attribute { }";
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
     }

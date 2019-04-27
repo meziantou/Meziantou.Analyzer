@@ -18,7 +18,6 @@ namespace Meziantou.Analyzer.Test.Rules
         public async Task IntToString_ShouldNotReportDiagnostic()
         {
             var project = CreateProjectBuilder()
-                  .ShouldNotReportDiagnostic()
                   .WithSourceCode(@"
 class Test
 {

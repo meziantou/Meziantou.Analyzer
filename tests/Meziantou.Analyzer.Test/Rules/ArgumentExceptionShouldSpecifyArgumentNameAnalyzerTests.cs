@@ -56,7 +56,6 @@ class Sample
 
             await CreateProjectBuilder()
                   .WithSourceCode(sourceCode)
-                  .ShouldNotReportDiagnostic()
                   .ValidateAsync();
         }
 

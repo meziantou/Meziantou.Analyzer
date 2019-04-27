@@ -31,11 +31,7 @@ class TestClass
     }
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 6, column: 35 + regex.Length);
             }
@@ -62,11 +58,7 @@ class TestClass
     }
 }");
 
-            if (isValid)
-            {
-                project.ShouldNotReportDiagnostic();
-            }
-            else
+            if (!isValid)
             {
                 project.ShouldReportDiagnostic(line: 6, column: 23 + regex.Length);
             }

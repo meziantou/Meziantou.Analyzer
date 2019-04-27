@@ -55,7 +55,6 @@ struct TypeName
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
-                .ShouldNotReportDiagnostic()
                 .ValidateAsync();
         }
 
@@ -69,7 +68,6 @@ enum TypeName
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
-                .ShouldNotReportDiagnostic()
                 .ValidateAsync();
         }
     }
