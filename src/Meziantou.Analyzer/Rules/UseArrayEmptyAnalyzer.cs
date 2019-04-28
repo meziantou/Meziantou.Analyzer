@@ -64,7 +64,24 @@ namespace Meziantou.Analyzer.Rules
                 return false;
 
             var dimensionSize = operation.DimensionSizes[0].ConstantValue;
-            return dimensionSize.HasValue && (int)dimensionSize.Value == 0;
+            return dimensionSize.HasValue && IsZero(dimensionSize.Value);
+
+            static bool IsZero(object value)
+            {
+                switch (value)
+                {
+                    case int i:
+                        return i == 0;
+
+                    case long l:
+                        return l == 0;
+
+                    case uint ui:
+                        return ui == 0;
+                }
+
+                return false;
+            }
         }
 
         private static bool IsInAttribute(IArrayCreationOperation operation)
