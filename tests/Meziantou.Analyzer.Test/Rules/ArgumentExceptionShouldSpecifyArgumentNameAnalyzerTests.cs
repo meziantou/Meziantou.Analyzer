@@ -68,12 +68,12 @@ class TestAttribute
     string Prop
     {
         get { throw null; }
-        set { throw new System.ArgumentNullException(""unknown""); }
+        set { throw new System.ArgumentNullException([|]""unknown""); }
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 21, message: "'unknown' is not a valid parameter name")
+                  .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
                   .ValidateAsync();
         }
 
@@ -85,12 +85,12 @@ class TestAttribute
 {
     void Test(string test)
     {
-        throw new System.ArgumentException(""message"", ""unknown"");
+        throw new System.ArgumentException(""message"", [|]""unknown"");
     }  
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 15, message: "'unknown' is not a valid parameter name")
+                  .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
                   .ValidateAsync();
         }
 

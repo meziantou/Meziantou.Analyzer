@@ -89,7 +89,7 @@ namespace Meziantou.Analyzer.Rules
                             return;
                         }
 
-                        context.ReportDiagnostic(s_rule, op, $"'{value}' is not a valid parameter name");
+                        context.ReportDiagnostic(s_rule, argument, $"'{value}' is not a valid parameter name");
                         return;
                     }
                     else
