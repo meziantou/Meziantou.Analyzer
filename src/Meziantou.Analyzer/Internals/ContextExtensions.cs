@@ -101,5 +101,21 @@ namespace Meziantou.Analyzer
                 }
             }
         }
+
+        public static void ReportDiagnostic(this OperationBlockAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, params string[] messageArgs)
+        {
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, symbol, messageArgs);
+        }
+
+        public static void ReportDiagnostic(this OperationBlockAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, ISymbol symbol, params string[] messageArgs)
+        {
+            foreach (var location in symbol.Locations)
+            {
+                if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(descriptor, location, properties, messageArgs));
+                }
+            }
+        }
     }
 }
