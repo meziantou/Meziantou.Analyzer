@@ -53,6 +53,7 @@ namespace Meziantou.Analyzer
         public const string DeclareTypesInNamespaces = "MA0047";
         public const string FileNameMustMatchTypeName = "MA0048";
         public const string TypeNameMustNotMatchNamespace = "MA0049";
+        public const string ValidateArgumentsCorrectly = "MA0050";
 
         public static string GetHelpUri(string idenfifier)
         {

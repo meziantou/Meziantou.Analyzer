@@ -60,6 +60,14 @@ namespace Meziantou.Analyzer
             return false;
         }
 
+        public static bool IsAssignableTo(this ITypeSymbol symbol, ITypeSymbol expectedType)
+        {
+            if (symbol == null || expectedType == null)
+                return false;
+
+            return symbol.Equals(expectedType) || symbol.InheritsFrom(expectedType);
+        }
+
         public static bool IsEqualTo(this ITypeSymbol symbol, ITypeSymbol expectedType)
         {
             if (symbol == null || expectedType == null)
