@@ -1,4 +1,6 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
@@ -10,11 +12,12 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<OptimizeStringBuilderUsageAnalyzer>(id: "MA0028");
+                .WithAnalyzer<OptimizeStringBuilderUsageAnalyzer>()
+                .WithCodeFixProvider<OptimizeStringBuilderUsageFixer>();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AppendFormat_NoDiagnosticAsync()
+        public async Task AppendFormat_NoDiagnostic()
         {
             const string SourceCode = @"using System.Text;
 class Test
@@ -37,7 +40,7 @@ class Test
         [DataRow(@"$""abc{""test""}""")]
         [DataRow(@"""abc"" + ""test""")]
         [DataRow(@"$""abc{""test""}"" + ""test""")]
-        public async System.Threading.Tasks.Task Append_NoDiagnosticAsync(string text)
+        public async Task Append_NoDiagnostic(string text)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text;
@@ -58,7 +61,7 @@ class Test
         [DataRow(@"""""")]
         [DataRow(@""""" + """"")]
         [DataRow(@""""".Substring(0, 10)")]
-        public async System.Threading.Tasks.Task Append_ReportDiagnosticAsync(string text)
+        public async Task Append_ReportDiagnostic(string text)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text;
@@ -76,7 +79,7 @@ class Test
         [DataTestMethod]
         [DataRow(@"""abc""")]
         [DataRow(@"$""abc""")]
-        public async System.Threading.Tasks.Task AppendLine_NoDiagnosticAsync(string text)
+        public async Task AppendLine_NoDiagnostic(string text)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text;
@@ -95,7 +98,7 @@ class Test
         [DataRow(@"""a"" + 10")]
         [DataRow(@"10 + 20 + ""a""")]
         [DataRow(@"10.ToString()")]
-        public async System.Threading.Tasks.Task AppendLine_ReportDiagnosticAsync(string text)
+        public async Task AppendLine_ReportDiagnostic(string text)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text;
@@ -113,7 +116,7 @@ class Test
         [DataTestMethod]
         [DataRow(@"""abc""")]
         [DataRow(@"$""abc""")]
-        public async System.Threading.Tasks.Task Insert_NoDiagnosticAsync(string text)
+        public async Task Insert_NoDiagnostic(string text)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text;
@@ -132,7 +135,7 @@ class Test
         [DataRow(@"""a"" + 10")]
         [DataRow(@"10 + 20 + ""a""")]
         [DataRow(@"10.ToString()")]
-        public async System.Threading.Tasks.Task Insert_ReportDiagnosticAsync(string text)
+        public async Task Insert_ReportDiagnostic(string text)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text;
@@ -144,6 +147,93 @@ class Test
     }
 }")
                   .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ValidateAsync();
+        }
+
+        private static IEnumerable<object[]> EmptyStringsArguments
+        {
+            get
+            {
+                yield return new object[] { @"$""""" };
+                yield return new object[] { @"$""{""""}""" };
+                yield return new object[] { @"""""" };
+                yield return new object[] { @""""" + """"" };
+                yield return new object[] { @"string.Empty" };
+            }
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(EmptyStringsArguments), DynamicDataSourceType.Property)]
+        public async Task AppendLine_EmptyString(string text)
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [|]new StringBuilder().AppendLine(" + text + @");
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().AppendLine();
+    }
+}")
+                  .ValidateAsync();
+        }
+        
+        [DataTestMethod]
+        [DynamicData(nameof(EmptyStringsArguments), DynamicDataSourceType.Property)]
+        public async Task Append_EmptyString(string text)
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [|]new StringBuilder().Append(" + text + @").AppendLine();
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().AppendLine();
+    }
+}")
+                  .ValidateAsync();
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(EmptyStringsArguments), DynamicDataSourceType.Property)]
+        public async Task Insert_EmptyString(string text)
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [|]new StringBuilder().Insert(0, " + text + @").AppendLine();
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().AppendLine();
+    }
+}")
                   .ValidateAsync();
         }
     }

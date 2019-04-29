@@ -44,12 +44,13 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             string reason;
+            ImmutableDictionary<string, string> properties;
             if (string.Equals(method.Name, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
             {
                 if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                     return;
 
-                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason))
+                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason, out properties))
                     return;
             }
             else if (string.Equals(method.Name, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
@@ -57,14 +58,14 @@ namespace Meziantou.Analyzer.Rules
                 if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                     return;
 
-                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason))
+                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason, out properties))
                     return;
             }
             else if (string.Equals(method.Name, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
             {
                 if (method.Parameters.Length == 2 && method.Parameters[1].Type.IsString())
                 {
-                    if (!IsOptimizable(context, method.Name, operation.Arguments[1], out reason))
+                    if (!IsOptimizable(context, method.Name, operation.Arguments[1], out reason, out properties))
                         return;
                 }
                 else
@@ -77,12 +78,18 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
-            context.ReportDiagnostic(s_rule, operation, reason);
+            context.ReportDiagnostic(s_rule, properties, operation, reason);
         }
 
-        private static bool IsOptimizable(OperationAnalysisContext context, string methodName, IArgumentOperation argument, out string reason)
+        private static ImmutableDictionary<string, string> CreateProperties(OptimizeStringBuilderUsageData data)
+        {
+            return ImmutableDictionary.Create<string, string>().Add("Data", data.ToString());
+        }
+
+        private static bool IsOptimizable(OperationAnalysisContext context, string methodName, IArgumentOperation argument, out string reason, out ImmutableDictionary<string, string> properties)
         {
             reason = default;
+            properties = default;
 
             if (argument.ConstantValue.HasValue)
                 return false;
@@ -96,10 +103,12 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
+                            properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
                             reason = "Remove the useless argument";
                         }
                         else
                         {
+                            properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
                             reason = "Remove this no-op call";
                         }
 
@@ -107,6 +116,8 @@ namespace Meziantou.Analyzer.Rules
                     }
                     else if (constValue.Length == 1)
                     {
+                        properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
+                            .Add("ConstantValue", constValue);
                         reason = $"Replace {methodName}(string) with {methodName}(char)";
                         return true;
                     }
@@ -116,11 +127,21 @@ namespace Meziantou.Analyzer.Rules
                 reason = $"Replace string interpolation with multiple {methodName} calls";
                 return true;
             }
-            else if (value.ConstantValue.HasValue && value.ConstantValue.Value is string constValue)
+            else if (TryGetConstStringValue(value, out var constValue))
             {
                 if (constValue.Length == 0)
                 {
-                    reason = "Remove this no-op call";
+                    if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                    {
+                        properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
+                        reason = "Remove the useless argument";
+                    }
+                    else
+                    {
+                        properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
+                        reason = "Remove this no-op call";
+                    }
+
                     return true;
                 }
                 else if (constValue.Length == 1)
@@ -244,6 +265,13 @@ namespace Meziantou.Analyzer.Rules
                     return false;
 
                 return TryGetConstStringValue(op, sb);
+            }
+            else if (operation is IMemberReferenceOperation memberReference)
+            {
+                if (string.Equals(memberReference.Member.Name, nameof(string.Empty), System.StringComparison.Ordinal) && memberReference.Member.ContainingType.IsString())
+                {
+                    return true;
+                }
             }
 
             return false;
