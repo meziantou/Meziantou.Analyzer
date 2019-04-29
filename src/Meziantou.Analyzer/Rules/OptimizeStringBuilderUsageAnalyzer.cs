@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Rules
             RuleIdentifiers.OptimizeStringBuilderUsage,
             title: "Optimize StringBuilder usage",
             messageFormat: "{0}",
-            RuleCategories.Usage,
+            RuleCategories.Performance,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
@@ -108,9 +108,12 @@ namespace Meziantou.Analyzer.Rules
                     }
                     return false;
                 }
-
-                context.ReportDiagnostic(s_rule, operation, $"Replace string interpolation with multiple {methodName} calls");
-                return true;
+                else
+                {
+                    var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitStringInterpolation);
+                    context.ReportDiagnostic(s_rule, properties, operation, $"Replace string interpolation with multiple {methodName} calls");
+                    return true;
+                }
             }
             else if (TryGetConstStringValue(value, out var constValue))
             {
@@ -131,7 +134,7 @@ namespace Meziantou.Analyzer.Rules
                 }
                 else if (constValue.Length == 1)
                 {
-                    if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
+                    if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
                     {
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
                             .Add("ConstantValue", constValue);
@@ -149,6 +152,7 @@ namespace Meziantou.Analyzer.Rules
                     if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
                         return false;
 
+                    // TODO
                     context.ReportDiagnostic(s_rule, operation, $"Replace the string concatenation by multiple {methodName} calls");
                     return true;
                 }
@@ -162,11 +166,13 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
+                            // TODO
                             context.ReportDiagnostic(s_rule, operation, "Replace with Append().AppendLine()");
                             return true;
                         }
                         else
                         {
+                            // TODO
                             context.ReportDiagnostic(s_rule, operation, "Remove the ToString call");
                             return true;
                         }
@@ -179,11 +185,13 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
+                            // TODO
                             context.ReportDiagnostic(s_rule, operation, "Use AppendFormat().AppendLine()");
                             return true;
                         }
                         else
                         {
+                            // TODO
                             context.ReportDiagnostic(s_rule, operation, "Use AppendFormat");
                             return true;
                         }
@@ -191,9 +199,14 @@ namespace Meziantou.Analyzer.Rules
                 }
                 else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
                 {
+                    // TODO
                     context.ReportDiagnostic(s_rule, operation, $"Use {methodName}(string, int, int) instead of Substring");
                     return true;
                 }
+
+                // TODO string.Join => AppendJoin
+
+                // TODO combine Appends when there are const strings
             }
 
             return false;
@@ -215,6 +228,15 @@ namespace Meziantou.Analyzer.Rules
 
             value = default;
             return false;
+        }
+
+        internal static string GetConstStringValue(IOperation operation)
+        {
+            var sb = new StringBuilder();
+            if (TryGetConstStringValue(operation, sb))
+                return sb.ToString();
+
+            return null;
         }
 
         private static bool TryGetConstStringValue(IOperation operation, StringBuilder sb)

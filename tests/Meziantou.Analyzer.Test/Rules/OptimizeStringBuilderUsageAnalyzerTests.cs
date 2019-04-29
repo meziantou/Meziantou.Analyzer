@@ -261,5 +261,102 @@ class Test
 }")
                   .ValidateAsync();
         }
+
+        [DataTestMethod]
+        [DataRow(@"""a""")]
+        public async Task Insert_OneCharString(string text)
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Insert(0, [|]" + text + @");
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Insert(0, 'a');
+    }
+}")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task Append_InterpolatedString()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [|]new StringBuilder().Append($""A{1}BC{2:X2}DEF"");
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).Append(""DEF"");
+    }
+}")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task AppendLine_InterpolatedString_FinishWithString()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [|]new StringBuilder().AppendLine($""A{1}BC{2:X2}DEF"");
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).AppendLine(""DEF"");
+    }
+}")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task AppendLine_InterpolatedString_FinishWithObject()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [|]new StringBuilder().AppendLine($""A{1}BC{2:X2}"");
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).AppendLine();
+    }
+}")
+                  .ValidateAsync();
+        }
     }
 }

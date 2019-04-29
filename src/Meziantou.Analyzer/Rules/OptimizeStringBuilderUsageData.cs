@@ -6,5 +6,6 @@
         RemoveArgument,
         RemoveMethod,
         ReplaceWithChar,
+        SplitStringInterpolation,
     }
 }

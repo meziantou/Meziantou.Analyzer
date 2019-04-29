@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -54,7 +55,48 @@ namespace Meziantou.Analyzer.Rules
                 case OptimizeStringBuilderUsageData.ReplaceWithChar:
                     context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceArgWithCharacter(context.Document, diagnostic, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                     break;
+
+                case OptimizeStringBuilderUsageData.SplitStringInterpolation:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => SplitStringInterpolation(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
             }
+        }
+
+        private static async Task<Document> SplitStringInterpolation(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        {
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+
+            var methodName = operation.TargetMethod.Name; // Append or AppendLine
+            var argument = (IInterpolatedStringOperation)operation.Arguments[0].Value;
+
+            var newExpression = operation.Children.First().Syntax;
+            foreach (var part in argument.Parts)
+            {
+                if (part is IInterpolatedStringTextOperation str)
+                {
+                    var text = OptimizeStringBuilderUsageAnalyzer.GetConstStringValue(str);
+                    var newArgument = generator.LiteralExpression(text.Length == 1 ? (object)text[0] : text);
+                    if (methodName == nameof(StringBuilder.AppendLine) && part == argument.Parts.Last())
+                    {
+                        newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"), newArgument);
+                    }
+                    else
+                    {
+                        newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), newArgument);
+                    }
+                }
+                else if (part is IInterpolatedStringContentOperation content)
+                {
+                    // TODO check format
+                    //generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), content.Syntax);
+                }
+            }
+
+            editor.ReplaceNode(nodeToFix, newExpression);
+            return editor.GetChangedDocument();
         }
 
         private static async Task<Document> ReplaceArgWithCharacter(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
