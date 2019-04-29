@@ -43,14 +43,12 @@ namespace Meziantou.Analyzer.Rules
             if (!method.ContainingType.IsEqualTo(stringBuilderSymbol))
                 return;
 
-            string reason;
-            ImmutableDictionary<string, string> properties;
             if (string.Equals(method.Name, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
             {
                 if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                     return;
 
-                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason, out properties))
+                if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
                     return;
             }
             else if (string.Equals(method.Name, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
@@ -58,27 +56,17 @@ namespace Meziantou.Analyzer.Rules
                 if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                     return;
 
-                if (!IsOptimizable(context, method.Name, operation.Arguments[0], out reason, out properties))
+                if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
                     return;
             }
             else if (string.Equals(method.Name, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
             {
                 if (method.Parameters.Length == 2 && method.Parameters[1].Type.IsString())
                 {
-                    if (!IsOptimizable(context, method.Name, operation.Arguments[1], out reason, out properties))
+                    if (!IsOptimizable(context, operation, method.Name, operation.Arguments[1]))
                         return;
                 }
-                else
-                {
-                    return;
-                }
             }
-            else
-            {
-                return;
-            }
-
-            context.ReportDiagnostic(s_rule, properties, operation, reason);
         }
 
         private static ImmutableDictionary<string, string> CreateProperties(OptimizeStringBuilderUsageData data)
@@ -86,11 +74,8 @@ namespace Meziantou.Analyzer.Rules
             return ImmutableDictionary.Create<string, string>().Add("Data", data.ToString());
         }
 
-        private static bool IsOptimizable(OperationAnalysisContext context, string methodName, IArgumentOperation argument, out string reason, out ImmutableDictionary<string, string> properties)
+        private static bool IsOptimizable(OperationAnalysisContext context, IOperation operation, string methodName, IArgumentOperation argument)
         {
-            reason = default;
-            properties = default;
-
             if (argument.ConstantValue.HasValue)
                 return false;
 
@@ -103,28 +88,28 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
-                            properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
-                            reason = "Remove the useless argument";
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
+                            context.ReportDiagnostic(s_rule, properties, operation, "Remove the useless argument");
                         }
                         else
                         {
-                            properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
-                            reason = "Remove this no-op call";
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
+                            context.ReportDiagnostic(s_rule, properties, operation, "Remove this no-op call");
                         }
 
                         return true;
                     }
                     else if (constValue.Length == 1)
                     {
-                        properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
                             .Add("ConstantValue", constValue);
-                        reason = $"Replace {methodName}(string) with {methodName}(char)";
+                        context.ReportDiagnostic(s_rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
                         return true;
                     }
                     return false;
                 }
 
-                reason = $"Replace string interpolation with multiple {methodName} calls";
+                context.ReportDiagnostic(s_rule, operation, $"Replace string interpolation with multiple {methodName} calls");
                 return true;
             }
             else if (TryGetConstStringValue(value, out var constValue))
@@ -133,13 +118,13 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                     {
-                        properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
-                        reason = "Remove the useless argument";
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
+                        context.ReportDiagnostic(s_rule, properties, operation, "Remove the useless argument");
                     }
                     else
                     {
-                        properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
-                        reason = "Remove this no-op call";
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
+                        context.ReportDiagnostic(s_rule, properties, operation, "Remove this no-op call");
                     }
 
                     return true;
@@ -148,7 +133,9 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
                     {
-                        reason = $"Replace {methodName}(string) with {methodName}(char)";
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
+                            .Add("ConstantValue", constValue);
+                        context.ReportDiagnostic(s_rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
                         return true;
                     }
                 }
@@ -162,7 +149,7 @@ namespace Meziantou.Analyzer.Rules
                     if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
                         return false;
 
-                    reason = $"Replace the string concatenation by multiple {methodName} calls";
+                    context.ReportDiagnostic(s_rule, operation, $"Replace the string concatenation by multiple {methodName} calls");
                     return true;
                 }
             }
@@ -175,12 +162,12 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
-                            reason = "Replace with Append().AppendLine()";
+                            context.ReportDiagnostic(s_rule, operation, "Replace with Append().AppendLine()");
                             return true;
                         }
                         else
                         {
-                            reason = "Remove the ToString call";
+                            context.ReportDiagnostic(s_rule, operation, "Remove the ToString call");
                             return true;
                         }
                     }
@@ -192,24 +179,23 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
-                            reason = "Use AppendFormat().AppendLine()";
+                            context.ReportDiagnostic(s_rule, operation, "Use AppendFormat().AppendLine()");
                             return true;
                         }
                         else
                         {
-                            reason = "Use AppendFormat";
+                            context.ReportDiagnostic(s_rule, operation, "Use AppendFormat");
                             return true;
                         }
                     }
                 }
                 else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
                 {
-                    reason = $"Use {methodName}(string, int, int) instead of Substring";
+                    context.ReportDiagnostic(s_rule, operation, $"Use {methodName}(string, int, int) instead of Substring");
                     return true;
                 }
             }
 
-            reason = default;
             return false;
         }
 

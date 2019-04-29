@@ -52,9 +52,21 @@ namespace Meziantou.Analyzer.Rules
                     break;
 
                 case OptimizeStringBuilderUsageData.ReplaceWithChar:
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => RemoveMethod(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceArgWithCharacter(context.Document, diagnostic, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                     break;
             }
+        }
+
+        private static async Task<Document> ReplaceArgWithCharacter(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        {
+            var constValue = diagnostic.Properties["ConstantValue"][0];
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+
+            var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
+
+            var newArgument = argument.WithExpression((ExpressionSyntax)editor.Generator.LiteralExpression(constValue));
+            editor.ReplaceNode(argument, newArgument);
+            return editor.GetChangedDocument();
         }
 
         private static async Task<Document> RemoveArgument(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)

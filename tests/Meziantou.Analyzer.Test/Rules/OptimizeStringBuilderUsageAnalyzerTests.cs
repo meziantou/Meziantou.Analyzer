@@ -236,5 +236,30 @@ class Test
 }")
                   .ValidateAsync();
         }
+
+        [DataTestMethod]
+        [DataRow(@"""a""")]
+        public async Task Append_OneCharString(string text)
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Append([|]" + text + @");
+    }
+}")
+                  .ShouldReportDiagnostic()
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Append('a');
+    }
+}")
+                  .ValidateAsync();
+        }
     }
 }
