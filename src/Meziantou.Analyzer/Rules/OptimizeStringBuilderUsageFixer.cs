@@ -72,6 +72,7 @@ namespace Meziantou.Analyzer.Rules
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var argument = (IInterpolatedStringOperation)operation.Arguments[0].Value;
 
+            bool shouldAppendLastAppendLine = methodName == nameof(StringBuilder.AppendLine);
             var newExpression = operation.Children.First().Syntax;
             foreach (var part in argument.Parts)
             {
@@ -79,20 +80,45 @@ namespace Meziantou.Analyzer.Rules
                 {
                     var text = OptimizeStringBuilderUsageAnalyzer.GetConstStringValue(str);
                     var newArgument = generator.LiteralExpression(text.Length == 1 ? (object)text[0] : text);
-                    if (methodName == nameof(StringBuilder.AppendLine) && part == argument.Parts.Last())
+                    if (shouldAppendLastAppendLine && part == argument.Parts.Last())
                     {
                         newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"), newArgument);
+                        shouldAppendLastAppendLine = false;
                     }
                     else
                     {
                         newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), newArgument);
                     }
                 }
-                else if (part is IInterpolatedStringContentOperation content)
+                else if (part is IInterpolationOperation interpolation)
                 {
-                    // TODO check format
-                    //generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), content.Syntax);
+                    if (interpolation.FormatString == null && interpolation.Alignment == null)
+                    {
+                        newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), interpolation.Expression.Syntax);
+                    }
+                    else
+                    {
+                        var format = "{0";
+                        if (interpolation.Alignment != null)
+                        {
+                            var value = interpolation.Alignment.ConstantValue.Value;
+                            format += "," + string.Format(CultureInfo.InvariantCulture, "{0}", value);
+                        }
+
+                        if (interpolation.FormatString != null)
+                        {
+                            format += ":" + OptimizeStringBuilderUsageAnalyzer.GetConstStringValue(interpolation.FormatString);
+                        }
+
+                        format += "}";
+                        newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendFormat"), generator.LiteralExpression(format), interpolation.Expression.Syntax);
+                    }
                 }
+            }
+
+            if (shouldAppendLastAppendLine)
+            {
+                newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
             }
 
             editor.ReplaceNode(nodeToFix, newExpression);

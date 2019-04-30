@@ -296,7 +296,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Append($""A{1}BC{2:X2}DEF"");
+        [|]new StringBuilder().Append($""A{1}BC{2:X2}DEF{1,-2:N2}"");
     }
 }")
                   .ShouldReportDiagnostic()
@@ -305,7 +305,7 @@ class Test
 {
     void A()
     {
-        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).Append(""DEF"");
+        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).Append(""DEF"").AppendFormat(""{0,-2:N2}"", 1);
     }
 }")
                   .ValidateAsync();
