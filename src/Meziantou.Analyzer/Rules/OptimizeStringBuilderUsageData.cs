@@ -7,5 +7,9 @@
         RemoveMethod,
         ReplaceWithChar,
         SplitStringInterpolation,
+        SplitAddOperator,
+        RemoveToString,
+        ReplaceWithAppendFormat,
+        ReplaceSubstring,
     }
 }

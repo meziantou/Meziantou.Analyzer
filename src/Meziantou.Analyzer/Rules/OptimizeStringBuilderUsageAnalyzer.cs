@@ -110,6 +110,9 @@ namespace Meziantou.Analyzer.Rules
                 }
                 else
                 {
+                    if (string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
+                        return false;
+
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitStringInterpolation);
                     context.ReportDiagnostic(s_rule, properties, operation, $"Replace string interpolation with multiple {methodName} calls");
                     return true;
@@ -147,14 +150,17 @@ namespace Meziantou.Analyzer.Rules
             }
             else if (value is IBinaryOperation binaryOperation)
             {
-                if (binaryOperation.OperatorKind == BinaryOperatorKind.Add && value.Type.IsString())
+                if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                 {
-                    if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
-                        return false;
+                    if (binaryOperation.OperatorKind == BinaryOperatorKind.Add && value.Type.IsString())
+                    {
+                        if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
+                            return false;
 
-                    // TODO
-                    context.ReportDiagnostic(s_rule, operation, $"Replace the string concatenation by multiple {methodName} calls");
-                    return true;
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitAddOperator);
+                        context.ReportDiagnostic(s_rule, properties, operation, $"Replace the string concatenation by multiple {methodName} calls");
+                        return true;
+                    }
                 }
             }
             else if (value is IInvocationOperation invocationOperation)
@@ -166,14 +172,14 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
-                            // TODO
-                            context.ReportDiagnostic(s_rule, operation, "Replace with Append().AppendLine()");
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
+                            context.ReportDiagnostic(s_rule, properties, operation, "Replace with Append().AppendLine()");
                             return true;
                         }
                         else
                         {
-                            // TODO
-                            context.ReportDiagnostic(s_rule, operation, "Remove the ToString call");
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
+                            context.ReportDiagnostic(s_rule, properties, operation, "Remove the ToString call");
                             return true;
                         }
                     }
@@ -185,27 +191,26 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
-                            // TODO
-                            context.ReportDiagnostic(s_rule, operation, "Use AppendFormat().AppendLine()");
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithAppendFormat);
+                            context.ReportDiagnostic(s_rule, properties, operation, "Use AppendFormat().AppendLine()");
                             return true;
                         }
                         else
                         {
-                            // TODO
-                            context.ReportDiagnostic(s_rule, operation, "Use AppendFormat");
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithAppendFormat);
+                            context.ReportDiagnostic(s_rule, properties, operation, "Use AppendFormat");
                             return true;
                         }
                     }
                 }
                 else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
                 {
-                    // TODO
-                    context.ReportDiagnostic(s_rule, operation, $"Use {methodName}(string, int, int) instead of Substring");
+                    var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceSubstring);
+                    context.ReportDiagnostic(s_rule, properties, operation, $"Use {methodName}(string, int, int) instead of Substring");
                     return true;
                 }
 
                 // TODO string.Join => AppendJoin
-
                 // TODO combine Appends when there are const strings
             }
 

@@ -13,7 +13,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -60,6 +59,21 @@ namespace Meziantou.Analyzer.Rules
                     context.RegisterCodeFix(CodeAction.Create(title, ct => SplitStringInterpolation(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                     break;
 
+                case OptimizeStringBuilderUsageData.SplitAddOperator:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => SplitAddOperator(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeStringBuilderUsageData.RemoveToString:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => RemoveToString(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeStringBuilderUsageData.ReplaceWithAppendFormat:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceWithAppendFormat(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeStringBuilderUsageData.ReplaceSubstring:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceSubstring(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
             }
         }
 
@@ -72,7 +86,7 @@ namespace Meziantou.Analyzer.Rules
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var argument = (IInterpolatedStringOperation)operation.Arguments[0].Value;
 
-            bool shouldAppendLastAppendLine = methodName == nameof(StringBuilder.AppendLine);
+            bool shouldAppendLastAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
             var newExpression = operation.Children.First().Syntax;
             foreach (var part in argument.Parts)
             {
@@ -117,6 +131,101 @@ namespace Meziantou.Analyzer.Rules
             }
 
             if (shouldAppendLastAppendLine)
+            {
+                newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
+            }
+
+            editor.ReplaceNode(nodeToFix, newExpression);
+            return editor.GetChangedDocument();
+        }
+
+        private static async Task<Document> SplitAddOperator(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        {
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+
+            var methodName = operation.TargetMethod.Name; // Append or AppendLine
+            bool isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+
+            var binaryOperation = (IBinaryOperation)operation.Arguments[0].Value;
+
+            var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.Children.First().Syntax, "Append"), binaryOperation.LeftOperand.Syntax);
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, isAppendLine ? "AppendLine" : "Append"), binaryOperation.RightOperand.Syntax);
+
+            editor.ReplaceNode(nodeToFix, newExpression);
+            return editor.GetChangedDocument();
+        }
+
+        private static async Task<Document> RemoveToString(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        {
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+
+            var methodName = operation.TargetMethod.Name; // Append or AppendLine
+            var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+
+            var toStringOperation = (IInvocationOperation)operation.Arguments[0].Value;
+
+            var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.Children.First().Syntax, "Append"), toStringOperation.Children.First().Syntax);
+            if (isAppendLine)
+            {
+                newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
+            }
+
+            editor.ReplaceNode(nodeToFix, newExpression);
+            return editor.GetChangedDocument();
+        }
+
+        private static async Task<Document> ReplaceWithAppendFormat(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        {
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+
+            var methodName = operation.TargetMethod.Name; // Append or AppendLine
+            var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+
+            var toStringOperation = (IInvocationOperation)operation.Arguments[0].Value;
+
+            var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.Children.First().Syntax, "AppendFormat"),
+                toStringOperation.Arguments[1].Syntax,
+                toStringOperation.Arguments[0].Syntax,
+                toStringOperation.Children.First().Syntax);
+
+            if (isAppendLine)
+            {
+                newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
+            }
+
+            editor.ReplaceNode(nodeToFix, newExpression);
+            return editor.GetChangedDocument();
+        }
+
+        private static async Task<Document> ReplaceSubstring(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        {
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+
+            var methodName = operation.TargetMethod.Name; // Append or AppendLine
+            var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+
+            var toStringOperation = (IInvocationOperation)operation.Arguments[0].Value;
+
+            var strSyntax = toStringOperation.Children.First().Syntax;
+            var lengthArgument = toStringOperation.Arguments.Length == 2 ?
+                toStringOperation.Arguments[1].Value.Syntax :
+                generator.SubtractExpression(generator.MemberAccessExpression(strSyntax, "Length"), toStringOperation.Arguments[0].Value.Syntax);
+
+            var newExpression = generator.InvocationExpression(
+                    generator.MemberAccessExpression(operation.Children.First().Syntax, "Append"),
+                    strSyntax,
+                    toStringOperation.Arguments[0].Value.Syntax,
+                    lengthArgument);
+
+            if (isAppendLine)
             {
                 newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
             }
