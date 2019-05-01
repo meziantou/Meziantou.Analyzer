@@ -55,10 +55,26 @@ namespace Meziantou.Analyzer.Rules
 #if DEBUG
             var statements = block.DescendantNodes().OfType<StatementSyntax>().ToList();
 #endif
-            return block.DescendantNodes()
+            return block.DescendantNodes(descendIntoChildren: ShouldDescendIntoChildren)
                 .OfType<StatementSyntax>()
-                .Where(statement => !(statement is BlockSyntax))
+                .Where(IsCountableStatement)
                 .Count();
+
+            bool ShouldDescendIntoChildren(SyntaxNode node)
+            {
+                if (node is LocalFunctionStatementSyntax)
+                    return false;
+
+                return true;
+            }
+
+            bool IsCountableStatement(StatementSyntax statement)
+            {
+                if (statement is BlockSyntax || statement is LocalFunctionStatementSyntax)
+                    return false;
+
+                return true;
+            }
         }
 
         private static int GetMaximumNumberOfStatements(SyntaxNodeAnalysisContext context)

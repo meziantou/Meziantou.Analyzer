@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -49,7 +48,37 @@ for (int a = 0; i < 0; i++)
             var count = CountStatements(SourceCode);
             Assert.AreEqual(2, count);
         }
-        
+
+        [TestMethod]
+        public void CountStatement_LocalFunction()
+        {
+            const string SourceCode = @"
+throw null;
+
+void B()
+{
+    throw null;
+}
+";
+
+            var count = CountStatements(SourceCode);
+            Assert.AreEqual(1, count);
+        }
+
+        [TestMethod]
+        public void CountStatement_If()
+        {
+            const string SourceCode = @"
+if (true)
+{
+    throw null;
+}
+";
+
+            var count = CountStatements(SourceCode);
+            Assert.AreEqual(2, count);
+        }
+
         private static int CountStatements(string code)
         {
             var tree = CSharpSyntaxTree.ParseText("void A(){ " + code + " }");
@@ -57,7 +86,5 @@ for (int a = 0; i < 0; i++)
             var root = tree.GetRoot().DescendantNodes().OfType<BlockSyntax>().First();
             return MethodShouldNotBeTooLongAnalyzer.CountStatements(root);
         }
-
-        // TODO test local function, for loop, if
     }
 }
