@@ -57,10 +57,9 @@ namespace Meziantou.Analyzer.Rules
 #endif
             return block.DescendantNodes(descendIntoChildren: ShouldDescendIntoChildren)
                 .OfType<StatementSyntax>()
-                .Where(IsCountableStatement)
-                .Count();
+                .Count(IsCountableStatement);
 
-            bool ShouldDescendIntoChildren(SyntaxNode node)
+            static bool ShouldDescendIntoChildren(SyntaxNode node)
             {
                 if (node is LocalFunctionStatementSyntax)
                     return false;
@@ -68,7 +67,7 @@ namespace Meziantou.Analyzer.Rules
                 return true;
             }
 
-            bool IsCountableStatement(StatementSyntax statement)
+            static bool IsCountableStatement(StatementSyntax statement)
             {
                 if (statement is BlockSyntax || statement is LocalFunctionStatementSyntax)
                     return false;
@@ -83,7 +82,7 @@ namespace Meziantou.Analyzer.Rules
             if (context.Options.TryGetConfigurationValue(file, "meziantou.maximumStatementsPerMethod", out var value) && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxStatements))
                 return maxStatements;
 
-            return -1;
+            return 40;
         }
     }
 }
