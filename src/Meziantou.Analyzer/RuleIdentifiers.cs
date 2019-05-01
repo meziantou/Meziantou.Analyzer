@@ -55,6 +55,7 @@ namespace Meziantou.Analyzer
         public const string TypeNameMustNotMatchNamespace = "MA0049";
         public const string ValidateArgumentsCorrectly = "MA0050";
         public const string MethodShouldNotBeTooLong = "MA0051";
+        public const string ReplaceEnumToStringWithNameof = "MA0052";
 
         public static string GetHelpUri(string idenfifier)
         {

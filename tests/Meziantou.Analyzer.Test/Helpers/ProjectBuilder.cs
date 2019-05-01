@@ -32,7 +32,6 @@ namespace TestHelper
         public int? CodeFixIndex { get; private set; }
         public string DefaultAnalyzerId { get; set; }
         public string DefaultAnalyzerMessage { get; set; }
-        public bool AllowNewCompilerDiagnostics { get; set; }
 
         private ProjectBuilder AddApiReference(string name)
         {
@@ -193,12 +192,6 @@ namespace TestHelper
         {
             ExpectedFixedCode = codeFix;
             CodeFixIndex = index;
-            return this;
-        }
-
-        public ProjectBuilder CodeFixAllowNewCompilerDiagnostics()
-        {
-            AllowNewCompilerDiagnostics = true;
             return this;
         }
     }
