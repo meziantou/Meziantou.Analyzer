@@ -139,7 +139,8 @@ namespace TestHelper
             var project = CreateProject();
             var documents = project.Documents.ToArray();
 
-            if (ApiReferences.Count + 1 != documents.Length)
+            var expectedDocuments = ApiReferences.Count + 1;
+            if (documents.Length != expectedDocuments)
             {
                 throw new InvalidOperationException("Amount of sources did not match amount of Documents created");
             }
@@ -169,11 +170,12 @@ namespace TestHelper
                 solution = solution.AddDocument(documentId, newFileName, SourceText.From(source));
                 count++;
             }
+
             return solution.GetProject(projectId);
         }
 
         [DebuggerStepThrough]
-        private async static Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
+        private async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
         {
             var projects = new HashSet<Project>();
             foreach (var document in documents)
@@ -191,9 +193,7 @@ namespace TestHelper
                 //        .Add("", ReportDiagnostic.Info));
                 //}
 
-                //project.AddAdditionalDocument("")
                 var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
-
                 if (compileSolution)
                 {
                     using (var ms = new MemoryStream())
@@ -213,7 +213,15 @@ namespace TestHelper
                     }
                 }
 
-                var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
+                var additionalFiles = ImmutableArray<AdditionalText>.Empty;
+                if (EditorConfig != null)
+                {
+                    additionalFiles = additionalFiles.Add(new TestAdditionalFile(".editorconfig", EditorConfig));
+                }
+
+                var compilationWithAnalyzers = compilation.WithAnalyzers(
+                    ImmutableArray.Create(analyzer),
+                    new AnalyzerOptions(additionalFiles));
                 var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(compilationWithAnalyzers.CancellationToken).ConfigureAwait(false);
                 foreach (var diag in diags)
                 {

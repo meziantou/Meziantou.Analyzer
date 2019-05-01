@@ -18,6 +18,19 @@ namespace Meziantou.Analyzer
             return true;
         }
 
+        public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxToken syntaxToken, params string[] messageArgs)
+        {
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, syntaxToken, messageArgs);
+        }
+
+        public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, SyntaxToken syntaxToken, params string[] messageArgs)
+        {
+            if (IsEnabled(context.Options, descriptor, syntaxToken.SyntaxTree.FilePath))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, syntaxToken.GetLocation(), properties, messageArgs));
+            }
+        }
+
         public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxNode syntaxNode, params string[] messageArgs)
         {
             ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, syntaxNode, messageArgs);
