@@ -1,4 +1,6 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -18,6 +20,30 @@ namespace Meziantou.Analyzer
             return true;
         }
 
+        public static DiagnosticSeverity? GetSeverity(this AnalyzerOptions options, DiagnosticDescriptor descriptor, string filePath)
+        {
+            if (options.TryGetConfigurationValue(filePath, "meziantou." + descriptor.Id + ".severity", out var value))
+            {
+                if (Enum.TryParse<DiagnosticSeverity>(value, out var result))
+                    return result;
+            }
+
+            return null;
+        }
+
+        private static Diagnostic CreateDiagnostic(AnalyzerOptions options, DiagnosticDescriptor descriptor, Location location, ImmutableDictionary<string, string> properties, params string[] messageArgs)
+        {
+            var severity = GetSeverity(options, descriptor, location.SourceTree.FilePath);
+            if (severity == null)
+            {
+                return Diagnostic.Create(descriptor, location, properties, messageArgs);
+            }
+            else
+            {
+                return Diagnostic.Create(descriptor, location, severity.Value, Enumerable.Empty<Location>(), properties, messageArgs);
+            }
+        }
+
         public static void ReportDiagnostic(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxToken syntaxToken, params string[] messageArgs)
         {
             ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, syntaxToken, messageArgs);
@@ -27,7 +53,7 @@ namespace Meziantou.Analyzer
         {
             if (IsEnabled(context.Options, descriptor, syntaxToken.SyntaxTree.FilePath))
             {
-                context.ReportDiagnostic(Diagnostic.Create(descriptor, syntaxToken.GetLocation(), properties, messageArgs));
+                context.ReportDiagnostic(CreateDiagnostic(context.Options, descriptor, syntaxToken.GetLocation(), properties, messageArgs));
             }
         }
 
@@ -40,7 +66,7 @@ namespace Meziantou.Analyzer
         {
             if (IsEnabled(context.Options, descriptor, syntaxNode.SyntaxTree.FilePath))
             {
-                context.ReportDiagnostic(Diagnostic.Create(descriptor, syntaxNode.GetLocation(), properties, messageArgs));
+                context.ReportDiagnostic(CreateDiagnostic(context.Options, descriptor, syntaxNode.GetLocation(), properties, messageArgs));
             }
         }
 
@@ -55,7 +81,7 @@ namespace Meziantou.Analyzer
             {
                 if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(descriptor, location, properties, messageArgs));
+                    context.ReportDiagnostic(CreateDiagnostic(context.Options, descriptor, location, properties, messageArgs));
                 }
             }
         }
@@ -82,7 +108,7 @@ namespace Meziantou.Analyzer
         {
             if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
             {
-                context.ReportDiagnostic(Diagnostic.Create(descriptor, location, properties, messageArgs));
+                context.ReportDiagnostic(CreateDiagnostic(context.Options, descriptor, location, properties, messageArgs));
             }
         }
 
@@ -95,7 +121,7 @@ namespace Meziantou.Analyzer
         {
             if (IsEnabled(context.Options, descriptor, operation.Syntax.SyntaxTree.FilePath))
             {
-                context.ReportDiagnostic(Diagnostic.Create(descriptor, operation.Syntax.GetLocation(), properties, messageArgs));
+                context.ReportDiagnostic(CreateDiagnostic(context.Options, descriptor, operation.Syntax.GetLocation(), properties, messageArgs));
             }
         }
 
@@ -110,7 +136,7 @@ namespace Meziantou.Analyzer
             {
                 if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(descriptor, location, properties, messageArgs));
+                    context.ReportDiagnostic(CreateDiagnostic(context.Options, descriptor, location, properties, messageArgs));
                 }
             }
         }
@@ -126,7 +152,7 @@ namespace Meziantou.Analyzer
             {
                 if (IsEnabled(context.Options, descriptor, location.SourceTree.FilePath))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(descriptor, location, properties, messageArgs));
+                    context.ReportDiagnostic(CreateDiagnostic(context.Options, descriptor, location, properties, messageArgs));
                 }
             }
         }

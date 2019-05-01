@@ -43,7 +43,7 @@ namespace TestHelper
 
             if (ExpectedFixedCode != null)
             {
-                await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, CodeFixIndex, allowNewCompilerDiagnostics: AllowNewCompilerDiagnostics).ConfigureAwait(false);
+                await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, CodeFixIndex).ConfigureAwait(false);
             }
         }
 
@@ -343,7 +343,7 @@ namespace TestHelper
             return semanticModel.GetDiagnostics();
         }
 
-        private async Task VerifyFix(DiagnosticAnalyzer analyzer, CodeFixProvider codeFixProvider, string newSource, int? codeFixIndex, bool allowNewCompilerDiagnostics)
+        private async Task VerifyFix(DiagnosticAnalyzer analyzer, CodeFixProvider codeFixProvider, string newSource, int? codeFixIndex)
         {
             var document = CreateProject().Documents.First();
             var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
@@ -374,29 +374,6 @@ namespace TestHelper
 
                 document = await ApplyFix(document, actions[0]).ConfigureAwait(false);
                 analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
-
-                var newCompilerDiagnostics = GetNewDiagnostics(compilerDiagnostics, await GetCompilerDiagnostics(document).ConfigureAwait(false));
-
-                //check if applying the code fix introduced any new compiler diagnostics
-                if (!allowNewCompilerDiagnostics && newCompilerDiagnostics.Any())
-                {
-                    // Format and get the compiler diagnostics again so that the locations make sense in the output
-                    var syntaxRoot = await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-                    var formattedDocument = Formatter.Format(syntaxRoot, Formatter.Annotation, document.Project.Solution.Workspace, cancellationToken: context.CancellationToken);
-                    document = document.WithSyntaxRoot(formattedDocument);
-                    newCompilerDiagnostics = GetNewDiagnostics(compilerDiagnostics, await GetCompilerDiagnostics(document).ConfigureAwait(false));
-
-                    Assert.IsTrue(false,
-                        string.Format("Fix introduced new compiler diagnostics:\r\n{0}\r\n\r\nNew document:\r\n{1}\r\n",
-                            string.Join("\r\n", newCompilerDiagnostics.Select(d => d.ToString())),
-                           (await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false)).ToFullString()));
-                }
-
-                //check if there are analyzer diagnostics left after the code fix
-                if (analyzerDiagnostics.Length == 0)
-                {
-                    break;
-                }
             }
 
             //after applying all of the code fixes, compare the resulting string to the inputted one
@@ -409,28 +386,6 @@ namespace TestHelper
             var operations = await codeAction.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
             var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
             return solution.GetDocument(document.Id);
-        }
-
-        private static IEnumerable<Diagnostic> GetNewDiagnostics(IEnumerable<Diagnostic> diagnostics, IEnumerable<Diagnostic> newDiagnostics)
-        {
-            var oldArray = diagnostics.OrderBy(d => d.Location.SourceSpan.Start).ToArray();
-            var newArray = newDiagnostics.OrderBy(d => d.Location.SourceSpan.Start).ToArray();
-
-            int oldIndex = 0;
-            int newIndex = 0;
-
-            while (newIndex < newArray.Length)
-            {
-                if (oldIndex < oldArray.Length && string.Equals(oldArray[oldIndex].Id, newArray[newIndex].Id, StringComparison.Ordinal))
-                {
-                    ++oldIndex;
-                    ++newIndex;
-                }
-                else
-                {
-                    yield return newArray[newIndex++];
-                }
-            }
         }
 
         private static async Task<string> GetStringFromDocument(Document document)

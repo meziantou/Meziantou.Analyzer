@@ -42,7 +42,6 @@ class Sample
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 7, column: 54)
                   .ShouldFixCodeWith(CodeFix)
-                  .CodeFixAllowNewCompilerDiagnostics() // TODO remove
                   .ValidateAsync();
         }
 
@@ -71,7 +70,6 @@ class Sample
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 6, column: 48)
                   .ShouldFixCodeWith(CodeFix)
-                  .CodeFixAllowNewCompilerDiagnostics() // TODO remove
                   .ValidateAsync();
         }
     }
