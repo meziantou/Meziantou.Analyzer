@@ -54,8 +54,8 @@ namespace Meziantou.Analyzer.Rules
 
         private class AnalyzerContext
         {
-            private readonly List<ITypeSymbol> potentialClasses = new List<ITypeSymbol>();
-            private readonly HashSet<ITypeSymbol> cannotBeStaticClasses = new HashSet<ITypeSymbol>();
+            private readonly List<ITypeSymbol> _potentialClasses = new List<ITypeSymbol>();
+            private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new HashSet<ITypeSymbol>();
 
             public AnalyzerContext(Compilation compilation)
             {
@@ -72,17 +72,17 @@ namespace Meziantou.Analyzer.Rules
                     case TypeKind.Class:
                         if (IsPotentialStatic(symbol))
                         {
-                            lock (potentialClasses)
+                            lock (_potentialClasses)
                             {
-                                potentialClasses.Add(symbol);
+                                _potentialClasses.Add(symbol);
                             }
                         }
 
                         if (symbol.BaseType != null)
                         {
-                            lock (cannotBeStaticClasses)
+                            lock (_cannotBeStaticClasses)
                             {
-                                cannotBeStaticClasses.Add(symbol.BaseType);
+                                _cannotBeStaticClasses.Add(symbol.BaseType);
                             }
                         }
 
@@ -94,9 +94,9 @@ namespace Meziantou.Analyzer.Rules
                             var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
                             if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol type)
                             {
-                                lock (cannotBeStaticClasses)
+                                lock (_cannotBeStaticClasses)
                                 {
-                                    cannotBeStaticClasses.Add(type);
+                                    _cannotBeStaticClasses.Add(type);
                                 }
                             }
                         }
@@ -108,17 +108,17 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeObjectCreation(OperationAnalysisContext context)
             {
                 var operation = (IObjectCreationOperation)context.Operation;
-                lock (cannotBeStaticClasses)
+                lock (_cannotBeStaticClasses)
                 {
-                    cannotBeStaticClasses.Add(operation.Constructor.ContainingType);
+                    _cannotBeStaticClasses.Add(operation.Constructor.ContainingType);
                 }
             }
 
             public void AnalyzeCompilationEnd(CompilationAnalysisContext context)
             {
-                foreach (var @class in potentialClasses)
+                foreach (var @class in _potentialClasses)
                 {
-                    if (cannotBeStaticClasses.Contains(@class))
+                    if (_cannotBeStaticClasses.Contains(@class))
                         continue;
 
                     context.ReportDiagnostic(s_rule, @class);
