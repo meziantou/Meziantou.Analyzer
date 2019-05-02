@@ -18,21 +18,74 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
-        public async Task TooLongMethod()
+        public async Task TooLongMethod_Statements()
         {
             const string SourceCode = @"
 public class Test
 {
     void [|]Method()
     {
-        var a = 0;
-        var b = 0;
+        var a = 0;var b = 0;var c = 0;
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .WithEditorConfig("MA0051.maximumStatementsPerMethod = 2")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task ValidMethod_Statements()
+        {
+            const string SourceCode = @"
+public class Test
+{
+    void Method()
+    {
+        var a = 0;var b = 0;var c = 0;
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .WithEditorConfig("MA0051.maximumStatementsPerMethod = 3")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task TooLongMethod_Lines()
+        {
+            const string SourceCode = @"
+public class Test
+{
+    void [|]Method()
+    {
+        var a = 0;var d = 0;
+        var b = 0;var e = 0;
         var c = 0;
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .WithEditorConfig("meziantou.maximumStatementsPerMethod=2")
+                  .WithEditorConfig("MA0051.maximumLinesPerMethod = 2")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task ValidMethod_Lines()
+        {
+            const string SourceCode = @"
+public class Test
+{
+    void Method()
+    {
+        var a = 0;var d = 0;
+        var b = 0;var e = 0;
+        var c = 0;
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .WithEditorConfig("MA0051.maximumLinesPerMethod = 4")
                   .ValidateAsync();
         }
 
@@ -84,7 +137,7 @@ if (true)
             var tree = CSharpSyntaxTree.ParseText("void A(){ " + code + " }");
 
             var root = tree.GetRoot().DescendantNodes().OfType<BlockSyntax>().First();
-            return MethodShouldNotBeTooLongAnalyzer.CountStatements(root);
+            return MethodShouldNotBeTooLongAnalyzer.CountStatements(default, root);
         }
     }
 }
