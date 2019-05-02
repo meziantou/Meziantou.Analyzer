@@ -15,7 +15,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.MethodShouldNotBeTooLong,
             title: "Method is too long",
-            messageFormat: "Method is too long ({0} statements; maximum: {1})",
+            messageFormat: "Method is too long ({0})",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -30,38 +30,92 @@ namespace Meziantou.Analyzer.Rules
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
             context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.LocalDeclarationStatement);
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.PropertyDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.ConstructorDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.DestructorDeclaration);
         }
 
         private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
         {
-            var maximumStatements = GetMaximumNumberOfStatements(context);
-            if (maximumStatements <= 0)
+            switch (context.Node)
+            {
+                case MethodDeclarationSyntax node:
+                    AnalyzeNode(context, node.Body, node.Identifier);
+                    AnalyzeNode(context, node.ExpressionBody, node.Identifier);
+                    break;
+
+                case LocalFunctionStatementSyntax node:
+                    AnalyzeNode(context, node.Body, node.Identifier);
+                    AnalyzeNode(context, node.ExpressionBody, node.Identifier);
+                    break;
+
+                case PropertyDeclarationSyntax node:
+                    if (node.AccessorList != null)
+                    {
+                        foreach (var accessor in node.AccessorList.Accessors)
+                        {
+                            AnalyzeNode(context, accessor.Body, accessor.Keyword);
+                            AnalyzeNode(context, accessor.ExpressionBody, accessor.Keyword);
+                        }
+                    }
+
+                    break;
+
+                case ConstructorDeclarationSyntax node:
+                    AnalyzeNode(context, node.Body, node.Identifier);
+                    AnalyzeNode(context, node.ExpressionBody, node.Identifier);
+                    break;
+
+                case DestructorDeclarationSyntax node:
+                    AnalyzeNode(context, node.Body, node.Identifier);
+                    AnalyzeNode(context, node.ExpressionBody, node.Identifier);
+                    break;
+            }
+        }
+
+        private static void AnalyzeNode(SyntaxNodeAnalysisContext context, SyntaxNode node, SyntaxToken reportNode)
+        {
+            if (node == null)
                 return;
 
-            var node = (MethodDeclarationSyntax)context.Node;
-            if (node.Body != null)
+            var maximumLines = GetMaximumNumberOfLines(context);
+            if (maximumLines > 0)
             {
-                var statements = CountStatements(node.Body);
+                var location = node.GetLocation();
+                var lineSpan = location.GetLineSpan();
+                var lines = lineSpan.EndLinePosition.Line - lineSpan.StartLinePosition.Line;
+                if (lines > maximumLines)
+                {
+                    context.ReportDiagnostic(s_rule, reportNode, $"{lines} lines; maximum allowed: {maximumLines}");
+                    return;
+                }
+            }
+
+            var maximumStatements = GetMaximumNumberOfStatements(context);
+            if (maximumStatements > 0)
+            {
+                var statements = CountStatements(context, node);
                 if (statements > maximumStatements)
                 {
-                    context.ReportDiagnostic(s_rule, node.Identifier, statements.ToString(CultureInfo.InvariantCulture), maximumStatements.ToString(CultureInfo.InvariantCulture));
+                    context.ReportDiagnostic(s_rule, reportNode, $"{statements} lines; maximum allowed: {maximumStatements}");
+                    return;
                 }
             }
         }
 
         // internal for testing
-        internal static int CountStatements(BlockSyntax block)
+        internal static int CountStatements(SyntaxNodeAnalysisContext context, SyntaxNode block)
         {
-#if DEBUG
-            var statements = block.DescendantNodes().OfType<StatementSyntax>().ToList();
-#endif
-            return block.DescendantNodes(descendIntoChildren: ShouldDescendIntoChildren)
+            var skipLocalFunctions = GetSkipLocalFunctions(context);
+
+            return block.DescendantNodesAndSelf(ShouldDescendIntoChildren)
                 .OfType<StatementSyntax>()
                 .Count(IsCountableStatement);
 
-            static bool ShouldDescendIntoChildren(SyntaxNode node)
+            bool ShouldDescendIntoChildren(SyntaxNode node)
             {
-                if (node is LocalFunctionStatementSyntax)
+                if (!skipLocalFunctions && node is LocalFunctionStatementSyntax)
                     return false;
 
                 return true;
@@ -76,10 +130,27 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
+        private static bool GetSkipLocalFunctions(SyntaxNodeAnalysisContext context)
+        {
+            if (context.Options != null && context.Options.TryGetConfigurationValue(context.Node.SyntaxTree.FilePath, $"{s_rule.Id}.skipLocalFunctions", out var value) && bool.TryParse(value, out var result))
+                return result;
+
+            return false;
+        }
+
         private static int GetMaximumNumberOfStatements(SyntaxNodeAnalysisContext context)
         {
             var file = context.Node.SyntaxTree.FilePath;
-            if (context.Options.TryGetConfigurationValue(file, "meziantou.maximumStatementsPerMethod", out var value) && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxStatements))
+            if (context.Options.TryGetConfigurationValue(file, $"{s_rule.Id}.maximumStatementsPerMethod", out var value) && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxStatements))
+                return maxStatements;
+
+            return 40;
+        }
+
+        private static int GetMaximumNumberOfLines(SyntaxNodeAnalysisContext context)
+        {
+            var file = context.Node.SyntaxTree.FilePath;
+            if (context.Options.TryGetConfigurationValue(file, $"{s_rule.Id}.maximumLinesPerMethod", out var value) && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxStatements))
                 return maxStatements;
 
             return 40;

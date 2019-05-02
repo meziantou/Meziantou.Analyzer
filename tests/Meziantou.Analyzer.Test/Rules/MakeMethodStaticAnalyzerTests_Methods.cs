@@ -558,6 +558,7 @@ partial class Test
     event System.EventHandler<System.EventArgs> TestEvent;
     void Initialize()
     {
+#line 4 ""App.xaml""
         TestEvent += Handler;
     }
 }

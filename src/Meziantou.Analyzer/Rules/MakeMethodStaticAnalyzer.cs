@@ -214,8 +214,8 @@ namespace Meziantou.Analyzer.Rules
 
             private static bool IsAspNetCoreMiddleware(Compilation compilation, IMethodSymbol methodSymbol)
             {
-                if (string.Equals(methodSymbol.Name, "Invoke", System.StringComparison.Ordinal) ||
-                    string.Equals(methodSymbol.Name, "InvokeAsync", System.StringComparison.Ordinal))
+                if (string.Equals(methodSymbol.Name, "Invoke", StringComparison.Ordinal) ||
+                    string.Equals(methodSymbol.Name, "InvokeAsync", StringComparison.Ordinal))
                 {
                     var httpContextSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
                     if (methodSymbol.Parameters.Length == 0 || !methodSymbol.Parameters[0].Type.IsEqualTo(httpContextSymbol))
@@ -245,7 +245,7 @@ namespace Meziantou.Analyzer.Rules
             private static bool IsAspNetCoreStartup(Compilation compilation, IMethodSymbol methodSymbol)
             {
                 // void ConfigureServices Microsoft.Extensions.DependencyInjection.IServiceCollection
-                if (string.Equals(methodSymbol.Name, "ConfigureServices", System.StringComparison.Ordinal))
+                if (string.Equals(methodSymbol.Name, "ConfigureServices", StringComparison.Ordinal))
                 {
                     var iserviceCollectionSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
                     if (methodSymbol.ReturnsVoid && methodSymbol.Parameters.Length == 1 && methodSymbol.Parameters[0].Type.IsEqualTo(iserviceCollectionSymbol))
@@ -255,7 +255,7 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 // void Configure Microsoft.AspNetCore.Builder.IApplicationBuilder
-                if (string.Equals(methodSymbol.Name, "Configure", System.StringComparison.Ordinal))
+                if (string.Equals(methodSymbol.Name, "Configure", StringComparison.Ordinal))
                 {
                     var iapplicationBuilder = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
                     if (methodSymbol.Parameters.Length > 0 && methodSymbol.Parameters[0].Type.IsEqualTo(iapplicationBuilder))
@@ -269,31 +269,7 @@ namespace Meziantou.Analyzer.Rules
 
             private static bool IsInXamlGeneratedFile(IOperation operation)
             {
-                // return operation.Syntax.SyntaxTree.FilePath.EndsWith(".g.i.cs", StringComparison.Ordinal);
-                var syntax = operation.Syntax;
-                var root = syntax.Ancestors().LastOrDefault();
-                if (root == null)
-                    return false;
-
-                if (!root.ContainsDirectives)
-                    return false;
-
-                var directive = root.GetFirstDirective();
-
-                do
-                {
-                    if (directive.IsKind(SyntaxKind.PragmaChecksumDirectiveTrivia))
-                    {
-                        var pragmaChecksumDirective = (PragmaChecksumDirectiveTriviaSyntax)directive;
-                        var file = pragmaChecksumDirective.File;
-                        if (file.ValueText.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
-                            return true;
-                    }
-
-                    directive = directive.GetNextDirective();
-                } while (directive != null);
-
-                return false;
+                return operation.Syntax.GetLocation().GetMappedLineSpan().Path?.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase) ?? false;
             }
         }
     }
