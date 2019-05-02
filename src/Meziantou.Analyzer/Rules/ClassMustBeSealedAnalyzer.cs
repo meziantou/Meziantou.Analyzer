@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -34,12 +35,29 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private static bool IsPotentialSealed(INamedTypeSymbol symbol)
+        private static bool IsPotentialSealed(AnalyzerOptions options, INamedTypeSymbol symbol)
         {
-            return !symbol.IsAbstract && !symbol.IsStatic && !symbol.IsValueType;
+            if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType)
+                return false;
+
+            if (symbol.IsVisibleOutsideOfAssembly() && PublicClassShouldBeSealed(options, symbol))
+                return false;
+
+            return true;
         }
 
-        private class AnalyzerContext
+        private static bool PublicClassShouldBeSealed(AnalyzerOptions options, ISymbol symbol)
+        {
+            foreach (var location in symbol.Locations)
+            {
+                if (options.TryGetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", out var value) && bool.TryParse(value, out var b) && b)
+                    return b;
+            }
+
+            return false;
+        }
+
+        private sealed class AnalyzerContext
         {
             private readonly List<ITypeSymbol> _potentialClasses = new List<ITypeSymbol>();
             private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new HashSet<ITypeSymbol>();
@@ -50,7 +68,7 @@ namespace Meziantou.Analyzer.Rules
                 switch (symbol.TypeKind)
                 {
                     case TypeKind.Class:
-                        if (IsPotentialSealed(symbol))
+                        if (IsPotentialSealed(context.Options, symbol))
                         {
                             lock (_potentialClasses)
                             {
