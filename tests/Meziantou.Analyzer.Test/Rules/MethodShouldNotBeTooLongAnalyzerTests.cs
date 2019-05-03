@@ -30,7 +30,7 @@ public class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .WithEditorConfig("MA0051.maximumStatementsPerMethod = 2")
+                  .WithEditorConfig("MA0051.maximum_statements_per_method = 2")
                   .ValidateAsync();
         }
 
@@ -47,7 +47,7 @@ public class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .WithEditorConfig("MA0051.maximumStatementsPerMethod = 3")
+                  .WithEditorConfig("MA0051.maximum_statements_per_method = 3")
                   .ValidateAsync();
         }
 
@@ -66,7 +66,7 @@ public class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .WithEditorConfig("MA0051.maximumLinesPerMethod = 2")
+                  .WithEditorConfig("MA0051.maximum_lines_per_method = 2")
                   .ValidateAsync();
         }
 
@@ -85,7 +85,7 @@ public class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .WithEditorConfig("MA0051.maximumLinesPerMethod = 4")
+                  .WithEditorConfig("MA0051.maximum_lines_per_method = 4")
                   .ValidateAsync();
         }
 

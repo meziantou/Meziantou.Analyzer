@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis.CSharp;
-using System.Globalization;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Linq;
 
@@ -30,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
             context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
-            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.LocalDeclarationStatement);
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.LocalFunctionStatement);
             context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.PropertyDeclaration);
             context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.ConstructorDeclaration);
             context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.DestructorDeclaration);
@@ -132,8 +131,9 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool GetSkipLocalFunctions(SyntaxNodeAnalysisContext context)
         {
-            if (context.Options != null && context.Options.TryGetConfigurationValue(context.Node.SyntaxTree.FilePath, $"{s_rule.Id}.skipLocalFunctions", out var value) && bool.TryParse(value, out var result))
-                return result;
+            var file = context.Node?.SyntaxTree.FilePath;
+            if (file != null && context.Options != null && context.Options.GetConfigurationValue(file, $"{s_rule.Id}.skip_local_functions", defaultValue: false))
+                return true;
 
             return false;
         }
@@ -141,19 +141,13 @@ namespace Meziantou.Analyzer.Rules
         private static int GetMaximumNumberOfStatements(SyntaxNodeAnalysisContext context)
         {
             var file = context.Node.SyntaxTree.FilePath;
-            if (context.Options.TryGetConfigurationValue(file, $"{s_rule.Id}.maximumStatementsPerMethod", out var value) && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxStatements))
-                return maxStatements;
-
-            return 40;
+            return context.Options.GetConfigurationValue(file, $"{s_rule.Id}.maximum_statements_per_method", defaultValue: 40);
         }
 
         private static int GetMaximumNumberOfLines(SyntaxNodeAnalysisContext context)
         {
             var file = context.Node.SyntaxTree.FilePath;
-            if (context.Options.TryGetConfigurationValue(file, $"{s_rule.Id}.maximumLinesPerMethod", out var value) && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxStatements))
-                return maxStatements;
-
-            return 40;
+            return context.Options.GetConfigurationValue(file, $"{s_rule.Id}.maximum_lines_per_method", 40);
         }
     }
 }

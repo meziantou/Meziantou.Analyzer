@@ -50,8 +50,8 @@ namespace Meziantou.Analyzer.Rules
         {
             foreach (var location in symbol.Locations)
             {
-                if (options.TryGetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", out var value) && bool.TryParse(value, out var b) && b)
-                    return b;
+                if (options.GetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", (bool?)null) == true)
+                    return true;
             }
 
             return false;

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
@@ -11,24 +10,12 @@ namespace Meziantou.Analyzer
     {
         public static bool IsEnabled(this AnalyzerOptions options, DiagnosticDescriptor descriptor, string filePath)
         {
-            if (options.TryGetConfigurationValue(filePath, descriptor.Id + ".enabled", out var value))
-            {
-                if (bool.TryParse(value, out var isEnabled) && !isEnabled)
-                    return false;
-            }
-
-            return true;
+            return options.GetConfigurationValue(filePath, descriptor.Id + ".enabled", defaultValue: true);
         }
 
         public static DiagnosticSeverity? GetSeverity(this AnalyzerOptions options, DiagnosticDescriptor descriptor, string filePath)
         {
-            if (options.TryGetConfigurationValue(filePath, descriptor.Id + ".severity", out var value))
-            {
-                if (Enum.TryParse<DiagnosticSeverity>(value, out var result))
-                    return result;
-            }
-
-            return null;
+            return options.GetConfigurationValue(filePath, descriptor.Id + ".severity", defaultValue: default(DiagnosticSeverity?));
         }
 
         private static Diagnostic CreateDiagnostic(AnalyzerOptions options, DiagnosticDescriptor descriptor, Location location, ImmutableDictionary<string, string> properties, params string[] messageArgs)
