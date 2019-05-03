@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
@@ -10,6 +11,51 @@ namespace Meziantou.Analyzer.Configurations
     {
         private static readonly ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy> s_cachedOptions
             = new ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy>();
+
+        public static bool GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, bool defaultValue)
+        {
+            var configuration = GetConfigurationHierarchy(options);
+            if (configuration.TryGetValue(filePath, key, out var value))
+            {
+                return ChangeType(value, defaultValue);
+            }
+
+            return defaultValue;
+        }
+
+        public static bool? GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, bool? defaultValue)
+        {
+            var configuration = GetConfigurationHierarchy(options);
+            if (configuration.TryGetValue(filePath, key, out var value))
+            {
+                return ChangeType(value, defaultValue);
+            }
+
+            return defaultValue;
+        }
+
+        public static int GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, int defaultValue)
+        {
+            var configuration = GetConfigurationHierarchy(options);
+            if (configuration.TryGetValue(filePath, key, out var value))
+            {
+                return ChangeType(value, defaultValue);
+            }
+
+            return defaultValue;
+        }
+
+        public static DiagnosticSeverity? GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, DiagnosticSeverity? defaultValue)
+        {
+            var configuration = GetConfigurationHierarchy(options);
+            if (configuration.TryGetValue(filePath, key, out var value))
+            {
+                if (value != null && Enum.TryParse<DiagnosticSeverity>(value, ignoreCase: true, out var result))
+                    return result;
+            }
+
+            return defaultValue;
+        }
 
         public static bool TryGetConfigurationValue(this AnalyzerOptions options, string filePath, string key, out string value)
         {
@@ -52,6 +98,30 @@ namespace Meziantou.Analyzer.Configurations
 
                 return EditorConfigFile.Empty;
             }
+        }
+
+        private static bool ChangeType(string value, bool defaultValue)
+        {
+            if (value != null && bool.TryParse(value, out var result))
+                return result;
+
+            return defaultValue;
+        }
+
+        private static bool? ChangeType(string value, bool? defaultValue)
+        {
+            if (value != null && bool.TryParse(value, out var result))
+                return result;
+
+            return defaultValue;
+        }
+
+        private static int ChangeType(string value, int defaultValue)
+        {
+            if (value != null && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+                return result;
+
+            return defaultValue;
         }
     }
 }

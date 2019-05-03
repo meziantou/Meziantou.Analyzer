@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using Meziantou.Analyzer.Rules;
+﻿using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
