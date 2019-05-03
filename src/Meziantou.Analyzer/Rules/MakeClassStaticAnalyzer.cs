@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -33,6 +36,8 @@ namespace Meziantou.Analyzer.Rules
 
                 ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
                 ctx.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeArrayCreation, OperationKind.ArrayCreation);
                 ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
             });
         }
@@ -52,7 +57,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private class AnalyzerContext
+        private sealed class AnalyzerContext
         {
             private readonly List<ITypeSymbol> _potentialClasses = new List<ITypeSymbol>();
             private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new HashSet<ITypeSymbol>();
@@ -80,10 +85,7 @@ namespace Meziantou.Analyzer.Rules
 
                         if (symbol.BaseType != null)
                         {
-                            lock (_cannotBeStaticClasses)
-                            {
-                                _cannotBeStaticClasses.Add(symbol.BaseType);
-                            }
+                            AddCannotBeStaticType(symbol.BaseType);
                         }
 
                         break;
@@ -94,10 +96,7 @@ namespace Meziantou.Analyzer.Rules
                             var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
                             if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol type)
                             {
-                                lock (_cannotBeStaticClasses)
-                                {
-                                    _cannotBeStaticClasses.Add(type);
-                                }
+                                AddCannotBeStaticType(type);
                             }
                         }
 
@@ -108,9 +107,25 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeObjectCreation(OperationAnalysisContext context)
             {
                 var operation = (IObjectCreationOperation)context.Operation;
-                lock (_cannotBeStaticClasses)
+                AddCannotBeStaticType(operation.Constructor.ContainingType);
+                foreach (var typeArgument in operation.Constructor.TypeArguments)
                 {
-                    _cannotBeStaticClasses.Add(operation.Constructor.ContainingType);
+                    AddCannotBeStaticType(typeArgument);
+                }
+            }
+
+            public void AnalyzeArrayCreation(OperationAnalysisContext context)
+            {
+                var operation = (IArrayCreationOperation)context.Operation;
+                AddCannotBeStaticType(operation.Type);
+            }
+
+            public void AnalyzeInvocation(OperationAnalysisContext context)
+            {
+                var operation = (IInvocationOperation)context.Operation;
+                foreach (var typeArgument in operation.TargetMethod.TypeArguments)
+                {
+                    AddCannotBeStaticType(typeArgument);
                 }
             }
 
@@ -122,6 +137,31 @@ namespace Meziantou.Analyzer.Rules
                         continue;
 
                     context.ReportDiagnostic(s_rule, @class);
+                }
+            }
+
+            private void AddCannotBeStaticType(ITypeSymbol typeSymbol)
+            {
+                lock (_cannotBeStaticClasses)
+                {
+                    _cannotBeStaticClasses.Add(typeSymbol);
+                    if (!typeSymbol.Equals(typeSymbol.OriginalDefinition))
+                    {
+                        AddCannotBeStaticType(typeSymbol.OriginalDefinition);
+                    }
+
+                    if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+                    {
+                        AddCannotBeStaticType(arrayTypeSymbol.ElementType);
+                    }
+
+                    if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+                    {
+                        foreach (var typeArgument in namedTypeSymbol.TypeArguments)
+                        {
+                            AddCannotBeStaticType(typeArgument);
+                        }
+                    }
                 }
             }
         }
