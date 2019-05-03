@@ -30,8 +30,8 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
         }
 
         [TestMethod]
@@ -53,8 +53,8 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
         }
 
         [TestMethod]
@@ -71,7 +71,7 @@ class TypeName
         new TypeName()
         {
             A = 1,
-            B = 2
+            [|]B = 2
         };
     }
 }";
@@ -91,10 +91,99 @@ class TypeName
     }
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 12, column: 13, message: "Add comma after the last property")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
+                .WithSourceCode(SourceCode)
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task EnumsWithLeadingComma()
+        {
+            const string SourceCode = @"
+enum TypeName
+{
+    A = 1,
+    B = 2,
+}";
+
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task EnumsWithoutLeadingComma()
+        {
+            const string SourceCode = @"
+enum TypeName
+{
+    A = 1,
+    [|]B = 2
+}";
+            const string CodeFix = @"
+enum TypeName
+{
+    A = 1,
+    B = 2,
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task AnonymousObjectWithLeadingComma()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        _= new
+        {
+            A = 1,
+            B = 2,
+        };
+    }
+}";
+
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task AnonymousObjectWithoutLeadingComma()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        _= new
+        {
+            A = 1,
+            [|]B = 2
+        };
+    }
+}";
+            const string CodeFix = @"
+class TypeName
+{
+    public void Test()
+    {
+        _= new
+        {
+            A = 1,
+            B = 2,
+        };
+    }
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
         }
     }
 }
