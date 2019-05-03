@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -45,7 +46,15 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
             var classNode = (ClassDeclarationSyntax)nodeToFix;
-            editor.ReplaceNode(classNode, classNode.AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
+
+            var newExpression = classNode.AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword));
+            var sealedModifier = newExpression.Modifiers.FirstOrDefault(token => token.IsKind(SyntaxKind.SealedKeyword));
+            if (sealedModifier != default)
+            {
+                newExpression = newExpression.WithModifiers(newExpression.Modifiers.Remove(sealedModifier));
+            }
+
+            editor.ReplaceNode(classNode, newExpression.WithAdditionalAnnotations(Formatter.Annotation));
             return editor.GetChangedDocument();
         }
 

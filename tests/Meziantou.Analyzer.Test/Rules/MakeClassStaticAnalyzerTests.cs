@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
@@ -163,6 +164,96 @@ class Test
 ";
             await CreateProjectBuilder()
                   .AddMSTestApi()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task SealedClass_NoDiagnostic()
+        {
+            const string SourceCode = @"
+public sealed class [|]Test
+{
+}
+";
+            const string CodeFix = @"
+public static class Test
+{
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task GenericClass_NoDiagnostic()
+        {
+            const string SourceCode = @"
+class Test
+{
+    static void A<T>() => throw null;
+    static void B() => A<Test>();
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task Array_NoDiagnostic()
+        {
+            const string SourceCode = @"
+class Test
+{
+    static void A() => _ = new Test[0];
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+        
+        [TestMethod]
+        public async Task GenericObjectCreation_NoDiagnostic()
+        {
+            const string SourceCode = @"
+class Test
+{
+    static void A() => new Test2<Test>();
+}
+
+class Test2<T>
+{
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task GenericInvocation_NoDiagnostic()
+        {
+            const string SourceCode = @"
+class Test
+{
+    static void A() => Test2.A<Test>();
+}
+
+static class Test2
+{
+    public static void A<T>() => throw null;
+}
+";
+
+            await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
