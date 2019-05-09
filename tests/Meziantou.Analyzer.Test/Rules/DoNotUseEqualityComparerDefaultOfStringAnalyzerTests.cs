@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
+    public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

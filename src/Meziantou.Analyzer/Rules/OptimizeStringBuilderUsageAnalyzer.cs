@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
+    public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.OptimizeStringBuilderUsage,

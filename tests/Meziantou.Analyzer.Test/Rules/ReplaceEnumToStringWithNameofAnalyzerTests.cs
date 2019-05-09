@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class ReplaceEnumToStringWithNameofAnalyzerTests
+    public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

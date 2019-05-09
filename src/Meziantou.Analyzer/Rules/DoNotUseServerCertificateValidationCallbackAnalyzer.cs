@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class DoNotUseServerCertificateValidationCallbackAnalyzer : DiagnosticAnalyzer
+    public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotUseServerCertificateValidationCallback,

@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer : DiagnosticAnalyzer
+    public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.PreferReturnCollectionAbstractionInsteadOfImplementation,
@@ -175,7 +175,7 @@ namespace Meziantou.Analyzer.Rules
             return true;
         }
 
-        private class AnalyzerContext
+        private sealed class AnalyzerContext
         {
             public static AnalyzerContext Create(Compilation compilation)
             {

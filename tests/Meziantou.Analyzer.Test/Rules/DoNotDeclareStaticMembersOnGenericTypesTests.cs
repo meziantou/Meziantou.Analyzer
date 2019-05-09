@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotDeclareStaticMembersOnGenericTypesTests
+    public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

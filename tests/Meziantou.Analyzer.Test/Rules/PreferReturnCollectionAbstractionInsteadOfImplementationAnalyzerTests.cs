@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzerTests
+    public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

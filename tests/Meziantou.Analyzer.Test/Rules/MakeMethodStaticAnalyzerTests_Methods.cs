@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MakeMethodStaticAnalyzerTests_Methods
+    public sealed class MakeMethodStaticAnalyzerTests_Methods
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

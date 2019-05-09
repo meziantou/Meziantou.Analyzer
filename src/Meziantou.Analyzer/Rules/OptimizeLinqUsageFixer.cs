@@ -17,7 +17,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public class OptimizeLinqUsageFixer : CodeFixProvider
+    public sealed class OptimizeLinqUsageFixer : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
             RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,
@@ -559,7 +559,7 @@ namespace Meziantou.Analyzer.Rules
             return memberAccessExpression.Expression;
         }
 
-        private class ParameterRewriter : CSharpSyntaxRewriter
+        private sealed class ParameterRewriter : CSharpSyntaxRewriter
         {
             private readonly SemanticModel _semanticModel;
             private readonly IParameterSymbol _parameterSymbol;

@@ -3,7 +3,7 @@ using System;
 
 namespace TestHelper
 {
-    public class DiagnosticResult
+    public sealed class DiagnosticResult
     {
         private DiagnosticResultLocation[] _locations;
 

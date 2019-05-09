@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class TypeNameMustNotMatchNamespaceAnalyzerTests
+    public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace TestHelper
 {
-    public partial class ProjectBuilder
+    public sealed partial class ProjectBuilder
     {
         private int _diagnosticMessageIndex = 0;
 

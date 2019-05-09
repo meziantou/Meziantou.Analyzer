@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
+    public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.ReplaceEnumToStringWithNameof);
 

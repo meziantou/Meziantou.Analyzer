@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests
+    public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

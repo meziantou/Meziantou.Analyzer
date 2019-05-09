@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
+    public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.ReplaceEnumToStringWithNameof,

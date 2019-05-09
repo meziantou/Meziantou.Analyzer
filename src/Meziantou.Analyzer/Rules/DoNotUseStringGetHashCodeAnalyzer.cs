@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
+    public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotUseStringGetHashCode,

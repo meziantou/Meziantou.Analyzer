@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DontUseDangerousThreadingMethodsAnalyzerTests
+    public sealed class DontUseDangerousThreadingMethodsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

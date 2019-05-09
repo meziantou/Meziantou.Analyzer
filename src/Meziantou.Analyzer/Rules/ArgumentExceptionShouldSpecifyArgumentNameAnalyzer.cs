@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
+    public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
     {
         internal const string ArgumentNameKey = "ArgumentName";
 

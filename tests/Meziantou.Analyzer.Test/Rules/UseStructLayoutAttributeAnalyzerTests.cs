@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseStructLayoutAttributeAnalyzerTests
+    public sealed class UseStructLayoutAttributeAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

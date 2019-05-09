@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
+    public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

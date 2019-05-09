@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 
 namespace Meziantou.Analyzer.Configurations
 {
-    internal class EditorConfigFile
+    internal sealed class EditorConfigFile
     {
         private readonly IReadOnlyDictionary<string, string> _configurations;
 

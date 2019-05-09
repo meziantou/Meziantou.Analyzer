@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DeclareTypesInNamespacesAnalyzerTests
+    public sealed class DeclareTypesInNamespacesAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

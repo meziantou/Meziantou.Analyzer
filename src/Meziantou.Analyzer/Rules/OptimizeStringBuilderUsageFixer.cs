@@ -17,7 +17,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public class OptimizeStringBuilderUsageFixer : CodeFixProvider
+    public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.OptimizeStringBuilderUsage);
 

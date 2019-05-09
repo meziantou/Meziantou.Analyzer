@@ -17,7 +17,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public class ValidateArgumentsCorrectlyFixer : CodeFixProvider
+    public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.ValidateArgumentsCorrectly);
 
@@ -78,7 +78,7 @@ namespace Meziantou.Analyzer.Rules
 
             statements = statements.Add(localFunctionSyntaxNode);
 
-            methodSyntaxNode =  methodSyntaxNode.WithBody(Block(statements)).WithAdditionalAnnotations(Formatter.Annotation);
+            methodSyntaxNode = methodSyntaxNode.WithBody(Block(statements)).WithAdditionalAnnotations(Formatter.Annotation);
             editor.ReplaceNode(nodeToFix, methodSyntaxNode);
             return editor.GetChangedDocument();
         }

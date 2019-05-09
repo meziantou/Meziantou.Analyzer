@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseStringGetHashCodeAnalyzerTests
+    public sealed class DoNotUseStringGetHashCodeAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

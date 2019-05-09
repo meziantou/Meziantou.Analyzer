@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseAnOverloadThatHaveCancellationTokenAnalyzerTests
+    public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

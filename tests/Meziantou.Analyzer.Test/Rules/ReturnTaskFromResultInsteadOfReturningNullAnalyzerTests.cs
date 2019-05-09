@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
+    public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
@@ -97,7 +97,7 @@ class Test
         System.Func<object> e = delegate () { return null; };
     }
 }";
-            
+
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
                   .ShouldReportDiagnostic(line: 6, column: 45)

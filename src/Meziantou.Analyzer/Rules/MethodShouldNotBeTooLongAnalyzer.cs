@@ -9,7 +9,7 @@ using System.Linq;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
+    public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.MethodShouldNotBeTooLong,
@@ -147,7 +147,7 @@ namespace Meziantou.Analyzer.Rules
         private static int GetMaximumNumberOfLines(SyntaxNodeAnalysisContext context)
         {
             var file = context.Node.SyntaxTree.FilePath;
-            return context.Options.GetConfigurationValue(file, $"{s_rule.Id}.maximum_lines_per_method", 40);
+            return context.Options.GetConfigurationValue(file, $"{s_rule.Id}.maximum_lines_per_method", 60);
         }
     }
 }

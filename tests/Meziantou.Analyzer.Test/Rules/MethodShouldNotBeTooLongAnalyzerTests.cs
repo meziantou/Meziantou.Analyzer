@@ -9,7 +9,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MethodShouldNotBeTooLongAnalyzerTests
+    public sealed class MethodShouldNotBeTooLongAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

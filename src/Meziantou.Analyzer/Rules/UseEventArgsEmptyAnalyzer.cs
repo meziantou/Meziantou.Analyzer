@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
+    public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseEventArgsEmpty,

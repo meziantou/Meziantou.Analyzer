@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
+    public sealed class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotRaiseReservedExceptionType,
