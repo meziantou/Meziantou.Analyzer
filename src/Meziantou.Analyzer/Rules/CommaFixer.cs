@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public class CommaFixer : CodeFixProvider
+    public sealed class CommaFixer : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.MissingCommaInObjectInitializer);
 

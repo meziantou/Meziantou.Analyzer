@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace TestHelper
 {
-    internal class TestAdditionalFile : AdditionalText
+    internal sealed class TestAdditionalFile : AdditionalText
     {
         private readonly string _content;
 

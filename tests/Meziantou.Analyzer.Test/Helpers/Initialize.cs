@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace TestHelper
 {
     [TestClass]
-    public class Initialize
+    public sealed class Initialize
     {
         public static IReadOnlyList<string> NetStandard2_0 { get; private set; }
 

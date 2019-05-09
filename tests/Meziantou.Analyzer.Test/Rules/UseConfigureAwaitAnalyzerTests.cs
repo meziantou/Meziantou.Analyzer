@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseConfigureAwaitAnalyzerTests
+    public sealed class UseConfigureAwaitAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

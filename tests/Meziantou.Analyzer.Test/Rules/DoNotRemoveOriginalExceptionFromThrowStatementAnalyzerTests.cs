@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
+    public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

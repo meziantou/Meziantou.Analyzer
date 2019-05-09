@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
+    public sealed class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

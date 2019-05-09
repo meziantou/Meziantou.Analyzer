@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DontUseInstanceFieldsOfTypeAsyncLocalAnalyzerTests
+    public sealed class DontUseInstanceFieldsOfTypeAsyncLocalAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

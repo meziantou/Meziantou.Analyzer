@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTests
+    public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

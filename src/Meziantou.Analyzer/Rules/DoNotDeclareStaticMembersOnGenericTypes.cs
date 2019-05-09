@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
+    public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotDeclareStaticMembersOnGenericTypes,

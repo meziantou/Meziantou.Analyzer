@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
+    public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_methodRule = new DiagnosticDescriptor(
             RuleIdentifiers.MakeMethodStatic,
@@ -52,7 +52,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private class AnalyzerContext
+        private sealed class AnalyzerContext
         {
             private readonly HashSet<ISymbol> _potentialSymbols = new HashSet<ISymbol>();
             private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new HashSet<ISymbol>();

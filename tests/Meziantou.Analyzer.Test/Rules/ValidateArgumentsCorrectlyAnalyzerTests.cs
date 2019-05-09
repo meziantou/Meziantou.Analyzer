@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class ValidateArgumentsCorrectlyAnalyzerTests
+    public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

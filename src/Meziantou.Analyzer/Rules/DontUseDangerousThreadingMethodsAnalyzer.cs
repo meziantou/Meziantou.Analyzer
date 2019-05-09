@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class DontUseDangerousThreadingMethodsAnalyzer : DiagnosticAnalyzer
+    public sealed class DontUseDangerousThreadingMethodsAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DontUseDangerousThreadingMethods,

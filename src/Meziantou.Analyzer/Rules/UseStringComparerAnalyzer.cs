@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class UseStringComparerAnalyzer : DiagnosticAnalyzer
+    public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
     {
         private static readonly string[] s_enumerableMethods =
         {

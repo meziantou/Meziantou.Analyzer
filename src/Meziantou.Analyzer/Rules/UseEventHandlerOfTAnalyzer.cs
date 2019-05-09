@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
+    public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseEventHandlerOfT,
@@ -31,7 +31,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private class AnalyzerContext
+        private sealed class AnalyzerContext
         {
             public AnalyzerContext(Compilation compilation)
             {

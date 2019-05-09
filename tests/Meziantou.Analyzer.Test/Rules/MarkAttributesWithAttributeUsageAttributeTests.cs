@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MarkAttributesWithAttributeUsageAttributeTests
+    public sealed class MarkAttributesWithAttributeUsageAttributeTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

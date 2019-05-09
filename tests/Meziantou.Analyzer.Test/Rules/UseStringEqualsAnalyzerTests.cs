@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseStringEqualsAnalyzerTests
+    public sealed class UseStringEqualsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

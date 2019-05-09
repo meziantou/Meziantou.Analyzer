@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class DontUseInstanceFieldsOfTypeAsyncLocalAnalyzer : DiagnosticAnalyzer
+    public sealed class DontUseInstanceFieldsOfTypeAsyncLocalAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DontUseInstanceFieldsOfTypeAsyncLocal,
@@ -36,7 +36,7 @@ namespace Meziantou.Analyzer.Rules
             var type = context.Compilation.GetTypeByMetadataName("System.Threading.AsyncLocal`1");
             if (field.Type.OriginalDefinition.IsEqualTo(type))
             {
-                    context.ReportDiagnostic(s_rule, field);
+                context.ReportDiagnostic(s_rule, field);
             }
         }
     }

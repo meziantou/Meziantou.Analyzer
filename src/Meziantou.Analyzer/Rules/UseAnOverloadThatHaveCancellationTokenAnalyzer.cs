@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticAnalyzer
+    public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenRule = new DiagnosticDescriptor(
             RuleIdentifiers.UseAnOverloadThatHaveCancellationToken,
@@ -53,7 +53,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private class AnalyzerContext
+        private sealed class AnalyzerContext
         {
             private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>> _membersByType = new ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>>();
 

@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class TypeNameMustNotMatchNamespaceAnalyzer : DiagnosticAnalyzer
+    public sealed class TypeNameMustNotMatchNamespaceAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.TypeNameMustNotMatchNamespace,

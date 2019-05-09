@@ -11,7 +11,7 @@ using static System.FormattableString;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
+    public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_listMethodsRule = new DiagnosticDescriptor(
             RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,

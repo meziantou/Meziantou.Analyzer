@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
+    public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

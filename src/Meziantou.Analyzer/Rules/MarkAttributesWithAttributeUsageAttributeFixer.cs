@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Editing;
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProvider
+    public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.MarkAttributesWithAttributeUsageAttribute);
 

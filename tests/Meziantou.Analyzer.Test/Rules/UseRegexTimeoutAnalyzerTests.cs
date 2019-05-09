@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseRegexTimeoutAnalyzerTests
+    public sealed class UseRegexTimeoutAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

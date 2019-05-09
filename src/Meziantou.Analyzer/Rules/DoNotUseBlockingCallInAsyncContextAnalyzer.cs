@@ -50,7 +50,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private class Context
+        private sealed class Context
         {
             private readonly Compilation _compilation;
 

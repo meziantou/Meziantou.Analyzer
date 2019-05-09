@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class FixToDoAnalyzer : DiagnosticAnalyzer
+    public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.FixToDo,
@@ -67,7 +67,7 @@ namespace Meziantou.Analyzer.Rules
                         line.Text.StartsWith("TODO:", StringComparison.OrdinalIgnoreCase))
                     {
                         var location = node.SyntaxTree.GetLocation(new Microsoft.CodeAnalysis.Text.TextSpan(node.SpanStart + line.SpanStart, line.Text.Length));
-                        
+
                         var diagnostic = Diagnostic.Create(s_rule, location, line.Text.Substring(4).Trim());
                         context.ReportDiagnostic(diagnostic);
                     }

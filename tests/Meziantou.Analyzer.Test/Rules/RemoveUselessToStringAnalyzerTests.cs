@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class RemoveUselessToStringAnalyzerTests
+    public sealed class RemoveUselessToStringAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
+    public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.ValidateArgumentsCorrectly,
@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private class AnalyzerContext
+        private sealed class AnalyzerContext
         {
             private readonly List<ISymbol> _symbols;
             private readonly INamedTypeSymbol _argumentSymbol;
@@ -82,7 +82,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private class MethodContext
+        private sealed class MethodContext
         {
             private readonly AnalyzerContext _analyzerContext;
             private readonly ISymbol _symbol;

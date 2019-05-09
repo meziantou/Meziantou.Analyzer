@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class UseEventHandlerOfTAnalyzerTests
+    public sealed class UseEventHandlerOfTAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

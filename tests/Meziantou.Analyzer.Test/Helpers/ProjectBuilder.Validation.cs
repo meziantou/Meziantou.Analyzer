@@ -20,7 +20,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace TestHelper
 {
-    public partial class ProjectBuilder
+    public sealed partial class ProjectBuilder
     {
         public async Task ValidateAsync()
         {

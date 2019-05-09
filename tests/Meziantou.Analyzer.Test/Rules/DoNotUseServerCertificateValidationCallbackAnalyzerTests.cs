@@ -5,7 +5,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseServerCertificateValidationCallbackAnalyzerTests
+    public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

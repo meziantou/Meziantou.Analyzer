@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
+    public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
@@ -45,7 +45,7 @@ class Test
                   .ShouldReportDiagnostic(line: 6, column: 13)
                   .ValidateAsync();
         }
-        
+
         [TestMethod]
         public async Task Async_ThreadSleep_Diagnostic()
         {

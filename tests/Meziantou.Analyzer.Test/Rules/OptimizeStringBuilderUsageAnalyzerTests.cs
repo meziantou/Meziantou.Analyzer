@@ -7,7 +7,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class OptimizeStringBuilderUsageAnalyzerTests
+    public sealed class OptimizeStringBuilderUsageAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
@@ -184,7 +184,7 @@ class Test
 }")
                   .ValidateAsync();
         }
-        
+
         [DataTestMethod]
         [DynamicData(nameof(EmptyStringsArguments), DynamicDataSourceType.Property)]
         public async Task Append_EmptyString(string text)

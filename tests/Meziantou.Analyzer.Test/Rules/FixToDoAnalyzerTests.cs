@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class FixToDoAnalyzerTests
+    public sealed class FixToDoAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

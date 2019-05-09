@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class MarkAttributesWithAttributeUsageAttributeAnalyzer : DiagnosticAnalyzer
+    public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.MarkAttributesWithAttributeUsageAttribute,

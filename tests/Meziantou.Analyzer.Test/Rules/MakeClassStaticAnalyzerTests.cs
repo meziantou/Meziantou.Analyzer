@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class MakeClassStaticAnalyzerTests
+    public sealed class MakeClassStaticAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
@@ -218,7 +218,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [TestMethod]
         public async Task GenericObjectCreation_NoDiagnostic()
         {

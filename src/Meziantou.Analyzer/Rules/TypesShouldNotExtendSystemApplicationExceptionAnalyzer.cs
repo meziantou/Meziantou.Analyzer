@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class TypesShouldNotExtendSystemApplicationExceptionAnalyzer : DiagnosticAnalyzer
+    public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.TypesShouldNotExtendSystemApplicationException,

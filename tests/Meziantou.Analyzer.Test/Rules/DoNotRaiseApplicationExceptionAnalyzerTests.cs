@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class DoNotRaiseApplicationExceptionAnalyzerTests
+    public sealed class DoNotRaiseApplicationExceptionAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

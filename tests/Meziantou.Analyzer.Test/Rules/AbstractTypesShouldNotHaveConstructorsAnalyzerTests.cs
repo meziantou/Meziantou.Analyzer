@@ -6,7 +6,7 @@ using TestHelper;
 namespace Meziantou.Analyzer.Test.Rules
 {
     [TestClass]
-    public class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
+    public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
