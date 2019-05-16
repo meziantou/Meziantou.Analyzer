@@ -43,5 +43,16 @@ namespace Meziantou.Analyzer
 
             return operation.Type;
         }
+
+        public static bool HasArgumentOfType(this IInvocationOperation operation, ITypeSymbol argumentTypeSymbol)
+        {
+            foreach (var arg in operation.Arguments)
+            {
+                if (argumentTypeSymbol.IsEqualTo(arg.Value.Type.ContainingType))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

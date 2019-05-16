@@ -61,20 +61,20 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
-            if (!UseStringComparisonAnalyzer.HasArgumentOfType(operation, formatProviderType))
+            if (!operation.HasArgumentOfType(formatProviderType))
             {
-                if (UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType) ||
-                    (operation.TargetMethod.ContainingType.IsNumberType() && UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, numberStyleType)) ||
-                    (operation.TargetMethod.ContainingType.IsDateTime() && UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, dateTimeStyleType)))
+                if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType) ||
+                    (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType, numberStyleType)) ||
+                    (operation.TargetMethod.ContainingType.IsDateTime() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType, dateTimeStyleType)))
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
                     return;
                 }
             }
 
-            if (!UseStringComparisonAnalyzer.HasArgumentOfType(operation, cultureInfoType))
+            if (!operation.HasArgumentOfType(cultureInfoType))
             {
-                if (UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, cultureInfoType))
+                if (operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, cultureInfoType) != null)
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, cultureInfoType.ToDisplayString());
                     return;

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
@@ -54,6 +55,49 @@ namespace Meziantou.Analyzer
             }
 
             return false;
+        }
+
+        internal static bool HasOverloadWithAdditionalParameterOfType(
+            this IMethodSymbol methodSymbol,
+            Compilation compilation,
+            params ITypeSymbol[] additionalParameterTypes)
+        {
+            return FindOverloadWithAdditionalParameterOfType(methodSymbol, compilation, additionalParameterTypes) != null;
+        }
+
+        internal static IMethodSymbol FindOverloadWithAdditionalParameterOfType(
+            this IMethodSymbol methodSymbol,
+            Compilation compilation,
+            params ITypeSymbol[] additionalParameterTypes)
+        {
+            return FindOverloadWithAdditionalParameterOfType(methodSymbol, compilation, includeObsoleteMethods: false, additionalParameterTypes);
+        }
+
+        internal static IMethodSymbol FindOverloadWithAdditionalParameterOfType(
+            this IMethodSymbol methodSymbol,
+            Compilation compilation,
+            bool includeObsoleteMethods,
+            params ITypeSymbol[] additionalParameterTypes)
+        {
+            var obsoleteAttribute = compilation?.GetTypeByMetadataName("System.ObsoleteAttribute");
+
+            var members = methodSymbol.ContainingType.GetMembers(methodSymbol.Name);
+            return members.OfType<IMethodSymbol>().FirstOrDefault(IsOverload);
+
+            bool IsOverload(IMethodSymbol member)
+            {
+                if (member.Equals(methodSymbol))
+                    return false;
+
+                if (member.Parameters.Length - additionalParameterTypes.Length != methodSymbol.Parameters.Length)
+                    return false;
+
+                if (!includeObsoleteMethods && member.HasAttribute(obsoleteAttribute))
+                    return false;
+
+                var types = member.Parameters.Select(p => p.Type).Except(methodSymbol.Parameters.Select(p => p.Type));
+                return !types.Except(additionalParameterTypes).Any();
+            }
         }
     }
 }
