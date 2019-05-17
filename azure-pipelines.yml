@@ -18,7 +18,7 @@ steps:
   displayName: Update version
   inputs:
     filePath: 'update-version.ps1'
-    arguments: '$(build.version)'
+    arguments: '$(Build.BuildNumber)'
     pwsh: true
 
 - task: NuGetCommand@2
