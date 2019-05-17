@@ -9,7 +9,7 @@
             "analyzer"
         ]
     },
-    "overview": "README.md",
+    "overview": "../README.md",
     "priceCategory": "free",
     "publisher": "Meziantou",
     "private": false,
