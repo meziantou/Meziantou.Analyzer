@@ -1,9 +1,11 @@
 ﻿$VerbosePreference="Continue"
 
 $version = $args[0]
-if (!$variablename) {
+if (!$version) {
     $version = "0.0.0"
 }
+
+Write-Host "Version: $version"
 
 # Update NuGet package version
 $FullPath = Resolve-Path $PSScriptRoot\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj
