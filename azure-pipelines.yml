@@ -14,7 +14,7 @@ variables:
 name: 1.0.$(patch)
 
 steps:
-- task: PowerShell@2~
+- task: PowerShell@2
   displayName: Update version
   inputs:
     filePath: 'update-version.ps1'
