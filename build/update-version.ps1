@@ -8,14 +8,14 @@ if (!$version) {
 Write-Host "Version: $version"
 
 # Update NuGet package version
-$FullPath = Resolve-Path $PSScriptRoot\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj
+$FullPath = Resolve-Path $PSScriptRoot\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj
 Write-Host $FullPath
 [xml]$content = Get-Content $FullPath
 $content.Project.PropertyGroup.PackageVersion = $version
 $content.Save($FullPath)
 
 # Update VSIX version
-$FullPath = Resolve-Path $PSScriptRoot\src\Meziantou.Analyzer.Vsix\source.extension.vsixmanifest
+$FullPath = Resolve-Path $PSScriptRoot\..\src\Meziantou.Analyzer.Vsix\source.extension.vsixmanifest
 Write-Host $FullPath
 [xml]$content = Get-Content $FullPath
 $content.PackageManifest.Metadata.Identity.Version = $version
