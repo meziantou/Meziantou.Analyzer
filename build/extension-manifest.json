@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json.schemastore.org/vsix-publish",
+    "categories": [
+        "Coding"
+    ],
+    "identity": {
+        "internalName": "Meziantou-Analyzer",
+        "tags": [
+            "analyzer"
+        ]
+    },
+    "overview": "README.md",
+    "priceCategory": "free",
+    "publisher": "Meziantou",
+    "private": false,
+    "qna": true,
+    "repo": "https://github.com/meziantou/Meziantou.Analyzer"
+}

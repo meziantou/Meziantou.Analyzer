@@ -17,7 +17,7 @@ steps:
 - task: PowerShell@2
   displayName: Update version
   inputs:
-    filePath: 'update-version.ps1'
+    filePath: 'build\update-version.ps1'
     arguments: '$(Build.BuildNumber)'
     pwsh: true
 
