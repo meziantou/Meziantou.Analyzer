@@ -5,17 +5,28 @@ pool:
   vmImage: 'windows-2019'
 
 variables:
+  patch: $[counter('versioncounter', 89)]
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
 
+name: 1.0.$(patch)
+
 steps:
+- task: PowerShell@2
+  displayName: Update version
+  inputs:
+    filePath: 'update-version.ps1'
+    arguments: '$(Build.BuildNumber)'
+    pwsh: true
+
 - task: NuGetCommand@2
   inputs:
     command: 'restore'
 
 - task: DotNetCoreCLI@2
+  displayName: 
   inputs:
     command: 'restore'
     projects: 'tests/**/*.csproj'
@@ -31,3 +42,16 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: |
+      **/*.vsix
+      **/*.nupkg
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishPipelineArtifact@0
+  inputs:
+    artifactName: 'drop'
+    targetPath: '$(Build.ArtifactStagingDirectory)'
