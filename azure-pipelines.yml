@@ -47,6 +47,7 @@ steps:
   inputs:
     SourceFolder: '$(Build.SourcesDirectory)'
     Contents: |
+      build/**
       **/*.vsix
       **/*.nupkg
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
