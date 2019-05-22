@@ -57,6 +57,7 @@ namespace Meziantou.Analyzer
         public const string MethodShouldNotBeTooLong = "MA0051";
         public const string ReplaceEnumToStringWithNameof = "MA0052";
         public const string ClassMustBeSealed = "MA0053";
+        public const string IncludeCatchExceptionAsInnerException = "MA0054";
 
         public static string GetHelpUri(string idenfifier)
         {
