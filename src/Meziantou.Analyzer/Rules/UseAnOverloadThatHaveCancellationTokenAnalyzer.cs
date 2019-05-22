@@ -84,7 +84,7 @@ namespace Meziantou.Analyzer.Rules
                     return;
 
                 var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
-                if (!isImplicitlyDeclared && !UseStringComparisonAnalyzer.HasOverloadWithAdditionalParameterOfType(operation, CancellationTokenSymbol))
+                if (!isImplicitlyDeclared && !operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, CancellationTokenSymbol))
                     return;
 
                 var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(operation));

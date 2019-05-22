@@ -27,8 +27,6 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            var values = Enum.GetValues(typeof(OperationKind)).Cast<OperationKind>().ToArray();
-
             context.RegisterOperationAction(Analyze, OperationKind.Throw);
         }
 

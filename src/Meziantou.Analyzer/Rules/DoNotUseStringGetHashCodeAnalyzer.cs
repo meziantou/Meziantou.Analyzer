@@ -35,7 +35,7 @@ namespace Meziantou.Analyzer.Rules
             if (string.Equals(operation.TargetMethod.Name, nameof(string.GetHashCode), StringComparison.Ordinal) &&
                 operation.TargetMethod.ContainingType.IsString())
             {
-                if (UseStringComparisonAnalyzer.HasArgumentOfType(operation, context.Compilation.GetTypeByMetadataName("System.StringComparison")))
+                if (operation.HasArgumentOfType(context.Compilation.GetTypeByMetadataName("System.StringComparison")))
                     return;
 
                 context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name);
