@@ -52,14 +52,7 @@ namespace Meziantou.Analyzer.Rules
                     {
                         context.ReportDiagnostic(s_rule, objectCreationOperation);
                     }
-
-                    return;
                 }
-
-                if (argument.Value is ILocalReferenceOperation argumentValue && catchOperation.Locals.Contains(argumentValue.Local))
-                    return;
-
-                context.ReportDiagnostic(s_rule, objectCreationOperation);
             }
         }
 
