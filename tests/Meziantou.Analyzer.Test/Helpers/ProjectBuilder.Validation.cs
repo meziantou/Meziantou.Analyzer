@@ -163,15 +163,23 @@ namespace TestHelper
                 .AddMetadataReferences(projectId, References);
 
             var count = 0;
-            foreach (var source in new[] { SourceCode }.Concat(ApiReferences))
+            AppendFile(FileName, SourceCode);
+
+            foreach (var source in ApiReferences)
             {
                 var newFileName = fileNamePrefix + count + fileExt;
-                var documentId = DocumentId.CreateNewId(projectId, debugName: newFileName);
-                solution = solution.AddDocument(documentId, newFileName, SourceText.From(source));
-                count++;
+                AppendFile(newFileName, source);
             }
 
             return solution.GetProject(projectId);
+
+            void AppendFile(string filename, string content)
+            {
+                filename ??= fileNamePrefix + count + fileExt;
+                var documentId = DocumentId.CreateNewId(projectId, debugName: filename);
+                solution = solution.AddDocument(documentId, filename, SourceText.From(content));
+                count++;
+            }
         }
 
         [DebuggerStepThrough]

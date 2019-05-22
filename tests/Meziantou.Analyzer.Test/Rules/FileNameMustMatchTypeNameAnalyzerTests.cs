@@ -27,6 +27,17 @@ class Sample
         }
 
         [TestMethod]
+        public async Task DoesMatchFileNameBeforeDot()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode("Sample.xaml.cs", @"
+class Sample
+{
+}")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
         public async Task DoesMatchFileName()
         {
             await CreateProjectBuilder()
