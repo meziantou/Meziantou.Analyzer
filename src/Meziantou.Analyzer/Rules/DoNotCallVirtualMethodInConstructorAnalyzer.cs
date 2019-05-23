@@ -14,8 +14,8 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotCallVirtualMethodInConstructor,
-            title: "Do not call virtual method in constructor",
-            messageFormat: "Do not call virtual method in constructor",
+            title: "Do not call overridable members in constructor",
+            messageFormat: "Do not call overridable members in constructor",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -47,23 +47,45 @@ namespace Meziantou.Analyzer.Rules
             if (body == null)
                 return;
 
-            var invocationSyntaxes = body.DescendantNodes().OfType<InvocationExpressionSyntax>();
-            foreach (var invocationSyntax in invocationSyntaxes)
-            {
-                var operation = context.SemanticModel.GetOperation(invocationSyntax, context.CancellationToken) as IInvocationOperation;
-                if (operation == null)
-                    continue;
+            var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
+            if (operation == null)
+                return;
 
-                if (operation.TargetMethod.IsVirtual && IsThis(operation))
+            var invocationOperations = operation.DescendantsAndSelf().OfType<IInvocationOperation>();
+            foreach (var invocationOperation in invocationOperations)
+            {
+                if (IsOverridable(invocationOperation.TargetMethod) && IsCurrentInstanceMethod(invocationOperation.Instance))
                 {
-                    context.ReportDiagnostic(s_rule, invocationSyntax);
+                    context.ReportDiagnostic(s_rule, invocationOperation.Syntax);
+                }
+            }
+
+            var references = operation.DescendantsAndSelf().OfType<IMemberReferenceOperation>();
+            foreach (var reference in references)
+            {
+                var member = reference.Member;
+                if (IsOverridable(member) && !reference.IsInNameofOperation())
+                {
+                    var child = reference.Children.SingleOrDefault();
+                    if (child != null && IsCurrentInstanceMethod(child))
+                    {
+                        context.ReportDiagnostic(s_rule, reference.Syntax);
+                    }
                 }
             }
         }
 
-        private static bool IsThis(IInvocationOperation operation)
+        private static bool IsOverridable(ISymbol symbol)
         {
-            return operation.Instance is IInstanceReferenceOperation i && i.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance;
+            return symbol.IsVirtual || symbol.IsAbstract || symbol.IsOverride;
+        }
+
+        private static bool IsCurrentInstanceMethod(IOperation operation)
+        {
+            if (operation == null)
+                return false;
+
+            return operation is IInstanceReferenceOperation i && i.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance;
         }
     }
 }
