@@ -59,6 +59,7 @@ namespace Meziantou.Analyzer
         public const string ClassMustBeSealed = "MA0053";
         public const string IncludeCatchExceptionAsInnerException = "MA0054";
         public const string DoNotUseDestructor = "MA0055";
+        public const string DoNotCallVirtualMethodInConstructor = "MA0056";
 
         public static string GetHelpUri(string idenfifier)
         {
