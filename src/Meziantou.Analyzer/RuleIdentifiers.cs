@@ -60,6 +60,9 @@ namespace Meziantou.Analyzer
         public const string IncludeCatchExceptionAsInnerException = "MA0054";
         public const string DoNotUseDestructor = "MA0055";
         public const string DoNotCallVirtualMethodInConstructor = "MA0056";
+        public const string AttributeNameShouldEndWithAttribute = "MA0057";
+        public const string ExceptionNameShouldEndWithException = "MA0058";
+        public const string EventArgsNameShouldEndWithEventArgs = "MA0059";
 
         public static string GetHelpUri(string idenfifier)
         {
