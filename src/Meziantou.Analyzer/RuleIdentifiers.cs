@@ -63,6 +63,7 @@ namespace Meziantou.Analyzer
         public const string AttributeNameShouldEndWithAttribute = "MA0057";
         public const string ExceptionNameShouldEndWithException = "MA0058";
         public const string EventArgsNameShouldEndWithEventArgs = "MA0059";
+        public const string TheReturnValueOfStreamReadShouldBeUsed = "MA0060";
 
         public static string GetHelpUri(string idenfifier)
         {
