@@ -58,7 +58,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsPotentialParameter(IParameterSymbol parameter, ITypeSymbol exceptionSymbol)
         {
-            return parameter.Type.IsAssignableTo(exceptionSymbol);
+            return parameter.Type.IsOrInheritFrom(exceptionSymbol);
         }
     }
 }

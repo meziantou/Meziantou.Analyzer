@@ -57,7 +57,7 @@ namespace Meziantou.Analyzer.Rules
 
             public bool IsArgumentException(IThrowOperation operation)
             {
-                return operation.Exception != null && operation.Exception.Type.IsAssignableTo(_argumentSymbol);
+                return operation.Exception != null && operation.Exception.Type.IsOrInheritFrom(_argumentSymbol);
             }
 
             public bool CanContainsYield(IMethodSymbol methodSymbol)
