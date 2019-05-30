@@ -48,7 +48,7 @@ namespace Meziantou.Analyzer
         {
             foreach (var arg in operation.Arguments)
             {
-                if (argumentTypeSymbol.IsEqualTo(arg.Value.Type.ContainingType))
+                if (argumentTypeSymbol.IsEqualTo(arg.Value.Type))
                     return true;
             }
 
