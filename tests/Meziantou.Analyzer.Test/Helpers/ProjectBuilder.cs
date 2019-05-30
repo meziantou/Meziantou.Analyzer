@@ -89,19 +89,19 @@ namespace TestHelper
                     lineIndex++;
 
                     int startIndex = 0;
+                    int matchCount = 0;
                     while (true)
                     {
                         var index = line.IndexOf(Pattern, startIndex, StringComparison.Ordinal);
                         if (index < 0)
                             break;
 
-                        ShouldReportDiagnostic(lineIndex, index + 1);
+                        ShouldReportDiagnostic(lineIndex, index + 1 - (matchCount * Pattern.Length));
                         startIndex = index + 1;
+                        matchCount++;
                     }
-
                 }
             }
-
         }
 
         public ProjectBuilder WithEditorConfig(string editorConfig)
