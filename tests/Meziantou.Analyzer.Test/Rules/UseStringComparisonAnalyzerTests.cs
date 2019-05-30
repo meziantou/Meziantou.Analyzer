@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
@@ -15,7 +16,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
+        public async Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -32,7 +33,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Equals_String_string_ShouldReportDiagnosticAsync()
+        public async Task Equals_String_string_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -58,7 +59,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Equals_String_ShouldReportDiagnosticAsync()
+        public async Task Equals_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -84,7 +85,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task IndexOf_String_StringComparison_ShouldNotReportDiagnosticAsync()
+        public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -100,7 +101,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task IndexOf_String_ShouldReportDiagnosticAsync()
+        public async Task IndexOf_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -126,7 +127,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task StartsWith_String_StringComparison_ShouldNotReportDiagnosticAsync()
+        public async Task StartsWith_String_StringComparison_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -142,7 +143,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task StartsWith_String_ShouldReportDiagnosticAsync()
+        public async Task StartsWith_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -168,7 +169,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Compare_ShouldReportDiagnosticAsync()
+        public async Task Compare_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -194,7 +195,7 @@ class TypeName
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Compare_ShouldNotReportDiagnosticAsync()
+        public async Task Compare_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class TypeName
@@ -202,6 +203,22 @@ class TypeName
     public void Test()
     {
         string.Compare(""a"", ""v"", ignoreCase: true);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task IndexOf_ShouldNotReportDiagnosticAsync()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        """".IndexOf("""", 0, System.StringComparison.Ordinal);
     }
 }";
             await CreateProjectBuilder()

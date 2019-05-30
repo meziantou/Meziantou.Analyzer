@@ -16,7 +16,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AbstractClass_NoDiagnosticAsync()
+        public async Task AbstractClass_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 abstract class AbstractClass
@@ -30,7 +30,7 @@ abstract class AbstractClass
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Inherited_NoDiagnosticAsync()
+        public async Task Inherited_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
@@ -46,7 +46,7 @@ class Test2 : Test { }
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task InstanceField_NoDiagnosticAsync()
+        public async Task InstanceField_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test4
@@ -60,7 +60,7 @@ class Test4
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task ImplementInterface_NoDiagnosticAsync()
+        public async Task ImplementInterface_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test : ITest
@@ -75,7 +75,7 @@ interface ITest { }
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task StaticMethodAndConstField_DiagnosticAsync()
+        public async Task StaticMethodAndConstField_DiagnosticAsync()
         {
             const string SourceCode = @"
 public class Test
@@ -97,7 +97,7 @@ public static class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task ConversionOperator_NoDiagnosticAsync()
+        public async Task ConversionOperator_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
@@ -110,7 +110,7 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AddOperator_NoDiagnosticAsync()
+        public async Task AddOperator_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
@@ -123,7 +123,7 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task ComImport_NoDiagnosticAsync()
+        public async Task ComImport_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 [System.Runtime.InteropServices.CoClass(typeof(Test))]
@@ -140,7 +140,7 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task Instantiation_NoDiagnosticAsync()
+        public async Task Instantiation_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
@@ -154,7 +154,7 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MsTestClass_NoDiagnosticAsync()
+        public async Task MsTestClass_NoDiagnosticAsync()
         {
             const string SourceCode = @"
 [Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]

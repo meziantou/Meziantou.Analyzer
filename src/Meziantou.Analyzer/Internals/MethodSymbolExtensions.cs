@@ -32,12 +32,25 @@ namespace Meziantou.Analyzer
 
         private static bool IsInterfaceImplementation(this ISymbol symbol)
         {
+            return GetImplementingInterfaceSymbol(symbol) != null;
+        }
+
+        public static IMethodSymbol GetImplementingInterfaceSymbol(this IMethodSymbol symbol)
+        {
+            if (symbol.ExplicitInterfaceImplementations.Any())
+                return symbol.ExplicitInterfaceImplementations.First();
+
+            return (IMethodSymbol)GetImplementingInterfaceSymbol((ISymbol)symbol);
+        }
+
+        private static ISymbol GetImplementingInterfaceSymbol(this ISymbol symbol)
+        {
             if (symbol.ContainingType == null)
-                return false;
+                return null;
 
             return symbol.ContainingType.AllInterfaces
                 .SelectMany(@interface => @interface.GetMembers())
-                .Any(interfaceMember => symbol.Equals(symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMember)));
+                .FirstOrDefault(interfaceMember => symbol.Equals(symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMember)));
         }
 
         public static bool IsUnitTestMethod(this IMethodSymbol methodSymbol)
