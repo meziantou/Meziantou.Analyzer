@@ -53,7 +53,17 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_Count));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_listMethodsRule, s_combineLinqMethodsRule, s_duplicateOrderByMethodsRule, s_optimizeCountRule);
+        private static readonly DiagnosticDescriptor s_optimizeWhereAndOrderByRule = new DiagnosticDescriptor(
+            RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy,
+            title: "Optimize Enumerable.OrderBy usage",
+            messageFormat: "Call 'Where' before '{0}'",
+            RuleCategories.Performance,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_listMethodsRule, s_combineLinqMethodsRule, s_duplicateOrderByMethodsRule, s_optimizeCountRule, s_optimizeWhereAndOrderByRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -84,12 +94,36 @@ namespace Meziantou.Analyzer.Rules
             UseIndexerInsteadOfElementAt(context, operation);
             CombineWhereWithNextMethod(context, operation, symbols);
             RemoveTwoConsecutiveOrderBy(context, operation, symbols);
+            WhereShouldBeBeforeOrderBy(context, operation, symbols);
             OptimizeCountUsage(context, operation, symbols);
         }
-
+        
         private static ImmutableDictionary<string, string> CreateProperties(OptimizeLinqUsageData data)
         {
             return ImmutableDictionary.Create<string, string>().Add("Data", data.ToString());
+        }
+
+        private static void WhereShouldBeBeforeOrderBy(OperationAnalysisContext context, IInvocationOperation operation, List<INamedTypeSymbol> enumerableSymbols)
+        {
+            if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
+                string.Equals(operation.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
+            {
+                var parent = GetParentLinqOperation(operation);
+                if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType))
+                {
+                    if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
+                    {
+                        var properties = CreateProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod)
+                           .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                           .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                           .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                           .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                           .Add("MethodName", parent.TargetMethod.Name);
+
+                        context.ReportDiagnostic(s_optimizeWhereAndOrderByRule, properties, parent, operation.TargetMethod.Name);
+                    }
+                }
+            }
         }
 
         private static void UseCountPropertyInsteadOfMethod(OperationAnalysisContext context, IInvocationOperation operation)

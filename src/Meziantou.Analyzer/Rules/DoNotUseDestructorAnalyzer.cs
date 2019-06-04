@@ -10,8 +10,8 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotUseDestructor,
-            title: "Do not use desctructor",
-            messageFormat: "Do not use desctructor",
+            title: "Do not use destructor",
+            messageFormat: "Do not use destructor",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
