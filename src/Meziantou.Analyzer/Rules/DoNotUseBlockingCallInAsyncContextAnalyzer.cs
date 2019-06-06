@@ -183,8 +183,7 @@ namespace Meziantou.Analyzer.Rules
                 var symbol = operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart);
                 if (symbol is IMethodSymbol methodSymbol)
                 {
-                    return !methodSymbol.IsOverride
-                        && !methodSymbol.IsInterfaceImplementation()
+                    return !methodSymbol.IsOverrideOrInterfaceImplementation()
                         && !methodSymbol.IsVisibleOutsideOfAssembly();
                 }
 

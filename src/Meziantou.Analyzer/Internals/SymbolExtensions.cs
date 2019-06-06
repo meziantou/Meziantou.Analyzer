@@ -22,13 +22,26 @@ namespace Meziantou.Analyzer
             return IsVisibleOutsideOfAssembly(symbol.ContainingType);
         }
 
-
         public static bool IsOperator(this ISymbol symbol)
         {
             if (symbol is IMethodSymbol methodSymbol)
             {
                 return methodSymbol.MethodKind == MethodKind.UserDefinedOperator || methodSymbol.MethodKind == MethodKind.Conversion;
             }
+
+            return false;
+        }
+
+        public static bool IsOverrideOrInterfaceImplementation(this ISymbol symbol)
+        {
+            if (symbol is IMethodSymbol methodSymbol)
+                return methodSymbol.IsOverride || methodSymbol.IsInterfaceImplementation();
+
+            if (symbol is IPropertySymbol propertySymbol)
+                return propertySymbol.IsOverride || propertySymbol.IsInterfaceImplementation();
+
+            if (symbol is IEventSymbol eventSymbol)
+                return eventSymbol.IsOverride || eventSymbol.IsInterfaceImplementation();
 
             return false;
         }
