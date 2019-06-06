@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -42,7 +43,7 @@ namespace Meziantou.Analyzer.Test.Rules
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task FieldsAsync(string visibility, string type, bool isValid)
+        public async Task Fields(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -62,7 +63,7 @@ public class Test
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task DelegatesAsync(string visibility, string type, bool isValid)
+        public async Task Delegates(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -82,7 +83,7 @@ public class Test
 
         [DataTestMethod]
         [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task Delegates_ParametersAsync(string visibility, string type, bool isValid)
+        public async Task Delegates_Parameters(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -102,7 +103,7 @@ public class Test
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task IndexersAsync(string visibility, string type, bool isValid)
+        public async Task Indexers(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -123,7 +124,7 @@ public class Test
 
         [DataTestMethod]
         [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task Indexers_ParametersAsync(string visibility, string type, bool isValid)
+        public async Task Indexers_Parameters(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -144,7 +145,7 @@ public class Test
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task PropertiesAsync(string visibility, string type, bool isValid)
+        public async Task Properties(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -164,7 +165,7 @@ public class Test
 
         [DataTestMethod]
         [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task MethodsAsync(string visibility, string type, bool isValid)
+        public async Task Methods(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -184,7 +185,7 @@ public class Test
 
         [DataTestMethod]
         [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
-        public async System.Threading.Tasks.Task Methods_ParametersAsync(string visibility, string type, bool isValid)
+        public async Task Methods_Parameters(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
@@ -203,7 +204,7 @@ public class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task PrivateContainerAsync()
+        public async Task PrivateContainer()
         {
             const string SourceCode = @"using System.Collections.Generic;
 internal class Test
@@ -211,6 +212,24 @@ internal class Test
     public delegate List<int> B();
     public List<int> _a;
     protected List<int> _b;
+    public List<int> A() => throw null;
+}";
+            await CreateProjectBuilder()
+                 .WithSourceCode(SourceCode)
+                 .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task InterfaceImplementation()
+        {
+            const string SourceCode = @"using System.Collections.Generic;
+public interface ITest
+{
+    [|]List<int> A();
+}
+
+public class Test : ITest
+{
     public List<int> A() => throw null;
 }";
             await CreateProjectBuilder()
