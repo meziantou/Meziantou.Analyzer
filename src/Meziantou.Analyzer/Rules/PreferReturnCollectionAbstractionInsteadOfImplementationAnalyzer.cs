@@ -86,7 +86,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisibleOutsideOfAssembly())
+            if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
                 return;
 
             var type = node.Type;
@@ -105,7 +105,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisibleOutsideOfAssembly())
+            if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
                 return;
 
             var type = node.Type;
@@ -122,7 +122,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisibleOutsideOfAssembly())
+            if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
                 return;
 
             var type = node.ReturnType;
