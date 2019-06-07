@@ -20,6 +20,10 @@ steps:
     version: '3.0.100-preview5-011568'
     includePreviewVersions: true
 
+- task: NuGetToolInstaller@1
+  inputs:
+    versionSpec: 5.1.0
+
 - task: PowerShell@2
   displayName: Update version
   inputs:
