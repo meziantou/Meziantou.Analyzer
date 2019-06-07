@@ -2,15 +2,24 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DocumentationGenerator
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
+            if (args.Length != 1)
+            {
+                Console.Error.WriteLine("You must specify the output folder");
+                return;
+            }
+
+            var outputFolder = args[0];
+
             var assembly = typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly;
             var diagnosticAnalyzers = assembly.GetExportedTypes()
                 .Where(type => !type.IsAbstract && typeof(DiagnosticAnalyzer).IsAssignableFrom(type))
@@ -29,13 +38,35 @@ namespace DocumentationGenerator
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
                 var hasCodeFix = codeFixProviders.Any(codeFixProvider => codeFixProvider.FixableDiagnosticIds.Contains(diagnostic.Id));
-                sb.AppendLine($"|[{diagnostic.Id}](Rules/{diagnostic.Id})|{diagnostic.Category}|{diagnostic.Title}|{diagnostic.DefaultSeverity}|{diagnostic.IsEnabledByDefault}|{hasCodeFix}|");
+                sb.AppendLine($"|[{diagnostic.Id}](Rules/{diagnostic.Id}.md)|{diagnostic.Category}|{diagnostic.Title}|<span title='{diagnostic.DefaultSeverity}'>{GetSeverity(diagnostic.DefaultSeverity)}</span>|{GetBoolean(diagnostic.IsEnabledByDefault)}|{GetBoolean(hasCodeFix)}|");
             }
 
             Console.WriteLine(sb.ToString());
-            var path = Path.GetFullPath(@"..\..\..\..\..\docs\README.md");
+            var path = Path.GetFullPath(Path.Combine(args[0], @"README.md"));
             Console.WriteLine(path);
             File.WriteAllText(path, sb.ToString());
+        }
+
+        private static string GetSeverity(DiagnosticSeverity severity)
+        {
+            switch (severity)
+            {
+                case DiagnosticSeverity.Hidden:
+                    return "👻";
+                case DiagnosticSeverity.Info:
+                    return "ℹ️";
+                case DiagnosticSeverity.Warning:
+                    return "⚠️";
+                case DiagnosticSeverity.Error:
+                    return "❌";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(severity));
+            }
+        }
+
+        private static string GetBoolean(bool value)
+        {
+            return value ? "✔️" : "❌";
         }
     }
 }
