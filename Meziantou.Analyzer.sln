@@ -15,9 +15,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		azure-pipelines.yml = azure-pipelines.yml
 		CHANGELOG.md = CHANGELOG.md
 		Directory.Build.props = Directory.Build.props
+		Global.json = Global.json
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentationGenerator", "src\DocumentationGenerator\DocumentationGenerator.csproj", "{E7199E8B-465B-4487-B078-1FB85BAFD368}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentationGenerator", "src\DocumentationGenerator\DocumentationGenerator.csproj", "{E7199E8B-465B-4487-B078-1FB85BAFD368}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
