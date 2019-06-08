@@ -1,0 +1,1 @@
+dotnet run --project "%~dp0\src\DocumentationGenerator\DocumentationGenerator.csproj" "%~dp0\docs"
