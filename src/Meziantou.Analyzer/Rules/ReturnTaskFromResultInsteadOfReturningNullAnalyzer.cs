@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -42,7 +43,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
-            if (!IsTaskType(context.Compilation, methodSymbol.ReturnType))
+            if (methodSymbol == null || !IsTaskType(context.Compilation, methodSymbol.ReturnType))
                 return;
 
             AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
@@ -55,7 +56,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
-            if (!IsTaskType(context.Compilation, methodSymbol.ReturnType))
+            if (methodSymbol == null || !IsTaskType(context.Compilation, methodSymbol.ReturnType))
                 return;
 
             if (node.Body is BlockSyntax)
@@ -132,9 +133,14 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsTaskType(Compilation compilation, ITypeSymbol typeSyntax)
         {
-            return typeSyntax != null &&
-                   typeSyntax.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task")) ||
-                   typeSyntax.OriginalDefinition.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
+            if (compilation is null)
+                throw new ArgumentNullException(nameof(compilation));
+
+            if (typeSyntax == null)
+                return false;
+
+            return typeSyntax.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task")) ||
+                   (typeSyntax.OriginalDefinition != null && typeSyntax.OriginalDefinition.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1")));
         }
     }
 }
