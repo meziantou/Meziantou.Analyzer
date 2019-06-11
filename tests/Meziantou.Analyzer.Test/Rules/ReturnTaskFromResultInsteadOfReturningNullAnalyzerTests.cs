@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MethodAsync()
+        public async Task Method()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class Test
@@ -33,7 +34,7 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task LocalFunctionAsync()
+        public async Task LocalFunction()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class Test
@@ -58,7 +59,7 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task LambdaExpressionAsync()
+        public async Task LambdaExpression()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class Test
@@ -83,25 +84,24 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task AnonymousMethodsAsync()
+        public async Task AnonymousMethods()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     void A()
     {
-        System.Func<Task> a = delegate () { return null; };
-        System.Func<Task<object>> b = delegate () { return null; };
+        System.Func<Task> a = delegate () { [|]return null; };
+        System.Func<Task<object>> b = delegate () { [|]return null; };
         System.Func<Task> c = async delegate () { };
         System.Func<Task<object>> d = async delegate () { return null; };
         System.Func<object> e = delegate () { return null; };
+        System.Action f = () => { };
     }
 }";
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 45)
-                  .ShouldReportDiagnostic(line: 7, column: 53)
                   .ValidateAsync();
         }
     }
