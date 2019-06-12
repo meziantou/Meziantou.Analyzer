@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer

@@ -44,11 +44,11 @@ namespace Meziantou.Analyzer.Rules
 
             if (nodeToFix is MethodDeclarationSyntax method)
             {
-                editor.ReplaceNode(method, method.AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
+                editor.ReplaceNode(method, method.WithModifiers(method.Modifiers.Add(SyntaxKind.StaticKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
             }
             else if (nodeToFix is PropertyDeclarationSyntax property)
             {
-                editor.ReplaceNode(property, property.AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
+                editor.ReplaceNode(property, property.WithModifiers(property.Modifiers.Add(SyntaxKind.StaticKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
             }
 
             return editor.GetChangedDocument();
