@@ -43,7 +43,8 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
             var classNode = (ClassDeclarationSyntax)nodeToFix;
-            editor.ReplaceNode(classNode, classNode.AddModifiers(SyntaxFactory.Token(SyntaxKind.SealedKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
+            var modifiers = classNode.Modifiers.Add(SyntaxKind.SealedKeyword);
+            editor.ReplaceNode(classNode, classNode.WithModifiers(modifiers).WithAdditionalAnnotations(Formatter.Annotation));
             return editor.GetChangedDocument();
         }
 

@@ -47,16 +47,10 @@ namespace Meziantou.Analyzer.Rules
 
             var classNode = (ClassDeclarationSyntax)nodeToFix;
 
-            var newExpression = classNode.AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword));
-            var sealedModifier = newExpression.Modifiers.FirstOrDefault(token => token.IsKind(SyntaxKind.SealedKeyword));
-            if (sealedModifier != default)
-            {
-                newExpression = newExpression.WithModifiers(newExpression.Modifiers.Remove(sealedModifier));
-            }
+            var modifiers = classNode.Modifiers.Remove(SyntaxKind.SealedKeyword).Add(SyntaxKind.StaticKeyword);
 
-            editor.ReplaceNode(classNode, newExpression.WithAdditionalAnnotations(Formatter.Annotation));
+            editor.ReplaceNode(classNode, classNode.WithModifiers(modifiers).WithAdditionalAnnotations(Formatter.Annotation));
             return editor.GetChangedDocument();
         }
-
     }
 }
