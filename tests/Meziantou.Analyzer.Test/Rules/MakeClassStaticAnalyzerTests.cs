@@ -257,5 +257,26 @@ static class Test2
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [TestMethod]
+        public async Task FixShouldAddStaticBeforePartial()
+        {
+            const string SourceCode = @"
+public partial class [|]Test
+{
+}
+";
+
+            const string CodeFix = @"
+public static partial class Test
+{
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
     }
 }
