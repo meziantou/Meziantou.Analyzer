@@ -91,25 +91,34 @@ namespace Meziantou.Analyzer
             bool includeObsoleteMethods,
             params ITypeSymbol[] additionalParameterTypes)
         {
-            var obsoleteAttribute = compilation?.GetTypeByMetadataName("System.ObsoleteAttribute");
-
             var members = methodSymbol.ContainingType.GetMembers(methodSymbol.Name);
-            return members.OfType<IMethodSymbol>().FirstOrDefault(IsOverload);
+            return members.OfType<IMethodSymbol>()
+                .Where(member => includeObsoleteMethods || !member.IsObsolete(compilation))
+                .FirstOrDefault(member => HasSimilarParameters(methodSymbol, member, additionalParameterTypes));
+        }
 
-            bool IsOverload(IMethodSymbol member)
-            {
-                if (member.Equals(methodSymbol))
-                    return false;
+        internal static bool IsObsolete(this IMethodSymbol methodSymbol, Compilation compilation)
+        {
+            var obsoleteAttribute = compilation?.GetTypeByMetadataName("System.ObsoleteAttribute");
+            if (obsoleteAttribute == null)
+                return false;
 
-                if (member.Parameters.Length - additionalParameterTypes.Length != methodSymbol.Parameters.Length)
-                    return false;
+            return methodSymbol.HasAttribute(obsoleteAttribute);
+        }
 
-                if (!includeObsoleteMethods && member.HasAttribute(obsoleteAttribute))
-                    return false;
+        internal static bool HasSimilarParameters(this IMethodSymbol methodSymbol, IMethodSymbol otherMethod, params ITypeSymbol[] additionalParameterTypes)
+        {
+            if (methodSymbol.Equals(otherMethod))
+                return false;
 
-                var types = member.Parameters.Select(p => p.Type).Except(methodSymbol.Parameters.Select(p => p.Type));
-                return !types.Except(additionalParameterTypes).Any();
-            }
+            additionalParameterTypes = additionalParameterTypes.Where(type => type != null).ToArray();
+            if (otherMethod.Parameters.Length - methodSymbol.Parameters.Length != additionalParameterTypes.Length)
+                return false;
+
+            var methodParameters = methodSymbol.Parameters.Select(p => p.Type);
+            var otherMethodParameters = otherMethod.Parameters.Select(p => p.Type);
+            var types = otherMethodParameters.Except(methodParameters);
+            return !types.Except(additionalParameterTypes).Any();
         }
     }
 }
