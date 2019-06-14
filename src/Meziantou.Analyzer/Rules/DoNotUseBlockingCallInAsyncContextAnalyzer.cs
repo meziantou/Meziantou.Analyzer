@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -57,12 +58,14 @@ namespace Meziantou.Analyzer.Rules
             public Context(Compilation compilation)
             {
                 _compilation = compilation;
+                CancellationTokenSymbol = _compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
                 TaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 TaskOfTSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
                 TaskAwaiterSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
                 ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
             }
 
+            private INamedTypeSymbol CancellationTokenSymbol { get; }
             private INamedTypeSymbol TaskSymbol { get; }
             private INamedTypeSymbol TaskOfTSymbol { get; }
             private INamedTypeSymbol TaskAwaiterSymbol { get; }
@@ -125,10 +128,22 @@ namespace Meziantou.Analyzer.Rules
 
                         if (memberSymbol is IMethodSymbol methodSymbol)
                         {
-                            return
-                                (!targetMethod.IsStatic || methodSymbol.IsStatic) &&
-                                (string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) || string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal)) &&
-                                methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol);
+                            if (targetMethod.IsStatic && !methodSymbol.IsStatic)
+                                return false;
+
+                            if (!string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) && !string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal))
+                                return false;
+
+                            if (!methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
+                                return false;
+
+                            if (methodSymbol.IsObsolete(context.Compilation))
+                                return false;
+
+                            if (!targetMethod.HasSimilarParameters(methodSymbol) && !targetMethod.HasSimilarParameters(methodSymbol, CancellationTokenSymbol))
+                                return false;
+
+                            return true;
                         }
 
                         return false;
