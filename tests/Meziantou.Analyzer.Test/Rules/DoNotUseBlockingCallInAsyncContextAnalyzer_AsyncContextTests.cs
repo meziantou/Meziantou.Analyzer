@@ -23,10 +23,10 @@ class Test
 {
     public async Task A()
     {
-        Task.Delay(1).Wait();
+        [|]Task.Delay(1).Wait();
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -39,10 +39,10 @@ class Test
 {
     public async Task A()
     {
-        _ = Task.FromResult(1).Result;
+        _ = [|]Task.FromResult(1).Result;
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 13)
+                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -55,10 +55,10 @@ class Test
 {
     public async Task A()
     {
-        System.Threading.Thread.Sleep(1);
+        [|]System.Threading.Thread.Sleep(1);
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -71,13 +71,13 @@ class Test
 {
     public async Task A()
     {
-        Write();
+        [|]Write();
     }
 
     public void Write() => throw null;
-    public Task Write(int a) => throw null;
+    public Task Write(System.Threading.CancellationToken cancellationToken) => throw null;
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -90,13 +90,13 @@ class Test
 {
     public async Task A()
     {
-        Write();
+        [|]Write();
     }
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
+                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -127,13 +127,13 @@ class Test
 {
     public async Task A()
     {
-        System.Func<Task> a = async () => Write();
+        System.Func<Task> a = async () => [|]Write();
     }
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 43)
+                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -148,17 +148,16 @@ class Test
     {
         Local();
 
-        async Task Local() => Write();
+        async Task Local() => [|]Write();
     }
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldReportDiagnostic(line: 8, column: 31)
+                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
-
-
+        
         [TestMethod]
         public async Task Method_NoOverload_NoDiagnostic()
         {
@@ -172,7 +171,25 @@ class Test
     }
 
     public void Write() => throw null;
-    public void Write(int a) => throw null;
+    public void Write(System.Threading.CancellationToken cancellationToken) => throw null;
+}")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task Method_NoOverloadWithSameParameters_NoDiagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        Write();
+    }
+
+    public void Write() => throw null;
+    public Task Write(int a) => throw null;
 }")
                   .ValidateAsync();
         }
