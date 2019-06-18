@@ -63,3 +63,4 @@
 |[MA0061](Rules/MA0061.md)|Design|Method overrides should not change parameter defaults|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0062](Rules/MA0062.md)|Design|Non-flags enums should not be marked with "FlagsAttribute"|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0063](Rules/MA0063.md)|Performance|Optimize Enumerable.OrderBy usage|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0064](Rules/MA0064.md)|Design|Avoid locking on publicly accessible instance|<span title='Warning'>⚠️</span>|✔️|❌|
