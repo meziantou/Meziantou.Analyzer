@@ -67,6 +67,7 @@ namespace Meziantou.Analyzer
         public const string MethodOverridesShouldNotChangeParameterDefaults = "MA0061";
         public const string NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute = "MA0062";
         public const string OptimizeEnumerable_WhereBeforeOrderBy = "MA0063";
+        public const string AvoidLockingOnPubliclyAccessibleInstance = "MA0064";
 
         public static string GetHelpUri(string idenfifier)
         {
