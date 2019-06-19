@@ -36,7 +36,7 @@ enum [|]Test : byte
         {
             const string SourceCode = @"
 [System.Flags]
-enum [|]Test : byte
+enum Test : byte
 {
     A = 1,
     B = 2,
@@ -44,6 +44,26 @@ enum [|]Test : byte
     D = 4,
     E = D | A,
     F = 8,
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task PowerOfTwoOrCombinationUsingHexa()
+        {
+            const string SourceCode = @"
+[System.Flags]
+enum Test
+{
+    A = 0x0,
+    B = 0x1,
+    C = 0x2,
+    D = 0x4,
+    E = 0x8,
+    F = 0x10,
 }
 ";
             await CreateProjectBuilder()
