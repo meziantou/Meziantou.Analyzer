@@ -47,7 +47,7 @@ namespace Meziantou.Analyzer.Rules
                     value = RemoveValue(value, powerOfTwo.member.ConstantValue);
                 }
 
-                if (!Equals(value, 0))
+                if (!IsZero(value))
                 {
                     context.ReportDiagnostic(s_rule, symbol, member.member.Name);
                     return;
@@ -61,6 +61,9 @@ namespace Meziantou.Analyzer.Rules
             // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
             switch (o)
             {
+                case null:
+                    throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value");
+
                 case byte x:
                     return (x == 0) || ((x & (x - 1)) == 0);
 
@@ -86,7 +89,45 @@ namespace Meziantou.Analyzer.Rules
                     return (x == 0) || ((x & (x - 1)) == 0);
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(o));
+                    throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported");
+            }
+        }
+
+        private static bool IsZero(object o)
+        {
+            // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
+            // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
+            switch (o)
+            {
+                case null:
+                    throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value");
+
+                case byte x:
+                    return x == 0;
+
+                case sbyte x:
+                    return x == 0;
+
+                case short x:
+                    return x == 0;
+
+                case ushort x:
+                    return x == 0;
+
+                case int x:
+                    return x == 0;
+
+                case uint x:
+                    return x == 0;
+
+                case long x:
+                    return x == 0;
+
+                case ulong x:
+                    return x == 0;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported");
             }
         }
 
@@ -96,6 +137,9 @@ namespace Meziantou.Analyzer.Rules
             // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
             switch (o)
             {
+                case null:
+                    throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value");
+
                 case byte x:
                     return (byte)(x & (~(byte)valueToRemove));
 
@@ -121,7 +165,7 @@ namespace Meziantou.Analyzer.Rules
                     return (ulong)(x & (~(ulong)valueToRemove));
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(o));
+                    throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported");
             }
         }
     }
