@@ -91,6 +91,13 @@ namespace Meziantou.Analyzer
             bool includeObsoleteMethods,
             params ITypeSymbol[] additionalParameterTypes)
         {
+            if (additionalParameterTypes == null)
+                return null;
+
+            additionalParameterTypes = additionalParameterTypes.Where(type => type != null).ToArray();
+            if (additionalParameterTypes.Length == 0)
+                return null;
+
             var members = methodSymbol.ContainingType.GetMembers(methodSymbol.Name);
             return members.OfType<IMethodSymbol>()
                 .Where(member => includeObsoleteMethods || !member.IsObsolete(compilation))
@@ -111,7 +118,11 @@ namespace Meziantou.Analyzer
             if (methodSymbol.Equals(otherMethod))
                 return false;
 
-            additionalParameterTypes = additionalParameterTypes.Where(type => type != null).ToArray();
+            if (additionalParameterTypes.Any(type => type == null))
+            {
+                additionalParameterTypes = additionalParameterTypes.Where(type => type != null).ToArray();
+            }
+
             if (otherMethod.Parameters.Length - methodSymbol.Parameters.Length != additionalParameterTypes.Length)
                 return false;
 
