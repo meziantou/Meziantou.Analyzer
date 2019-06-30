@@ -64,3 +64,5 @@
 |[MA0062](Rules/MA0062.md)|Design|Non-flags enums should not be marked with "FlagsAttribute"|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0063](Rules/MA0063.md)|Performance|Optimize Enumerable.OrderBy usage|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0064](Rules/MA0064.md)|Design|Avoid locking on publicly accessible instance|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0065](Rules/MA0065.md)|Performance|Default ValueType.Equals or HashCode is used for struct's equality|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0066](Rules/MA0066.md)|Performance|Hash table unfriendly type is used in a hash table|<span title='Warning'>⚠️</span>|✔️|❌|

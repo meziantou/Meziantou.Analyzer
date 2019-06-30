@@ -68,6 +68,8 @@ namespace Meziantou.Analyzer
         public const string NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute = "MA0062";
         public const string OptimizeEnumerable_WhereBeforeOrderBy = "MA0063";
         public const string AvoidLockingOnPubliclyAccessibleInstance = "MA0064";
+        public const string DoNotUseDefaultEqualsOnValueType = "MA0065";
+        public const string StructWithDefaultEqualsImplementationUsedAsAKey = "MA0066";
 
         public static string GetHelpUri(string idenfifier)
         {
