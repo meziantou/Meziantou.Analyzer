@@ -35,29 +35,34 @@ namespace Meziantou.Analyzer.Rules
         {
             public AnalyzerContext(Compilation compilation)
             {
-                EventHandlerSymbol = compilation.GetTypeByMetadataName("System.EventHandler");
-                EventHandlerOfTSymbol = compilation.GetTypeByMetadataName("System.EventHandler`1");
-                RoutedPropertyChangedEventHandlerOfTSymbol = compilation.GetTypeByMetadataName("System.Windows.RoutedPropertyChangedEventHandler`1");
+                EventArgsSymbol = compilation.GetTypeByMetadataName("System.EventArgs");
             }
 
-            public INamedTypeSymbol EventHandlerSymbol { get; }
-            public INamedTypeSymbol EventHandlerOfTSymbol { get; }
-            public INamedTypeSymbol RoutedPropertyChangedEventHandlerOfTSymbol { get; }
+            public INamedTypeSymbol EventArgsSymbol { get; }
 
             public void AnalyzeSymbol(SymbolAnalysisContext context)
             {
                 var symbol = (IEventSymbol)context.Symbol;
-                if (symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerOfTSymbol) ||
-                    symbol.Type.OriginalDefinition.IsEqualTo(EventHandlerSymbol) ||
-                    symbol.Type.OriginalDefinition.IsEqualTo(RoutedPropertyChangedEventHandlerOfTSymbol))
-                {
+                var method = (symbol.Type as INamedTypeSymbol)?.DelegateInvokeMethod;
+                if (method == null)
                     return;
-                }
+
+                if (IsValidSignature(method))
+                    return;
 
                 if (symbol.IsInterfaceImplementation())
                     return;
 
                 context.ReportDiagnostic(s_rule, symbol);
+            }
+
+            private bool IsValidSignature(IMethodSymbol methodSymbol)
+            {
+                return methodSymbol.ReturnsVoid
+                    && methodSymbol.Arity == 0
+                    && methodSymbol.Parameters.Length == 2
+                    && methodSymbol.Parameters[0].Type.IsObject()
+                    && methodSymbol.Parameters[1].Type.IsOrInheritFrom(EventArgsSymbol);
             }
         }
     }
