@@ -50,7 +50,7 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
 
             context.RegisterCompilationStartAction(AnalyzeConstructors);
-            context.RegisterCompilationStartAction(AnalyzeMethods);
+            context.RegisterCompilationStartAction(AnalyzeEnumerableMethods);
         }
 
         private static INamedTypeSymbol GetIComparableString(Compilation compilation)
@@ -101,7 +101,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static void AnalyzeMethods(CompilationStartAnalysisContext compilationContext)
+        private static void AnalyzeEnumerableMethods(CompilationStartAnalysisContext compilationContext)
         {
             var stringEqualityComparerInterfaceType = GetIComparableString(compilationContext.Compilation);
             if (stringEqualityComparerInterfaceType == null)

@@ -15,7 +15,11 @@ namespace TestHelper
 
         public ProjectBuilder()
         {
-            References = new List<MetadataReference>(Initialize.NetStandard2_0.Select(file => MetadataReference.CreateFromFile(file)));
+            var list = new List<MetadataReference>();
+            list.AddRange(Initialize.NetStandard2_0.Select(file => MetadataReference.CreateFromFile(file)));
+            list.AddRange(Initialize.System_Collections_Immutable.Select(file => MetadataReference.CreateFromFile(file)));
+
+            References = list;
         }
 
         public string FileName { get; private set; }
