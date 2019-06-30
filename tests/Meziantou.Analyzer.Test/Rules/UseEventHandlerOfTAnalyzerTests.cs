@@ -21,21 +21,56 @@ namespace Meziantou.Analyzer.Test.Rules
                   .WithSourceCode(@"
 class Test
 {
-    event System.EventHandler<string> myevent;
+    event System.EventHandler<System.EventArgs> myevent;
 }")
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task InvalidEvent()
+        public async Task ValidEvent_CustomEventArgs()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+class SampleEventArgs : System.EventArgs
+{
+}
+
+class Test
+{
+    event System.EventHandler<SampleEventArgs> myevent;
+}")
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task ValidEvent_CustomDelegate()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+class SampleEventArgs : System.EventArgs
+{
+}
+
+delegate void CustomEventHandler(object sender, SampleEventArgs e);
+
+class Test
+{
+    event CustomEventHandler myevent;
+}")
+                  .ValidateAsync();
+        }
+
+        [DataTestMethod]
+        [DataRow("System.Action<string>")]
+        [DataRow("System.EventHandler<string>")]
+        public async Task InvalidEvent(string signature)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"
 class Test
 {
-    event System.Action<string> myevent;
+    event " + signature + @" [|]myevent;
 }")
-                  .ShouldReportDiagnostic(line: 4, column: 33)
                   .ValidateAsync();
         }
     }

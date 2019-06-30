@@ -84,6 +84,14 @@ namespace Meziantou.Analyzer
             return expectedTypes.Any(t => IsEqualTo(t, symbol));
         }
 
+        public static bool IsObject(this ITypeSymbol symbol)
+        {
+            if (symbol == null)
+                return false;
+
+            return symbol.SpecialType == SpecialType.System_Object;
+        }
+
         public static bool IsString(this ITypeSymbol symbol)
         {
             if (symbol == null)
