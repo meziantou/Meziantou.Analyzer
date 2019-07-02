@@ -34,7 +34,7 @@ namespace Meziantou.Analyzer.Rules
             if (method.IsImplicitlyDeclared || method.Parameters.Length == 0)
                 return;
 
-            IMethodSymbol baseSymbol = null;
+            IMethodSymbol baseSymbol;
             if (method.IsOverride)
             {
                 baseSymbol = method.OverriddenMethod;
@@ -49,11 +49,15 @@ namespace Meziantou.Analyzer.Rules
 
             foreach (var parameter in method.Parameters)
             {
-                if (parameter.IsImplicitlyDeclared || !parameter.HasExplicitDefaultValue || parameter.IsThis)
+                if (parameter.IsImplicitlyDeclared || parameter.IsThis)
                     continue;
 
                 var originalParameter = baseSymbol.Parameters[parameter.Ordinal];
-                if (!Equals(originalParameter.ExplicitDefaultValue, parameter.ExplicitDefaultValue))
+                if (originalParameter.HasExplicitDefaultValue != parameter.HasExplicitDefaultValue)
+                {
+                    context.ReportDiagnostic(s_rule, parameter, originalParameter.HasExplicitDefaultValue ? FormattableString.Invariant($"{originalParameter.ExplicitDefaultValue}") : null);
+                }
+                else if (originalParameter.HasExplicitDefaultValue && !Equals(originalParameter.ExplicitDefaultValue, parameter.ExplicitDefaultValue))
                 {
                     context.ReportDiagnostic(s_rule, parameter, FormattableString.Invariant($"{originalParameter.ExplicitDefaultValue}"));
                 }
