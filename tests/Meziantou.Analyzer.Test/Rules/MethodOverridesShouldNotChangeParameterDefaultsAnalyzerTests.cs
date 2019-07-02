@@ -121,5 +121,42 @@ class TestDerived : Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [TestMethod]
+        public async Task Override_DifferentValue_OriginalParameterHasNoDefault()
+        {
+            const string SourceCode = @"
+class Test
+{
+    public virtual void A(int a) { }
+}
+
+class TestDerived : Test
+{
+    public override void A(int [|]a = 1) { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        public async Task Override_DifferentValue_OverrideParameterHasNoDefault()
+        {
+            const string SourceCode = @"
+class Test
+{
+    public virtual void A(int a = 0) { }
+}
+
+class TestDerived : Test
+{
+    public override void A(int [|]a) { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
     }
 }
