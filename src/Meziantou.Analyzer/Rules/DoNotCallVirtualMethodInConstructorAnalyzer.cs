@@ -50,6 +50,7 @@ namespace Meziantou.Analyzer.Rules
             if (operation == null)
                 return;
 
+            // Check method calls
             var invocationOperations = operation.DescendantsAndSelf().OfType<IInvocationOperation>();
             foreach (var invocationOperation in invocationOperations)
             {
@@ -59,14 +60,15 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
+            // Check property access
             var references = operation.DescendantsAndSelf().OfType<IMemberReferenceOperation>();
             foreach (var reference in references)
             {
                 var member = reference.Member;
                 if (IsOverridable(member) && !reference.IsInNameofOperation())
                 {
-                    var child = reference.Children.SingleOrDefault();
-                    if (child != null && IsCurrentInstanceMethod(child))
+                    var children = reference.Children.Take(2).ToList();
+                    if (children.Count == 1 && IsCurrentInstanceMethod(children[0]))
                     {
                         context.ReportDiagnostic(s_rule, reference.Syntax);
                     }
@@ -76,7 +78,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsOverridable(ISymbol symbol)
         {
-            return symbol.IsVirtual || symbol.IsAbstract || symbol.IsOverride;
+            return !symbol.IsSealed && (symbol.IsVirtual || symbol.IsAbstract || symbol.IsOverride);
         }
 
         private static bool IsCurrentInstanceMethod(IOperation operation)
