@@ -15,6 +15,24 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
+        public async Task Interface_ExplicitImplementation()
+        {
+            const string SourceCode = @"
+interface ITest
+{
+    void A(int a = 0);
+}
+
+class Test : ITest
+{
+    void ITest.A(int a) { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
         public async Task Interface_SameValue()
         {
             const string SourceCode = @"
@@ -26,42 +44,6 @@ interface ITest
 class Test : ITest
 {
     public void A(int a = 0) { }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
-        [TestMethod]
-        public async Task ExplicitInterface_SameValue()
-        {
-            const string SourceCode = @"
-interface ITest
-{
-    void A(int a = 0);
-}
-
-class Test : ITest
-{
-    void ITest.A(int a = 0) { }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
-        [TestMethod]
-        public async Task ExplicitInterface_DifferentValue()
-        {
-            const string SourceCode = @"
-interface ITest
-{
-    void A(int a = 0, int b = 1);
-}
-
-class Test : ITest
-{
-    void ITest.A(int [|]a = 1, int [|]b = 2) { }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
@@ -101,6 +83,8 @@ class TestDerived : Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: '0'; current: '1')")
+                  .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: '1'; current: '2')")
                   .ValidateAsync();
         }
 
@@ -137,6 +121,7 @@ class TestDerived : Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: <no default value>; current: '1')")
                   .ValidateAsync();
         }
 
@@ -155,8 +140,8 @@ class TestDerived : Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: '0'; current: <no default value>)")
                   .ValidateAsync();
         }
-
     }
 }
