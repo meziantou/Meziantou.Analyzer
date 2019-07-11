@@ -36,6 +36,8 @@ namespace Meziantou.Analyzer.Rules
                 var objectType = compilationContext.Compilation.GetSpecialType(SpecialType.System_Object);
                 var taskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 var taskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+                var valueTaskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+                var valueTaskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
                 var methodBaseTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
                 var fieldInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.FieldInfo");
                 var propertyInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.PropertyInfo");
@@ -81,6 +83,12 @@ namespace Meziantou.Analyzer.Rules
                                     return;
 
                                 if (IsMethod(methodSymbol, taskGenericTokenType, nameof(Task.ConfigureAwait)))
+                                    return;
+
+                                if (IsMethod(methodSymbol, valueTaskTokenType, nameof(Task.ConfigureAwait)))
+                                    return;
+
+                                if (IsMethod(methodSymbol, valueTaskGenericTokenType, nameof(Task.ConfigureAwait)))
                                     return;
 
                                 if (IsMethod(methodSymbol, taskTokenType, nameof(Task.FromResult)))
