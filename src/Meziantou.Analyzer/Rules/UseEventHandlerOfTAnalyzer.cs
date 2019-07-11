@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseEventHandlerOfT,
             title: "Use EventHandler<T>",
-            messageFormat: "Use EventHandler<T>",
+            messageFormat: "{0}",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -47,22 +47,49 @@ namespace Meziantou.Analyzer.Rules
                 if (method == null)
                     return;
 
-                if (IsValidSignature(method))
+                if (IsValidSignature(method, out var message))
                     return;
 
                 if (symbol.IsInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_rule, symbol);
+                context.ReportDiagnostic(s_rule, symbol, message);
             }
 
-            private bool IsValidSignature(IMethodSymbol methodSymbol)
+            private bool IsValidSignature(IMethodSymbol methodSymbol, out string message)
             {
-                return methodSymbol.ReturnsVoid
-                    && methodSymbol.Arity == 0
-                    && methodSymbol.Parameters.Length == 2
-                    && methodSymbol.Parameters[0].Type.IsObject()
-                    && methodSymbol.Parameters[1].Type.IsOrInheritFrom(EventArgsSymbol);
+                if (!methodSymbol.ReturnsVoid)
+                {
+                    message = "The delegate must return void";
+                    return false;
+                }
+
+                if (methodSymbol.Arity != 0)
+                {
+                    message = "The delegate must not be a generic method";
+                    return false;
+                }
+
+                if (methodSymbol.Parameters.Length != 2)
+                {
+                    message = "The delegate must have 2 parameters";
+                    return false;
+                }
+
+                if (!methodSymbol.Parameters[0].Type.IsObject())
+                {
+                    message = "The first parameter must be of type object";
+                    return false;
+                }
+
+                if (!methodSymbol.Parameters[1].Type.IsOrInheritFrom(EventArgsSymbol))
+                {
+                    message = "The second parameter must be of type 'System.EventArgs' or a derived type";
+                    return false;
+                }
+
+                message = null;
+                return true;
             }
         }
     }
