@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.MethodOverridesShouldNotChangeParameterDefaults,
             title: "Method overrides should not change parameter defaults",
-            messageFormat: "Method overrides should not change parameter defaults ({0})",
+            messageFormat: "Method overrides should not change parameter defaults (original: {0}; current: {1})",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -32,6 +32,9 @@ namespace Meziantou.Analyzer.Rules
         {
             var method = (IMethodSymbol)context.Symbol;
             if (method.IsImplicitlyDeclared || method.Parameters.Length == 0)
+                return;
+
+            if (method.ExplicitInterfaceImplementations.Length > 0)
                 return;
 
             IMethodSymbol baseSymbol;
@@ -55,13 +58,26 @@ namespace Meziantou.Analyzer.Rules
                 var originalParameter = baseSymbol.Parameters[parameter.Ordinal];
                 if (originalParameter.HasExplicitDefaultValue != parameter.HasExplicitDefaultValue)
                 {
-                    context.ReportDiagnostic(s_rule, parameter, originalParameter.HasExplicitDefaultValue ? FormattableString.Invariant($"{originalParameter.ExplicitDefaultValue}") : null);
+                    context.ReportDiagnostic(s_rule, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
                 }
                 else if (originalParameter.HasExplicitDefaultValue && !Equals(originalParameter.ExplicitDefaultValue, parameter.ExplicitDefaultValue))
                 {
-                    context.ReportDiagnostic(s_rule, parameter, FormattableString.Invariant($"{originalParameter.ExplicitDefaultValue}"));
+                    context.ReportDiagnostic(s_rule, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
                 }
             }
+        }
+
+        private static string GetParameterDisplayValue(IParameterSymbol parameter)
+        {
+            if (!parameter.HasExplicitDefaultValue)
+                return "<no default value>";
+
+            if (parameter.ExplicitDefaultValue is null)
+            {
+                return "null";
+            }
+
+            return FormattableString.Invariant($"'{parameter.ExplicitDefaultValue}'");
         }
     }
 }
