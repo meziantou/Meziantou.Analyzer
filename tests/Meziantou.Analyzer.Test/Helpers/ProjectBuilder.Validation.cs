@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -182,6 +183,18 @@ namespace TestHelper
             }
         }
 
+        private static ReportDiagnostic GetReportDiagnostic(DiagnosticDescriptor descriptor)
+        {
+            return descriptor.DefaultSeverity switch
+            {
+                DiagnosticSeverity.Hidden => ReportDiagnostic.Hidden,
+                DiagnosticSeverity.Info => ReportDiagnostic.Info,
+                DiagnosticSeverity.Warning => ReportDiagnostic.Warn,
+                DiagnosticSeverity.Error => ReportDiagnostic.Error,
+                _ => ReportDiagnostic.Info, // Ensure the analyzer is enabled for the test
+            };
+        }
+
         [DebuggerStepThrough]
         private async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
         {
@@ -195,11 +208,9 @@ namespace TestHelper
             foreach (var project in projects)
             {
                 var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-                //if (DefaultAnalyzerId != null)
-                //{
-                //    options.WithSpecificDiagnosticOptions(ImmutableDictionary.Create<string, ReportDiagnostic>()
-                //        .Add("", ReportDiagnostic.Info));
-                //}
+
+                // Enable diagnostic
+                options = options.WithSpecificDiagnosticOptions(analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag))));
 
                 var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
                 if (compileSolution)

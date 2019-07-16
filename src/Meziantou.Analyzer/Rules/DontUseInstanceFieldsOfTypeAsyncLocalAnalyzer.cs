@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Rules
             messageFormat: "Don't use instance fields of type AsyncLocal<T>",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
+            isEnabledByDefault: false,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DontUseInstanceFieldsOfTypeAsyncLocal));
 
