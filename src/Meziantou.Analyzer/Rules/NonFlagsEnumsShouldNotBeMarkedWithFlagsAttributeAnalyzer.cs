@@ -38,6 +38,9 @@ namespace Meziantou.Analyzer.Rules
             if (!symbol.HasAttribute(context.Compilation.GetTypeByMetadataName("System.FlagsAttribute")))
                 return;
 
+            if (!symbol.GetMembers().OfType<IFieldSymbol>().All(member => member.HasConstantValue && member.ConstantValue != null))
+                return; // I cannot reproduce this case, but it was reported by some users.
+
             var members = symbol.GetMembers().OfType<IFieldSymbol>().Select(member => (member, IsPowerOfTwo: IsPowerOfTwo(member.ConstantValue))).ToList();
             foreach (var member in members.Where(member => !member.IsPowerOfTwo))
             {
@@ -59,76 +62,38 @@ namespace Meziantou.Analyzer.Rules
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
             // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
-            switch (o)
+            return o switch
             {
-                case null:
-                    throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value");
-
-                case byte x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                case sbyte x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                case short x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                case ushort x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                case int x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                case uint x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                case long x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                case ulong x:
-                    return (x == 0) || ((x & (x - 1)) == 0);
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported");
-            }
+                null => throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value"),
+                byte x => (x == 0) || ((x & (x - 1)) == 0),
+                sbyte x => (x == 0) || ((x & (x - 1)) == 0),
+                short x => (x == 0) || ((x & (x - 1)) == 0),
+                ushort x => (x == 0) || ((x & (x - 1)) == 0),
+                int x => (x == 0) || ((x & (x - 1)) == 0),
+                uint x => (x == 0) || ((x & (x - 1)) == 0),
+                long x => (x == 0) || ((x & (x - 1)) == 0),
+                ulong x => (x == 0) || ((x & (x - 1)) == 0),
+                _ => throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported"),
+            };
         }
 
         private static bool IsZero(object o)
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
             // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
-            switch (o)
+            return o switch
             {
-                case null:
-                    throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value");
-
-                case byte x:
-                    return x == 0;
-
-                case sbyte x:
-                    return x == 0;
-
-                case short x:
-                    return x == 0;
-
-                case ushort x:
-                    return x == 0;
-
-                case int x:
-                    return x == 0;
-
-                case uint x:
-                    return x == 0;
-
-                case long x:
-                    return x == 0;
-
-                case ulong x:
-                    return x == 0;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported");
-            }
+                null => throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value"),
+                byte x => x == 0,
+                sbyte x => x == 0,
+                short x => x == 0,
+                ushort x => x == 0,
+                int x => x == 0,
+                uint x => x == 0,
+                long x => x == 0,
+                ulong x => x == 0,
+                _ => throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported"),
+            };
         }
 
         private static object RemoveValue(object o, object valueToRemove)
