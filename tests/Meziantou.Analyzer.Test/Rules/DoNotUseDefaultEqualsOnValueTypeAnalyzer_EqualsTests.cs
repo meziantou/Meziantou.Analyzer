@@ -118,5 +118,28 @@ class Sample
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [TestMethod]
+        public async Task GetHashCode_Enum()
+        {
+            const string SourceCode = @"
+enum Test
+{
+    A,
+    B,
+}
+
+class Sample
+{
+    public void A()
+    {
+        _ = Test.A.GetHashCode();
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }

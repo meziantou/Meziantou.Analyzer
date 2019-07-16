@@ -96,7 +96,7 @@ namespace Meziantou.Analyzer.Rules
                     if (actualType == null)
                         return;
 
-                    if (actualType.IsOrInheritFrom(ValueTypeSymbol) && HasDefaultEqualsOrHashCodeImplementations(actualType))
+                    if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
                     {
                         context.ReportDiagnostic(s_rule, operation);
                     }
@@ -107,7 +107,7 @@ namespace Meziantou.Analyzer.Rules
                     if (actualType == null)
                         return;
 
-                    if (actualType.IsOrInheritFrom(ValueTypeSymbol) && HasDefaultEqualsOrHashCodeImplementations(actualType))
+                    if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
                     {
                         context.ReportDiagnostic(s_rule, operation);
                     }
@@ -115,7 +115,7 @@ namespace Meziantou.Analyzer.Rules
                 else if (IsImmutableCreateMethod(operation.TargetMethod))
                 {
                     var type = operation.TargetMethod.TypeArguments[0];
-                    if (type.IsOrInheritFrom(ValueTypeSymbol) && HasDefaultEqualsOrHashCodeImplementations(type))
+                    if (IsStruct(type) && HasDefaultEqualsOrHashCodeImplementations(type))
                     {
                         if (operation.TargetMethod.ContainingType.IsEqualTo(ImmutableSortedDictionarySymbol))
                         {
@@ -150,6 +150,11 @@ namespace Meziantou.Analyzer.Rules
 
                     return methodSymbol.Arity >= 1 && names.Contains(methodSymbol.Name, StringComparer.Ordinal) && builderTypes.Any(type => type.IsEqualTo(methodSymbol.ContainingType.OriginalDefinition));
                 }
+            }
+
+            private static bool IsStruct(ITypeSymbol typeSymbol)
+            {
+                return typeSymbol.TypeKind == TypeKind.Structure;
             }
 
             public void AnalyzeFieldReferenceOperation(OperationAnalysisContext context)
