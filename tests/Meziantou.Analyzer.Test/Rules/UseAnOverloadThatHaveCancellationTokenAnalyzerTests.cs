@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
@@ -253,6 +254,27 @@ class Test
             _ = CancellationTokenSource.CreateLinkedTokenSource(CancellationToken.None);
         }
     }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [TestMethod]
+        [TestProperty("WI", "https://github.com/meziantou/Meziantou.Analyzer/issues/67")]
+        public async Task OverloadWithMultipleParametersOfSameType()
+        {
+            const string SourceCode = @"
+class Test
+{
+    public static void A()
+    {
+        Sample(""""); // reported here
+    }
+
+    public static void Sample(string a) { }
+    public static void Sample(string a, string b) { }
 }
 ";
             await CreateProjectBuilder()

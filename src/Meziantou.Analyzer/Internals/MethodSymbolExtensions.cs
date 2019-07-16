@@ -126,10 +126,20 @@ namespace Meziantou.Analyzer
             if (otherMethod.Parameters.Length - methodSymbol.Parameters.Length != additionalParameterTypes.Length)
                 return false;
 
-            var methodParameters = methodSymbol.Parameters.Select(p => p.Type);
-            var otherMethodParameters = otherMethod.Parameters.Select(p => p.Type);
-            var types = otherMethodParameters.Except(methodParameters);
-            return !types.Except(additionalParameterTypes).Any();
+            var methodParameters = methodSymbol.Parameters.Select(p => p.Type).ToList();
+            var otherMethodParameters = otherMethod.Parameters.Select(p => p.Type).ToList();
+
+            foreach (var param in methodParameters)
+            {
+                otherMethodParameters.Remove(param);
+            }
+
+            foreach (var param in additionalParameterTypes)
+            {
+                otherMethodParameters.Remove(param);
+            }
+
+            return otherMethodParameters.Count == 0;
         }
     }
 }
