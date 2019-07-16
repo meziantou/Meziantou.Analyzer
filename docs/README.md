@@ -33,7 +33,7 @@
 |[MA0031](Rules/MA0031.md)|Performance|Optimize Enumerable.Count usage|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0032](Rules/MA0032.md)|Usage|Use a cancellation token|<span title='Hidden'>👻</span>|✔️|❌|
 |[MA0033](Rules/MA0033.md)|Design|Don't tag instance fields with ThreadStaticAttribute|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0034](Rules/MA0034.md)|Design|Don't use instance fields of type AsyncLocal<T>|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0034](Rules/MA0034.md)|Design|Don't use instance fields of type AsyncLocal<T>|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0035](Rules/MA0035.md)|Usage|Don't use dangerous threading methods|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0036](Rules/MA0036.md)|Design|Make class static|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0037](Rules/MA0037.md)|Usage|Remove empty statement|<span title='Error'>❌</span>|✔️|❌|
