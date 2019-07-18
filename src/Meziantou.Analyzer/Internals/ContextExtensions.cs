@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
@@ -10,24 +11,34 @@ namespace Meziantou.Analyzer
     {
         public static bool IsEnabled(this AnalyzerOptions options, DiagnosticDescriptor descriptor, string filePath)
         {
-            return options.GetConfigurationValue(filePath, descriptor.Id + ".enabled", defaultValue: true);
+            var severity = GetSeverity(options, descriptor, filePath);
+            return severity != Microsoft.CodeAnalysis.ReportDiagnostic.Suppress;
         }
 
-        public static DiagnosticSeverity? GetSeverity(this AnalyzerOptions options, DiagnosticDescriptor descriptor, string filePath)
+        public static ReportDiagnostic? GetSeverity(this AnalyzerOptions options, DiagnosticDescriptor descriptor, string filePath)
         {
-            return options.GetConfigurationValue(filePath, descriptor.Id + ".severity", defaultValue: default(DiagnosticSeverity?));
+            return options.GetConfigurationValue(filePath, descriptor.Id + ".severity", defaultValue: default(ReportDiagnostic?));
         }
 
         private static Diagnostic CreateDiagnostic(AnalyzerOptions options, DiagnosticDescriptor descriptor, Location location, ImmutableDictionary<string, string> properties, params string[] messageArgs)
         {
             var severity = GetSeverity(options, descriptor, location.SourceTree.FilePath);
-            if (severity == null)
+            if (severity == null || severity.Value == Microsoft.CodeAnalysis.ReportDiagnostic.Default)
             {
                 return Diagnostic.Create(descriptor, location, properties, messageArgs);
             }
             else
             {
-                return Diagnostic.Create(descriptor, location, severity.Value, Enumerable.Empty<Location>(), properties, messageArgs);
+                var diagnosticSeverity = severity.Value switch
+                {
+                    Microsoft.CodeAnalysis.ReportDiagnostic.Info => DiagnosticSeverity.Info,
+                    Microsoft.CodeAnalysis.ReportDiagnostic.Warn => DiagnosticSeverity.Warning,
+                    Microsoft.CodeAnalysis.ReportDiagnostic.Error => DiagnosticSeverity.Error,
+                    Microsoft.CodeAnalysis.ReportDiagnostic.Hidden => DiagnosticSeverity.Hidden,
+                    _ => throw new InvalidOperationException($"{severity.Value} is not valid."),
+                };
+
+                return Diagnostic.Create(descriptor, location, diagnosticSeverity, Enumerable.Empty<Location>(), properties, messageArgs);
             }
         }
 

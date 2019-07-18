@@ -45,12 +45,12 @@ namespace Meziantou.Analyzer.Configurations
             return defaultValue;
         }
 
-        public static DiagnosticSeverity? GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, DiagnosticSeverity? defaultValue)
+        public static ReportDiagnostic? GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, ReportDiagnostic? defaultValue)
         {
             var configuration = GetConfigurationHierarchy(options);
             if (configuration.TryGetValue(filePath, key, out var value))
             {
-                if (value != null && Enum.TryParse<DiagnosticSeverity>(value, ignoreCase: true, out var result))
+                if (value != null && Enum.TryParse<ReportDiagnostic>(value, ignoreCase: true, out var result))
                     return result;
             }
 
