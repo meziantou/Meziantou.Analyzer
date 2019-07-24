@@ -34,7 +34,7 @@ class Test
                   .WithSourceCode(@"
 class Test
 {
-    public void A() => [|]"""".ToString();
+    public void A() => [||]"""".ToString();
 }")
                   .ValidateAsync();
         }

@@ -22,7 +22,7 @@ class ClassTest
 {
     async Task Test()
     {
-        [|]await Task.Delay(1);
+        [||]await Task.Delay(1);
     }
 }";
             const string CodeFix = @"using System.Threading.Tasks;
@@ -115,7 +115,7 @@ class MyClass : System.Windows.Window
     {
         await Task.Delay(1);
         await Task.Delay(1).ConfigureAwait(false);
-        [|]await Task.Delay(1);
+        [||]await Task.Delay(1);
     }
 }";
             const string CodeFix = @"using System.Threading.Tasks;
@@ -174,7 +174,7 @@ class MyClass : System.Windows.Window
         }
         else
         {
-            [|]await Task.Delay(1);
+            [||]await Task.Delay(1);
         }
     }
 }";

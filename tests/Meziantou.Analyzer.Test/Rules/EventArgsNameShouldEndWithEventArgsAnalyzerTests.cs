@@ -31,7 +31,7 @@ class CustomEventArgs : System.EventArgs
         public async Task NameDoesNotEndWithEventArgs()
         {
             const string SourceCode = @"
-class [|]CustomArgs : System.EventArgs
+class [||]CustomArgs : System.EventArgs
 {
 }
 ";

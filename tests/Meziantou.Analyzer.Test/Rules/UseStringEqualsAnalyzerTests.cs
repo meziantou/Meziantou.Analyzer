@@ -22,7 +22,7 @@ class TypeName
 {
     public void Test()
     {
-        var a = [|]""a"" == ""v"";
+        var a = [||]""a"" == ""v"";
     }
 }";
             const string CodeFix = @"
@@ -48,7 +48,7 @@ class TypeName
 {
     public void Test()
     {
-        var a = [|]""a"" != ""v"";
+        var a = [||]""a"" != ""v"";
     }
 }";
             const string CodeFix = @"
@@ -75,7 +75,7 @@ class TypeName
     public void Test()
     {
         string str = """";
-        var a = [|]str == ""v"";
+        var a = [||]str == ""v"";
     }
 }";
             const string CodeFix = @"

@@ -78,7 +78,7 @@ interface ITest { }
         public async Task StaticMethodAndConstField_DiagnosticAsync()
         {
             const string SourceCode = @"
-public class [|]Test
+public class [||]Test
 {
     const int a = 10;
     static void A() { }
@@ -171,7 +171,7 @@ class Test
         public async Task SealedClass_NoDiagnostic()
         {
             const string SourceCode = @"
-public sealed class [|]Test
+public sealed class [||]Test
 {
 }
 ";
@@ -261,7 +261,7 @@ static class Test2
         public async Task FixShouldAddStaticBeforePartial()
         {
             const string SourceCode = @"
-public partial class [|]Test
+public partial class [||]Test
 {
 }
 ";

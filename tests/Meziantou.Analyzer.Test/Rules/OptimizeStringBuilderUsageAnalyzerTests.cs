@@ -69,7 +69,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Append(" + text + @");
+        [||]new StringBuilder().Append(" + text + @");
     }
 }")
                   .ValidateAsync();
@@ -105,7 +105,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine(" + text + @");
+        [||]new StringBuilder().AppendLine(" + text + @");
     }
 }")
                   .ValidateAsync();
@@ -141,7 +141,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Insert(0, " + text + @");
+        [||]new StringBuilder().Insert(0, " + text + @");
     }
 }")
                   .ValidateAsync();
@@ -169,7 +169,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine(" + text + @");
+        [||]new StringBuilder().AppendLine(" + text + @");
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -193,7 +193,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Append(" + text + @").AppendLine();
+        [||]new StringBuilder().Append(" + text + @").AppendLine();
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -217,7 +217,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Insert(0, " + text + @").AppendLine();
+        [||]new StringBuilder().Insert(0, " + text + @").AppendLine();
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -241,7 +241,7 @@ class Test
 {
     void A()
     {
-        new StringBuilder().Append([|]" + text + @");
+        new StringBuilder().Append([||]" + text + @");
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -265,7 +265,7 @@ class Test
 {
     void A()
     {
-        new StringBuilder().Insert(0, [|]" + text + @");
+        new StringBuilder().Insert(0, [||]" + text + @");
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -288,7 +288,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Append($""A{1}BC{2:X2}DEF{1,-2:N2}"");
+        [||]new StringBuilder().Append($""A{1}BC{2:X2}DEF{1,-2:N2}"");
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -311,7 +311,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine($""A{1}BC{2:X2}DEF"");
+        [||]new StringBuilder().AppendLine($""A{1}BC{2:X2}DEF"");
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -334,7 +334,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine($""A{1}BC{2:X2}"");
+        [||]new StringBuilder().AppendLine($""A{1}BC{2:X2}"");
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -358,7 +358,7 @@ class Test
     void A()
     {
         var a = """";
-        [|]new StringBuilder().Append(""ab"" + a);
+        [||]new StringBuilder().Append(""ab"" + a);
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -383,7 +383,7 @@ class Test
     void A()
     {
         var a = """";
-        [|]new StringBuilder().AppendLine(""ab"" + a);
+        [||]new StringBuilder().AppendLine(""ab"" + a);
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -407,7 +407,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Append(1.ToString());
+        [||]new StringBuilder().Append(1.ToString());
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -430,7 +430,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine(1.ToString());
+        [||]new StringBuilder().AppendLine(1.ToString());
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -453,7 +453,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().Append(1.ToString(""{0}"", null));
+        [||]new StringBuilder().Append(1.ToString(""{0}"", null));
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -476,7 +476,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine(1.ToString(""{0}"", null));
+        [||]new StringBuilder().AppendLine(1.ToString(""{0}"", null));
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -499,7 +499,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine("""".Substring(0, 1));
+        [||]new StringBuilder().AppendLine("""".Substring(0, 1));
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -522,7 +522,7 @@ class Test
 {
     void A()
     {
-        [|]new StringBuilder().AppendLine(""abc"".Substring(2));
+        [||]new StringBuilder().AppendLine(""abc"".Substring(2));
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;

@@ -25,7 +25,7 @@ namespace Meziantou.Analyzer.Test.Rules
         public async System.Threading.Tasks.Task InheritFromApplicationException_ShouldReportErrorAsync()
         {
             await CreateProjectBuilder()
-                  .WithSourceCode("class [|]Test : System.ApplicationException { }")
+                  .WithSourceCode("class [||]Test : System.ApplicationException { }")
                   .ValidateAsync();
         }
     }

@@ -9,25 +9,31 @@ namespace TestHelper
     [StructLayout(LayoutKind.Auto)]
     public readonly struct DiagnosticResultLocation
     {
-        public DiagnosticResultLocation(string path, int line, int column)
+        public DiagnosticResultLocation(string path, int lineStart, int columnStart, int lineEnd, int columnEnd)
         {
-            if (line < -1)
+            if (lineStart < -1)
             {
-                throw new ArgumentOutOfRangeException(nameof(line), "line must be >= -1");
+                throw new ArgumentOutOfRangeException(nameof(lineStart), "line must be >= -1");
             }
 
-            if (column < -1)
+            if (columnStart < -1)
             {
-                throw new ArgumentOutOfRangeException(nameof(column), "column must be >= -1");
+                throw new ArgumentOutOfRangeException(nameof(columnStart), "column must be >= -1");
             }
 
             Path = path;
-            Line = line;
-            Column = column;
+            LineStart = lineStart;
+            ColumnStart = columnStart;
+            LineEnd = lineEnd;
+            ColumnEnd = columnEnd;
         }
 
         public string Path { get; }
-        public int Line { get; }
-        public int Column { get; }
+        public int LineStart { get; }
+        public int ColumnStart { get; }
+        public int LineEnd { get; }
+        public int ColumnEnd { get; }
+
+        public bool IsSpan => LineStart != LineEnd || ColumnStart != ColumnEnd;
     }
 }

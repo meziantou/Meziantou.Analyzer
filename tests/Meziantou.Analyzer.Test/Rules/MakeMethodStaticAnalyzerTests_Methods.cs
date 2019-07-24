@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Test.Rules
             const string SourceCode = @"
 class TestClass
 {
-    void [|]A() => throw null;
+    void [||]A() => throw null;
 }
 ";
             const string CodeFix = @"
@@ -145,7 +145,7 @@ class TestClass
 using System.Linq;
 class TestClass
 {
-    void [|]A()
+    void [||]A()
     {
         _ = from item in new [] { 1, 2 }
             select item;
@@ -164,7 +164,7 @@ class TestClass
 using System.Linq;
 class TestClass
 {
-    void [|]A()
+    void [||]A()
     {
         _ = from item in new [] { 1, 2 }
             let b = Test()
@@ -185,7 +185,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    void [|]A() { _ = TestProperty; }
+    void [||]A() { _ = TestProperty; }
 
     public static int TestProperty => 0;
 }
@@ -201,7 +201,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    void [|]A() { TestMethod(); }
+    void [||]A() { TestMethod(); }
 
     public static int TestMethod() => 0;
 }
@@ -217,7 +217,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    void [|]A() { _ = _a; }
+    void [||]A() { _ = _a; }
 
     public static int _a;
 }
@@ -325,7 +325,7 @@ interface ITest<T>
             const string SourceCode = @"
 class TestClass
 {
-    void [|]A()
+    void [||]A()
     {
         var obj = new { Prop = 0 };
         _ = obj.Prop;
@@ -343,7 +343,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    void [|]A()
+    void [||]A()
     {
         _ = new TestClass();
     }
@@ -360,7 +360,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    void [|]A()
+    void [||]A()
     {
         _ = new TestClass2();
     }

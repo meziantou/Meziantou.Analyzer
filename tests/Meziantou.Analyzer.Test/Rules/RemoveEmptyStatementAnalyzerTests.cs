@@ -21,7 +21,7 @@ class Test
 {
     public void A()
     {
-        [|];
+        [||];
     }
 }";
             await CreateProjectBuilder()

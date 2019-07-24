@@ -3,9 +3,11 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace TestHelper
 {
@@ -81,31 +83,59 @@ namespace TestHelper
 
         private void ParseSourceCode(string sourceCode)
         {
-            const string Pattern = "[|]";
-            SourceCode = sourceCode.Replace(Pattern, "");
+            var sb = new StringBuilder();
+            var lineStart = -1;
+            var columnStart = -1;
 
-            using (var sr = new StringReader(sourceCode))
+            var lineIndex = 1;
+            var columnIndex = 1;
+            for (var i = 0; i < sourceCode.Length; i++)
             {
-                int lineIndex = 0;
-                string line;
-                while ((line = sr.ReadLine()) != null)
+                var c = sourceCode[i];
+                switch (c)
                 {
-                    lineIndex++;
+                    case '\n':
+                        sb.Append(c);
+                        lineIndex++;
+                        columnIndex = 1;
+                        break;
 
-                    int startIndex = 0;
-                    int matchCount = 0;
-                    while (true)
-                    {
-                        var index = line.IndexOf(Pattern, startIndex, StringComparison.Ordinal);
-                        if (index < 0)
-                            break;
+                    case '[' when lineStart < 0 && Next() == '|':
+                        lineStart = lineIndex;
+                        columnStart = columnIndex;
+                        i++;
+                        break;
 
-                        ShouldReportDiagnostic(lineIndex, index + 1 - (matchCount * Pattern.Length));
-                        startIndex = index + 1;
-                        matchCount++;
-                    }
+                    case '|' when lineStart >= 0 && Next() == ']':
+                        ShouldReportDiagnostic(new DiagnosticResult
+                        {
+                            Locations = new[]
+                            {
+                                new DiagnosticResultLocation("Test0.cs", lineStart, columnStart, lineIndex, columnIndex),
+                            },
+                        });
+
+                        lineStart = -1;
+                        columnStart = -1;
+                        i++;
+                        break;
+
+                    default:
+                        sb.Append(c);
+                        columnIndex++;
+                        break;
+                }
+
+                char Next()
+                {
+                    if (i + 1 < sourceCode.Length)
+                        return sourceCode[i + 1];
+
+                    return default;
                 }
             }
+
+            SourceCode = sb.ToString();
         }
 
         public ProjectBuilder WithEditorConfig(string editorConfig)
@@ -156,21 +186,7 @@ namespace TestHelper
             return WithCodeFixProvider(new T());
         }
 
-        public ProjectBuilder ShouldReportDiagnostic(int line, int column, string id = null, string message = null, DiagnosticSeverity? severity = null)
-        {
-            return ShouldReportDiagnostic(new DiagnosticResult
-            {
-                Id = id ?? DefaultAnalyzerId,
-                Message = message ?? DefaultAnalyzerMessage,
-                Severity = severity,
-                Locations = new[]
-                {
-                    new DiagnosticResultLocation(FileName ?? "Test0.cs", line, column),
-                },
-            });
-        }
-
-        public ProjectBuilder ShouldReportDiagnostic(params DiagnosticResult[] expectedDiagnosticResults)
+        private ProjectBuilder ShouldReportDiagnostic(params DiagnosticResult[] expectedDiagnosticResults)
         {
             foreach (var diagnostic in expectedDiagnosticResults)
             {

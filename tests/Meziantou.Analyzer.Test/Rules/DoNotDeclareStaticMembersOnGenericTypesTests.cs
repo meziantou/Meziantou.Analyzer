@@ -54,7 +54,7 @@ public class Test<T>
             const string SourceCode = @"
 public class Test<T>
 {
-    public static string [|]field;
+    public static string [||]field;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
@@ -67,7 +67,7 @@ public class Test<T>
             const string SourceCode = @"
 public class Test<T>
 {
-    public static string [|]Prop => throw null;
+    public static string [||]Prop => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
@@ -80,7 +80,7 @@ public class Test<T>
             const string SourceCode = @"
 public class Test<T>
 {
-    public static string [|]Method() => throw null;
+    public static string [||]Method() => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)

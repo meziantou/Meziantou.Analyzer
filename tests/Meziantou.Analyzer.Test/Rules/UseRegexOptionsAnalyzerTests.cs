@@ -26,7 +26,7 @@ class TestClass
 {
     void Test()
     {
-        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[|]") + options + @", default);
+        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[||]") + options + @", default);
     }
 }");
             await project.ValidateAsync();
@@ -47,7 +47,7 @@ class TestClass
 {
     void Test()
     {
-        new Regex(""" + regex + @""", " + (isValid ? "" : "[|]") + options + @", default);
+        new Regex(""" + regex + @""", " + (isValid ? "" : "[||]") + options + @", default);
     }
 }");
 

@@ -45,7 +45,7 @@ class Test
     public Test()
     {
         System.Collections.Generic.IEnumerable<string> enumerable = null;
-        [|]enumerable." + a + @"(x => x).Where(x => x != null);
+        [||]enumerable." + a + @"(x => x).Where(x => x != null);
     }
 }
 ")

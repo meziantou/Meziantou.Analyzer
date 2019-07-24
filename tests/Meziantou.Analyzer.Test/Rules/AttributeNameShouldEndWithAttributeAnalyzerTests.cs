@@ -31,7 +31,7 @@ class CustomAttribute : System.Attribute
         public async Task NameDoesNotEndWithAttribute()
         {
             const string SourceCode = @"
-class [|]CustomAttr : System.Attribute
+class [||]CustomAttr : System.Attribute
 {
 }
 ";

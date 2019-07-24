@@ -35,7 +35,7 @@ class Test2
 class Test2
 {
     [System.ThreadStatic]
-    int [|]_a;
+    int [||]_a;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)

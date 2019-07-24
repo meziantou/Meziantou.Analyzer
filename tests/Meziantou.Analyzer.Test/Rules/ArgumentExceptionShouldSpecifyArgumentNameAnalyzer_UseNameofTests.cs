@@ -24,7 +24,7 @@ class Sample
     string Prop
     {
         get { throw null; }
-        set { throw new System.ArgumentNullException([|]""value""); }
+        set { throw new System.ArgumentNullException([||]""value""); }
     }
 }";
 
@@ -52,7 +52,7 @@ class Sample
 {
     string M(string arg0)
     {
-        throw new System.ArgumentNullException([|]""arg0"");
+        throw new System.ArgumentNullException([||]""arg0"");
     }
 }";
 

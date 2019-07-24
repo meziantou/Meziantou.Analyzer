@@ -33,7 +33,7 @@ namespace Test
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"
-class [|]Sample
+class [||]Sample
 {
     class Nested { }
 }")
