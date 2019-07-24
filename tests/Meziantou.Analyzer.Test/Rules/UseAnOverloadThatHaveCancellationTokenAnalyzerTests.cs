@@ -23,7 +23,7 @@ class Test
 {
     public void A()
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -42,7 +42,7 @@ class Test
 {
     public void A()
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -79,7 +79,7 @@ class Test
 {
     public void A(System.Threading.Tasks.Task task)
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -100,7 +100,7 @@ class Test
 {
     public void A(System.Threading.Tasks.Task<int> task)
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -119,7 +119,7 @@ class Test
 {
     public void A(System.Threading.CancellationToken cancellationToken)
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -139,7 +139,7 @@ class Test
 {
     public static void A(HttpRequest request)
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public static void MethodWithCancellationToken() => throw null;
@@ -164,7 +164,7 @@ class Test
 {
     public void A()
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public System.Threading.CancellationToken MyCancellationToken { get; }
@@ -192,7 +192,7 @@ class Test
 {
     public static void A()
     {
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
     }
 
     public static System.Threading.CancellationToken MyCancellationToken { get; }
@@ -225,7 +225,7 @@ class Test
         }
 
         System.Threading.CancellationToken a = default;
-        [|]MethodWithCancellationToken();
+        [||]MethodWithCancellationToken();
         System.Threading.CancellationToken unaccessible2 = default;
     }
 

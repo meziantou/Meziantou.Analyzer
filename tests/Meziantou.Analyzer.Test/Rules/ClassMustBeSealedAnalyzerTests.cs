@@ -37,7 +37,7 @@ class Test
 {
 }
 
-class [|]Test2 : Test
+class [||]Test2 : Test
 {
 }
 ";
@@ -66,7 +66,7 @@ interface ITest
 {
 }
 
-class [|]Test : ITest
+class [||]Test : ITest
 {
 }
 ";
@@ -89,7 +89,7 @@ sealed class Test : ITest
         public async Task StaticMethodAndConstField_Diagnostic()
         {
             const string SourceCode = @"
-public class [|]Test
+public class [||]Test
 {
     const int a = 10;
     static void A() { }
@@ -102,7 +102,6 @@ public sealed class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic()
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

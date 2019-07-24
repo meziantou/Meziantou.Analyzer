@@ -23,10 +23,9 @@ class Test
 {
     public async Task A()
     {
-        [|]Task.Delay(1).Wait();
+        [||]Task.Delay(1).Wait();
     }
 }")
-                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -39,10 +38,9 @@ class Test
 {
     public async Task A()
     {
-        _ = [|]Task.FromResult(1).Result;
+        _ = [||]Task.FromResult(1).Result;
     }
 }")
-                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -55,10 +53,9 @@ class Test
 {
     public async Task A()
     {
-        [|]System.Threading.Thread.Sleep(1);
+        [||]System.Threading.Thread.Sleep(1);
     }
 }")
-                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -71,13 +68,12 @@ class Test
 {
     public async Task A()
     {
-        [|]Write();
+        [||]Write();
     }
 
     public void Write() => throw null;
     public Task Write(System.Threading.CancellationToken cancellationToken) => throw null;
 }")
-                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -90,13 +86,12 @@ class Test
 {
     public async Task A()
     {
-        [|]Write();
+        [||]Write();
     }
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -127,13 +122,12 @@ class Test
 {
     public async Task A()
     {
-        System.Func<Task> a = async () => [|]Write();
+        System.Func<Task> a = async () => [||]Write();
     }
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
 
@@ -148,13 +142,12 @@ class Test
     {
         Local();
 
-        async Task Local() => [|]Write();
+        async Task Local() => [||]Write();
     }
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldReportDiagnostic()
                   .ValidateAsync();
         }
         

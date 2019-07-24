@@ -126,7 +126,7 @@ class TypeName
             const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
-    IEnumerable<int> [|]A(string a)
+    IEnumerable<int> [||]A(string a)
     {
         if (a == null)
             throw new System.ArgumentNullException(nameof(a));

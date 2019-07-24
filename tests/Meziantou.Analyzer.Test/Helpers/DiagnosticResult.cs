@@ -21,8 +21,8 @@ namespace TestHelper
 
         public string Path => Locations.Length > 0 ? Locations[0].Path : "";
 
-        public int Line => Locations.Length > 0 ? Locations[0].Line : -1;
+        public int Line => Locations.Length > 0 ? Locations[0].LineStart : -1;
 
-        public int Column => Locations.Length > 0 ? Locations[0].Column : -1;
+        public int Column => Locations.Length > 0 ? Locations[0].ColumnStart : -1;
     }
 }

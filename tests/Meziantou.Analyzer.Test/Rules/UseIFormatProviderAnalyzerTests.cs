@@ -37,7 +37,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]1.ToString();
+        [||]1.ToString();
     }
 }";
             await CreateProjectBuilder()
@@ -87,8 +87,8 @@ class TypeName
 {
     public void Test()
     {
-        [|]int.Parse("""");
-        [|]int.Parse("""", System.Globalization.NumberStyles.Any);
+        [||]int.Parse("""");
+        [||]int.Parse("""", System.Globalization.NumberStyles.Any);
     }
 }";
             await CreateProjectBuilder()
@@ -106,7 +106,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]float.TryParse("""", out _);
+        [||]float.TryParse("""", out _);
     }
 }";
             await CreateProjectBuilder()
@@ -123,7 +123,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]float.TryParse("""", out _);
+        [||]float.TryParse("""", out _);
     }
 }";
             await CreateProjectBuilder()
@@ -140,7 +140,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]"""".ToLower();
+        [||]"""".ToLower();
     }
 }";
             await CreateProjectBuilder()
@@ -157,7 +157,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]new System.Text.StringBuilder().AppendFormat(""{0}"", 10);
+        [||]new System.Text.StringBuilder().AppendFormat(""{0}"", 10);
     }
 }";
             await CreateProjectBuilder()

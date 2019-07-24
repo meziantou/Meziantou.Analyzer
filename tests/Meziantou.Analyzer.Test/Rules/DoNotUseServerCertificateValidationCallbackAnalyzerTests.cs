@@ -21,7 +21,7 @@ class Test
 {
     void A()
     {
-        [|]System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
+        [||]System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
     }
 }
 
@@ -52,7 +52,7 @@ class Test
     void A()
     {
         var handler = new System.Net.Http.HttpClientHandler();
-        [|]handler.ServerCertificateCustomValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
+        [||]handler.ServerCertificateCustomValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
     }
 }
 

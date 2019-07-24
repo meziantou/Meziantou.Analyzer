@@ -40,7 +40,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]System.String.Equals(""a"", ""v"");
+        [||]System.String.Equals(""a"", ""v"");
     }
 }";
             const string CodeFix = @"
@@ -66,7 +66,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]""a"".Equals(""v"");
+        [||]""a"".Equals(""v"");
     }
 }";
             const string CodeFix = @"
@@ -108,7 +108,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]""a"".IndexOf(""v"");
+        [||]""a"".IndexOf(""v"");
     }
 }";
             const string CodeFix = @"
@@ -150,7 +150,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]""a"".StartsWith(""v"");
+        [||]""a"".StartsWith(""v"");
     }
 }";
             const string CodeFix = @"
@@ -176,7 +176,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]string.Compare(""a"", ""v"");
+        [||]string.Compare(""a"", ""v"");
     }
 }";
             const string CodeFix = @"

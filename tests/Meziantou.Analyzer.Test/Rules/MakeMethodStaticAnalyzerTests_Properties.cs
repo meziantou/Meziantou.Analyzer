@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
             const string SourceCode = @"
 class TestClass
 {
-    int [|]A => throw null;
+    int [||]A => throw null;
 }
 ";
             const string CodeFix = @"
@@ -71,7 +71,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    public int [|]A => TestProperty;
+    public int [||]A => TestProperty;
 
     public static int TestProperty => 0;
 }
@@ -96,7 +96,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    int [|]A => TestMethod();
+    int [||]A => TestMethod();
 
     public static int TestMethod() => 0;
 }
@@ -112,7 +112,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    int [|]A => _a;
+    int [||]A => _a;
 
     static int _a;
 }

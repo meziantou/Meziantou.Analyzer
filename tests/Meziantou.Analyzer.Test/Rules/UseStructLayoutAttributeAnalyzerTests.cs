@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Test.Rules
         [TestMethod]
         public async System.Threading.Tasks.Task MissingAttribute_ShouldReportDiagnosticAsync()
         {
-            const string SourceCode = "struct [|]TypeName { }";
+            const string SourceCode = "struct [||]TypeName { }";
             const string CodeFix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
 struct TypeName { }";
 
@@ -31,7 +31,7 @@ struct TypeName { }";
         public async System.Threading.Tasks.Task AddAttributeShouldUseShortnameAsync()
         {
             const string SourceCode = @"using System.Runtime.InteropServices;
-struct [|]TypeName { }";
+struct [||]TypeName { }";
             const string CodeFix = @"using System.Runtime.InteropServices;
 
 [StructLayout(LayoutKind.Auto)]

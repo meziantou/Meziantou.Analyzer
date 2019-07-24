@@ -51,7 +51,7 @@ namespace Meziantou.Analyzer.Test.Rules
 public class Test
 {
     " + visibility + @"
-    " + (isValid ? "" : "[|]") + type + @" _a;
+    " + (isValid ? "" : "[||]") + type + @" _a;
 }");
 
             await project.ValidateAsync();
@@ -66,7 +66,7 @@ public class Test
 public class Test
 {
     " + visibility + @" delegate
-    " + (isValid ? "" : "[|]") + type + @" A();
+    " + (isValid ? "" : "[||]") + type + @" A();
 }");
 
             await project.ValidateAsync();
@@ -81,7 +81,7 @@ public class Test
 public class Test
 {
     " + visibility + @" delegate void A(
-    " + (isValid ? "" : "[|]") + type + @" p);
+    " + (isValid ? "" : "[||]") + type + @" p);
 }");
 
             await project.ValidateAsync();
@@ -96,7 +96,7 @@ public class Test
 public class Test
 {
     " + visibility + @"
-    " + (isValid ? "" : "[|]") + type + @" this[int value] => throw null;
+    " + (isValid ? "" : "[||]") + type + @" this[int value] => throw null;
 }");
 
             await project.ValidateAsync();
@@ -111,7 +111,7 @@ public class Test
 public class Test
 {
     " + visibility + @" int this[
-    " + (isValid ? "" : "[|]") + type + @" value] => throw null;
+    " + (isValid ? "" : "[||]") + type + @" value] => throw null;
 }");
 
             await project.ValidateAsync();
@@ -126,7 +126,7 @@ public class Test
 public class Test
 {
     " + visibility + @"
-    " + (isValid ? "" : "[|]") + type + @" A => throw null;
+    " + (isValid ? "" : "[||]") + type + @" A => throw null;
 }");
 
             await project.ValidateAsync();
@@ -141,7 +141,7 @@ public class Test
 public class Test
 {
     " + visibility + @"
-    " + (isValid ? "" : "[|]") + type + @" A() => throw null;
+    " + (isValid ? "" : "[||]") + type + @" A() => throw null;
 }");
 
             await project.ValidateAsync();
@@ -156,7 +156,7 @@ public class Test
 public class Test
 {
     " + visibility + @" void A(
-    " + (isValid ? "" : "[|]") + type + @" p) => throw null;
+    " + (isValid ? "" : "[||]") + type + @" p) => throw null;
 }");
 
             await project.ValidateAsync();
@@ -184,7 +184,7 @@ internal class Test
             const string SourceCode = @"using System.Collections.Generic;
 public interface ITest
 {
-    [|]List<int> A();
+    [||]List<int> A();
 }
 
 public class Test : ITest

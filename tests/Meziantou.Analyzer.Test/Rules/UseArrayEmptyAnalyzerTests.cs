@@ -25,7 +25,7 @@ class TestClass
 {{
     void Test()
     {{
-        var a = [|]{code};
+        var a = [||]{code};
     }}
 }}")
                   .ShouldFixCodeWith(@"

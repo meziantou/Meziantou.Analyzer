@@ -23,7 +23,7 @@ class Test
     internal void Sample()
     {
         _ = EqualityComparer<int>.Default.Equals(0, 0);
-        _ = [|]EqualityComparer<string>.Default.Equals(null, null);
+        _ = [||]EqualityComparer<string>.Default.Equals(null, null);
     }
 }
 ";

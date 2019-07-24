@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             const string SourceCode = @"
 [System.Flags]
-enum [|]Test : byte
+enum [||]Test : byte
 {
     A = 1,
     B = 2,

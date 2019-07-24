@@ -20,9 +20,9 @@ namespace Meziantou.Analyzer.Test.Rules
             const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
-    Task A() { [|]return null; }
-    Task B() => [|]null;
-    Task C() { [|]return ((Test)null)?.A(); }
+    Task A() { [||]return null; }
+    Task B() => [||]null;
+    Task C() { [||]return ((Test)null)?.A(); }
     async Task<object> Valid() { return null; }
 }";
             await CreateProjectBuilder()
@@ -40,9 +40,9 @@ class Test
     {
         Task<object> Valid1() { return Task.FromResult<object>(null); }
         async Task<object> Valid2() { return null; }
-        Task A() { [|]return null; }
-        Task<object> B() { [|]return null; }
-        Task<object> C() => [|]null;
+        Task A() { [||]return null; }
+        Task<object> B() { [||]return null; }
+        Task<object> C() => [||]null;
         object       D() => null;
     }
 }";
@@ -60,9 +60,9 @@ class Test
 {
     void A()
     {
-        System.Func<Task>         a = () => [|]null;
-        System.Func<Task<object>> b = () => [|]null;
-        System.Func<Task<object>> c = () => { [|]return null; };
+        System.Func<Task>         a = () => [||]null;
+        System.Func<Task<object>> b = () => [||]null;
+        System.Func<Task<object>> c = () => { [||]return null; };
         System.Func<Task>         valid1 = async () => { };
         System.Func<Task<object>> valid2 = async () => null;
         System.Func<object>       valid3 = () => null;
@@ -82,8 +82,8 @@ class Test
 {
     void A()
     {
-        System.Func<Task> a = delegate () { [|]return null; };
-        System.Func<Task<object>> b = delegate () { [|]return null; };
+        System.Func<Task> a = delegate () { [||]return null; };
+        System.Func<Task<object>> b = delegate () { [||]return null; };
         System.Func<Task> c = async delegate () { };
         System.Func<Task<object>> d = async delegate () { return null; };
         System.Func<object> e = delegate () { return null; };
