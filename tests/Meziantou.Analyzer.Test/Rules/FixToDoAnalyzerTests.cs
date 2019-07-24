@@ -1,4 +1,5 @@
-﻿using Meziantou.Analyzer.Rules;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
@@ -17,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         [DataTestMethod]
         [DataRow("//TODOA")]
         [DataRow("// (TODO)")]
-        public async System.Threading.Tasks.Task SingleLineCommentWithoutTodoAsync(string comment)
+        public async Task SingleLineCommentWithoutTodo(string comment)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(comment)
@@ -25,45 +26,45 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [DataTestMethod]
-        [DataRow("//TODO", "", 3)]
-        [DataRow("// TODO", "", 4)]
-        [DataRow("//TODO test", "test", 3)]
-        [DataRow("// TODO test", "test", 4)]
-        [DataRow("  // TODO test", "test", 6)]
-        public async System.Threading.Tasks.Task SingleLineCommentAsync(string comment, string todo, int column)
+        [DataRow("//[|]TODO", "")]
+        [DataRow("// [|]TODO", "")]
+        [DataRow("//[|]TODO test", "test")]
+        [DataRow("// [|]TODO test", "test")]
+        [DataRow("  // [|]TODO test", "test")]
+        public async Task SingleLineComment(string comment, string todo)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(comment)
-                  .ShouldReportDiagnostic(line: 1, column: column, message: $"TODO {todo}")
+                  .ShouldReportDiagnosticWithMessage($"TODO {todo}")
                   .ValidateAsync();
         }
 
         [DataTestMethod]
-        [DataRow("/*TODO*/", "", 1, 3)]
-        [DataRow("/* TODO*/", "", 1, 4)]
-        [DataRow("/*TODO test*/", "test", 1, 3)]
-        [DataRow("/* TODO test*/", "test", 1, 4)]
-        [DataRow("  /* TODO test*/", "test", 1, 6)]
-        [DataRow("/*\n* TODO test\r\n*/", "test", 2, 3)]
-        public async System.Threading.Tasks.Task MultiLinesCommentAsync(string comment, string todo, int line, int column)
+        [DataRow("/*[|]TODO*/", "")]
+        [DataRow("/* [|]TODO*/", "")]
+        [DataRow("/*[|]TODO test*/", "test")]
+        [DataRow("/* [|]TODO test*/", "test")]
+        [DataRow("  /* [|]TODO test*/", "test")]
+        [DataRow("/*\n* [|]TODO test\r\n*/", "test")]
+        public async Task MultiLinesComment(string comment, string todo)
         {
             await CreateProjectBuilder()
                   .WithSourceCode(comment)
-                  .ShouldReportDiagnostic(line: line, column: column, message: $"TODO {todo}")
+                  .ShouldReportDiagnosticWithMessage($"TODO {todo}")
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task MultiTodoCommentAsync()
+        public async Task MultiTodoComment()
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"
 /*
- * TODO a
- * TODO b
+ * [|]TODO a
+ * [|]TODO b
  */")
-                  .ShouldReportDiagnostic(line: 3, column: 4, message: "TODO a")
-                  .ShouldReportDiagnostic(line: 4, column: 4, message: "TODO b")
+                  .ShouldReportDiagnosticWithMessage("TODO a")
+                  .ShouldReportDiagnosticWithMessage("TODO b")
                   .ValidateAsync();
         }
     }

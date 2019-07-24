@@ -22,7 +22,7 @@ class TypeName
 {
     public void Test()
     {
-        ""a"".GetHashCode();
+        [|]""a"".GetHashCode();
         System.StringComparer.Ordinal.GetHashCode(""a"");
         new object().GetHashCode();
     }
@@ -39,7 +39,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

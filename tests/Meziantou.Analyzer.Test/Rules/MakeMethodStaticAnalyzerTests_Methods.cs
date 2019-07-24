@@ -16,12 +16,12 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
-        public async Task ExpressionBodyAsync()
+        public async Task ExpressionBody()
         {
             const string SourceCode = @"
 class TestClass
 {
-    void A() => throw null;
+    void [|]A() => throw null;
 }
 ";
             const string CodeFix = @"
@@ -32,13 +32,12 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 10)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task AccessInstanceProperty_NoDiagnosticAsync()
+        public async Task AccessInstanceProperty_NoDiagnostic()
         {
             const string SourceCode = @"
 class TestClass
@@ -54,7 +53,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task AccessInstanceMethodInLinqQuery_Where_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -76,7 +75,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task AccessInstanceMethodInLinqQuery_Select_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_Select_NoDiagnostic()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -97,7 +96,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task AccessInstanceMethodInLinqQuery_From_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_From_NoDiagnostic()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -118,7 +117,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task AccessInstanceMethodInLinqQuery_Let_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_Let_NoDiagnostic()
         {
             const string SourceCode = @"
 using System.Linq;
@@ -140,13 +139,13 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task LinqQuery_DiagnosticAsync()
+        public async Task LinqQuery_Diagnostic()
         {
             const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
-    void A()
+    void [|]A()
     {
         _ = from item in new [] { 1, 2 }
             select item;
@@ -155,18 +154,17 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 5, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task AccessStaticMethodInLinqQuery_Let_DiagnosticAsync()
+        public async Task AccessStaticMethodInLinqQuery_Let_Diagnostic()
         {
             const string SourceCode = @"
 using System.Linq;
 class TestClass
 {
-    void A()
+    void [|]A()
     {
         _ = from item in new [] { 1, 2 }
             let b = Test()
@@ -178,63 +176,59 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 5, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task AccessStaticPropertyAsync()
+        public async Task AccessStaticProperty()
         {
             const string SourceCode = @"
 class TestClass
 {
-    void A() { _ = TestProperty; }
+    void [|]A() { _ = TestProperty; }
 
     public static int TestProperty => 0;
 }
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task AccessStaticMethodAsync()
+        public async Task AccessStaticMethod()
         {
             const string SourceCode = @"
 class TestClass
 {
-    void A() { TestMethod(); }
+    void [|]A() { TestMethod(); }
 
     public static int TestMethod() => 0;
 }
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task AccessStaticFieldAsync()
+        public async Task AccessStaticField()
         {
             const string SourceCode = @"
 class TestClass
 {
-    void A() { _ = _a; }
+    void [|]A() { _ = _a; }
 
     public static int _a;
 }
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task AccessInstanceFieldAsync()
+        public async Task AccessInstanceField()
         {
             const string SourceCode = @"
 class TestClass
@@ -250,7 +244,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task MethodImplementAnInterfaceAsync()
+        public async Task MethodImplementAnInterface()
         {
             const string SourceCode = @"
 class TestClass : ITest
@@ -269,7 +263,7 @@ interface ITest
         }
 
         [TestMethod]
-        public async Task MethodExplicitlyImplementAnInterfaceAsync()
+        public async Task MethodExplicitlyImplementAnInterface()
         {
             const string SourceCode = @"
 class TestClass : ITest
@@ -288,7 +282,7 @@ interface ITest
         }
 
         [TestMethod]
-        public async Task MethodImplementAGenericInterfaceAsync()
+        public async Task MethodImplementAGenericInterface()
         {
             const string SourceCode = @"
 class TestClass : ITest<int>
@@ -307,7 +301,7 @@ interface ITest<T>
         }
 
         [TestMethod]
-        public async Task MethodImplementAGenericInterfaceInAGenericClassAsync()
+        public async Task MethodImplementAGenericInterfaceInAGenericClass()
         {
             const string SourceCode = @"
 class TestClass<T> : ITest<T>
@@ -326,12 +320,12 @@ interface ITest<T>
         }
 
         [TestMethod]
-        public async Task MethodUseAnAnonymousObjectAsync()
+        public async Task MethodUseAnAnonymousObject()
         {
             const string SourceCode = @"
 class TestClass
 {
-    void A()
+    void [|]A()
     {
         var obj = new { Prop = 0 };
         _ = obj.Prop;
@@ -340,17 +334,16 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task CreateInstanceAsync()
+        public async Task CreateInstance()
         {
             const string SourceCode = @"
 class TestClass
 {
-    void A()
+    void [|]A()
     {
         _ = new TestClass();
     }
@@ -358,17 +351,16 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task CreateInstanceOfAnotherTypeAsync()
+        public async Task CreateInstanceOfAnotherType()
         {
             const string SourceCode = @"
 class TestClass
 {
-    void A()
+    void [|]A()
     {
         _ = new TestClass2();
     }
@@ -380,12 +372,11 @@ class TestClass2
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 10)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async Task MSTest_TestMethodAsync()
+        public async Task MSTest_TestMethod()
         {
             const string SourceCode = @"
 class TestClass
@@ -403,7 +394,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task MSTest_DataTestMethodAsync()
+        public async Task MSTest_DataTestMethod()
         {
             const string SourceCode = @"
 class TestClass
@@ -421,7 +412,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task XUnit_TestMethodAsync()
+        public async Task XUnit_TestMethod()
         {
             const string SourceCode = @"
 class TestClass
@@ -439,7 +430,7 @@ class TestClass
         }
 
         [TestMethod]
-        public async Task AspNetCore_StartupAsync()
+        public async Task AspNetCore_Startup()
         {
             const string SourceCode = @"
 using System;
@@ -465,7 +456,7 @@ public class Startup
         }
 
         [TestMethod]
-        public async Task AspNetCore_Middleware_Convention_InvokeAsync()
+        public async Task AspNetCore_Middleware_Convention_Invoke()
         {
             const string SourceCode = @"
 using System;
@@ -490,7 +481,7 @@ public class CustomMiddleware
         }
 
         [TestMethod]
-        public async Task AspNetCore_Middleware_Convention_InterfaceAsync()
+        public async Task AspNetCore_Middleware_Convention_Interface()
         {
             const string SourceCode = @"
 using System;
@@ -511,7 +502,7 @@ public class CustomMiddleware : IMiddleware
         }
 
         [TestMethod]
-        public async Task AspNetCore_Middleware_Convention_ExplicitInterfaceAsync()
+        public async Task AspNetCore_Middleware_Convention_ExplicitInterface()
         {
             const string SourceCode = @"
 using System;
@@ -532,7 +523,7 @@ public class CustomMiddleware : IMiddleware
         }
 
         [TestMethod]
-        public async Task AbstractMethod_ShouldNotReportDiagnosticAsync()
+        public async Task AbstractMethod_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 abstract class Test
@@ -546,7 +537,7 @@ abstract class Test
 
 
         [TestMethod]
-        public async Task XamlEventHandler_ShouldNotReportDiagnosticAsync()
+        public async Task XamlEventHandler_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 #pragma checksum ""..\..\MainWindow.xaml"" ""{8829d00f-11b8-4213-878b-770e8597ac16}"" ""25B36A30BAFC7BB7D58C2E7472CEB827253914A46567E515A46D7429205241EB""

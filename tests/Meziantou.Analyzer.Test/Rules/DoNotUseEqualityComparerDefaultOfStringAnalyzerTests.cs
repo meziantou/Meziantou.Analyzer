@@ -23,7 +23,7 @@ class Test
     internal void Sample()
     {
         _ = EqualityComparer<int>.Default.Equals(0, 0);
-        _ = EqualityComparer<string>.Default.Equals(null, null);
+        _ = [|]EqualityComparer<string>.Default.Equals(null, null);
     }
 }
 ";
@@ -39,7 +39,6 @@ class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

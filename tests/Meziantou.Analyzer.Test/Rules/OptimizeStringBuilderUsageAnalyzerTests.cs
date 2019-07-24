@@ -69,10 +69,9 @@ class Test
 {
     void A()
     {
-        new StringBuilder().Append(" + text + @");
+        [|]new StringBuilder().Append(" + text + @");
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
 
@@ -106,10 +105,9 @@ class Test
 {
     void A()
     {
-        new StringBuilder().AppendLine(" + text + @");
+        [|]new StringBuilder().AppendLine(" + text + @");
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
 

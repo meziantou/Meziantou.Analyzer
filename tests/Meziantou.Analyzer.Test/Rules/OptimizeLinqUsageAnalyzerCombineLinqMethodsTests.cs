@@ -34,11 +34,11 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Where(x => x == 0)." + methodName + @"();
+        [|]enumerable.Where(x => x == 0)." + methodName + @"();
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Combine 'Where' with '{methodName}'")
+                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with '{methodName}'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -63,11 +63,11 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Where(x => x == 0).Where(y => true);
+        [|]enumerable.Where(x => x == 0).Where(y => true);
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Combine 'Where' with 'Where'")
+                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Where'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -91,11 +91,11 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Where(x => x == 0 || x == 1).Any();
+        [|]enumerable.Where(x => x == 0 || x == 1).Any();
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Combine 'Where' with 'Any'")
+                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Any'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -119,11 +119,11 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Where(x => x == 0 || x == 1).Any(y => y == 2);
+        [|]enumerable.Where(x => x == 0 || x == 1).Any(y => y == 2);
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Combine 'Where' with 'Any'")
+                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Any'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -147,13 +147,13 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Where(Filter).Any();
+        [|]enumerable.Where(Filter).Any();
     }
 
     bool Filter(int x) => true;
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Combine 'Where' with 'Any'")
+                  .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -179,13 +179,13 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Where(Filter).Any(Filter);
+        [|]enumerable.Where(Filter).Any(Filter);
     }
 
     bool Filter(int x) => true;
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Combine 'Where' with 'Any'")
+                  .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -211,13 +211,13 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Where(Filter).Any(x => true);
+        [|]enumerable.Where(Filter).Any(x => true);
     }
 
     bool Filter(int x) => true;
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Combine 'Where' with 'Any'")
+                  .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {

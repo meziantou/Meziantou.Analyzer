@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -50,13 +51,8 @@ namespace Meziantou.Analyzer.Test.Rules
 public class Test
 {
     " + visibility + @"
-    " + type + @" _a;
+    " + (isValid ? "" : "[|]") + type + @" _a;
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }
@@ -70,13 +66,8 @@ public class Test
 public class Test
 {
     " + visibility + @" delegate
-    " + type + @" A();
+    " + (isValid ? "" : "[|]") + type + @" A();
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }
@@ -90,13 +81,8 @@ public class Test
 public class Test
 {
     " + visibility + @" delegate void A(
-    " + type + @" p);
+    " + (isValid ? "" : "[|]") + type + @" p);
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }
@@ -110,14 +96,8 @@ public class Test
 public class Test
 {
     " + visibility + @"
-    " + type + @" this[int value] => throw null;
+    " + (isValid ? "" : "[|]") + type + @" this[int value] => throw null;
 }");
-
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }
@@ -131,14 +111,8 @@ public class Test
 public class Test
 {
     " + visibility + @" int this[
-    " + type + @" value] => throw null;
+    " + (isValid ? "" : "[|]") + type + @" value] => throw null;
 }");
-
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }
@@ -152,13 +126,8 @@ public class Test
 public class Test
 {
     " + visibility + @"
-    " + type + @" A => throw null;
+    " + (isValid ? "" : "[|]") + type + @" A => throw null;
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }
@@ -172,13 +141,8 @@ public class Test
 public class Test
 {
     " + visibility + @"
-    " + type + @" A() => throw null;
+    " + (isValid ? "" : "[|]") + type + @" A() => throw null;
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }
@@ -192,13 +156,8 @@ public class Test
 public class Test
 {
     " + visibility + @" void A(
-    " + type + @" p) => throw null;
+    " + (isValid ? "" : "[|]") + type + @" p) => throw null;
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 5, column: 5);
-            }
 
             await project.ValidateAsync();
         }

@@ -21,12 +21,11 @@ class TestClass
 {
     void Test()
     {
-        Regex.IsMatch(""test"", ""[a-z]+"");
+        [|]Regex.IsMatch(""test"", ""[a-z]+"");
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
 
@@ -54,12 +53,11 @@ class TestClass
 {
     void Test()
     {
-        new Regex(""[a-z]+"");
+        [|]new Regex(""[a-z]+"");
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
 

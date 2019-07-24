@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
             const string SourceCode = @"
 class TestClass
 {
-    int A => throw null;
+    int [|]A => throw null;
 }
 ";
             const string CodeFix = @"
@@ -31,7 +31,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -72,7 +71,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    public int A => TestProperty;
+    public int [|]A => TestProperty;
 
     public static int TestProperty => 0;
 }
@@ -87,7 +86,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 16)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -98,14 +96,13 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    int A => TestMethod();
+    int [|]A => TestMethod();
 
     public static int TestMethod() => 0;
 }
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 9)
                   .ValidateAsync();
         }
 
@@ -115,7 +112,7 @@ class TestClass
             const string SourceCode = @"
 class TestClass
 {
-    int A => _a;
+    int [|]A => _a;
 
     static int _a;
 }
@@ -130,7 +127,6 @@ class TestClass
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 4, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

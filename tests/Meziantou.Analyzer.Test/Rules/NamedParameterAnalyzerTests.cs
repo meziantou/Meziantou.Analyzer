@@ -71,7 +71,7 @@ class TypeName
 {
     public void Test()
     {
-        var a = string.Compare("""", """", true);
+        var a = string.Compare("""", """", [|]true);
     }
 }";
             const string CodeFix = @"
@@ -84,7 +84,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 40)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -145,7 +144,7 @@ class TypeName
 {
     public void Test()
     {
-        typeof(TypeName).GetMethod("""").Invoke(null, null);
+        typeof(TypeName).GetMethod("""").Invoke(null, [|]null);
     }
 }";
             const string CodeFix = @"
@@ -158,7 +157,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 53)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -213,7 +211,7 @@ class TypeName
 {
     public void Test()
     {
-        new TypeName(null);
+        new TypeName([|]null);
     }
 
     TypeName(string a) { }
@@ -230,7 +228,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 22)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

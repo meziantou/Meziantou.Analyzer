@@ -16,14 +16,14 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithoutCancellationToken_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithoutCancellationToken_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public void A()
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -31,31 +31,29 @@ class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public void A()
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithCancellationToken_ShouldNotReportDiagnosticAsync()
+        public async Task CallingMethodWithCancellationToken_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
@@ -74,14 +72,14 @@ class Test
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithATaskInContext_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithATaskInContext_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public void A(System.Threading.Tasks.Task task)
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -91,19 +89,18 @@ class Test
             // Should not report MA0040 with task.Factory.CancellationToken
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithATaskOfTInContext_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithATaskOfTInContext_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public void A(System.Threading.Tasks.Task<int> task)
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -111,19 +108,18 @@ class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0032", severity: DiagnosticSeverity.Hidden)
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
+        public async Task CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public void A(System.Threading.CancellationToken cancellationToken)
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -131,19 +127,19 @@ class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (cancellationToken)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (cancellationToken)")
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
+        public async Task CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public static void A(HttpRequest request)
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public static void MethodWithCancellationToken() => throw null;
@@ -156,19 +152,19 @@ class HttpRequest
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (request.RequestAborted)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (request.RequestAborted)")
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithProperty_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithProperty_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public void A()
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public System.Threading.CancellationToken MyCancellationToken { get; }
@@ -184,19 +180,19 @@ class HttpContext
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (MyCancellationToken, Context.RequestAborted)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (MyCancellationToken, Context.RequestAborted)")
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethodWithInstanceProperty_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithInstanceProperty_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
 class Test
 {
     public static void A()
     {
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
     }
 
     public static System.Threading.CancellationToken MyCancellationToken { get; }
@@ -212,12 +208,12 @@ class HttpContext
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, id: "MA0040", message: "Specify a CancellationToken (MyCancellationToken)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (MyCancellationToken)")
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CallingMethod_ShouldReportDiagnosticWithVariablesAsync()
+        public async Task CallingMethod_ShouldReportDiagnosticWithVariablesAsync()
         {
             const string SourceCode = @"
 class Test
@@ -229,7 +225,7 @@ class Test
         }
 
         System.Threading.CancellationToken a = default;
-        MethodWithCancellationToken();
+        [|]MethodWithCancellationToken();
         System.Threading.CancellationToken unaccessible2 = default;
     }
 
@@ -238,12 +234,12 @@ class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 11, column: 9, id: "MA0040", message: "Specify a CancellationToken (a)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (a)")
                   .ValidateAsync();
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task CancellationTokenSourceCreate_ShouldNotReportDiagnostic()
+        public async Task CancellationTokenSourceCreate_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"using System.Threading;
 class Test

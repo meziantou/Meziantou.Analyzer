@@ -21,7 +21,7 @@ class Test
 {
     void A()
     {
-        System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
+        [|]System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
     }
 }
 
@@ -40,7 +40,6 @@ namespace System.Net.Security
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
 
@@ -53,7 +52,7 @@ class Test
     void A()
     {
         var handler = new System.Net.Http.HttpClientHandler();
-        handler.ServerCertificateCustomValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
+        [|]handler.ServerCertificateCustomValidationCallback += (sender, certification, chain, sslPolicyErrors) => throw null;
     }
 }
 
@@ -67,7 +66,6 @@ namespace System.Net.Http
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 9)
                   .ValidateAsync();
         }
     }

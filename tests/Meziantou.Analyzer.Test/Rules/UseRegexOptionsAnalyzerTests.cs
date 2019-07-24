@@ -26,15 +26,9 @@ class TestClass
 {
     void Test()
     {
-        Regex.IsMatch(""test"", """ + regex + @""", " + options + @", default);
+        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[|]") + options + @", default);
     }
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 6, column: 35 + regex.Length);
-            }
-
             await project.ValidateAsync();
         }
 
@@ -53,14 +47,9 @@ class TestClass
 {
     void Test()
     {
-        new Regex(""" + regex + @""", " + options + @", default);
+        new Regex(""" + regex + @""", " + (isValid ? "" : "[|]") + options + @", default);
     }
 }");
-
-            if (!isValid)
-            {
-                project.ShouldReportDiagnostic(line: 6, column: 23 + regex.Length);
-            }
 
             await project.ValidateAsync();
         }

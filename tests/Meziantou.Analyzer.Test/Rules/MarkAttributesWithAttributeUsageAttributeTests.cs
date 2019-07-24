@@ -17,14 +17,13 @@ namespace Meziantou.Analyzer.Test.Rules
         [TestMethod]
         public async System.Threading.Tasks.Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportErrorAsync()
         {
-            const string SourceCode = "class TestAttribute : System.Attribute { }";
+            const string SourceCode = "class [|]TestAttribute : System.Attribute { }";
 
             const string CodeFix = @"[System.AttributeUsage(System.AttributeTargets.All)]
 class TestAttribute : System.Attribute { }";
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 1, column: 7)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

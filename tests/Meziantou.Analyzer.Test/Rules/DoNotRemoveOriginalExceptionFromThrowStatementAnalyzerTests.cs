@@ -54,7 +54,7 @@ class Test
         catch (System.Exception ex)
         {
             _ = ex;
-            throw ex;
+            [|]throw ex;
         }
     }
 }
@@ -77,7 +77,6 @@ class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 12, column: 13)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

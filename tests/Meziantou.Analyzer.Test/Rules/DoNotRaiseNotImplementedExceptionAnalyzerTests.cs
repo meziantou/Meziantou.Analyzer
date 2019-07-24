@@ -46,12 +46,11 @@ class TestAttribute
 {
     void Test()
     {
-        throw new NotImplementedException();
+        [|]throw new NotImplementedException();
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
     }
