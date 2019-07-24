@@ -49,19 +49,14 @@ namespace DocumentationGenerator
 
         private static string GetSeverity(DiagnosticSeverity severity)
         {
-            switch (severity)
+            return severity switch
             {
-                case DiagnosticSeverity.Hidden:
-                    return "👻";
-                case DiagnosticSeverity.Info:
-                    return "ℹ️";
-                case DiagnosticSeverity.Warning:
-                    return "⚠️";
-                case DiagnosticSeverity.Error:
-                    return "❌";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(severity));
-            }
+                DiagnosticSeverity.Hidden => "👻",
+                DiagnosticSeverity.Info => "ℹ️",
+                DiagnosticSeverity.Warning => "⚠️",
+                DiagnosticSeverity.Error => "❌",
+                _ => throw new ArgumentOutOfRangeException(nameof(severity)),
+            };
         }
 
         private static string GetBoolean(bool value)
