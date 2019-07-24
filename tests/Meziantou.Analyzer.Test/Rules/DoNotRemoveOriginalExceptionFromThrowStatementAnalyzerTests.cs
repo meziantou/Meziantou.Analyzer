@@ -54,7 +54,7 @@ class Test
         catch (System.Exception ex)
         {
             _ = ex;
-            [|]throw ex;
+            [||]throw ex;
         }
     }
 }

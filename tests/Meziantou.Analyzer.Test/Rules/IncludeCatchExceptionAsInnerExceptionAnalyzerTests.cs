@@ -65,7 +65,7 @@ class Test
         }
         catch (System.Exception ex)
         {
-            throw [|]new System.Exception("""");
+            throw [||]new System.Exception("""");
         }
     }
 }";

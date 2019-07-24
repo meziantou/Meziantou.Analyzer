@@ -21,7 +21,7 @@ class TypeName
 {
     public void Test()
     {
-        [|]new System.EventArgs();
+        [||]new System.EventArgs();
     }
 }";
             await CreateProjectBuilder()

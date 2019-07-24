@@ -79,7 +79,7 @@ class Test
 
 class TestDerived : Test
 {
-    public override void A(int [|]a = 1, int [|]b = 2) { }
+    public override void A(int [||]a = 1, int [||]b = 2) { }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
@@ -117,7 +117,7 @@ class Test
 
 class TestDerived : Test
 {
-    public override void A(int [|]a = 1) { }
+    public override void A(int [||]a = 1) { }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
@@ -136,7 +136,7 @@ class Test
 
 class TestDerived : Test
 {
-    public override void A(int [|]a) { }
+    public override void A(int [||]a) { }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)

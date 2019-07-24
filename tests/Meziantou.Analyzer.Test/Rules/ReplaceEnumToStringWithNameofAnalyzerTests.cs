@@ -23,7 +23,7 @@ class Test
 {
     void A()
     {
-        _ = [|]MyEnum.A.ToString();
+        _ = [||]MyEnum.A.ToString();
     }
 }
 

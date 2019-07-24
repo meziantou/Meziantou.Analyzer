@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"
-class [|]Sample
+class [||]Sample
 {
 }")
                   .ValidateAsync();

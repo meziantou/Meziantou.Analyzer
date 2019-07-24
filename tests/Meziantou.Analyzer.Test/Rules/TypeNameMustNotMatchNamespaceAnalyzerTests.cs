@@ -35,7 +35,7 @@ namespace TestNamespace
             const string SourceCode = @"
 namespace Test
 {
-    class [|]Test
+    class [||]Test
     {
     }
 }";

@@ -39,7 +39,7 @@ class TestAttribute
 {
     void Test()
     {
-        [|]throw new IndexOutOfRangeException();
+        [||]throw new IndexOutOfRangeException();
     }
 }";
             await CreateProjectBuilder()

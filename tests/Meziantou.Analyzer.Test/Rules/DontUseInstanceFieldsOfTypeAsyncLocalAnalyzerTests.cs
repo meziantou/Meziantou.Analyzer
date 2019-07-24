@@ -33,7 +33,7 @@ class Test2
             const string SourceCode = @"
 class Test2
 {
-    System.Threading.AsyncLocal<int> [|]_a;
+    System.Threading.AsyncLocal<int> [||]_a;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)

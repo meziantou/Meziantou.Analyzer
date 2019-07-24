@@ -26,11 +26,11 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [DataTestMethod]
-        [DataRow("//[|]TODO", "")]
-        [DataRow("// [|]TODO", "")]
-        [DataRow("//[|]TODO test", "test")]
-        [DataRow("// [|]TODO test", "test")]
-        [DataRow("  // [|]TODO test", "test")]
+        [DataRow("//[||]TODO", "")]
+        [DataRow("// [||]TODO", "")]
+        [DataRow("//[||]TODO test", "test")]
+        [DataRow("// [||]TODO test", "test")]
+        [DataRow("  // [||]TODO test", "test")]
         public async Task SingleLineComment(string comment, string todo)
         {
             await CreateProjectBuilder()
@@ -40,12 +40,12 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [DataTestMethod]
-        [DataRow("/*[|]TODO*/", "")]
-        [DataRow("/* [|]TODO*/", "")]
-        [DataRow("/*[|]TODO test*/", "test")]
-        [DataRow("/* [|]TODO test*/", "test")]
-        [DataRow("  /* [|]TODO test*/", "test")]
-        [DataRow("/*\n* [|]TODO test\r\n*/", "test")]
+        [DataRow("/*[||]TODO*/", "")]
+        [DataRow("/* [||]TODO*/", "")]
+        [DataRow("/*[||]TODO test*/", "test")]
+        [DataRow("/* [||]TODO test*/", "test")]
+        [DataRow("  /* [||]TODO test*/", "test")]
+        [DataRow("/*\n* [||]TODO test\r\n*/", "test")]
         public async Task MultiLinesComment(string comment, string todo)
         {
             await CreateProjectBuilder()
@@ -60,8 +60,8 @@ namespace Meziantou.Analyzer.Test.Rules
             await CreateProjectBuilder()
                   .WithSourceCode(@"
 /*
- * [|]TODO a
- * [|]TODO b
+ * [||]TODO a
+ * [||]TODO b
  */")
                   .ShouldReportDiagnosticWithMessage("TODO a")
                   .ShouldReportDiagnosticWithMessage("TODO b")

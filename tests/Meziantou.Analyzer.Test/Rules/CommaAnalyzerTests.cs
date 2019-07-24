@@ -71,7 +71,7 @@ class TypeName
         new TypeName()
         {
             A = 1,
-            [|]B = 2
+            [||]B = 2
         };
     }
 }";
@@ -118,7 +118,7 @@ enum TypeName
 enum TypeName
 {
     A = 1,
-    [|]B = 2
+    [||]B = 2
 }";
             const string CodeFix = @"
 enum TypeName
@@ -164,7 +164,7 @@ class TypeName
         _= new
         {
             A = 1,
-            [|]B = 2
+            [||]B = 2
         };
     }
 }";

@@ -43,7 +43,7 @@ class Test2
             var sourceCode = @"
 abstract class Test
 {
-    public [|]Test() { }
+    public [||]Test() { }
 }";
 
             var expectedCodeFix = @"
@@ -64,7 +64,7 @@ abstract class Test
             var sourceCode = @"
 abstract class Test
 {
-    internal [|]Test() { }
+    internal [||]Test() { }
 }";
 
             var codeFix = @"

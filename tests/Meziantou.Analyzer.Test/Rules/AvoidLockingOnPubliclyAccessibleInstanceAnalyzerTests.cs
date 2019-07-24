@@ -22,7 +22,7 @@ class Test
 {
     void A()
     {
-        lock ([|]this) {}
+        lock ([||]this) {}
     }
 }";
             await CreateProjectBuilder()
@@ -38,7 +38,7 @@ class Test
 {
     void A()
     {
-        lock ([|]typeof(Test))
+        lock ([||]typeof(Test))
         {
             throw null;
         }
@@ -58,7 +58,7 @@ class Test
     void A()
     {
         System.Type type = null;
-        lock ([|]type) {}
+        lock ([||]type) {}
     }
 }";
             await CreateProjectBuilder()
@@ -75,7 +75,7 @@ public class Test
     public string TestField;
     void A()
     {
-        lock ([|]TestField) {}
+        lock ([||]TestField) {}
     }
 }";
             await CreateProjectBuilder()
