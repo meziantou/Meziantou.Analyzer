@@ -34,7 +34,7 @@ class Sample
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [TestMethod]
         public async Task ObjectEquals_DefaultImplementation()
         {
@@ -134,6 +134,31 @@ class Sample
     public void A()
     {
         _ = Test.A.GetHashCode();
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+
+        [TestMethod]
+        public async Task GetHashCode_EnumVariable()
+        {
+            const string SourceCode = @"
+enum Test
+{
+    A,
+    B,
+}
+
+class Sample
+{
+    public void A()
+    {
+        var a = Test.A;
+        _ = a.GetHashCode();
     }
 }
 ";
