@@ -22,7 +22,7 @@ class TypeName
 {
     public void Test()
     {
-        var a = ""a"" == ""v"";
+        var a = [|]""a"" == ""v"";
     }
 }";
             const string CodeFix = @"
@@ -35,7 +35,7 @@ class TypeName
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
-                .ShouldReportDiagnostic(line: 6, column: 17, message: "Use string.Equals instead of Equals operator")
+                .ShouldReportDiagnosticWithMessage("Use string.Equals instead of Equals operator")
                 .ShouldFixCodeWith(CodeFix)
                 .ValidateAsync();
         }
@@ -48,7 +48,7 @@ class TypeName
 {
     public void Test()
     {
-        var a = ""a"" != ""v"";
+        var a = [|]""a"" != ""v"";
     }
 }";
             const string CodeFix = @"
@@ -61,7 +61,7 @@ class TypeName
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
-                .ShouldReportDiagnostic(line: 6, column: 17, message: "Use string.Equals instead of NotEquals operator")
+                .ShouldReportDiagnosticWithMessage("Use string.Equals instead of NotEquals operator")
                 .ShouldFixCodeWith(CodeFix)
                 .ValidateAsync();
         }
@@ -75,7 +75,7 @@ class TypeName
     public void Test()
     {
         string str = """";
-        var a = str == ""v"";
+        var a = [|]str == ""v"";
     }
 }";
             const string CodeFix = @"
@@ -89,7 +89,7 @@ class TypeName
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
-                .ShouldReportDiagnostic(line: 7, column: 17, message: "Use string.Equals instead of Equals operator")
+                .ShouldReportDiagnosticWithMessage("Use string.Equals instead of Equals operator")
                 .ShouldFixCodeWith(CodeFix)
                 .ValidateAsync();
         }

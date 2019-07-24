@@ -34,9 +34,8 @@ class Test
                   .WithSourceCode(@"
 class Test
 {
-    public void A() => """".ToString();
+    public void A() => [|]"""".ToString();
 }")
-                  .ShouldReportDiagnostic(line: 4, column: 24)
                   .ValidateAsync();
         }
     }

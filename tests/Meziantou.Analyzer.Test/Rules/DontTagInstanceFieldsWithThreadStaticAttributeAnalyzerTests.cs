@@ -35,11 +35,10 @@ class Test2
 class Test2
 {
     [System.ThreadStatic]
-    int _a;
+    int [|]_a;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 5, column: 9)
                   .ValidateAsync();
         }
     }

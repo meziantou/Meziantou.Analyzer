@@ -33,11 +33,10 @@ namespace Test
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"
-class Sample
+class [|]Sample
 {
     class Nested { }
 }")
-                  .ShouldReportDiagnostic(line: 2, column: 7)
                   .ValidateAsync();
         }
     }

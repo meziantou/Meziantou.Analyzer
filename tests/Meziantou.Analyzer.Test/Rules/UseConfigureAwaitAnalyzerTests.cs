@@ -22,7 +22,7 @@ class ClassTest
 {
     async Task Test()
     {
-        await Task.Delay(1);
+        [|]await Task.Delay(1);
     }
 }";
             const string CodeFix = @"using System.Threading.Tasks;
@@ -35,7 +35,6 @@ class ClassTest
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -116,7 +115,7 @@ class MyClass : System.Windows.Window
     {
         await Task.Delay(1);
         await Task.Delay(1).ConfigureAwait(false);
-        await Task.Delay(1);
+        [|]await Task.Delay(1);
     }
 }";
             const string CodeFix = @"using System.Threading.Tasks;
@@ -132,7 +131,6 @@ class MyClass : System.Windows.Window
             await CreateProjectBuilder()
                   .AddWpfApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 8, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -176,14 +174,13 @@ class MyClass : System.Windows.Window
         }
         else
         {
-            await Task.Delay(1);
+            [|]await Task.Delay(1);
         }
     }
 }";
             await CreateProjectBuilder()
                   .AddWpfApi()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 13, column: 13)
                   .ValidateAsync();
         }
 

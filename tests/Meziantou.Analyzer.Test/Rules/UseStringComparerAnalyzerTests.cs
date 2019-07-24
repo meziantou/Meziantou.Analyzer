@@ -38,7 +38,7 @@ class TypeName
 {
     public void Test()
     {
-        new System.Collections.Generic.HashSet<string>();
+        [|]new System.Collections.Generic.HashSet<string>();
     }
 }";
             const string CodeFix = @"
@@ -51,7 +51,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -80,7 +79,7 @@ class TypeName
 {
     public void Test()
     {
-        new System.Collections.Generic.Dictionary<string, int>();
+        [|]new System.Collections.Generic.Dictionary<string, int>();
     }
 }";
             const string CodeFix = @"
@@ -93,7 +92,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -106,7 +104,7 @@ class TypeName
 {
     public void Test()
     {
-        new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
+        [|]new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
     }
 }";
             const string CodeFix = @"
@@ -119,7 +117,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -133,7 +130,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.Contains("""");
+        [|]obj.Contains("""");
     }
 }";
             const string CodeFix = @"using System.Linq;
@@ -147,7 +144,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -161,7 +157,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.ToDictionary(p => p);
+        [|]obj.ToDictionary(p => p);
     }
 }";
             const string CodeFix = @"using System.Linq;
@@ -175,7 +171,6 @@ class TypeName
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 9)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

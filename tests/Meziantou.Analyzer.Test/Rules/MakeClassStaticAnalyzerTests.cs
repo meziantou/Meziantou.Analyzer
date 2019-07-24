@@ -78,7 +78,7 @@ interface ITest { }
         public async Task StaticMethodAndConstField_DiagnosticAsync()
         {
             const string SourceCode = @"
-public class Test
+public class [|]Test
 {
     const int a = 10;
     static void A() { }
@@ -91,7 +91,6 @@ public static class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 2, column: 14)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

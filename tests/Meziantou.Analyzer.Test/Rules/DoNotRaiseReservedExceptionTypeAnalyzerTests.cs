@@ -39,12 +39,12 @@ class TestAttribute
 {
     void Test()
     {
-        throw new IndexOutOfRangeException();
+        [|]throw new IndexOutOfRangeException();
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "'System.IndexOutOfRangeException' is a reserved exception type")
+                  .ShouldReportDiagnosticWithMessage("'System.IndexOutOfRangeException' is a reserved exception type")
                   .ValidateAsync();
         }
     }

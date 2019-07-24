@@ -29,11 +29,11 @@ class Test
     public Test()
     {
         IQueryable<string> query = null;
-        query." + a + @"(x => x)." + b + @"(x => x);
+        [|]query." + a + @"(x => x)." + b + @"(x => x);
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'")
+                  .ShouldReportDiagnosticWithMessage($"Remove the first '{a}' method or use '{expectedMethod}'")
                   .ShouldFixCodeWith(1, @"using System.Linq;
 class Test
 {
@@ -61,11 +61,11 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        enumerable." + a + @"(x => x)." + b + @"(x => x);
+        [|]enumerable." + a + @"(x => x)." + b + @"(x => x);
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'")
+                  .ShouldReportDiagnosticWithMessage($"Remove the first '{a}' method or use '{expectedMethod}'")
                   .ShouldFixCodeWith(1, @"using System.Linq;
 class Test
 {
@@ -93,11 +93,11 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        enumerable." + a + @"(x => x)." + b + @"(x => x);
+        [|]enumerable." + a + @"(x => x)." + b + @"(x => x);
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'")
+                  .ShouldReportDiagnosticWithMessage($"Remove the first '{a}' method or use '{expectedMethod}'")
                   .ShouldFixCodeWith(0, @"using System.Linq;
 class Test
 {
@@ -125,11 +125,11 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        enumerable.OrderBy(x => x)." + a + @"(x => x)." + b + @"(x => x);
+        [|]enumerable.OrderBy(x => x)." + a + @"(x => x)." + b + @"(x => x);
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: $"Remove the first '{a}' method or use '{expectedMethod}'")
+                  .ShouldReportDiagnosticWithMessage($"Remove the first '{a}' method or use '{expectedMethod}'")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {

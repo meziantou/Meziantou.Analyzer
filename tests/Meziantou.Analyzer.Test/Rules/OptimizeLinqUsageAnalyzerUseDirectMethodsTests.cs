@@ -26,7 +26,7 @@ class Test
         var enumerable = System.Linq.Enumerable.Empty<int>();
         var list = new System.Collections.Generic.List<int>();
         list.FirstOrDefault();
-        list.FirstOrDefault(x => x == 0); // Error
+        [|]list.FirstOrDefault(x => x == 0);
         enumerable.FirstOrDefault();
         enumerable.FirstOrDefault(x => x == 0);
     }
@@ -40,7 +40,7 @@ class Test
         var enumerable = System.Linq.Enumerable.Empty<int>();
         var list = new System.Collections.Generic.List<int>();
         list.FirstOrDefault();
-        list.Find(x => x == 0); // Error
+        list.Find(x => x == 0);
         enumerable.FirstOrDefault();
         enumerable.FirstOrDefault(x => x == 0);
     }
@@ -49,7 +49,7 @@ class Test
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 9, column: 9, message: "Use 'Find()' instead of 'FirstOrDefault()'")
+                  .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -81,7 +81,7 @@ class Test
     public Test()
     {
         var list = new System.Collections.Generic.List<int>();
-        _ = list.Count();
+        _ = [|]list.Count();
         list.Count(x => x == 0);
     }
 }
@@ -101,7 +101,7 @@ class Test
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13, message: "Use 'Count' instead of 'Count()'")
+                  .ShouldReportDiagnosticWithMessage("Use 'Count' instead of 'Count()'")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -150,7 +150,7 @@ class Test
     public Test()
     {
         var list = new int[10];
-        _ = list.Count();
+        _ = [|]list.Count();
         list.Count(x => x == 0);
     }
 }
@@ -169,7 +169,7 @@ class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13, message: "Use 'Length' instead of 'Count()'")
+                  .ShouldReportDiagnosticWithMessage("Use 'Length' instead of 'Count()'")
                   .ShouldFixCodeWith(Fix)
                   .ValidateAsync();
         }
@@ -183,7 +183,7 @@ class Test
     public Test()
     {
         var list = new System.Collections.Generic.List<int>();
-        _ = list.ElementAt(10);
+        _ = [|]list.ElementAt(10);
         list.ElementAtOrDefault(10);
     }
 }
@@ -202,7 +202,7 @@ class Test
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'ElementAt()'")
+                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'ElementAt()'")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -216,7 +216,7 @@ class Test
     public Test()
     {
         var list = new int[5];
-        _ = list.ElementAt(10);
+        _ = [|]list.ElementAt(10);
         list.ElementAtOrDefault(10);
     }
 }
@@ -234,7 +234,7 @@ class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'ElementAt()'")
+                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'ElementAt()'")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -248,7 +248,7 @@ class Test
     public Test()
     {
         var list = new int[5];
-        _ = list.First();
+        _ = [|]list.First();
         list.First(x=> x == 0);
     }
 }
@@ -267,7 +267,7 @@ class Test
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'First()'")
+                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'First()'")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -281,7 +281,7 @@ class Test
     public Test()
     {
         var list = new int[5];
-        _ = list.Last();
+        _ = [|]list.Last();
         list.First(x=> x == 0);
     }
 }
@@ -300,7 +300,7 @@ class Test
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'Last()'")
+                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -314,7 +314,7 @@ class Test
     public Test()
     {
         var list = new System.Collections.Generic.List<int>();
-        _ = list.Last();
+        _ = [|]list.Last();
         list.First(x=> x == 0);
     }
 }
@@ -333,7 +333,7 @@ class Test
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 13, message: "Use '[]' instead of 'Last()'")
+                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

@@ -25,7 +25,7 @@ class TestClass
 {{
     void Test()
     {{
-        var a = {code};
+        var a = [|]{code};
     }}
 }}")
                   .ShouldFixCodeWith(@"
@@ -36,7 +36,6 @@ class TestClass
         var a = System.Array.Empty<int>();
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 17)
                   .ValidateAsync();
         }
 

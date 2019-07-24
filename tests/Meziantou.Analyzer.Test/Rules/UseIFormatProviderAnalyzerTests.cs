@@ -37,12 +37,12 @@ class TypeName
 {
     public void Test()
     {
-        1.ToString();
+        [|]1.ToString();
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter")
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter")
                   .ValidateAsync();
         }
 
@@ -87,14 +87,14 @@ class TypeName
 {
     public void Test()
     {
-        int.Parse("""");
-        int.Parse("""", System.Globalization.NumberStyles.Any);
+        [|]int.Parse("""");
+        [|]int.Parse("""", System.Globalization.NumberStyles.Any);
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
-                  .ShouldReportDiagnostic(line: 7, column: 9, message: "Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
                   .ValidateAsync();
         }
 
@@ -106,12 +106,12 @@ class TypeName
 {
     public void Test()
     {
-        float.TryParse("""", out _);
+        [|]float.TryParse("""", out _);
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
                   .ValidateAsync();
         }
 
@@ -123,12 +123,12 @@ class TypeName
 {
     public void Test()
     {
-        float.TryParse("""", out _);
+        [|]float.TryParse("""", out _);
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
                   .ValidateAsync();
         }
 
@@ -140,12 +140,12 @@ class TypeName
 {
     public void Test()
     {
-        """".ToLower();
+        [|]"""".ToLower();
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "Use an overload of 'ToLower' that has a 'System.Globalization.CultureInfo' parameter")
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'ToLower' that has a 'System.Globalization.CultureInfo' parameter")
                   .ValidateAsync();
         }
 
@@ -157,12 +157,12 @@ class TypeName
 {
     public void Test()
     {
-        new System.Text.StringBuilder().AppendFormat(""{0}"", 10);
+        [|]new System.Text.StringBuilder().AppendFormat(""{0}"", 10);
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9, message: "Use an overload of 'AppendFormat' that has a 'System.IFormatProvider' parameter")
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'AppendFormat' that has a 'System.IFormatProvider' parameter")
                   .ValidateAsync();
         }
     }

@@ -21,12 +21,11 @@ class TypeName
 {
     public void Test()
     {
-        new System.EventArgs();
+        [|]new System.EventArgs();
     }
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
-                .ShouldReportDiagnostic(line: 6, column: 9)
                 .ValidateAsync();
         }
     }

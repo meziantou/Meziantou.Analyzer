@@ -102,12 +102,11 @@ class TestAttribute
     string Prop
     {
         get { throw null; }
-        set { throw new System.ArgumentNullException(); }
+        set { throw [|]new System.ArgumentNullException(); }
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 21, message: "Use an overload of 'System.ArgumentNullException' with the parameter name")
                   .ValidateAsync();
         }
 
@@ -119,12 +118,11 @@ class TestAttribute
 {
     void Test(string test)
     {
-        throw new System.ArgumentException(""message"");
+        throw [|]new System.ArgumentException(""message"");
     }    
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 15, message: "Use an overload of 'System.ArgumentException' with the parameter name")
                   .ValidateAsync();
         }
     }

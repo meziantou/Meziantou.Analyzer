@@ -21,12 +21,11 @@ class Test
 {
     public void A()
     {
-        ;
+        [|];
     }
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
 

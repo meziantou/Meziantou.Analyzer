@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestHelper;
 
@@ -30,11 +31,11 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        _ = " + text + @";
+        _ = [|]" + text + @";
     }
 }
 ")
-                .ShouldReportDiagnostic(line: 7, column: 13, message: "Expression is always false")
+                .ShouldReportDiagnosticWithMessage("Expression is always false")
                 .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -63,11 +64,11 @@ class Test
     {
         int n = 10;
         var enumerable = Enumerable.Empty<int>();
-        _ = " + text + @";
+        _ = [|]" + text + @";
     }
 }
 ")
-                  .ShouldReportDiagnostic(line: 8, column: 13, message: "Expression is always true")
+                  .ShouldReportDiagnosticWithMessage("Expression is always true")
                   .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -95,11 +96,11 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
+        _ = [|]enumerable." + text + @";
     }
 }
 ")
-                   .ShouldReportDiagnostic(line: 7, column: 13, message: expectedMessage)
+                   .ShouldReportDiagnosticWithMessage(expectedMessage)
                    .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -126,11 +127,11 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
+        _ = [|]enumerable." + text + @";
     }
 }
 ")
-                   .ShouldReportDiagnostic(line: 7, column: 13, message: expectedMessage)
+                   .ShouldReportDiagnosticWithMessage(expectedMessage)
                    .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -159,11 +160,11 @@ class Test
     {
         int n = 10;
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
+        _ = [|]enumerable." + text + @";
     }
 }
 ")
-                   .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
+                   .ShouldReportDiagnosticWithMessage(expectedMessage)
                    .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -194,11 +195,11 @@ class Test
     {
         int n = 10;
         var enumerable = Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
+        _ = [|]enumerable." + text + @";
     }
 }
 ")
-                   .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
+                   .ShouldReportDiagnosticWithMessage(expectedMessage)
                    .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -230,11 +231,11 @@ class Test
     {
         int n = 10;
         var enumerable = Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
+        _ = [|]enumerable." + text + @";
     }
 }
 ")
-                   .ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage)
+                   .ShouldReportDiagnosticWithMessage(expectedMessage)
                    .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
@@ -250,8 +251,8 @@ class Test
         }
 
         [DataTestMethod]
-        [DataRow("Take(10).Count() == 1", null)]
-        public async Task Count_Equals(string text, string expectedMessage)
+        [DataRow("Take(10).Count() == 1")]
+        public async Task Count_Equals(string text)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Linq;
@@ -265,17 +266,12 @@ class Test
 }
 ");
 
-            if (expectedMessage != null)
-            {
-                project.ShouldReportDiagnostic(line: 7, column: 13, message: expectedMessage);
-            }
-
             await project.ValidateAsync();
         }
 
         [DataTestMethod]
-        [DataRow("Take(1).Count() != n", null)]
-        public async Task Count_NotEquals(string text, string expectedMessage)
+        [DataRow("Take(1).Count() != n")]
+        public async Task Count_NotEquals(string text)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Linq;
@@ -289,12 +285,6 @@ class Test
     }
 }
 ");
-
-            if (expectedMessage != null)
-            {
-                project.ShouldReportDiagnostic(line: 8, column: 13, message: expectedMessage);
-            }
-
             await project.ValidateAsync();
         }
     }

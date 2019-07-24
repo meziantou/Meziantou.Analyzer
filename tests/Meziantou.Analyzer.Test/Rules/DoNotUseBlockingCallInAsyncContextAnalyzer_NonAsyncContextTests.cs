@@ -56,10 +56,9 @@ public class Test
 {
     private void A()
     {
-        Task.Delay(1).Wait();
+        [|]Task.Delay(1).Wait();
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
 
@@ -72,13 +71,12 @@ public class Test
 {
     private void A()
     {
-        Write();
+        [|]Write();
     }
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
     }

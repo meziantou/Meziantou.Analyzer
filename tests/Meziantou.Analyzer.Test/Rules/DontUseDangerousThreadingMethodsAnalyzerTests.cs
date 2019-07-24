@@ -26,10 +26,9 @@ public class Test
 {
     public void A()
     {
-        " + text + @";
+        [|]" + text + @";
     }
 }")
-                  .ShouldReportDiagnostic(line: 6, column: 9)
                   .ValidateAsync();
         }
     }

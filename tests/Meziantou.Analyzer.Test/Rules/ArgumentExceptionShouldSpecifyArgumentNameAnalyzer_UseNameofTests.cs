@@ -24,7 +24,7 @@ class Sample
     string Prop
     {
         get { throw null; }
-        set { throw new System.ArgumentNullException(""value""); }
+        set { throw new System.ArgumentNullException([|]""value""); }
     }
 }";
 
@@ -40,7 +40,6 @@ class Sample
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 7, column: 54)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -53,7 +52,7 @@ class Sample
 {
     string M(string arg0)
     {
-        throw new System.ArgumentNullException(""arg0"");
+        throw new System.ArgumentNullException([|]""arg0"");
     }
 }";
 
@@ -68,7 +67,6 @@ class Sample
 
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnostic(line: 6, column: 48)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

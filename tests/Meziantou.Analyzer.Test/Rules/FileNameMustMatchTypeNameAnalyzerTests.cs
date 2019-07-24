@@ -19,10 +19,9 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"
-class Sample
+class [|]Sample
 {
 }")
-                  .ShouldReportDiagnostic(line: 2, column: 7)
                   .ValidateAsync();
         }
 
