@@ -100,38 +100,19 @@ namespace Meziantou.Analyzer.Rules
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
             // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
-            switch (o)
+            return o switch
             {
-                case null:
-                    throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value");
-
-                case byte x:
-                    return (byte)(x & (~(byte)valueToRemove));
-
-                case sbyte x:
-                    return (sbyte)(x & (~(sbyte)valueToRemove));
-
-                case short x:
-                    return (short)(x & (~(short)valueToRemove));
-
-                case ushort x:
-                    return (ushort)(x & (~(ushort)valueToRemove));
-
-                case int x:
-                    return (int)(x & (~(int)valueToRemove));
-
-                case uint x:
-                    return (uint)(x & (~(uint)valueToRemove));
-
-                case long x:
-                    return (long)(x & (~(long)valueToRemove));
-
-                case ulong x:
-                    return (ulong)(x & (~(ulong)valueToRemove));
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported");
-            }
+                null => throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value"),
+                byte x => (byte)(x & (~(byte)valueToRemove)),
+                sbyte x => (sbyte)(x & (~(sbyte)valueToRemove)),
+                short x => (short)(x & (~(short)valueToRemove)),
+                ushort x => (ushort)(x & (~(ushort)valueToRemove)),
+                int x => (int)(x & (~(int)valueToRemove)),
+                uint x => (uint)(x & (~(uint)valueToRemove)),
+                long x => (long)(x & (~(long)valueToRemove)),
+                ulong x => (object)(ulong)(x & (~(ulong)valueToRemove)),
+                _ => throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported"),
+            };
         }
     }
 }

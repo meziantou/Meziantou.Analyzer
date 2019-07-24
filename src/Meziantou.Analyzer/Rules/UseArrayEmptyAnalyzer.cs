@@ -68,19 +68,13 @@ namespace Meziantou.Analyzer.Rules
 
             static bool IsZero(object value)
             {
-                switch (value)
+                return value switch
                 {
-                    case int i:
-                        return i == 0;
-
-                    case long l:
-                        return l == 0;
-
-                    case uint ui:
-                        return ui == 0;
-                }
-
-                return false;
+                    int i => i == 0,
+                    long l => l == 0,
+                    uint ui => ui == 0,
+                    _ => false,
+                };
             }
         }
 
@@ -136,15 +130,12 @@ namespace Meziantou.Analyzer.Rules
 
         private static ImmutableArray<IParameterSymbol> GetParameters(ISymbol symbol)
         {
-            switch (symbol.Kind)
+            return symbol.Kind switch
             {
-                case SymbolKind.Method:
-                    return ((IMethodSymbol)symbol).Parameters;
-                case SymbolKind.Property:
-                    return ((IPropertySymbol)symbol).Parameters;
-                default:
-                    return ImmutableArray<IParameterSymbol>.Empty;
-            }
+                SymbolKind.Method => ((IMethodSymbol)symbol).Parameters,
+                SymbolKind.Property => ((IPropertySymbol)symbol).Parameters,
+                _ => ImmutableArray<IParameterSymbol>.Empty,
+            };
         }
     }
 }

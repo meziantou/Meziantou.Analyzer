@@ -532,22 +532,14 @@ namespace Meziantou.Analyzer.Rules
             BinaryOperatorKind NormalizeOperator()
             {
                 bool isCountLeftOperand = binaryOperation.LeftOperand == countOperand;
-                switch (binaryOperation.OperatorKind)
+                return binaryOperation.OperatorKind switch
                 {
-                    case BinaryOperatorKind.LessThan:
-                        return isCountLeftOperand ? BinaryOperatorKind.LessThan : BinaryOperatorKind.GreaterThan;
-                    case BinaryOperatorKind.LessThanOrEqual:
-                        return isCountLeftOperand ? BinaryOperatorKind.LessThanOrEqual : BinaryOperatorKind.GreaterThanOrEqual;
-
-                    case BinaryOperatorKind.GreaterThanOrEqual:
-                        return isCountLeftOperand ? BinaryOperatorKind.GreaterThanOrEqual : BinaryOperatorKind.LessThanOrEqual;
-
-                    case BinaryOperatorKind.GreaterThan:
-                        return isCountLeftOperand ? BinaryOperatorKind.GreaterThan : BinaryOperatorKind.LessThan;
-
-                    default:
-                        return binaryOperation.OperatorKind;
-                }
+                    BinaryOperatorKind.LessThan => isCountLeftOperand ? BinaryOperatorKind.LessThan : BinaryOperatorKind.GreaterThan,
+                    BinaryOperatorKind.LessThanOrEqual => isCountLeftOperand ? BinaryOperatorKind.LessThanOrEqual : BinaryOperatorKind.GreaterThanOrEqual,
+                    BinaryOperatorKind.GreaterThanOrEqual => isCountLeftOperand ? BinaryOperatorKind.GreaterThanOrEqual : BinaryOperatorKind.LessThanOrEqual,
+                    BinaryOperatorKind.GreaterThan => isCountLeftOperand ? BinaryOperatorKind.GreaterThan : BinaryOperatorKind.LessThan,
+                    _ => binaryOperation.OperatorKind,
+                };
             }
 
             bool HasTake()
