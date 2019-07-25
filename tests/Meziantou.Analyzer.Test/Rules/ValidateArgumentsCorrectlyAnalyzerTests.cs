@@ -164,5 +164,33 @@ class TypeName
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+        [TestMethod]
+        public async Task ValidValidation()
+        {
+            const string SourceCode = @"using System.Collections.Generic;
+class TypeName
+{
+    IEnumerable<int> A(string a)
+    {
+        if (a == null)
+            throw new System.ArgumentNullException(nameof(a));
+
+        return A();
+
+        IEnumerable<int> A()
+        {
+            yield return 0;
+            if (a == null)
+            {
+                yield return 1;
+            }
+        }
+    }
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
