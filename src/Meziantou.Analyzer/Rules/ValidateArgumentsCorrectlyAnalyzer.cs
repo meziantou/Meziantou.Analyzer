@@ -4,6 +4,8 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -34,7 +36,7 @@ namespace Meziantou.Analyzer.Rules
                 var compilation = ctx.Compilation;
                 var analyzerContext = new AnalyzerContext(compilation);
 
-                ctx.RegisterOperationBlockStartAction(analyzerContext.AnalyzeMethodBodyStart);
+                ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
             });
         }
 
@@ -55,11 +57,6 @@ namespace Meziantou.Analyzer.Rules
                 _argumentSymbol = compilation.GetTypeByMetadataName("System.ArgumentException");
             }
 
-            public bool IsArgumentException(IThrowOperation operation)
-            {
-                return operation.Exception != null && operation.Exception.Type.IsOrInheritFrom(_argumentSymbol);
-            }
-
             public bool CanContainsYield(IMethodSymbol methodSymbol)
             {
                 if (!_symbols.Contains(methodSymbol.ReturnType.OriginalDefinition))
@@ -68,60 +65,69 @@ namespace Meziantou.Analyzer.Rules
                 return methodSymbol.Parameters.All(p => p.RefKind == RefKind.None);
             }
 
-            internal void AnalyzeMethodBodyStart(OperationBlockStartAnalysisContext context)
+            internal void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
             {
-                var symbol = context.OwningSymbol as IMethodSymbol;
-                if (symbol == null || !CanContainsYield(symbol))
+                var node = (MethodDeclarationSyntax)context.Node;
+                var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IMethodSymbol;
+                if (methodSymbol == null || !CanContainsYield(methodSymbol))
                     return;
 
-                var methodContext = new MethodContext(this, symbol);
-                context.RegisterOperationAction(methodContext.AnalyzeYield, OperationKind.YieldReturn);
-                context.RegisterOperationAction(methodContext.AnalyzeYield, OperationKind.YieldBreak);
-                context.RegisterOperationAction(methodContext.AnalyzeThrow, OperationKind.Throw);
-                context.RegisterOperationBlockEndAction(methodContext.OperationBlockEndAction);
-            }
-        }
+                var descendants = node.DescendantNodes(childNode => node == childNode || FilterDescendants(childNode)).ToList();
 
-        private sealed class MethodContext
-        {
-            private readonly AnalyzerContext _analyzerContext;
-            private readonly ISymbol _symbol;
-            private int _lastThrowIndex = -1;
-            private int _firstYieldIndex = int.MaxValue;
+                var firstYieldIndex = descendants
+                        .Where(node => node.IsKind(SyntaxKind.YieldReturnStatement) || node.IsKind(SyntaxKind.YieldBreakStatement))
+                        .DefaultIfEmpty()
+                        .Min(node => node?.SpanStart);
 
-            public MethodContext(AnalyzerContext analyzerContext, ISymbol symbol)
-            {
-                _analyzerContext = analyzerContext;
-                _symbol = symbol;
-            }
+                if (!firstYieldIndex.HasValue)
+                    return;
 
-            internal void AnalyzeThrow(OperationAnalysisContext context)
-            {
-                var operation = (IThrowOperation)context.Operation;
-                if (_analyzerContext.IsArgumentException(operation))
-                {
-                    _lastThrowIndex = Math.Max(GetEndOfBlockIndex(context.Operation), _lastThrowIndex);
-                }
-            }
+                var lastThrowIndex = descendants
+                        .Where(node => node.IsKind(SyntaxKind.ThrowStatement) || node.IsKind(SyntaxKind.ThrowExpression))
+                        .Where(node => IsArgumentException(context, node))
+                        .DefaultIfEmpty()
+                        .Max(node => GetEndOfBlockIndex(context, node));
 
-            internal void AnalyzeYield(OperationAnalysisContext context)
-            {
-                _firstYieldIndex = Math.Min(context.Operation.Syntax.SpanStart, _firstYieldIndex);
-            }
-
-            internal void OperationBlockEndAction(OperationBlockAnalysisContext context)
-            {
-                if (_lastThrowIndex >= 0 && _firstYieldIndex != int.MaxValue && _lastThrowIndex < _firstYieldIndex)
+                if (lastThrowIndex != null && firstYieldIndex != null && lastThrowIndex < firstYieldIndex)
                 {
                     var properties = ImmutableDictionary.Create<string, string>()
-                        .Add("Index", _lastThrowIndex.ToString(CultureInfo.InvariantCulture));
+                        .Add("Index", lastThrowIndex.Value.ToString(CultureInfo.InvariantCulture));
 
-                    context.ReportDiagnostic(s_rule, properties, _symbol);
+                    context.ReportDiagnostic(s_rule, properties, methodSymbol);
                 }
             }
 
-            private static int GetEndOfBlockIndex(IOperation operation)
+            public bool IsArgumentException(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode)
             {
+                var exceptionExpression = syntaxNode switch
+                {
+                    ThrowStatementSyntax throwStatement => throwStatement.Expression,
+                    ThrowExpressionSyntax throwExpression => throwExpression.Expression,
+                    _ => null,
+                };
+
+                if (exceptionExpression == null)
+                    return false;
+
+                var type = context.SemanticModel.GetTypeInfo(exceptionExpression, context.CancellationToken).Type;
+                return type != null && type.IsOrInheritFrom(_argumentSymbol);
+            }
+
+            private static bool FilterDescendants(SyntaxNode node)
+            {
+                return !node.IsKind(SyntaxKind.MethodDeclaration)
+                    && !node.IsKind(SyntaxKind.LocalFunctionStatement);
+            }
+
+            private static int? GetEndOfBlockIndex(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode)
+            {
+                if (syntaxNode == null)
+                    return null;
+
+                var operation = context.SemanticModel.GetOperation(syntaxNode, context.CancellationToken);
+                if (operation == null)
+                    return null;
+
                 while (operation != null)
                 {
                     if (operation is IMethodBodyOperation)
