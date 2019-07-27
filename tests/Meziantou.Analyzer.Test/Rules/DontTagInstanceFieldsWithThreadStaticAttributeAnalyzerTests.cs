@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task DontReportAsync()
         {
             const string SourceCode = @"
@@ -28,7 +27,7 @@ class Test2
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ReportAsync()
         {
             const string SourceCode = @"

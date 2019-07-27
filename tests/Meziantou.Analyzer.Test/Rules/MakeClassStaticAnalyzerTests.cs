@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class MakeClassStaticAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<MakeClassStaticFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AbstractClass_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -29,7 +28,7 @@ abstract class AbstractClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Inherited_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -45,7 +44,7 @@ class Test2 : Test { }
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task InstanceField_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -59,7 +58,7 @@ class Test4
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ImplementInterface_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -74,7 +73,7 @@ interface ITest { }
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMethodAndConstField_DiagnosticAsync()
         {
             const string SourceCode = @"
@@ -95,7 +94,7 @@ public static class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ConversionOperator_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -108,7 +107,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AddOperator_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -121,7 +120,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ComImport_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -138,7 +137,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Instantiation_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -152,7 +151,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MsTestClass_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -167,7 +166,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task SealedClass_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -187,7 +186,7 @@ public static class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task GenericClass_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -203,7 +202,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Array_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -218,7 +217,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task GenericObjectCreation_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -237,7 +236,7 @@ class Test2<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task GenericInvocation_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -257,7 +256,7 @@ static class Test2
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task FixShouldAddStaticBeforePartial()
         {
             const string SourceCode = @"

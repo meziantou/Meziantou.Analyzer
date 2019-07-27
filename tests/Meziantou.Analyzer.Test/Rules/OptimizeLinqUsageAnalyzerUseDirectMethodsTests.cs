@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<OptimizeLinqUsageFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task FirstOrDefaultAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -54,7 +53,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Count_IEnumerableAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -72,7 +71,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Count_ListAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -106,7 +105,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Count_ICollectionExplicitImplementationAsync()
         {
             const string SourceCode = @"
@@ -141,7 +140,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Count_ArrayAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -174,7 +173,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ElementAt_ListAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -207,7 +206,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ElementAt_ArrayAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -239,7 +238,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task First_ArrayAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -272,7 +271,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Last_Array()
         {
             const string SourceCode = @"using System.Linq;
@@ -305,7 +304,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Last_List()
         {
             const string SourceCode = @"using System.Linq;

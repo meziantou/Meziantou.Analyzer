@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class AttributeNameShouldEndWithAttributeAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<AttributeNameShouldEndWithAttributeAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NameEndsWithAttribute()
         {
             const string SourceCode = @"
@@ -27,7 +26,7 @@ class CustomAttribute : System.Attribute
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NameDoesNotEndWithAttribute()
         {
             const string SourceCode = @"

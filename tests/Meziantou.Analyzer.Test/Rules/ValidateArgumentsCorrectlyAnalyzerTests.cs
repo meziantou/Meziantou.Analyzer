@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<ValidateArgumentsCorrectlyFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ReturnVoid()
         {
             const string SourceCode = @"using System.Collections.Generic;
@@ -30,7 +29,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ReturnString()
         {
             const string SourceCode = @"using System.Collections.Generic;
@@ -46,7 +45,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task OutParameter()
         {
             const string SourceCode = @"using System.Collections.Generic;
@@ -62,7 +61,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NoValidation()
         {
             const string SourceCode = @"using System.Collections.Generic;
@@ -78,7 +77,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task SameBlock()
         {
             const string SourceCode = @"using System.Collections.Generic;
@@ -98,7 +97,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StatementInMiddleOfArgumentValidation()
         {
             const string SourceCode = @"using System.Collections;
@@ -120,7 +119,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ReportDiagnostic()
         {
             const string SourceCode = @"using System.Collections.Generic;
@@ -164,7 +163,7 @@ class TypeName
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
-        [TestMethod]
+        [Fact]
         public async Task ValidValidation()
         {
             const string SourceCode = @"using System.Collections.Generic;

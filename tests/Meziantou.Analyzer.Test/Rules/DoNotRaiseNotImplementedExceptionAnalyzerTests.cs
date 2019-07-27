@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotRaiseNotImplementedExceptionAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DoNotRaiseNotImplementedExceptionAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"using System;
@@ -38,7 +37,7 @@ class TestAttribute
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task RaiseNotImplementedException_ShouldReportErrorAsync()
         {
             const string SourceCode = @"using System;

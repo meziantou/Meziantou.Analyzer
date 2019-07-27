@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class OptimizeLinqUsageAnalyzerCombineLinqMethodsTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,16 +14,16 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<OptimizeLinqUsageFixer>();
         }
 
-        [DataTestMethod]
-        [DataRow("Any")]
-        [DataRow("First")]
-        [DataRow("FirstOrDefault")]
-        [DataRow("Last")]
-        [DataRow("LastOrDefault")]
-        [DataRow("Single")]
-        [DataRow("SingleOrDefault")]
-        [DataRow("Count")]
-        [DataRow("LongCount")]
+        [Theory]
+        [InlineData("Any")]
+        [InlineData("First")]
+        [InlineData("FirstOrDefault")]
+        [InlineData("Last")]
+        [InlineData("LastOrDefault")]
+        [InlineData("Single")]
+        [InlineData("SingleOrDefault")]
+        [InlineData("Count")]
+        [InlineData("LongCount")]
         public async Task CombineWhereWithTheFollowingMethod(string methodName)
         {
             await CreateProjectBuilder()
@@ -52,9 +51,8 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
-        [DataRow("Where", "x => true")]
-        public async Task CombineWhereWithTheFollowingMethod()
+        [Fact]
+        public async Task CombineWhereWithTheFollowingWhereMethod()
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Linq;
@@ -81,7 +79,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithNothing()
         {
             await CreateProjectBuilder()
@@ -109,7 +107,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithLambda()
         {
             await CreateProjectBuilder()
@@ -137,7 +135,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithNothing()
         {
             await CreateProjectBuilder()
@@ -169,7 +167,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithMethodGroup()
         {
             await CreateProjectBuilder()
@@ -201,7 +199,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithLambda()
         {
             await CreateProjectBuilder()

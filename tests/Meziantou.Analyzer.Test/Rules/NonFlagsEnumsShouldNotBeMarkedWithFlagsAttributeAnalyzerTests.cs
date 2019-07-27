@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NonPowerOfTwo()
         {
             const string SourceCode = @"
@@ -31,7 +30,7 @@ enum [||]Test : byte
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PowerOfTwoOrCombination()
         {
             const string SourceCode = @"
@@ -51,7 +50,7 @@ enum Test : byte
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PowerOfTwoOrCombinationUsingHexa()
         {
             const string SourceCode = @"

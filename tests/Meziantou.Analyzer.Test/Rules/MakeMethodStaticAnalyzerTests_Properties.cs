@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class MakeMethodStaticAnalyzerTests_Properties
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<MakeMethodStaticFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ExpressionBodyAsync()
         {
             const string SourceCode = @"
@@ -35,7 +34,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task AccessInstanceProperty_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -51,7 +50,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Where_NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -65,7 +64,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task AccessStaticPropertyAsync()
         {
             const string SourceCode = @"
@@ -90,7 +89,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task AccessStaticMethodAsync()
         {
             const string SourceCode = @"
@@ -106,7 +105,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task AccessStaticFieldAsync()
         {
             const string SourceCode = @"
@@ -131,7 +130,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task AccessInstanceFieldAsync()
         {
             const string SourceCode = @"
@@ -147,7 +146,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task MethodImplementAnInterfaceAsync()
         {
             const string SourceCode = @"
@@ -166,7 +165,7 @@ interface ITest
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task MethodExplicitlyImplementAnInterfaceAsync()
         {
             const string SourceCode = @"

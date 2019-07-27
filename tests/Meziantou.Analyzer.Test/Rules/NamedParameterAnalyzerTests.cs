@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class NamedParameterAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<NamedParameterFixer>();
         }
 
-        [TestMethod]
+        [Fact]
 
         public async System.Threading.Tasks.Task Task_ConfigureAwait_ShouldNotReportDiagnosticAsync()
         {
@@ -31,7 +30,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Task_T_ConfigureAwait_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -47,7 +46,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task NamedParameter_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -63,7 +62,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task True_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -88,7 +87,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task False_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -104,7 +103,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Null_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -120,7 +119,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -136,7 +135,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task MethodBaseInvoke_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -161,7 +160,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task MSTestAssert_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -175,7 +174,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task NunitAssert_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -189,7 +188,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task XunitAssert_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -203,7 +202,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Ctor_ShouldUseTheRightParameterNameAsync()
         {
             const string SourceCode = @"
@@ -232,7 +231,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -257,7 +256,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Task_FromResult_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"

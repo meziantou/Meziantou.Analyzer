@@ -3,12 +3,11 @@ using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class MethodShouldNotBeTooLongAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -17,7 +16,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<MethodShouldNotBeTooLongAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task TooLongMethod_Statements()
         {
             const string SourceCode = @"
@@ -34,7 +33,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ValidMethod_Statements()
         {
             const string SourceCode = @"
@@ -51,7 +50,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task TooLongMethod_Lines()
         {
             const string SourceCode = @"
@@ -70,7 +69,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ValidMethod_Lines()
         {
             const string SourceCode = @"
@@ -89,7 +88,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public void CountStatement_ForLoop()
         {
             const string SourceCode = @"
@@ -99,10 +98,10 @@ for (int a = 0; i < 0; i++)
 }";
 
             var count = CountStatements(SourceCode);
-            Assert.AreEqual(2, count);
+            Assert.Equal(2, count);
         }
 
-        [TestMethod]
+        [Fact]
         public void CountStatement_LocalFunction()
         {
             const string SourceCode = @"
@@ -115,10 +114,10 @@ void B()
 ";
 
             var count = CountStatements(SourceCode);
-            Assert.AreEqual(1, count);
+            Assert.Equal(1, count);
         }
 
-        [TestMethod]
+        [Fact]
         public void CountStatement_If()
         {
             const string SourceCode = @"
@@ -129,7 +128,7 @@ if (true)
 ";
 
             var count = CountStatements(SourceCode);
-            Assert.AreEqual(2, count);
+            Assert.Equal(2, count);
         }
 
         private static int CountStatements(string code)

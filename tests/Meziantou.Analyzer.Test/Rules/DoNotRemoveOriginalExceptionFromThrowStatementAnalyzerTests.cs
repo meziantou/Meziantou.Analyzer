@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<DoNotRemoveOriginalExceptionFromThrowStatementFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task NoDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -40,7 +39,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"

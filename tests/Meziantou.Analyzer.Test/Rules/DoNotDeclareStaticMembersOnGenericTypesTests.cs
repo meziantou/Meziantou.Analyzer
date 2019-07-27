@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DoNotDeclareStaticMembersOnGenericTypes>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMembersInNonGenericClass_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -33,7 +32,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMembersInGenericClass_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -48,7 +47,7 @@ public class Test<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMembers_Field_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -61,7 +60,7 @@ public class Test<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMembers_Property_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -74,7 +73,7 @@ public class Test<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMembers_Method_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -87,7 +86,7 @@ public class Test<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMembers_Operator_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"

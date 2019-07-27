@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<ReturnTaskFromResultInsteadOfReturningNullAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Method()
         {
             const string SourceCode = @"using System.Threading.Tasks;
@@ -30,7 +29,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LocalFunction()
         {
             const string SourceCode = @"using System.Threading.Tasks;
@@ -52,7 +51,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LambdaExpression()
         {
             const string SourceCode = @"using System.Threading.Tasks;
@@ -74,7 +73,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AnonymousMethods()
         {
             const string SourceCode = @"using System.Threading.Tasks;

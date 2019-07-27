@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042");
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Async_Wait_Diagnostic()
         {
             await CreateProjectBuilder()
@@ -29,7 +28,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Async_Result_Diagnostic()
         {
             await CreateProjectBuilder()
@@ -44,7 +43,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Async_ThreadSleep_Diagnostic()
         {
             await CreateProjectBuilder()
@@ -59,7 +58,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Async_SuggestOverload_Diagnostic()
         {
             await CreateProjectBuilder()
@@ -77,7 +76,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Async_AsyncSuffix_Diagnostic()
         {
             await CreateProjectBuilder()
@@ -95,7 +94,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Async_NoOverload_NoDiagnostic()
         {
             await CreateProjectBuilder()
@@ -113,7 +112,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AsyncLambda_Overload_NoDiagnostic()
         {
             await CreateProjectBuilder()
@@ -131,7 +130,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AsyncLocalFunction_Overload_NoDiagnostic()
         {
             await CreateProjectBuilder()
@@ -151,7 +150,7 @@ class Test
                   .ValidateAsync();
         }
         
-        [TestMethod]
+        [Fact]
         public async Task Method_NoOverload_NoDiagnostic()
         {
             await CreateProjectBuilder()
@@ -169,7 +168,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Method_NoOverloadWithSameParameters_NoDiagnostic()
         {
             await CreateProjectBuilder()

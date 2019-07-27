@@ -1,12 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class OptimizeLinqUsageAnalyzerCountTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -16,12 +14,12 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<OptimizeLinqUsageFixer>();
         }
 
-        [DataTestMethod]
-        [DataRow("enumerable.Count() < 0")]
-        [DataRow("enumerable.Count() <= -1")]
-        [DataRow("enumerable.Count() <= -2")]
-        [DataRow("enumerable.Count() == -1")]
-        [DataRow("-1 == enumerable.Count()")]
+        [Theory]
+        [InlineData("enumerable.Count() < 0")]
+        [InlineData("enumerable.Count() <= -1")]
+        [InlineData("enumerable.Count() <= -2")]
+        [InlineData("enumerable.Count() == -1")]
+        [InlineData("-1 == enumerable.Count()")]
         public async Task Count_AlwaysFalse(string text)
         {
             await CreateProjectBuilder()
@@ -49,11 +47,11 @@ class Test
                 .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("enumerable.Count() != -2")]
-        [DataRow("enumerable.Count() > -1")]
-        [DataRow("enumerable.Count() >= 0")]
-        [DataRow("-10 <= enumerable.Count()")]
+        [Theory]
+        [InlineData("enumerable.Count() != -2")]
+        [InlineData("enumerable.Count() > -1")]
+        [InlineData("enumerable.Count() >= 0")]
+        [InlineData("-10 <= enumerable.Count()")]
         public async Task Count_AlwaysTrue(string text)
         {
             await CreateProjectBuilder()
@@ -83,10 +81,10 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("Count() == 0", "Replace 'Count() == 0' with 'Any() == false'")]
-        [DataRow("Count() < 1", "Replace 'Count() < 1' with 'Any() == false'")]
-        [DataRow("Count() <= 0", "Replace 'Count() <= 0' with 'Any() == false'")]
+        [Theory]
+        [InlineData("Count() == 0", "Replace 'Count() == 0' with 'Any() == false'")]
+        [InlineData("Count() < 1", "Replace 'Count() < 1' with 'Any() == false'")]
+        [InlineData("Count() <= 0", "Replace 'Count() <= 0' with 'Any() == false'")]
         public async Task Count_AnyFalse(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
@@ -114,10 +112,10 @@ class Test
                    .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("Count() != 0", "Replace 'Count() != 0' with 'Any()'")]
-        [DataRow("Count() > 0", "Replace 'Count() > 0' with 'Any()'")]
-        [DataRow("Count() >= 1", "Replace 'Count() >= 1' with 'Any()'")]
+        [Theory]
+        [InlineData("Count() != 0", "Replace 'Count() != 0' with 'Any()'")]
+        [InlineData("Count() > 0", "Replace 'Count() > 0' with 'Any()'")]
+        [InlineData("Count() >= 1", "Replace 'Count() >= 1' with 'Any()'")]
         public async Task Count_AnyTrue(string text, string expectedMessage)
         {
             await CreateProjectBuilder()
@@ -145,11 +143,11 @@ class Test
                    .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("Count() == 1", "Take(2).Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
-        [DataRow("Count() != 10", "Take(11).Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
-        [DataRow("Count() != n", "Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
-        [DataRow("Count(x => x > 1) != n", "Where(x => x > 1).Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
+        [Theory]
+        [InlineData("Count() == 1", "Take(2).Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
+        [InlineData("Count() != 10", "Take(11).Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
+        [InlineData("Count() != n", "Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
+        [InlineData("Count(x => x > 1) != n", "Where(x => x > 1).Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
         public async Task Count_TakeAndCount(string text, string fix, string expectedMessage)
         {
             await CreateProjectBuilder()
@@ -179,12 +177,12 @@ class Test
                    .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("Count() > 1", "Skip(1).Any()", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
-        [DataRow("Count() > 2", "Skip(2).Any()", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
-        [DataRow("Count() > n", "Skip(n).Any()", "Replace 'Count() > n' with 'Skip(n).Any()'")]
-        [DataRow("Count() >= 2", "Skip(1).Any()", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
-        [DataRow("Count() >= n", "Skip(n - 1).Any()", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
+        [Theory]
+        [InlineData("Count() > 1", "Skip(1).Any()", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
+        [InlineData("Count() > 2", "Skip(2).Any()", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
+        [InlineData("Count() > n", "Skip(n).Any()", "Replace 'Count() > n' with 'Skip(n).Any()'")]
+        [InlineData("Count() >= 2", "Skip(1).Any()", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
+        [InlineData("Count() >= n", "Skip(n - 1).Any()", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
         public async Task Count_SkipAndAny(string text, string fix, string expectedMessage)
         {
             await CreateProjectBuilder()
@@ -214,13 +212,13 @@ class Test
                    .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("Count() < 2", "Skip(1).Any()", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
-        [DataRow("Count() < n", "Skip(n - 1).Any()", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
-        [DataRow("Count() <= 1", "Skip(1).Any()", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
-        [DataRow("Count() <= 2", "Skip(2).Any()", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
-        [DataRow("Count() <= n", "Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
-        [DataRow("Count(x => true) <= n", "Where(x => true).Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
+        [Theory]
+        [InlineData("Count() < 2", "Skip(1).Any()", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
+        [InlineData("Count() < n", "Skip(n - 1).Any()", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
+        [InlineData("Count() <= 1", "Skip(1).Any()", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
+        [InlineData("Count() <= 2", "Skip(2).Any()", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
+        [InlineData("Count() <= n", "Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
+        [InlineData("Count(x => true) <= n", "Where(x => true).Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
         public async Task Count_NotSkipAndAny(string text, string fix, string expectedMessage)
         {
             await CreateProjectBuilder()
@@ -250,8 +248,8 @@ class Test
                    .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("Take(10).Count() == 1")]
+        [Theory]
+        [InlineData("Take(10).Count() == 1")]
         public async Task Count_Equals(string text)
         {
             var project = CreateProjectBuilder()
@@ -269,8 +267,8 @@ class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("Take(1).Count() != n")]
+        [Theory]
+        [InlineData("Take(1).Count() != n")]
         public async Task Count_NotEquals(string text)
         {
             var project = CreateProjectBuilder()

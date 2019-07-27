@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseStructLayoutAttributeAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<UseStructLayoutAttributeFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task MissingAttribute_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = "struct [||]TypeName { }";
@@ -27,7 +26,7 @@ struct TypeName { }";
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task AddAttributeShouldUseShortnameAsync()
         {
             const string SourceCode = @"using System.Runtime.InteropServices;
@@ -43,7 +42,7 @@ struct TypeName { }";
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task WithAttribute_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"using System.Runtime.InteropServices;
@@ -56,7 +55,7 @@ struct TypeName
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Enum_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"

@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<EventArgsNameShouldEndWithEventArgsAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NameEndsWithEventArgs()
         {
             const string SourceCode = @"
@@ -27,7 +26,7 @@ class CustomEventArgs : System.EventArgs
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NameDoesNotEndWithEventArgs()
         {
             const string SourceCode = @"

@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class MakeMethodStaticAnalyzerTests_Methods
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<MakeMethodStaticFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ExpressionBody()
         {
             const string SourceCode = @"
@@ -36,7 +35,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessInstanceProperty_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -52,7 +51,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -74,7 +73,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessInstanceMethodInLinqQuery_Select_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -95,7 +94,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessInstanceMethodInLinqQuery_From_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -116,7 +115,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessInstanceMethodInLinqQuery_Let_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -138,7 +137,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LinqQuery_Diagnostic()
         {
             const string SourceCode = @"
@@ -157,7 +156,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessStaticMethodInLinqQuery_Let_Diagnostic()
         {
             const string SourceCode = @"
@@ -179,7 +178,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessStaticProperty()
         {
             const string SourceCode = @"
@@ -195,7 +194,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessStaticMethod()
         {
             const string SourceCode = @"
@@ -211,7 +210,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessStaticField()
         {
             const string SourceCode = @"
@@ -227,7 +226,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AccessInstanceField()
         {
             const string SourceCode = @"
@@ -243,7 +242,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MethodImplementAnInterface()
         {
             const string SourceCode = @"
@@ -262,7 +261,7 @@ interface ITest
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MethodExplicitlyImplementAnInterface()
         {
             const string SourceCode = @"
@@ -281,7 +280,7 @@ interface ITest
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MethodImplementAGenericInterface()
         {
             const string SourceCode = @"
@@ -300,7 +299,7 @@ interface ITest<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MethodImplementAGenericInterfaceInAGenericClass()
         {
             const string SourceCode = @"
@@ -319,7 +318,7 @@ interface ITest<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MethodUseAnAnonymousObject()
         {
             const string SourceCode = @"
@@ -337,7 +336,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CreateInstance()
         {
             const string SourceCode = @"
@@ -354,7 +353,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CreateInstanceOfAnotherType()
         {
             const string SourceCode = @"
@@ -375,7 +374,7 @@ class TestClass2
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MSTest_TestMethod()
         {
             const string SourceCode = @"
@@ -393,7 +392,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MSTest_DataTestMethod()
         {
             const string SourceCode = @"
@@ -411,7 +410,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task XUnit_TestMethod()
         {
             const string SourceCode = @"
@@ -429,7 +428,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AspNetCore_Startup()
         {
             const string SourceCode = @"
@@ -455,7 +454,7 @@ public class Startup
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AspNetCore_Middleware_Convention_Invoke()
         {
             const string SourceCode = @"
@@ -480,7 +479,7 @@ public class CustomMiddleware
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AspNetCore_Middleware_Convention_Interface()
         {
             const string SourceCode = @"
@@ -501,7 +500,7 @@ public class CustomMiddleware : IMiddleware
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AspNetCore_Middleware_Convention_ExplicitInterface()
         {
             const string SourceCode = @"
@@ -522,7 +521,7 @@ public class CustomMiddleware : IMiddleware
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AbstractMethod_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
@@ -536,7 +535,7 @@ abstract class Test
         }
 
 
-        [TestMethod]
+        [Fact]
         public async Task XamlEventHandler_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"

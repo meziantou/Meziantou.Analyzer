@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DoNotUseServerCertificateValidationCallbackAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ServicePointManager_ServerCertificateValidationCallbackAsync()
         {
             const string SourceCode = @"
@@ -43,7 +42,7 @@ namespace System.Net.Security
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
         {
             const string SourceCode = @"

@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<ValueReturnedByStreamReadShouldBeUsedAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Read_ReturnValueNotUsed()
         {
             const string SourceCode = @"using System.IO;
@@ -32,7 +31,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ReadAsync_ReturnValueNotUsed()
         {
             const string SourceCode = @"using System.IO;
@@ -50,7 +49,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ReadAsync_ReturnValueUsed_DiscardOperator()
         {
             const string SourceCode = @"using System.IO;
@@ -68,7 +67,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Read_ReturnValueUsed_MethodCall()
         {
             const string SourceCode = @"using System.IO;

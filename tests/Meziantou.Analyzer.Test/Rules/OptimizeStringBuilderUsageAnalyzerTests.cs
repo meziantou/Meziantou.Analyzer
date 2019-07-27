@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class OptimizeStringBuilderUsageAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -16,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<OptimizeStringBuilderUsageFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendFormat_NoDiagnostic()
         {
             const string SourceCode = @"using System.Text;
@@ -32,14 +31,14 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("10")]
-        [DataRow("10 + 20")]
-        [DataRow(@"""abc""")]
-        [DataRow(@"$""abc""")]
-        [DataRow(@"$""abc{""test""}""")]
-        [DataRow(@"""abc"" + ""test""")]
-        [DataRow(@"$""abc{""test""}"" + ""test""")]
+        [Theory]
+        [InlineData("10")]
+        [InlineData("10 + 20")]
+        [InlineData(@"""abc""")]
+        [InlineData(@"$""abc""")]
+        [InlineData(@"$""abc{""test""}""")]
+        [InlineData(@"""abc"" + ""test""")]
+        [InlineData(@"$""abc{""test""}"" + ""test""")]
         public async Task Append_NoDiagnostic(string text)
         {
             await CreateProjectBuilder()
@@ -54,13 +53,13 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow(@"$""a{1}""")]
-        [DataRow(@"""a"" + 10")]
-        [DataRow(@"10 + 20 + ""a""")]
-        [DataRow(@"""""")]
-        [DataRow(@""""" + """"")]
-        [DataRow(@""""".Substring(0, 10)")]
+        [Theory]
+        [InlineData(@"$""a{1}""")]
+        [InlineData(@"""a"" + 10")]
+        [InlineData(@"10 + 20 + ""a""")]
+        [InlineData(@"""""")]
+        [InlineData(@""""" + """"")]
+        [InlineData(@""""".Substring(0, 10)")]
         public async Task Append_ReportDiagnostic(string text)
         {
             await CreateProjectBuilder()
@@ -75,9 +74,9 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow(@"""abc""")]
-        [DataRow(@"$""abc""")]
+        [Theory]
+        [InlineData(@"""abc""")]
+        [InlineData(@"$""abc""")]
         public async Task AppendLine_NoDiagnostic(string text)
         {
             await CreateProjectBuilder()
@@ -92,11 +91,11 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow(@"$""a{1}""")]
-        [DataRow(@"""a"" + 10")]
-        [DataRow(@"10 + 20 + ""a""")]
-        [DataRow(@"10.ToString()")]
+        [Theory]
+        [InlineData(@"$""a{1}""")]
+        [InlineData(@"""a"" + 10")]
+        [InlineData(@"10 + 20 + ""a""")]
+        [InlineData(@"10.ToString()")]
         public async Task AppendLine_ReportDiagnostic(string text)
         {
             await CreateProjectBuilder()
@@ -111,12 +110,12 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow(@"""abc""")]
-        [DataRow(@"$""abc""")]
-        [DataRow(@"$""a{1}""")]
-        [DataRow(@"""a"" + 10")]
-        [DataRow(@"10 + 20 + ""a""")]
+        [Theory]
+        [InlineData(@"""abc""")]
+        [InlineData(@"$""abc""")]
+        [InlineData(@"$""a{1}""")]
+        [InlineData(@"""a"" + 10")]
+        [InlineData(@"10 + 20 + ""a""")]
         public async Task Insert_NoDiagnostic(string text)
         {
             await CreateProjectBuilder()
@@ -131,8 +130,8 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow(@"10.ToString()")]
+        [Theory]
+        [InlineData(@"10.ToString()")]
         public async Task Insert_Diagnostic(string text)
         {
             await CreateProjectBuilder()
@@ -147,7 +146,7 @@ class Test
                   .ValidateAsync();
         }
 
-        private static IEnumerable<object[]> EmptyStringsArguments
+        public static IEnumerable<object[]> EmptyStringsArguments
         {
             get
             {
@@ -159,8 +158,8 @@ class Test
             }
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(EmptyStringsArguments), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(EmptyStringsArguments))]
         public async Task AppendLine_EmptyString(string text)
         {
             await CreateProjectBuilder()
@@ -183,8 +182,8 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(EmptyStringsArguments), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(EmptyStringsArguments))]
         public async Task Append_EmptyString(string text)
         {
             await CreateProjectBuilder()
@@ -207,8 +206,8 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(EmptyStringsArguments), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(EmptyStringsArguments))]
         public async Task Insert_EmptyString(string text)
         {
             await CreateProjectBuilder()
@@ -231,8 +230,8 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow(@"""a""")]
+        [Theory]
+        [InlineData(@"""a""")]
         public async Task Append_OneCharString(string text)
         {
             await CreateProjectBuilder()
@@ -255,8 +254,8 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow(@"""a""")]
+        [Theory]
+        [InlineData(@"""a""")]
         public async Task Insert_OneCharString(string text)
         {
             await CreateProjectBuilder()
@@ -279,7 +278,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Append_InterpolatedString()
         {
             await CreateProjectBuilder()
@@ -302,7 +301,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendLine_InterpolatedString_FinishWithString()
         {
             await CreateProjectBuilder()
@@ -325,7 +324,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendLine_InterpolatedString_FinishWithObject()
         {
             await CreateProjectBuilder()
@@ -348,7 +347,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Append_StringAdd()
         {
             await CreateProjectBuilder()
@@ -373,7 +372,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendLine_StringAdd()
         {
             await CreateProjectBuilder()
@@ -398,7 +397,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Append_ToString()
         {
             await CreateProjectBuilder()
@@ -421,7 +420,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendLine_ToString()
         {
             await CreateProjectBuilder()
@@ -444,7 +443,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Append_AppendFormat()
         {
             await CreateProjectBuilder()
@@ -467,7 +466,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendLine_AppendFormat()
         {
             await CreateProjectBuilder()
@@ -490,7 +489,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendLine_AppendSubString()
         {
             await CreateProjectBuilder()
@@ -513,7 +512,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AppendLine_AppendSubStringWithoutLength()
         {
             await CreateProjectBuilder()

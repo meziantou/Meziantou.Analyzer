@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseEventArgsEmptyAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<UseEventArgsEmptyAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ShouldReportAsync()
         {
             const string SourceCode = @"

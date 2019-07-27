@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseStringComparerAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<UseStringComparerFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task HashSet_Int32_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -30,7 +29,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task HashSet_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -55,7 +54,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -71,7 +70,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Dictionary_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -96,7 +95,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ConcurrentDictionary_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -121,7 +120,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task EnumerableContains_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"using System.Linq;
@@ -148,7 +147,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task EnumerableToDictionary_String_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"using System.Linq;
