@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseRegexTimeoutAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<UseRegexTimeoutAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task IsMatch_MissingTimeout_ShouldReportErrorAsync()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
@@ -29,7 +28,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task IsMatch_WithTimeout_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
@@ -45,7 +44,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Ctor_MissingTimeout_ShouldReportErrorAsync()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
@@ -61,7 +60,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Ctor_WithTimeout_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
@@ -77,7 +76,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task NonRegexCtor_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"

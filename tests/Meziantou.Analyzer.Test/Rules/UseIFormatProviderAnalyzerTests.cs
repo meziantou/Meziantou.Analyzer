@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseIFormatProviderAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<UseIFormatProviderAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Int32ToStringWithCultureInfo_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -29,7 +28,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -46,7 +45,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task BooleanToStringWithoutCultureInfo_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -62,7 +61,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task SystemGuidToStringWithoutCultureInfo_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -79,7 +78,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Int32ParseWithoutCultureInfo_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -98,7 +97,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -115,7 +114,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task DateTimeTryParseWithoutCultureInfo_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -132,7 +131,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task StringToLower_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -149,7 +148,7 @@ class TypeName
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task StringBuilderAppendFormat_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"

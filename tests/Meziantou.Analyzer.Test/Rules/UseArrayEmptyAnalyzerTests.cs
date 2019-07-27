@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseArrayEmptyAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,9 +13,9 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<UseArrayEmptyFixer>();
         }
 
-        [DataTestMethod]
-        [DataRow("new int[0]")]
-        [DataRow("new int[] { }")]
+        [Theory]
+        [InlineData("new int[0]")]
+        [InlineData("new int[] { }")]
         public async System.Threading.Tasks.Task EmptyArray_ShouldReportErrorAsync(string code)
         {
             await CreateProjectBuilder()
@@ -39,9 +38,9 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("new int[1]")]
-        [DataRow("new int[] { 0 }")]
+        [Theory]
+        [InlineData("new int[1]")]
+        [InlineData("new int[] { 0 }")]
         public async System.Threading.Tasks.Task NonEmptyArray_ShouldReportErrorAsync(string code)
         {
             await CreateProjectBuilder()
@@ -56,7 +55,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Length_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"
@@ -73,7 +72,7 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ParamsMethod_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"
@@ -93,7 +92,7 @@ public class TestClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task EmptyArrayInAttribute_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"

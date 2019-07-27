@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0045");
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PublicNonAsync_Wait_NoDiagnostic()
         {
             await CreateProjectBuilder()
@@ -29,7 +28,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PublicNonAsync_AsyncSuffix_NoDiagnostic()
         {
             await CreateProjectBuilder()
@@ -47,7 +46,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PrivateNonAsync_Wait_NoDiagnostic()
         {
             await CreateProjectBuilder()
@@ -62,7 +61,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PrivateNonAsync_AsyncSuffix_NoDiagnostic()
         {
             await CreateProjectBuilder()

@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<TypeNameMustNotMatchNamespaceAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task DifferentName()
         {
             const string SourceCode = @"
@@ -29,7 +28,7 @@ namespace TestNamespace
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task SameName()
         {
             const string SourceCode = @"
@@ -44,7 +43,7 @@ namespace Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task SameNameInNestedType()
         {
             const string SourceCode = @"

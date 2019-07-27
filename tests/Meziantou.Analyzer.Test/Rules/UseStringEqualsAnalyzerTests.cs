@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseStringEqualsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<UseStringEqualsFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Equals_StringLiteral_stringLiteral_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -40,7 +39,7 @@ class TypeName
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -66,7 +65,7 @@ class TypeName
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Equals_StringVariable_stringLiteral_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -94,7 +93,7 @@ class TypeName
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Equals_ObjectVariable_stringLiteral_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -111,7 +110,7 @@ class TypeName
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Equals_stringLiteral_null_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -128,7 +127,7 @@ class TypeName
                 .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task Equals_InIQueryableMethod_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"using System.Linq;

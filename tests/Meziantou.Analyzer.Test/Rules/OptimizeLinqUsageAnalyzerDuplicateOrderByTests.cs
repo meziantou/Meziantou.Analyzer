@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class OptimizeLinqUsageAnalyzerDuplicateOrderByTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,11 +14,11 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<OptimizeLinqUsageFixer>();
         }
 
-        [DataTestMethod]
-        [DataRow("OrderBy", "OrderBy", "ThenBy")]
-        [DataRow("OrderBy", "OrderByDescending", "ThenByDescending")]
-        [DataRow("OrderByDescending", "OrderBy", "ThenBy")]
-        [DataRow("OrderByDescending", "OrderByDescending", "ThenByDescending")]
+        [Theory]
+        [InlineData("OrderBy", "OrderBy", "ThenBy")]
+        [InlineData("OrderBy", "OrderByDescending", "ThenByDescending")]
+        [InlineData("OrderByDescending", "OrderBy", "ThenBy")]
+        [InlineData("OrderByDescending", "OrderByDescending", "ThenByDescending")]
         public async Task IQueryable_TwoOrderBy_FixRemoveDuplicate(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()
@@ -47,11 +46,11 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("OrderBy", "OrderBy", "ThenBy")]
-        [DataRow("OrderBy", "OrderByDescending", "ThenByDescending")]
-        [DataRow("OrderByDescending", "OrderBy", "ThenBy")]
-        [DataRow("OrderByDescending", "OrderByDescending", "ThenByDescending")]
+        [Theory]
+        [InlineData("OrderBy", "OrderBy", "ThenBy")]
+        [InlineData("OrderBy", "OrderByDescending", "ThenByDescending")]
+        [InlineData("OrderByDescending", "OrderBy", "ThenBy")]
+        [InlineData("OrderByDescending", "OrderByDescending", "ThenByDescending")]
         public async Task TwoOrderBy_FixRemoveDuplicate(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()
@@ -79,11 +78,11 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("OrderBy", "OrderBy", "ThenBy")]
-        [DataRow("OrderBy", "OrderByDescending", "ThenByDescending")]
-        [DataRow("OrderByDescending", "OrderBy", "ThenBy")]
-        [DataRow("OrderByDescending", "OrderByDescending", "ThenByDescending")]
+        [Theory]
+        [InlineData("OrderBy", "OrderBy", "ThenBy")]
+        [InlineData("OrderBy", "OrderByDescending", "ThenByDescending")]
+        [InlineData("OrderByDescending", "OrderBy", "ThenBy")]
+        [InlineData("OrderByDescending", "OrderByDescending", "ThenByDescending")]
         public async Task TwoOrderBy_FixWithThenBy(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()
@@ -111,11 +110,11 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("ThenBy", "OrderBy", "ThenBy")]
-        [DataRow("ThenByDescending", "OrderBy", "ThenBy")]
-        [DataRow("ThenBy", "OrderByDescending", "ThenByDescending")]
-        [DataRow("ThenByDescending", "OrderByDescending", "ThenByDescending")]
+        [Theory]
+        [InlineData("ThenBy", "OrderBy", "ThenBy")]
+        [InlineData("ThenByDescending", "OrderBy", "ThenBy")]
+        [InlineData("ThenBy", "OrderByDescending", "ThenByDescending")]
+        [InlineData("ThenByDescending", "OrderByDescending", "ThenByDescending")]
         public async Task ThenByFollowedByOrderBy(string a, string b, string expectedMethod)
         {
             await CreateProjectBuilder()

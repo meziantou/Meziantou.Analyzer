@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<MethodOverridesShouldNotChangeParameterDefaultsAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Interface_ExplicitImplementation()
         {
             const string SourceCode = @"
@@ -32,7 +31,7 @@ class Test : ITest
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Interface_SameValue()
         {
             const string SourceCode = @"
@@ -50,7 +49,7 @@ class Test : ITest
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Override_SameValue()
         {
             const string SourceCode = @"
@@ -68,7 +67,7 @@ class TestDerived : Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Override_DifferentValue()
         {
             const string SourceCode = @"
@@ -88,7 +87,7 @@ class TestDerived : Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task New_DifferentValue()
         {
             const string SourceCode = @"
@@ -106,7 +105,7 @@ class TestDerived : Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Override_DifferentValue_OriginalParameterHasNoDefault()
         {
             const string SourceCode = @"
@@ -125,7 +124,7 @@ class TestDerived : Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Override_DifferentValue_OverrideParameterHasNoDefault()
         {
             const string SourceCode = @"

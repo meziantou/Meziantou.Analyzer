@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseEventHandlerOfTAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<UseEventHandlerOfTAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ValidEvent()
         {
             await CreateProjectBuilder()
@@ -26,7 +25,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ValidEvent_CustomEventArgs()
         {
             await CreateProjectBuilder()
@@ -42,7 +41,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ValidEvent_CustomDelegate()
         {
             await CreateProjectBuilder()
@@ -60,9 +59,9 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("System.Action<string>")]
-        [DataRow("System.EventHandler<string>")]
+        [Theory]
+        [InlineData("System.Action<string>")]
+        [InlineData("System.EventHandler<string>")]
         public async Task InvalidEvent(string signature)
         {
             await CreateProjectBuilder()

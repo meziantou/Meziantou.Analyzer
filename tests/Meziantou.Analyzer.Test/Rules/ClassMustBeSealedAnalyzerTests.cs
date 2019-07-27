@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class ClassMustBeSealedAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<ClassMustBeSealedFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AbstractClass_NoDiagnostic()
         {
             const string SourceCode = @"
@@ -29,7 +28,7 @@ abstract class AbstractClass
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Inherited_Diagnostic()
         {
             const string SourceCode = @"
@@ -58,7 +57,7 @@ sealed class Test2 : Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ImplementInterface_Diagnostic()
         {
             const string SourceCode = @"
@@ -85,7 +84,7 @@ sealed class Test : ITest
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StaticMethodAndConstField_Diagnostic()
         {
             const string SourceCode = @"

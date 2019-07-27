@@ -16,7 +16,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
 using Microsoft.CodeAnalysis.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace TestHelper
 {
@@ -26,17 +26,17 @@ namespace TestHelper
         {
             if (DiagnosticAnalyzer == null)
             {
-                Assert.Fail("DiagnosticAnalyzer is not configured");
+                Assert.True(false, "DiagnosticAnalyzer is not configured");
             }
 
             if (ExpectedFixedCode != null && CodeFixProvider == null)
             {
-                Assert.Fail("CodeFixProvider is not configured");
+                Assert.True(false, "CodeFixProvider is not configured");
             }
 
             if (ExpectedDiagnosticResults == null)
             {
-                Assert.Fail("ExpectedDiagnostic is not configured");
+                Assert.True(false, "ExpectedDiagnostic is not configured");
             }
 
             await VerifyDiagnostic(ExpectedDiagnosticResults).ConfigureAwait(false);
@@ -70,7 +70,7 @@ namespace TestHelper
             {
                 var diagnosticsOutput = actualResults.Any() ? FormatDiagnostics(analyzer, actualResults.ToArray()) : "    NONE.";
 
-                Assert.Fail("Mismatch between number of diagnostics returned, expected \"{0}\" actual \"{1}\"\r\n\r\nDiagnostics:\r\n{2}\r\n", expectedCount, actualCount, diagnosticsOutput);
+                Assert.True(false, $"Mismatch between number of diagnostics returned, expected \"{expectedCount}\" actual \"{actualCount}\"\r\n\r\nDiagnostics:\r\n{diagnosticsOutput}\r\n");
             }
 
             for (var i = 0; i < expectedResults.Count; i++)
@@ -82,7 +82,7 @@ namespace TestHelper
                 {
                     if (actual.Location != Location.None)
                     {
-                        Assert.IsTrue(false,
+                        Assert.True(false,
                             string.Format("Expected:\nA project diagnostic with No location\nActual:\n{0}",
                             FormatDiagnostics(analyzer, actual)));
                     }
@@ -94,7 +94,7 @@ namespace TestHelper
 
                     if (additionalLocations.Length != expected.Locations.Length - 1)
                     {
-                        Assert.IsTrue(false,
+                        Assert.True(false,
                             string.Format("Expected {0} additional locations but got {1} for Diagnostic:\r\n    {2}\r\n",
                                 expected.Locations.Length - 1, additionalLocations.Length,
                                 FormatDiagnostics(analyzer, actual)));
@@ -108,35 +108,36 @@ namespace TestHelper
 
                 if (expected.Id != null && !string.Equals(actual.Id, expected.Id, StringComparison.Ordinal))
                 {
-                    Assert.IsTrue(false,
+                    Assert.True(false,
                         string.Format("Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                             expected.Id, actual.Id, FormatDiagnostics(analyzer, actual)));
                 }
 
                 if (expected.Severity != null && actual.Severity != expected.Severity)
                 {
-                    Assert.IsTrue(false,
+                    Assert.True(false,
                         string.Format("Expected diagnostic severity to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                             expected.Severity, actual.Severity, FormatDiagnostics(analyzer, actual)));
                 }
 
                 if (expected.Message != null && !string.Equals(actual.GetMessage(), expected.Message, StringComparison.Ordinal))
                 {
-                    Assert.IsTrue(false,
+                    Assert.True(false,
                         string.Format("Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                             expected.Message, actual.GetMessage(), FormatDiagnostics(analyzer, actual)));
                 }
             }
         }
 
-        private Task<Diagnostic[]> GetSortedDiagnostics(DiagnosticAnalyzer analyzer)
+        private async Task<Diagnostic[]> GetSortedDiagnostics(DiagnosticAnalyzer analyzer)
         {
-            return GetSortedDiagnosticsFromDocuments(analyzer, GetDocuments(), compileSolution: true);
+            var documents = await GetDocuments().ConfigureAwait(false);
+            return await GetSortedDiagnosticsFromDocuments(analyzer, documents, compileSolution: true).ConfigureAwait(false);
         }
 
-        private Document[] GetDocuments()
+        private async Task<Document[]> GetDocuments()
         {
-            var project = CreateProject();
+            var project = await CreateProject().ConfigureAwait(false);
             var documents = project.Documents.ToArray();
 
             var expectedDocuments = ApiReferences.Count + 1;
@@ -148,7 +149,7 @@ namespace TestHelper
             return documents;
         }
 
-        private Project CreateProject()
+        private async Task<Project> CreateProject()
         {
             var fileNamePrefix = "Test";
             var fileExt = ".cs";
@@ -160,7 +161,9 @@ namespace TestHelper
                 .CurrentSolution
                 .AddProject(projectId, testProjectName, testProjectName, LanguageNames.CSharp)
                 .WithProjectParseOptions(projectId, CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion))
-                .AddMetadataReferences(projectId, References);
+                .AddMetadataReferences(projectId, References)
+                .AddMetadataReferences(projectId, (await CommonReferences.NetStandard2_0.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)))
+                .AddMetadataReferences(projectId, (await CommonReferences.System_Collections_Immutable.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)));
 
             var count = 0;
             AppendFile(FileName, SourceCode);
@@ -226,7 +229,7 @@ namespace TestHelper
                                 sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
                             }
 
-                            Assert.Fail("The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
+                            Assert.True(false, "The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
                         }
                     }
                 }
@@ -288,7 +291,7 @@ namespace TestHelper
                         }
                         else
                         {
-                            Assert.IsTrue(location.IsInSource, $"Test base does not currently handle diagnostics in metadata locations. Diagnostic in metadata: {diagnostics[i]}\r\n");
+                            Assert.True(location.IsInSource, $"Test base does not currently handle diagnostics in metadata locations. Diagnostic in metadata: {diagnostics[i]}\r\n");
 
                             var resultMethodName = diagnostics[i].Location.SourceTree.FilePath.EndsWith(".cs", StringComparison.Ordinal) ? "GetCSharpResultAt" : "GetBasicResultAt";
                             var linePosition = diagnostics[i].Location.GetLineSpan().StartLinePosition;
@@ -326,7 +329,7 @@ namespace TestHelper
         {
             var actualSpan = actual.GetLineSpan();
 
-            Assert.IsTrue(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.") && expected.Path.Contains("Test.")),
+            Assert.True(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.") && expected.Path.Contains("Test.")),
                 string.Format("Expected diagnostic to be in file \"{0}\" was actually in file \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                     expected.Path, actualSpan.Path, FormatDiagnostics(analyzer, diagnostic)));
 
@@ -337,7 +340,7 @@ namespace TestHelper
             {
                 if (actualLinePosition.Line + 1 != expected.LineStart)
                 {
-                    Assert.IsTrue(false,
+                    Assert.True(false,
                         string.Format("Expected diagnostic to be on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                             expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzer, diagnostic)));
                 }
@@ -348,7 +351,7 @@ namespace TestHelper
             {
                 if (actualLinePosition.Character + 1 != expected.ColumnStart)
                 {
-                    Assert.IsTrue(false,
+                    Assert.True(false,
                         string.Format("Expected diagnostic to start at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                             expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzer, diagnostic)));
                 }
@@ -363,7 +366,7 @@ namespace TestHelper
                 {
                     if (actualLinePosition.Line + 1 != expected.LineEnd)
                     {
-                        Assert.IsTrue(false,
+                        Assert.True(false,
                             string.Format("Expected diagnostic to end on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                                 expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzer, diagnostic)));
                     }
@@ -374,7 +377,7 @@ namespace TestHelper
                 {
                     if (actualLinePosition.Character + 1 != expected.ColumnEnd)
                     {
-                        Assert.IsTrue(false,
+                        Assert.True(false,
                             string.Format("Expected diagnostic to end at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                                 expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzer, diagnostic)));
                     }
@@ -390,7 +393,8 @@ namespace TestHelper
 
         private async Task VerifyFix(DiagnosticAnalyzer analyzer, CodeFixProvider codeFixProvider, string newSource, int? codeFixIndex)
         {
-            var document = CreateProject().Documents.First();
+            var project = await CreateProject().ConfigureAwait(false);
+            var document = project.Documents.First();
             var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
             var compilerDiagnostics = await GetCompilerDiagnostics(document).ConfigureAwait(false);
 
@@ -399,7 +403,7 @@ namespace TestHelper
                 var diagnostic = analyzerDiagnostics[0];
                 if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
                 {
-                    Assert.Fail("The CodeFixProvider is not valid for the DiagnosticAnalyzer");
+                    Assert.True(false, "The CodeFixProvider is not valid for the DiagnosticAnalyzer");
                 }
 
                 var actions = new List<CodeAction>();
@@ -423,7 +427,7 @@ namespace TestHelper
 
             //after applying all of the code fixes, compare the resulting string to the inputted one
             var actual = await GetStringFromDocument(document).ConfigureAwait(false);
-            Assert.AreEqual(newSource, actual);
+            Assert.Equal(newSource, actual);
         }
 
         private static async Task<Document> ApplyFix(Document document, CodeAction codeAction)

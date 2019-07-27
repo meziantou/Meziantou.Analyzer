@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseRegexOptionsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,11 +12,11 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<UseRegexTimeoutAnalyzer>();
         }
 
-        [DataTestMethod]
-        [DataRow("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", false)]
-        [DataRow("([a-z]+)", "RegexOptions.None", false)]
-        [DataRow("([a-z]+)", "RegexOptions.ExplicitCapture", true)]
-        [DataRow("(?<test>[a-z]+)", "RegexOptions.None", true)]
+        [Theory]
+        [InlineData("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", false)]
+        [InlineData("([a-z]+)", "RegexOptions.None", false)]
+        [InlineData("([a-z]+)", "RegexOptions.ExplicitCapture", true)]
+        [InlineData("(?<test>[a-z]+)", "RegexOptions.None", true)]
         public async System.Threading.Tasks.Task IsMatch_RegexOptionsAsync(string regex, string options, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -32,13 +31,13 @@ class TestClass
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", false)]
-        [DataRow("(?<test>[a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", true)]
-        [DataRow("[a-z]+", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", true)]
-        [DataRow("[a-z]+", "RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase", true)]
-        [DataRow("[a-z]+", "RegexOptions.ECMAScript", true)]
-        [DataRow("([a-z]+)", "RegexOptions.ECMAScript", true)]
+        [Theory]
+        [InlineData("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", false)]
+        [InlineData("(?<test>[a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", true)]
+        [InlineData("[a-z]+", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", true)]
+        [InlineData("[a-z]+", "RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase", true)]
+        [InlineData("[a-z]+", "RegexOptions.ECMAScript", true)]
+        [InlineData("([a-z]+)", "RegexOptions.ECMAScript", true)]
         public async System.Threading.Tasks.Task Ctor_RegexOptionsAsync(string regex, string options, bool isValid)
         {
             var project = CreateProjectBuilder()

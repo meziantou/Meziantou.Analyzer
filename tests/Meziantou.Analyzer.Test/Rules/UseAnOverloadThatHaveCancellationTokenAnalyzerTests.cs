@@ -1,12 +1,11 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<UseAnOverloadThatHaveCancellationTokenAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithoutCancellationToken_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -34,7 +33,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -52,7 +51,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithCancellationToken_ShouldNotReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -71,7 +70,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithATaskInContext_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -92,7 +91,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithATaskOfTInContext_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -111,7 +110,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
         {
             const string SourceCode = @"
@@ -131,7 +130,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
         {
             const string SourceCode = @"
@@ -156,7 +155,7 @@ class HttpRequest
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithProperty_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -184,7 +183,7 @@ class HttpContext
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethodWithInstanceProperty_ShouldReportDiagnosticAsync()
         {
             const string SourceCode = @"
@@ -212,7 +211,7 @@ class HttpContext
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CallingMethod_ShouldReportDiagnosticWithVariablesAsync()
         {
             const string SourceCode = @"
@@ -238,7 +237,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CancellationTokenSourceCreate_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"using System.Threading;
@@ -257,8 +256,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
-        [TestProperty("WI", "https://github.com/meziantou/Meziantou.Analyzer/issues/67")]
+        [Fact]
         public async Task OverloadWithMultipleParametersOfSameType()
         {
             const string SourceCode = @"

@@ -3,10 +3,8 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace TestHelper
@@ -15,21 +13,12 @@ namespace TestHelper
     {
         private int _diagnosticMessageIndex = 0;
 
-        public ProjectBuilder()
-        {
-            var list = new List<MetadataReference>();
-            list.AddRange(Initialize.NetStandard2_0.Select(file => MetadataReference.CreateFromFile(file)));
-            list.AddRange(Initialize.System_Collections_Immutable.Select(file => MetadataReference.CreateFromFile(file)));
-
-            References = list;
-        }
-
         public string FileName { get; private set; }
         public string SourceCode { get; private set; } = "";
         public string EditorConfig { get; private set; }
         public bool IsValidCode { get; private set; } = true;
         public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
-        public IList<MetadataReference> References { get; }
+        public IList<MetadataReference> References { get; } = new List<MetadataReference>();
         public IList<string> ApiReferences { get; } = new List<string>();
         public DiagnosticAnalyzer DiagnosticAnalyzer { get; private set; }
         public CodeFixProvider CodeFixProvider { get; private set; }

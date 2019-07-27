@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DontUseDangerousThreadingMethodsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,10 +12,10 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DontUseDangerousThreadingMethodsAnalyzer>();
         }
 
-        [DataTestMethod]
-        [DataRow("Thread.CurrentThread.Abort()")]
-        [DataRow("Thread.CurrentThread.Suspend()")]
-        [DataRow("Thread.CurrentThread.Resume()")]
+        [Theory]
+        [InlineData("Thread.CurrentThread.Abort()")]
+        [InlineData("Thread.CurrentThread.Suspend()")]
+        [InlineData("Thread.CurrentThread.Resume()")]
         public async System.Threading.Tasks.Task ReportDiagnosticAsync(string text)
         {
             await CreateProjectBuilder()

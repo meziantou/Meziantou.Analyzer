@@ -1,13 +1,11 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -16,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer>();
         }
 
-        private static IEnumerable<object[]> ReturnTypeValues
+        public static IEnumerable<object[]> ReturnTypeValues
         {
             get
             {
@@ -30,7 +28,7 @@ namespace Meziantou.Analyzer.Test.Rules
             }
         }
 
-        private static IEnumerable<object[]> ParametersTypeValues
+        public static IEnumerable<object[]> ParametersTypeValues
         {
             get
             {
@@ -42,8 +40,8 @@ namespace Meziantou.Analyzer.Test.Rules
             }
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ReturnTypeValues))]
         public async Task Fields(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -57,8 +55,8 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ReturnTypeValues))]
         public async Task Delegates(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -72,8 +70,8 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ParametersTypeValues))]
         public async Task Delegates_Parameters(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -87,8 +85,8 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ReturnTypeValues))]
         public async Task Indexers(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -102,8 +100,8 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ParametersTypeValues))]
         public async Task Indexers_Parameters(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -117,8 +115,8 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ReturnTypeValues))]
         public async Task Properties(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -132,8 +130,8 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ReturnTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ReturnTypeValues))]
         public async Task Methods(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -147,8 +145,8 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(ParametersTypeValues), DynamicDataSourceType.Property)]
+        [Theory]
+        [MemberData(nameof(ParametersTypeValues))]
         public async Task Methods_Parameters(string visibility, string type, bool isValid)
         {
             var project = CreateProjectBuilder()
@@ -162,7 +160,7 @@ public class Test
             await project.ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PrivateContainer()
         {
             const string SourceCode = @"using System.Collections.Generic;
@@ -178,7 +176,7 @@ internal class Test
                  .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task InterfaceImplementation()
         {
             const string SourceCode = @"using System.Collections.Generic;

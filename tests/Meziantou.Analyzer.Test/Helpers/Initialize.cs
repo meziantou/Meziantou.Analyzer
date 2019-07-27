@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -9,20 +8,21 @@ using System.Threading.Tasks;
 
 namespace TestHelper
 {
-    [TestClass]
-    public sealed class Initialize
+    public sealed class CommonReferences
     {
-        public static IReadOnlyList<string> NetStandard2_0 { get; private set; }
-        public static IReadOnlyList<string> System_Collections_Immutable { get; private set; }
+        private static readonly Lazy<Task<string[]>> s_netStandard2_0;
+        private static readonly Lazy<Task<string[]>> s_system_collection_immutable;
 
-        [AssemblyInitialize]
-        public static async Task AssemblyInitialize(TestContext _)
+        public static Task<string[]> NetStandard2_0 => s_netStandard2_0.Value;
+        public static Task<string[]> System_Collections_Immutable => s_system_collection_immutable.Value;
+
+        static CommonReferences()
         {
-            await InitializeNetStandard2_0().ConfigureAwait(false);
-            await InitializeSystem_Collections_Immutable().ConfigureAwait(false);
+            s_netStandard2_0 = new Lazy<Task<string[]>>(() => InitializeNetStandard2_0());
+            s_system_collection_immutable = new Lazy<Task<string[]>>(() => InitializeSystem_Collections_Immutable());
         }
 
-        private static async Task InitializeNetStandard2_0()
+        private static async Task<string[]> InitializeNetStandard2_0()
         {
             var tempFolder = Path.Combine(Path.GetTempPath(), "Meziantou.AnalyzerTests", "ref", "netstandard2.0");
             if (!Directory.Exists(tempFolder) || !Directory.EnumerateFileSystemEntries(tempFolder).Any())
@@ -38,10 +38,10 @@ namespace TestHelper
                 }
             }
 
-            NetStandard2_0 = Directory.GetFiles(tempFolder, "*.dll");
+            return Directory.GetFiles(tempFolder, "*.dll");
         }
 
-        private static async Task InitializeSystem_Collections_Immutable()
+        private static async Task<string[]> InitializeSystem_Collections_Immutable()
         {
             var tempFolder = Path.Combine(Path.GetTempPath(), "Meziantou.AnalyzerTests", "ref", "System_Collections_Immutable");
             if (!Directory.Exists(tempFolder) || !Directory.EnumerateFileSystemEntries(tempFolder).Any())
@@ -57,7 +57,7 @@ namespace TestHelper
                 }
             }
 
-            System_Collections_Immutable = Directory.GetFiles(tempFolder, "*.dll");
+            return Directory.GetFiles(tempFolder, "*.dll");
         }
     }
 }

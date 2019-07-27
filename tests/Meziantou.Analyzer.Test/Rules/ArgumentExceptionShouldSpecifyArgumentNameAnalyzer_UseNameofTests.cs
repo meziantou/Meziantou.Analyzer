@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameofTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<ArgumentExceptionShouldSpecifyArgumentNameFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Property()
         {
             const string SourceCode = @"
@@ -44,7 +43,7 @@ class Sample
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Method()
         {
             const string SourceCode = @"

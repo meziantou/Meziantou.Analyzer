@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DoNotUseDefaultEqualsOnValueTypeAnalyzer>(id: "MA0065");
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Equals_DefaultImplementation()
         {
             const string SourceCode = @"
@@ -35,7 +34,7 @@ class Sample
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ObjectEquals_DefaultImplementation()
         {
             const string SourceCode = @"
@@ -52,7 +51,7 @@ struct Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Equals_Override()
         {
             const string SourceCode = @"
@@ -75,7 +74,7 @@ class Sample
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task GetHashCode_DefaultImplementation()
         {
             const string SourceCode = @"
@@ -96,7 +95,7 @@ class Sample
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task GetHashCode_Override()
         {
             const string SourceCode = @"
@@ -119,7 +118,7 @@ class Sample
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task GetHashCode_Enum()
         {
             const string SourceCode = @"
@@ -143,7 +142,7 @@ class Sample
         }
 
 
-        [TestMethod]
+        [Fact]
         public async Task GetHashCode_EnumVariable()
         {
             const string SourceCode = @"

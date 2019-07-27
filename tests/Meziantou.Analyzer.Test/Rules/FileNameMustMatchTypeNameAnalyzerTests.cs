@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class FileNameMustMatchTypeNameAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<FileNameMustMatchTypeNameAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task DoesNotMatchFileName()
         {
             await CreateProjectBuilder()
@@ -25,7 +24,7 @@ class [||]Sample
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task DoesMatchFileNameBeforeDot()
         {
             await CreateProjectBuilder()
@@ -36,7 +35,7 @@ class Sample
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task DoesMatchFileName()
         {
             await CreateProjectBuilder()
@@ -47,7 +46,7 @@ class Test0
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task DoesMatchFileName_Generic()
         {
             await CreateProjectBuilder()
@@ -58,7 +57,7 @@ class Test0<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task DoesMatchFileName_GenericUsingArity()
         {
             await CreateProjectBuilder()
@@ -69,7 +68,7 @@ class Test0<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task DoesMatchFileName_GenericUsingOfT()
         {
             await CreateProjectBuilder()
@@ -80,7 +79,7 @@ class Test0<T>
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NestedTypeDoesMatchFileName_Ok()
         {
             await CreateProjectBuilder()

@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class MarkAttributesWithAttributeUsageAttributeTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<MarkAttributesWithAttributeUsageAttributeFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportErrorAsync()
         {
             const string SourceCode = "class [||]TestAttribute : System.Attribute { }";
@@ -28,7 +27,7 @@ class TestAttribute : System.Attribute { }";
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ClassDoesNotInheritsFromAttribute_ShouldNotReportErrorAsync()
         {
             await CreateProjectBuilder()
@@ -36,7 +35,7 @@ class TestAttribute : System.Attribute { }";
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task ClassHasAttribute_ShouldNotReportErrorAsync()
         {
             const string SourceCode = @"

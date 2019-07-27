@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<AbstractTypesShouldNotHaveConstructorsFixer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Ctor()
         {
             const string SourceCode = @"
@@ -37,7 +36,7 @@ class Test2
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task PublicCtor()
         {
             var sourceCode = @"
@@ -58,7 +57,7 @@ abstract class Test
                     .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task InternalCtor()
         {
             var sourceCode = @"

@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<DoNotCallVirtualMethodInConstructorAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithVirtualCall()
         {
             const string SourceCode = @"
@@ -32,7 +31,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithAbstractCall()
         {
             const string SourceCode = @"
@@ -50,7 +49,7 @@ abstract class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithNoVirtualCall()
         {
             const string SourceCode = @"
@@ -68,7 +67,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithVirtualCallOnAnotherInstance()
         {
             const string SourceCode = @"
@@ -87,7 +86,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithVirtualPropertyAssignment()
         {
             const string SourceCode = @"
@@ -105,7 +104,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithVirtualPropertyAssignmentOnAnotherInstance()
         {
             const string SourceCode = @"
@@ -124,7 +123,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithVirtualPropertyGet()
         {
             const string SourceCode = @"
@@ -142,7 +141,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithOverridedMethod()
         {
             const string SourceCode = @"
@@ -165,7 +164,7 @@ class Test : Base
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CtorWithVirtualPropertyReferenceInNameOf()
         {
             const string SourceCode = @"

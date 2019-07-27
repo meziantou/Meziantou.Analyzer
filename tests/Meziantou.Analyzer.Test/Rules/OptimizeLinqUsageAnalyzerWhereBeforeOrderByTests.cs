@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class OptimizeLinqUsageAnalyzerWhereBeforeOrderByTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,9 +13,9 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: "MA0063");
         }
 
-        [DataTestMethod]
-        [DataRow("OrderBy")]
-        [DataRow("OrderByDescending")]
+        [Theory]
+        [InlineData("OrderBy")]
+        [InlineData("OrderByDescending")]
         public async Task Enumerable_WhereBeforeOrderBy_Valid(string a)
         {
             await CreateProjectBuilder()
@@ -33,9 +32,9 @@ class Test
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("OrderBy")]
-        [DataRow("OrderByDescending")]
+        [Theory]
+        [InlineData("OrderBy")]
+        [InlineData("OrderByDescending")]
         public async Task Enumerable_WhereAfterOrderBy_Invalid(string a)
         {
             await CreateProjectBuilder()

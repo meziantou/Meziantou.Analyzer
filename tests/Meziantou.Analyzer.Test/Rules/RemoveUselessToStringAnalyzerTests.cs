@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class RemoveUselessToStringAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<RemoveUselessToStringAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task IntToString_ShouldNotReportDiagnostic()
         {
             var project = CreateProjectBuilder()
@@ -27,7 +26,7 @@ class Test
             await project.ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task StringToString_ShouldReportDiagnostic()
         {
             await CreateProjectBuilder()

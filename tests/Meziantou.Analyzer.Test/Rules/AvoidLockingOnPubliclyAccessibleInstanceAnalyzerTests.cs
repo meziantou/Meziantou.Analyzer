@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<AvoidLockingOnPubliclyAccessibleInstanceAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LockThis()
         {
             const string SourceCode = @"
@@ -30,7 +29,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LockTypeof()
         {
             const string SourceCode = @"
@@ -49,7 +48,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LockVariableOfTypeSystemType()
         {
             const string SourceCode = @"
@@ -66,7 +65,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LockPubliclyAccessibleField()
         {
             const string SourceCode = @"
@@ -83,7 +82,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LockPrivateFieldShouldNotReport()
         {
             const string SourceCode = @"
@@ -100,7 +99,7 @@ public class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LockVariableOfTypeStringShouldNotReport()
         {
             const string SourceCode = @"

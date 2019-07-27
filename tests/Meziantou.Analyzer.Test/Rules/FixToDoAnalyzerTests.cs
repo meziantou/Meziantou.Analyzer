@@ -1,12 +1,11 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class FixToDoAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -15,9 +14,9 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<FixToDoAnalyzer>();
         }
 
-        [DataTestMethod]
-        [DataRow("//TODOA")]
-        [DataRow("// (TODO)")]
+        [Theory]
+        [InlineData("//TODOA")]
+        [InlineData("// (TODO)")]
         public async Task SingleLineCommentWithoutTodo(string comment)
         {
             await CreateProjectBuilder()
@@ -25,12 +24,12 @@ namespace Meziantou.Analyzer.Test.Rules
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("//[||]TODO", "")]
-        [DataRow("// [||]TODO", "")]
-        [DataRow("//[||]TODO test", "test")]
-        [DataRow("// [||]TODO test", "test")]
-        [DataRow("  // [||]TODO test", "test")]
+        [Theory]
+        [InlineData("//[||]TODO", "")]
+        [InlineData("// [||]TODO", "")]
+        [InlineData("//[||]TODO test", "test")]
+        [InlineData("// [||]TODO test", "test")]
+        [InlineData("  // [||]TODO test", "test")]
         public async Task SingleLineComment(string comment, string todo)
         {
             await CreateProjectBuilder()
@@ -39,13 +38,13 @@ namespace Meziantou.Analyzer.Test.Rules
                   .ValidateAsync();
         }
 
-        [DataTestMethod]
-        [DataRow("/*[||]TODO*/", "")]
-        [DataRow("/* [||]TODO*/", "")]
-        [DataRow("/*[||]TODO test*/", "test")]
-        [DataRow("/* [||]TODO test*/", "test")]
-        [DataRow("  /* [||]TODO test*/", "test")]
-        [DataRow("/*\n* [||]TODO test\r\n*/", "test")]
+        [Theory]
+        [InlineData("/*[||]TODO*/", "")]
+        [InlineData("/* [||]TODO*/", "")]
+        [InlineData("/*[||]TODO test*/", "test")]
+        [InlineData("/* [||]TODO test*/", "test")]
+        [InlineData("  /* [||]TODO test*/", "test")]
+        [InlineData("/*\n* [||]TODO test\r\n*/", "test")]
         public async Task MultiLinesComment(string comment, string todo)
         {
             await CreateProjectBuilder()
@@ -54,7 +53,7 @@ namespace Meziantou.Analyzer.Test.Rules
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task MultiTodoComment()
         {
             await CreateProjectBuilder()

@@ -1,10 +1,9 @@
 ﻿using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -13,7 +12,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<TypesShouldNotExtendSystemApplicationExceptionAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task InheritFromException_ShouldNotReportErrorAsync()
         {
             await CreateProjectBuilder()
@@ -21,7 +20,7 @@ namespace Meziantou.Analyzer.Test.Rules
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async System.Threading.Tasks.Task InheritFromApplicationException_ShouldReportErrorAsync()
         {
             await CreateProjectBuilder()

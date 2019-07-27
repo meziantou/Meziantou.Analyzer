@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    [TestClass]
     public sealed class IncludeCatchExceptionAsInnerExceptionAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -14,7 +13,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithAnalyzer<IncludeCatchExceptionAsInnerExceptionAnalyzer>();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task NotInCatchException_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
@@ -30,7 +29,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task InCatchExceptionWithInnerException_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
@@ -52,7 +51,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task InCatchExceptionWithoutInnerException_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
@@ -74,7 +73,7 @@ class Test
                   .ValidateAsync();
         }
 
-        [TestMethod]
+        [Fact]
         public async Task InCatchExceptionWithoutInnerException_NoConstructorWithInnerException_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
