@@ -57,12 +57,18 @@ namespace Meziantou.Analyzer
             var attributes = methodSymbol.GetAttributes();
             foreach (var attribute in attributes)
             {
-                var ns = attribute.AttributeClass.ContainingNamespace;
-                if (ns.IsNamespace(new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" }) ||
-                    ns.IsNamespace(new[] { "NUnit", "Framework" }) ||
-                    ns.IsNamespace(new[] { "Xunit" }))
+                var type = attribute.AttributeClass;
+                while (type != null)
                 {
-                    return true;
+                    var ns = type.ContainingNamespace;
+                    if (ns.IsNamespace(new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" }) ||
+                        ns.IsNamespace(new[] { "NUnit", "Framework" }) ||
+                        ns.IsNamespace(new[] { "Xunit" }))
+                    {
+                        return true;
+                    }
+
+                    type = type.BaseType;
                 }
             }
 

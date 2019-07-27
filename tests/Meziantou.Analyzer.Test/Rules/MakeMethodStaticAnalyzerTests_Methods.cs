@@ -429,6 +429,28 @@ class TestClass
         }
 
         [Fact]
+        public async Task XUnit_TestMethodCustomAttribute()
+        {
+            const string SourceCode = @"
+class TestClass
+{
+    private class CustomFactAttribute : Xunit.FactAttribute
+    {
+    }
+
+    [CustomFactAttribute]
+    void A()
+    {
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .AddXUnitApi()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
         public async Task AspNetCore_Startup()
         {
             const string SourceCode = @"
