@@ -33,7 +33,6 @@ namespace Meziantou.Analyzer.Rules
          description: "",
          helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakePropertyStatic));
 
-
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_methodRule, s_propertyRule);
 
         public override void Initialize(AnalysisContext context)
