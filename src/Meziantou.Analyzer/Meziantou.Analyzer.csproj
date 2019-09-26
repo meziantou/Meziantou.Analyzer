@@ -5,7 +5,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>Meziantou.Analyzer</PackageId>
     <PackageVersion>1.0.0</PackageVersion>
-    <Description>A Roslyn analyzer to enforce some good pratices in C#</Description>
+    <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
     <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
     <NoPackageAnalysis>true</NoPackageAnalysis>
   </PropertyGroup>
