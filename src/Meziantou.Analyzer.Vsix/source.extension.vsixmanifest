@@ -3,7 +3,7 @@
     <Metadata>
         <Identity Id="Meziantou.Analyzer.dd3c9fea-c73f-4c59-a7e0-cd45a3a44d24" Version="1.0.89" Language="en-US" Publisher="Meziantou"/>
         <DisplayName>Meziantou.Analyzer</DisplayName>
-        <Description xml:space="preserve">A Roslyn analyzer to enforce some good pratices in C#</Description>
+        <Description xml:space="preserve">A Roslyn analyzer to enforce some good practices in C#</Description>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0,)" />
