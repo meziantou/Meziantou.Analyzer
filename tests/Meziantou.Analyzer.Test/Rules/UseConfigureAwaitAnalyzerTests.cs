@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MissingConfigureAwait_ShouldReportErrorAsync()
+        public async Task MissingConfigureAwait_ShouldReportError()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
@@ -39,7 +40,7 @@ class ClassTest
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ConfigureAwaitIsPresent_ShouldNotReportErrorAsync()
+        public async Task ConfigureAwaitIsPresent_ShouldNotReportError()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
@@ -55,7 +56,7 @@ class ClassTest
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ConfigureAwaitOfTIsPresent_ShouldNotReportErrorAsync()
+        public async Task ConfigureAwaitOfTIsPresent_ShouldNotReportError()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
@@ -71,7 +72,7 @@ class ClassTest
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MissingConfigureAwaitInWpfWindowClass_ShouldNotReportErrorAsync()
+        public async Task MissingConfigureAwaitInWpfWindowClass_ShouldNotReportError()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
@@ -88,7 +89,7 @@ class MyClass : System.Windows.Window
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MissingConfigureAwaitInWpfCommandClass_ShouldNotReportErrorAsync()
+        public async Task MissingConfigureAwaitInWpfCommandClass_ShouldNotReportError()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Input.ICommand
@@ -105,7 +106,7 @@ class MyClass : System.Windows.Input.ICommand
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AfterConfigureAwaitFalse_AllAwaitShouldUseConfigureAwaitAsync()
+        public async Task AfterConfigureAwaitFalse_AllAwaitShouldUseConfigureAwait()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
@@ -135,7 +136,7 @@ class MyClass : System.Windows.Window
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AfterConfigureAwaitFalseInANonAccessibleBranch_ShouldNotReportDiagnosticAsync()
+        public async Task AfterConfigureAwaitFalseInANonAccessibleBranch_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
@@ -159,7 +160,7 @@ class MyClass : System.Windows.Window
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AfterConfigureAwaitFalseInNonAccessibleBranch2_ShouldReportDiagnosticAsync()
+        public async Task AfterConfigureAwaitFalseInNonAccessibleBranch2_ShouldReportDiagnostic()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
@@ -184,7 +185,7 @@ class MyClass : System.Windows.Window
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task TaskYield_ShouldNotReportDiagnosticAsync()
+        public async Task TaskYield_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
@@ -200,7 +201,7 @@ class ClassTest
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task XUnitAttribute_ShouldNotReportDiagnosticAsync()
+        public async Task XUnitAttribute_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
@@ -213,6 +214,29 @@ class ClassTest
 }";
             await CreateProjectBuilder()
                   .AddXUnitApi()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Blazor_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"using System.Threading.Tasks;
+namespace Microsoft.AspNetCore.Components
+{
+    public interface IComponent
+    {
+    }
+}
+
+class ClassTest : Microsoft.AspNetCore.Components.IComponent
+{
+    async Task Test()
+    {
+        await Task.Delay(1);
+    }
+}";
+            await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }

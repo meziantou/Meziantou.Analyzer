@@ -61,7 +61,8 @@ namespace Meziantou.Analyzer.Rules
                     containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Razor.RazorPage")) || // ASP.NET Core
                     containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
                     containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
-                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")))  // ASP.NET Core
+                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")) ||
+                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent")))  // Blazor has a synchronization context, see https://github.com/meziantou/Meziantou.Analyzer/issues/96
                 {
                     return false;
                 }
