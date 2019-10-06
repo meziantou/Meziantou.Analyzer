@@ -29,16 +29,22 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var title = "Use ConfigureAwait(false)";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => AddConfigureAwait(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    "Use ConfigureAwait(false)",
+                    ct => AddConfigureAwait(context.Document, nodeToFix, value: false, ct),
+                    equivalenceKey: "Use ConfigureAwait(false)"),
+                context.Diagnostics);
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    "Use ConfigureAwait(true)",
+                    ct => AddConfigureAwait(context.Document, nodeToFix, value: true, ct),
+                    equivalenceKey: "Use ConfigureAwait(true)"),
+                context.Diagnostics);
         }
 
-        private static async Task<Document> AddConfigureAwait(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> AddConfigureAwait(Document document, SyntaxNode nodeToFix, bool value, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
@@ -49,7 +55,7 @@ namespace Meziantou.Analyzer.Rules
 
             var newExpression = (ExpressionSyntax)generator.InvocationExpression(
                 generator.MemberAccessExpression(syntax.Expression, nameof(Task.ConfigureAwait)),
-                generator.FalseLiteralExpression());
+                generator.LiteralExpression(value));
 
             var newInvokeExpression = syntax.WithExpression(newExpression);
 
