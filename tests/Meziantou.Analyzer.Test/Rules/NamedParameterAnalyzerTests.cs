@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -15,7 +16,7 @@ namespace Meziantou.Analyzer.Test.Rules
 
         [Fact]
 
-        public async System.Threading.Tasks.Task Task_ConfigureAwait_ShouldNotReportDiagnosticAsync()
+        public async Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -31,7 +32,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Task_T_ConfigureAwait_ShouldNotReportDiagnosticAsync()
+        public async Task Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -47,7 +48,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task NamedParameter_ShouldNotReportDiagnosticAsync()
+        public async Task NamedParameter_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -63,7 +64,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task True_ShouldReportDiagnosticAsync()
+        public async Task True_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -88,7 +89,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task False_ShouldReportDiagnosticAsync()
+        public async Task False_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -104,7 +105,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Null_ShouldReportDiagnosticAsync()
+        public async Task Null_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -120,7 +121,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnosticAsync()
+        public async Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -136,7 +137,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MethodBaseInvoke_ShouldReportDiagnosticAsync()
+        public async Task MethodBaseInvoke_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -161,7 +162,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MSTestAssert_ShouldNotReportDiagnosticAsync()
+        public async Task MSTestAssert_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -175,7 +176,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task NunitAssert_ShouldNotReportDiagnosticAsync()
+        public async Task NunitAssert_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -189,7 +190,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task XunitAssert_ShouldNotReportDiagnosticAsync()
+        public async Task XunitAssert_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -203,7 +204,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Ctor_ShouldUseTheRightParameterNameAsync()
+        public async Task Ctor_ShouldUseTheRightParameterName()
         {
             const string SourceCode = @"
 class TypeName
@@ -232,7 +233,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnosticAsync()
+        public async Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -257,7 +258,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Task_FromResult_ShouldNotReportDiagnosticAsync()
+        public async Task Task_FromResult_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -270,6 +271,44 @@ class TypeName
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Expression_ShouldNotReportDiagnostic()
+        {
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System.Linq;
+using System.Collections.Generic;
+
+class Test
+{
+    public Test()
+    {
+        IEnumerable<string> query = null;
+        query.Where(x => M([||]false));
+    }
+
+    static bool M(bool a) => false;
+}
+")
+                  .ValidateAsync();
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        IQueryable<string> query = null;
+        query.Where(x => M(false));
+    }
+
+    static bool M(bool a) => false;
+}
+")
                   .ValidateAsync();
         }
     }

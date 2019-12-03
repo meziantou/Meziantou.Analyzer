@@ -120,6 +120,10 @@ namespace Meziantou.Analyzer.Rules
 
                                 if ((string.Equals(methodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(methodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
                                     return;
+
+                                var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
+                                if (operation != null && operation.IsInQueryableExpressionArgument())
+                                    return;
                             }
                         }
 
