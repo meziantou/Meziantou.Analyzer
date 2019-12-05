@@ -122,7 +122,7 @@ namespace Meziantou.Analyzer.Rules
                                     return;
 
                                 var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
-                                if (operation != null && operation.IsInQueryableExpressionArgument())
+                                if (operation != null && operation.IsInExpressionArgument())
                                     return;
                             }
                         }

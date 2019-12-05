@@ -311,5 +311,38 @@ class Test
 ")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Expression_ShouldNotReportDiagnostic2()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+
+class Test
+{
+    public Test()
+    {
+        Mock<ITest> mock = null;
+        mock.Setup(x => x.M(false));
+    }
+
+    static bool M(bool a) => false;
+}
+
+interface ITest
+{
+    bool M(bool a);
+}
+
+class Mock<T>
+{
+    public void Setup<TResult>(Expression<Func<T, TResult>> expression) => throw null;
+}
+")
+                  .ValidateAsync();
+        }
     }
 }

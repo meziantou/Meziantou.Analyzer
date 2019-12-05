@@ -29,6 +29,18 @@ namespace Meziantou.Analyzer
             return false;
         }
 
+        public static bool IsInExpressionArgument(this IOperation operation)
+        {
+            foreach (var op in operation.Ancestors().OfType<IArgumentOperation>())
+            {
+                var type = op.Parameter.Type;
+                if (type.InheritsFrom(operation.SemanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
+                    return true;
+            }
+
+            return false;
+        }
+
         public static bool IsInNameofOperation(this IOperation operation)
         {
             return operation.Ancestors().OfType<INameOfOperation>().Any();
