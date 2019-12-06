@@ -71,6 +71,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseDefaultEqualsOnValueType = "MA0065";
         public const string StructWithDefaultEqualsImplementationUsedAsAKey = "MA0066";
         public const string UseGuidEmpty = "MA0067";
+        public const string NotNullIfNotNullArgumentShouldExist = "MA0068";
 
         public static string GetHelpUri(string idenfifier)
         {
