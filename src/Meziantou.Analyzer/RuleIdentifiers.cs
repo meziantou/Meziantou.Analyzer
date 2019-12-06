@@ -72,6 +72,7 @@ namespace Meziantou.Analyzer
         public const string StructWithDefaultEqualsImplementationUsedAsAKey = "MA0066";
         public const string UseGuidEmpty = "MA0067";
         public const string NotNullIfNotNullArgumentShouldExist = "MA0068";
+        public const string NonConstantStaticFieldsShouldNotBeVisible = "MA0069";
 
         public static string GetHelpUri(string idenfifier)
         {
