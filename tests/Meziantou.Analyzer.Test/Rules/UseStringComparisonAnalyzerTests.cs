@@ -224,5 +224,32 @@ class TypeName
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task JObject_Property_ShouldReportDiagnosticAsync()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        var obj = new Newtonsoft.Json.Linq.JObject();
+        [||]obj.Property("""");
+    }
+}
+
+namespace Newtonsoft.Json.Linq
+{
+    public class JObject
+    {
+        public void Property(string name) => throw null;
+        public void Property(string name, System.StringComparison comparison) => throw null;
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }

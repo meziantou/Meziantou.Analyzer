@@ -32,6 +32,7 @@ namespace Meziantou.Analyzer.Rules
         {
             var stringComparisonType = context.Compilation.GetTypeByMetadataName("System.StringComparison");
             var stringType = context.Compilation.GetSpecialType(SpecialType.System_String);
+            var jobjectType = context.Compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
 
             var operation = (IInvocationOperation)context.Operation;
             if (!IsMethod(operation, stringType, nameof(string.Compare)) &&
@@ -42,7 +43,8 @@ namespace Meziantou.Analyzer.Rules
                 !IsMethod(operation, stringType, nameof(string.LastIndexOfAny)) &&
                 !IsMethod(operation, stringType, nameof(string.EndsWith)) &&
                 !IsMethod(operation, stringType, nameof(string.Replace)) &&
-                !IsMethod(operation, stringType, nameof(string.StartsWith)))
+                !IsMethod(operation, stringType, nameof(string.StartsWith)) &&
+                !IsMethod(operation, jobjectType, "Property"))
             {
                 return;
             }
@@ -51,7 +53,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                 // https://github.com/aspnet/EntityFrameworkCore/issues/1222
-                if (operation.IsInQueryableExpressionArgument())
+                if (operation.IsInExpressionArgument())
                     return;
 
                 // Check if there is an overload with a StringComparison
