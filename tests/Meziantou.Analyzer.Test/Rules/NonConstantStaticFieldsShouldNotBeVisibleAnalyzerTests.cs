@@ -60,5 +60,18 @@ public class Sample
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task EnumMembers()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+public enum Sample
+{
+    A = 1,
+    B,
+}")
+                  .ValidateAsync();
+        }
     }
 }
