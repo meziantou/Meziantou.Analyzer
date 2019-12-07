@@ -33,6 +33,10 @@ namespace Meziantou.Analyzer.Rules
             if (!symbol.IsStatic || symbol.IsReadOnly || !symbol.IsVisibleOutsideOfAssembly())
                 return;
 
+            // Skip enumerations
+            if (symbol.ContainingSymbol is INamedTypeSymbol typeSymbol && typeSymbol.EnumUnderlyingType != null)
+                return;
+
             context.ReportDiagnostic(s_rule, symbol);
         }
     }
