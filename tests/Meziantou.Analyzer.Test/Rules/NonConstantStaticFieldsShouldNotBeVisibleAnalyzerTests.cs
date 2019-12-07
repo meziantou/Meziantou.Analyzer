@@ -73,5 +73,17 @@ public enum Sample
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Const()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+public class Sample
+{
+    public const int a = 0;
+}")
+                  .ValidateAsync();
+        }
     }
 }
