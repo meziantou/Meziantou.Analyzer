@@ -17,12 +17,12 @@ steps:
 - task: UseDotNet@2
   inputs:
     packageType: 'sdk'
-    version: '3.0.100-preview5-011568'
-    includePreviewVersions: true
+    version: '3.1.100'
+    includePreviewVersions: false
 
 - task: NuGetToolInstaller@1
   inputs:
-    versionSpec: 5.1.0
+    versionSpec: 5.4.0
 
 - task: PowerShell@2
   displayName: Update version
