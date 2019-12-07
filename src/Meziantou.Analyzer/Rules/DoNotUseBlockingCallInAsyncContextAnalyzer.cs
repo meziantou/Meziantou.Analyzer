@@ -169,6 +169,9 @@ namespace Meziantou.Analyzer.Rules
 
             private void ReportDiagnosticIfNeeded(OperationAnalysisContext context, IOperation operation, string message)
             {
+                if (!CanBeAsync(operation))
+                    return;
+
                 if (IsAsyncContext(operation))
                 {
                     context.ReportDiagnostic(s_rule, operation, message);
@@ -202,6 +205,14 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 return false;
+            }
+
+            private static bool CanBeAsync(IOperation operation)
+            {
+                if (operation.Ancestors().Any(op => op is ILockOperation))
+                    return false;
+
+                return true;
             }
         }
     }

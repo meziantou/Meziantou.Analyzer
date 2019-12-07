@@ -62,7 +62,7 @@ public class Test
         }
 
         [Fact]
-        public async Task PrivateNonAsync_AsyncSuffix_NoDiagnostic()
+        public async Task PrivateNonAsync_AsyncSuffix()
         {
             await CreateProjectBuilder()
                   .WithSourceCode(@"using System.Threading.Tasks;
@@ -75,6 +75,45 @@ public class Test
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
+}")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task PrivateNonAsync_AsyncSuffix_InLock()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+public class Test
+{
+    private void A()
+    {
+        lock (this)
+        {
+            Write();
+        }
+    }
+
+    public void Write() => throw null;
+    public Task WriteAsync() => throw null;
+}")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task LambdaInLock()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+public class Test
+{
+    private void A()
+    {
+        lock (this)
+        {
+            _ = Task.FromResult(0).ContinueWith(t => t.Result);
+        }
+    }
 }")
                   .ValidateAsync();
         }
