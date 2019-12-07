@@ -30,7 +30,7 @@ namespace Meziantou.Analyzer.Rules
         private void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (IFieldSymbol)context.Symbol;
-            if (!symbol.IsStatic || symbol.IsReadOnly || !symbol.IsVisibleOutsideOfAssembly())
+            if (!symbol.IsStatic || symbol.IsReadOnly || symbol.IsConst || !symbol.IsVisibleOutsideOfAssembly())
                 return;
 
             // Skip enumerations
