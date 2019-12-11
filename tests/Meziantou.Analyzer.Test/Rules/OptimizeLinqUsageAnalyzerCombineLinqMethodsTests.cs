@@ -230,5 +230,24 @@ class Test
 ")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task CombineWhereWithAny_DoNotReportForWhereWithIndex()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        enumerable.Where(Filter).Any(x => true);
+    }
+
+    bool Filter(int x, int index) => true;
+}
+")
+                  .ValidateAsync();
+        }
     }
 }
