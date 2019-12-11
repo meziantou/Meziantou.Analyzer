@@ -97,7 +97,7 @@ namespace Meziantou.Analyzer.Rules
             WhereShouldBeBeforeOrderBy(context, operation, symbols);
             OptimizeCountUsage(context, operation, symbols);
         }
-        
+
         private static ImmutableDictionary<string, string> CreateProperties(OptimizeLinqUsageData data)
         {
             return ImmutableDictionary.Create<string, string>().Add("Data", data.ToString());
@@ -228,6 +228,18 @@ namespace Meziantou.Analyzer.Rules
         {
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Where), StringComparison.Ordinal))
             {
+                // Cannot replace Where when using Func<TSource,int,bool>
+                if (operation.TargetMethod.Parameters.Length != 2)
+                    return;
+
+                var type = operation.TargetMethod.Parameters[1].Type as INamedTypeSymbol;
+                if (type == null)
+                    return;
+
+                if (type.TypeArguments.Length == 3)
+                    return;
+
+                // Check parent methods
                 var parent = GetParentLinqOperation(operation);
                 if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType))
                 {
