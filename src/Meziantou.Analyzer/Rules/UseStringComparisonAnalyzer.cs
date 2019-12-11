@@ -73,7 +73,7 @@ namespace Meziantou.Analyzer.Rules
             if (!string.Equals(methodSymbol.Name, name, StringComparison.Ordinal))
                 return false;
 
-            if (!type.Equals(methodSymbol.ContainingType))
+            if (!type.IsEqualTo(methodSymbol.ContainingType))
                 return false;
 
             return true;
