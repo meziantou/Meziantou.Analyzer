@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer.Rules
 
                     // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                     // https://github.com/aspnet/EntityFrameworkCore/issues/1222
-                    if (operation.IsInQueryableExpressionArgument())
+                    if (operation.IsInExpressionArgument())
                         return;
 
                     context.ReportDiagnostic(s_rule, operation, $"{operation.OperatorKind} operator");
