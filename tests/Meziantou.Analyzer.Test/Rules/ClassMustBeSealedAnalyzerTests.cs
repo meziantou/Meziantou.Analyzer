@@ -85,7 +85,21 @@ sealed class Test : ITest
         }
 
         [Fact]
-        public async Task StaticMethodAndConstField_Diagnostic()
+        public async Task StaticMethodAndConstField_NotReported()
+        {
+            const string SourceCode = @"
+public class Test
+{
+    const int a = 10;
+    static void A() { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task StaticMethodAndConstFieldWithEditorConfigTrue_Diagnostic()
         {
             const string SourceCode = @"
 public class [||]Test
@@ -101,6 +115,7 @@ public sealed class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
+                  .WithEditorConfig("MA0053.public_class_should_be_sealed = true")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }

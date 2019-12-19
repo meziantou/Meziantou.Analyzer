@@ -40,7 +40,7 @@ namespace Meziantou.Analyzer.Rules
             if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType)
                 return false;
 
-            if (symbol.IsVisibleOutsideOfAssembly() && PublicClassShouldBeSealed(options, symbol))
+            if (symbol.IsVisibleOutsideOfAssembly() && !PublicClassShouldBeSealed(options, symbol))
                 return false;
 
             return true;
