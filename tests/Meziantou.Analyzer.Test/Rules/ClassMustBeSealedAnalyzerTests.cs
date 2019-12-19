@@ -119,5 +119,22 @@ public sealed class Test
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task GenericBaseClass()
+        {
+            const string SourceCode = @"
+internal class Base<T>
+{
+}
+
+internal sealed class Child : Base<int>
+{
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
