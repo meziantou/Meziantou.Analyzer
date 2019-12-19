@@ -81,6 +81,7 @@ namespace Meziantou.Analyzer.Rules
                             lock (_cannotBeSealedClasses)
                             {
                                 _cannotBeSealedClasses.Add(symbol.BaseType);
+                                _cannotBeSealedClasses.Add(symbol.BaseType.OriginalDefinition);
                             }
                         }
 
