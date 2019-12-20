@@ -65,6 +65,7 @@ class Test
         System.Func<Task>         valid1 = async () => { };
         System.Func<Task<object>> valid2 = async () => null;
         System.Func<object>       valid3 = () => null;
+        System.Func<Task<object>> valid4 = async () => { return null; };
     }
 }";
 
@@ -94,5 +95,25 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task AsyncLambdaInTask()
+        {
+            const string SourceCode = @"using System.Threading.Tasks;
+class Test
+{
+    Task A()
+    {
+        
+        System.Func<Task<object>> valid4 = async () => { return null; };
+        return Task.CompletedTask;
+    }
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
     }
 }

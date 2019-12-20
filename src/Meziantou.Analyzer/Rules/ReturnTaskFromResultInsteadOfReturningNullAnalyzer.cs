@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -106,9 +107,9 @@ namespace Meziantou.Analyzer.Rules
             if (operation == null)
                 return;
 
-            foreach (var op in operation.DescendantsAndSelf().OfType<IReturnOperation>())
+            foreach (var op in DescendantsAndSelf(operation, o=> !(o is IAnonymousFunctionOperation) && !(o is ILocalFunctionOperation)))
             {
-                if (IsNullValue(op.ReturnedValue))
+                if (op is IReturnOperation returnOperation && IsNullValue(returnOperation.ReturnedValue))
                 {
                     context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation()));
                 }
@@ -141,6 +142,24 @@ namespace Meziantou.Analyzer.Rules
 
             return typeSyntax.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task")) ||
                    (typeSyntax.OriginalDefinition != null && typeSyntax.OriginalDefinition.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1")));
+        }
+
+        private static IEnumerable<IOperation> DescendantsAndSelf(IOperation operation, Func<IOperation, bool> processChildren)
+        {
+            var stack = new Stack<IOperation>();
+            stack.Push(operation);
+            while (stack.Any())
+            {
+                var op = stack.Pop();
+                yield return op;
+                if (processChildren(op))
+                {
+                    foreach (var child in op.Children)
+                    {
+                        stack.Push(child);
+                    }
+                }
+            }
         }
     }
 }
