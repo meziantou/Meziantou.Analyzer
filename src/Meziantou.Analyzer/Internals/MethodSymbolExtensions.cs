@@ -106,8 +106,7 @@ namespace Meziantou.Analyzer
 
             var members = methodSymbol.ContainingType.GetMembers(methodSymbol.Name);
             return members.OfType<IMethodSymbol>()
-                .Where(member => includeObsoleteMethods || !member.IsObsolete(compilation))
-                .FirstOrDefault(member => HasSimilarParameters(methodSymbol, member, additionalParameterTypes));
+                .FirstOrDefault(member => (includeObsoleteMethods || !member.IsObsolete(compilation)) && HasSimilarParameters(methodSymbol, member, additionalParameterTypes));
         }
 
         internal static bool IsObsolete(this IMethodSymbol methodSymbol, Compilation compilation)

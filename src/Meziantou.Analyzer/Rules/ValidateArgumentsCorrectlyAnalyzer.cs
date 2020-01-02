@@ -82,8 +82,7 @@ namespace Meziantou.Analyzer.Rules
                     return;
 
                 var lastThrowIndex = descendants
-                        .Where(node => node.IsKind(SyntaxKind.ThrowStatement) || node.IsKind(SyntaxKind.ThrowExpression))
-                        .Where(node => IsArgumentException(context, node))
+                        .Where(node => (node.IsKind(SyntaxKind.ThrowStatement) || node.IsKind(SyntaxKind.ThrowExpression)) && IsArgumentException(context, node))
                         .DefaultIfEmpty()
                         .Max(node => GetEndOfBlockIndex(context, node));
 

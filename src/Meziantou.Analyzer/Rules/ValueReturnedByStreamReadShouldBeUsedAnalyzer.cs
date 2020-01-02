@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterOperationAction(AnalyzeOperation, OperationKind.Invocation);
         }
 
-        private void AnalyzeOperation(OperationAnalysisContext context)
+        private static void AnalyzeOperation(OperationAnalysisContext context)
         {
             var invocation = (IInvocationOperation)context.Operation;
             var targetMethod = invocation.TargetMethod;
