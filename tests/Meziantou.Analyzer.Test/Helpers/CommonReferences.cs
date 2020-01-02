@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace TestHelper
 {
-    public sealed class CommonReferences
+    public static class CommonReferences
     {
         private static readonly Lazy<Task<string[]>> s_netStandard2_0;
         private static readonly Lazy<Task<string[]>> s_system_collection_immutable;

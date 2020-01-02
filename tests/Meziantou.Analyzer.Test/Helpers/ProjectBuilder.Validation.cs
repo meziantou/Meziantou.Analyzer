@@ -217,20 +217,18 @@ namespace TestHelper
                 var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
                 if (compileSolution)
                 {
-                    using (var ms = new MemoryStream())
+                    using var ms = new MemoryStream();
+                    var result = compilation.Emit(ms);
+                    if (!result.Success)
                     {
-                        var result = compilation.Emit(ms);
-                        if (!result.Success)
+                        string sourceCode = null;
+                        var document = project.Documents.FirstOrDefault();
+                        if (document != null)
                         {
-                            string sourceCode = null;
-                            var document = project.Documents.FirstOrDefault();
-                            if (document != null)
-                            {
-                                sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
-                            }
-
-                            Assert.True(false, "The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
+                            sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
                         }
+
+                        Assert.True(false, "The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
                     }
                 }
 

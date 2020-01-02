@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterSymbolAction(AnalyzeMethodSymbol, SymbolKind.Method);
         }
 
-        private void AnalyzeMethodSymbol(SymbolAnalysisContext context)
+        private static void AnalyzeMethodSymbol(SymbolAnalysisContext context)
         {
             var symbol = (IMethodSymbol)context.Symbol;
             if (symbol.MethodKind == MethodKind.Destructor)

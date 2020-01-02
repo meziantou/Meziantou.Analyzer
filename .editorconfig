@@ -230,5 +230,21 @@ dotnet_naming_symbols.all_members.applicable_kinds = *
 
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
-# Use String.Equals
-MA0006.severity = Hidden
+## Analyzers
+# IDE0002: Name can be simplified
+dotnet_diagnostic.IDE0002.severity = suggestion
+
+# IDE0005: Remove unnecessary imports
+dotnet_diagnostic.IDE0005.severity = suggestion
+
+# IDE1006: Naming rule violation
+dotnet_diagnostic.IDE1006.severity = suggestion
+
+# MA0006: use String.Equals
+dotnet_diagnostic.MA0006.severity = none
+
+# Meziantou Analyzer
+MA0051.maximum_statements_per_method = 0
+MA0051.skip_local_functions = false
+MA0051.maximum_lines_per_method = 0
+MA0053.public_class_should_be_sealed = true

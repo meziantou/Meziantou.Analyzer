@@ -38,11 +38,9 @@ namespace TestHelper
                     throw new Exception("File not found. Available values:" + Environment.NewLine + string.Join(Environment.NewLine, names));
                 }
 
-                using (var sr = new StreamReader(stream))
-                {
-                    var content = sr.ReadToEnd();
-                    ApiReferences.Add(content);
-                }
+                using var sr = new StreamReader(stream);
+                var content = sr.ReadToEnd();
+                ApiReferences.Add(content);
             }
 
             return this;

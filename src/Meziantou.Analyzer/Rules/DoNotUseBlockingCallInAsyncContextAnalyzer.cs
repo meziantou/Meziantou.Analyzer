@@ -57,6 +57,12 @@ namespace Meziantou.Analyzer.Rules
             public Context(Compilation compilation)
             {
                 _compilation = compilation;
+                var consoleSymbol = _compilation.GetTypeByMetadataName("System.Console");
+                if (consoleSymbol != null)
+                {
+                    ConsoleErrorAndOutSymbols = consoleSymbol.GetMembers(nameof(Console.Out)).Concat(consoleSymbol.GetMembers(nameof(Console.Error))).ToArray();
+                }
+
                 CancellationTokenSymbol = _compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
                 TaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 TaskOfTSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
@@ -64,6 +70,7 @@ namespace Meziantou.Analyzer.Rules
                 ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
             }
 
+            private ISymbol[] ConsoleErrorAndOutSymbols { get; }
             private INamedTypeSymbol CancellationTokenSymbol { get; }
             private INamedTypeSymbol TaskSymbol { get; }
             private INamedTypeSymbol TaskOfTSymbol { get; }
@@ -108,6 +115,19 @@ namespace Meziantou.Analyzer.Rules
                     {
                         ReportDiagnosticIfNeeded(context, operation, "Use await and 'Task.Delay()' instead of 'Thread.Sleep()'");
                         return;
+                    }
+                }
+
+                // Console.Out|Error.Write
+                if(string.Equals(targetMethod.Name, "Write", StringComparison.Ordinal) ||
+                   string.Equals(targetMethod.Name, "WriteLine", StringComparison.Ordinal) ||
+                   string.Equals(targetMethod.Name, "Flush", StringComparison.Ordinal))
+                {
+                    var left = operation.Children.FirstOrDefault();
+                    if(left is IMemberReferenceOperation memberReference)
+                    {
+                        if (ConsoleErrorAndOutSymbols.Contains(memberReference.Member))
+                            return;
                     }
                 }
 

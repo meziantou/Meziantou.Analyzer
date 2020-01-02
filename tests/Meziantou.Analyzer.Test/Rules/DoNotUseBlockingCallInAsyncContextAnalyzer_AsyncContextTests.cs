@@ -185,5 +185,26 @@ class Test
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Console_NoDiagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        System.Console.Out.WriteLine();
+        System.Console.Out.Write(' ');
+        System.Console.Out.Flush();
+
+        System.Console.Error.WriteLine();
+        System.Console.Error.Write(' ');
+        System.Console.Error.Flush();
+    }
+}")
+                  .ValidateAsync();
+        }
     }
 }
