@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -28,39 +29,24 @@ namespace Meziantou.Analyzer.Rules
 
             context.RegisterCompilationStartAction(ctx =>
             {
-                var analyzerContext = new AnalyzerContext();
+                var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
                 ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
                 ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
             });
         }
 
-        private static bool IsPotentialSealed(AnalyzerOptions options, INamedTypeSymbol symbol)
-        {
-            if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType)
-                return false;
-
-            if (symbol.IsVisibleOutsideOfAssembly() && !PublicClassShouldBeSealed(options, symbol))
-                return false;
-
-            return true;
-        }
-
-        private static bool PublicClassShouldBeSealed(AnalyzerOptions options, ISymbol symbol)
-        {
-            foreach (var location in symbol.Locations)
-            {
-                if (options.GetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", (bool?)null) == true)
-                    return true;
-            }
-
-            return false;
-        }
-
         private sealed class AnalyzerContext
         {
             private readonly List<ITypeSymbol> _potentialClasses = new List<ITypeSymbol>();
             private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new HashSet<ITypeSymbol>();
+
+            private INamedTypeSymbol ExceptionSymbol { get; }
+
+            public AnalyzerContext(Compilation compilation)
+            {
+                ExceptionSymbol = compilation.GetTypeByMetadataName("System.Exception");
+            }
 
             public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
             {
@@ -98,6 +84,44 @@ namespace Meziantou.Analyzer.Rules
 
                     context.ReportDiagnostic(s_rule, @class);
                 }
+            }
+
+            private bool IsPotentialSealed(AnalyzerOptions options, INamedTypeSymbol symbol)
+            {
+                if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType)
+                    return false;
+
+                if (symbol.InheritsFrom(ExceptionSymbol))
+                    return false;
+
+                if (symbol.GetMembers().Any(member => member.IsVirtual) && !SealedClassWithVirtualMember(options, symbol))
+                    return false;
+
+                if (symbol.IsVisibleOutsideOfAssembly() && !PublicClassShouldBeSealed(options, symbol))
+                    return false;
+
+                return true;
+            }
+
+            private static bool PublicClassShouldBeSealed(AnalyzerOptions options, ISymbol symbol)
+            {
+                foreach (var location in symbol.Locations)
+                {
+                    if (options.GetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", (bool?)null) == true)
+                        return true;
+                }
+
+                return false;
+            }
+            private static bool SealedClassWithVirtualMember(AnalyzerOptions options, ISymbol symbol)
+            {
+                foreach (var location in symbol.Locations)
+                {
+                    if (options.GetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_shoud_be_sealed", (bool?)null) == true)
+                        return true;
+                }
+
+                return false;
             }
         }
     }
