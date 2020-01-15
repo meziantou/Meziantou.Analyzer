@@ -136,5 +136,47 @@ internal sealed class Child : Base<int>
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Exception()
+        {
+            const string SourceCode = @"
+internal class SampleException : System.Exception
+{
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task VirtualMember()
+        {
+            const string SourceCode = @"
+internal class SampleException
+{
+    protected virtual void A() => throw null;
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task VirtualMember_EditorConfig()
+        {
+            const string SourceCode = @"
+internal class [||]SampleException
+{
+    protected virtual void A() => throw null;
+}";
+
+            await CreateProjectBuilder()
+                  .WithEditorConfig("MA0053.class_with_virtual_member_shoud_be_sealed = true")
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
