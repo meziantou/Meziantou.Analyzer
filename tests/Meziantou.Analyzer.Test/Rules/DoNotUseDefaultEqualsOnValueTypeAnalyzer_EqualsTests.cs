@@ -141,7 +141,6 @@ class Sample
                   .ValidateAsync();
         }
 
-
         [Fact]
         public async Task GetHashCode_EnumVariable()
         {

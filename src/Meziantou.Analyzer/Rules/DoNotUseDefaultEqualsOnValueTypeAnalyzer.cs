@@ -154,7 +154,7 @@ namespace Meziantou.Analyzer.Rules
 
             private static bool IsStruct(ITypeSymbol typeSymbol)
             {
-                return typeSymbol.TypeKind == TypeKind.Structure;
+                return typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsValueType && namedTypeSymbol.EnumUnderlyingType == null;
             }
 
             public void AnalyzeFieldReferenceOperation(OperationAnalysisContext context)
@@ -168,7 +168,7 @@ namespace Meziantou.Analyzer.Rules
 
                     if (HashSetSymbols.Any(t => type.OriginalDefinition.Equals(t)))
                     {
-                        if (type.TypeArguments[0].IsOrInheritFrom(ValueTypeSymbol) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
+                        if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
                         {
                             context.ReportDiagnostic(s_rule2, operation);
                         }
@@ -188,7 +188,7 @@ namespace Meziantou.Analyzer.Rules
                     if (operation.Constructor.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol.Construct(type.TypeArguments[0]))))
                         return;
 
-                    if (type.TypeArguments[0].IsOrInheritFrom(ValueTypeSymbol) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
+                    if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
                     {
                         context.ReportDiagnostic(s_rule2, operation);
                     }
