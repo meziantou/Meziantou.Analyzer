@@ -90,5 +90,36 @@ struct Test
                   .WithSourceCode(sourceCode)
                   .ValidateAsync();
         }
+
+        [Theory]
+        [InlineData("new System.Collections.Generic.HashSet<Test>()")]
+        [InlineData("new System.Collections.Generic.Dictionary<Test, object>()")]
+        [InlineData("new System.Collections.Concurrent.ConcurrentDictionary<Test, object>()")]
+        [InlineData("System.Collections.Immutable.ImmutableHashSet.Create<Test>()")]
+        [InlineData("System.Collections.Immutable.ImmutableDictionary.Create<Test, object>()")]
+        [InlineData("System.Collections.Immutable.ImmutableSortedDictionary.Create<Test, object>()")]
+        public async Task GetHashCode_Enum(string text)
+        {
+            string sourceCode = @"
+enum Test
+{
+    A,
+    B,
+}
+
+class Sample
+{
+    public void A()
+    {
+        _ = " + text + @";
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(sourceCode)
+                  .ValidateAsync();
+        }
+
+
     }
 }
