@@ -45,5 +45,10 @@ namespace Meziantou.Analyzer
 
             return false;
         }
+
+        public static bool IsConst(this ISymbol symbol)
+        {
+            return symbol is IFieldSymbol field && field.IsConst;
+        }
     }
 }

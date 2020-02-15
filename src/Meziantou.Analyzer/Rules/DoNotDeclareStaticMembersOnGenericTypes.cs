@@ -35,7 +35,7 @@ namespace Meziantou.Analyzer.Rules
 
             foreach (var member in symbol.GetMembers())
             {
-                if (member.IsStatic)
+                if (member.IsStatic && !member.IsConst())
                 {
                     // skip properties
                     if (member is IMethodSymbol method && (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet))
