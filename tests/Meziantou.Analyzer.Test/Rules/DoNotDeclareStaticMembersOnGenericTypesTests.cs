@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async Task StaticMembersInNonGenericClass_ShouldNotReportDiagnosticAsync()
+        public async Task StaticMembersInNonGenericClass_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 public class Test
@@ -33,7 +33,7 @@ public class Test
         }
 
         [Fact]
-        public async Task StaticMembersInGenericClass_ShouldNotReportDiagnosticAsync()
+        public async Task StaticMembersInGenericClass_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -48,7 +48,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Field_ShouldReportDiagnosticAsync()
+        public async Task StaticMembers_Field_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -61,7 +61,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Property_ShouldReportDiagnosticAsync()
+        public async Task StaticMembers_Property_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -74,7 +74,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Method_ShouldReportDiagnosticAsync()
+        public async Task StaticMembers_Method_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -94,6 +94,20 @@ public class Test<T>
 {
     public static implicit operator Test<T>(int i) => throw null;
 }";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Const()
+        {
+            const string SourceCode = @"
+public class Test<T>
+{    
+    public const string PasswordlessSignInPurpose = ""PasswordlessSignIn"";
+}";
+
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
