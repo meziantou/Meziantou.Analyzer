@@ -1,16 +1,13 @@
 ﻿using System.Collections.Immutable;
 using System.Composition;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
-using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.CodeAnalysis.Simplification;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -31,59 +28,44 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var title = "Add StructLayout attribute";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => Refactor(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    "Add Auto StructLayout attribute",
+                    ct => Refactor(context.Document, nodeToFix, LayoutKind.Auto, ct),
+                    equivalenceKey: "Add Auto StructLayout attribute"),
+                context.Diagnostics);
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    "Add Sequential StructLayout attribute",
+                    ct => Refactor(context.Document, nodeToFix, LayoutKind.Explicit, ct),
+                    equivalenceKey: "Add Sequential StructLayout attribute"),
+                context.Diagnostics);
         }
 
-        private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, LayoutKind layoutKind, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+
+            var structLayoutAttribute = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
+            var layoutKindEnum = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
+
+            var attribute = editor.Generator.Attribute(
+                generator.TypeExpression(structLayoutAttribute, addImport: true),
+                new[]
+                {
+                    generator.AttributeArgument(
+                        generator.MemberAccessExpression(
+                            generator.TypeExpression(layoutKindEnum, addImport: true),
+                            layoutKind.ToString())),
+                });
+
             var structNode = (StructDeclarationSyntax)nodeToFix;
 
-            var newExpression = structNode.AddAttributeLists(
-                AttributeList(
-                    SingletonSeparatedList(
-                        Attribute(StructLayoutAttribute())
-                        .WithArgumentList(
-                            AttributeArgumentList(
-                                SingletonSeparatedList(
-                                    AttributeArgument(
-                                        MemberAccessExpression(
-                                            SyntaxKind.SimpleMemberAccessExpression,
-                                            LayoutKindAttribute(),
-                                            IdentifierName("Auto")))))))));
-
-            editor.ReplaceNode(nodeToFix, newExpression.WithAdditionalAnnotations(Formatter.Annotation, Simplifier.Annotation));
+            editor.AddAttribute(structNode, attribute);
             return editor.GetChangedDocument();
-        }
-
-        private static NameSyntax StructLayoutAttribute()
-        {
-            return
-                QualifiedName(
-                    QualifiedName(
-                        QualifiedName(
-                            IdentifierName("System"),
-                            IdentifierName("Runtime")),
-                        IdentifierName("InteropServices")),
-                    IdentifierName("StructLayoutAttribute"));
-        }
-
-        private static NameSyntax LayoutKindAttribute()
-        {
-            return
-                QualifiedName(
-                    QualifiedName(
-                        QualifiedName(
-                            IdentifierName("System"),
-                            IdentifierName("Runtime")),
-                        IdentifierName("InteropServices")),
-                    IdentifierName("LayoutKind"));
         }
     }
 }
