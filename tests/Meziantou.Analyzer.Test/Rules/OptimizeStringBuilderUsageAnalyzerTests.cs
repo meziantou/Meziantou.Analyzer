@@ -534,5 +534,24 @@ class Test
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task AppendLine_CustomStructToString()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+struct MyStruct
+{
+}
+
+class Test
+{
+    void A()
+    {
+        new StringBuilder().AppendLine(new MyStruct().ToString());
+    }
+}")
+                  .ValidateAsync();
+        }
     }
 }
