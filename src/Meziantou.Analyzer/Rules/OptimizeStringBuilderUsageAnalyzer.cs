@@ -170,6 +170,9 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
                     {
+                        if (invocationOperation.Instance.Type.IsValueType && !IsPrimitive(invocationOperation.Instance.Type))
+                            return false;
+
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
                             var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
@@ -215,6 +218,22 @@ namespace Meziantou.Analyzer.Rules
             }
 
             return false;
+        }
+
+        private static bool IsPrimitive(ITypeSymbol symbol)
+        {
+            return symbol.SpecialType == SpecialType.System_Boolean
+                || symbol.SpecialType == SpecialType.System_Byte
+                || symbol.SpecialType == SpecialType.System_Char
+                || symbol.SpecialType == SpecialType.System_Decimal
+                || symbol.SpecialType == SpecialType.System_Double
+                || symbol.SpecialType == SpecialType.System_Int16
+                || symbol.SpecialType == SpecialType.System_Int32
+                || symbol.SpecialType == SpecialType.System_Int64
+                || symbol.SpecialType == SpecialType.System_SByte
+                || symbol.SpecialType == SpecialType.System_UInt16
+                || symbol.SpecialType == SpecialType.System_UInt32
+                || symbol.SpecialType == SpecialType.System_UInt64;
         }
 
         private static bool IsConstString(IOperation operation)
