@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -13,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task IsMatch_MissingTimeout_ShouldReportErrorAsync()
+        public async Task IsMatch_MissingTimeout_ShouldReportError()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
@@ -29,7 +30,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task IsMatch_WithTimeout_ShouldNotReportErrorAsync()
+        public async Task IsMatch_WithTimeout_ShouldNotReportError()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
@@ -45,7 +46,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Ctor_MissingTimeout_ShouldReportErrorAsync()
+        public async Task Ctor_MissingTimeout_ShouldReportError()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
@@ -61,7 +62,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Ctor_WithTimeout_ShouldNotReportErrorAsync()
+        public async Task Ctor_WithTimeout_ShouldNotReportError()
         {
             const string SourceCode = @"using System.Text.RegularExpressions;
 class TestClass
@@ -77,7 +78,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task NonRegexCtor_ShouldNotReportErrorAsync()
+        public async Task NonRegexCtor_ShouldNotReportError()
         {
             const string SourceCode = @"
 class TestClass

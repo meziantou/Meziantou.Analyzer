@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -17,7 +18,7 @@ namespace Meziantou.Analyzer.Test.Rules
         [InlineData("([a-z]+)", "RegexOptions.None", false)]
         [InlineData("([a-z]+)", "RegexOptions.ExplicitCapture", true)]
         [InlineData("(?<test>[a-z]+)", "RegexOptions.None", true)]
-        public async System.Threading.Tasks.Task IsMatch_RegexOptionsAsync(string regex, string options, bool isValid)
+        public async Task IsMatch_RegexOptions(string regex, string options, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text.RegularExpressions;
@@ -38,7 +39,7 @@ class TestClass
         [InlineData("[a-z]+", "RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase", true)]
         [InlineData("[a-z]+", "RegexOptions.ECMAScript", true)]
         [InlineData("([a-z]+)", "RegexOptions.ECMAScript", true)]
-        public async System.Threading.Tasks.Task Ctor_RegexOptionsAsync(string regex, string options, bool isValid)
+        public async Task Ctor_RegexOptions(string regex, string options, bool isValid)
         {
             var project = CreateProjectBuilder()
                   .WithSourceCode(@"using System.Text.RegularExpressions;

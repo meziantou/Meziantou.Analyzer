@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -16,7 +17,7 @@ namespace Meziantou.Analyzer.Test.Rules
         [InlineData("Thread.CurrentThread.Abort()")]
         [InlineData("Thread.CurrentThread.Suspend()")]
         [InlineData("Thread.CurrentThread.Resume()")]
-        public async System.Threading.Tasks.Task ReportDiagnosticAsync(string text)
+        public async Task ReportDiagnostic(string text)
         {
             await CreateProjectBuilder()
 

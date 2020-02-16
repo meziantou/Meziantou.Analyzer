@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task NoDiagnosticAsync()
+        public async Task NoDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -40,7 +41,7 @@ class Test
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ShouldReportDiagnosticAsync()
+        public async Task ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
