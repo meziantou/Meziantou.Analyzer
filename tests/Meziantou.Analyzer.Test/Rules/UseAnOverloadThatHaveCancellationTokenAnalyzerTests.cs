@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async Task CallingMethodWithoutCancellationToken_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithoutCancellationToken_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -33,7 +33,7 @@ class Test
         }
 
         [Fact]
-        public async Task CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -51,7 +51,7 @@ class Test
         }
 
         [Fact]
-        public async Task CallingMethodWithCancellationToken_ShouldNotReportDiagnosticAsync()
+        public async Task CallingMethodWithCancellationToken_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -70,7 +70,7 @@ class Test
         }
 
         [Fact]
-        public async Task CallingMethodWithATaskInContext_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithATaskInContext_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -91,7 +91,7 @@ class Test
         }
 
         [Fact]
-        public async Task CallingMethodWithATaskOfTInContext_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithATaskOfTInContext_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -110,7 +110,7 @@ class Test
         }
 
         [Fact]
-        public async Task CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
+        public async Task CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterName()
         {
             const string SourceCode = @"
 class Test
@@ -130,7 +130,7 @@ class Test
         }
 
         [Fact]
-        public async Task CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterNameAsync()
+        public async Task CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
         {
             const string SourceCode = @"
 class Test
@@ -155,7 +155,7 @@ class HttpRequest
         }
 
         [Fact]
-        public async Task CallingMethodWithProperty_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithProperty_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -183,7 +183,7 @@ class HttpContext
         }
 
         [Fact]
-        public async Task CallingMethodWithInstanceProperty_ShouldReportDiagnosticAsync()
+        public async Task CallingMethodWithInstanceProperty_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -211,7 +211,7 @@ class HttpContext
         }
 
         [Fact]
-        public async Task CallingMethod_ShouldReportDiagnosticWithVariablesAsync()
+        public async Task CallingMethod_ShouldReportDiagnosticWithVariables()
         {
             const string SourceCode = @"
 class Test

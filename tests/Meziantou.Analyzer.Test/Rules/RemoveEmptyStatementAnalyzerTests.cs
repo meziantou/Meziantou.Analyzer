@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -13,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task EmptyStatementAsync()
+        public async Task EmptyStatement()
         {
             const string SourceCode = @"
 class Test
@@ -29,7 +30,7 @@ class Test
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task EmptyStatementInALabelAsync()
+        public async Task EmptyStatementInALabel()
         {
             const string SourceCode = @"
 class Test

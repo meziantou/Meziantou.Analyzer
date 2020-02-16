@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -14,11 +15,17 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MissingAttribute_ShouldReportDiagnosticAsync()
+        public async Task MissingAttribute_ShouldReportDiagnostic()
         {
-            const string SourceCode = "struct [||]TypeName { }";
+            const string SourceCode = @"struct [||]TypeName
+{
+    int a;
+}";
             const string CodeFix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
-struct TypeName { }";
+struct TypeName
+{
+    int a;
+}";
 
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
@@ -27,14 +34,20 @@ struct TypeName { }";
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AddAttributeShouldUseShortnameAsync()
+        public async Task AddAttributeShouldUseShortname()
         {
             const string SourceCode = @"using System.Runtime.InteropServices;
-struct [||]TypeName { }";
+struct [||]TypeName
+{
+    int a;
+}";
             const string CodeFix = @"using System.Runtime.InteropServices;
 
 [StructLayout(LayoutKind.Auto)]
-struct TypeName { }";
+struct TypeName
+{
+    int a;
+}";
 
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
@@ -43,12 +56,13 @@ struct TypeName { }";
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task WithAttribute_ShouldNotReportDiagnosticAsync()
+        public async Task WithAttribute_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"using System.Runtime.InteropServices;
 [StructLayout(LayoutKind.Sequential)]
 struct TypeName
 {
+    int a;
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)
@@ -56,12 +70,37 @@ struct TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Enum_ShouldNotReportDiagnosticAsync()
+        public async Task Enum_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 enum TypeName
 {
     None,
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task WithReferenceType_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+struct TypeName
+{
+    string a;
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Empty_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+struct TypeName
+{
 }";
             await CreateProjectBuilder()
                 .WithSourceCode(SourceCode)

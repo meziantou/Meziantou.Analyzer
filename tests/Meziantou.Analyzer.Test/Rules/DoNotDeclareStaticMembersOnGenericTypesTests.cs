@@ -87,7 +87,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Operator_ShouldReportDiagnosticAsync()
+        public async Task StaticMembers_Operator_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 public class Test<T>

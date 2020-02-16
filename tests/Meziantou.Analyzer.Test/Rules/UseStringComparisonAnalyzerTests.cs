@@ -32,7 +32,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task Equals_String_string_ShouldReportDiagnosticAsync()
+        public async Task Equals_String_string_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -58,7 +58,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task Equals_String_ShouldReportDiagnosticAsync()
+        public async Task Equals_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -84,7 +84,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnosticAsync()
+        public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -100,7 +100,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task IndexOf_String_ShouldReportDiagnosticAsync()
+        public async Task IndexOf_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -126,7 +126,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task StartsWith_String_StringComparison_ShouldNotReportDiagnosticAsync()
+        public async Task StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -142,7 +142,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task StartsWith_String_ShouldReportDiagnosticAsync()
+        public async Task StartsWith_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -168,7 +168,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task Compare_ShouldReportDiagnosticAsync()
+        public async Task Compare_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -194,7 +194,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task Compare_ShouldNotReportDiagnosticAsync()
+        public async Task Compare_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -210,7 +210,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task IndexOf_ShouldNotReportDiagnosticAsync()
+        public async Task IndexOf_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -226,7 +226,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task JObject_Property_ShouldReportDiagnosticAsync()
+        public async Task JObject_Property_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName

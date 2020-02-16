@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Equals_StringLiteral_stringLiteral_ShouldReportDiagnosticAsync()
+        public async Task Equals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -40,7 +41,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnosticAsync()
+        public async Task NotEquals_StringLiteral_stringLiteral_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -66,7 +67,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Equals_StringVariable_stringLiteral_ShouldReportDiagnosticAsync()
+        public async Task Equals_StringVariable_stringLiteral_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -94,7 +95,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Equals_ObjectVariable_stringLiteral_ShouldReportDiagnosticAsync()
+        public async Task Equals_ObjectVariable_stringLiteral_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -111,7 +112,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Equals_stringLiteral_null_ShouldReportDiagnosticAsync()
+        public async Task Equals_stringLiteral_null_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -128,7 +129,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Equals_InIQueryableMethod_ShouldNotReportDiagnosticAsync()
+        public async Task Equals_InIQueryableMethod_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"using System.Linq;
 class TypeName

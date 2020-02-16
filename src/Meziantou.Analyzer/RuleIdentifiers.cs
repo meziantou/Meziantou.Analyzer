@@ -37,7 +37,6 @@ namespace Meziantou.Analyzer
         public const string OptimizeEnumerable_Count = "MA0031";
         public const string UseAnOverloadThatHaveCancellationToken = "MA0032";
         public const string DontTagInstanceFieldsWithThreadStaticAttribute = "MA0033";
-        public const string DontUseInstanceFieldsOfTypeAsyncLocal = "MA0034";
         public const string DontUseDangerousThreadingMethods = "MA0035";
         public const string MakeClassStatic = "MA0036";
         public const string RemoveEmptyStatement = "MA0037";

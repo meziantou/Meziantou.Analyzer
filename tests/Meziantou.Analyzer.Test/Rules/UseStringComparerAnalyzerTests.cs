@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task HashSet_Int32_ShouldNotReportDiagnosticAsync()
+        public async Task HashSet_Int32_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -30,7 +31,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task HashSet_String_ShouldReportDiagnosticAsync()
+        public async Task HashSet_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -55,7 +56,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnosticAsync()
+        public async Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -71,7 +72,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Dictionary_String_ShouldReportDiagnosticAsync()
+        public async Task Dictionary_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -96,7 +97,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ConcurrentDictionary_String_ShouldReportDiagnosticAsync()
+        public async Task ConcurrentDictionary_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -121,7 +122,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task EnumerableContains_String_ShouldReportDiagnosticAsync()
+        public async Task EnumerableContains_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"using System.Linq;
 class TypeName
@@ -148,7 +149,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task EnumerableToDictionary_String_ShouldReportDiagnosticAsync()
+        public async Task EnumerableToDictionary_String_ShouldReportDiagnostic()
         {
             const string SourceCode = @"using System.Linq;
 class TypeName

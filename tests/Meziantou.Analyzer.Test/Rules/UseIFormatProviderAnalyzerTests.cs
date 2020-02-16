@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -13,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Int32ToStringWithCultureInfo_ShouldNotReportDiagnosticAsync()
+        public async Task Int32ToStringWithCultureInfo_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -29,7 +30,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnosticAsync()
+        public async Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -46,7 +47,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task BooleanToStringWithoutCultureInfo_ShouldNotReportDiagnosticAsync()
+        public async Task BooleanToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -62,7 +63,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task SystemGuidToStringWithoutCultureInfo_ShouldNotReportDiagnosticAsync()
+        public async Task SystemGuidToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -79,7 +80,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Int32ParseWithoutCultureInfo_ShouldReportDiagnosticAsync()
+        public async Task Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -98,7 +99,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnosticAsync()
+        public async Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -115,7 +116,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task DateTimeTryParseWithoutCultureInfo_ShouldReportDiagnosticAsync()
+        public async Task DateTimeTryParseWithoutCultureInfo_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -132,7 +133,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task StringToLower_ShouldReportDiagnosticAsync()
+        public async Task StringToLower_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -149,7 +150,7 @@ class TypeName
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task StringBuilderAppendFormat_ShouldReportDiagnosticAsync()
+        public async Task StringBuilderAppendFormat_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName

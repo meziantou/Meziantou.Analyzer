@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportErrorAsync()
+        public async Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
         {
             const string SourceCode = "class [||]TestAttribute : System.Attribute { }";
 
@@ -28,7 +29,7 @@ class TestAttribute : System.Attribute { }";
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ClassDoesNotInheritsFromAttribute_ShouldNotReportErrorAsync()
+        public async Task ClassDoesNotInheritsFromAttribute_ShouldNotReportError()
         {
             await CreateProjectBuilder()
                   .WithSourceCode("class TestAttribute : System.Object { }")
@@ -36,7 +37,7 @@ class TestAttribute : System.Attribute { }";
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ClassHasAttribute_ShouldNotReportErrorAsync()
+        public async Task ClassHasAttribute_ShouldNotReportError()
         {
             const string SourceCode = @"
 [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]

@@ -34,7 +34,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnosticAsync()
+        public async Task MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -57,7 +57,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnosticAsync()
+        public async Task MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName

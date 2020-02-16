@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ExpressionBodyAsync()
+        public async Task ExpressionBodyAsync()
         {
             const string SourceCode = @"
 class TestClass
@@ -35,7 +36,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AccessInstanceProperty_NoDiagnosticAsync()
+        public async Task AccessInstanceProperty_NoDiagnostic()
         {
             const string SourceCode = @"
 class TestClass
@@ -51,7 +52,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AccessInstanceMethodInLinqQuery_Where_NoDiagnosticAsync()
+        public async Task AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
         {
             const string SourceCode = @"
 class TestClass
@@ -65,7 +66,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AccessStaticPropertyAsync()
+        public async Task AccessStaticProperty()
         {
             const string SourceCode = @"
 class TestClass
@@ -90,7 +91,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AccessStaticMethodAsync()
+        public async Task AccessStaticMethod()
         {
             const string SourceCode = @"
 class TestClass
@@ -106,7 +107,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AccessStaticFieldAsync()
+        public async Task AccessStaticField()
         {
             const string SourceCode = @"
 class TestClass
@@ -131,7 +132,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AccessInstanceFieldAsync()
+        public async Task AccessInstanceField()
         {
             const string SourceCode = @"
 class TestClass
@@ -147,7 +148,7 @@ class TestClass
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MethodImplementAnInterfaceAsync()
+        public async Task MethodImplementAnInterface()
         {
             const string SourceCode = @"
 class TestClass : ITest
@@ -166,7 +167,7 @@ interface ITest
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task MethodExplicitlyImplementAnInterfaceAsync()
+        public async Task MethodExplicitlyImplementAnInterface()
         {
             const string SourceCode = @"
 class TestClass : ITest

@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -13,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task ServicePointManager_ServerCertificateValidationCallbackAsync()
+        public async Task ServicePointManager_ServerCertificateValidationCallbackAsync()
         {
             const string SourceCode = @"
 class Test
@@ -43,7 +44,7 @@ namespace System.Net.Security
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
+        public async Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
         {
             const string SourceCode = @"
 class Test

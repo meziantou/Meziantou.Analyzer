@@ -1,6 +1,7 @@
 ﻿using Meziantou.Analyzer.Rules;
 using Xunit;
 using TestHelper;
+using System.Threading.Tasks;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -13,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task InheritFromException_ShouldNotReportErrorAsync()
+        public async Task InheritFromException_ShouldNotReportError()
         {
             await CreateProjectBuilder()
                   .WithSourceCode("class Test : System.Exception { }")
@@ -21,7 +22,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task InheritFromApplicationException_ShouldReportErrorAsync()
+        public async Task InheritFromApplicationException_ShouldReportError()
         {
             await CreateProjectBuilder()
                   .WithSourceCode("class [||]Test : System.ApplicationException { }")
