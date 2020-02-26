@@ -53,7 +53,7 @@
 |[MA0051](Rules/MA0051.md)|Design|Method is too long|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0052](Rules/MA0052.md)|Performance|Replace with nameof|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0053](Rules/MA0053.md)|Design|Make class sealed|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0054](Rules/MA0054.md)|Design|Preserve the catched exception in the innerException|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0054](Rules/MA0054.md)|Design|Embed caught exception as innerException|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0055](Rules/MA0055.md)|Design|Do not use destructor|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0056](Rules/MA0056.md)|Design|Do not call overridable members in constructor|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0057](Rules/MA0057.md)|Naming|Class name should end with 'Attribute'|<span title='Info'>ℹ️</span>|✔️|❌|
