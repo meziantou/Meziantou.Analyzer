@@ -7,12 +7,12 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class IncludeCatchExceptionAsInnerExceptionAnalyzer : DiagnosticAnalyzer
+    public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
-            RuleIdentifiers.IncludeCatchExceptionAsInnerException,
-            title: "Preserve the catched exception in the innerException",
-            messageFormat: "Preserve the catched exception in the innerException",
+            RuleIdentifiers.EmbedCaughtExceptionAsInnerException,
+            title: "Embed the caught exception as innerException",
+            messageFormat: "Embed the caught exception as innerException",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,

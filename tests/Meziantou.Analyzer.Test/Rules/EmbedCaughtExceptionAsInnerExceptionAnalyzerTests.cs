@@ -5,16 +5,16 @@ using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public sealed class IncludeCatchExceptionAsInnerExceptionAnalyzerTests
+    public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<IncludeCatchExceptionAsInnerExceptionAnalyzer>();
+                .WithAnalyzer<EmbedCaughtExceptionAsInnerExceptionAnalyzer>();
         }
 
         [Fact]
-        public async Task NotInCatchException_ShouldNotReportDiagnostic()
+        public async Task NotInCaughtException_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -30,7 +30,7 @@ class Test
         }
 
         [Fact]
-        public async Task InCatchExceptionWithInnerException_ShouldNotReportDiagnostic()
+        public async Task InCaughtExceptionWithInnerException_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -52,7 +52,7 @@ class Test
         }
 
         [Fact]
-        public async Task InCatchExceptionWithoutInnerException_ShouldReportDiagnostic()
+        public async Task InCaughtExceptionWithoutInnerException_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
@@ -74,7 +74,7 @@ class Test
         }
 
         [Fact]
-        public async Task InCatchExceptionWithoutInnerException_NoConstructorWithInnerException_ShouldNotReportDiagnostic()
+        public async Task InCaughtExceptionWithoutInnerException_NoConstructorWithInnerException_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class Test
