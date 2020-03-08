@@ -73,6 +73,7 @@ namespace Meziantou.Analyzer
         public const string NotNullIfNotNullArgumentShouldExist = "MA0068";
         public const string NonConstantStaticFieldsShouldNotBeVisible = "MA0069";
         public const string ObsoleteAttributesShouldIncludeExplanations = "MA0070";
+        public const string DoNotUseElseWhenIfBlockJumps = "MA0071";
 
         public static string GetHelpUri(string idenfifier)
         {
