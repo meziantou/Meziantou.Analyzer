@@ -18,10 +18,10 @@ namespace Meziantou.Analyzer.Rules
             RuleCategories.Style,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
-            description: "The 'if' block ends with a jump statement (break, continue, goto, return, throw, yield). Using 'else' is redundant and needlessly maintains a higher nesting level.",
+            description: "The 'if' block contains a jump statement (break, continue, goto, return, throw, yield). Using 'else' is redundant and needlessly maintains a higher nesting level.",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseElseWhenIfBlockJumps));
 
-        private static readonly Type[] s_jumpStatementSyntaxTypes =
+        private static readonly Type[] s_jumpStatementTypes =
         {
             typeof(BreakStatementSyntax),
             typeof(ContinueStatementSyntax),
@@ -44,29 +44,29 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeElseClause(SyntaxNodeAnalysisContext context)
         {
             var elseClauseSyntax = (ElseClauseSyntax)context.Node;
+            if (elseClauseSyntax is null)
+                return;
 
-            var ifStatementSyntax = elseClauseSyntax.Parent;
-            var ifStatementNodes = ifStatementSyntax.ChildNodes();
+            if (!(elseClauseSyntax.Parent is IfStatementSyntax ifStatementSyntax))
+                return;
 
-            // The 1st node is the 'if' statement's condition,
-            // the 2nd one, a StatementSyntax or a BlockSyntax (i.e. the node we are interested in)
-            // the last one, the ElseClauseSyntax.
-            var statementOrBlock = ifStatementNodes.Skip(1).Take(1).First();
-            if (IsOrEndsWithJumpStatement(statementOrBlock))
+            var statementOrBlock = ifStatementSyntax.Statement;
+            if (statementOrBlock is null)
+                return;
+
+            if (ContainsJumpStatement(statementOrBlock))
             {
                 context.ReportDiagnostic(s_rule, elseClauseSyntax);
             }
         }
 
-        private static bool IsOrEndsWithJumpStatement(SyntaxNode node)
+        private static bool ContainsJumpStatement(SyntaxNode node)
         {
-            if (s_jumpStatementSyntaxTypes.Any(t => t == node.GetType()))
-                return true;
+            if (node is BlockSyntax blockSyntax)
+                return blockSyntax.Statements.Any(IsJumpStatement);
+            return (IsJumpStatement(node));
 
-            if (node is BlockSyntax && s_jumpStatementSyntaxTypes.Any(t => t == node.ChildNodes().Last().GetType()))
-                return true;
-
-            return false;
+            bool IsJumpStatement(SyntaxNode node) => s_jumpStatementTypes.Any(jumpStatementType => jumpStatementType == node.GetType());
         }
     }
 }
