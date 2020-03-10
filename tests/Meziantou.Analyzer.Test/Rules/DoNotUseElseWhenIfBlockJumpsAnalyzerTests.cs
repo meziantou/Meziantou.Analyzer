@@ -7,55 +7,120 @@ namespace Meziantou.Analyzer.Test.Rules
 {
     public sealed class DoNotUseElseWhenIfBlockJumpsAnalyzerTests
     {
-        private const string IfThatContinuesElse = @"
+        private const string IfBreakElse = @"
 class TestClass
 {
-    int Test(int value)
+    void Test()
     {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                Incr(ref value);
+                break;
+                void Incr(ref int val) => val++;
+            }
+        [||]else
+            {
+                value--;
+            }
+        }
+    }
+}";
+        private const string IfContinueElse = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                Incr(ref value);
+                continue;
+                void Incr(ref int val) => val++;
+            }
+        [||]else
+            {
+                value--;
+            }
+        }
+    }
+}";
+        private const string IfGotoElse = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                Incr(ref value);
+                goto OUT;
+                void Incr(ref int val) => val++;
+            }
+        [||]else
+            {
+                value--;
+            }
+        }
+    OUT:
+        value--;
+    }
+}";
+        private const string IfReturnElse = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                return;
+            }
+        [||]else
+            {
+                value--;
+            }
+        }
+    }
+}";
+        private const string IfThrowElse = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+                throw new System.ArgumentNullException(nameof(value));
+        [||]else
+                value--;
+        }
+    }
+}";
+        private const string IfYieldElse = @"
+class TestClass
+{
+    System.Collections.Generic.IEnumerable<int> Test()
+    {
+        int value = -1;
         while (true)
         {
             if (value < 0)
             {
                 value++;
-                continue;
+                yield return value;
             }
         [||]else
-            {
-                return 1;
-            }
-        }
-    }
-}";
-        private const string IfThatReturnsElse = @"
-class TestClass
-{
-    int Test(int value)
-    {
-        if (value < 0)
-        {
-            // Indicates it's a negative number
-            return -1;
-        }
-    [||]else
-        {
-            // Indicates it's a positive number
-            return 1;
-        }
-    }
-}";
-        private const string IfThatThrowsElse = @"
-class TestClass
-{
-    int Test(int value)
-    {
-        if (value < 0)
-        {
-            throw new System.ArgumentNullException(nameof(value));
-        }
-    [||]else
-        {
-            // Indicates it's a positive number
-            return 1;
+                value--;
         }
     }
 }";
@@ -66,9 +131,12 @@ class TestClass
         }
 
         [Theory]
-        [InlineData(IfThatContinuesElse)]
-        [InlineData(IfThatReturnsElse)]
-        [InlineData(IfThatThrowsElse)]
+        [InlineData(IfBreakElse)]
+        [InlineData(IfContinueElse)]
+        [InlineData(IfGotoElse)]
+        [InlineData(IfReturnElse)]
+        [InlineData(IfThrowElse)]
+        [InlineData(IfYieldElse)]
         public async Task IfBlockJumpsAndElseBlockExists_DiagnosticIsReported(string sourceCode)
         {
             await CreateProjectBuilder()
@@ -78,24 +146,22 @@ class TestClass
         }
 
         [Fact]
-        public async Task IfBlockJumpsAndNoElseBlockExists_NoDiagnosticIsReported()
+        public async Task IfBlockJumpsAndNoElseBlockExists_NoDiagnosticReported()
         {
             var sourceCode = @"
 class TestClass
 {
-    int Test(int value)
+    void Test()
     {
-        while (value-- > -10)
+        var value = -1;
+        while (true)
         {
             if (value < 0)
             {
                 continue;
             }
-            System.Console.WriteLine(""Value is still positive"");
+            value++;
         }
-        if (value < -100)
-            throw new System.InvalidOperationException(""Value is way too negative"");
-        return 1;
     }
 }";
             await CreateProjectBuilder()
@@ -104,28 +170,50 @@ class TestClass
         }
 
         [Fact]
-        public async Task IfBlockDoesNotJumpAndElseBlockExists_NoDiagnosticIsReported()
+        public async Task IfBlockDoesNotJumpAndElseBlockExists_NoDiagnosticReported()
         {
             var sourceCode = @"
 class TestClass
 {
-    int Test(int value)
+    void Test()
     {
+        var value = -1;
         while (true)
         {
             if (value < 0)
             {
                 value++;
-                System.Console.WriteLine(""Value is negative"");
             }
             else
             {
-                System.Console.WriteLine(""Value is positive"");
                 break;
             }
         }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(sourceCode)
+                  .ValidateAsync();
+        }
 
-        return 1;
+        [Fact]
+        public async Task InnerIfBlockJumpsAndOuterElseBlockExists_NoDiagnosticReported()
+        {
+            var sourceCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        if (true)
+        {
+            if (true)
+                return;
+        }
+        else
+        {
+            value++;
+        }
     }
 }";
             await CreateProjectBuilder()
