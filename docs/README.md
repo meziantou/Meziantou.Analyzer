@@ -66,4 +66,4 @@
 |[MA0064](Rules/MA0064.md)|Design|Avoid locking on publicly accessible instance|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0065](Rules/MA0065.md)|Performance|Default ValueType.Equals or HashCode is used for struct's equality|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0066](Rules/MA0066.md)|Performance|Hash table unfriendly type is used in a hash table|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0071](Rules/MA0071.md)|Style|Do not use 'else' when 'if' block jumps|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0071](Rules/MA0071.md)|Style|Avoid using redundant 'else'|<span title='Info'>ℹ️</span>|✔️|❌|
