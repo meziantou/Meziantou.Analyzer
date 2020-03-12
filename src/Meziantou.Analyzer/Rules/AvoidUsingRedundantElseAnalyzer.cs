@@ -49,7 +49,7 @@ namespace Meziantou.Analyzer.Rules
 
             if (!result.EndPointIsReachable || result.ExitPoints.Any(ep => IsDirectAccess(ifStatementSyntax, ep)))
             {
-                context.ReportDiagnostic(s_rule, elseClauseSyntax);
+                context.ReportDiagnostic(s_rule, elseClauseSyntax.ElseKeyword);
             }
         }
 
