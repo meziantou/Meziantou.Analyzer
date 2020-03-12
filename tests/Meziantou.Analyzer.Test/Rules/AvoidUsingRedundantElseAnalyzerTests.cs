@@ -32,7 +32,7 @@ class TestClass
                 }
                 void Incr(ref int val) => val++;
             }
-        [||]else
+        [|else|]
             {
                 value--;
             }
@@ -61,7 +61,7 @@ class TestClass
                 continue;
                 void Incr(ref int val) => val++;
             }
-        [||]else
+        [|else|]
             {
                 value--;
             }
@@ -90,7 +90,7 @@ class TestClass
                 goto OUT;
                 void Incr(ref int val) => val++;
             }
-        [||]else
+        [|else|]
             {
                 value--;
             }
@@ -119,7 +119,7 @@ class TestClass
             {
                 return;
             }
-        [||]else
+        [|else|]
             {
                 value--;
             }
@@ -144,7 +144,7 @@ class TestClass
         {
             if (value < 0)
                 throw new System.ArgumentNullException(nameof(value));
-        [||]else
+        [|else|]
                 value--;
         }
     }
@@ -170,7 +170,7 @@ class TestClass
                 value++;
                 yield break;
             }
-        [||]else
+        [|else|]
                 value--;
         }
     }
