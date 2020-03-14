@@ -108,7 +108,7 @@ class TestClass
         [Fact]
         public async Task IfContinueElse_DiagnosticIsReported()
         {
-            var sourceCode = @"
+            var initialCode = @"
 class TestClass
 {
     void Test()
@@ -129,8 +129,28 @@ class TestClass
         }
     }
 }";
+            var finalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                Incr(ref value);
+                continue;
+                void Incr(ref int val) => val++;
+            }
+
+            value--;
+        }
+    }
+}";
             await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
+                  .WithSourceCode(initialCode)
+                  .ShouldFixCodeWith(finalCode)
                   .ValidateAsync();
         }
 
