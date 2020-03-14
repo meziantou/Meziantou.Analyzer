@@ -14,10 +14,194 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithCodeFixProvider<AvoidUsingRedundantElseFixer>();
         }
 
-        [Fact]
-        public async Task IfBreakElse_DiagnosticIsReported()
+        // The following tests aim to validate several combinations affecting
+        //  1. whether the AvoidUsingRedundantElse rule is deemed infringed, and
+        //  2. the way the code is subsequently fixed.
+        //
+        // Test code has the form
+        //      while
+        //          if
+        //              jump
+        //          else
+        //
+        // Some of the varying factors are:
+        //
+        // - Are there
+        //      'while' braces?             => If not, we need to add some in the fixed code.
+        //      'if' braces?
+        //      'else' braces?              => If so, we need to remove them in the fixed code.
+        // - Does the 'if' block contain
+        //      nested blocks?
+        //      local functions?
+        // - Is the code misformatted?      => If so, only modified lines should be formatted.
+
+        [Theory]
+        [InlineData("break", true)]
+        [InlineData("continue", true)]
+        [InlineData("goto LABEL", true)]
+        [InlineData("return", true)]
+        [InlineData("throw new System.ArgumentNullException(nameof(value))", true)]
+        [InlineData("value++", false)]
+        [InlineData("if (value < -5) return", false)]
+        public async Task Test1_WhenIfJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
         {
-            var sourceCode = @"
+            var @else = expectElseRemoval ? "[|else|]" : "else";
+            var originalCode = $@"
+class TestClass
+{{
+    void Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                {statement};
+            }}
+            {@else}
+                value--;
+        }}
+    LABEL:
+        value++;
+    }}
+}}";
+            var modifiedCode = $@"
+class TestClass
+{{
+    void Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                {statement};
+            }}
+
+            value--;
+        }}
+    LABEL:
+        value++;
+    }}
+}}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(expectElseRemoval ? modifiedCode : originalCode)
+                  .ValidateAsync();
+        }
+
+        [Theory]
+        [InlineData("yield break", true)]
+        [InlineData("yield return value", false)]
+        [InlineData("if (value < -5) yield break", false)]
+        public async Task Test2_WhenIfYieldJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
+        {
+            var @else = expectElseRemoval ? "[|else|]" : "else";
+            var originalCode = $@"
+class TestClass
+{{
+    System.Collections.Generic.IEnumerable<int> Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                value++;
+                {statement};
+            }}
+            {@else}
+            {{
+                value--;
+            }}
+        }}
+    }}
+}}";
+            var modifiedCode = $@"
+class TestClass
+{{
+    System.Collections.Generic.IEnumerable<int> Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                value++;
+                {statement};
+            }}
+
+            value--;
+        }}
+    }}
+}}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(expectElseRemoval ? modifiedCode : originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test3_IfThatBreaksAndContainsLocalFunction_ElseRemoved()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                Increment(ref value);
+                break;
+                void Increment(ref int val) => val++;
+            }
+        [|else|]
+            {
+                Decrement(ref value);
+                void Decrement(ref int val)
+                {
+                    val--;
+                }
+            }
+        }
+    }
+}";
+            var modifiedCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                Increment(ref value);
+                break;
+                void Increment(ref int val) => val++;
+            }
+
+            Decrement(ref value);
+            void Decrement(ref int val)
+            {
+                val--;
+            }
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test4_IfThatBreaksFromNestedBlock_ElseRemoved()
+        {
+            var originalCode = @"
 class TestClass
 {
     void Test()
@@ -28,20 +212,16 @@ class TestClass
             if (value < 0)
             {
                 {
-                    Incr(ref value);
                     break;
                 }
-                void Incr(ref int val) => val++;
             }
         [|else|]
-            {
+                // Decrement
                 value--;
-            }
         }
     }
 }";
-
-            var fixedCode = @"
+            var modifiedCode = @"
 class TestClass
 {
     void Test()
@@ -52,63 +232,25 @@ class TestClass
             if (value < 0)
             {
                 {
-                    Incr(ref value);
                     break;
                 }
-                void Incr(ref int val) => val++;
             }
 
+            // Decrement
             value--;
         }
     }
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ShouldFixCodeWith(fixedCode)
-                  .ValidateAsync();
-        }
-
-
-        [Fact]
-        public async Task ShouldAddBracesIfNeeded()
-        {
-            var sourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        while (true)
-            if (true)
-                return;
-            [|else|]
-                return;
-    }
-}";
-
-            var fixedCode = @"
-class TestClass
-{
-    void Test()
-    {
-        while (true)
-        {
-            if (true)
-                return;
-
-            return;
-        }
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ShouldFixCodeWith(fixedCode)
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
 
         [Fact]
-        public async Task IfContinueElse_DiagnosticIsReported()
+        public async Task Test5_IfThatBreaksFromNestedBlockAndContainsLocalFunction_ElseRemoved()
         {
-            var initialCode = @"
+            var originalCode = @"
 class TestClass
 {
     void Test()
@@ -118,18 +260,27 @@ class TestClass
         {
             if (value < 0)
             {
-                Incr(ref value);
-                continue;
-                void Incr(ref int val) => val++;
+                {
+                    Increment(ref value);
+                    break;
+                }
+                void Increment(ref int val) => val++;
             }
         [|else|]
             {
-                value--;
+                {
+                    Decrement(ref value);
+                }
+
+                void Decrement(ref int val)
+                {
+                    val--;
+                }
             }
         }
     }
 }";
-            var finalCode = @"
+            var modifiedCode = @"
 class TestClass
 {
     void Test()
@@ -139,227 +290,129 @@ class TestClass
         {
             if (value < 0)
             {
-                Incr(ref value);
-                continue;
-                void Incr(ref int val) => val++;
+                {
+                    Increment(ref value);
+                    break;
+                }
+                void Increment(ref int val) => val++;
             }
 
-            value--;
+            {
+                Decrement(ref value);
+            }
+
+            void Decrement(ref int val)
+            {
+                val--;
+            }
         }
     }
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(initialCode)
-                  .ShouldFixCodeWith(finalCode)
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
 
         [Fact]
-        public async Task IfGotoElse_DiagnosticIsReported()
+        public async Task Test6_IfThatBreaksAndWhileWithoutBraces_ElseRemovedAndWhileBracesAdded()
         {
-            var sourceCode = @"
+            var originalCode = @"
 class TestClass
 {
     void Test()
     {
         var value = -1;
         while (true)
-        {
             if (value < 0)
-            {
-                Incr(ref value);
-                goto OUT;
-                void Incr(ref int val) => val++;
-            }
-        [|else|]
-            {
-                value--;
-            }
-        }
-    OUT:
-        value--;
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task IfReturnElse_DiagnosticIsReported()
-        {
-            var sourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        var value = -1;
-        while (true)
-        {
-            if (value < 0)
-            {
-                return;
-            }
-        [|else|]
-            {
-                value--;
-            }
-        }
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task IfThrowElse_DiagnosticIsReported()
-        {
-            var sourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        var value = -1;
-        while (true)
-        {
-            if (value < 0)
-                throw new System.ArgumentNullException(nameof(value));
-        [|else|]
-                value--;
-        }
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task IfYieldBreakElse_DiagnosticIsReported()
-        {
-            var sourceCode = @"
-class TestClass
-{
-    System.Collections.Generic.IEnumerable<int> Test()
-    {
-        int value = -1;
-        while (true)
-        {
-            if (value < 0)
-            {
-                value++;
-                yield break;
-            }
-        [|else|]
-                value--;
-        }
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task IfYieldReturnElse_NoDiagnosticReported()
-        {
-            var sourceCode = @"
-class TestClass
-{
-    System.Collections.Generic.IEnumerable<int> Test()
-    {
-        int value = -1;
-        while (true)
-        {
-            if (value < 0)
-            {
-                value++;
-                yield return value;
-            }
-            else
-                value--;
-        }
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task IfContinueNoElse_NoDiagnosticReported()
-        {
-            var sourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        var value = -1;
-        while (true)
-        {
-            if (value < 0)
-            {
-                continue;
-            }
-            value++;
-        }
-    }
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task IfNoJumpElse_NoDiagnosticReported()
-        {
-            var sourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        var value = -1;
-        while (true)
-        {
-            if (value < 0)
-            {
-                value++;
-            }
-            else
             {
                 break;
             }
-        }
+        [|else|]
+            {
+                value--;
+            }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task InnerIfBlockJumpsAndOuterElseBlockExists_NoDiagnosticReported()
-        {
-            var sourceCode = @"
+            var modifiedCode = @"
 class TestClass
 {
     void Test()
     {
-        var value = new System.Random().Next(-10, 10);
-        if (value < 0)
+        var value = -1;
+        while (true)
         {
-            if (value < 5)
-                return;
+            if (value < 0)
+            {
+                break;
+            }
+
+            value--;
         }
-        else
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test7_IfThatBreaksAndCodeMisformatted_ElseRemovedButOnlyItsStatementsAreFormatted()
         {
+            var originalCode = @"
+class TestClass
+{
+ void Test(){
+ var value = -1;
+   while (true)
+ {if (value < 0)
+{    break;
+}[|else|]{                         value--;
+ }
+}
+}
+}";
+            var modifiedCode = @"
+class TestClass
+{
+ void Test(){
+ var value = -1;
+   while (true)
+ {if (value < 0)
+{    break;
+}
+
+            value--;
+        }
+}
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test8_IfThatBreaksButNoElse_NoDiagnosticReported()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+                break;
+
             value++;
         }
     }
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
+                  .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
     }

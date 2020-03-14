@@ -12,8 +12,8 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.AvoidUsingRedundantElse,
-            title: "Avoid using redundant 'else'",
-            messageFormat: "Avoid using redundant 'else'",
+            title: "Avoid using redundant else",
+            messageFormat: "Avoid using redundant else",
             RuleCategories.Style,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,

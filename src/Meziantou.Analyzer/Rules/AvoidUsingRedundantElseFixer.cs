@@ -27,45 +27,55 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var diagnostic = context.Diagnostics[0];
-
-            var title = "Remove redundant 'else'";
+            var title = "Remove redundant else";
             var codeAction = CodeAction.Create(
                 title,
-                ct => Refactor(context.Document, nodeToFix, ct),
+                ct => RemoveRedundantElse(context.Document, nodeToFix, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
 
-        private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> RemoveRedundantElse(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
             if (!(nodeToFix is ElseClauseSyntax elseClauseSyntax))
                 return document;
 
             if (!(elseClauseSyntax.Parent is IfStatementSyntax ifStatementSyntax))
                 return document;
 
-            var elseChildNodes = (elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax) ?
-                elseBlockSyntax.ChildNodes() :
-                elseClauseSyntax.ChildNodes();
-
-            // For now, limit the fix to the case where ifStatementSyntax is child of a blockSyntax
-            if (!(ifStatementSyntax.Parent is BlockSyntax blockSyntax))
+            var ifStatementParent = ifStatementSyntax.Parent;
+            if (ifStatementParent is null)
                 return document;
 
-            var nodes = elseChildNodes.Select(n => n.WithAdditionalAnnotations(Formatter.Annotation));
-            editor.InsertAfter(ifStatementSyntax, nodes);
-
-            editor.ReplaceNode(ifStatementSyntax, ifStatementSyntax
+            var modifiedIfStatement = ifStatementSyntax
                 .WithElse(null)
-                .WithTrailingTrivia(ifStatementSyntax.GetTrailingTrivia().Add(LineFeed)));
+                .WithTrailingTrivia(ifStatementSyntax.GetTrailingTrivia().Add(LineFeed));
 
-            var newDoc = editor.GetChangedDocument();
+            // Get all syntax nodes currently under the 'else' clause
+            var elseChildNodes = (elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax) ?
+                elseBlockSyntax.ChildNodes() :
+                new[] { elseClauseSyntax.Statement };
 
-            var text = await newDoc.GetTextAsync().ConfigureAwait(false);
+            var formattedElseChildNodes = elseChildNodes.Select(n => n.WithAdditionalAnnotations(Formatter.Annotation));
+
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+
+            // If ifStatementParent is not a BlockSyntax, we need to create one to be able to split 'if' and 'else',
+            // and insert the 'else' child nodes after the 'if' statement.
+            if (!(ifStatementParent is BlockSyntax blockSyntax))
+            {
+                blockSyntax = Block(new[]
+                {
+                    modifiedIfStatement
+                }.Concat(formattedElseChildNodes.Cast<StatementSyntax>()));
+                editor.ReplaceNode(ifStatementSyntax, blockSyntax);
+            }
+            else
+            {
+                editor.InsertAfter(ifStatementSyntax, formattedElseChildNodes);
+                editor.ReplaceNode(ifStatementSyntax, modifiedIfStatement);
+            }
 
             return editor.GetChangedDocument();
         }
