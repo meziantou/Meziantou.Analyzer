@@ -67,10 +67,13 @@ namespace Meziantou.Analyzer.Rules
             {
                 if (node == ifStatementSyntax)
                     return true;
+
                 if (!(node is BlockSyntax))
                     break;
+
                 node = node.Parent;
             }
+
             return false;
         }
     }

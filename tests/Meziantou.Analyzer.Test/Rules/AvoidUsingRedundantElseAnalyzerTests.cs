@@ -10,7 +10,8 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<AvoidUsingRedundantElseAnalyzer>();
+                .WithAnalyzer<AvoidUsingRedundantElseAnalyzer>()
+                .WithCodeFixProvider<AvoidUsingRedundantElseFixer>();
         }
 
         [Fact]
@@ -39,8 +40,68 @@ class TestClass
         }
     }
 }";
+
+            var fixedCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value < 0)
+            {
+                {
+                    Incr(ref value);
+                    break;
+                }
+                void Incr(ref int val) => val++;
+            }
+
+            value--;
+        }
+    }
+}";
             await CreateProjectBuilder()
                   .WithSourceCode(sourceCode)
+                  .ShouldFixCodeWith(fixedCode)
+                  .ValidateAsync();
+        }
+
+
+        [Fact]
+        public async Task ShouldAddBracesIfNeeded()
+        {
+            var sourceCode = @"
+class TestClass
+{
+    void Test()
+    {
+        while (true)
+            if (true)
+                return;
+            [|else|]
+                return;
+    }
+}";
+
+            var fixedCode = @"
+class TestClass
+{
+    void Test()
+    {
+        while (true)
+        {
+            if (true)
+                return;
+
+            return;
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(sourceCode)
+                  .ShouldFixCodeWith(fixedCode)
                   .ValidateAsync();
         }
 
