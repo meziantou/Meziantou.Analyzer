@@ -141,7 +141,7 @@ namespace Meziantou.Analyzer.Rules
             if (!string.Equals(name, "*", StringComparison.Ordinal) && !string.Equals(method.Name, name, StringComparison.Ordinal))
                 return false;
 
-            if (!type.Equals(method.ContainingType.OriginalDefinition))
+            if (!type.IsEqualTo(method.ContainingType.OriginalDefinition))
                 return false;
 
             return true;

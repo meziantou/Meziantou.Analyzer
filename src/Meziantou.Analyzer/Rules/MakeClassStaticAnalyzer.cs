@@ -142,7 +142,7 @@ namespace Meziantou.Analyzer.Rules
                 lock (_cannotBeStaticClasses)
                 {
                     _cannotBeStaticClasses.Add(typeSymbol);
-                    if (!typeSymbol.Equals(typeSymbol.OriginalDefinition))
+                    if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
                     {
                         AddCannotBeStaticType(typeSymbol.OriginalDefinition);
                     }

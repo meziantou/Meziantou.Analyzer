@@ -166,7 +166,7 @@ namespace Meziantou.Analyzer.Rules
                     if (type?.OriginalDefinition == null)
                         return;
 
-                    if (HashSetSymbols.Any(t => type.OriginalDefinition.Equals(t)))
+                    if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
                     {
                         if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
                         {
@@ -183,7 +183,7 @@ namespace Meziantou.Analyzer.Rules
                 if (type?.OriginalDefinition == null)
                     return;
 
-                if (HashSetSymbols.Any(t => type.OriginalDefinition.Equals(t)))
+                if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
                 {
                     if (operation.Constructor.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol.Construct(type.TypeArguments[0]))))
                         return;
@@ -197,10 +197,10 @@ namespace Meziantou.Analyzer.Rules
 
             private bool HasDefaultEqualsOrHashCodeImplementations(ITypeSymbol typeSymbol)
             {
-                if (ValueTypeEqualsSymbol != null && typeSymbol.GetMembers(ValueTypeEqualsSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeEqualsSymbol.Equals(member.OverriddenMethod)) == null)
+                if (ValueTypeEqualsSymbol != null && typeSymbol.GetMembers(ValueTypeEqualsSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeEqualsSymbol.IsEqualTo(member.OverriddenMethod)) == null)
                     return true;
 
-                if (ValueTypeGetHashCodeSymbol != null && typeSymbol.GetMembers(ValueTypeGetHashCodeSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeGetHashCodeSymbol.Equals(member.OverriddenMethod)) == null)
+                if (ValueTypeGetHashCodeSymbol != null && typeSymbol.GetMembers(ValueTypeGetHashCodeSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeGetHashCodeSymbol.IsEqualTo(member.OverriddenMethod)) == null)
                     return true;
 
                 return false;

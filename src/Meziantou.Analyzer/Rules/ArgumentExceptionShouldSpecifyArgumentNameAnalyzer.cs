@@ -98,11 +98,9 @@ namespace Meziantou.Analyzer.Rules
                         return;
                     }
                 }
-                else
-                {
-                    // Cannot determine the value of the argument
-                    return;
-                }
+
+                // Cannot determine the value of the argument
+                return;
             }
 
             context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));

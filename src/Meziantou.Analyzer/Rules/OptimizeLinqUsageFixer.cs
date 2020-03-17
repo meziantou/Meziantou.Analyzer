@@ -575,7 +575,7 @@ namespace Meziantou.Analyzer.Rules
             public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
             {
                 var symbol = _semanticModel.GetSymbolInfo(node).Symbol;
-                if (symbol != null && symbol.Equals(_parameterSymbol))
+                if (symbol != null && symbol.IsEqualTo(_parameterSymbol))
                 {
                     return SyntaxFactory.IdentifierName(_newParameterName);
                 }

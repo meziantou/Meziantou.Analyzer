@@ -87,7 +87,7 @@ namespace Meziantou.Analyzer.Rules
                     if (type?.OriginalDefinition == null)
                         return;
 
-                    if (types.Any(t => type.OriginalDefinition.Equals(t)))
+                    if (types.Any(t => type.OriginalDefinition.IsEqualTo(t)))
                     {
                         // We only care about dictionaries that use a string as the key
                         if (!type.TypeArguments[0].IsString())
@@ -161,7 +161,7 @@ namespace Meziantou.Analyzer.Rules
                 if (argumentType == null)
                     continue;
 
-                if (argumentType.GetAllInterfacesIncludingThis().Any(i => stringEqualityComparerInterfaceType.Equals(i)))
+                if (argumentType.GetAllInterfacesIncludingThis().Any(i => stringEqualityComparerInterfaceType.IsEqualTo(i)))
                 {
                     hasEqualityComparer = true;
                     break;

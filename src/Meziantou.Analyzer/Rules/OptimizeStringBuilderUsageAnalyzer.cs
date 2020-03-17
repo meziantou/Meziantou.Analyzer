@@ -273,7 +273,8 @@ namespace Meziantou.Analyzer.Rules
                 sb.Append(str);
                 return true;
             }
-            else if (operation is IInterpolatedStringOperation interpolationStringOperation)
+
+            if (operation is IInterpolatedStringOperation interpolationStringOperation)
             {
                 foreach (var part in interpolationStringOperation.Parts)
                 {
@@ -283,14 +284,16 @@ namespace Meziantou.Analyzer.Rules
 
                 return true;
             }
-            else if (operation is IInterpolatedStringTextOperation text)
+
+            if (operation is IInterpolatedStringTextOperation text)
             {
                 if (!TryGetConstStringValue(text.Text, sb))
                     return false;
 
                 return true;
             }
-            else if (operation is IInterpolatedStringContentOperation interpolated)
+
+            if (operation is IInterpolatedStringContentOperation interpolated)
             {
                 var op = interpolated.Children.SingleOrDefaultIfMultiple();
                 if (op == null)
@@ -298,7 +301,8 @@ namespace Meziantou.Analyzer.Rules
 
                 return TryGetConstStringValue(op, sb);
             }
-            else if (operation is IMemberReferenceOperation memberReference)
+
+            if (operation is IMemberReferenceOperation memberReference)
             {
                 if (string.Equals(memberReference.Member.Name, nameof(string.Empty), System.StringComparison.Ordinal) && memberReference.Member.ContainingType.IsString())
                 {

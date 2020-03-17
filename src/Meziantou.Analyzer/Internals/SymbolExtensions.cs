@@ -4,6 +4,14 @@ namespace Meziantou.Analyzer
 {
     internal static class SymbolExtensions
     {
+        public static bool IsEqualTo(this ISymbol symbol, ISymbol expectedType)
+        {
+            if (symbol == null || expectedType == null)
+                return false;
+
+            return SymbolEqualityComparer.Default.Equals(expectedType, symbol);
+        }
+
         public static bool IsVisibleOutsideOfAssembly(this ISymbol symbol)
         {
             if (symbol == null)
