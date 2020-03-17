@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Threading;
@@ -7,9 +6,10 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -38,75 +38,50 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> RemoveRedundantElse(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            var elseClause = (ElseClauseSyntax)nodeToFix;
-            if (elseClause == null)
+            if (!(nodeToFix is ElseClauseSyntax elseClauseSyntax))
                 return document;
 
-            var ifStatement = elseClause.Parent as IfStatementSyntax;
-            if (ifStatement == null)
+            if (!(elseClauseSyntax.Parent is IfStatementSyntax ifStatementSyntax))
                 return document;
 
-            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var ifStatementParent = ifStatementSyntax.Parent;
+            if (ifStatementParent is null)
+                return document;
 
-            // Remove else
-            root = root.ReplaceNode(ifStatement, ifStatement.WithElse(@else: null));
-            ifStatement = (IfStatementSyntax)root.FindNode(ifStatement.IfKeyword.Span);
+            // Get all syntax nodes currently under the 'else' clause
+            var elseChildNodes = (elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax) ?
+                elseBlockSyntax.ChildNodes() :
+                new[] { elseClauseSyntax.Statement };
 
-            // Insert else statements after the if statement
-            if (elseClause.Statement != null)
+            var formattedElseChildNodes = elseChildNodes.Select(n => n.WithAdditionalAnnotations(Formatter.Annotation)).ToArray();
+
+            var ifTrailingTrivia = formattedElseChildNodes.Length > 0 ?
+                ifStatementSyntax.GetTrailingTrivia().Add(LineFeed) :
+                ifStatementSyntax.GetTrailingTrivia();
+
+            var modifiedIfStatement = ifStatementSyntax
+                .WithElse(null)
+                .WithTrailingTrivia(ifTrailingTrivia);
+
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+
+            // If ifStatementParent is not a BlockSyntax, we need to create one to be able to split 'if' and 'else',
+            // and insert the 'else' child nodes after the 'if' statement.
+            if (!(ifStatementParent is BlockSyntax blockSyntax))
             {
-                IEnumerable<StatementSyntax> newStatements;
-                if (elseClause.Statement is BlockSyntax blockSyntax)
+                blockSyntax = Block(new[]
                 {
-                    newStatements = blockSyntax.Statements.Select((statement, index) =>
-                    {
-                        var newStatement = statement;
-                        if (index == 0)
-                        {
-                            newStatement = AddNewLineBefore(newStatement);
-                        }
-
-                        return newStatement.WithAdditionalAnnotations(Formatter.Annotation);
-                    });
-                }
-                else
-                {
-                    newStatements = new[] { AddNewLineBefore(elseClause.Statement).WithAdditionalAnnotations(Formatter.Annotation) };
-                }
-
-                if (MustWrapInBlock(ifStatement))
-                {
-                    root = root.ReplaceNode(ifStatement, SyntaxFactory.Block(new StatementSyntax[] { ifStatement }.Concat(newStatements)).WithAdditionalAnnotations(Formatter.Annotation));
-                }
-                else
-                {
-                    root = root.InsertNodesAfter(ifStatement, newStatements);
-                }
+                    modifiedIfStatement
+                }.Concat(formattedElseChildNodes.Cast<StatementSyntax>()));
+                editor.ReplaceNode(ifStatementSyntax, blockSyntax);
+            }
+            else
+            {
+                editor.InsertAfter(ifStatementSyntax, formattedElseChildNodes);
+                editor.ReplaceNode(ifStatementSyntax, modifiedIfStatement);
             }
 
-
-            return document.WithSyntaxRoot(root);
-        }
-
-        private static StatementSyntax AddNewLineBefore(StatementSyntax syntaxNode)
-        {
-            return syntaxNode.WithLeadingTrivia(syntaxNode.GetLeadingTrivia().Insert(0, SyntaxFactory.LineFeed));
-        }
-
-        private static bool MustWrapInBlock(SyntaxNode syntaxNode)
-        {
-            if (syntaxNode.Parent == null)
-                return true;
-
-            return syntaxNode.Parent switch
-            {
-                IfStatementSyntax statement => statement.Statement == syntaxNode || statement.Else == syntaxNode,
-                WhileStatementSyntax statement => statement.Statement == syntaxNode,
-                ForEachStatementSyntax statement => statement.Statement == syntaxNode,
-                ForStatementSyntax statement => statement.Statement == syntaxNode,
-                DoStatementSyntax statement => statement.Statement == syntaxNode,
-                _ => false,
-            };
+            return editor.GetChangedDocument();
         }
     }
 }
