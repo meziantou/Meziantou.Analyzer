@@ -74,6 +74,7 @@ namespace Meziantou.Analyzer
         public const string NonConstantStaticFieldsShouldNotBeVisible = "MA0069";
         public const string ObsoleteAttributesShouldIncludeExplanations = "MA0070";
         public const string AvoidUsingRedundantElse = "MA0071";
+        public const string DoNotThrowExceptionFromFinallyBlock = "MA0072";
 
         public static string GetHelpUri(string idenfifier)
         {
