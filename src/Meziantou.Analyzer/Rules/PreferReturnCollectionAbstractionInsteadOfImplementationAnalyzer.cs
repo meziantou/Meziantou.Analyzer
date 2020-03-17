@@ -160,13 +160,13 @@ namespace Meziantou.Analyzer.Rules
                 return true;
 
             var originalDefinition = symbol.OriginalDefinition;
-            if (analyzerContext.ConcreteCollectionSymbols.Any(t => t.Equals(originalDefinition)))
+            if (analyzerContext.ConcreteCollectionSymbols.Any(t => t.IsEqualTo(originalDefinition)))
                 return false;
 
             var namedTypeSymbol = symbol as INamedTypeSymbol;
             if (namedTypeSymbol != null)
             {
-                if (analyzerContext.TaskSymbols.Any(t => t.Equals(symbol.OriginalDefinition)))
+                if (analyzerContext.TaskSymbols.Any(t => t.IsEqualTo(symbol.OriginalDefinition)))
                 {
                     return IsValidType(analyzerContext, namedTypeSymbol.TypeArguments[0]);
                 }

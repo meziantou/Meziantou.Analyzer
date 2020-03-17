@@ -146,7 +146,7 @@ namespace Meziantou.Analyzer.Rules
                     return;
                 }
 
-                if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.Equals(collectionOfTSymbol) || i.OriginalDefinition.Equals(readOnlyCollectionOfTSymbol)))
+                if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(collectionOfTSymbol) || i.OriginalDefinition.IsEqualTo(readOnlyCollectionOfTSymbol)))
                 {
                     // Ensure the Count property is not an explicit implementation
                     var count = actualType.GetMembers("Count").OfType<IPropertySymbol>().FirstOrDefault(m => m.ExplicitInterfaceImplementations.Length == 0);
@@ -218,7 +218,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var actualType = GetActualType(operation.Arguments[0]);
-            if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.Equals(listSymbol) || i.OriginalDefinition.Equals(readOnlyListSymbol)))
+            if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(listSymbol) || i.OriginalDefinition.IsEqualTo(readOnlyListSymbol)))
             {
                 context.ReportDiagnostic(s_listMethodsRule, properties, operation, "[]", operation.TargetMethod.Name);
             }

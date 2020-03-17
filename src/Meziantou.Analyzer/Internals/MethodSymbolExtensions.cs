@@ -49,7 +49,7 @@ namespace Meziantou.Analyzer
 
             return symbol.ContainingType.AllInterfaces
                 .SelectMany(@interface => @interface.GetMembers())
-                .FirstOrDefault(interfaceMember => symbol.Equals(symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMember)));
+                .FirstOrDefault(interfaceMember => SymbolEqualityComparer.Default.Equals(symbol, symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMember)));
         }
 
         public static bool IsUnitTestMethod(this IMethodSymbol methodSymbol)
@@ -120,7 +120,7 @@ namespace Meziantou.Analyzer
 
         internal static bool HasSimilarParameters(this IMethodSymbol methodSymbol, IMethodSymbol otherMethod, params ITypeSymbol[] additionalParameterTypes)
         {
-            if (methodSymbol.Equals(otherMethod))
+            if (methodSymbol.IsEqualTo(otherMethod))
                 return false;
 
             if (additionalParameterTypes.Any(type => type == null))

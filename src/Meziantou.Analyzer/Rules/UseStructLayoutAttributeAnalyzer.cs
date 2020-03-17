@@ -45,7 +45,7 @@ namespace Meziantou.Analyzer.Rules
             if (attributeType == null)
                 return;
 
-            if (symbol.GetAttributes().Any(attr => attributeType.Equals(attr.AttributeClass)))
+            if (symbol.GetAttributes().Any(attr => attributeType.IsEqualTo(attr.AttributeClass)))
                 return;
 
             bool hasMember = false;

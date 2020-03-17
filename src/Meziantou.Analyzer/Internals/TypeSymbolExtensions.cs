@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer
             var baseType = classSymbol.BaseType;
             while (baseType != null)
             {
-                if (baseClassType.Equals(baseType))
+                if (baseClassType.IsEqualTo(baseType))
                     return true;
 
                 baseType = baseType.BaseType;
@@ -43,7 +43,7 @@ namespace Meziantou.Analyzer
             if (interfaceType == null)
                 return false;
 
-            return classSymbol.AllInterfaces.Any(i => interfaceType.Equals(i));
+            return classSymbol.AllInterfaces.Any(i => interfaceType.IsEqualTo(i));
         }
 
         public static bool HasAttribute(this ISymbol symbol, ITypeSymbol attributeType)
@@ -53,7 +53,7 @@ namespace Meziantou.Analyzer
 
             foreach (var attribute in symbol.GetAttributes())
             {
-                if (attributeType.Equals(attribute.AttributeClass))
+                if (attributeType.IsEqualTo(attribute.AttributeClass))
                     return true;
             }
 
@@ -65,15 +65,7 @@ namespace Meziantou.Analyzer
             if (symbol == null || expectedType == null)
                 return false;
 
-            return symbol.Equals(expectedType) || symbol.InheritsFrom(expectedType);
-        }
-
-        public static bool IsEqualTo(this ITypeSymbol symbol, ITypeSymbol expectedType)
-        {
-            if (symbol == null || expectedType == null)
-                return false;
-
-            return expectedType.Equals(symbol);
+            return symbol.IsEqualTo(expectedType) || symbol.InheritsFrom(expectedType);
         }
 
         public static bool IsEqualToAny(this ITypeSymbol symbol, params ITypeSymbol[] expectedTypes)
@@ -81,7 +73,7 @@ namespace Meziantou.Analyzer
             if (symbol == null || expectedTypes == null)
                 return false;
 
-            return expectedTypes.Any(t => IsEqualTo(t, symbol));
+            return expectedTypes.Any(t => t.IsEqualTo(symbol));
         }
 
         public static bool IsObject(this ITypeSymbol symbol)

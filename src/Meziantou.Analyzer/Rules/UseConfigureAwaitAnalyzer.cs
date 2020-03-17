@@ -149,8 +149,8 @@ namespace Meziantou.Analyzer.Rules
 
             var configuredTaskAwaitableType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
             var configuredTaskAwaitableOfTType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
-            return (configuredTaskAwaitableType != null && configuredTaskAwaitableType.Equals(awaitExpressionType)) ||
-                   (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.Equals(awaitExpressionType.OriginalDefinition));
+            return (configuredTaskAwaitableType != null && configuredTaskAwaitableType.IsEqualTo(awaitExpressionType)) ||
+                   (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.IsEqualTo(awaitExpressionType.OriginalDefinition));
         }
 
         private static T GetParentSymbol<T>(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken) where T : ISymbol

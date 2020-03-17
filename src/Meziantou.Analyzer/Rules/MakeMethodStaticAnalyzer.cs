@@ -232,7 +232,7 @@ namespace Meziantou.Analyzer.Rules
                         if (invokeAsyncSymbol != null)
                         {
                             var implementationMember = methodSymbol.ContainingType.FindImplementationForInterfaceMember(invokeAsyncSymbol);
-                            if (methodSymbol.Equals(implementationMember))
+                            if (methodSymbol.IsEqualTo(implementationMember))
                                 return true;
                         }
                     }

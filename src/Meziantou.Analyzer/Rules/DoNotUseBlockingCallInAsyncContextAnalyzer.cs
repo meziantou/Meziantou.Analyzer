@@ -142,7 +142,7 @@ namespace Meziantou.Analyzer.Rules
 
                     bool IsPotentialMember(ISymbol memberSymbol)
                     {
-                        if (memberSymbol.Equals(targetMethod))
+                        if (memberSymbol.IsEqualTo(targetMethod))
                             return false;
 
                         if (memberSymbol is IMethodSymbol methodSymbol)

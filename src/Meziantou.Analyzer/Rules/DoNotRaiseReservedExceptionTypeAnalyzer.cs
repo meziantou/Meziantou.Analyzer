@@ -55,7 +55,7 @@ namespace Meziantou.Analyzer.Rules
             if (operation == null || operation.Exception == null)
                 return;
 
-            var exceptionType = operation.Exception.Type;
+            var exceptionType = operation.Exception.GetActualType();
             if (reservedExceptionTypes.Any(type => exceptionType.IsEqualTo(type) || exceptionType.InheritsFrom(type)))
             {
                 context.ReportDiagnostic(s_rule, operation, exceptionType.ToDisplayString());
