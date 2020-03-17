@@ -48,16 +48,20 @@ namespace Meziantou.Analyzer.Rules
             if (ifStatementParent is null)
                 return document;
 
-            var modifiedIfStatement = ifStatementSyntax
-                .WithElse(null)
-                .WithTrailingTrivia(ifStatementSyntax.GetTrailingTrivia().Add(LineFeed));
-
             // Get all syntax nodes currently under the 'else' clause
             var elseChildNodes = (elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax) ?
                 elseBlockSyntax.ChildNodes() :
                 new[] { elseClauseSyntax.Statement };
 
-            var formattedElseChildNodes = elseChildNodes.Select(n => n.WithAdditionalAnnotations(Formatter.Annotation));
+            var formattedElseChildNodes = elseChildNodes.Select(n => n.WithAdditionalAnnotations(Formatter.Annotation)).ToArray();
+
+            var ifTrailingTrivia = formattedElseChildNodes.Length > 0 ?
+                ifStatementSyntax.GetTrailingTrivia().Add(LineFeed) :
+                ifStatementSyntax.GetTrailingTrivia();
+
+            var modifiedIfStatement = ifStatementSyntax
+                .WithElse(null)
+                .WithTrailingTrivia(ifTrailingTrivia);
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 

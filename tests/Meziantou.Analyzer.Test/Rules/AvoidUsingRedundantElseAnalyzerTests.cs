@@ -394,7 +394,41 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test8_IfThatBreaksButNoElse_NoDiagnosticReported()
+        public async Task Test8_IfThatBreaksWithEmptyElseBlock_ElseRemovedAndNoEmptyLineAfterIf()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        if (true)
+        {
+            return;
+        }
+        [|else|]
+        {
+        }
+    }
+}";
+            var modifiedCode = @"
+class TestClass
+{
+    void Test()
+    {
+        if (true)
+        {
+            return;
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test9_IfThatBreaksButNoElse_NoDiagnosticReported()
         {
             var originalCode = @"
 class TestClass
