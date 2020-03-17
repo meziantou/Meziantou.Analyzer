@@ -33,7 +33,6 @@
 |[MA0031](Rules/MA0031.md)|Performance|Optimize Enumerable.Count usage|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0032](Rules/MA0032.md)|Usage|Use a cancellation token|<span title='Hidden'>👻</span>|✔️|❌|
 |[MA0033](Rules/MA0033.md)|Design|Don't tag instance fields with ThreadStaticAttribute|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0034](Rules/MA0034.md)|Design|Don't use instance fields of type AsyncLocal<T>|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0035](Rules/MA0035.md)|Usage|Don't use dangerous threading methods|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0036](Rules/MA0036.md)|Design|Make class static|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0037](Rules/MA0037.md)|Usage|Remove empty statement|<span title='Error'>❌</span>|✔️|❌|
@@ -53,7 +52,7 @@
 |[MA0051](Rules/MA0051.md)|Design|Method is too long|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0052](Rules/MA0052.md)|Performance|Replace with nameof|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0053](Rules/MA0053.md)|Design|Make class sealed|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0054](Rules/MA0054.md)|Design|Embed caught exception as innerException|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0054](Rules/MA0054.md)|Design|Embed the caught exception as innerException|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0055](Rules/MA0055.md)|Design|Do not use destructor|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0056](Rules/MA0056.md)|Design|Do not call overridable members in constructor|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0057](Rules/MA0057.md)|Naming|Class name should end with 'Attribute'|<span title='Info'>ℹ️</span>|✔️|❌|
@@ -66,4 +65,9 @@
 |[MA0064](Rules/MA0064.md)|Design|Avoid locking on publicly accessible instance|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0065](Rules/MA0065.md)|Performance|Default ValueType.Equals or HashCode is used for struct's equality|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0066](Rules/MA0066.md)|Performance|Hash table unfriendly type is used in a hash table|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0071](Rules/MA0071.md)|Style|Avoid using redundant 'else'|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0067](Rules/MA0067.md)|Design|Use Guid.Empty|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0068](Rules/MA0068.md)|Design|Invalid parameter name|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0069](Rules/MA0069.md)|Design|Non-constant static fields should not be visible|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0070](Rules/MA0070.md)|Design|Obsolete attributes should include explanations|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0071](Rules/MA0071.md)|Style|Avoid using redundant else|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0072](Rules/MA0072.md)|Design|Do not throw an exception from a finally block|<span title='Warning'>⚠️</span>|✔️|❌|
