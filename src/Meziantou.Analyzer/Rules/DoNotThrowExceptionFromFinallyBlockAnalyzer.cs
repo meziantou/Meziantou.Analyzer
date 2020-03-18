@@ -45,12 +45,49 @@ namespace Meziantou.Analyzer.Rules
 
             if (!result.EndPointIsReachable)
             {
-                var throwStatement = finallyBlock.Statements.FirstOrDefault(s => s.GetType() == typeof(ThrowStatementSyntax));
+                var throwStatement = finallyBlock.Statements.FirstOrDefault(IsThrowStatement);
                 if (throwStatement is null)
                     return;
 
                 context.ReportDiagnostic(s_rule, throwStatement);
             }
+            else
+            {
+                var node = finallyBlock.DescendantNodes().Where(IsThrowStatement)
+                    .FirstOrDefault(node => IsDirectAccess(finallyBlock, node));
+                if (node != null)
+                {
+                    context.ReportDiagnostic(s_rule, (ThrowStatementSyntax)node);
+                }
+            }
+        }
+
+        private static bool IsThrowStatement(SyntaxNode node)
+        {
+            return node.GetType() == typeof(ThrowStatementSyntax);
+        }
+
+        /// <summary>
+        /// Determines if a given 'finally' block's access to a 'throw' statement is straightforward.
+        /// </summary>
+        /// <param name="finallyBlock">The 'finally' block under scrutiny</param>
+        /// <param name="throwStatement">A 'throw' statement contained in the said block</param>
+        /// <returns>true if directly accessible, false otherwise</returns>
+        private static bool IsDirectAccess(BlockSyntax finallyBlock, SyntaxNode throwStatement)
+        {
+            var node = throwStatement.Parent;
+            while (node != null)
+            {
+                if (node == finallyBlock)
+                    return true;
+
+                if (!(node is BlockSyntax))
+                    break;
+
+                node = node.Parent;
+            }
+
+            return false;
         }
     }
 }

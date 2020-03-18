@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async Task ThrowExceptionFromFinallyBlock_ShouldReportDiagnostic()
+        public async Task FinallyThrowsException_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -23,7 +23,6 @@ class TestClass
     {
         try
         {
-            throw new System.Exception(""Triggering exception"");
         }
         finally
         {
@@ -37,7 +36,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task DoNotThrowExceptionFromFinallyBlock_NoDiagnosticReported()
+        public async Task FinallyDoesNotThrowException_NoDiagnosticReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -47,11 +46,93 @@ class TestClass
         var value = 1;
         try
         {
-            throw new System.Exception(""Triggering exception"");
         }
         finally
         {
             value++;
+        }        
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task FinallyThrowsExceptionFromNestedBlock_DiagnosticIsReported()
+        {
+            const string SourceCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = 1;
+        try
+        {
+        }
+        finally
+        {
+            {
+                Increment(ref value);
+                [|throw new System.Exception($""Unbecoming exception No {value}"");|]
+            }
+            void Increment(ref int val) => val++;
+        }        
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task FinallyThrowsExceptionFromNestedTryCatchBlock_ExceptionIsHandled_NoDiagnosticReported()
+        {
+            const string SourceCode = @"
+class TestClass
+{
+    void Test()
+    {
+        try
+        {
+        }
+        finally
+        {
+            try
+            {
+                 throw new System.Exception();
+            }
+            catch
+            {
+            }
+        }        
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact(Skip = "Does not currently pass... but should it?")]
+        public async Task FinallyThrowsExceptionFromNestedTryCatchBlock_OtherExceptionIsHandled_DiagnosticIsReported()
+        {
+            const string SourceCode = @"
+class TestClass
+{
+    void Test()
+    {
+        try
+        {
+        }
+        finally
+        {
+            try
+            {
+                 [|throw new System.Exception();|]
+            }
+            catch (System.ArgumentException)
+            {
+            }
         }        
     }
 }";
