@@ -8,17 +8,17 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class DoNotThrowExceptionFromFinallyBlockAnalyzer : DiagnosticAnalyzer
+    public sealed class DoNotThrowFromFinallyBlockAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
-            RuleIdentifiers.DoNotThrowExceptionFromFinallyBlock,
-            title: "Do not throw an exception from a finally block",
-            messageFormat: "Do not throw an exception from a finally block",
+            RuleIdentifiers.DoNotThrowFromFinallyBlock,
+            title: "Do not throw from a finally block",
+            messageFormat: "Do not throw from a finally block",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotThrowExceptionFromFinallyBlock));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotThrowFromFinallyBlock));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 

@@ -5,12 +5,12 @@ using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public sealed class DoNotThrowExceptionFromFinallyBlockAnalyzerTests
+    public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<DoNotThrowExceptionFromFinallyBlockAnalyzer>();
+                .WithAnalyzer<DoNotThrowFromFinallyBlockAnalyzer>();
         }
 
         [Fact]
