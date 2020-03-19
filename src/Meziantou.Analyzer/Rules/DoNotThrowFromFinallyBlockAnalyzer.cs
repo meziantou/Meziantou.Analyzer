@@ -45,9 +45,6 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static bool IsThrowStatement(SyntaxNode node)
-        {
-            return node.GetType() == typeof(ThrowStatementSyntax);
-        }
+        private static bool IsThrowStatement(SyntaxNode node) => node.IsKind(SyntaxKind.ThrowStatement);
     }
 }
