@@ -70,4 +70,4 @@
 |[MA0069](Rules/MA0069.md)|Design|Non-constant static fields should not be visible|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0070](Rules/MA0070.md)|Design|Obsolete attributes should include explanations|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0071](Rules/MA0071.md)|Style|Avoid using redundant else|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0072](Rules/MA0072.md)|Design|Do not throw an exception from a finally block|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0072](Rules/MA0072.md)|Design|Do not throw from a finally block|<span title='Warning'>⚠️</span>|✔️|❌|

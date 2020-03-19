@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async Task FinallyThrowsException_DiagnosticIsReported()
+        public async Task FinallyThrowsDirectly_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -36,7 +36,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task FinallyDoesNotThrowException_NoDiagnosticReported()
+        public async Task FinallyDoesNotThrow_NoDiagnosticReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -59,7 +59,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task FinallyThrowsExceptionFromNestedBlock_DiagnosticIsReported()
+        public async Task FinallyThrowsFromNestedBlock_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -86,7 +86,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task FinallyThrowsExceptionFromNestedTryCatchBlock_ExceptionIsHandled_NoDiagnosticReported()
+        public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -100,7 +100,7 @@ class TestClass
         {
             try
             {
-                 throw new System.Exception();
+                [|throw new System.Exception();|]
             }
             catch
             {
@@ -113,8 +113,8 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [Fact(Skip = "Does not currently pass... but should it?")]
-        public async Task FinallyThrowsExceptionFromNestedTryCatchBlock_OtherExceptionIsHandled_DiagnosticIsReported()
+        [Fact]
+        public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsUnhandled_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -128,10 +128,39 @@ class TestClass
         {
             try
             {
-                 [|throw new System.Exception();|]
+                [|throw new System.Exception();|]
             }
             catch (System.ArgumentException)
             {
+            }
+        }        
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task FinallyThrowsFromSeveralLocations_DiagnosticIsReportedForEachOne()
+        {
+            const string SourceCode = @"
+class TestClass
+{
+    void Test()
+    {
+        try
+        {
+        }
+        finally
+        {
+            if (true)
+            {
+                [|throw new System.Exception();|]
+            }
+            else
+            {
+                [|throw new System.Exception();|]
             }
         }        
     }
