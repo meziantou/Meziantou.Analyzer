@@ -68,7 +68,7 @@ namespace Meziantou.Analyzer.Rules
                 if (node == ifStatementSyntax)
                     return true;
 
-                if (!(node is BlockSyntax))
+                if (!node.IsKind(SyntaxKind.Block))
                     break;
 
                 node = node.Parent;
