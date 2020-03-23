@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
@@ -65,11 +66,11 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-            // If ifStatementParent is not a BlockSyntax, we need to create one to be able to split 'if' and 'else',
+            // If ifStatementParent is not a Block, we need to create one to be able to split 'if' and 'else',
             // and insert the 'else' child nodes after the 'if' statement.
-            if (!(ifStatementParent is BlockSyntax blockSyntax))
+            if (!ifStatementParent.IsKind(SyntaxKind.Block))
             {
-                blockSyntax = Block(new[]
+                var blockSyntax = Block(new[]
                 {
                     modifiedIfStatement
                 }.Concat(formattedElseChildNodes.Cast<StatementSyntax>()));
