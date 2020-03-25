@@ -15,21 +15,19 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Theory]
-        [InlineData("==", true, "")]
-        [InlineData("==", false, "!")]
-        [InlineData("!=", true, "!")]
-        [InlineData("!=", false, "")]
-        public async Task Test_ComparisonWithBoolLiteralRightOperand(string equalityOperator, bool boolLiteral, string expectedPrefix)
+        [InlineData("==", "true", "")]
+        [InlineData("==", "false", "!")]
+        [InlineData("!=", "true", "!")]
+        [InlineData("!=", "false", "")]
+        public async Task Test_ComparisonWithBoolLiteralRightOperand(string equalityOperator, string boolLiteral, string expectedPrefix)
         {
-            var boolAsString = boolLiteral.ToString().ToLowerInvariant();
-
             var originalCode = $@"
 class TestClass
 {{
     void Test()
     {{
         var condition = false;
-        if (condition [|{equalityOperator}|] {boolAsString})
+        if (condition [|{equalityOperator}|] {boolLiteral})
         {{
         }}
     }}
@@ -52,20 +50,18 @@ class TestClass
         }
 
         [Theory]
-        [InlineData(true, "==", "")]
-        [InlineData(false, "==", "!")]
-        [InlineData(true, "!=", "!")]
-        [InlineData(false, "!=", "")]
-        public async Task Test_ComparisonWithBoolLiteralLeftOperand(bool boolLiteral, string equalityOperator, string expectedPrefix)
+        [InlineData("true", "==", "")]
+        [InlineData("false", "==", "!")]
+        [InlineData("true", "!=", "!")]
+        [InlineData("false", "!=", "")]
+        public async Task Test_ComparisonWithBoolLiteralLeftOperand(string boolLiteral, string equalityOperator, string expectedPrefix)
         {
-            var boolAsString = boolLiteral.ToString().ToLowerInvariant();
-
             var originalCode = $@"
 class TestClass
 {{
     void Test()
     {{
-        var success = {boolAsString} [|{equalityOperator}|] (GetSomeNumber() == 15);
+        var success = {boolLiteral} [|{equalityOperator}|] (GetSomeNumber() == 15);
         int GetSomeNumber() => 12;
     }}
 }}";
