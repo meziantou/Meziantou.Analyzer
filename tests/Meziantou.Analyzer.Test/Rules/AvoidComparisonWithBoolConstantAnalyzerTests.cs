@@ -114,20 +114,18 @@ class TestClass
         }
 
         [Theory]
-        [InlineData("==", "true", "")]
-        [InlineData("==", "false", "!")]
         [InlineData("!=", "true", "!")]
-        [InlineData("!=", "false", "")]
-        public async Task ComparingTwoBoolConstants_KeepsSecondConstant(string equalityOperator, string constBool, string expectedPrefix)
+        [InlineData("==", "MyConstant2", "")]
+        public async Task ComparingBoolConstantsAndLiterals_KeepsSecondOperand(string equalityOperator, string secondOperand, string expectedPrefix)
         {
             var originalCode = $@"
 class TestClass
 {{
     void Test()
     {{
-        const bool MyConstant1 = {constBool};
+        const bool MyConstant1 = true;
         const bool MyConstant2 = false;
-        _ = MyConstant1 [|{equalityOperator}|] MyConstant2;
+        _ = MyConstant1 [|{equalityOperator}|] {secondOperand};
     }}
 }}";
             var modifiedCode = $@"
@@ -135,9 +133,9 @@ class TestClass
 {{
     void Test()
     {{
-        const bool MyConstant1 = {constBool};
+        const bool MyConstant1 = true;
         const bool MyConstant2 = false;
-        _ = {expectedPrefix}MyConstant2;
+        _ = {expectedPrefix}{secondOperand};
     }}
 }}";
             await CreateProjectBuilder()
