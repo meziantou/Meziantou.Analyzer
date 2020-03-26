@@ -75,7 +75,7 @@ namespace Meziantou.Analyzer
         public const string ObsoleteAttributesShouldIncludeExplanations = "MA0070";
         public const string AvoidUsingRedundantElse = "MA0071";
         public const string DoNotThrowFromFinallyBlock = "MA0072";
-        public const string AvoidComparisonWithBoolLiteral = "MA0073";
+        public const string AvoidComparisonWithBoolConstant = "MA0073";
         public const string AvoidCultureSensitiveMethod = "MA0074";
         public const string DoNotUseImplicitCultureSensitiveToString = "MA0075";
         public const string DoNotUseImplicitCultureSensitiveToStringInterpolation = "MA0076";

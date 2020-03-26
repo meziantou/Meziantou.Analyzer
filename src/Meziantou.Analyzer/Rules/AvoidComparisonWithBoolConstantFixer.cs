@@ -14,9 +14,9 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public sealed class AvoidComparisonWithBoolLiteralFixer : CodeFixProvider
+    public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.AvoidComparisonWithBoolLiteral);
+        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.AvoidComparisonWithBoolConstant);
 
         public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -30,13 +30,13 @@ namespace Meziantou.Analyzer.Rules
             var title = "Remove comparison with bool literal";
             var codeAction = CodeAction.Create(
                 title,
-                ct => RemoveComparisonWithBoolLiteral(context.Document, nodeToFix, ct),
+                ct => RemoveComparisonWithBoolConstant(context.Document, nodeToFix, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
 
-        private static async Task<Document> RemoveComparisonWithBoolLiteral(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> RemoveComparisonWithBoolConstant(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             if (!(nodeToFix is BinaryExpressionSyntax binaryExpressionSyntax))
                 return document;
@@ -44,27 +44,29 @@ namespace Meziantou.Analyzer.Rules
             if (binaryExpressionSyntax.Left is null || binaryExpressionSyntax.Right is null)
                 return document;
 
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var leftConstant = semanticModel.GetConstantValue(binaryExpressionSyntax.Left);
+            var rightConstant = semanticModel.GetConstantValue(binaryExpressionSyntax.Right);
+
             ExpressionSyntax fixedNode;
             bool invertCondition;
-            if (binaryExpressionSyntax.Left.IsKind(SyntaxKind.TrueLiteralExpression))
+            if (leftConstant.HasValue)
             {
                 fixedNode = binaryExpressionSyntax.Right;
-                invertCondition = binaryExpressionSyntax.IsKind(SyntaxKind.NotEqualsExpression);
+                invertCondition = (bool)leftConstant.Value ?
+                    binaryExpressionSyntax.IsKind(SyntaxKind.NotEqualsExpression) :
+                    binaryExpressionSyntax.IsKind(SyntaxKind.EqualsExpression);
             }
-            else if (binaryExpressionSyntax.Right.IsKind(SyntaxKind.TrueLiteralExpression))
+            else if (rightConstant.HasValue)
             {
                 fixedNode = binaryExpressionSyntax.Left;
-                invertCondition = binaryExpressionSyntax.IsKind(SyntaxKind.NotEqualsExpression);
+                invertCondition = (bool)rightConstant.Value ?
+                    binaryExpressionSyntax.IsKind(SyntaxKind.NotEqualsExpression) :
+                    binaryExpressionSyntax.IsKind(SyntaxKind.EqualsExpression);
             }
-            else if (binaryExpressionSyntax.Left.IsKind(SyntaxKind.FalseLiteralExpression))
+            else
             {
-                fixedNode = binaryExpressionSyntax.Right;
-                invertCondition = binaryExpressionSyntax.IsKind(SyntaxKind.EqualsExpression);
-            }
-            else // if (binaryExpressionSyntax.Right.IsKind(SyntaxKind.FalseLiteralExpression))
-            {
-                fixedNode = binaryExpressionSyntax.Left;
-                invertCondition = binaryExpressionSyntax.IsKind(SyntaxKind.EqualsExpression);
+                return document;
             }
 
             if (invertCondition)

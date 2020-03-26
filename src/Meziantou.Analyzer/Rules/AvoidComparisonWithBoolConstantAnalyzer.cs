@@ -7,17 +7,17 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class AvoidComparisonWithBoolLiteralAnalyzer : DiagnosticAnalyzer
+    public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
-            RuleIdentifiers.AvoidComparisonWithBoolLiteral,
-            title: "Avoid comparison with bool literal",
-            messageFormat: "Avoid comparison with bool literal",
+            RuleIdentifiers.AvoidComparisonWithBoolConstant,
+            title: "Avoid comparison with bool contant",
+            messageFormat: "Avoid comparison with bool constant",
             RuleCategories.Style,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidComparisonWithBoolLiteral));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidComparisonWithBoolConstant));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
@@ -39,18 +39,25 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
+            // There must be 2 valid operands
             if (binaryOperation.LeftOperand is null || binaryOperation.RightOperand is null)
                 return;
 
-            if ((binaryOperation.LeftOperand.Type.IsBoolean() && binaryOperation.LeftOperand.Kind == OperationKind.Literal &&
-                !binaryOperation.RightOperand.IsImplicit) ||
-                (binaryOperation.RightOperand.Type.IsBoolean() && binaryOperation.RightOperand.Kind == OperationKind.Literal &&
-                !binaryOperation.LeftOperand.IsImplicit))
+            // Operands must be explicit
+            if (binaryOperation.LeftOperand.IsImplicit || binaryOperation.RightOperand.IsImplicit)
+                return;
+
+            if (IsConstantBool(binaryOperation.LeftOperand) || IsConstantBool(binaryOperation.RightOperand))
             {
                 var operatorTokenLocation = ((BinaryExpressionSyntax)binaryOperation.Syntax).OperatorToken.GetLocation();
                 var diagnostic = Diagnostic.Create(s_rule, operatorTokenLocation);
                 context.ReportDiagnostic(diagnostic);
             }
+        }
+
+        private static bool IsConstantBool(IOperation operation)
+        {
+            return operation.Type.IsBoolean() && operation.ConstantValue.HasValue;
         }
     }
 }
