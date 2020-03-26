@@ -1,8 +1,8 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -19,9 +19,6 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidComparisonWithBoolLiteral));
 
-        private static readonly ImmutableArray<SyntaxKind> s_comparisonExpressionKinds =
-            ImmutableArray.Create(SyntaxKind.EqualsExpression, SyntaxKind.NotEqualsExpression);
-
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
         public override void Initialize(AnalysisContext context)
@@ -29,22 +26,30 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterSyntaxNodeAction(AnalyzeComparisonWithBool, s_comparisonExpressionKinds);
+            context.RegisterOperationAction(AnalyzeBinaryOperation, OperationKind.Binary);
         }
 
-        private static void AnalyzeComparisonWithBool(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeBinaryOperation(OperationAnalysisContext context)
         {
-            var binaryExpressionSyntax = (BinaryExpressionSyntax)context.Node;
+            var binaryOperation = (IBinaryOperation)context.Operation;
 
-            if (binaryExpressionSyntax.Left is null || binaryExpressionSyntax.Right is null)
+            if (binaryOperation.OperatorKind != BinaryOperatorKind.Equals &&
+                binaryOperation.OperatorKind != BinaryOperatorKind.NotEquals)
+            {
+                return;
+            }
+
+            if (binaryOperation.LeftOperand is null || binaryOperation.RightOperand is null)
                 return;
 
-            if (binaryExpressionSyntax.Left.IsKind(SyntaxKind.TrueLiteralExpression) ||
-                binaryExpressionSyntax.Left.IsKind(SyntaxKind.FalseLiteralExpression) ||
-                binaryExpressionSyntax.Right.IsKind(SyntaxKind.TrueLiteralExpression) ||
-                binaryExpressionSyntax.Right.IsKind(SyntaxKind.FalseLiteralExpression))
+            if ((binaryOperation.LeftOperand.Type.IsBoolean() && binaryOperation.LeftOperand.Kind == OperationKind.Literal &&
+                !binaryOperation.RightOperand.IsImplicit) ||
+                (binaryOperation.RightOperand.Type.IsBoolean() && binaryOperation.RightOperand.Kind == OperationKind.Literal &&
+                !binaryOperation.LeftOperand.IsImplicit))
             {
-                context.ReportDiagnostic(s_rule, binaryExpressionSyntax.OperatorToken);
+                var operatorTokenLocation = ((BinaryExpressionSyntax)binaryOperation.Syntax).OperatorToken.GetLocation();
+                var diagnostic = Diagnostic.Create(s_rule, operatorTokenLocation);
+                context.ReportDiagnostic(diagnostic);
             }
         }
     }

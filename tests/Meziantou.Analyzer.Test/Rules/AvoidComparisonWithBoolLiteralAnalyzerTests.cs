@@ -79,5 +79,24 @@ class TestClass
                   .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Test_ComparingNullableBoolVariableWithBoolLiteral_NoDiagnosticReported()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        bool? a = true;
+        if (a == true)
+        {
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
     }
 }
