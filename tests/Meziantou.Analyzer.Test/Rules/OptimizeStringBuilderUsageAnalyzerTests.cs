@@ -323,6 +323,29 @@ class Test
 }")
                   .ValidateAsync();
         }
+        
+        [Fact]
+        public async Task AppendLine_InterpolatedString_FinishWithChar()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [||]new StringBuilder().AppendLine($""A{1}BC{2:X2}D"");
+    }
+}")
+                  .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).Append('D').AppendLine();
+    }
+}")
+                  .ValidateAsync();
+        }
 
         [Fact]
         public async Task AppendLine_InterpolatedString_FinishWithObject()

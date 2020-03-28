@@ -86,7 +86,7 @@ namespace Meziantou.Analyzer.Rules
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var argument = (IInterpolatedStringOperation)operation.Arguments[0].Value;
 
-            bool shouldAppendLastAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+            var shouldAppendLastAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
             var newExpression = operation.Children.First().Syntax;
             foreach (var part in argument.Parts)
             {
@@ -96,7 +96,17 @@ namespace Meziantou.Analyzer.Rules
                     var newArgument = generator.LiteralExpression(text.Length == 1 ? (object)text[0] : text);
                     if (shouldAppendLastAppendLine && part == argument.Parts.Last())
                     {
-                        newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"), newArgument);
+                        if (text.Length == 1)
+                        {
+                            // AppendLine doesn't support char, so we need to use Append(char).AppendLine();
+                            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), newArgument);
+                            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
+                        }
+                        else
+                        {
+                            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"), newArgument);
+                        }
+
                         shouldAppendLastAppendLine = false;
                     }
                     else
@@ -146,7 +156,7 @@ namespace Meziantou.Analyzer.Rules
             var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
 
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
-            bool isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+            var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
 
             var binaryOperation = (IBinaryOperation)operation.Arguments[0].Value;
 
