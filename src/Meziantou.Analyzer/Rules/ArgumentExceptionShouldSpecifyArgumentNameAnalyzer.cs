@@ -107,46 +107,53 @@ namespace Meziantou.Analyzer.Rules
             var node = operation.Syntax;
             while (node != null)
             {
-                if (node is AccessorDeclarationSyntax accessor)
+                switch (node)
                 {
-                    if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
-                    {
-                        yield return "value";
-                    }
-                }
-                else if (node is PropertyDeclarationSyntax)
-                {
-                    yield break;
-                }
-                else if (node is IndexerDeclarationSyntax indexerDeclarationSyntax)
-                {
-                    var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
-                    foreach (var parameter in symbol.Parameters)
-                        yield return parameter.Name;
+                    case AccessorDeclarationSyntax accessor:
+                        if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
+                        {
+                            yield return "value";
+                        }
 
-                    yield break;
-                }
-                else if (node is MethodDeclarationSyntax methodDeclaration)
-                {
-                    var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
-                    foreach (var parameter in symbol.Parameters)
-                        yield return parameter.Name;
+                        break;
 
-                    yield break;
-                }
-                else if (node is LocalFunctionStatementSyntax localFunctionStatement)
-                {
-                    var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
-                    foreach (var parameter in symbol.Parameters)
-                        yield return parameter.Name;
-                }
-                else if (node is ConstructorDeclarationSyntax constructorDeclaration)
-                {
-                    var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
-                    foreach (var parameter in symbol.Parameters)
-                        yield return parameter.Name;
+                    case PropertyDeclarationSyntax _:
+                        yield break;
 
-                    yield break;
+                    case IndexerDeclarationSyntax indexerDeclarationSyntax:
+                        {
+                            var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
+
+                            yield break;
+                        }
+
+                    case MethodDeclarationSyntax methodDeclaration:
+                        {
+                            var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
+
+                            yield break;
+                        }
+
+                    case LocalFunctionStatementSyntax localFunctionStatement:
+                        {
+                            var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
+                            break;
+                        }
+
+                    case ConstructorDeclarationSyntax constructorDeclaration:
+                        {
+                            var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
+
+                            yield break;
+                        }
                 }
 
                 node = node.Parent;

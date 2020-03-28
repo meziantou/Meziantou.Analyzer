@@ -38,7 +38,7 @@ namespace DocumentationGenerator
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
                 var hasCodeFix = codeFixProviders.Any(codeFixProvider => codeFixProvider.FixableDiagnosticIds.Contains(diagnostic.Id));
-                sb.AppendLine($"|[{diagnostic.Id}](Rules/{diagnostic.Id}.md)|{diagnostic.Category}|{diagnostic.Title}|<span title='{diagnostic.DefaultSeverity}'>{GetSeverity(diagnostic.DefaultSeverity)}</span>|{GetBoolean(diagnostic.IsEnabledByDefault)}|{GetBoolean(hasCodeFix)}|");
+                sb.Append("|[").Append(diagnostic.Id).Append("](Rules/").Append(diagnostic.Id).Append(".md)|").Append(diagnostic.Category).Append('|').Append(diagnostic.Title).Append("|<span title='").Append(diagnostic.DefaultSeverity).Append("'>").Append(GetSeverity(diagnostic.DefaultSeverity)).Append("</span>|").Append(GetBoolean(diagnostic.IsEnabledByDefault)).Append('|').Append(GetBoolean(hasCodeFix)).Append('|').AppendLine();
             }
 
             Console.WriteLine(sb.ToString());

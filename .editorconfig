@@ -243,6 +243,9 @@ dotnet_diagnostic.IDE1006.severity = suggestion
 # MA0006: use String.Equals
 dotnet_diagnostic.MA0006.severity = none
 
+# MA0045: make method async
+dotnet_diagnostic.MA0045.severity = none
+
 # Meziantou Analyzer
 MA0051.maximum_statements_per_method = 0
 MA0051.skip_local_functions = false

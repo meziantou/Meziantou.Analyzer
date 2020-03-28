@@ -389,7 +389,7 @@ namespace Meziantou.Analyzer.Rules
                             // expr.Count() < 10
                             message = Invariant($"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                                .Add("SkipMinusOne", null);
+                                .Add("SkipMinusOne", value: null);
                         }
 
                         break;
@@ -456,7 +456,7 @@ namespace Meziantou.Analyzer.Rules
                             // expr.Count() >= 2
                             message = Invariant($"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                                .Add("SkipMinusOne", null);
+                                .Add("SkipMinusOne", value: null);
                         }
 
                         break;
@@ -490,7 +490,7 @@ namespace Meziantou.Analyzer.Rules
                         // expr.Count() < 10
                         message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                            .Add("SkipMinusOne", null);
+                            .Add("SkipMinusOne", value: null);
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
@@ -509,7 +509,7 @@ namespace Meziantou.Analyzer.Rules
                         // expr.Count() >= 2
                         message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                            .Add("SkipMinusOne", null);
+                            .Add("SkipMinusOne", value: null);
                         break;
                 }
             }
@@ -543,7 +543,7 @@ namespace Meziantou.Analyzer.Rules
 
             BinaryOperatorKind NormalizeOperator()
             {
-                bool isCountLeftOperand = binaryOperation.LeftOperand == countOperand;
+                var isCountLeftOperand = binaryOperation.LeftOperand == countOperand;
                 return binaryOperation.OperatorKind switch
                 {
                     BinaryOperatorKind.LessThan => isCountLeftOperand ? BinaryOperatorKind.LessThan : BinaryOperatorKind.GreaterThan,

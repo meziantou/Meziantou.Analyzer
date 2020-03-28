@@ -87,19 +87,19 @@ namespace Meziantou.Analyzer.Rules
                     break;
 
                 case OptimizeLinqUsageData.UseTrue:
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseConstantValue(context.Document, nodeToFix, true, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseConstantValue(context.Document, nodeToFix, constantValue: true, ct), equivalenceKey: title), context.Diagnostics);
                     break;
 
                 case OptimizeLinqUsageData.UseFalse:
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseConstantValue(context.Document, nodeToFix, false, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseConstantValue(context.Document, nodeToFix, constantValue: false, ct), equivalenceKey: title), context.Diagnostics);
                     break;
 
                 case OptimizeLinqUsageData.UseNotAny:
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, false, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, constantValue: false, ct), equivalenceKey: title), context.Diagnostics);
                     break;
 
                 case OptimizeLinqUsageData.UseAny:
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, true, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, constantValue: true, ct), equivalenceKey: title), context.Diagnostics);
                     break;
 
                 case OptimizeLinqUsageData.UseTakeAndCount:
@@ -107,11 +107,11 @@ namespace Meziantou.Analyzer.Rules
                     break;
 
                 case OptimizeLinqUsageData.UseSkipAndAny:
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, true, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, comparandValue: true, ct), equivalenceKey: title), context.Diagnostics);
                     break;
 
                 case OptimizeLinqUsageData.UseSkipAndNotAny:
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, false, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, comparandValue: false, ct), equivalenceKey: title), context.Diagnostics);
                     break;
             }
         }

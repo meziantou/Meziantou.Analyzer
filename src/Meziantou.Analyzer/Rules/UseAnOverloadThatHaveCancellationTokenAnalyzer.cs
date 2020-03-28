@@ -172,17 +172,13 @@ namespace Meziantou.Analyzer.Rules
                 static string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
                 {
                     if (prefix == null)
-                    {
                         return string.Join(".", symbols.Select(symbol => symbol.Name));
-                    }
-                    else
-                    {
-                        var suffix = string.Join(".", symbols.Select(symbol => symbol.Name));
-                        if (string.IsNullOrEmpty(suffix))
-                            return prefix;
 
-                        return prefix + "." + suffix;
-                    }
+                    var suffix = string.Join(".", symbols.Select(symbol => symbol.Name));
+                    if (string.IsNullOrEmpty(suffix))
+                        return prefix;
+
+                    return prefix + "." + suffix;
                 }
 
                 bool IsSymbolAccessible(ISymbol symbol)
@@ -219,54 +215,63 @@ namespace Meziantou.Analyzer.Rules
                 var node = operation.Syntax;
                 while (node != null)
                 {
-                    if (node is AccessorDeclarationSyntax accessor)
+                    switch (node)
                     {
-                        if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
-                        {
-                            var property = node.Ancestors().OfType<PropertyDeclarationSyntax>().FirstOrDefault();
-                            if (property != null)
+                        case AccessorDeclarationSyntax accessor:
                             {
-                                var symbol = operation.SemanticModel.GetDeclaredSymbol(property);
-                                if (symbol != null)
+                                if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
                                 {
-                                    yield return new NameAndType("value", symbol.Type);
+                                    var property = node.Ancestors().OfType<PropertyDeclarationSyntax>().FirstOrDefault();
+                                    if (property != null)
+                                    {
+                                        var symbol = operation.SemanticModel.GetDeclaredSymbol(property);
+                                        if (symbol != null)
+                                        {
+                                            yield return new NameAndType("value", symbol.Type);
+                                        }
+                                    }
                                 }
+
+                                break;
                             }
-                        }
-                    }
-                    else if (node is PropertyDeclarationSyntax)
-                    {
-                        yield break;
-                    }
-                    else if (node is IndexerDeclarationSyntax indexerDeclarationSyntax)
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
-                        foreach (var parameter in symbol.Parameters)
-                            yield return new NameAndType(parameter.Name, parameter.Type);
 
-                        yield break;
-                    }
-                    else if (node is MethodDeclarationSyntax methodDeclaration)
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
-                        foreach (var parameter in symbol.Parameters)
-                            yield return new NameAndType(parameter.Name, parameter.Type);
+                        case PropertyDeclarationSyntax _:
+                            yield break;
 
-                        yield break;
-                    }
-                    else if (node is LocalFunctionStatementSyntax localFunctionStatement)
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
-                        foreach (var parameter in symbol.Parameters)
-                            yield return new NameAndType(parameter.Name, parameter.Type);
-                    }
-                    else if (node is ConstructorDeclarationSyntax constructorDeclaration)
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
-                        foreach (var parameter in symbol.Parameters)
-                            yield return new NameAndType(parameter.Name, parameter.Type);
+                        case IndexerDeclarationSyntax indexerDeclarationSyntax:
+                            {
+                                var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return new NameAndType(parameter.Name, parameter.Type);
 
-                        yield break;
+                                yield break;
+                            }
+
+                        case MethodDeclarationSyntax methodDeclaration:
+                            {
+                                var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return new NameAndType(parameter.Name, parameter.Type);
+
+                                yield break;
+                            }
+
+                        case LocalFunctionStatementSyntax localFunctionStatement:
+                            {
+                                var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                break;
+                            }
+
+                        case ConstructorDeclarationSyntax constructorDeclaration:
+                            {
+                                var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return new NameAndType(parameter.Name, parameter.Type);
+
+                                yield break;
+                            }
                     }
 
                     node = node.Parent;

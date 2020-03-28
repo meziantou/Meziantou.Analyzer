@@ -173,18 +173,17 @@ namespace Meziantou.Analyzer.Rules
                         if (invocationOperation.Instance.Type.IsValueType && !IsPrimitive(invocationOperation.Instance.Type))
                             return false;
 
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                         {
-                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
                             context.ReportDiagnostic(s_rule, properties, operation, "Replace with Append().AppendLine()");
-                            return true;
                         }
                         else
                         {
-                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
                             context.ReportDiagnostic(s_rule, properties, operation, "Remove the ToString call");
-                            return true;
                         }
+
+                        return true;
                     }
 
                     if (targetMethod.Parameters.Length == 2 &&
@@ -212,9 +211,6 @@ namespace Meziantou.Analyzer.Rules
                     context.ReportDiagnostic(s_rule, properties, operation, $"Use {methodName}(string, int, int) instead of Substring");
                     return true;
                 }
-
-                // TODO string.Join => AppendJoin
-                // TODO combine Appends when there are const strings
             }
 
             return false;
