@@ -20,8 +20,8 @@ namespace Meziantou.Analyzer.Rules
 
         private static readonly DiagnosticDescriptor s_stringInterpolationRule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation,
-            title: "Do not use implicit culture-sensitive ToString",
-            messageFormat: "Do not use implicit culture-sensitive ToString",
+            title: "Do not use implicit culture-sensitive ToString in interpolated strings",
+            messageFormat: "Do not use implicit culture-sensitive ToString in interpolated strings",
             RuleCategories.Design,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,

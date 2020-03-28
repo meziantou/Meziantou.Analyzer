@@ -45,6 +45,23 @@ namespace DocumentationGenerator
             var path = Path.GetFullPath(Path.Combine(args[0], @"README.md"));
             Console.WriteLine(path);
             File.WriteAllText(path, sb.ToString());
+
+            // Write title in detail pages
+            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+            {
+                var title = $"# {diagnostic.Id} - {diagnostic.Title}";
+                var detailPath = Path.GetFullPath(Path.Combine(args[0], "Rules", diagnostic.Id + ".md"));
+                if (File.Exists(detailPath))
+                {
+                    var lines = File.ReadAllLines(detailPath);
+                    lines[0] = title;
+                    File.WriteAllLines(detailPath, lines);
+                }
+                else
+                {
+                    File.WriteAllText(detailPath, title);
+                }
+            }
         }
 
         private static string GetSeverity(DiagnosticSeverity severity)
