@@ -344,5 +344,30 @@ class Mock<T>
 ")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task SyntaxNode_With()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        var a = new Microsoft.CodeAnalysis.SyntaxNode();
+        _ = a.WithElse(null);
+    }
+}
+
+namespace Microsoft.CodeAnalysis
+{
+    public class SyntaxNode
+    {
+        public SyntaxNode WithElse(object value) => throw null;
+    }
+}
+")
+                  .ValidateAsync();
+        }
     }
 }

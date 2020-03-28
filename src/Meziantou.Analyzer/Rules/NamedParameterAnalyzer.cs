@@ -46,6 +46,7 @@ namespace Meziantou.Analyzer.Rules
                 var xunitAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Xunit.Assert");
                 var keyValuePairTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
                 var propertyBuilderType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
+                var syntaxNodeType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
 
                 compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
                 {
@@ -119,6 +120,10 @@ namespace Meziantou.Analyzer.Rules
                                     return;
 
                                 if ((string.Equals(methodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(methodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
+                                    return;
+
+                                // e.g. SyntaxNode.WithElse
+                                if (methodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && methodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
                                     return;
 
                                 var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
