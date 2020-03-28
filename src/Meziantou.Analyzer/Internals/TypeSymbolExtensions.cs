@@ -124,6 +124,11 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_DateTime;
         }
 
+        public static bool IsEnumeration(this ITypeSymbol symbol)
+        {
+            return symbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.EnumUnderlyingType != null;
+        }
+
         public static bool IsNumberType(this ITypeSymbol symbol)
         {
             if (symbol == null)

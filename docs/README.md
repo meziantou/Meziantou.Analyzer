@@ -1,6 +1,6 @@
 |Id|Category|Description|Severity|Is enabled|Code fix|
 |--|--------|-----------|:------:|:--------:|:------:|
-|[MA0001](Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0001](Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0002](Rules/MA0002.md)|Usage|IEqualityComparer<string> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0003](Rules/MA0003.md)|Style|Name parameter|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0004](Rules/MA0004.md)|Usage|Use .ConfigureAwait(false)|<span title='Warning'>⚠️</span>|✔️|✔️|
@@ -71,3 +71,6 @@
 |[MA0070](Rules/MA0070.md)|Design|Obsolete attributes should include explanations|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0071](Rules/MA0071.md)|Style|Avoid using redundant else|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0072](Rules/MA0072.md)|Design|Do not throw from a finally block|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0074](Rules/MA0074.md)|Usage|Avoid implicit culture-sensitive methods|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0075](Rules/MA0075.md)|Design|Do not use implicit culture-sensitive ToString|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0076](Rules/MA0076.md)|Design|Do not use implicit culture-sensitive ToString|<span title='Info'>ℹ️</span>|✔️|❌|

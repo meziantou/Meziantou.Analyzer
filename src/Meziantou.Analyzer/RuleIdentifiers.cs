@@ -76,6 +76,8 @@ namespace Meziantou.Analyzer
         public const string AvoidUsingRedundantElse = "MA0071";
         public const string DoNotThrowFromFinallyBlock = "MA0072";
         public const string AvoidCultureSensitiveMethod = "MA0074";
+        public const string DoNotUseImplicitCultureSensitiveToString = "MA0075";
+        public const string DoNotUseImplicitCultureSensitiveToStringInterpolation = "MA0076";
 
         public static string GetHelpUri(string idenfifier)
         {

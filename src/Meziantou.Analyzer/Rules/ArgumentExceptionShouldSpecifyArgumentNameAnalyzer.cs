@@ -92,11 +92,6 @@ namespace Meziantou.Analyzer.Rules
                         context.ReportDiagnostic(s_rule, argument, $"'{value}' is not a valid parameter name");
                         return;
                     }
-                    else
-                    {
-                        // Cannot determine the value of the argument
-                        return;
-                    }
                 }
 
                 // Cannot determine the value of the argument

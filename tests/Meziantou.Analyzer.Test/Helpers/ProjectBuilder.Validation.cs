@@ -163,7 +163,8 @@ namespace TestHelper
                 .WithProjectParseOptions(projectId, CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion))
                 .AddMetadataReferences(projectId, References)
                 .AddMetadataReferences(projectId, (await CommonReferences.NetStandard2_0.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)))
-                .AddMetadataReferences(projectId, (await CommonReferences.System_Collections_Immutable.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)));
+                .AddMetadataReferences(projectId, (await CommonReferences.System_Collections_Immutable.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)))
+                .AddMetadataReferences(projectId, (await CommonReferences.System_Numerics_Vectors.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)));
 
             var count = 0;
             AppendFile(FileName, SourceCode);

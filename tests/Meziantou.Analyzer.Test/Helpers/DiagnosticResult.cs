@@ -9,7 +9,7 @@ namespace TestHelper
 
         public DiagnosticResultLocation[] Locations
         {
-            get => _locations ?? (_locations = Array.Empty<DiagnosticResultLocation>());
+            get => _locations ??= Array.Empty<DiagnosticResultLocation>();
             set => _locations = value;
         }
 

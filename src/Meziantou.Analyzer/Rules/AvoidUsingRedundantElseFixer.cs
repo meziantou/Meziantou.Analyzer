@@ -72,7 +72,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 var blockSyntax = Block(new[]
                 {
-                    modifiedIfStatement
+                    modifiedIfStatement,
                 }.Concat(formattedElseChildNodes.Cast<StatementSyntax>()));
                 editor.ReplaceNode(ifStatementSyntax, blockSyntax);
             }

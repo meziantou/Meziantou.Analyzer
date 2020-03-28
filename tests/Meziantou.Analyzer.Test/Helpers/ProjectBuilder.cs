@@ -55,6 +55,8 @@ namespace TestHelper
         public ProjectBuilder AddXUnitApi() => AddApiReference("XUnit");
 
         public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
+        
+        public ProjectBuilder AddSystemNumericsVectors() => AddApiReference("System.Numerics.Vectors");
 
         public ProjectBuilder WithSourceCode(string sourceCode)
         {
