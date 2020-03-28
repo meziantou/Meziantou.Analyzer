@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -51,15 +50,6 @@ namespace Meziantou.Analyzer.Rules
                 // Guid.ToString(IFormatProvider) should not be used
                 if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
                     return;
-            }
-            else if (!string.Equals(methodName, "Parse", StringComparison.Ordinal) &&
-                     !string.Equals(methodName, "TryParse", StringComparison.Ordinal) &&
-                     !string.Equals(methodName, "TryFormat", StringComparison.Ordinal) &&
-                     !string.Equals(methodName, nameof(string.ToLower), StringComparison.Ordinal) &&
-                     !string.Equals(methodName, nameof(string.ToUpper), StringComparison.Ordinal) &&
-                     !string.Equals(methodName, nameof(StringBuilder.AppendFormat), StringComparison.Ordinal))
-            {
-                return;
             }
 
             if (!operation.HasArgumentOfType(formatProviderType))
