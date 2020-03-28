@@ -9,9 +9,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
-            RuleIdentifiers.UseStringComparison,
-            title: "StringComparison is missing",
+        private static readonly DiagnosticDescriptor s_avoidCultureSensitiveMethodRule = new DiagnosticDescriptor(
+            RuleIdentifiers.AvoidCultureSensitiveMethod,
+            title: "Avoid implicit culture-sensitive methods",
             messageFormat: "Use an overload of '{0}' that has a StringComparison parameter",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
@@ -19,7 +19,17 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparison));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        private static readonly DiagnosticDescriptor s_useStringComparisonRule = new DiagnosticDescriptor(
+            RuleIdentifiers.UseStringComparison,
+            title: "StringComparison is missing",
+            messageFormat: "Use an overload of '{0}' that has a StringComparison parameter",
+            RuleCategories.Usage,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparison));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_avoidCultureSensitiveMethodRule, s_useStringComparisonRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -32,23 +42,7 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var stringComparisonType = context.Compilation.GetTypeByMetadataName("System.StringComparison");
-            var stringType = context.Compilation.GetSpecialType(SpecialType.System_String);
-            var jobjectType = context.Compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
-
             var operation = (IInvocationOperation)context.Operation;
-            if (!IsMethod(operation, stringType, nameof(string.Compare)) &&
-                !IsMethod(operation, stringType, nameof(string.Equals)) &&
-                !IsMethod(operation, stringType, nameof(string.IndexOf)) &&
-                !IsMethod(operation, stringType, nameof(string.IndexOfAny)) &&
-                !IsMethod(operation, stringType, nameof(string.LastIndexOf)) &&
-                !IsMethod(operation, stringType, nameof(string.LastIndexOfAny)) &&
-                !IsMethod(operation, stringType, nameof(string.EndsWith)) &&
-                !IsMethod(operation, stringType, nameof(string.Replace)) &&
-                !IsMethod(operation, stringType, nameof(string.StartsWith)) &&
-                !IsMethod(operation, jobjectType, "Property"))
-            {
-                return;
-            }
 
             if (!operation.HasArgumentOfType(stringComparisonType))
             {
@@ -60,7 +54,14 @@ namespace Meziantou.Analyzer.Rules
                 // Check if there is an overload with a StringComparison
                 if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, stringComparisonType))
                 {
-                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name);
+                    if (IsNonCultureSensitiveMethod(operation))
+                    {
+                        context.ReportDiagnostic(s_useStringComparisonRule, operation, operation.TargetMethod.Name);
+                    }
+                    else
+                    {
+                        context.ReportDiagnostic(s_avoidCultureSensitiveMethodRule, operation, operation.TargetMethod.Name);
+                    }
                 }
             }
         }
@@ -78,6 +79,40 @@ namespace Meziantou.Analyzer.Rules
                 return false;
 
             return true;
+        }
+
+        private static bool IsNonCultureSensitiveMethod(IInvocationOperation operation)
+        {
+            var method = operation.TargetMethod;
+            if (method == null)
+                return false;
+
+            // string.Equals(string)
+            if (method.ContainingType.IsString() && method.Name == nameof(string.Equals) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
+                return true;
+
+            // string.Equals(string, string)
+            if (method.ContainingType.IsString() && method.Name == nameof(string.Equals) && method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsString())
+                return true;
+
+            // string.IndexOf(char)
+            if (method.ContainingType.IsString() && method.Name == nameof(string.IndexOf) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                return true;
+
+            // string.EndsWith(char)
+            if (method.ContainingType.IsString() && method.Name == nameof(string.EndsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                return true;
+
+            // string.StartsWith(char)
+            if (method.ContainingType.IsString() && method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                return true;
+
+            // JObject.Property(string)
+            var jobjectType = operation.SemanticModel.Compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
+            if (method.ContainingType.IsEqualTo(jobjectType) && method.Name == "Property" && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
+                return true;
+
+            return false;
         }
     }
 }

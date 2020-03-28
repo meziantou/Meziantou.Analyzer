@@ -96,6 +96,8 @@ namespace TestHelper
                     case '|' when lineStart >= 0 && Next() == ']':
                         ShouldReportDiagnostic(new DiagnosticResult
                         {
+                            Id = DefaultAnalyzerId,
+                            Message = DefaultAnalyzerMessage,
                             Locations = new[]
                             {
                                 new DiagnosticResultLocation("Test0.cs", lineStart, columnStart, lineIndex, columnIndex),

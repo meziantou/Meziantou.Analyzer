@@ -92,6 +92,14 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_String;
         }
 
+        public static bool IsChar(this ITypeSymbol symbol)
+        {
+            if (symbol == null)
+                return false;
+
+            return symbol.SpecialType == SpecialType.System_Char;
+        }
+
         public static bool IsInt32(this ITypeSymbol symbol)
         {
             if (symbol == null)
