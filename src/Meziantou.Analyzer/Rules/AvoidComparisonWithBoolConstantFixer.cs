@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
 using Microsoft.CodeAnalysis.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -64,7 +65,7 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-            editor.ReplaceNode(nodeToFix, nodeToKeep.WithAdditionalAnnotations(Formatter.Annotation));
+            editor.ReplaceNode(nodeToFix, nodeToKeep.WithAdditionalAnnotations(Formatter.Annotation, Simplifier.Annotation));
 
             return editor.GetChangedDocument();
         }

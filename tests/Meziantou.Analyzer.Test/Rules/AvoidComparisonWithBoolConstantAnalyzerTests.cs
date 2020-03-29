@@ -15,19 +15,19 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Theory]
-        [InlineData("==", "true", "")]
+        [InlineData("==", "true", null)]
         [InlineData("==", "false", "!")]
         [InlineData("!=", "true", "!")]
-        [InlineData("!=", "false", "")]
-        public async Task ComparingVariableWithBoolLiteral_KeepsVariable(string equalityOperator, string boolLiteral, string expectedPrefix)
+        [InlineData("!=", "false", null)]
+        public async Task ComparingVariableWithBoolLiteral_KeepsVariable(string op, string literal, string expectedPrefix)
         {
             var originalCode = $@"
 class TestClass
 {{
     void Test()
     {{
-        var condition = false;
-        if (condition [|{equalityOperator}|] {boolLiteral})
+        var value = false;
+        if (value [|{op}|] {literal})
         {{
         }}
     }}
@@ -37,8 +37,8 @@ class TestClass
 {{
     void Test()
     {{
-        var condition = false;
-        if ({expectedPrefix}condition)
+        var value = false;
+        if ({expectedPrefix}value)
         {{
         }}
     }}
@@ -50,18 +50,18 @@ class TestClass
         }
 
         [Theory]
-        [InlineData("true", "==", "")]
-        [InlineData("false", "==", "!")]
-        [InlineData("true", "!=", "!")]
-        [InlineData("false", "!=", "")]
-        public async Task ComparingBoolLiteralWithExpression_KeepsExpression(string boolLiteral, string equalityOperator, string expectedPrefix)
+        [InlineData("true", "==", "(GetSomeNumber() == 15)", "GetSomeNumber() == 15")]
+        [InlineData("false", "==", "(GetSomeNumber() == 15)", "!(GetSomeNumber() == 15)")]
+        [InlineData("true", "!=", "(GetSomeNumber() == 15)", "!(GetSomeNumber() == 15)")]
+        [InlineData("false", "!=", "(GetSomeNumber() == 15)", "GetSomeNumber() == 15")]
+        public async Task ComparingBoolLiteralWithExpression_KeepsExpression(string literal, string op, string originalExpression, string modifiedExpression)
         {
             var originalCode = $@"
 class TestClass
 {{
     void Test()
     {{
-        var success = {boolLiteral} [|{equalityOperator}|] (GetSomeNumber() == 15);
+        var value = {literal} [|{op}|] {originalExpression};
         int GetSomeNumber() => 12;
     }}
 }}";
@@ -70,7 +70,7 @@ class TestClass
 {{
     void Test()
     {{
-        var success = {expectedPrefix}(GetSomeNumber() == 15);
+        var value = {modifiedExpression};
         int GetSomeNumber() => 12;
     }}
 }}";
@@ -81,11 +81,11 @@ class TestClass
         }
 
         [Theory]
-        [InlineData("==", "true", "")]
+        [InlineData("==", "true", null)]
         [InlineData("==", "false", "!")]
         [InlineData("!=", "true", "!")]
-        [InlineData("!=", "false", "")]
-        public async Task ComparingVariableWithBoolConstant_KeepsVariable(string equalityOperator, string constBool, string expectedPrefix)
+        [InlineData("!=", "false", null)]
+        public async Task ComparingVariableWithBoolConstant_KeepsVariable(string op, string constBool, string expectedPrefix)
         {
             var originalCode = $@"
 class TestClass
@@ -93,8 +93,8 @@ class TestClass
     void Test()
     {{
         const bool MyConstant = {constBool};
-        bool a = false;
-        _ = a [|{equalityOperator}|] MyConstant;
+        bool value = false;
+        _ = value [|{op}|] MyConstant;
     }}
 }}";
             var modifiedCode = $@"
@@ -103,8 +103,8 @@ class TestClass
     void Test()
     {{
         const bool MyConstant = {constBool};
-        bool a = false;
-        _ = {expectedPrefix}a;
+        bool value = false;
+        _ = {expectedPrefix}value;
     }}
 }}";
             await CreateProjectBuilder()
@@ -115,8 +115,8 @@ class TestClass
 
         [Theory]
         [InlineData("!=", "true", "!")]
-        [InlineData("==", "MyConstant2", "")]
-        public async Task ComparingBoolConstantsAndLiterals_KeepsSecondOperand(string equalityOperator, string secondOperand, string expectedPrefix)
+        [InlineData("==", "MyConstant2", null)]
+        public async Task ComparingBoolConstantsAndLiterals_KeepsRightOperand(string op, string rightOperand, string expectedPrefix)
         {
             var originalCode = $@"
 class TestClass
@@ -125,7 +125,7 @@ class TestClass
     {{
         const bool MyConstant1 = true;
         const bool MyConstant2 = false;
-        _ = MyConstant1 [|{equalityOperator}|] {secondOperand};
+        _ = MyConstant1 [|{op}|] {rightOperand};
     }}
 }}";
             var modifiedCode = $@"
@@ -135,7 +135,7 @@ class TestClass
     {{
         const bool MyConstant1 = true;
         const bool MyConstant2 = false;
-        _ = {expectedPrefix}{secondOperand};
+        _ = {expectedPrefix}{rightOperand};
     }}
 }}";
             await CreateProjectBuilder()
@@ -152,8 +152,8 @@ class TestClass
 {
     void Test()
     {
-        bool? a = true;
-        if (a == true)
+        bool? value = true;
+        if (value == true)
         {
         }
     }
@@ -171,11 +171,11 @@ class TestClass
 {
     void Test()
     {
-        bool a = true;
-        if (a)
+        bool value = true;
+        if (value)
         {
         }
-        if (!a)
+        if (!value)
         {
         }
     }
