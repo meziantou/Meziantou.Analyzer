@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Composition;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -9,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules
@@ -27,16 +29,18 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            var title = "Remove comparison with bool literal";
+            var diagnostic = context.Diagnostics[0];
+
+            var title = "Remove comparison with bool constant";
             var codeAction = CodeAction.Create(
                 title,
-                ct => RemoveComparisonWithBoolConstant(context.Document, nodeToFix, ct),
+                ct => RemoveComparisonWithBoolConstant(context.Document, diagnostic, nodeToFix, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
 
-        private static async Task<Document> RemoveComparisonWithBoolConstant(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> RemoveComparisonWithBoolConstant(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             if (!(nodeToFix is BinaryExpressionSyntax binaryExpressionSyntax))
                 return document;
@@ -44,40 +48,23 @@ namespace Meziantou.Analyzer.Rules
             if (binaryExpressionSyntax.Left is null || binaryExpressionSyntax.Right is null)
                 return document;
 
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-            var leftConstant = semanticModel.GetConstantValue(binaryExpressionSyntax.Left);
-            var rightConstant = semanticModel.GetConstantValue(binaryExpressionSyntax.Right);
+            var nodeToKeepSpanStart = int.Parse(diagnostic.Properties.GetValueOrDefault("NodeToKeepSpanStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var nodeToKeepSpanLength = int.Parse(diagnostic.Properties.GetValueOrDefault("NodeToKeepSpanLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var logicalNotOperatorNeeded = bool.Parse(diagnostic.Properties.GetValueOrDefault("LogicalNotOperatorNeeded"));
 
-            ExpressionSyntax fixedNode;
-            bool invertCondition;
-            if (leftConstant.HasValue)
-            {
-                fixedNode = binaryExpressionSyntax.Right;
-                invertCondition = (bool)leftConstant.Value ?
-                    binaryExpressionSyntax.IsKind(SyntaxKind.NotEqualsExpression) :
-                    binaryExpressionSyntax.IsKind(SyntaxKind.EqualsExpression);
-            }
-            else if (rightConstant.HasValue)
-            {
-                fixedNode = binaryExpressionSyntax.Left;
-                invertCondition = (bool)rightConstant.Value ?
-                    binaryExpressionSyntax.IsKind(SyntaxKind.NotEqualsExpression) :
-                    binaryExpressionSyntax.IsKind(SyntaxKind.EqualsExpression);
-            }
-            else
-            {
-                return document;
-            }
+            var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var nodeToKeep = syntaxRoot.FindNode(new TextSpan(nodeToKeepSpanStart, nodeToKeepSpanLength), getInnermostNodeForTie: true);
+            if (nodeToKeep.Parent.IsKind(SyntaxKind.ParenthesizedExpression))
+                nodeToKeep = nodeToKeep.Parent;
 
-            if (invertCondition)
+            if (logicalNotOperatorNeeded)
             {
-                fixedNode = PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, fixedNode);
+                nodeToKeep = PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, (ExpressionSyntax)nodeToKeep);
             }
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-            editor.ReplaceNode(nodeToFix, fixedNode
-                .WithAdditionalAnnotations(Formatter.Annotation));
+            editor.ReplaceNode(nodeToFix, nodeToKeep.WithAdditionalAnnotations(Formatter.Annotation));
 
             return editor.GetChangedDocument();
         }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -11,7 +12,7 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.AvoidComparisonWithBoolConstant,
-            title: "Avoid comparison with bool contant",
+            title: "Avoid comparison with bool constant",
             messageFormat: "Avoid comparison with bool constant",
             RuleCategories.Style,
             DiagnosticSeverity.Info,
@@ -47,12 +48,36 @@ namespace Meziantou.Analyzer.Rules
             if (binaryOperation.LeftOperand.IsImplicit || binaryOperation.RightOperand.IsImplicit)
                 return;
 
-            if (IsConstantBool(binaryOperation.LeftOperand) || IsConstantBool(binaryOperation.RightOperand))
+            IOperation nodeToKeep;
+            IOperation nodeToRemove;
+            if (IsConstantBool(binaryOperation.LeftOperand))
             {
-                var operatorTokenLocation = ((BinaryExpressionSyntax)binaryOperation.Syntax).OperatorToken.GetLocation();
-                var diagnostic = Diagnostic.Create(s_rule, operatorTokenLocation);
-                context.ReportDiagnostic(diagnostic);
+                nodeToKeep = binaryOperation.RightOperand;
+                nodeToRemove = binaryOperation.LeftOperand;
             }
+            else if (IsConstantBool(binaryOperation.RightOperand))
+            {
+                nodeToKeep = binaryOperation.LeftOperand;
+                nodeToRemove = binaryOperation.RightOperand;
+            }
+            else
+            {
+                return;
+            }
+
+            // The fixer will need to prefix the remaining operand with '!' if the original comparison is "!= true" or "== false"
+            var logicalNotOperatorNeeded = (bool)nodeToRemove.ConstantValue.Value ?
+                binaryOperation.OperatorKind == BinaryOperatorKind.NotEquals :
+                binaryOperation.OperatorKind == BinaryOperatorKind.Equals;
+
+            var properties = ImmutableDictionary.Create<string, string>()
+                .Add("NodeToKeepSpanStart", nodeToKeep.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                .Add("NodeToKeepSpanLength", nodeToKeep.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                .Add("LogicalNotOperatorNeeded", logicalNotOperatorNeeded.ToString());
+
+            var operatorTokenLocation = ((BinaryExpressionSyntax)binaryOperation.Syntax).OperatorToken.GetLocation();
+            var diagnostic = Diagnostic.Create(s_rule, operatorTokenLocation, properties);
+            context.ReportDiagnostic(diagnostic);
         }
 
         private static bool IsConstantBool(IOperation operation)
