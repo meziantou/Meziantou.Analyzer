@@ -107,9 +107,9 @@ namespace Meziantou.Analyzer.Rules
             if (method.ContainingType.IsString() && method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
                 return true;
 
-            // JObject.Property(string)
+            // JObject.Property / TryGetValue / GetValue
             var jobjectType = operation.SemanticModel.Compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
-            if (method.ContainingType.IsEqualTo(jobjectType) && method.Name == "Property" && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
+            if (method.ContainingType.IsEqualTo(jobjectType))
                 return true;
 
             return false;
