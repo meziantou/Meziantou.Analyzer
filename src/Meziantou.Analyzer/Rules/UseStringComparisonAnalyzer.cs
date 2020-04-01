@@ -112,6 +112,11 @@ namespace Meziantou.Analyzer.Rules
             if (method.ContainingType.IsEqualTo(jobjectType))
                 return true;
 
+            // Xunit.Assert.Contains/NotContains
+            var xunitAssertType = operation.SemanticModel.Compilation.GetTypeByMetadataName("XUnit.Assert");
+            if (method.ContainingType.IsEqualTo(xunitAssertType))
+                return true;
+
             return false;
         }
     }
