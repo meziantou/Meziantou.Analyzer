@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -31,21 +30,35 @@ namespace Meziantou.Analyzer.Rules
 
         private static void AnalyzeMethodSymbol(SymbolAnalysisContext context)
         {
-            var symbol = (IMethodSymbol)context.Symbol;
+            var equalsMethod = (IMethodSymbol)context.Symbol;
 
-            if (!string.Equals(symbol.Name, "Equals", StringComparison.Ordinal))
+            if (!equalsMethod.Name.Equals("Equals", StringComparison.Ordinal))
                 return;
 
-            if (symbol.IsStatic || symbol.MethodKind != MethodKind.Ordinary || symbol.DeclaredAccessibility != Accessibility.Public)
+            if (equalsMethod.IsStatic ||
+                equalsMethod.IsAbstract ||
+                equalsMethod.MethodKind != MethodKind.Ordinary ||
+                equalsMethod.DeclaredAccessibility != Accessibility.Public)
+            {
+                return;
+            }
+
+            if (equalsMethod.Parameters.Length != 1 ||
+                !equalsMethod.Parameters[0].Type.IsEqualTo(equalsMethod.ContainingType) ||
+                !equalsMethod.ReturnType.IsBoolean())
+            {
+                return;
+            }
+
+            var iequatableType = context.Compilation.GetTypeByMetadataName("System.IEquatable`1");
+            if (iequatableType == null)
                 return;
 
-            if (symbol.Parameters.Length != 1 || !symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) || !symbol.ReturnType.IsBoolean())
+            iequatableType = iequatableType.Construct(equalsMethod.ContainingType);
+            if (equalsMethod.ContainingType.Implements(iequatableType))
                 return;
 
-            if (symbol.ContainingType.Interfaces.Any(i => i.Name.Equals("IEquatable", StringComparison.Ordinal)))
-                return;
-
-            context.ReportDiagnostic(s_rule, symbol.ContainingType);
+            context.ReportDiagnostic(s_rule, equalsMethod.ContainingType);
         }
     }
 }
