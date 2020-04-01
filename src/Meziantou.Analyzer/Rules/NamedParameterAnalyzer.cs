@@ -38,6 +38,7 @@ namespace Meziantou.Analyzer.Rules
                 var taskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
                 var valueTaskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
                 var valueTaskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+                var taskCompletionSourceType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
                 var methodBaseTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
                 var fieldInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.FieldInfo");
                 var propertyInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.PropertyInfo");
@@ -93,6 +94,12 @@ namespace Meziantou.Analyzer.Rules
                                     return;
 
                                 if (IsMethod(methodSymbol, taskTokenType, nameof(Task.FromResult)))
+                                    return;
+
+                                if (IsMethod(methodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.SetResult)))
+                                    return;
+
+                                if (IsMethod(methodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.TrySetResult)))
                                     return;
 
                                 if (IsMethod(methodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)

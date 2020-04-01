@@ -369,5 +369,39 @@ namespace Microsoft.CodeAnalysis
 ")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task TaskCompletionSouce_SetResult()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        var a = new System.Threading.Tasks.TaskCompletionSource<string>();
+        a.SetResult(null);
+    }
+}
+")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task TaskCompletionSouce_TrySetResult()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        var a = new System.Threading.Tasks.TaskCompletionSource<string>();
+        _ = a.TrySetResult(null);
+    }
+}
+")
+                  .ValidateAsync();
+        }
     }
 }
