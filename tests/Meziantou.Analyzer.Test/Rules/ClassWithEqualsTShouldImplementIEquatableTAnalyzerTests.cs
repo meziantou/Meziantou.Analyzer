@@ -10,32 +10,45 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<ClassWithEqualsTShouldImplementIEquatableTAnalyzer>();
+                .WithAnalyzer<ClassWithEqualsTShouldImplementIEquatableTAnalyzer>()
+                .WithCodeFixProvider<ClassWithEqualsTShouldImplementIEquatableTFixer>();
         }
 
         [Fact]
-        public async Task Test_ClassDoesNotImplementIEquatableAndProvidesCompatibleEqualsMethod_DiagnosticIsReported()
+        public async Task Test_ClassImplementsNoInterfaceAndProvidesCompatibleEqualsMethod_DiagnosticIsReported()
         {
-            var sourceCode = @"
+            var originalCode = @"
 class [|Test|]
 {
     public bool Equals(Test other) => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task Test_StructDoesNotImplementIEquatableAndProvidesCompatibleEqualsMethod_DiagnosticIsReported()
-        {
-            var sourceCode = @"
-struct [|Test|]
+            var modifiedCode = @"
+class Test : System.IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_StructImplementsNoInterfaceAndProvidesCompatibleEqualsMethod_DiagnosticIsReported()
+        {
+            var originalCode = @"
+struct [|Test|]     //  This comment stays
+{
+    public bool Equals(Test other) => throw null;
+}";
+            var modifiedCode = @"
+struct Test : System.IEquatable<Test>     //  This comment stays
+{
+    public bool Equals(Test other) => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
 
@@ -46,15 +59,15 @@ struct [|Test|]
         [InlineData("public int Equals(Test other)")]
         [InlineData("public void Equals(Test other)")]
         [InlineData("public bool EqualsTo(Test other)")]
-        public async Task Test_ClassDoesNotImplementIEquatableAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
+        public async Task Test_ClassImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
         {
-            var sourceCode = $@"
+            var originalCode = $@"
 class Test
 {{
     {methodSignature} => throw null;
 }}";
             await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
+                  .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
 
@@ -65,110 +78,138 @@ class Test
         [InlineData("public int Equals(Test other)")]
         [InlineData("public void Equals(Test other)")]
         [InlineData("public bool EqualsTo(Test other)")]
-        public async Task Test_StructDoesNotImplementIEquatableAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
+        public async Task Test_StructImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
         {
-            var sourceCode = $@"
+            var originalCode = $@"
 struct Test
 {{
     {methodSignature} => throw null;
 }}";
             await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
+                  .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
 
         [Fact]
         public async Task Test_ClassImplementsSystemIEquatableWithTOfRightType_NoDiagnosticReported()
         {
-            const string SourceCode = @"using System;
+            var originalCode = @"using System;
 class Test : IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
+                  .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
 
         [Fact]
         public async Task Test_StructImplementsSystemIEquatableWithTOfRightType_NoDiagnosticReported()
         {
-            const string SourceCode = @"using System;
+            var originalCode = @"using System;
 struct Test : IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
+                  .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
 
         [Fact]
         public async Task Test_ClassImplementsSystemIEquatableWithTOfWrongTypeButProvidesCompatibleEqualsMethod_DiagnosticIsReported()
         {
-            const string SourceCode = @"using System;
+            var originalCode = @"using System;
 class [|Test|] : IEquatable<string>
 {
     public bool Equals(Test other) => throw null;
     public bool Equals(string other) => throw null;
 }";
+            var modifiedCode = @"using System;
+class Test : IEquatable<string>, IEquatable<Test>
+{
+    public bool Equals(Test other) => throw null;
+    public bool Equals(string other) => throw null;
+}";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
 
         [Fact]
         public async Task Test_StructImplementsSystemIEquatableWithTOfWrongTypeButProvidesCompatibleEqualsMethod_DiagnosticIsReported()
         {
-            const string SourceCode = @"using System;
+            var originalCode = @"using System;
 struct [|Test|] : IEquatable<string>
 {
     public bool Equals(Test other) => throw null;
     public bool Equals(string other) => throw null;
 }";
+            var modifiedCode = @"using System;
+struct Test : IEquatable<string>, IEquatable<Test>
+{
+    public bool Equals(Test other) => throw null;
+    public bool Equals(string other) => throw null;
+}";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
 
         [Fact]
         public async Task Test_ClassImplementsWrongIEquatableButProvidesCompatibleEqualsMethod_DiagnosticIsReported()
         {
-            const string SourceCode = @"
+            var originalCode = @"
 interface IEquatable<T> { bool Equals(T other); }
 class [|Test|] : IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
 }";
+            var modifiedCode = @"
+interface IEquatable<T> { bool Equals(T other); }
+class Test : IEquatable<Test>, System.IEquatable<Test>
+{
+    public bool Equals(Test other) => throw null;
+}";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
 
         [Fact]
         public async Task Test_StructImplementsWrongIEquatableButProvidesCompatibleEqualsMethod_DiagnosticIsReported()
         {
-            const string SourceCode = @"
+            var originalCode = @"
 interface IEquatable<T> { bool Equals(T other); }
 struct [|Test|] : IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
 }";
+            var modifiedCode = @"
+interface IEquatable<T> { bool Equals(T other); }
+struct Test : IEquatable<Test>, System.IEquatable<Test>
+{
+    public bool Equals(Test other) => throw null;
+}";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
 
         [Fact]
-        public async Task Test_InterfaceDoesNotImplementSystemIEquatableButProvidesCompatibleEqualsMethod_NoDiagnosticReported()
+        public async Task Test_InterfaceDoesNotInheritFromSystemIEquatableButProvidesCompatibleEqualsMethod_NoDiagnosticReported()
         {
-            const string SourceCode = @"
+            var originalCode = @"
 public interface ITest
 {
     bool Equals(ITest other);
 }";
             await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
+                  .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
     }
