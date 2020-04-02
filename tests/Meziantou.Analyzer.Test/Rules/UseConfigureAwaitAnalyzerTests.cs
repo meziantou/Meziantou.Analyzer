@@ -83,7 +83,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .AddWpfApi()
+                  .WithTargetFramework(TargetFramework.Net48)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -94,13 +94,17 @@ class MyClass : System.Windows.Window
             const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Input.ICommand
 {
+    public void Execute(object o) => throw null;
+    public bool CanExecute(object o) => throw null;
+    public event System.EventHandler CanExecuteChanged;
+
     async Task Test()
     {
         await Task.Delay(1);
     }
 }";
             await CreateProjectBuilder()
-                  .AddWpfApi()
+                  .WithTargetFramework(TargetFramework.Net48)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -129,7 +133,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .AddWpfApi()
+                  .WithTargetFramework(TargetFramework.Net48)
                   .WithSourceCode(SourceCode)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
@@ -154,7 +158,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .AddWpfApi()
+                  .WithTargetFramework(TargetFramework.Net48)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -179,7 +183,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .AddWpfApi()
+                  .WithTargetFramework(TargetFramework.Net48)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }

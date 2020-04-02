@@ -195,7 +195,7 @@ class TypeName
             const string SourceCode = @"
 class TypeName
 {
-    public void Test() => Xunit.Assert.AreEqual(null, true);
+    public void Test() => Xunit.Assert.Equal(null, ""dummy"");
 }";
             await CreateProjectBuilder()
                   .AddXUnitApi()

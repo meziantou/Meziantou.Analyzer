@@ -3,14 +3,24 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Net.Http;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace TestHelper
 {
     public sealed partial class ProjectBuilder
     {
+        private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> s_cache = new ConcurrentDictionary<string, Lazy<Task<string[]>>>(StringComparer.Ordinal);
+
         private int _diagnosticMessageIndex = 0;
 
         public string FileName { get; private set; }
@@ -18,6 +28,7 @@ namespace TestHelper
         public string EditorConfig { get; private set; }
         public bool IsValidCode { get; private set; } = true;
         public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
+        public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetStandard2_0;
         public IList<MetadataReference> References { get; } = new List<MetadataReference>();
         public IList<string> ApiReferences { get; } = new List<string>();
         public DiagnosticAnalyzer DiagnosticAnalyzer { get; private set; }
@@ -27,6 +38,67 @@ namespace TestHelper
         public int? CodeFixIndex { get; private set; }
         public string DefaultAnalyzerId { get; set; }
         public string DefaultAnalyzerMessage { get; set; }
+
+        private static Task<string[]> GetNuGetReferences(string packageName, string version, string path)
+        {
+            var task = s_cache.GetOrAdd(packageName + '@' + version + ':' + path, key =>
+            {
+                return new Lazy<Task<string[]>>(Download);
+            });
+
+            return task.Value;
+
+            async Task<string[]> Download()
+            {
+                var tempFolder = Path.Combine(Path.GetTempPath(), "Meziantou.AnalyzerTests", "ref", packageName + '@' + version);
+                if (!Directory.Exists(tempFolder) || !Directory.EnumerateFileSystemEntries(tempFolder).Any())
+                {
+                    Directory.CreateDirectory(tempFolder);
+                    using var httpClient = new HttpClient();
+                    using var stream = await httpClient.GetStreamAsync($"https://www.nuget.org/api/v2/package/{packageName}/{version}").ConfigureAwait(false);
+                    using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+
+                    foreach (var entry in zip.Entries.Where(file => file.FullName.StartsWith(path, StringComparison.Ordinal)))
+                    {
+                        entry.ExtractToFile(Path.Combine(tempFolder, entry.Name));
+                    }
+                }
+
+                var dlls = Directory.GetFiles(tempFolder, "*.dll");
+
+                // Filter invalid .NET assembly
+                var result = new List<string>();
+                foreach (var dll in dlls)
+                {
+                    if (Path.GetFileName(dll) == "System.EnterpriseServices.Wrapper.dll")
+                        continue;
+
+                    try
+                    {
+                        using var stream = File.OpenRead(dll);
+                        using var peFile = new PEReader(stream);
+                        var metadataReader = peFile.GetMetadataReader();
+                        result.Add(dll);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                Assert.NotEmpty(result);
+                return result.ToArray();
+            }
+        }
+
+        private ProjectBuilder AddNuGetReference(string packageName, string version, string path)
+        {
+            foreach (var reference in GetNuGetReferences(packageName, version, path).Result)
+            {
+                References.Add(MetadataReference.CreateFromFile(reference));
+            }
+
+            return this;
+        }
 
         private ProjectBuilder AddApiReference(string name)
         {
@@ -46,17 +118,15 @@ namespace TestHelper
             return this;
         }
 
-        public ProjectBuilder AddWpfApi() => AddApiReference("System.Windows.Window");
+        public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
 
-        public ProjectBuilder AddMSTestApi() => AddApiReference("MSTest");
+        public ProjectBuilder AddNUnitApi() => AddNuGetReference("NUnit", "3.12.0", "lib/netstandard2.0/");
 
-        public ProjectBuilder AddNUnitApi() => AddApiReference("NUnit");
-
-        public ProjectBuilder AddXUnitApi() => AddApiReference("XUnit");
+        public ProjectBuilder AddXUnitApi() =>
+            AddNuGetReference("xunit.extensibility.core", "2.4.1", "lib/netstandard1.1/")
+            .AddNuGetReference("xunit.assert", "2.4.1", "lib/netstandard1.1/");
 
         public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
-        
-        public ProjectBuilder AddSystemNumericsVectors() => AddApiReference("System.Numerics.Vectors");
 
         public ProjectBuilder WithSourceCode(string sourceCode)
         {
@@ -203,6 +273,12 @@ namespace TestHelper
         {
             ExpectedFixedCode = codeFix;
             CodeFixIndex = index;
+            return this;
+        }
+
+        public ProjectBuilder WithTargetFramework(TargetFramework targetFramework)
+        {
+            TargetFramework = targetFramework;
             return this;
         }
     }

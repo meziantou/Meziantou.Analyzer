@@ -149,7 +149,7 @@ namespace TestHelper
             return documents;
         }
 
-        private async Task<Project> CreateProject()
+        private Task<Project> CreateProject()
         {
             var fileNamePrefix = "Test";
             var fileExt = ".cs";
@@ -157,14 +157,24 @@ namespace TestHelper
 
             var projectId = ProjectId.CreateNewId(debugName: testProjectName);
 
+            switch (TargetFramework)
+            {
+                case TargetFramework.NetStandard2_0:
+                    AddNuGetReference("NETStandard.Library", "2.0.3", "build/netstandard2.0/ref/");
+                    break;
+                case TargetFramework.Net48:
+                    AddNuGetReference("Microsoft.NETFramework.ReferenceAssemblies.net48", "1.0.0", "build/.NETFramework/v4.8/");
+                    break;
+            }
+
+            AddNuGetReference("System.Collections.Immutable", "1.5.0", "lib/netstandard2.0/");
+            AddNuGetReference("System.Numerics.Vectors", "4.5.0", "ref/netstandard2.0/");
+
             var solution = new AdhocWorkspace()
                 .CurrentSolution
                 .AddProject(projectId, testProjectName, testProjectName, LanguageNames.CSharp)
                 .WithProjectParseOptions(projectId, CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion))
-                .AddMetadataReferences(projectId, References)
-                .AddMetadataReferences(projectId, (await CommonReferences.NetStandard2_0.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)))
-                .AddMetadataReferences(projectId, (await CommonReferences.System_Collections_Immutable.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)))
-                .AddMetadataReferences(projectId, (await CommonReferences.System_Numerics_Vectors.ConfigureAwait(false)).Select(file => MetadataReference.CreateFromFile(file)));
+                .AddMetadataReferences(projectId, References);
 
             var count = 0;
             AppendFile(FileName, SourceCode);
@@ -175,7 +185,7 @@ namespace TestHelper
                 AppendFile(newFileName, source);
             }
 
-            return solution.GetProject(projectId);
+            return Task.FromResult(solution.GetProject(projectId));
 
             void AppendFile(string filename, string content)
             {
