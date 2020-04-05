@@ -60,7 +60,7 @@ namespace TestHelper
 
                     foreach (var entry in zip.Entries.Where(file => file.FullName.StartsWith(path, StringComparison.Ordinal)))
                     {
-                        entry.ExtractToFile(Path.Combine(tempFolder, entry.Name));
+                        entry.ExtractToFile(Path.Combine(tempFolder, entry.Name), overwrite: true);
                     }
                 }
 
