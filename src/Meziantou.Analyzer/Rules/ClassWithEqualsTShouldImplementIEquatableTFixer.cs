@@ -37,30 +37,26 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> ImplementIEquatable(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            if (!(nodeToFix is BaseTypeDeclarationSyntax typeDeclarationSyntax))
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+
+            var declaredTypeSymbol = semanticModel.GetDeclaredSymbol(nodeToFix) as ITypeSymbol;
+            if (declaredTypeSymbol is null)
                 return document;
 
-            var interfaceTypeSyntax = SimpleBaseType(
-                QualifiedName(IdentifierName("System"), GenericName(Identifier("IEquatable"))
-                    .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList<TypeSyntax>(IdentifierName(typeDeclarationSyntax.Identifier.WithoutTrivia()))))))
-                .WithAdditionalAnnotations(Simplifier.Annotation);
+            var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IEquatable`1");
+            if (genericInterfaceSymbol is null)
+                return document;
 
-            BaseTypeDeclarationSyntax newTypeDeclarationSyntax;
-            if (typeDeclarationSyntax.BaseList is null)
-            {
-                newTypeDeclarationSyntax = typeDeclarationSyntax
-                    .WithIdentifier(typeDeclarationSyntax.Identifier.WithTrailingTrivia(null))
-                    .WithBaseList(BaseList(SingletonSeparatedList<BaseTypeSyntax>(interfaceTypeSyntax))
-                        .WithTrailingTrivia(typeDeclarationSyntax.Identifier.TrailingTrivia));
-            }
-            else
-            {
-                newTypeDeclarationSyntax = typeDeclarationSyntax
-                    .AddBaseListTypes(interfaceTypeSyntax);
-            }
+            var concreteInterfaceSymbol = genericInterfaceSymbol.Construct(declaredTypeSymbol);
+            if (concreteInterfaceSymbol is null)
+                return document;
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            editor.ReplaceNode(typeDeclarationSyntax, newTypeDeclarationSyntax);
+            var generator = editor.Generator;
+
+            var concreteInterfaceTypeNode = generator.TypeExpression(concreteInterfaceSymbol);
+
+            editor.AddInterfaceType(nodeToFix, concreteInterfaceTypeNode.WithoutTrailingTrivia());
 
             return editor.GetChangedDocument();
         }

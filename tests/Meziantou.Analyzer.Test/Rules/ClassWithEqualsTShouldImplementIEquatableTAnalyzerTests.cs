@@ -18,12 +18,14 @@ namespace Meziantou.Analyzer.Test.Rules
         public async Task Test_ClassImplementsNoInterfaceAndProvidesCompatibleEqualsMethod_DiagnosticIsReported()
         {
             var originalCode = @"
-class [|Test|]
+class BaseClass {}
+class [|Test|] : BaseClass
 {
     public bool Equals(Test other) => throw null;
 }";
             var modifiedCode = @"
-class Test : System.IEquatable<Test>
+class BaseClass {}
+class Test : BaseClass, System.IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
 }";
