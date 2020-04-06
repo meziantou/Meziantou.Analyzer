@@ -52,70 +52,6 @@ struct Test : System.IEquatable<Test>     //  This comment stays
                   .ValidateAsync();
         }
 
-        [Theory]
-        [InlineData("static public bool Equals(Test other)")]
-        [InlineData("private bool Equals(Test other)")]
-        [InlineData("public bool Equals(int other)")]
-        [InlineData("public int Equals(Test other)")]
-        [InlineData("public void Equals(Test other)")]
-        [InlineData("public bool EqualsTo(Test other)")]
-        public async Task Test_ClassImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
-        {
-            var originalCode = $@"
-class Test
-{{
-    {methodSignature} => throw null;
-}}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
-
-        [Theory]
-        [InlineData("static public bool Equals(Test other)")]
-        [InlineData("private bool Equals(Test other)")]
-        [InlineData("public bool Equals(int other)")]
-        [InlineData("public int Equals(Test other)")]
-        [InlineData("public void Equals(Test other)")]
-        [InlineData("public bool EqualsTo(Test other)")]
-        public async Task Test_StructImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
-        {
-            var originalCode = $@"
-struct Test
-{{
-    {methodSignature} => throw null;
-}}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task Test_ClassImplementsSystemIEquatableWithTOfRightType_NoDiagnosticReported()
-        {
-            var originalCode = @"using System;
-class Test : IEquatable<Test>
-{
-    public bool Equals(Test other) => throw null;
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
-
-        [Fact]
-        public async Task Test_StructImplementsSystemIEquatableWithTOfRightType_NoDiagnosticReported()
-        {
-            var originalCode = @"using System;
-struct Test : IEquatable<Test>
-{
-    public bool Equals(Test other) => throw null;
-}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
-
         [Fact]
         public async Task Test_ClassImplementsSystemIEquatableWithTOfWrongTypeButProvidesCompatibleEqualsMethod_DiagnosticIsReported()
         {
@@ -197,6 +133,70 @@ struct Test : IEquatable<Test>, System.IEquatable<Test>
             await CreateProjectBuilder()
                   .WithSourceCode(originalCode)
                   .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Theory]
+        [InlineData("static public bool Equals(Test other)")]
+        [InlineData("private bool Equals(Test other)")]
+        [InlineData("public bool Equals(int other)")]
+        [InlineData("public int Equals(Test other)")]
+        [InlineData("public void Equals(Test other)")]
+        [InlineData("public bool EqualsTo(Test other)")]
+        public async Task Test_ClassImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
+        {
+            var originalCode = $@"
+class Test
+{{
+    {methodSignature} => throw null;
+}}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Theory]
+        [InlineData("static public bool Equals(Test other)")]
+        [InlineData("private bool Equals(Test other)")]
+        [InlineData("public bool Equals(int other)")]
+        [InlineData("public int Equals(Test other)")]
+        [InlineData("public void Equals(Test other)")]
+        [InlineData("public bool EqualsTo(Test other)")]
+        public async Task Test_StructImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
+        {
+            var originalCode = $@"
+struct Test
+{{
+    {methodSignature} => throw null;
+}}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_ClassImplementsSystemIEquatableWithTOfRightType_NoDiagnosticReported()
+        {
+            var originalCode = @"using System;
+class Test : IEquatable<Test>
+{
+    public bool Equals(Test other) => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_StructImplementsSystemIEquatableWithTOfRightType_NoDiagnosticReported()
+        {
+            var originalCode = @"using System;
+struct Test : IEquatable<Test>
+{
+    public bool Equals(Test other) => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
 
