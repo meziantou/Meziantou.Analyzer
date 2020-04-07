@@ -19,22 +19,39 @@ namespace Meziantou.Analyzer.Rules
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.AvoidUsingRedundantElse);
 
-        public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
-
-        public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+        /// <inheritdoc/>
+        public override FixAllProvider GetFixAllProvider()
         {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
-            if (nodeToFix == null)
-                return;
+            // We can't use WellKnownFixAllProviders.BatchFixer here, as we need to fix diagnostics per document in reverse order
+            return AvoidUsingRedundantElseFixAllProvider.Instance;
+        }
 
+        public override Task RegisterCodeFixesAsync(CodeFixContext context)
+        {
             var title = "Remove redundant else";
             var codeAction = CodeAction.Create(
                 title,
-                ct => RemoveRedundantElse(context.Document, nodeToFix, ct),
+                ct => RemoveRedundantElseClausesInDocument(context.Document, context.Diagnostics, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
+
+            return Task.CompletedTask;
+        }
+
+        internal static async Task<Document> RemoveRedundantElseClausesInDocument(Document document, ImmutableArray<Diagnostic> diagnostics, CancellationToken cancellationToken)
+        {
+            foreach (var diagnostic in diagnostics.Reverse())
+            {
+                var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+                var nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+                if (nodeToFix == null)
+                    continue;
+
+                document = await RemoveRedundantElse(document, nodeToFix, cancellationToken).ConfigureAwait(false);
+            }
+
+            return document;
         }
 
         private static async Task<Document> RemoveRedundantElse(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)

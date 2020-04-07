@@ -43,7 +43,7 @@ namespace Meziantou.Analyzer.Test.Rules
         [InlineData("throw new System.ArgumentNullException(nameof(value))", true)]
         [InlineData("value++", false)]
         [InlineData("if (value < -5) return", false)]
-        public async Task Test1_WhenIfJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
+        public async Task Test_WhenIfJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
         {
             var @else = expectElseRemoval ? "[|else|]" : "else";
             var originalCode = $@"
@@ -94,7 +94,7 @@ class TestClass
         [InlineData("yield break", true)]
         [InlineData("yield return value", false)]
         [InlineData("if (value < -5) yield break", false)]
-        public async Task Test2_WhenIfYieldJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
+        public async Task Test_WhenIfYieldJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
         {
             var @else = expectElseRemoval ? "[|else|]" : "else";
             var originalCode = $@"
@@ -142,7 +142,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test3_IfThatBreaksAndContainsLocalFunction_ElseRemoved()
+        public async Task Test_IfThatBreaksAndContainsLocalFunction_ElseRemoved()
         {
             var originalCode = @"
 class TestClass
@@ -199,7 +199,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test4_IfThatBreaksFromNestedBlock_ElseRemoved()
+        public async Task Test_IfThatBreaksFromNestedBlock_ElseRemoved()
         {
             var originalCode = @"
 class TestClass
@@ -248,7 +248,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test5_IfThatBreaksFromNestedBlockAndContainsLocalFunction_ElseRemoved()
+        public async Task Test_IfThatBreaksFromNestedBlockAndContainsLocalFunction_ElseRemoved()
         {
             var originalCode = @"
 class TestClass
@@ -315,7 +315,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test6_IfThatBreaksAndWhileWithoutBraces_ElseRemovedAndWhileBracesAdded()
+        public async Task Test_IfThatBreaksAndWhileWithoutBraces_ElseRemovedAndWhileBracesAdded()
         {
             var originalCode = @"
 class TestClass
@@ -358,7 +358,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test7_IfThatBreaksAndCodeMisformatted_ElseRemovedButOnlyItsStatementsAreFormatted()
+        public async Task Test_IfThatBreaksAndCodeMisformatted_ElseRemovedButOnlyItsStatementsAreFormatted()
         {
             var originalCode = @"
 class TestClass
@@ -394,7 +394,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test8_IfThatBreaksWithEmptyElseBlock_ElseRemovedAndNoEmptyLineAfterIf()
+        public async Task Test_IfThatBreaksWithEmptyElseBlock_ElseRemovedAndNoEmptyLineAfterIf()
         {
             var originalCode = @"
 class TestClass
@@ -428,7 +428,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task Test9_IfThatBreaksButNoElse_NoDiagnosticReported()
+        public async Task Test_IfThatBreaksButNoElse_NoDiagnosticReported()
         {
             var originalCode = @"
 class TestClass
@@ -447,6 +447,72 @@ class TestClass
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_SeveralNestedIfElseBlocksWithIfsThatJump_AllProblematicElsesRemoved()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value > 0)
+            {
+                return;
+            }
+            [|else|] if (value < -10)
+            {
+                continue;
+            }
+            [|else|]
+            {
+                if (value < 0)
+                {
+                    break;
+                }
+                [|else|]
+                {
+                    value++;
+                }
+            }
+        }
+    }
+}";
+            var modifiedCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        while (true)
+        {
+            if (value > 0)
+            {
+                return;
+            }
+
+            if (value < -10)
+            {
+                continue;
+            }
+
+            if (value < 0)
+            {
+                break;
+            }
+
+            value++;
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldBatchFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
     }
