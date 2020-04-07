@@ -138,6 +138,48 @@ struct Test : IEquatable<Test>, System.IEquatable<Test>
                   .ValidateAsync();
         }
 
+        [Fact]
+        public async Task Test_ClassImplementsNoInterfaceButProvidesEqualsMethodOnNullableType_DiagnosticIsReported()
+        {
+            var originalCode = @"
+#nullable enable
+class [|Test|]
+{
+    public bool Equals(Test? other) => throw null;
+}";
+            var modifiedCode = @"
+#nullable enable
+class Test : System.IEquatable<Test?>
+{
+    public bool Equals(Test? other) => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_ClassImplementsNoInterfaceButProvidesEqualsMethodOnNonNullableType_DiagnosticIsReported()
+        {
+            var originalCode = @"
+#nullable enable
+class [|Test|]
+{
+    public bool Equals(Test other) => throw null;
+}";
+            var modifiedCode = @"
+#nullable enable
+class Test : System.IEquatable<Test>
+{
+    public bool Equals(Test other) => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
         [Theory]
         [InlineData("static public bool Equals(Test other)")]
         [InlineData("private bool Equals(Test other)")]

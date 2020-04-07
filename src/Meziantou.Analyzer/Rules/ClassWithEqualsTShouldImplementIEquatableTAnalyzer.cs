@@ -50,12 +50,12 @@ namespace Meziantou.Analyzer.Rules
                 return;
             }
 
-            var iequatableType = context.Compilation.GetTypeByMetadataName("System.IEquatable`1");
-            if (iequatableType == null)
+            var genericInterfaceSymbol = context.Compilation.GetTypeByMetadataName("System.IEquatable`1");
+            if (genericInterfaceSymbol == null)
                 return;
 
-            iequatableType = iequatableType.Construct(equalsMethod.ContainingType);
-            if (equalsMethod.ContainingType.Implements(iequatableType))
+            var concreteInterfaceSymbol = genericInterfaceSymbol.Construct(equalsMethod.ContainingType);
+            if (equalsMethod.ContainingType.Implements(concreteInterfaceSymbol))
                 return;
 
             context.ReportDiagnostic(s_rule, equalsMethod.ContainingType);

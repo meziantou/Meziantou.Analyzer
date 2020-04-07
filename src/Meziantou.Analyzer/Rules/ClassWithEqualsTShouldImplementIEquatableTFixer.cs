@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -47,9 +48,19 @@ namespace Meziantou.Analyzer.Rules
             if (genericInterfaceSymbol is null)
                 return document;
 
-            var concreteInterfaceSymbol = genericInterfaceSymbol.Construct(declaredTypeSymbol);
-            if (concreteInterfaceSymbol is null)
+            // Retrieve Nullable Annotation from the Equals method and use it to construct the concrete interface
+            var equalsMethod = declaredTypeSymbol.GetMembers("Equals")
+                .OfType<IMethodSymbol>()
+                .Where(m => m.Parameters.Length == 1 && m.Parameters[0].Type.IsEqualTo(declaredTypeSymbol))
+                .FirstOrDefault();
+            if (equalsMethod is null)
                 return document;
+
+            var nullableAnnotation = equalsMethod.Parameters[0].NullableAnnotation;
+
+            var concreteInterfaceSymbol = genericInterfaceSymbol.Construct(
+                ImmutableArray.Create(declaredTypeSymbol),
+                ImmutableArray.Create(nullableAnnotation));
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
