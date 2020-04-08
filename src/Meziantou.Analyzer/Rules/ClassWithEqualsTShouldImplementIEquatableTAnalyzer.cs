@@ -30,25 +30,9 @@ namespace Meziantou.Analyzer.Rules
 
         private static void AnalyzeMethodSymbol(SymbolAnalysisContext context)
         {
-            var equalsMethod = (IMethodSymbol)context.Symbol;
-
-            if (!equalsMethod.Name.Equals("Equals", StringComparison.Ordinal))
+            var equalsMethod = AsEqualsMethod(context.Symbol);
+            if (equalsMethod is null)
                 return;
-
-            if (equalsMethod.IsStatic ||
-                equalsMethod.IsAbstract ||
-                equalsMethod.MethodKind != MethodKind.Ordinary ||
-                equalsMethod.DeclaredAccessibility != Accessibility.Public)
-            {
-                return;
-            }
-
-            if (equalsMethod.Parameters.Length != 1 ||
-                !equalsMethod.Parameters[0].Type.IsEqualTo(equalsMethod.ContainingType) ||
-                !equalsMethod.ReturnType.IsBoolean())
-            {
-                return;
-            }
 
             var genericInterfaceSymbol = context.Compilation.GetTypeByMetadataName("System.IEquatable`1");
             if (genericInterfaceSymbol == null)
@@ -59,6 +43,39 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             context.ReportDiagnostic(s_rule, equalsMethod.ContainingType);
+        }
+
+        /// <summary>
+        /// Determines if an <see cref="ISymbol"/> has the same signature as <see cref="IEquatable{T}.Equals(T)"/>,
+        /// in which case it's returned as an <see cref="IMethodSymbol"/>. Else, null is returned.
+        /// </summary>
+        /// <param name="symbol">Symbol to be assessed</param>
+        /// <returns>The input ISymbol cast to IMethodSymbol, if it has the right signature; null otherwise</returns>
+        internal static IMethodSymbol AsEqualsMethod(ISymbol symbol)
+        {
+            if (symbol.Kind != SymbolKind.Method)
+                return null;
+
+            if (!symbol.Name.Equals("Equals", StringComparison.Ordinal))
+                return null;
+
+            var equalsMethod = (IMethodSymbol)symbol;
+            if (equalsMethod.IsStatic ||
+                equalsMethod.IsAbstract ||
+                equalsMethod.MethodKind != MethodKind.Ordinary ||
+                equalsMethod.DeclaredAccessibility != Accessibility.Public)
+            {
+                return null;
+            }
+
+            if (equalsMethod.Parameters.Length != 1 ||
+                !equalsMethod.Parameters[0].Type.IsEqualTo(equalsMethod.ContainingType) ||
+                !equalsMethod.ReturnType.IsBoolean())
+            {
+                return null;
+            }
+
+            return equalsMethod;
         }
     }
 }

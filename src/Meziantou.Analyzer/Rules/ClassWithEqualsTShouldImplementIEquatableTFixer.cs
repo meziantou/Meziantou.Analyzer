@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
-using Microsoft.CodeAnalysis.Simplification;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using static Meziantou.Analyzer.Rules.ClassWithEqualsTShouldImplementIEquatableTAnalyzer;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -40,8 +38,7 @@ namespace Meziantou.Analyzer.Rules
         {
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
-            var declaredTypeSymbol = semanticModel.GetDeclaredSymbol(nodeToFix) as ITypeSymbol;
-            if (declaredTypeSymbol is null)
+            if (!(semanticModel.GetDeclaredSymbol(nodeToFix) is ITypeSymbol declaredTypeSymbol))
                 return document;
 
             var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IEquatable`1");
@@ -49,10 +46,7 @@ namespace Meziantou.Analyzer.Rules
                 return document;
 
             // Retrieve Nullable Annotation from the Equals method and use it to construct the concrete interface
-            var equalsMethod = declaredTypeSymbol.GetMembers("Equals")
-                .OfType<IMethodSymbol>()
-                .Where(m => m.Parameters.Length == 1 && m.Parameters[0].Type.IsEqualTo(declaredTypeSymbol))
-                .FirstOrDefault();
+            var equalsMethod = declaredTypeSymbol.GetMembers().Select(m => AsEqualsMethod(m)).SingleOrDefault(m => m != null);
             if (equalsMethod is null)
                 return document;
 
