@@ -15,16 +15,33 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
+        public async Task SingleField_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"struct TypeName
+{
+    static int s_a;
+    const int constant = 0;
+    int a;
+}";
+
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
+        }
+        
+        [Fact]
         public async Task MissingAttribute_ShouldReportDiagnostic()
         {
             const string SourceCode = @"struct [||]TypeName
 {
     int a;
+    int b;
 }";
             const string CodeFix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
 struct TypeName
 {
     int a;
+    int b;
 }";
 
             await CreateProjectBuilder()
@@ -40,6 +57,7 @@ struct TypeName
 struct [||]TypeName
 {
     int a;
+    int b;
 }";
             const string CodeFix = @"using System.Runtime.InteropServices;
 
@@ -47,6 +65,7 @@ struct [||]TypeName
 struct TypeName
 {
     int a;
+    int b;
 }";
 
             await CreateProjectBuilder()

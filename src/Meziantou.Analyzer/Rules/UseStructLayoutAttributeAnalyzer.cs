@@ -48,16 +48,19 @@ namespace Meziantou.Analyzer.Rules
             if (symbol.GetAttributes().Any(attr => attributeType.IsEqualTo(attr.AttributeClass)))
                 return;
 
-            bool hasMember = false;
+            var memberCount = 0;
             foreach (var member in symbol.GetMembers().OfType<IFieldSymbol>())
             {
+                if (member.IsConst || member.IsStatic)
+                    continue;
+
                 if (member.Type.IsReferenceType)
                     return; // When a struct contains a reference type field, the layout is automatically changed to Auto
 
-                hasMember = true;
+                memberCount++;
             }
 
-            if (hasMember)
+            if (memberCount > 1)
             {
                 context.ReportDiagnostic(s_rule, symbol);
             }
