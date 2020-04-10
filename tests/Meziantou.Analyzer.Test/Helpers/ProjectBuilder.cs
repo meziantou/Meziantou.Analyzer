@@ -36,6 +36,7 @@ namespace TestHelper
         public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = new List<DiagnosticResult>();
         public string ExpectedFixedCode { get; private set; }
         public int? CodeFixIndex { get; private set; }
+        public bool UseBatchFixer { get; private set; }
         public string DefaultAnalyzerId { get; set; }
         public string DefaultAnalyzerMessage { get; set; }
 
@@ -273,6 +274,19 @@ namespace TestHelper
         {
             ExpectedFixedCode = codeFix;
             CodeFixIndex = index;
+            return this;
+        }
+
+        public ProjectBuilder ShouldBatchFixCodeWith(string codeFix)
+        {
+            return ShouldBatchFixCodeWith(index: null, codeFix);
+        }
+
+        public ProjectBuilder ShouldBatchFixCodeWith(int? index, string codeFix)
+        {
+            ExpectedFixedCode = codeFix;
+            CodeFixIndex = index;
+            UseBatchFixer = true;
             return this;
         }
 

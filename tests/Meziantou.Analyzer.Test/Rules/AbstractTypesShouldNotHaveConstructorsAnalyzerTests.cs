@@ -77,5 +77,30 @@ abstract class Test
                     .ShouldFixCodeWith(codeFix)
                     .ValidateAsync();
         }
+
+        [Fact]
+        public async Task InternalCtor_BatchFix()
+        {
+            var sourceCode = @"
+abstract class Test
+{
+    internal [||]Test() { }
+
+    internal [||]Test(int a) { }
+}";
+
+            var codeFix = @"
+abstract class Test
+{
+    protected Test() { }
+
+    protected Test(int a) { }
+}";
+
+            await CreateProjectBuilder()
+                    .WithSourceCode(sourceCode)
+                    .ShouldBatchFixCodeWith(codeFix)
+                    .ValidateAsync();
+        }
     }
 }
