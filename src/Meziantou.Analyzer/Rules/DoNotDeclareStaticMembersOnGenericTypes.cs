@@ -49,6 +49,10 @@ namespace Meziantou.Analyzer.Rules
                     if (!member.IsVisibleOutsideOfAssembly())
                         continue;
 
+                    // Exclude protected member as the usage is easy from a derived class
+                    if (member.DeclaredAccessibility == Accessibility.Protected || member.DeclaredAccessibility == Accessibility.ProtectedOrInternal)
+                        continue;
+
                     context.ReportDiagnostic(s_rule, member);
                 }
             }

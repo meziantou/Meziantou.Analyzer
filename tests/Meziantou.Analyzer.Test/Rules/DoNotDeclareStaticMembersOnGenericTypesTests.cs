@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Fact]
-        public async Task StaticMembersInNonGenericClass_ShouldNotReportDiagnostic()
+        public async Task StaticMembersInNonGenericClass()
         {
             const string SourceCode = @"
 public class Test
@@ -33,7 +33,7 @@ public class Test
         }
 
         [Fact]
-        public async Task StaticMembersInGenericClass_ShouldNotReportDiagnostic()
+        public async Task NonStaticMembersInGenericClass()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -48,7 +48,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Field_ShouldReportDiagnostic()
+        public async Task StaticMembers_Field()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -61,7 +61,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Property_ShouldReportDiagnostic()
+        public async Task StaticMembers_Property()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -74,7 +74,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Method_ShouldNotReportDiagnostic()
+        public async Task StaticMembers_Method()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -87,7 +87,7 @@ public class Test<T>
         }
 
         [Fact]
-        public async Task StaticMembers_Operator_ShouldReportDiagnostic()
+        public async Task StaticMembers_Operator()
         {
             const string SourceCode = @"
 public class Test<T>
@@ -112,5 +112,23 @@ public class Test<T>
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task NonPublicStaticMembers()
+        {
+            const string SourceCode = @"
+public class Test<T>
+{
+    internal protected static string Method1() => throw null;
+    protected static string Method2() => throw null;
+    private protected static string Method3() => throw null;
+    internal static string Method4() => throw null;
+    private static string Method5() => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
     }
 }
