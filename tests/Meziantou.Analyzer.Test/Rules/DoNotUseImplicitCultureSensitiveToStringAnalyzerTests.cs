@@ -100,9 +100,10 @@ class Test
         [InlineData("abc[|{(float)-1}|]")]
         [InlineData("abc[|{(double)-1}|]")]
         [InlineData("abc[|{(decimal)-1}|]")]
+        [InlineData(@"test[|{new int[0].Min()}|]")]
         public async Task InterpolatedStringDiagnostic(string content)
         {
-            var sourceCode = @"
+            var sourceCode = @"using System.Linq;
 class Test
 {
     void A() { string str = $""" + content + @"""; }
@@ -121,9 +122,12 @@ class Test
         [InlineData("abc{(uint)1}")]
         [InlineData("abc{(ulong)1}")]
         [InlineData(@"test{new System.Uri("""")}")]
+        [InlineData(@"test{new int[0].Length}")]
+        [InlineData(@"test{new int[0].Count()}")]
+        [InlineData(@"test{new System.Collections.Generic.List<int>().Count}")]
         public async Task InterpolatedStringNoDiagnostic(string content)
         {
-            var sourceCode = @"
+            var sourceCode = @"using System.Linq;
 class Test
 {
     void A() { string str = $""" + content + @"""; }
