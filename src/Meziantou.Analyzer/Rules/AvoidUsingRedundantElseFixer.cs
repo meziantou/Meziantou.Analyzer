@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer.Rules
 
         internal static async Task<Document> RemoveRedundantElseClausesInDocument(Document document, ImmutableArray<Diagnostic> diagnostics, CancellationToken cancellationToken)
         {
-            foreach (var diagnostic in diagnostics.Reverse())
+            foreach (var diagnostic in diagnostics.OrderByDescending(d => d.Location.SourceSpan))
             {
                 var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
                 var nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
