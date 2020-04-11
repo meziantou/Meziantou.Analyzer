@@ -191,7 +191,7 @@ namespace TestHelper
             {
                 filename ??= fileNamePrefix + count + fileExt;
                 var documentId = DocumentId.CreateNewId(projectId, debugName: filename);
-                solution = solution.AddDocument(documentId, filename, SourceText.From(content));
+                solution = solution.AddDocument(documentId, filename, SourceText.From(content), filePath: filename);
                 count++;
             }
         }
@@ -407,31 +407,53 @@ namespace TestHelper
             var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
             var compilerDiagnostics = await GetCompilerDiagnostics(document).ConfigureAwait(false);
 
-            for (var i = 0; i < analyzerDiagnostics.Length; ++i)
+            // Assert fixer is value
+            foreach (var diagnostic in analyzerDiagnostics)
             {
-                var diagnostic = analyzerDiagnostics[0];
                 if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
                 {
                     Assert.True(false, "The CodeFixProvider is not valid for the DiagnosticAnalyzer");
                 }
+            }
+
+            if (UseBatchFixer)
+            {
+                var diagnostic = analyzerDiagnostics[0];
 
                 var actions = new List<CodeAction>();
                 var context = new CodeFixContext(document, diagnostic, (a, _) => actions.Add(a), CancellationToken.None);
                 await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
 
-                if (actions.Count == 0)
+                if (actions.Count > 0)
                 {
-                    break;
-                }
+                    var action = actions[codeFixIndex ?? 0];
+                    var fixAllContext = new FixAllContext(document, codeFixProvider, FixAllScope.Document, action.EquivalenceKey, analyzerDiagnostics.Select(d => d.Id).Distinct(StringComparer.Ordinal), new CustomDiagnosticProvider(analyzerDiagnostics), CancellationToken.None);
+                    var fixes = await codeFixProvider.GetFixAllProvider().GetFixAsync(fixAllContext).ConfigureAwait(false);
 
-                if (codeFixIndex != null)
+                    document = await ApplyFix(document, fixes).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                for (var i = 0; i < analyzerDiagnostics.Length; ++i)
                 {
-                    document = await ApplyFix(document, actions[(int)codeFixIndex]).ConfigureAwait(false);
-                    break;
-                }
+                    var diagnostic = analyzerDiagnostics[0];
+                    var actions = new List<CodeAction>();
+                    var context = new CodeFixContext(document, diagnostic, (a, _) => actions.Add(a), CancellationToken.None);
+                    await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
 
-                document = await ApplyFix(document, actions[0]).ConfigureAwait(false);
-                analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
+                    if (actions.Count == 0)
+                        break;
+
+                    if (codeFixIndex != null)
+                    {
+                        document = await ApplyFix(document, actions[(int)codeFixIndex]).ConfigureAwait(false);
+                        break;
+                    }
+
+                    document = await ApplyFix(document, actions[0]).ConfigureAwait(false);
+                    analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
+                }
             }
 
             //after applying all of the code fixes, compare the resulting string to the inputted one
@@ -452,6 +474,33 @@ namespace TestHelper
             var root = await simplifiedDoc.GetSyntaxRootAsync().ConfigureAwait(false);
             root = Formatter.Format(root, Formatter.Annotation, simplifiedDoc.Project.Solution.Workspace);
             return root.GetText().ToString();
+        }
+
+        private sealed class CustomDiagnosticProvider : FixAllContext.DiagnosticProvider
+        {
+            private readonly Diagnostic[] _diagnostics;
+
+            public CustomDiagnosticProvider(Diagnostic[] diagnostics)
+            {
+                _diagnostics = diagnostics;
+            }
+
+            public override Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(Project project, CancellationToken cancellationToken)
+            {
+                return GetProjectDiagnosticsAsync(project, cancellationToken);
+            }
+
+            public override async Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
+            {
+                var documentRoot = await document.GetSyntaxRootAsync().ConfigureAwait(false);
+                return _diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot());
+            }
+
+            public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(Project project, CancellationToken cancellationToken)
+            {
+                var diagnostics = project.Documents.SelectMany(doc => GetDocumentDiagnosticsAsync(doc, cancellationToken).Result);
+                return Task.FromResult(diagnostics);
+            }
         }
     }
 }
