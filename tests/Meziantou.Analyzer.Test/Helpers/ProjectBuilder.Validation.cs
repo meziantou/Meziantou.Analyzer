@@ -191,7 +191,7 @@ namespace TestHelper
             {
                 filename ??= fileNamePrefix + count + fileExt;
                 var documentId = DocumentId.CreateNewId(projectId, debugName: filename);
-                solution = solution.AddDocument(documentId, filename, SourceText.From(content));
+                solution = solution.AddDocument(documentId, filename, SourceText.From(content), filePath: filename);
                 count++;
             }
         }
@@ -487,20 +487,23 @@ namespace TestHelper
 
             public override Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(Project project, CancellationToken cancellationToken)
             {
-                // TODO I'm not sure of this one
                 return GetProjectDiagnosticsAsync(project, cancellationToken);
             }
 
-            public override async Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
+            public override Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
             {
-                var root = await document.GetSyntaxRootAsync().ConfigureAwait(false);
-                return _diagnostics.Where(d => root == d.Location.SourceTree.GetRoot());
+                return Task.FromResult(_diagnostics.Where(diagnostic => IsDiagnosticForDocument(diagnostic, document)));
             }
 
             public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(Project project, CancellationToken cancellationToken)
             {
-                // TODO using project.Documents
-                return Task.FromResult(Enumerable.Empty<Diagnostic>());
+                var diagnostics = project.Documents.SelectMany(doc => GetDocumentDiagnosticsAsync(doc, cancellationToken).Result);
+                return Task.FromResult(diagnostics);
+            }
+
+            private static bool IsDiagnosticForDocument(Diagnostic diagnostic, Document document)
+            {
+                return string.Equals(diagnostic.Location.SourceTree.FilePath, document.FilePath, StringComparison.OrdinalIgnoreCase);
             }
         }
     }
