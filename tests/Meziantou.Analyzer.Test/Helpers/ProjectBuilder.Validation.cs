@@ -490,20 +490,16 @@ namespace TestHelper
                 return GetProjectDiagnosticsAsync(project, cancellationToken);
             }
 
-            public override Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
+            public override async Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
             {
-                return Task.FromResult(_diagnostics.Where(diagnostic => IsDiagnosticForDocument(diagnostic, document)));
+                var documentRoot = await document.GetSyntaxRootAsync().ConfigureAwait(false);
+                return _diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot());
             }
 
             public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(Project project, CancellationToken cancellationToken)
             {
                 var diagnostics = project.Documents.SelectMany(doc => GetDocumentDiagnosticsAsync(doc, cancellationToken).Result);
                 return Task.FromResult(diagnostics);
-            }
-
-            private static bool IsDiagnosticForDocument(Diagnostic diagnostic, Document document)
-            {
-                return string.Equals(diagnostic.Location.SourceTree.FilePath, document.FilePath, StringComparison.OrdinalIgnoreCase);
             }
         }
     }
