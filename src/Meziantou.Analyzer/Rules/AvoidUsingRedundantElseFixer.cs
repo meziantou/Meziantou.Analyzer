@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
+using static Meziantou.Analyzer.Rules.AvoidUsingRedundantElseAnalyzer;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules
@@ -56,30 +57,28 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> RemoveRedundantElse(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            if (!(nodeToFix is ElseClauseSyntax elseClauseSyntax))
+            if (!(nodeToFix is ElseClauseSyntax elseClause))
                 return document;
 
-            if (!(elseClauseSyntax.Parent is IfStatementSyntax ifStatementSyntax))
+            if (!(elseClause.Parent is IfStatementSyntax ifStatement))
                 return document;
 
-            var ifStatementParent = ifStatementSyntax.Parent;
+            var ifStatementParent = ifStatement.Parent;
             if (ifStatementParent is null)
                 return document;
 
             // Get all syntax nodes currently under the 'else' clause
-            var elseChildNodes = (elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax) ?
-                elseBlockSyntax.ChildNodes() :
-                new[] { elseClauseSyntax.Statement };
+            var nodesAfterNewIfStatement = GetElseClauseChildren(elseClause)
+                .Select(n => n.WithAdditionalAnnotations(Formatter.Annotation))
+                .ToArray();
 
-            var formattedElseChildNodes = elseChildNodes.Select(n => n.WithAdditionalAnnotations(Formatter.Annotation)).ToArray();
+            var newIfStatementTrailingTrivia = nodesAfterNewIfStatement.Length > 0 ?
+                ifStatement.GetTrailingTrivia().Add(LineFeed) :
+                ifStatement.GetTrailingTrivia();
 
-            var ifTrailingTrivia = formattedElseChildNodes.Length > 0 ?
-                ifStatementSyntax.GetTrailingTrivia().Add(LineFeed) :
-                ifStatementSyntax.GetTrailingTrivia();
-
-            var modifiedIfStatement = ifStatementSyntax
+            var newIfStatement = ifStatement
                 .WithElse(null)
-                .WithTrailingTrivia(ifTrailingTrivia);
+                .WithTrailingTrivia(newIfStatementTrailingTrivia);
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
@@ -87,16 +86,16 @@ namespace Meziantou.Analyzer.Rules
             // and insert the 'else' child nodes after the 'if' statement.
             if (!ifStatementParent.IsKind(SyntaxKind.Block))
             {
-                var blockSyntax = Block(new[]
+                var surroundingBlock = Block(new[]
                 {
-                    modifiedIfStatement,
-                }.Concat(formattedElseChildNodes.Cast<StatementSyntax>()));
-                editor.ReplaceNode(ifStatementSyntax, blockSyntax);
+                    newIfStatement,
+                }.Concat(nodesAfterNewIfStatement.Cast<StatementSyntax>()));
+                editor.ReplaceNode(ifStatement, surroundingBlock);
             }
             else
             {
-                editor.InsertAfter(ifStatementSyntax, formattedElseChildNodes);
-                editor.ReplaceNode(ifStatementSyntax, modifiedIfStatement);
+                editor.InsertAfter(ifStatement, nodesAfterNewIfStatement);
+                editor.ReplaceNode(ifStatement, newIfStatement);
             }
 
             return editor.GetChangedDocument();
