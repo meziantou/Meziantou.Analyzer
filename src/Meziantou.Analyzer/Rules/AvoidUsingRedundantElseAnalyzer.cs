@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -32,25 +33,65 @@ namespace Meziantou.Analyzer.Rules
 
         private static void AnalyzeElseClause(SyntaxNodeAnalysisContext context)
         {
-            var elseClauseSyntax = (ElseClauseSyntax)context.Node;
-            if (elseClauseSyntax is null)
+            var elseClause = (ElseClauseSyntax)context.Node;
+            if (elseClause is null)
                 return;
 
-            if (!(elseClauseSyntax.Parent is IfStatementSyntax ifStatementSyntax))
+            if (!(elseClause.Parent is IfStatementSyntax ifStatement))
                 return;
 
-            var statementOrBlock = ifStatementSyntax.Statement;
-            if (statementOrBlock is null)
+            var thenStatement = ifStatement.Statement;
+            var elseStatement = elseClause.Statement;
+            if (thenStatement is null || elseStatement is null)
                 return;
 
-            var result = context.SemanticModel.AnalyzeControlFlow(statementOrBlock);
-            if (!result.Succeeded)
+            // If the 'else' clause contains a "using statement local declaration" as direct child, return
+            // NOTE:
+            //  using var charEnumerator = "".GetEnumerator();          => LocalDeclarationStatementSyntax  (will return)
+            //  using (var charEnumerator = "".GetEnumerator()) { }     => UsingStatementSyntax             (will carry on)
+            var elseHasUsingStatementLocalDeclaration = GetElseClauseChildren(elseClause)
+                .OfType<LocalDeclarationStatementSyntax>()
+                .Any(localDeclaration => localDeclaration.UsingKeyword.IsKind(SyntaxKind.UsingKeyword));
+            if (elseHasUsingStatementLocalDeclaration)
                 return;
 
-            if (!result.EndPointIsReachable || result.ExitPoints.Any(ep => IsDirectAccess(ifStatementSyntax, ep)))
+            // If there are conflicting local (variable or function) declarations in 'if' and 'else' blocks, return
+            var thenLocalIdentifiers = FindLocalIdentifiersIn(thenStatement);
+            var elseLocalIdentifiers = FindLocalIdentifiersIn(elseStatement);
+            if (thenLocalIdentifiers.Intersect(elseLocalIdentifiers).Any())
+                return;
+
+            var controlFlowAnalysis = context.SemanticModel.AnalyzeControlFlow(thenStatement);
+            if (!controlFlowAnalysis.Succeeded)
+                return;
+
+            if (!controlFlowAnalysis.EndPointIsReachable || controlFlowAnalysis.ExitPoints.Any(ep => IsDirectAccess(ifStatement, ep)))
             {
-                context.ReportDiagnostic(s_rule, elseClauseSyntax.ElseKeyword);
+                context.ReportDiagnostic(s_rule, elseClause.ElseKeyword);
             }
+        }
+
+        internal static IEnumerable<SyntaxNode> GetElseClauseChildren(ElseClauseSyntax elseClauseSyntax)
+        {
+            return elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax ?
+                elseBlockSyntax.ChildNodes() :
+                new[] { elseClauseSyntax.Statement };
+        }
+
+        private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)
+        {
+            return node
+                .DescendantNodes()
+                .Where(node => node.IsKind(SyntaxKind.VariableDeclarator) ||
+                               node.IsKind(SyntaxKind.LocalFunctionStatement) ||
+                               node.IsKind(SyntaxKind.SingleVariableDesignation))   // local declaration in pattern matching
+                .Select(node => node switch
+                {
+                    VariableDeclaratorSyntax variableDeclarator => variableDeclarator.Identifier.Text,
+                    LocalFunctionStatementSyntax localFunction => localFunction.Identifier.Text,
+                    SingleVariableDesignationSyntax singleVariableDesignation => singleVariableDesignation.Identifier.Text,
+                    _ => default
+                });
         }
 
         /// <summary>

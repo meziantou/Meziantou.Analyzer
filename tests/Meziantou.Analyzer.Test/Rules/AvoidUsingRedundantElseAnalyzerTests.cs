@@ -158,7 +158,7 @@ class TestClass
                 break;
                 void Increment(ref int val) => val++;
             }
-        [|else|]
+            [|else|]
             {
                 Decrement(ref value);
                 void Decrement(ref int val)
@@ -215,7 +215,7 @@ class TestClass
                     break;
                 }
             }
-        [|else|]
+            [|else|]
                 // Decrement
                 value--;
         }
@@ -266,7 +266,7 @@ class TestClass
                 }
                 void Increment(ref int val) => val++;
             }
-        [|else|]
+            [|else|]
             {
                 {
                     Decrement(ref value);
@@ -328,7 +328,7 @@ class TestClass
             {
                 break;
             }
-        [|else|]
+            [|else|]
             {
                 value--;
             }
@@ -513,6 +513,145 @@ class TestClass
             await CreateProjectBuilder()
                   .WithSourceCode(originalCode)
                   .ShouldBatchFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Theory]
+        [InlineData("var local = string.Empty;")]
+        [InlineData("if (value is string local) {}")]
+        [InlineData("int local() => throw null;")]
+        [InlineData("switch (value) { case string local: break; }")]
+        public async Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_NoDiagnosticReported(string localDeclaration)
+        {
+            var originalCode = $@"
+class TestClass
+{{
+    void Test()
+    {{
+        object value = string.Empty;
+        if (value != null)
+        {{
+            {localDeclaration}
+            return;
+        }}
+        else
+        {{
+            int local() => throw null;
+        }}
+    }}
+}}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_IfThatReturnsAndElseContainsUsingStatementLocalDeclaration_NoDiagnosticReported()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        if (value < 0)
+        {
+            return;
+        }
+        else
+        {
+            using var charEnumerator = string.Empty.GetEnumerator();
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_IfThatReturnsAndElseContainsUsingStatementSyntax_ElseRemoved()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        if (value < 0)
+        {
+            return;
+        }
+        [|else|]
+        {
+            using (var charEnumerator = string.Empty.GetEnumerator())
+            {
+            }
+        }
+    }
+}";
+            var modifiedCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        if (value < 0)
+        {
+            return;
+        }
+
+        using (var charEnumerator = string.Empty.GetEnumerator())
+        {
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Test_IfThatReturnsAndElseContainsNestedUsingStatementLocalDeclaration_ElseRemoved()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        if (value < 0)
+        {
+            return;
+        }
+        [|else|]
+        {
+            {
+                using var charEnumerator = string.Empty.GetEnumerator();
+            }
+        }
+    }
+}";
+            var modifiedCode = @"
+class TestClass
+{
+    void Test()
+    {
+        var value = -1;
+        if (value < 0)
+        {
+            return;
+        }
+
+        {
+            using var charEnumerator = string.Empty.GetEnumerator();
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
     }
