@@ -516,26 +516,30 @@ class TestClass
                   .ValidateAsync();
         }
 
-        [Fact]
-        public async Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_NoDiagnosticReported()
+        [Theory]
+        [InlineData("var local = string.Empty;")]
+        [InlineData("if (value is string local) {}")]
+        [InlineData("int local() => throw null;")]
+        [InlineData("switch (value) { case string local: break; }")]
+        public async Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_NoDiagnosticReported(string localDeclaration)
         {
-            var originalCode = @"
+            var originalCode = $@"
 class TestClass
-{
+{{
     void Test()
-    {
-        var value = -1;
-        if (value < 0)
-        {
-            var value2 = string.Empty;
+    {{
+        object value = string.Empty;
+        if (value != null)
+        {{
+            {localDeclaration}
             return;
-        }
+        }}
         else
-        {
-            int value2() => throw null;
-        }
-    }
-}";
+        {{
+            int local() => throw null;
+        }}
+    }}
+}}";
             await CreateProjectBuilder()
                   .WithSourceCode(originalCode)
                   .ValidateAsync();

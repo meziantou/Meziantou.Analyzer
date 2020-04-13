@@ -82,11 +82,14 @@ namespace Meziantou.Analyzer.Rules
         {
             return node
                 .DescendantNodes()
-                .Where(node => node.IsKind(SyntaxKind.VariableDeclarator) || node.IsKind(SyntaxKind.LocalFunctionStatement))
+                .Where(node => node.IsKind(SyntaxKind.VariableDeclarator) ||
+                               node.IsKind(SyntaxKind.LocalFunctionStatement) ||
+                               node.IsKind(SyntaxKind.SingleVariableDesignation))   // local declaration in pattern matching
                 .Select(node => node switch
                 {
                     VariableDeclaratorSyntax variableDeclarator => variableDeclarator.Identifier.Text,
                     LocalFunctionStatementSyntax localFunction => localFunction.Identifier.Text,
+                    SingleVariableDesignationSyntax singleVariableDesignation => singleVariableDesignation.Identifier.Text,
                     _ => default
                 });
         }
