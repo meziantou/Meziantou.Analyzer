@@ -119,8 +119,6 @@ namespace TestHelper
             return this;
         }
 
-        public ProjectBuilder AddDynamicTypeSupport() => AddNuGetReference("Microsoft.CSharp", "4.7.0", "lib/netstandard2.0/");
-
         public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
 
         public ProjectBuilder AddNUnitApi() => AddNuGetReference("NUnit", "3.12.0", "lib/netstandard2.0/");

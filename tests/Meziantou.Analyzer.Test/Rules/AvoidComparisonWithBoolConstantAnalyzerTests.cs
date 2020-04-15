@@ -187,7 +187,6 @@ class TestClass
 }}";
             await CreateProjectBuilder()
                   .WithSourceCode(originalCode)
-                  .AddDynamicTypeSupport()
                   .ValidateAsync();
         }
 
