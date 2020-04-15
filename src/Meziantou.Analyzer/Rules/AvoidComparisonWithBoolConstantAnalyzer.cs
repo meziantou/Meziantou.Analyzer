@@ -48,6 +48,10 @@ namespace Meziantou.Analyzer.Rules
             if (binaryOperation.LeftOperand.IsImplicit || binaryOperation.RightOperand.IsImplicit)
                 return;
 
+            // Neither operand can be dynamic
+            if (binaryOperation.LeftOperand.Type.TypeKind == TypeKind.Dynamic || binaryOperation.RightOperand.Type.TypeKind == TypeKind.Dynamic)
+                return;
+
             IOperation nodeToKeep;
             IOperation nodeToRemove;
             if (IsConstantBool(binaryOperation.LeftOperand))
