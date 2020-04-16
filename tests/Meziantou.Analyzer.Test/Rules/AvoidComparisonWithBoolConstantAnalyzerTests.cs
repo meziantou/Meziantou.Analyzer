@@ -211,5 +211,23 @@ class TestClass
                   .WithSourceCode(originalCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ComparingNullableLongVariableWithNullLiteral_NoDiagnosticReported()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test(long? number)
+    {
+        if (number == null)
+        {
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
     }
 }

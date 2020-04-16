@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer.Rules
             }
 
             // There must be 2 valid operands
-            if (binaryOperation.LeftOperand is null || binaryOperation.RightOperand is null)
+            if (binaryOperation.LeftOperand?.Type is null || binaryOperation.RightOperand?.Type is null)
                 return;
 
             // Operands must be explicit
