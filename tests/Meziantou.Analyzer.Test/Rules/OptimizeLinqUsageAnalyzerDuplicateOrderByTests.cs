@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: "MA0030")
+                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.DuplicateEnumerable_OrderBy)
                 .WithCodeFixProvider<OptimizeLinqUsageFixer>();
         }
 

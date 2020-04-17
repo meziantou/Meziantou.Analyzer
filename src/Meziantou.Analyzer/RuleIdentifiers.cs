@@ -80,6 +80,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseImplicitCultureSensitiveToString = "MA0075";
         public const string DoNotUseImplicitCultureSensitiveToStringInterpolation = "MA0076";
         public const string ClassWithEqualsTShouldImplementIEquatableT = "MA0077";
+        public const string OptimizeEnumerable_CastInsteadOfSelect = "MA0078";
 
         public static string GetHelpUri(string idenfifier)
         {

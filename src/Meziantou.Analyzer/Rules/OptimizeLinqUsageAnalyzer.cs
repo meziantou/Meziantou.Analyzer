@@ -4,6 +4,8 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using static System.FormattableString;
@@ -63,7 +65,23 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_listMethodsRule, s_combineLinqMethodsRule, s_duplicateOrderByMethodsRule, s_optimizeCountRule, s_optimizeWhereAndOrderByRule);
+        private static readonly DiagnosticDescriptor s_useCastInsteadOfSelect = new DiagnosticDescriptor(
+            RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect,
+            title: "Use 'Cast' instead of 'Select' to cast",
+            messageFormat: "Use 'Cast<{0}>' instead of 'Select' to cast",
+            RuleCategories.Performance,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+            s_listMethodsRule,
+            s_combineLinqMethodsRule,
+            s_duplicateOrderByMethodsRule,
+            s_optimizeCountRule,
+            s_optimizeWhereAndOrderByRule,
+            s_useCastInsteadOfSelect);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -96,6 +114,7 @@ namespace Meziantou.Analyzer.Rules
             RemoveTwoConsecutiveOrderBy(context, operation, symbols);
             WhereShouldBeBeforeOrderBy(context, operation, symbols);
             OptimizeCountUsage(context, operation, symbols);
+            UseCastInsteadOfSelect(context, operation);
         }
 
         private static ImmutableDictionary<string, string> CreateProperties(OptimizeLinqUsageData data)
@@ -232,8 +251,7 @@ namespace Meziantou.Analyzer.Rules
                 if (operation.TargetMethod.Parameters.Length != 2)
                     return;
 
-                var type = operation.TargetMethod.Parameters[1].Type as INamedTypeSymbol;
-                if (type == null)
+                if (!(operation.TargetMethod.Parameters[1].Type is INamedTypeSymbol type))
                     return;
 
                 if (type.TypeArguments.Length == 3)
@@ -562,6 +580,64 @@ namespace Meziantou.Analyzer.Rules
 
                 return string.Equals(op.TargetMethod.Name, nameof(Enumerable.Take), StringComparison.Ordinal) && enumerableSymbols.Contains(op.TargetMethod.ContainingType);
             }
+        }
+
+        private static void UseCastInsteadOfSelect(OperationAnalysisContext context, IInvocationOperation operation)
+        {
+            if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Select), StringComparison.Ordinal))
+                return;
+
+            // A valid 'Select' operation always has 2 arguments, regardless of whether the underlying code syntax is
+            // that of a call to an extension method:   source.Select(selector);
+            // or to a static method:                   Enumerable.Select(source, selector);
+            //  Operation's first argument  -> 'source'
+            //  Operation's second argument -> 'selector'
+            if (operation.Arguments.Length != 2)
+                return;
+
+            var selectorArg = operation.Arguments[1];
+
+            // Get the selector's return operation
+            var returnOp = selectorArg.Descendants().OfType<IReturnOperation>().FirstOrDefault();
+            if (returnOp is null)
+                return;
+
+            // Is it returning a cast value?
+            if (!(returnOp.ReturnedValue is IConversionOperation castOp))
+                return;
+
+            // And is the cast applied to the sequence element, passed in as argument to the selector?
+            if (!(castOp.Operand is IParameterReferenceOperation))
+                return;
+
+            string castType = null;
+
+            // In C# there's 2 ways of casting...
+            if (castOp.Syntax is CastExpressionSyntax castExpression)
+            {
+                castType = castExpression.Type.ToString();
+            }
+            else if (castOp.Syntax is BinaryExpressionSyntax binaryExpression && binaryExpression.IsKind(SyntaxKind.AsExpression))
+            {
+                castType = binaryExpression.Right.ToString();
+            }
+            else
+            {
+                return;
+            }
+
+            // Store the exact syntax of the type specification. The fixer will use it as is
+            // (without attempting simplification) when replacing Select by Cast.
+            var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
+               .Add("CastType", castType);
+
+            // Get the location of the [|Select|] member access expression
+            if (!(operation.Syntax.ChildNodes().FirstOrDefault() is MemberAccessExpressionSyntax memberAccessExpression))
+                return;
+
+            var selectMethodName = memberAccessExpression.Name;
+            var diagnostic = Diagnostic.Create(s_useCastInsteadOfSelect, selectMethodName.GetLocation(), properties, castType);
+            context.ReportDiagnostic(diagnostic);
         }
 
         private static ITypeSymbol GetActualType(IArgumentOperation argument)

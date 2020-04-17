@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -23,7 +24,8 @@ namespace Meziantou.Analyzer.Rules
             RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,
             RuleIdentifiers.DuplicateEnumerable_OrderBy,
             RuleIdentifiers.OptimizeLinqUsage,
-            RuleIdentifiers.OptimizeEnumerable_Count);
+            RuleIdentifiers.OptimizeEnumerable_Count,
+            RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect);
 
         public override FixAllProvider GetFixAllProvider()
         {
@@ -112,6 +114,10 @@ namespace Meziantou.Analyzer.Rules
 
                 case OptimizeLinqUsageData.UseSkipAndNotAny:
                     context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, comparandValue: false, ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+
+                case OptimizeLinqUsageData.UseCastInsteadOfSelect:
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => UseCastInsteadOfSelect(context.Document, diagnostic, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                     break;
             }
         }
@@ -266,6 +272,51 @@ namespace Meziantou.Analyzer.Rules
             return editor.GetChangedDocument();
         }
 
+        private async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        {
+            // nodeToFix represents the 'Select' method IdentifierNameSyntax.
+            // Its parent is MemberAccessExpressionSyntax...
+            if (!(nodeToFix.Parent is MemberAccessExpressionSyntax memberAccessExpression))
+                return document;
+
+            // ...and its grandparent - the actual node to replace - is InvocationExpressionSyntax
+            if (!(memberAccessExpression.Parent is InvocationExpressionSyntax selectInvocationExpression))
+                return document;
+
+            // Build the 'Cast<CastType>' name
+            var castType = diagnostic.Properties.GetValueOrDefault("CastType");
+            var castNameSyntax = GenericName(Identifier("Cast"))
+                .WithTypeArgumentList(
+                    TypeArgumentList(
+                        SingletonSeparatedList<TypeSyntax>(
+                            IdentifierName(castType))));
+
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+
+            // Is the 'source' (i.e. the sequence of values 'Select' is invoked on) passed in as argument?
+            //  If there is 1 argument      -> No 'source' argument, only 'selector'
+            //  If there are 2 arguments    -> The 1st argument is the 'source'
+            var argumentListArguments = selectInvocationExpression.ArgumentList.Arguments;
+            var sourceArg = argumentListArguments.Reverse().Skip(1).FirstOrDefault();
+
+            SyntaxNode castInvocationExpression;
+            if (sourceArg is null)
+            {
+                castInvocationExpression = generator.InvocationExpression(
+                    generator.MemberAccessExpression(memberAccessExpression.Expression, castNameSyntax));
+            }
+            else
+            {
+                castInvocationExpression = generator.InvocationExpression(
+                    generator.MemberAccessExpression(memberAccessExpression.Expression, castNameSyntax),
+                    sourceArg);
+            }
+
+            editor.ReplaceNode(selectInvocationExpression, castInvocationExpression);
+            return editor.GetChangedDocument();
+        }
+
         private static async Task<Document> UseConstantValue(Document document, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -326,7 +377,7 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-            var newExpression = expression.WithName(SyntaxFactory.IdentifierName("Find"));
+            var newExpression = expression.WithName(IdentifierName("Find"));
 
             editor.ReplaceNode(expression, newExpression);
             return editor.GetChangedDocument();
@@ -451,7 +502,7 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-            var newExpression = expression.WithName(SyntaxFactory.IdentifierName(expectedMethodName));
+            var newExpression = expression.WithName(IdentifierName(expectedMethodName));
 
             editor.ReplaceNode(expression, newExpression);
             return editor.GetChangedDocument();
@@ -577,7 +628,7 @@ namespace Meziantou.Analyzer.Rules
                 var symbol = _semanticModel.GetSymbolInfo(node).Symbol;
                 if (symbol != null && symbol.IsEqualTo(_parameterSymbol))
                 {
-                    return SyntaxFactory.IdentifierName(_newParameterName);
+                    return IdentifierName(_newParameterName);
                 }
 
                 return base.VisitIdentifierName(node);
