@@ -610,30 +610,19 @@ namespace Meziantou.Analyzer.Rules
             if (!(castOp.Operand is IParameterReferenceOperation))
                 return;
 
-            string castType = null;
-
-            // In C# there's 2 ways of casting...
-            if (castOp.Syntax is CastExpressionSyntax castExpression)
-            {
-                castType = castExpression.Type.ToString();
-            }
-            else if (castOp.Syntax is BinaryExpressionSyntax binaryExpression && binaryExpression.IsKind(SyntaxKind.AsExpression))
-            {
-                castType = binaryExpression.Right.ToString();
-            }
-            else
-            {
+            if (!(castOp.Syntax is CastExpressionSyntax castExpression))
                 return;
-            }
+
+            // Get the location of the [|Select|] member access expression
+            if (!(operation.Syntax.ChildNodes().FirstOrDefault() is MemberAccessExpressionSyntax memberAccessExpression))
+                return;
+
+            var castType = castExpression.Type.ToString();
 
             // Store the exact syntax of the type specification. The fixer will use it as is
             // (without attempting simplification) when replacing Select by Cast.
             var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
                .Add("CastType", castType);
-
-            // Get the location of the [|Select|] member access expression
-            if (!(operation.Syntax.ChildNodes().FirstOrDefault() is MemberAccessExpressionSyntax memberAccessExpression))
-                return;
 
             var selectMethodName = memberAccessExpression.Name;
             var diagnostic = Diagnostic.Create(s_useCastInsteadOfSelect, selectMethodName.GetLocation(), properties, castType);

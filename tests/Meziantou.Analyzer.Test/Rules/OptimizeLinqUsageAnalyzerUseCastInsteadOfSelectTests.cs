@@ -15,10 +15,10 @@ namespace Meziantou.Analyzer.Test.Rules
         }
 
         [Theory]
-        [InlineData("enumerable.[|Select|](dt => (BaseType)dt)",
-                    "enumerable.Cast<BaseType>()")]
-        [InlineData("Enumerable.[|Select|](enumerable, dt => dt as Test.BaseType).Where(x => x != null)",
-                    "Enumerable.Cast<Test.BaseType>(enumerable).Where(x => x != null)")]
+        [InlineData("source.[|Select|](dt => (BaseType)dt)",
+                    "source.Cast<BaseType>()")]
+        [InlineData("Enumerable.[|Select|](source, dt => (Test.BaseType)dt).FirstOrDefault()",
+                    "Enumerable.Cast<Test.BaseType>(source).FirstOrDefault()")]
         [InlineData("System.Linq.Enumerable.Empty<DerivedType>().[|Select|](dt => (Gen.IList<string>)dt)",
                                 "Enumerable.Empty<DerivedType>().Cast<Gen.IList<string>>()")]
         public async Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(string selectInvocation, string expectedReplacement)
@@ -32,7 +32,7 @@ class Test
 
     public Test()
     {{
-        var enumerable = System.Linq.Enumerable.Empty<DerivedType>();
+        var source = System.Linq.Enumerable.Empty<DerivedType>();
         {selectInvocation};
     }}
 }}";
@@ -45,7 +45,7 @@ class Test
 
     public Test()
     {{
-        var enumerable = System.Linq.Enumerable.Empty<DerivedType>();
+        var source = System.Linq.Enumerable.Empty<DerivedType>();
         {expectedReplacement};
     }}
 }}";
@@ -56,8 +56,9 @@ class Test
         }
 
         [Theory]
-        [InlineData("enumerable.Select(dt => dt.Name)")]
-        [InlineData("enumerable.Select(dt => (object)dt.Name)")]
+        [InlineData("source.Select(dt => dt.Name)")]            // No cast
+        [InlineData("source.Select(dt => (object)dt.Name)")]    // Cast of property, not of element itself
+        [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator -> Could be replaced by OfType<>
         public async Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
         {
             var originalCode = $@"using System.Linq;
@@ -68,7 +69,7 @@ class Test
 
     public Test()
     {{
-        var enumerable = System.Linq.Enumerable.Empty<DerivedType>();
+        var source = System.Linq.Enumerable.Empty<DerivedType>();
         {selectInvocation};
     }}
 }}";
