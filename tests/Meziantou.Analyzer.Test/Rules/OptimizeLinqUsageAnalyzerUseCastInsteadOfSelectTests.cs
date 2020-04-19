@@ -18,9 +18,11 @@ namespace Meziantou.Analyzer.Test.Rules
         [InlineData("source.[|Select|](dt => (BaseType)dt)",
                     "source.Cast<BaseType>()")]
         [InlineData("Enumerable.[|Select|](source, dt => (Test.BaseType)dt).FirstOrDefault()",
-                    "Enumerable.Cast<Test.BaseType>(source).FirstOrDefault()")]
+                    "Enumerable.Cast<BaseType>(source).FirstOrDefault()")]
         [InlineData("System.Linq.Enumerable.Empty<DerivedType>().[|Select|](dt => (Gen.IList<string>)dt)",
                                 "Enumerable.Empty<DerivedType>().Cast<Gen.IList<string>>()")]
+        [InlineData("Enumerable.Range(0, 1).[|Select<int, object>|](i => i)",
+                    "Enumerable.Range(0, 1).Cast<object>()")]
         public async Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(string selectInvocation, string expectedReplacement)
         {
             var originalCode = $@"using System.Linq;
@@ -58,7 +60,7 @@ class Test
         [Theory]
         [InlineData("source.Select(dt => dt.Name)")]            // No cast
         [InlineData("source.Select(dt => (object)dt.Name)")]    // Cast of property, not of element itself
-        [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator -> Could be replaced by OfType<>
+        [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
         public async Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
         {
             var originalCode = $@"using System.Linq;

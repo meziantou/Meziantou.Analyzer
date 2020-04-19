@@ -602,25 +602,20 @@ namespace Meziantou.Analyzer.Rules
             if (returnOp is null)
                 return;
 
-            // Is it returning a cast value?
-            if (!(returnOp.ReturnedValue is IConversionOperation castOp))
+            // If what's returned is not a cast value or the cast is done by 'as' operator
+            if (!(returnOp.ReturnedValue is IConversionOperation castOp) || castOp.IsTryCast)
                 return;
 
-            // And is the cast applied to the sequence element, passed in as argument to the selector?
-            if (!(castOp.Operand is IParameterReferenceOperation))
-                return;
-
-            if (!(castOp.Syntax is CastExpressionSyntax castExpression))
+            // If the cast is not applied directly to the source element (one of the selector's arguments)
+            if (castOp.Operand.Kind != OperationKind.ParameterReference)
                 return;
 
             // Get the location of the [|Select|] member access expression
             if (!(operation.Syntax.ChildNodes().FirstOrDefault() is MemberAccessExpressionSyntax memberAccessExpression))
                 return;
 
-            var castType = castExpression.Type.ToString();
-
-            // Store the exact syntax of the type specification. The fixer will use it as is
-            // (without attempting simplification) when replacing Select by Cast.
+            // Get the cast type's minimally qualified name, in the current context
+            var castType = castOp.Type.ToMinimalDisplayString(operation.SemanticModel, operation.Syntax.SpanStart);
             var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
                .Add("CastType", castType);
 
