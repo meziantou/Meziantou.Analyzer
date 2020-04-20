@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -117,13 +116,6 @@ namespace Meziantou.Analyzer
             {
                 context.ReportDiagnostic(CreateDiagnostic(descriptor, location, properties, messageArgs));
             }
-        }
-
-        [Flags]
-        public enum DiagnosticReportOptions
-        {
-            None = 0x0,
-            ReportOnMethodName = 0x1
         }
     }
 }
