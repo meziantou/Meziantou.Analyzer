@@ -46,6 +46,11 @@ namespace Meziantou.Analyzer.Rules
             if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), out OptimizeLinqUsageData data) || data == OptimizeLinqUsageData.None)
                 return;
 
+            // If the so-called nodeToFix is a Name (most likely a method name such as 'Select' or 'Count'),
+            // adjust it so that it refers to its InvocationExpression ancestor instead.
+            if ((nodeToFix.IsKind(SyntaxKind.IdentifierName) || nodeToFix.IsKind(SyntaxKind.GenericName)) && !TryGetInvocationExpressionAncestor(ref nodeToFix))
+                return;
+
             var title = "Optimize linq usage";
             switch (data)
             {
@@ -120,6 +125,21 @@ namespace Meziantou.Analyzer.Rules
                     context.RegisterCodeFix(CodeAction.Create(title, ct => UseCastInsteadOfSelect(context.Document, diagnostic, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                     break;
             }
+        }
+
+        private static bool TryGetInvocationExpressionAncestor(ref SyntaxNode nodeToFix)
+        {
+            var node = nodeToFix;
+            while (node != null)
+            {
+                if (node.IsKind(SyntaxKind.InvocationExpression))
+                {
+                    nodeToFix = node;
+                    return true;
+                }
+                node = node.Parent;
+            }
+            return false;
         }
 
         private static async Task<Document> UseAny(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)
@@ -274,13 +294,10 @@ namespace Meziantou.Analyzer.Rules
 
         private async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            // nodeToFix represents the 'Select' method IdentifierNameSyntax.
-            // Its parent is MemberAccessExpressionSyntax...
-            if (!(nodeToFix.Parent is MemberAccessExpressionSyntax memberAccessExpression))
+            if (!(nodeToFix is InvocationExpressionSyntax selectInvocationExpression))
                 return document;
 
-            // ...and its grandparent - the actual node to replace - is InvocationExpressionSyntax
-            if (!(memberAccessExpression.Parent is InvocationExpressionSyntax selectInvocationExpression))
+            if (!(selectInvocationExpression.Expression is MemberAccessExpressionSyntax memberAccessExpression))
                 return document;
 
             // Build the 'Cast<CastType>' name

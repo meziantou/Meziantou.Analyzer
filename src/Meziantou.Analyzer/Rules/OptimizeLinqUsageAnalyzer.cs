@@ -4,11 +4,10 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using static System.FormattableString;
+using static Meziantou.Analyzer.ContextExtensions;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -161,7 +160,7 @@ namespace Meziantou.Analyzer.Rules
                 if (actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLengthProperty);
-                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Length", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Length", operation.TargetMethod.Name);
                     return;
                 }
 
@@ -172,7 +171,7 @@ namespace Meziantou.Analyzer.Rules
                     if (count != null)
                     {
                         var properties = CreateProperties(OptimizeLinqUsageData.UseCountProperty);
-                        context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Count", operation.TargetMethod.Name);
+                        context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Count", operation.TargetMethod.Name);
                         return;
                     }
                 }
@@ -183,7 +182,7 @@ namespace Meziantou.Analyzer.Rules
                 if (actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
-                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, "LongLength", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "LongLength", operation.TargetMethod.Name);
                 }
             }
         }
@@ -200,7 +199,7 @@ namespace Meziantou.Analyzer.Rules
             if (GetActualType(operation.Arguments[0]).OriginalDefinition.IsEqualTo(listSymbol))
             {
                 var properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Find()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
             }
         }
 
@@ -239,7 +238,7 @@ namespace Meziantou.Analyzer.Rules
             var actualType = GetActualType(operation.Arguments[0]);
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(listSymbol) || i.OriginalDefinition.IsEqualTo(readOnlyListSymbol)))
             {
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, "[]", operation.TargetMethod.Name);
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
             }
         }
 
@@ -610,18 +609,12 @@ namespace Meziantou.Analyzer.Rules
             if (castOp.Operand.Kind != OperationKind.ParameterReference)
                 return;
 
-            // Get the location of the [|Select|] member access expression
-            if (!(operation.Syntax.ChildNodes().FirstOrDefault() is MemberAccessExpressionSyntax memberAccessExpression))
-                return;
-
             // Get the cast type's minimally qualified name, in the current context
             var castType = castOp.Type.ToMinimalDisplayString(operation.SemanticModel, operation.Syntax.SpanStart);
             var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
                .Add("CastType", castType);
 
-            var selectMethodName = memberAccessExpression.Name;
-            var diagnostic = Diagnostic.Create(s_useCastInsteadOfSelect, selectMethodName.GetLocation(), properties, castType);
-            context.ReportDiagnostic(diagnostic);
+            context.ReportDiagnostic(s_useCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
         }
 
         private static ITypeSymbol GetActualType(IArgumentOperation argument)

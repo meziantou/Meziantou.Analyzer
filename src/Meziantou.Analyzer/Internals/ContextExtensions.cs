@@ -1,6 +1,10 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer
 {
@@ -77,6 +81,18 @@ namespace Meziantou.Analyzer
             context.ReportDiagnostic(CreateDiagnostic(descriptor, operation.Syntax.GetLocation(), properties, messageArgs));
         }
 
+        public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string> properties, IInvocationOperation operation, DiagnosticReportOptions options, params string[] messageArgs)
+        {
+            if (options.HasFlag(DiagnosticReportOptions.ReportOnMethodName) &&
+                operation.Syntax.ChildNodes().FirstOrDefault() is MemberAccessExpressionSyntax memberAccessExpression)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, memberAccessExpression.Name.GetLocation(), properties, messageArgs));
+                return;
+            }
+
+            context.ReportDiagnostic(descriptor, properties, operation, messageArgs);
+        }
+
         public static void ReportDiagnostic(this CompilationAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, params string[] messageArgs)
         {
             ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, symbol, messageArgs);
@@ -101,6 +117,13 @@ namespace Meziantou.Analyzer
             {
                 context.ReportDiagnostic(CreateDiagnostic(descriptor, location, properties, messageArgs));
             }
+        }
+
+        [Flags]
+        public enum DiagnosticReportOptions
+        {
+            None = 0x0,
+            ReportOnMethodName = 0x1
         }
     }
 }
