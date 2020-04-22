@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Simplification;
 using Microsoft.CodeAnalysis.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -330,7 +331,7 @@ namespace Meziantou.Analyzer.Rules
                     sourceArg);
             }
 
-            editor.ReplaceNode(selectInvocationExpression, castInvocationExpression);
+            editor.ReplaceNode(selectInvocationExpression, castInvocationExpression.WithAdditionalAnnotations(Simplifier.Annotation));
             return editor.GetChangedDocument();
         }
 

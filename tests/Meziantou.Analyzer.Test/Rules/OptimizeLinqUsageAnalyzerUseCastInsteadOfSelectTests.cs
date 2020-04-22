@@ -18,15 +18,32 @@ namespace Meziantou.Analyzer.Test.Rules
         [InlineData("source.[|Select|](dt => (BaseType)dt)",
                     "source.Cast<BaseType>()")]
         [InlineData("Enumerable.[|Select|](source, dt => (Test.BaseType)dt).FirstOrDefault()",
-                    "Enumerable.Cast<BaseType>(source).FirstOrDefault()")]
+                    "source.Cast<BaseType>().FirstOrDefault()")]
         [InlineData("System.Linq.Enumerable.Empty<DerivedType>().[|Select|](dt => (Gen.IList<string>)dt)",
                                 "Enumerable.Empty<DerivedType>().Cast<Gen.IList<string>>()")]
         [InlineData("Enumerable.Range(0, 1).[|Select<int, object>|](i => i)",
                     "Enumerable.Range(0, 1).Cast<object>()")]
-        public async Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(string selectInvocation, string expectedReplacement)
+        [InlineData("source.[|Select|](i => (object?)i)",
+                    "source.Cast<object?>()",
+                    true)]
+        [InlineData("source.[|Select|](i => (object)i)",
+                    "source.Cast<object>()",
+                    true)]
+        [InlineData("source.[|Select<DerivedType, object?>|](i => i)",
+                    "source.Cast<object?>()",
+                    true)]
+        [InlineData("source.[|Select<DerivedType, object>|](i => i)",
+                    "source.Cast<object>()",
+                    true)]
+        public async Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(
+            string selectInvocation,
+            string expectedReplacement,
+            bool enableNullable = false)
         {
-            var originalCode = $@"using System.Linq;
+            var originalCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
+using System.Linq;
 using Gen = System.Collections.Generic;
+
 class Test
 {{
     class BaseType {{ public string Name {{ get; set; }} }}
@@ -38,8 +55,10 @@ class Test
         {selectInvocation};
     }}
 }}";
-            var modifiedCode = $@"using System.Linq;
+            var modifiedCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
+using System.Linq;
 using Gen = System.Collections.Generic;
+
 class Test
 {{
     class BaseType {{ public string Name {{ get; set; }} }}

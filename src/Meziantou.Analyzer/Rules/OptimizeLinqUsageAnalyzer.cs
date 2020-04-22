@@ -4,10 +4,11 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using static System.FormattableString;
-using static Meziantou.Analyzer.ContextExtensions;
 
 namespace Meziantou.Analyzer.Rules
 {
@@ -609,8 +610,26 @@ namespace Meziantou.Analyzer.Rules
             if (castOp.Operand.Kind != OperationKind.ParameterReference)
                 return;
 
+            // Determine if we're casting to a nullable type. If we can't do it via Syntax, use ISymbol.
+            // TODO: Revisit this once https://github.com/dotnet/roslyn/pull/42403 is merged.
+            NullableFlowState nullableFlowState = NullableFlowState.None;
+            if (castOp.Syntax is CastExpressionSyntax castExpression)
+            {
+                if (castExpression.Type.IsKind(SyntaxKind.NullableType))
+                    nullableFlowState = NullableFlowState.MaybeNull;
+            }
+            else
+            {
+                var castMethodSymbol = operation.SemanticModel.GetSymbolInfo(castOp.Syntax.Parent).Symbol as IMethodSymbol;
+                var returnTypeSymbol = castMethodSymbol?.ReturnType;
+                if (returnTypeSymbol?.NullableAnnotation == NullableAnnotation.Annotated)
+                {
+                    nullableFlowState = NullableFlowState.MaybeNull;
+                }
+            }
+
             // Get the cast type's minimally qualified name, in the current context
-            var castType = castOp.Type.ToMinimalDisplayString(operation.SemanticModel, operation.Syntax.SpanStart);
+            var castType = castOp.Type.ToMinimalDisplayString(operation.SemanticModel, nullableFlowState, operation.Syntax.SpanStart);
             var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
                .Add("CastType", castType);
 
