@@ -19,5 +19,6 @@
         UseTakeAndCount,
         UseSkipAndNotAny,
         UseSkipAndAny,
+        UseCastInsteadOfSelect,
     }
 }

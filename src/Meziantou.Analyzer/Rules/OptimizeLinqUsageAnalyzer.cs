@@ -4,6 +4,8 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using static System.FormattableString;
@@ -63,7 +65,23 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_listMethodsRule, s_combineLinqMethodsRule, s_duplicateOrderByMethodsRule, s_optimizeCountRule, s_optimizeWhereAndOrderByRule);
+        private static readonly DiagnosticDescriptor s_useCastInsteadOfSelect = new DiagnosticDescriptor(
+            RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect,
+            title: "Use 'Cast' instead of 'Select' to cast",
+            messageFormat: "Use 'Cast<{0}>' instead of 'Select' to cast",
+            RuleCategories.Performance,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+            s_listMethodsRule,
+            s_combineLinqMethodsRule,
+            s_duplicateOrderByMethodsRule,
+            s_optimizeCountRule,
+            s_optimizeWhereAndOrderByRule,
+            s_useCastInsteadOfSelect);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -96,6 +114,7 @@ namespace Meziantou.Analyzer.Rules
             RemoveTwoConsecutiveOrderBy(context, operation, symbols);
             WhereShouldBeBeforeOrderBy(context, operation, symbols);
             OptimizeCountUsage(context, operation, symbols);
+            UseCastInsteadOfSelect(context, operation);
         }
 
         private static ImmutableDictionary<string, string> CreateProperties(OptimizeLinqUsageData data)
@@ -142,7 +161,7 @@ namespace Meziantou.Analyzer.Rules
                 if (actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLengthProperty);
-                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Length", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Length", operation.TargetMethod.Name);
                     return;
                 }
 
@@ -153,7 +172,7 @@ namespace Meziantou.Analyzer.Rules
                     if (count != null)
                     {
                         var properties = CreateProperties(OptimizeLinqUsageData.UseCountProperty);
-                        context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Count", operation.TargetMethod.Name);
+                        context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Count", operation.TargetMethod.Name);
                         return;
                     }
                 }
@@ -164,7 +183,7 @@ namespace Meziantou.Analyzer.Rules
                 if (actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
-                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, "LongLength", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "LongLength", operation.TargetMethod.Name);
                 }
             }
         }
@@ -181,7 +200,7 @@ namespace Meziantou.Analyzer.Rules
             if (GetActualType(operation.Arguments[0]).OriginalDefinition.IsEqualTo(listSymbol))
             {
                 var properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, "Find()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
             }
         }
 
@@ -220,7 +239,7 @@ namespace Meziantou.Analyzer.Rules
             var actualType = GetActualType(operation.Arguments[0]);
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(listSymbol) || i.OriginalDefinition.IsEqualTo(readOnlyListSymbol)))
             {
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, "[]", operation.TargetMethod.Name);
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
             }
         }
 
@@ -232,8 +251,7 @@ namespace Meziantou.Analyzer.Rules
                 if (operation.TargetMethod.Parameters.Length != 2)
                     return;
 
-                var type = operation.TargetMethod.Parameters[1].Type as INamedTypeSymbol;
-                if (type == null)
+                if (!(operation.TargetMethod.Parameters[1].Type is INamedTypeSymbol type))
                     return;
 
                 if (type.TypeArguments.Length == 3)
@@ -562,6 +580,49 @@ namespace Meziantou.Analyzer.Rules
 
                 return string.Equals(op.TargetMethod.Name, nameof(Enumerable.Take), StringComparison.Ordinal) && enumerableSymbols.Contains(op.TargetMethod.ContainingType);
             }
+        }
+
+        private static void UseCastInsteadOfSelect(OperationAnalysisContext context, IInvocationOperation operation)
+        {
+            if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Select), StringComparison.Ordinal))
+                return;
+
+            // A valid 'Select' operation always has 2 arguments, regardless of whether the underlying code syntax is
+            // that of a call to an extension method:   source.Select(selector);
+            // or to a static method:                   Enumerable.Select(source, selector);
+            //  Operation's first argument  -> 'source'
+            //  Operation's second argument -> 'selector'
+            if (operation.Arguments.Length != 2)
+                return;
+
+            var selectorArg = operation.Arguments[1];
+
+            // Get the selector's return operation
+            var returnOp = selectorArg.Descendants().OfType<IReturnOperation>().FirstOrDefault();
+            if (returnOp is null)
+                return;
+
+            // If what's returned is not a cast value or the cast is done by 'as' operator
+            if (!(returnOp.ReturnedValue is IConversionOperation castOp) || castOp.IsTryCast)
+                return;
+
+            // If the cast is not applied directly to the source element (one of the selector's arguments)
+            if (castOp.Operand.Kind != OperationKind.ParameterReference)
+                return;
+
+            // Determine if we're casting to a nullable type.
+            // TODO: Revisit this once https://github.com/dotnet/roslyn/pull/42403 is merged.
+            var selectMethodSymbol = operation.SemanticModel.GetSymbolInfo(operation.Syntax).Symbol as IMethodSymbol;
+            var nullableFlowState = selectMethodSymbol?.TypeArgumentNullableAnnotations[1] == NullableAnnotation.Annotated ?
+                NullableFlowState.MaybeNull :
+                NullableFlowState.None;
+
+            // Get the cast type's minimally qualified name, in the current context
+            var castType = castOp.Type.ToMinimalDisplayString(operation.SemanticModel, nullableFlowState, operation.Syntax.SpanStart);
+            var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
+               .Add("CastType", castType);
+
+            context.ReportDiagnostic(s_useCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
         }
 
         private static ITypeSymbol GetActualType(IArgumentOperation argument)
