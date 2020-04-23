@@ -610,23 +610,12 @@ namespace Meziantou.Analyzer.Rules
             if (castOp.Operand.Kind != OperationKind.ParameterReference)
                 return;
 
-            // Determine if we're casting to a nullable type. If we can't do it via Syntax, use ISymbol.
+            // Determine if we're casting to a nullable type.
             // TODO: Revisit this once https://github.com/dotnet/roslyn/pull/42403 is merged.
-            NullableFlowState nullableFlowState = NullableFlowState.None;
-            if (castOp.Syntax is CastExpressionSyntax castExpression)
-            {
-                if (castExpression.Type.IsKind(SyntaxKind.NullableType))
-                    nullableFlowState = NullableFlowState.MaybeNull;
-            }
-            else
-            {
-                var castMethodSymbol = operation.SemanticModel.GetSymbolInfo(castOp.Syntax.Parent).Symbol as IMethodSymbol;
-                var returnTypeSymbol = castMethodSymbol?.ReturnType;
-                if (returnTypeSymbol?.NullableAnnotation == NullableAnnotation.Annotated)
-                {
-                    nullableFlowState = NullableFlowState.MaybeNull;
-                }
-            }
+            var selectMethodSymbol = operation.SemanticModel.GetSymbolInfo(operation.Syntax).Symbol as IMethodSymbol;
+            var nullableFlowState = selectMethodSymbol?.TypeArgumentNullableAnnotations[1] == NullableAnnotation.Annotated ?
+                NullableFlowState.MaybeNull :
+                NullableFlowState.None;
 
             // Get the cast type's minimally qualified name, in the current context
             var castType = castOp.Type.ToMinimalDisplayString(operation.SemanticModel, nullableFlowState, operation.Syntax.SpanStart);
