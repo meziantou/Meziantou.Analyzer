@@ -115,7 +115,7 @@ namespace Meziantou.Analyzer.Rules
 
                     var result = new List<IReadOnlyList<ISymbol>>();
 
-                    var members = s.GetMembers();
+                    var members = s.GetAllMembers();
                     foreach (var member in members)
                     {
                         if (member.IsImplicitlyDeclared)

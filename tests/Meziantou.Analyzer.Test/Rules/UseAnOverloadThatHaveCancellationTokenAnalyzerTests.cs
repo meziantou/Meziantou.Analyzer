@@ -158,7 +158,7 @@ class HttpRequest
         public async Task CallingMethodWithProperty_ShouldReportDiagnostic()
         {
             const string SourceCode = @"
-class Test
+class Test : ControllerBase
 {
     public void A()
     {
@@ -166,10 +166,14 @@ class Test
     }
 
     public System.Threading.CancellationToken MyCancellationToken { get; }
-    public HttpContext Context { get; }
 
     public void MethodWithCancellationToken() => throw null;
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+}
+
+class ControllerBase
+{
+    public HttpContext Context { get; }
 }
 
 class HttpContext

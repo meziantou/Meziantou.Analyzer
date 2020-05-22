@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
 {
@@ -57,6 +58,17 @@ namespace Meziantou.Analyzer
         public static bool IsConst(this ISymbol symbol)
         {
             return symbol is IFieldSymbol field && field.IsConst;
+        }
+
+        public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol symbol)
+        {
+            while (symbol != null)
+            {
+                foreach (var member in symbol.GetMembers())
+                    yield return member;
+
+                symbol = symbol.BaseType;
+            }
         }
     }
 }
