@@ -127,6 +127,12 @@ namespace TestHelper
             AddNuGetReference("xunit.extensibility.core", "2.4.1", "lib/netstandard1.1/")
             .AddNuGetReference("xunit.assert", "2.4.1", "lib/netstandard1.1/");
 
+        public ProjectBuilder AddAsyncInterfaceApi() =>
+            AddNuGetReference("Microsoft.Bcl.AsyncInterfaces", "1.1.1", "ref/netstandard2.0/")
+            .AddNuGetReference("System.Threading.Tasks.Extensions", "4.5.4", "lib/netstandard2.0/")
+            .AddNuGetReference("System.Runtime.CompilerServices.Unsafe", "4.7.1", "ref/netstandard2.0/")
+            ;
+
         public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
 
         public ProjectBuilder WithSourceCode(string sourceCode)
