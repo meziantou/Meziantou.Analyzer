@@ -29,14 +29,34 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule = new DiagnosticDescriptor(
             RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable,
             title: "Use a cancellation token",
-            messageFormat: "Specify a CancellationToken ({0})",
+            messageFormat: "Specify a CancellationToken. Available tokens: {0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable));
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_useAnOverloadThatHaveCancellationTokenRule, s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule);
+        private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRule = new DiagnosticDescriptor(
+            RuleIdentifiers.FlowCancellationTokenInAwaitForEach,
+            title: "Use a cancellation token using .WithCancellation()",
+            messageFormat: "Specify a CancellationToken",
+            RuleCategories.Usage,
+            DiagnosticSeverity.Hidden,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEach));
+
+        private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule = new DiagnosticDescriptor(
+            RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable,
+            title: "Use a cancellation token using .WithCancellation()",
+            messageFormat: "Specify a CancellationToken using WithCancellation(). Available tokens: {0}",
+            RuleCategories.Usage,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable));
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_useAnOverloadThatHaveCancellationTokenRule, s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule, s_flowCancellationTokenInAwaitForEachRule, s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -49,7 +69,8 @@ namespace Meziantou.Analyzer.Rules
                 if (analyzerContext.CancellationTokenSymbol == null)
                     return;
 
-                ctx.RegisterOperationAction(analyzerContext.Analyze, OperationKind.Invocation);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeLoop, OperationKind.Loop);
             });
         }
 
@@ -64,6 +85,7 @@ namespace Meziantou.Analyzer.Rules
                 CancellationTokenSourceSymbol = compilation.GetTypeByMetadataName("System.Threading.CancellationTokenSource");
                 TaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 TaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+                ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
             }
 
             public Compilation Compilation { get; }
@@ -71,20 +93,33 @@ namespace Meziantou.Analyzer.Rules
             public INamedTypeSymbol CancellationTokenSourceSymbol { get; }
             private INamedTypeSymbol TaskSymbol { get; }
             private INamedTypeSymbol TaskOfTSymbol { get; }
+            private INamedTypeSymbol ConfiguredCancelableAsyncEnumerableSymbol { get; }
 
-            public void Analyze(OperationAnalysisContext context)
+            private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
             {
-                var operation = (IInvocationOperation)context.Operation;
+                return operation.Arguments.Any(arg => !arg.IsImplicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
+            }
+
+            private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation)
+            {
                 var method = operation.TargetMethod;
-
-                if (operation.Arguments.Any(arg => !arg.IsImplicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol)))
-                    return;
-
                 if (string.Equals(method.Name, nameof(CancellationTokenSource.CreateLinkedTokenSource), StringComparison.Ordinal) && method.ContainingType.IsEqualTo(CancellationTokenSourceSymbol))
-                    return;
+                    return false;
 
                 var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
-                if (!isImplicitlyDeclared && !operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, CancellationTokenSymbol))
+                if (!isImplicitlyDeclared && !operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation.SemanticModel.Compilation, CancellationTokenSymbol))
+                    return false;
+
+                return true;
+            }
+
+            public void AnalyzeInvocation(OperationAnalysisContext context)
+            {
+                var operation = (IInvocationOperation)context.Operation;
+                if (HasExplicitCancellationTokenArgument(operation))
+                    return;
+
+                if (!HasAnOverloadWithCancellationToken(operation))
                     return;
 
                 var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(operation));
@@ -95,6 +130,49 @@ namespace Meziantou.Analyzer.Rules
                 else
                 {
                     context.ReportDiagnostic(s_useAnOverloadThatHaveCancellationTokenRule, operation, possibleCancellationTokens);
+                }
+            }
+
+            public void AnalyzeLoop(OperationAnalysisContext context)
+            {
+                var op = context.Operation as IForEachLoopOperation;
+                if (op == null)
+                    return;
+
+                if (!op.IsAsynchronous)
+                    return;
+
+                var collectionType = op.Collection.GetActualType();
+                if (collectionType.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
+                    return;
+
+                // await foreach (var item in A(cancellationToken)) OK
+                // await foreach (var item in A())                  KO
+                // await foreach (var item in a)                    KO
+                var collection = op.Collection;
+                if (collection is IConversionOperation conversion)
+                {
+                    collection = conversion.Operand;
+                }
+
+                if (collection is IInvocationOperation invocation)
+                {
+                    if (HasExplicitCancellationTokenArgument(invocation))
+                        return;
+
+                    // Already handled by AnalyzeInvocation
+                    if (HasAnOverloadWithCancellationToken(invocation))
+                        return;
+                }
+
+                var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(op));
+                if (!string.IsNullOrEmpty(possibleCancellationTokens))
+                {
+                    context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, op.Collection, possibleCancellationTokens);
+                }
+                else
+                {
+                    context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRule, op.Collection, possibleCancellationTokens);
                 }
             }
 
@@ -153,7 +231,7 @@ namespace Meziantou.Analyzer.Rules
                 });
             }
 
-            private IEnumerable<string> FindCancellationTokens(IInvocationOperation operation)
+            private IEnumerable<string> FindCancellationTokens(IOperation operation)
             {
                 var isStatic = IsStaticMember(operation);
 

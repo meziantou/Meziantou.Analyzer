@@ -240,6 +240,9 @@ dotnet_diagnostic.IDE0005.severity = suggestion
 # IDE1006: Naming rule violation
 dotnet_diagnostic.IDE1006.severity = suggestion
 
+# Relase tracking
+dotnet_diagnostic.RS2008.severity = none
+
 # MA0006: use String.Equals
 dotnet_diagnostic.MA0006.severity = none
 

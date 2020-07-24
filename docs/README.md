@@ -77,3 +77,5 @@
 |[MA0076](Rules/MA0076.md)|Design|Do not use implicit culture-sensitive ToString in interpolated strings|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0077](Rules/MA0077.md)|Design|A class that provides Equals(T) should implement IEquatable<T>|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0078](Rules/MA0078.md)|Performance|Use 'Cast' instead of 'Select' to cast|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0079](Rules/MA0079.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0080](Rules/MA0080.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Hidden'>👻</span>|✔️|❌|

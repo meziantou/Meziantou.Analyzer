@@ -81,6 +81,8 @@ namespace Meziantou.Analyzer
         public const string DoNotUseImplicitCultureSensitiveToStringInterpolation = "MA0076";
         public const string ClassWithEqualsTShouldImplementIEquatableT = "MA0077";
         public const string OptimizeEnumerable_CastInsteadOfSelect = "MA0078";
+        public const string FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable = "MA0079";
+        public const string FlowCancellationTokenInAwaitForEach = "MA0080";
 
         public static string GetHelpUri(string idenfifier)
         {
