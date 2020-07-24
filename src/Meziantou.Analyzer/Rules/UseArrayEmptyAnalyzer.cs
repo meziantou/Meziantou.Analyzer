@@ -85,7 +85,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsCompilerGeneratedParamsArray(IArrayCreationOperation arrayCreationExpression, OperationAnalysisContext context)
         {
-            var model = context.Compilation.GetSemanticModel(arrayCreationExpression.Syntax.SyntaxTree);
+            var model = context.Operation.SemanticModel;
 
             // Compiler generated array creation seems to just use the syntax from the parent.
             var parent = model.GetOperation(arrayCreationExpression.Syntax, context.CancellationToken);
