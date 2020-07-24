@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
@@ -142,8 +141,7 @@ namespace Meziantou.Analyzer
 
             foreach (var param in additionalParameterTypes)
             {
-                Debug.Assert(param != null);
-                otherMethodParameters.Remove(param);
+                otherMethodParameters.Remove(param!);
             }
 
             return otherMethodParameters.Count == 0;
