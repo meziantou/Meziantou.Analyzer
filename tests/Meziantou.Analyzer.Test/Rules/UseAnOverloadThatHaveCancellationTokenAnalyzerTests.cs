@@ -125,7 +125,7 @@ class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (cancellationToken)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken. Available tokens: cancellationToken")
                   .ValidateAsync();
         }
 
@@ -150,7 +150,7 @@ class HttpRequest
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (request.RequestAborted)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken. Available tokens: request.RequestAborted")
                   .ValidateAsync();
         }
 
@@ -182,7 +182,7 @@ class HttpContext
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (MyCancellationToken, Context.RequestAborted)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken. Available tokens: MyCancellationToken, Context.RequestAborted")
                   .ValidateAsync();
         }
 
@@ -210,7 +210,7 @@ class HttpContext
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (MyCancellationToken)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken. Available tokens: MyCancellationToken")
                   .ValidateAsync();
         }
 
@@ -236,7 +236,7 @@ class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken (a)")
+                  .ShouldReportDiagnosticWithMessage("Specify a CancellationToken. Available tokens: a")
                   .ValidateAsync();
         }
 

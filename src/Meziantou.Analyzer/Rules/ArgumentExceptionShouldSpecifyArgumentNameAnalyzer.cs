@@ -123,8 +123,11 @@ namespace Meziantou.Analyzer.Rules
                     case IndexerDeclarationSyntax indexerDeclarationSyntax:
                         {
                             var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
+                            if (symbol != null)
+                            {
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return parameter.Name;
+                            }
 
                             yield break;
                         }
@@ -132,8 +135,11 @@ namespace Meziantou.Analyzer.Rules
                     case MethodDeclarationSyntax methodDeclaration:
                         {
                             var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
+                            if (symbol != null)
+                            {
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return parameter.Name;
+                            }
 
                             yield break;
                         }
@@ -141,16 +147,23 @@ namespace Meziantou.Analyzer.Rules
                     case LocalFunctionStatementSyntax localFunctionStatement:
                         {
                             var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
+                            if (symbol != null)
+                            {
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return parameter.Name;
+                            }
+
                             break;
                         }
 
                     case ConstructorDeclarationSyntax constructorDeclaration:
                         {
                             var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
+                            if (symbol != null)
+                            {
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return parameter.Name;
+                            }
 
                             yield break;
                         }

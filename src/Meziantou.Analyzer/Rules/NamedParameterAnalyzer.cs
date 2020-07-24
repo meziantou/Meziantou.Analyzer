@@ -67,7 +67,7 @@ namespace Meziantou.Analyzer.Rules
                         var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
                         if (invocationExpression != null)
                         {
-                            var methodSymbol = (IMethodSymbol)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                            var methodSymbol = (IMethodSymbol?)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
                             if (methodSymbol != null)
                             {
                                 var argumentIndex = ArgumentIndex(argument);
@@ -145,7 +145,7 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private static bool IsMethod(IMethodSymbol method, ITypeSymbol type, string name)
+        private static bool IsMethod(IMethodSymbol? method, ITypeSymbol? type, string name)
         {
             if (type == null || method == null || method.ContainingType == null)
                 return false;

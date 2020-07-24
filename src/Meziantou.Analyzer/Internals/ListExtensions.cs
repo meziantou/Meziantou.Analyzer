@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer
             }
         }
 
-        public static void AddIfNotNull<T>(this IList<T> list, T item) where T : class
+        public static void AddIfNotNull<T>(this IList<T> list, T? item) where T : class
         {
             if (item is null)
                 return;

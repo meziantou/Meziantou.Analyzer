@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true) as InvocationExpressionSyntax;
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true) as InvocationExpressionSyntax;
             if (nodeToFix == null)
                 return;
 
@@ -40,8 +40,7 @@ namespace Meziantou.Analyzer.Rules
         private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var semanticModel = editor.SemanticModel;
             var generator = editor.Generator;
 
             var invocationExpression = (InvocationExpressionSyntax)nodeToFix;

@@ -52,7 +52,7 @@ namespace Meziantou.Analyzer.Rules
                     return;
             }
 
-            if (!operation.HasArgumentOfType(formatProviderType))
+            if (formatProviderType != null && !operation.HasArgumentOfType(formatProviderType))
             {
                 if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType) ||
                     (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType, numberStyleType)) ||
@@ -63,7 +63,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            if (!operation.HasArgumentOfType(cultureInfoType))
+            if (cultureInfoType != null && !operation.HasArgumentOfType(cultureInfoType))
             {
                 if (operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, cultureInfoType) != null)
                 {

@@ -62,7 +62,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var controlFlowAnalysis = context.SemanticModel.AnalyzeControlFlow(thenStatement);
-            if (!controlFlowAnalysis.Succeeded)
+            if (controlFlowAnalysis == null || !controlFlowAnalysis.Succeeded)
                 return;
 
             if (!controlFlowAnalysis.EndPointIsReachable || controlFlowAnalysis.ExitPoints.Any(ep => IsDirectAccess(ifStatement, ep)))
@@ -80,18 +80,23 @@ namespace Meziantou.Analyzer.Rules
 
         private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)
         {
-            return node
-                .DescendantNodes()
-                .Where(node => node.IsKind(SyntaxKind.VariableDeclarator) ||
-                               node.IsKind(SyntaxKind.LocalFunctionStatement) ||
-                               node.IsKind(SyntaxKind.SingleVariableDesignation))   // local declaration in pattern matching
-                .Select(node => node switch
+            foreach(var child in node.DescendantNodes())
+            {
+                switch (child)
                 {
-                    VariableDeclaratorSyntax variableDeclarator => variableDeclarator.Identifier.Text,
-                    LocalFunctionStatementSyntax localFunction => localFunction.Identifier.Text,
-                    SingleVariableDesignationSyntax singleVariableDesignation => singleVariableDesignation.Identifier.Text,
-                    _ => default
-                });
+                    case VariableDeclaratorSyntax variableDeclarator:
+                        yield return variableDeclarator.Identifier.Text;
+                        break;
+
+                    case LocalFunctionStatementSyntax localFunction:
+                        yield return localFunction.Identifier.Text;
+                        break;
+
+                    case SingleVariableDesignationSyntax singleVariableDesignation:
+                        yield return singleVariableDesignation.Identifier.Text;
+                        break;
+                }
+            }
         }
 
         /// <summary>

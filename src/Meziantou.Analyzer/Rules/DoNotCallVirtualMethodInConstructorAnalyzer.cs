@@ -42,7 +42,7 @@ namespace Meziantou.Analyzer.Rules
             if (methodSymbol.ContainingType.IsSealed)
                 return;
 
-            var body = (SyntaxNode)node.Body ?? node.ExpressionBody;
+            var body = (SyntaxNode?)node.Body ?? node.ExpressionBody;
             if (body == null)
                 return;
 

@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules
         protected override string CodeActionTitle => "Remove redundant else";
 
         /// <inheritdoc/>
-        protected override async Task<SyntaxNode> FixAllInDocumentAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics)
+        protected override async Task<SyntaxNode?> FixAllInDocumentAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics)
         {
             if (diagnostics.IsEmpty)
                 return null;

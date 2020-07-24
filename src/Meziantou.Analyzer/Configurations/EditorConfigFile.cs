@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Configurations
 {
@@ -15,7 +16,7 @@ namespace Meziantou.Analyzer.Configurations
             _configurations = configurations ?? throw new ArgumentNullException(nameof(configurations));
         }
 
-        public bool TryGetValue(string key, out string result)
+        public bool TryGetValue(string key, [NotNullWhen(true)]out string? result)
         {
             return _configurations.TryGetValue(key, out result);
         }

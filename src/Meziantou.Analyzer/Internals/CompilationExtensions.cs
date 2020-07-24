@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer
                 .Select(compilation.GetAssemblyOrModuleSymbol)
                 .OfType<IAssemblySymbol>()
                 .Select(assemblySymbol => assemblySymbol.GetTypeByMetadataName(typeMetadataName))
-                .Where(t => t != null);
+                .WhereNotNull();
         }
     }
 }

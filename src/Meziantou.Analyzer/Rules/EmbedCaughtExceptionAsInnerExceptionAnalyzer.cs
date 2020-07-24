@@ -37,6 +37,8 @@ namespace Meziantou.Analyzer.Rules
 
             var compilation = context.Compilation;
             var exceptionSymbol = compilation.GetTypeByMetadataName("System.Exception");
+            if (exceptionSymbol == null)
+                return;
 
             var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();
             if (catchOperation == null)

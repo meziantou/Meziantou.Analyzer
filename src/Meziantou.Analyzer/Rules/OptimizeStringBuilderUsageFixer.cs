@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -81,7 +81,9 @@ namespace Meziantou.Analyzer.Rules
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
-            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            if (operation == null)
+                return document;
 
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var argument = (IInterpolatedStringOperation)operation.Arguments[0].Value;
@@ -93,6 +95,9 @@ namespace Meziantou.Analyzer.Rules
                 if (part is IInterpolatedStringTextOperation str)
                 {
                     var text = OptimizeStringBuilderUsageAnalyzer.GetConstStringValue(str);
+                    if (text == null)
+                        return document; // This should not happen
+
                     var newArgument = generator.LiteralExpression(text.Length == 1 ? (object)text[0] : text);
                     if (shouldAppendLastAppendLine && part == argument.Parts.Last())
                     {
@@ -153,7 +158,9 @@ namespace Meziantou.Analyzer.Rules
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
-            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            if (operation == null)
+                return document;
 
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
@@ -171,7 +178,9 @@ namespace Meziantou.Analyzer.Rules
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
-            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            if (operation == null)
+                return document;
 
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
@@ -192,7 +201,9 @@ namespace Meziantou.Analyzer.Rules
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
-            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            if (operation == null)
+                return document;
 
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
@@ -217,7 +228,9 @@ namespace Meziantou.Analyzer.Rules
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
-            var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+            if (operation == null)
+                return document;
 
             var methodName = operation.TargetMethod.Name; // Append or AppendLine
             var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
@@ -250,9 +263,12 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
             var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
+            if (argument != null)
+            {
+                var newArgument = argument.WithExpression((ExpressionSyntax)editor.Generator.LiteralExpression(constValue));
+                editor.ReplaceNode(argument, newArgument);
+            }
 
-            var newArgument = argument.WithExpression((ExpressionSyntax)editor.Generator.LiteralExpression(constValue));
-            editor.ReplaceNode(argument, newArgument);
             return editor.GetChangedDocument();
         }
 

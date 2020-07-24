@@ -50,14 +50,14 @@ namespace Meziantou.Analyzer.Rules
         private sealed class Context
         {
             public Compilation Compilation { get; }
-            private INamedTypeSymbol IEqualityComparerSymbol { get; }
-            private INamedTypeSymbol IComparerSymbol { get; }
-            private ITypeSymbol ValueTypeSymbol { get; }
-            private ITypeSymbol ImmutableDictionarySymbol { get; }
-            private ITypeSymbol ImmutableHashSetSymbol { get; }
-            private ITypeSymbol ImmutableSortedDictionarySymbol { get; }
-            private IMethodSymbol ValueTypeEqualsSymbol { get; }
-            private IMethodSymbol ValueTypeGetHashCodeSymbol { get; }
+            private INamedTypeSymbol? IEqualityComparerSymbol { get; }
+            private INamedTypeSymbol? IComparerSymbol { get; }
+            private ITypeSymbol? ValueTypeSymbol { get; }
+            private ITypeSymbol? ImmutableDictionarySymbol { get; }
+            private ITypeSymbol? ImmutableHashSetSymbol { get; }
+            private ITypeSymbol? ImmutableSortedDictionarySymbol { get; }
+            private IMethodSymbol? ValueTypeEqualsSymbol { get; }
+            private IMethodSymbol? ValueTypeGetHashCodeSymbol { get; }
             private ITypeSymbol[] HashSetSymbols { get; }
 
             public Context(Compilation compilation)
@@ -119,12 +119,12 @@ namespace Meziantou.Analyzer.Rules
                     {
                         if (operation.TargetMethod.ContainingType.IsEqualTo(ImmutableSortedDictionarySymbol))
                         {
-                            if (operation.TargetMethod.Parameters.Any(arg => arg.Type.IsEqualTo(IComparerSymbol.Construct(type))))
+                            if (operation.TargetMethod.Parameters.Any(arg => arg.Type.IsEqualTo(IComparerSymbol?.Construct(type))))
                                 return;
                         }
                         else
                         {
-                            if (operation.TargetMethod.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol.Construct(type))))
+                            if (operation.TargetMethod.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol?.Construct(type))))
                                 return;
                         }
 
@@ -185,7 +185,7 @@ namespace Meziantou.Analyzer.Rules
 
                 if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
                 {
-                    if (operation.Constructor.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol.Construct(type.TypeArguments[0]))))
+                    if (operation.Constructor.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol?.Construct(type.TypeArguments[0]))))
                         return;
 
                     if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))

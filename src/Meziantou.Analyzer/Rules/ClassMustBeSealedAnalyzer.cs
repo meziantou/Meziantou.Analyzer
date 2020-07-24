@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer.Rules
             private readonly List<ITypeSymbol> _potentialClasses = new List<ITypeSymbol>();
             private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new HashSet<ITypeSymbol>();
 
-            private INamedTypeSymbol ExceptionSymbol { get; }
+            private INamedTypeSymbol? ExceptionSymbol { get; }
 
             public AnalyzerContext(Compilation compilation)
             {
@@ -105,23 +105,12 @@ namespace Meziantou.Analyzer.Rules
 
             private static bool PublicClassShouldBeSealed(AnalyzerOptions options, ISymbol symbol)
             {
-                foreach (var location in symbol.Locations)
-                {
-                    if (options.GetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", (bool?)null) == true)
-                        return true;
-                }
-
-                return false;
+                return options.GetConfigurationValue(symbol, RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", defaultValue: false);
             }
+
             private static bool SealedClassWithVirtualMember(AnalyzerOptions options, ISymbol symbol)
             {
-                foreach (var location in symbol.Locations)
-                {
-                    if (options.GetConfigurationValue(location.SourceTree.FilePath, RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_shoud_be_sealed", (bool?)null) == true)
-                        return true;
-                }
-
-                return false;
+                return options.GetConfigurationValue(symbol, RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_shoud_be_sealed", defaultValue: false);
             }
         }
     }

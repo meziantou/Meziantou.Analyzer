@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -43,6 +44,9 @@ namespace Meziantou.Analyzer.Rules
             if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
                 return;
 
+            if (context.Compilation == null)
+                return;
+
             var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
             if (methodSymbol == null || !IsTaskType(context.Compilation, methodSymbol.ReturnType))
                 return;
@@ -54,6 +58,9 @@ namespace Meziantou.Analyzer.Rules
         {
             var node = (LambdaExpressionSyntax)context.Node;
             if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
+                return;
+
+            if (context.Compilation == null)
                 return;
 
             var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
@@ -80,11 +87,21 @@ namespace Meziantou.Analyzer.Rules
             if (node.Modifiers.Any(SyntaxKind.AsyncKeyword))
                 return;
 
+            if (context.Compilation == null || context.SemanticModel == null)
+                return;
+
             var type = node.ReturnType;
             if (type != null && IsTaskType(context.Compilation, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken));
+                if (node.Body != null)
+                {
+                    AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
+                }
+
+                if (node.ExpressionBody != null)
+                {
+                    AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken));
+                }
             }
         }
 
@@ -95,19 +112,26 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var type = node.ReturnType;
-            if (type != null && IsTaskType(context.Compilation, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+            if (type != null && context.Compilation != null && IsTaskType(context.Compilation, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
-                AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken));
+                if (node.Body != null)
+                {
+                    AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
+                }
+
+                if (node.ExpressionBody != null)
+                {
+                    AnalyzeOperation(context, context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken));
+                }
             }
         }
 
-        private static void AnalyzeOperation(SyntaxNodeAnalysisContext context, IOperation operation)
+        private static void AnalyzeOperation(SyntaxNodeAnalysisContext context, IOperation? operation)
         {
             if (operation == null)
                 return;
 
-            foreach (var op in DescendantsAndSelf(operation, o=> !(o is IAnonymousFunctionOperation) && !(o is ILocalFunctionOperation)))
+            foreach (var op in DescendantsAndSelf(operation, o => !(o is IAnonymousFunctionOperation) && !(o is ILocalFunctionOperation)))
             {
                 if (op is IReturnOperation returnOperation && IsNullValue(returnOperation.ReturnedValue))
                 {
@@ -116,7 +140,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static bool IsNullValue(IOperation operation)
+        private static bool IsNullValue([NotNullWhen(true)] IOperation? operation)
         {
             if (operation == null)
                 return false;
@@ -132,7 +156,7 @@ namespace Meziantou.Analyzer.Rules
             return false;
         }
 
-        private static bool IsTaskType(Compilation compilation, ITypeSymbol typeSyntax)
+        private static bool IsTaskType(Compilation compilation, ITypeSymbol? typeSyntax)
         {
             if (compilation is null)
                 throw new ArgumentNullException(nameof(compilation));

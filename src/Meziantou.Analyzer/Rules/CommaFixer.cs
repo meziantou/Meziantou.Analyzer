@@ -34,10 +34,13 @@ namespace Meziantou.Analyzer.Rules
         private static async Task<Document> GetTransformedDocumentAsync(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
         {
             var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
+            if (syntaxRoot == null)
+                return document;
+
             var syntaxNode = syntaxRoot.FindNode(diagnostic.Location.SourceSpan);
 
             var textChange = new TextChange(diagnostic.Location.SourceSpan, syntaxNode.ToString() + ",");
+            var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
             return document.WithText(text.WithChanges(textChange));
         }
     }

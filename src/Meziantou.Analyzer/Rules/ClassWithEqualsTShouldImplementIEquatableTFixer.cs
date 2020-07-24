@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer.Rules
         {
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
-            if (!(semanticModel.GetDeclaredSymbol(nodeToFix) is ITypeSymbol declaredTypeSymbol))
+            if (semanticModel == null || !(semanticModel.GetDeclaredSymbol(nodeToFix) is ITypeSymbol declaredTypeSymbol))
                 return document;
 
             var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IEquatable`1");

@@ -26,7 +26,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -54,6 +54,9 @@ namespace Meziantou.Analyzer.Rules
             var logicalNotOperatorNeeded = bool.Parse(diagnostic.Properties.GetValueOrDefault("LogicalNotOperatorNeeded"));
 
             var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            if (syntaxRoot == null)
+                return document;
+
             var nodeToKeep = syntaxRoot.FindNode(new TextSpan(nodeToKeepSpanStart, nodeToKeepSpanLength), getInnermostNodeForTie: true);
             if (nodeToKeep.Parent.IsKind(SyntaxKind.ParenthesizedExpression))
                 nodeToKeep = nodeToKeep.Parent;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace Meziantou.Analyzer.Configurations
@@ -14,7 +15,7 @@ namespace Meziantou.Analyzer.Configurations
             _projectEditorConfigFile = rootEditorConfigFile;
         }
 
-        public bool TryGetValue(string filePath, string key, out string result)
+        public bool TryGetValue(string filePath, string key, [NotNullWhen(true)]out string? result)
         {
             if (_projectEditorConfigFile.TryGetValue(key, out result))
                 return true;

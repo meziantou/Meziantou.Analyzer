@@ -51,7 +51,7 @@ namespace Meziantou.Analyzer.Rules
         /// </summary>
         /// <param name="symbol">Symbol to be assessed</param>
         /// <returns>The input ISymbol cast to IMethodSymbol, if it has the right signature; null otherwise</returns>
-        internal static IMethodSymbol AsEqualsMethod(ISymbol symbol)
+        internal static IMethodSymbol? AsEqualsMethod(ISymbol symbol)
         {
             if (symbol.Kind != SymbolKind.Method)
                 return null;

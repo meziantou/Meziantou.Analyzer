@@ -92,7 +92,7 @@ namespace Meziantou.Analyzer.Rules
             if (parent == null)
                 return false;
 
-            ISymbol targetSymbol = null;
+            ISymbol? targetSymbol = null;
             var arguments = ImmutableArray<IArgumentOperation>.Empty;
             if (parent is IInvocationOperation invocation)
             {

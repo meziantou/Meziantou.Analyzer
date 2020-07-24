@@ -45,7 +45,7 @@ namespace Meziantou.Analyzer.Rules
             foreach (var diagnostic in diagnostics.OrderByDescending(d => d.Location.SourceSpan))
             {
                 var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-                var nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+                var nodeToFix = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
                 if (nodeToFix == null)
                     continue;
 

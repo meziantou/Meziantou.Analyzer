@@ -64,7 +64,7 @@ namespace Meziantou.Analyzer.Rules
                 CoClassAttributeSymbol = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
             }
 
-            public INamedTypeSymbol CoClassAttributeSymbol { get; }
+            public INamedTypeSymbol? CoClassAttributeSymbol { get; }
 
             public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
             {

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
@@ -34,15 +35,15 @@ namespace Meziantou.Analyzer
             return GetImplementingInterfaceSymbol(symbol) != null;
         }
 
-        public static IMethodSymbol GetImplementingInterfaceSymbol(this IMethodSymbol symbol)
+        public static IMethodSymbol? GetImplementingInterfaceSymbol(this IMethodSymbol symbol)
         {
             if (symbol.ExplicitInterfaceImplementations.Any())
                 return symbol.ExplicitInterfaceImplementations.First();
 
-            return (IMethodSymbol)GetImplementingInterfaceSymbol((ISymbol)symbol);
+            return (IMethodSymbol?)GetImplementingInterfaceSymbol((ISymbol)symbol);
         }
 
-        private static ISymbol GetImplementingInterfaceSymbol(this ISymbol symbol)
+        private static ISymbol? GetImplementingInterfaceSymbol(this ISymbol symbol)
         {
             if (symbol.ContainingType == null)
                 return null;
@@ -78,24 +79,24 @@ namespace Meziantou.Analyzer
         internal static bool HasOverloadWithAdditionalParameterOfType(
             this IMethodSymbol methodSymbol,
             Compilation compilation,
-            params ITypeSymbol[] additionalParameterTypes)
+            params ITypeSymbol?[] additionalParameterTypes)
         {
             return FindOverloadWithAdditionalParameterOfType(methodSymbol, compilation, additionalParameterTypes) != null;
         }
 
-        internal static IMethodSymbol FindOverloadWithAdditionalParameterOfType(
+        internal static IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
             this IMethodSymbol methodSymbol,
             Compilation compilation,
-            params ITypeSymbol[] additionalParameterTypes)
+            params ITypeSymbol?[] additionalParameterTypes)
         {
             return FindOverloadWithAdditionalParameterOfType(methodSymbol, compilation, includeObsoleteMethods: false, additionalParameterTypes);
         }
 
-        internal static IMethodSymbol FindOverloadWithAdditionalParameterOfType(
+        internal static IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
             this IMethodSymbol methodSymbol,
             Compilation compilation,
             bool includeObsoleteMethods,
-            params ITypeSymbol[] additionalParameterTypes)
+            params ITypeSymbol?[] additionalParameterTypes)
         {
             if (additionalParameterTypes == null)
                 return null;
@@ -118,14 +119,14 @@ namespace Meziantou.Analyzer
             return methodSymbol.HasAttribute(obsoleteAttribute);
         }
 
-        internal static bool HasSimilarParameters(this IMethodSymbol methodSymbol, IMethodSymbol otherMethod, params ITypeSymbol[] additionalParameterTypes)
+        internal static bool HasSimilarParameters(this IMethodSymbol methodSymbol, IMethodSymbol otherMethod, params ITypeSymbol?[] additionalParameterTypes)
         {
             if (methodSymbol.IsEqualTo(otherMethod))
                 return false;
 
             if (additionalParameterTypes.Any(type => type == null))
             {
-                additionalParameterTypes = additionalParameterTypes.Where(type => type != null).ToArray();
+                additionalParameterTypes = additionalParameterTypes.WhereNotNull().ToArray();
             }
 
             if (otherMethod.Parameters.Length - methodSymbol.Parameters.Length != additionalParameterTypes.Length)
@@ -141,6 +142,7 @@ namespace Meziantou.Analyzer
 
             foreach (var param in additionalParameterTypes)
             {
+                Debug.Assert(param != null);
                 otherMethodParameters.Remove(param);
             }
 

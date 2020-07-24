@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -237,7 +238,7 @@ namespace Meziantou.Analyzer.Rules
             return TryGetConstStringValue(operation, out _);
         }
 
-        private static bool TryGetConstStringValue(IOperation operation, out string value)
+        private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)]out string? value)
         {
             var sb = new StringBuilder();
             if (TryGetConstStringValue(operation, sb))
@@ -250,7 +251,7 @@ namespace Meziantou.Analyzer.Rules
             return false;
         }
 
-        internal static string GetConstStringValue(IOperation operation)
+        internal static string? GetConstStringValue(IOperation operation)
         {
             var sb = new StringBuilder();
             if (TryGetConstStringValue(operation, sb))

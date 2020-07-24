@@ -70,11 +70,11 @@ namespace Meziantou.Analyzer.Rules
                 ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
             }
 
-            private ISymbol[] ConsoleErrorAndOutSymbols { get; }
-            private INamedTypeSymbol CancellationTokenSymbol { get; }
-            private INamedTypeSymbol TaskSymbol { get; }
-            private INamedTypeSymbol TaskOfTSymbol { get; }
-            private INamedTypeSymbol TaskAwaiterSymbol { get; }
+            private ISymbol[]? ConsoleErrorAndOutSymbols { get; }
+            private INamedTypeSymbol? CancellationTokenSymbol { get; }
+            private INamedTypeSymbol? TaskSymbol { get; }
+            private INamedTypeSymbol? TaskOfTSymbol { get; }
+            private INamedTypeSymbol? TaskAwaiterSymbol { get; }
             private INamedTypeSymbol[] ThreadSymbols { get; }
 
             public bool IsValid => TaskSymbol != null && TaskOfTSymbol != null && TaskAwaiterSymbol != null;
@@ -126,7 +126,7 @@ namespace Meziantou.Analyzer.Rules
                     var left = operation.Children.FirstOrDefault();
                     if(left is IMemberReferenceOperation memberReference)
                     {
-                        if (ConsoleErrorAndOutSymbols.Contains(memberReference.Member))
+                        if (ConsoleErrorAndOutSymbols?.Contains(memberReference.Member) == true)
                             return;
                     }
                 }
