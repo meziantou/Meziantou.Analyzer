@@ -73,7 +73,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static void AnalyzeNode(SyntaxNodeAnalysisContext context, SyntaxNode node, SyntaxToken reportNode)
+        private static void AnalyzeNode(SyntaxNodeAnalysisContext context, SyntaxNode? node, SyntaxToken reportNode)
         {
             if (node == null)
                 return;

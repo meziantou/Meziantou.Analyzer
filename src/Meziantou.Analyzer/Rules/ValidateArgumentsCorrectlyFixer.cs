@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -52,6 +52,8 @@ namespace Meziantou.Analyzer.Rules
             var index = int.Parse(diagnostic.Properties["Index"], CultureInfo.InvariantCulture);
             var symbol = (IMethodSymbol)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
             var methodSyntaxNode = (MethodDeclarationSyntax)nodeToFix;
+            if (methodSyntaxNode.Body == null)
+                return document;
 
             // Create local function
             var returnTypeSyntax = generator.TypeExpression(symbol.ReturnType);

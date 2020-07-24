@@ -24,7 +24,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -47,7 +47,7 @@ namespace Meziantou.Analyzer.Rules
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var semanticModel = editor.SemanticModel;
 
             var structLayoutAttribute = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
             var layoutKindEnum = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");

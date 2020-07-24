@@ -37,7 +37,7 @@ namespace Meziantou.Analyzer.Rules
             if (method.ExplicitInterfaceImplementations.Length > 0)
                 return;
 
-            IMethodSymbol baseSymbol;
+            IMethodSymbol? baseSymbol;
             if (method.IsOverride)
             {
                 baseSymbol = method.OverriddenMethod;

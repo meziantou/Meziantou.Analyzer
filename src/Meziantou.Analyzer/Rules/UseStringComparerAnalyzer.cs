@@ -54,7 +54,7 @@ namespace Meziantou.Analyzer.Rules
             context.RegisterCompilationStartAction(AnalyzeEnumerableMethods);
         }
 
-        private static INamedTypeSymbol GetIComparableString(Compilation compilation)
+        private static INamedTypeSymbol? GetIComparableString(Compilation compilation)
         {
             var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
             if (equalityComparerInterfaceType == null)

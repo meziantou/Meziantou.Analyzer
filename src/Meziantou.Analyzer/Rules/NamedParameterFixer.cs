@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Rules
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
             // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
             // get the innermost node for ties.
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -43,7 +43,7 @@ namespace Meziantou.Analyzer.Rules
         private static async Task<Document> AddParameterName(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var semanticModel = editor.SemanticModel;
 
             var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
             if (argument == null || argument.NameColon != null)
@@ -64,18 +64,18 @@ namespace Meziantou.Analyzer.Rules
             return editor.GetChangedDocument();
         }
 
-        private static IReadOnlyList<IParameterSymbol> FindParameters(SemanticModel semanticModel, SyntaxNode node)
+        private static IReadOnlyList<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node)
         {
             while (node != null)
             {
                 switch (node)
                 {
                     case InvocationExpressionSyntax invocationExpression:
-                        var method = (IMethodSymbol)semanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                        var method = (IMethodSymbol?)semanticModel.GetSymbolInfo(invocationExpression).Symbol;
                         return method?.Parameters;
 
                     case ObjectCreationExpressionSyntax objectCreationExpression:
-                        var ctor = (IMethodSymbol)semanticModel.GetSymbolInfo(objectCreationExpression).Symbol;
+                        var ctor = (IMethodSymbol?)semanticModel.GetSymbolInfo(objectCreationExpression).Symbol;
                         return ctor?.Parameters;
                 }
 

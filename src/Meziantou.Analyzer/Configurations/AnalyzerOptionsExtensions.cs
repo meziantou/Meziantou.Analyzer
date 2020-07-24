@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -57,18 +58,30 @@ namespace Meziantou.Analyzer.Configurations
             return defaultValue;
         }
 
-        public static bool TryGetConfigurationValue(this AnalyzerOptions options, string filePath, string key, out string value)
+        public static bool GetConfigurationValue(this AnalyzerOptions options, ISymbol symbol, string key, bool defaultValue)
+        {
+            foreach (var location in symbol.Locations)
+            {
+                var filePath = location.SourceTree?.FilePath;
+                if (filePath != null && options.TryGetConfigurationValue(filePath, key, out var str))
+                    return ChangeType(str, defaultValue);
+            }
+
+            return defaultValue;
+        }
+
+        public static bool TryGetConfigurationValue(this AnalyzerOptions options, string filePath, string key, [NotNullWhen(true)] out string? value)
         {
             var configuration = GetConfigurationHierarchy(options);
             return configuration.TryGetValue(filePath, key, out value);
         }
 
-        public static bool TryGetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, out string value)
+        public static bool TryGetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, [NotNullWhen(true)] out string? value)
         {
             return TryGetConfigurationValue(options, operation.Syntax, key, out value);
         }
 
-        public static bool TryGetConfigurationValue(this AnalyzerOptions options, SyntaxNode syntaxNode, string key, out string value)
+        public static bool TryGetConfigurationValue(this AnalyzerOptions options, SyntaxNode syntaxNode, string key, [NotNullWhen(true)] out string? value)
         {
             return TryGetConfigurationValue(options, syntaxNode.SyntaxTree.FilePath, key, out value);
         }
@@ -92,7 +105,8 @@ namespace Meziantou.Analyzer.Configurations
                     if (fileName.Equals(".editorconfig", StringComparison.OrdinalIgnoreCase))
                     {
                         var text = additionalFile.GetText();
-                        return EditorConfigFileParser.Parse(text);
+                        if (text != null)
+                            return EditorConfigFileParser.Parse(text);
                     }
                 }
 

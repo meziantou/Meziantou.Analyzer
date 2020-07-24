@@ -63,7 +63,7 @@ namespace Meziantou.Analyzer.Rules
                         line.Text.StartsWith("TODO ", StringComparison.OrdinalIgnoreCase) ||
                         line.Text.StartsWith("TODO:", StringComparison.OrdinalIgnoreCase))
                     {
-                        var location = node.SyntaxTree.GetLocation(new Microsoft.CodeAnalysis.Text.TextSpan(node.SpanStart + line.SpanStart, line.Text.Length));
+                        var location = context.Tree.GetLocation(new Microsoft.CodeAnalysis.Text.TextSpan(node.SpanStart + line.SpanStart, line.Text.Length));
 
                         var diagnostic = Diagnostic.Create(s_rule, location, line.Text.Substring(4).Trim());
                         context.ReportDiagnostic(diagnostic);

@@ -42,7 +42,8 @@ namespace Meziantou.Analyzer.Rules
                 if (symbol.ContainingType != null)
                     continue;
 
-                var fileName = GetFileName(location.SourceTree.FilePath);
+                var filePath = location.SourceTree?.FilePath;
+                var fileName = filePath == null ? null : GetFileName(filePath);
                 var symbolName = symbol.Name;
                 if (string.Equals(fileName, symbolName, StringComparison.OrdinalIgnoreCase))
                     continue;

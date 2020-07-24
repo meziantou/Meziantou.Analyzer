@@ -24,7 +24,7 @@ namespace Meziantou.Analyzer.Rules
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
             // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
             // get the innermost node for ties.
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -40,8 +40,7 @@ namespace Meziantou.Analyzer.Rules
         private static async Task<Document> ConvertToArrayEmpty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var semanticModel = editor.SemanticModel;
             var generator = editor.Generator;
 
             var elementType = GetArrayElementType(nodeToFix, semanticModel, cancellationToken);
@@ -53,10 +52,10 @@ namespace Meziantou.Analyzer.Rules
             return editor.GetChangedDocument();
         }
 
-        private static ITypeSymbol GetArrayElementType(SyntaxNode arrayCreationExpression, SemanticModel semanticModel, CancellationToken cancellationToken)
+        private static ITypeSymbol? GetArrayElementType(SyntaxNode arrayCreationExpression, SemanticModel semanticModel, CancellationToken cancellationToken)
         {
             var typeInfo = semanticModel.GetTypeInfo(arrayCreationExpression, cancellationToken);
-            var arrayType = (IArrayTypeSymbol)(typeInfo.Type ?? typeInfo.ConvertedType);
+            var arrayType = (IArrayTypeSymbol?)(typeInfo.Type ?? typeInfo.ConvertedType);
             return arrayType?.ElementType;
         }
 

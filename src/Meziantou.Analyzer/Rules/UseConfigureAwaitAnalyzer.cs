@@ -54,18 +54,22 @@ namespace Meziantou.Analyzer.Rules
             var containingClass = GetParentSymbol<INamedTypeSymbol>(context.SemanticModel, node, context.CancellationToken);
             if (containingClass != null)
             {
-                if (containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
-                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
-                    containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
-                    containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
-                    containingClass.InheritsFrom(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase")) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
-                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Razor.IRazorPage")) || // ASP.NET Core
-                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
-                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
-                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")) ||
-                    containingClass.Implements(context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent")))  // Blazor has a synchronization context, see https://github.com/meziantou/Meziantou.Analyzer/issues/96
+                var compilation = context.Compilation;
+                if (compilation != null)
                 {
-                    return false;
+                    if (containingClass.InheritsFrom(compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject")) || // WPF
+                        containingClass.Implements(compilation.GetTypeByMetadataName("System.Windows.Input.ICommand")) || // WPF
+                        containingClass.InheritsFrom(compilation.GetTypeByMetadataName("System.Windows.Forms.Control")) || // WinForms
+                        containingClass.InheritsFrom(compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl")) || // ASP.NET (Webforms)
+                        containingClass.InheritsFrom(compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase")) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                        containingClass.Implements(compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Razor.IRazorPage")) || // ASP.NET Core
+                        containingClass.Implements(compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper")) || // ASP.NET Core
+                        containingClass.Implements(compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent")) || // ASP.NET Core
+                        containingClass.Implements(compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata")) ||
+                        containingClass.Implements(compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent")))  // Blazor has a synchronization context, see https://github.com/meziantou/Meziantou.Analyzer/issues/96
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -122,7 +126,7 @@ namespace Meziantou.Analyzer.Rules
         private static bool IsEndPointReachable(SyntaxNodeAnalysisContext context, StatementSyntax statementSyntax)
         {
             var result = context.SemanticModel.AnalyzeControlFlow(statementSyntax);
-            if (!result.Succeeded)
+            if (result == null || !result.Succeeded)
                 return false;
 
             if (!result.EndPointIsReachable)
@@ -147,13 +151,13 @@ namespace Meziantou.Analyzer.Rules
             if (awaitExpressionType == null)
                 return false;
 
-            var configuredTaskAwaitableType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
-            var configuredTaskAwaitableOfTType = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
+            var configuredTaskAwaitableType = context.Compilation?.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
+            var configuredTaskAwaitableOfTType = context.Compilation?.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
             return (configuredTaskAwaitableType != null && configuredTaskAwaitableType.IsEqualTo(awaitExpressionType)) ||
                    (configuredTaskAwaitableOfTType != null && configuredTaskAwaitableOfTType.IsEqualTo(awaitExpressionType.OriginalDefinition));
         }
 
-        private static T GetParentSymbol<T>(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken) where T : ISymbol
+        private static T? GetParentSymbol<T>(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken) where T : class, ISymbol
         {
             var symbol = semanticModel.GetEnclosingSymbol(node.SpanStart, cancellationToken);
             while (symbol != null)

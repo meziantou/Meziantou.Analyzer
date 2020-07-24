@@ -47,8 +47,15 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (!method.Parameters.Any(p => p.Name == parameterName))
                     {
-                        var location = attribute.ApplicationSyntaxReference.GetSyntax(context.CancellationToken).GetLocation();
-                        context.ReportDiagnostic(s_rule, location, parameterName);
+                        var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation();
+                        if (location != null)
+                        {
+                            context.ReportDiagnostic(s_rule, location, parameterName);
+                        }
+                        else
+                        {
+                            context.ReportDiagnostic(s_rule, method, parameterName);
+                        }
                     }
                 }
             }

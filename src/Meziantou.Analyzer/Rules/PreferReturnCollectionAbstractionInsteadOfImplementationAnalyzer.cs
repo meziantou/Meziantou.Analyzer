@@ -43,14 +43,17 @@ namespace Meziantou.Analyzer.Rules
         private void AnalyzeField(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
         {
             var node = (FieldDeclarationSyntax)context.Node;
-            if (node == null)
+            if (node == null || node.Declaration == null)
                 return;
 
-            var firstVariable = node.Declaration?.Variables.FirstOrDefault();
+            var firstVariable = node.Declaration.Variables.FirstOrDefault();
             if (firstVariable == null)
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) as IFieldSymbol;
+            if (symbol == null)
+                return;
+
             if (!symbol.IsVisibleOutsideOfAssembly())
                 return;
 
@@ -134,7 +137,7 @@ namespace Meziantou.Analyzer.Rules
             AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
         }
 
-        private void AnalyzeParameters(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext, IEnumerable<ParameterSyntax> parameters)
+        private void AnalyzeParameters(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext, IEnumerable<ParameterSyntax>? parameters)
         {
             if (parameters != null)
             {
@@ -154,7 +157,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private bool IsValidType(AnalyzerContext analyzerContext, ITypeSymbol symbol)
+        private bool IsValidType(AnalyzerContext analyzerContext, ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return true;

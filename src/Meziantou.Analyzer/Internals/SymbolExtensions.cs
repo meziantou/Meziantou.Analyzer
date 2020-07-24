@@ -5,7 +5,7 @@ namespace Meziantou.Analyzer
 {
     internal static class SymbolExtensions
     {
-        public static bool IsEqualTo(this ISymbol symbol, ISymbol expectedType)
+        public static bool IsEqualTo(this ISymbol? symbol, ISymbol? expectedType)
         {
             if (symbol == null || expectedType == null)
                 return false;
@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer
             return SymbolEqualityComparer.Default.Equals(expectedType, symbol);
         }
 
-        public static bool IsVisibleOutsideOfAssembly(this ISymbol symbol)
+        public static bool IsVisibleOutsideOfAssembly(this ISymbol? symbol)
         {
             if (symbol == null)
                 return false;
@@ -31,7 +31,7 @@ namespace Meziantou.Analyzer
             return IsVisibleOutsideOfAssembly(symbol.ContainingType);
         }
 
-        public static bool IsOperator(this ISymbol symbol)
+        public static bool IsOperator(this ISymbol? symbol)
         {
             if (symbol is IMethodSymbol methodSymbol)
             {
@@ -41,7 +41,7 @@ namespace Meziantou.Analyzer
             return false;
         }
 
-        public static bool IsOverrideOrInterfaceImplementation(this ISymbol symbol)
+        public static bool IsOverrideOrInterfaceImplementation(this ISymbol? symbol)
         {
             if (symbol is IMethodSymbol methodSymbol)
                 return methodSymbol.IsOverride || methodSymbol.IsInterfaceImplementation();
@@ -55,12 +55,12 @@ namespace Meziantou.Analyzer
             return false;
         }
 
-        public static bool IsConst(this ISymbol symbol)
+        public static bool IsConst(this ISymbol? symbol)
         {
             return symbol is IFieldSymbol field && field.IsConst;
         }
 
-        public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol symbol)
+        public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol? symbol)
         {
             while (symbol != null)
             {

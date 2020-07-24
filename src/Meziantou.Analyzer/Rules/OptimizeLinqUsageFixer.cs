@@ -36,7 +36,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return;
 
@@ -149,12 +149,12 @@ namespace Meziantou.Analyzer.Rules
             var countOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var countNode = root.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
+            var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
             if (countNode == null)
                 return document;
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var semanticModel = editor.SemanticModel;
             var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
             if (countOperation == null)
                 return document;
@@ -181,15 +181,15 @@ namespace Meziantou.Analyzer.Rules
             var operandOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var countNode = root.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
-            var operandNode = root.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
+            var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
+            var operandNode = root?.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
             if (countNode == null || operandNode == null)
                 return document;
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-            var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
-            var operandOperation = semanticModel.GetOperation(operandNode, cancellationToken);
+            var semanticModel = editor.SemanticModel;
+            var countOperation = semanticModel?.GetOperation(countNode, cancellationToken) as IInvocationOperation;
+            var operandOperation = semanticModel?.GetOperation(operandNode, cancellationToken);
             if (countOperation == null || operandOperation == null)
                 return document;
 
@@ -232,13 +232,13 @@ namespace Meziantou.Analyzer.Rules
             var skipMinusOne = diagnostic.Properties.ContainsKey("SkipMinusOne");
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var countNode = root.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
-            var operandNode = root.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
+            var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
+            var operandNode = root?.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
             if (countNode == null || operandNode == null)
                 return document;
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var semanticModel = editor.SemanticModel;
             var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
             var operandOperation = semanticModel.GetOperation(operandNode, cancellationToken);
             if (countOperation == null || operandOperation == null)
@@ -407,13 +407,13 @@ namespace Meziantou.Analyzer.Rules
             if (expression == null)
                 return document;
 
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var semanticModel = editor.SemanticModel;
             var operation = semanticModel.GetOperation(nodeToFix, cancellationToken) as IInvocationOperation;
             if (operation == null)
                 return document;
 
-            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var generator = editor.Generator;
 
             var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, operation.Arguments[1].Syntax);
 
@@ -427,13 +427,12 @@ namespace Meziantou.Analyzer.Rules
             if (expression == null)
                 return document;
 
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var semanticModel = editor.SemanticModel;
             var operation = semanticModel.GetOperation(nodeToFix, cancellationToken) as IInvocationOperation;
             if (operation == null)
                 return document;
-
-            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var generator = editor.Generator;
 
             var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, generator.LiteralExpression(0));
 
@@ -447,13 +446,12 @@ namespace Meziantou.Analyzer.Rules
             if (expression == null)
                 return document;
 
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            var generator = editor.Generator;
+            var semanticModel = editor.SemanticModel;
             var operation = semanticModel.GetOperation(nodeToFix, cancellationToken) as IInvocationOperation;
             if (operation == null)
                 return document;
-
-            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var generator = editor.Generator;
 
             var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax,
                 generator.SubtractExpression(
@@ -484,15 +482,15 @@ namespace Meziantou.Analyzer.Rules
             var lastOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var firstNode = root.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
-            var lastNode = root.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+            var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
+            var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
             if (firstNode == null || lastNode == null)
                 return document;
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-            var firstOperation = semanticModel.GetOperation(firstNode, cancellationToken) as IInvocationOperation;
-            var lastOperation = semanticModel.GetOperation(lastNode, cancellationToken) as IInvocationOperation;
+            var semanticModel = editor.SemanticModel;
+            var firstOperation = semanticModel?.GetOperation(firstNode, cancellationToken) as IInvocationOperation;
+            var lastOperation = semanticModel?.GetOperation(lastNode, cancellationToken) as IInvocationOperation;
             if (firstOperation == null || lastOperation == null)
                 return document;
 
@@ -510,7 +508,7 @@ namespace Meziantou.Analyzer.Rules
             var expectedMethodName = diagnostic.Properties["ExpectedMethodName"];
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var nodeToFix = root.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+            var nodeToFix = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
             if (nodeToFix == null)
                 return document;
 
@@ -537,15 +535,15 @@ namespace Meziantou.Analyzer.Rules
             var lastOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var firstNode = root.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
-            var lastNode = root.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+            var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
+            var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
             if (firstNode == null || lastNode == null)
                 return document;
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-            var firstOperation = semanticModel.GetOperation(firstNode, cancellationToken) as IInvocationOperation;
-            var lastOperation = semanticModel.GetOperation(lastNode, cancellationToken) as IInvocationOperation;
+            var semanticModel = editor.SemanticModel;
+            var firstOperation = semanticModel?.GetOperation(firstNode, cancellationToken) as IInvocationOperation;
+            var lastOperation = semanticModel?.GetOperation(lastNode, cancellationToken) as IInvocationOperation;
             if (firstOperation == null || lastOperation == null)
                 return document;
 
@@ -557,7 +555,7 @@ namespace Meziantou.Analyzer.Rules
             editor.ReplaceNode(lastOperation.Syntax, newExpression);
             return editor.GetChangedDocument();
 
-            SyntaxNode CombineArguments(IArgumentOperation argument1, IArgumentOperation argument2)
+            SyntaxNode? CombineArguments(IArgumentOperation argument1, IArgumentOperation argument2)
             {
                 if (argument2 == null)
                     return argument1?.Syntax;
@@ -567,6 +565,8 @@ namespace Meziantou.Analyzer.Rules
 
                 var value1 = argument1.Value as IDelegateCreationOperation;
                 var value2 = argument2.Value as IDelegateCreationOperation;
+                if (value1 == null || value2 == null)
+                    return null;
 
                 var anonymousMethod1 = value1.Target as IAnonymousFunctionOperation;
                 var anonymousMethod2 = value2.Target as IAnonymousFunctionOperation;
@@ -610,7 +610,7 @@ namespace Meziantou.Analyzer.Rules
             return new ParameterRewriter(semanticModel, parameterSymbol, newParameterName).Visit(method.Body.Syntax);
         }
 
-        private static MemberAccessExpressionSyntax GetMemberAccessExpression(SyntaxNode invocationExpressionSyntax)
+        private static MemberAccessExpressionSyntax? GetMemberAccessExpression(SyntaxNode invocationExpressionSyntax)
         {
             var invocationExpression = invocationExpressionSyntax as InvocationExpressionSyntax;
             if (invocationExpression == null)
@@ -619,7 +619,7 @@ namespace Meziantou.Analyzer.Rules
             return invocationExpression.Expression as MemberAccessExpressionSyntax;
         }
 
-        private static SyntaxNode GetParentMemberExpression(SyntaxNode invocationExpressionSyntax)
+        private static SyntaxNode? GetParentMemberExpression(SyntaxNode invocationExpressionSyntax)
         {
             var memberAccessExpression = GetMemberAccessExpression(invocationExpressionSyntax);
             if (memberAccessExpression == null)
@@ -641,7 +641,7 @@ namespace Meziantou.Analyzer.Rules
                 _newParameterName = newParameterName;
             }
 
-            public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
+            public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
             {
                 var symbol = _semanticModel.GetSymbolInfo(node).Symbol;
                 if (symbol != null && symbol.IsEqualTo(_parameterSymbol))

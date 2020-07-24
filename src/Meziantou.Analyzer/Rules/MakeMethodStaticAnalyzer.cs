@@ -81,8 +81,11 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeMethod(SyntaxNodeAnalysisContext context)
             {
                 var node = (MethodDeclarationSyntax)context.Node;
-                var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IMethodSymbol;
+                var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
                 if (methodSymbol == null)
+                    return;
+
+                if (context.Compilation == null)
                     return;
 
                 if (!IsPotentialStatic(methodSymbol) ||
@@ -93,7 +96,7 @@ namespace Meziantou.Analyzer.Rules
                     return;
                 }
 
-                var body = (SyntaxNode)node.Body ?? node.ExpressionBody;
+                var body = (SyntaxNode?)node.Body ?? node.ExpressionBody;
                 if (body == null)
                     return;
 
@@ -128,7 +131,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     foreach (var accessor in node.AccessorList.Accessors)
                     {
-                        var body = (SyntaxNode)accessor.Body ?? accessor.ExpressionBody;
+                        var body = (SyntaxNode?)accessor.Body ?? accessor.ExpressionBody;
                         if (body == null)
                             return;
 

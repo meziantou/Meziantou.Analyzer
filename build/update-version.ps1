@@ -1,4 +1,5 @@
 ﻿$VerbosePreference="Continue"
+$ErrorActionPreference="Stop"
 
 $version = $args[0]
 if (!$version) {
@@ -11,7 +12,8 @@ Write-Host "Version: $version"
 $FullPath = Resolve-Path $PSScriptRoot\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj
 Write-Host $FullPath
 [xml]$content = Get-Content $FullPath
-$content.Project.PropertyGroup.PackageVersion = $version
+$packageVersion = Select-Xml -Xml $content -XPath /Project/PropertyGroup/PackageVersion
+$packageVersion.Node.InnerText = $version
 $content.Save($FullPath)
 
 # Update VSIX version

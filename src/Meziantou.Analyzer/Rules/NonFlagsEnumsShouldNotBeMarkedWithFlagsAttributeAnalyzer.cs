@@ -41,19 +41,29 @@ namespace Meziantou.Analyzer.Rules
             if (!symbol.GetMembers().OfType<IFieldSymbol>().All(member => member.HasConstantValue && member.ConstantValue != null))
                 return; // I cannot reproduce this case, but it was reported by some users.
 
-            var members = symbol.GetMembers().OfType<IFieldSymbol>().Select(member => (member, IsPowerOfTwo: IsPowerOfTwo(member.ConstantValue))).ToList();
+            var members = symbol.GetMembers()
+                .OfType<IFieldSymbol>()
+                .Where(member => member.ConstantValue != null)
+                .Select(member => (member, IsPowerOfTwo: IsPowerOfTwo(member.ConstantValue!)))
+                .ToList();
             foreach (var member in members.Where(member => !member.IsPowerOfTwo))
             {
                 var value = member.member.ConstantValue;
-                foreach (var powerOfTwo in members.Where(member => member.IsPowerOfTwo))
+                if (value != null)
                 {
-                    value = RemoveValue(value, powerOfTwo.member.ConstantValue);
-                }
+                    foreach (var powerOfTwo in members.Where(member => member.IsPowerOfTwo))
+                    {
+                        if (powerOfTwo.member.ConstantValue != null)
+                        {
+                            value = RemoveValue(value, powerOfTwo.member.ConstantValue);
+                        }
+                    }
 
-                if (!IsZero(value))
-                {
-                    context.ReportDiagnostic(s_rule, symbol, member.member.Name);
-                    return;
+                    if (!IsZero(value))
+                    {
+                        context.ReportDiagnostic(s_rule, symbol, member.member.Name);
+                        return;
+                    }
                 }
             }
         }

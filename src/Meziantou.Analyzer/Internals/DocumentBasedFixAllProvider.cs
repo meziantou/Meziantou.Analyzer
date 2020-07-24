@@ -20,9 +20,9 @@ namespace Meziantou.Analyzer
     {
         protected abstract string CodeActionTitle { get; }
 
-        public override Task<CodeAction> GetFixAsync(FixAllContext fixAllContext)
+        public override Task<CodeAction?> GetFixAsync(FixAllContext fixAllContext)
         {
-            CodeAction fixAction;
+            CodeAction? fixAction;
             switch (fixAllContext.Scope)
             {
                 case FixAllScope.Document:
@@ -66,7 +66,7 @@ namespace Meziantou.Analyzer
         /// <para>-or-</para>
         /// <para><see langword="null"/>, if no changes were made to the document.</para>
         /// </returns>
-        protected abstract Task<SyntaxNode> FixAllInDocumentAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics);
+        protected abstract Task<SyntaxNode?> FixAllInDocumentAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics);
 
         private async Task<Document> GetDocumentFixesAsync(FixAllContext fixAllContext)
         {
@@ -90,7 +90,7 @@ namespace Meziantou.Analyzer
             var documentDiagnosticsToFix = await FixAllContextHelper.GetDocumentDiagnosticsToFixAsync(fixAllContext).ConfigureAwait(false);
 
             var solution = fixAllContext.Solution;
-            var newDocuments = new List<Task<SyntaxNode>>(documents.Length);
+            var newDocuments = new List<Task<SyntaxNode?>>(documents.Length);
             foreach (var document in documents)
             {
                 if (!documentDiagnosticsToFix.TryGetValue(document, out var diagnostics))
@@ -106,9 +106,7 @@ namespace Meziantou.Analyzer
             {
                 var newDocumentRoot = await newDocuments[i].ConfigureAwait(false);
                 if (newDocumentRoot == null)
-                {
                     continue;
-                }
 
                 solution = solution.WithDocumentSyntaxRoot(documents[i].Id, newDocumentRoot);
             }

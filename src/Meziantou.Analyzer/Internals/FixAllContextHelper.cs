@@ -96,8 +96,11 @@ namespace Meziantou.Analyzer
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var document = documentAndDiagnostics.Key;
-                var diagnosticsForDocument = documentAndDiagnostics.ToImmutableArray();
-                builder.Add(document, diagnosticsForDocument);
+                if (document != null)
+                {
+                    var diagnosticsForDocument = documentAndDiagnostics.ToImmutableArray();
+                    builder.Add(document, diagnosticsForDocument);
+                }
             }
 
             return builder.ToImmutable();
@@ -113,14 +116,17 @@ namespace Meziantou.Analyzer
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var tree = await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(false);
-                    builder.Add(tree, document);
+                    if (tree != null)
+                    {
+                        builder.Add(tree, document);
+                    }
                 }
             }
 
             return builder.ToImmutable();
         }
 
-        private static Document GetReportedDocument(Diagnostic diagnostic, ImmutableDictionary<SyntaxTree, Document> treeToDocumentsMap)
+        private static Document? GetReportedDocument(Diagnostic diagnostic, ImmutableDictionary<SyntaxTree, Document> treeToDocumentsMap)
         {
             var tree = diagnostic.Location.SourceTree;
             if (tree != null)

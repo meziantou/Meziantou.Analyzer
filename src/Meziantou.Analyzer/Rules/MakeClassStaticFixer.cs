@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Rules
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
             // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
             // get the innermost node for ties.
-            var nodeToFix = root.FindNode(context.Span, getInnermostNodeForTie: true) as ClassDeclarationSyntax;
+            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true) as ClassDeclarationSyntax;
             if (nodeToFix == null)
                 return;
 

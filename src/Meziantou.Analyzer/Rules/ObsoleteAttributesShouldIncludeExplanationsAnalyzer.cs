@@ -44,8 +44,15 @@ namespace Meziantou.Analyzer.Rules
 
                 if (attribute.ConstructorArguments.Length == 0)
                 {
-                    var location = attribute.ApplicationSyntaxReference.GetSyntax(context.CancellationToken).GetLocation();
-                    context.ReportDiagnostic(s_rule, location);
+                    var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation();
+                    if (location != null)
+                    {
+                        context.ReportDiagnostic(s_rule, location);
+                    }
+                    else
+                    {
+                        context.ReportDiagnostic(s_rule, method);
+                    }
                 }
             }
         }

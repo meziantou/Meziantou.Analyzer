@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -38,7 +39,7 @@ namespace Meziantou.Analyzer.Rules
                 EventArgsSymbol = compilation.GetTypeByMetadataName("System.EventArgs");
             }
 
-            public INamedTypeSymbol EventArgsSymbol { get; }
+            public INamedTypeSymbol? EventArgsSymbol { get; }
 
             public void AnalyzeSymbol(SymbolAnalysisContext context)
             {
@@ -56,7 +57,7 @@ namespace Meziantou.Analyzer.Rules
                 context.ReportDiagnostic(s_rule, symbol, message);
             }
 
-            private bool IsValidSignature(IMethodSymbol methodSymbol, out string message)
+            private bool IsValidSignature(IMethodSymbol methodSymbol, [NotNullWhen(false)]out string? message)
             {
                 if (!methodSymbol.ReturnsVoid)
                 {

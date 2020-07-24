@@ -42,7 +42,7 @@ namespace Meziantou.Analyzer.Rules
         private sealed class AnalyzerContext
         {
             private readonly List<ISymbol> _symbols;
-            private readonly INamedTypeSymbol _argumentSymbol;
+            private readonly INamedTypeSymbol? _argumentExceptionSymbol;
 
             public AnalyzerContext(Compilation compilation)
             {
@@ -53,7 +53,7 @@ namespace Meziantou.Analyzer.Rules
                 symbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerator`1"));
                 _symbols = symbols;
 
-                _argumentSymbol = compilation.GetTypeByMetadataName("System.ArgumentException");
+                _argumentExceptionSymbol = compilation.GetTypeByMetadataName("System.ArgumentException");
             }
 
             public bool CanContainsYield(IMethodSymbol methodSymbol)
@@ -108,7 +108,7 @@ namespace Meziantou.Analyzer.Rules
                     return false;
 
                 var type = context.SemanticModel.GetTypeInfo(exceptionExpression, context.CancellationToken).Type;
-                return type != null && type.IsOrInheritFrom(_argumentSymbol);
+                return type != null && type.IsOrInheritFrom(_argumentExceptionSymbol);
             }
 
             private static bool FilterDescendants(SyntaxNode node)
@@ -140,7 +140,7 @@ namespace Meziantou.Analyzer.Rules
                     operation = operation.Parent;
                 }
 
-                return operation.Syntax.Span.End;
+                return operation?.Syntax.Span.End;
             }
         }
     }

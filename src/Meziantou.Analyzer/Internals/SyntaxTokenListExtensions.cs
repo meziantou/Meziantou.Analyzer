@@ -49,7 +49,7 @@ namespace Meziantou.Analyzer
 
         private static int IndexOf(SyntaxToken token)
         {
-            for (int i = 0; i < s_modifiersSortOrder.Length; i++)
+            for (var i = 0; i < s_modifiersSortOrder.Length; i++)
             {
                 if (s_modifiersSortOrder[i] == token.Text)
                     return i;

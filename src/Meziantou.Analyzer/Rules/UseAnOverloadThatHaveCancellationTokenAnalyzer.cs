@@ -89,11 +89,11 @@ namespace Meziantou.Analyzer.Rules
             }
 
             public Compilation Compilation { get; }
-            public INamedTypeSymbol CancellationTokenSymbol { get; }
-            public INamedTypeSymbol CancellationTokenSourceSymbol { get; }
-            private INamedTypeSymbol TaskSymbol { get; }
-            private INamedTypeSymbol TaskOfTSymbol { get; }
-            private INamedTypeSymbol ConfiguredCancelableAsyncEnumerableSymbol { get; }
+            public INamedTypeSymbol? CancellationTokenSymbol { get; }
+            public INamedTypeSymbol? CancellationTokenSourceSymbol { get; }
+            private INamedTypeSymbol? TaskSymbol { get; }
+            private INamedTypeSymbol? TaskOfTSymbol { get; }
+            private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; }
 
             private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
             {
@@ -176,7 +176,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            private IEnumerable<IReadOnlyList<ISymbol>> GetMembers(ITypeSymbol symbol, int maxDepth)
+            private IEnumerable<IReadOnlyList<ISymbol>> GetMembers(ITypeSymbol? symbol, int maxDepth)
             {
                 if (maxDepth < 0 || symbol == null)
                     return Enumerable.Empty<IReadOnlyList<ISymbol>>();
@@ -247,7 +247,7 @@ namespace Meziantou.Analyzer.Rules
                        orderby fullPath.Count(c => c == '.'), fullPath
                        select fullPath;
 
-                static string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
+                static string ComputeFullPath(string? prefix, IEnumerable<ISymbol> symbols)
                 {
                     if (prefix == null)
                         return string.Join(".", symbols.Select(symbol => symbol.Name));
@@ -265,7 +265,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            private static ITypeSymbol GetContainingType(IOperation operation)
+            private static ITypeSymbol? GetContainingType(IOperation operation)
             {
                 var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is ClassDeclarationSyntax || node is StructDeclarationSyntax);
                 if (ancestor == null)
@@ -319,8 +319,11 @@ namespace Meziantou.Analyzer.Rules
                         case IndexerDeclarationSyntax indexerDeclarationSyntax:
                             {
                                 var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                if (symbol != null)
+                                {
+                                    foreach (var parameter in symbol.Parameters)
+                                        yield return new NameAndType(parameter.Name, parameter.Type);
+                                }
 
                                 yield break;
                             }
@@ -328,8 +331,11 @@ namespace Meziantou.Analyzer.Rules
                         case MethodDeclarationSyntax methodDeclaration:
                             {
                                 var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                if (symbol != null)
+                                {
+                                    foreach (var parameter in symbol.Parameters)
+                                        yield return new NameAndType(parameter.Name, parameter.Type);
+                                }
 
                                 yield break;
                             }
@@ -337,16 +343,23 @@ namespace Meziantou.Analyzer.Rules
                         case LocalFunctionStatementSyntax localFunctionStatement:
                             {
                                 var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                if (symbol != null)
+                                {
+                                    foreach (var parameter in symbol.Parameters)
+                                        yield return new NameAndType(parameter.Name, parameter.Type);
+                                }
+
                                 break;
                             }
 
                         case ConstructorDeclarationSyntax constructorDeclaration:
                             {
                                 var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                if (symbol != null)
+                                {
+                                    foreach (var parameter in symbol.Parameters)
+                                        yield return new NameAndType(parameter.Name, parameter.Type);
+                                }
 
                                 yield break;
                             }
@@ -410,14 +423,14 @@ namespace Meziantou.Analyzer.Rules
         [StructLayout(LayoutKind.Auto)]
         private readonly struct NameAndType
         {
-            public NameAndType(string name, ITypeSymbol typeSymbol)
+            public NameAndType(string? name, ITypeSymbol? typeSymbol)
             {
                 Name = name;
                 TypeSymbol = typeSymbol;
             }
 
-            public string Name { get; }
-            public ITypeSymbol TypeSymbol { get; }
+            public string? Name { get; }
+            public ITypeSymbol? TypeSymbol { get; }
         }
     }
 }

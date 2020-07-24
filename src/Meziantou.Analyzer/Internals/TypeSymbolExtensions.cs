@@ -21,9 +21,9 @@ namespace Meziantou.Analyzer
             return allInterfaces;
         }
 
-        public static bool InheritsFrom(this ITypeSymbol classSymbol, ITypeSymbol baseClassType)
+        public static bool InheritsFrom(this ITypeSymbol classSymbol, ITypeSymbol? baseClassType)
         {
-            if (classSymbol == null || baseClassType == null)
+            if (baseClassType == null)
                 return false;
 
             var baseType = classSymbol.BaseType;
@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer
             return false;
         }
 
-        public static bool Implements(this ITypeSymbol classSymbol, ITypeSymbol interfaceType)
+        public static bool Implements(this ITypeSymbol classSymbol, ITypeSymbol? interfaceType)
         {
             if (interfaceType == null)
                 return false;
@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer
             return classSymbol.AllInterfaces.Any(i => interfaceType.IsEqualTo(i));
         }
 
-        public static bool HasAttribute(this ISymbol symbol, ITypeSymbol attributeType)
+        public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType)
         {
             if (attributeType == null)
                 return false;
@@ -60,15 +60,15 @@ namespace Meziantou.Analyzer
             return false;
         }
 
-        public static bool IsOrInheritFrom(this ITypeSymbol symbol, ITypeSymbol expectedType)
+        public static bool IsOrInheritFrom(this ITypeSymbol symbol, ITypeSymbol? expectedType)
         {
-            if (symbol == null || expectedType == null)
+            if (expectedType == null)
                 return false;
 
             return symbol.IsEqualTo(expectedType) || symbol.InheritsFrom(expectedType);
         }
 
-        public static bool IsEqualToAny(this ITypeSymbol symbol, params ITypeSymbol[] expectedTypes)
+        public static bool IsEqualToAny(this ITypeSymbol? symbol, params ITypeSymbol?[]? expectedTypes)
         {
             if (symbol == null || expectedTypes == null)
                 return false;
@@ -76,7 +76,7 @@ namespace Meziantou.Analyzer
             return expectedTypes.Any(t => t.IsEqualTo(symbol));
         }
 
-        public static bool IsObject(this ITypeSymbol symbol)
+        public static bool IsObject(this ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return false;
@@ -84,7 +84,7 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_Object;
         }
 
-        public static bool IsString(this ITypeSymbol symbol)
+        public static bool IsString(this ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return false;
@@ -92,7 +92,7 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_String;
         }
 
-        public static bool IsChar(this ITypeSymbol symbol)
+        public static bool IsChar(this ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return false;
@@ -100,7 +100,7 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_Char;
         }
 
-        public static bool IsInt32(this ITypeSymbol symbol)
+        public static bool IsInt32(this ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return false;
@@ -108,7 +108,7 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_Int32;
         }
 
-        public static bool IsBoolean(this ITypeSymbol symbol)
+        public static bool IsBoolean(this ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return false;
@@ -116,7 +116,7 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_Boolean;
         }
 
-        public static bool IsDateTime(this ITypeSymbol symbol)
+        public static bool IsDateTime(this ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return false;
@@ -124,12 +124,12 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_DateTime;
         }
 
-        public static bool IsEnumeration(this ITypeSymbol symbol)
+        public static bool IsEnumeration(this ITypeSymbol? symbol)
         {
             return symbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.EnumUnderlyingType != null;
         }
 
-        public static bool IsNumberType(this ITypeSymbol symbol)
+        public static bool IsNumberType(this ITypeSymbol? symbol)
         {
             if (symbol == null)
                 return false;

@@ -205,7 +205,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static void UseIndexerInsteadOfElementAt(OperationAnalysisContext context, IInvocationOperation operation)
         {
-            ImmutableDictionary<string, string> properties = default;
+            ImmutableDictionary<string, string>? properties = null;
 
             var argCount = -1;
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ElementAt), StringComparison.Ordinal))
@@ -332,7 +332,7 @@ namespace Meziantou.Analyzer.Rules
             if (otherOperand == null)
                 return;
 
-            string message = null;
+            string? message = null;
             var properties = ImmutableDictionary<string, string>.Empty;
             if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
             {
@@ -406,7 +406,7 @@ namespace Meziantou.Analyzer.Rules
                             // expr.Count() < 10
                             message = Invariant($"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                                .Add("SkipMinusOne", value: null);
+                                .Add("SkipMinusOne", value: "");
                         }
 
                         break;
@@ -473,7 +473,7 @@ namespace Meziantou.Analyzer.Rules
                             // expr.Count() >= 2
                             message = Invariant($"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                                .Add("SkipMinusOne", value: null);
+                                .Add("SkipMinusOne", value: "");
                         }
 
                         break;
@@ -507,7 +507,7 @@ namespace Meziantou.Analyzer.Rules
                         // expr.Count() < 10
                         message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                            .Add("SkipMinusOne", value: null);
+                            .Add("SkipMinusOne", value: "");
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
@@ -526,7 +526,7 @@ namespace Meziantou.Analyzer.Rules
                         // expr.Count() >= 2
                         message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                            .Add("SkipMinusOne", value: null);
+                            .Add("SkipMinusOne", value: "");
                         break;
                 }
             }
@@ -629,7 +629,7 @@ namespace Meziantou.Analyzer.Rules
             return argument.Value.GetActualType();
         }
 
-        private static IInvocationOperation GetParentLinqOperation(IOperation op)
+        private static IInvocationOperation? GetParentLinqOperation(IOperation op)
         {
             var parent = op.Parent;
             if (parent is IConversionOperation)
@@ -648,7 +648,7 @@ namespace Meziantou.Analyzer.Rules
             return null;
         }
 
-        private static IInvocationOperation GetChildLinqOperation(IInvocationOperation op)
+        private static IInvocationOperation? GetChildLinqOperation(IInvocationOperation op)
         {
             if (op.Arguments.Length == 0)
                 return null;
@@ -660,7 +660,7 @@ namespace Meziantou.Analyzer.Rules
             return null;
         }
 
-        private static IBinaryOperation GetParentBinaryOperation(IOperation op, out IOperation operand)
+        private static IBinaryOperation? GetParentBinaryOperation(IOperation op, out IOperation? operand)
         {
             var parent = op.Parent;
             if (parent is IConversionOperation)

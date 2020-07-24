@@ -83,7 +83,7 @@ namespace Meziantou.Analyzer.Configurations
 
                     Debug.Assert(!string.IsNullOrEmpty(key));
                     Debug.Assert(string.Equals(key, key.Trim(), StringComparison.Ordinal));
-                    Debug.Assert(string.Equals(value, value?.Trim(), StringComparison.Ordinal));
+                    Debug.Assert(string.Equals(value, value.Trim(), StringComparison.Ordinal));
 
                     key = CaseInsensitiveComparison.ToLower(key);
                     if (s_reservedKeys.Contains(key) || s_reservedValues.Contains(value))

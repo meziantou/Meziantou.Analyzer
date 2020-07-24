@@ -44,6 +44,9 @@ namespace Meziantou.Analyzer.Rules
             var stringComparisonType = context.Compilation.GetTypeByMetadataName("System.StringComparison");
             var operation = (IInvocationOperation)context.Operation;
 
+            if (stringComparisonType == null)
+                return;
+
             if (!operation.HasArgumentOfType(stringComparisonType))
             {
                 // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
