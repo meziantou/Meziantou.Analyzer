@@ -79,3 +79,4 @@
 |[MA0078](Rules/MA0078.md)|Performance|Use 'Cast' instead of 'Select' to cast|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0079](Rules/MA0079.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0080](Rules/MA0080.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Hidden'>👻</span>|✔️|❌|
+|[MA0081](Rules/MA0081.md)|Design|Method overrides should not omit params keyword|<span title='Warning'>⚠️</span>|✔️|❌|
