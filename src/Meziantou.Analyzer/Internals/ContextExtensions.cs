@@ -60,6 +60,12 @@ namespace Meziantou.Analyzer
             }
         }
 
+        public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxReference syntaxReference, params string[] messageArgs)
+        {
+            var syntaxNode = syntaxReference.GetSyntax(context.CancellationToken);
+            context.ReportDiagnostic(Diagnostic.Create(descriptor, syntaxNode.GetLocation(), ImmutableDictionary<string, string>.Empty, messageArgs));
+        }
+
         public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, Location location, params string[] messageArgs)
         {
             context.ReportDiagnostic(Diagnostic.Create(descriptor, location, ImmutableDictionary<string, string>.Empty, messageArgs));

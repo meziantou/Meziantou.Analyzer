@@ -81,3 +81,4 @@
 |[MA0080](Rules/MA0080.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Hidden'>👻</span>|✔️|❌|
 |[MA0081](Rules/MA0081.md)|Design|Method overrides should not omit params keyword|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0082](Rules/MA0082.md)|Design|NaN should not be used in comparisons|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0083](Rules/MA0083.md)|Design|ConstructorArgument parameters should exist in constructors|<span title='Warning'>⚠️</span>|✔️|❌|
