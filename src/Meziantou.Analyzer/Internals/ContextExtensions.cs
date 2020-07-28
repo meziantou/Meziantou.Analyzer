@@ -76,6 +76,17 @@ namespace Meziantou.Analyzer
             context.ReportDiagnostic(CreateDiagnostic(descriptor, location, properties, messageArgs));
         }
 
+        public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxToken token, params string[] messageArgs)
+        {
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, token, messageArgs);
+        }
+
+        public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string>? properties, SyntaxToken token, params string[] messageArgs)
+        {
+            context.ReportDiagnostic(CreateDiagnostic(descriptor, token.GetLocation(), properties, messageArgs));
+        }
+
+
         public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, IOperation operation, params string[] messageArgs)
         {
             ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string>.Empty, operation, messageArgs);
