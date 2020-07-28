@@ -87,6 +87,7 @@ namespace Meziantou.Analyzer
         public const string DoNotNaNInComparisons = "MA0082";
         public const string ConstructorArgumentParametersShouldExistInConstructors = "MA0083";
         public const string LocalVariablesShouldNotHideSymbols = "MA0084";
+        public const string AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEvents = "MA0085";
 
         public static string GetHelpUri(string idenfifier)
         {
