@@ -83,6 +83,7 @@ namespace Meziantou.Analyzer
         public const string OptimizeEnumerable_CastInsteadOfSelect = "MA0078";
         public const string FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable = "MA0079";
         public const string FlowCancellationTokenInAwaitForEach = "MA0080";
+        public const string PreserveParamsOnOverride = "MA0081";
 
         public static string GetHelpUri(string idenfifier)
         {
