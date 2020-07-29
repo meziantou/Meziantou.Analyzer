@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzerTests
+    public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {

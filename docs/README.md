@@ -88,3 +88,4 @@
 |[MA0087](Rules/MA0087.md)|Design|Parameters with [DefaultParameterValue] attributes should also be marked [Optional]|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0088](Rules/MA0088.md)|Design|Use [DefaultParameterValue] instead of [DefaultValue]|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0089](Rules/MA0089.md)|Performance|Optimize string method usage|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0090](Rules/MA0090.md)|Design|Remove empty block|<span title='Info'>ℹ️</span>|✔️|❌|
