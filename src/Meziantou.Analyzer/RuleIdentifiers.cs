@@ -91,6 +91,7 @@ namespace Meziantou.Analyzer
         public const string DoNotThrowFromDestructor = "MA0086";
         public const string ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter = "MA0087";
         public const string DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant = "MA0088";
+        public const string OptimizeStartsWith = "MA0089";
 
         public static string GetHelpUri(string idenfifier)
         {

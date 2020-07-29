@@ -42,6 +42,9 @@ namespace Meziantou.Analyzer.Rules
 
             foreach (var member in GetSymbols(containingType, localSymbol.Name))
             {
+                if (!operation.SemanticModel.IsAccessible(operation.Syntax.SpanStart, member))
+                    continue;
+
                 if (member is IFieldSymbol)
                 {
                     ReportDiagnostic("field");
@@ -70,29 +73,14 @@ namespace Meziantou.Analyzer.Rules
 
         private IEnumerable<ISymbol> GetSymbols(INamedTypeSymbol? type, string name)
         {
-            var first = true;
             while (type != null)
             {
                 var members = type.GetMembers(name);
                 foreach (var member in members)
                 {
-                    if (!first)
-                    {
-                        // Check member is accessible
-                        if (member.DeclaredAccessibility != Accessibility.Public &&
-                            member.DeclaredAccessibility != Accessibility.Protected &&
-                            member.DeclaredAccessibility != Accessibility.ProtectedOrInternal &&
-                            member.DeclaredAccessibility != Accessibility.ProtectedAndInternal)
-                        {
-                            continue;
-                        }
-
-                    }
-
                     yield return member;
                 }
 
-                first = false;
                 type = type.BaseType;
             }
         }

@@ -9,25 +9,9 @@ namespace Meziantou.Analyzer.Test.Rules
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
-            var project = new ProjectBuilder()
-                .WithAnalyzer<ConstructorArgumentParametersShouldExistInConstructorsAnalyzer>();
-
-            project.ApiReferences.Add(@"
-namespace System.Windows.Markup
-{
-    using System.Runtime.CompilerServices;
-    public sealed class ConstructorArgumentAttribute : Attribute
-    {
-        public ConstructorArgumentAttribute(string argumentName)
-        {
-            ArgumentName = argumentName;
-        }
-
-        public string ArgumentName { get; }
-    }
-}");
-
-            return project;
+            return new ProjectBuilder()
+                .WithAnalyzer<ConstructorArgumentParametersShouldExistInConstructorsAnalyzer>()
+                .WithTargetFramework(TargetFramework.Net48);
         }
 
         [Fact]

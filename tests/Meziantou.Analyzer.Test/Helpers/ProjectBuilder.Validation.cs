@@ -162,6 +162,11 @@ namespace TestHelper
                 case TargetFramework.NetStandard2_0:
                     AddNuGetReference("NETStandard.Library", "2.0.3", "build/netstandard2.0/ref/");
                     break;
+
+                case TargetFramework.NetStandard2_1:
+                    AddNuGetReference("NETStandard.Library.Ref", "2.1.0", "ref/netstandard2.1/");
+                    break;
+
                 case TargetFramework.Net48:
                     AddNuGetReference("Microsoft.NETFramework.ReferenceAssemblies.net48", "1.0.0", "build/.NETFramework/v4.8/");
                     break;
