@@ -89,6 +89,7 @@ namespace Meziantou.Analyzer
         public const string LocalVariablesShouldNotHideSymbols = "MA0084";
         public const string AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEvents = "MA0085";
         public const string DoNotThrowFromDestructor = "MA0086";
+        public const string ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter = "MA0087";
 
         public static string GetHelpUri(string idenfifier)
         {

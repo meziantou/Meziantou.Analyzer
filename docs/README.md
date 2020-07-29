@@ -85,3 +85,4 @@
 |[MA0084](Rules/MA0084.md)|Design|Local variable should not hide other symbols|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0085](Rules/MA0085.md)|Usage|Anonymous delegates should not be used to unsubscribe from Events|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0086](Rules/MA0086.md)|Design|Do not throw from a destructor|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0087](Rules/MA0087.md)|Design|Parameters with [DefaultParameterValue] attributes should also be marked [Optional]|<span title='Warning'>⚠️</span>|✔️|❌|
