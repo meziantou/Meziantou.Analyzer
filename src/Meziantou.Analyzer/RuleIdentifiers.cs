@@ -93,6 +93,9 @@ namespace Meziantou.Analyzer
         public const string DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant = "MA0088";
         public const string OptimizeStartsWith = "MA0089";
         public const string RemoveEmptyBlock = "MA0090";
+        public const string SenderShouldBeThisForInstanceEvents = "MA0091";
+        public const string SenderShouldBeNullForStaticEvents = "MA0092";
+        public const string EventArgsSenderShouldNotBeNullForEvents = "MA0093";
 
         public static string GetHelpUri(string idenfifier)
         {

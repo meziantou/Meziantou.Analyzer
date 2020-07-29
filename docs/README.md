@@ -89,3 +89,6 @@
 |[MA0088](Rules/MA0088.md)|Design|Use [DefaultParameterValue] instead of [DefaultValue]|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0089](Rules/MA0089.md)|Performance|Optimize string method usage|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0090](Rules/MA0090.md)|Design|Remove empty block|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0091](Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0092](Rules/MA0092.md)|Usage|Sender should be 'null' for instance events|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0093](Rules/MA0093.md)|Usage|EventArgs should not be null|<span title='Warning'>⚠️</span>|✔️|❌|
