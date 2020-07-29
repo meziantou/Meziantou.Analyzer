@@ -5,12 +5,12 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public sealed class OptionalParametersAttributeAnalyzerTests
+    public sealed class OptionalParametersAttributeAnalyzerMA0087Tests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<OptionalParametersAttributeAnalyzer>();
+                .WithAnalyzer<OptionalParametersAttributeAnalyzer>(id: "MA0087");
         }
 
         [Fact]

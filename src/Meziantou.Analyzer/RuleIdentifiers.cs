@@ -90,6 +90,7 @@ namespace Meziantou.Analyzer
         public const string AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEvents = "MA0085";
         public const string DoNotThrowFromDestructor = "MA0086";
         public const string ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter = "MA0087";
+        public const string DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant = "MA0088";
 
         public static string GetHelpUri(string idenfifier)
         {
