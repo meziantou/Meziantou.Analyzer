@@ -82,3 +82,6 @@
 |[MA0081](Rules/MA0081.md)|Design|Method overrides should not omit params keyword|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0082](Rules/MA0082.md)|Design|NaN should not be used in comparisons|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0083](Rules/MA0083.md)|Design|ConstructorArgument parameters should exist in constructors|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0084](Rules/MA0084.md)|Design|Local variable should not hide other symbols|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0085](Rules/MA0085.md)|Usage|Anonymous delegates should not be used to unsubscribe from Events|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0086](Rules/MA0086.md)|Design|Do not throw from a destructor|<span title='Warning'>⚠️</span>|✔️|❌|
