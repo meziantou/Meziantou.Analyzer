@@ -23,6 +23,16 @@ namespace Meziantou.Analyzer.Rules
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods));
+        
+        private static readonly DiagnosticDescriptor s_indexerInsteadOfElementAtRule = new DiagnosticDescriptor(
+            RuleIdentifiers.UseIndexerInsteadOfElementAt,
+            title: "Use indexer instead of extenion methods",
+            messageFormat: "Use '{0}' instead of '{1}()'",
+            RuleCategories.Performance,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseIndexerInsteadOfElementAt));
 
         private static readonly DiagnosticDescriptor s_combineLinqMethodsRule = new DiagnosticDescriptor(
             RuleIdentifiers.OptimizeLinqUsage,
@@ -76,6 +86,7 @@ namespace Meziantou.Analyzer.Rules
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
             s_listMethodsRule,
+            s_indexerInsteadOfElementAtRule,
             s_combineLinqMethodsRule,
             s_duplicateOrderByMethodsRule,
             s_optimizeCountRule,
@@ -238,7 +249,7 @@ namespace Meziantou.Analyzer.Rules
             var actualType = GetActualType(operation.Arguments[0]);
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(listSymbol) || i.OriginalDefinition.IsEqualTo(readOnlyListSymbol)))
             {
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
+                context.ReportDiagnostic(s_indexerInsteadOfElementAtRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
             }
         }
 

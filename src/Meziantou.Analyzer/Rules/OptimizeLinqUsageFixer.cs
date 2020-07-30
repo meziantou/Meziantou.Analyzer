@@ -23,6 +23,7 @@ namespace Meziantou.Analyzer.Rules
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
             RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,
+            RuleIdentifiers.UseIndexerInsteadOfElementAt,
             RuleIdentifiers.DuplicateEnumerable_OrderBy,
             RuleIdentifiers.OptimizeLinqUsage,
             RuleIdentifiers.OptimizeEnumerable_Count,
