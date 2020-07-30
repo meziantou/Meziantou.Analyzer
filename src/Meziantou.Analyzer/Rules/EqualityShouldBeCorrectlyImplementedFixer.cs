@@ -7,12 +7,12 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Editing;
-using static Meziantou.Analyzer.Rules.ClassWithEqualsTShouldImplementIEquatableTAnalyzer;
+using static Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedAnalyzer;
 
 namespace Meziantou.Analyzer.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public sealed class ClassWithEqualsTShouldImplementIEquatableTFixer : CodeFixProvider
+    public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT);
 
@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer.Rules
                 return document;
 
             // Retrieve Nullable Annotation from the Equals method and use it to construct the concrete interface
-            var equalsMethod = declaredTypeSymbol.GetMembers().Select(m => AsEqualsMethod(m)).SingleOrDefault(m => m != null);
+            var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().Where(m => IsEqualsOfTMethod(m)).SingleOrDefault(m => m != null);
             if (equalsMethod is null)
                 return document;
 

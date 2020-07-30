@@ -1,17 +1,17 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Xunit;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public sealed class ClassWithEqualsTShouldImplementIEquatableTAnalyzerTests
+    public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<ClassWithEqualsTShouldImplementIEquatableTAnalyzer>()
-                .WithCodeFixProvider<ClassWithEqualsTShouldImplementIEquatableTFixer>();
+                .WithAnalyzer<EqualityShouldBeCorrectlyImplementedAnalyzer>()
+                .WithCodeFixProvider<EqualityShouldBeCorrectlyImplementedFixer>();
         }
 
         [Fact]
@@ -224,6 +224,7 @@ struct Test
             var originalCode = @"using System;
 class Test : IEquatable<Test>
 {
+    public override bool Equals(object o) => throw null;
     public bool Equals(Test other) => throw null;
 }";
             await CreateProjectBuilder()
@@ -237,6 +238,7 @@ class Test : IEquatable<Test>
             var originalCode = @"using System;
 struct Test : IEquatable<Test>
 {
+    public override bool Equals(object o) => throw null;
     public bool Equals(Test other) => throw null;
 }";
             await CreateProjectBuilder()

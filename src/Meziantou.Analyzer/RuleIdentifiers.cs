@@ -96,6 +96,10 @@ namespace Meziantou.Analyzer
         public const string SenderShouldBeThisForInstanceEvents = "MA0091";
         public const string SenderShouldBeNullForStaticEvents = "MA0092";
         public const string EventArgsSenderShouldNotBeNullForEvents = "MA0093";
+        public const string ClassWithCompareToTShouldImplementIComparableT = "MA0094";
+        public const string ClassWithEqualsTShouldOverrideEqualsObject = "MA0095";
+        public const string ClassImplementingIComparableTShouldImplementIEquatableT = "MA0096";
+        public const string TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable = "MA0097";
 
         public static string GetHelpUri(string idenfifier)
         {
