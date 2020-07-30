@@ -1,10 +1,10 @@
 |Id|Category|Description|Severity|Is enabled|Code fix|
 |--|--------|-----------|:------:|:--------:|:------:|
 |[MA0001](Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0002](Rules/MA0002.md)|Usage|IEqualityComparer<string> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0002](Rules/MA0002.md)|Usage|IEqualityComparer\<string\> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0003](Rules/MA0003.md)|Style|Name parameter|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0004](Rules/MA0004.md)|Usage|Use .ConfigureAwait(false)|<span title='Warning'>⚠️</span>|✔️|✔️|
-|[MA0005](Rules/MA0005.md)|Performance|Use Array.Empty<T>()|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0005](Rules/MA0005.md)|Performance|Use Array.Empty\<T\>()|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0006](Rules/MA0006.md)|Usage|use String.Equals|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0007](Rules/MA0007.md)|Style|Add comma after the last property|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0008](Rules/MA0008.md)|Performance|Add StructLayoutAttribute|<span title='Warning'>⚠️</span>|✔️|✔️|
@@ -44,7 +44,7 @@
 |[MA0043](Rules/MA0043.md)|Usage|Use nameof operator|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0044](Rules/MA0044.md)|Performance|Remove ToString call|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0045](Rules/MA0045.md)|Design|Do not use blocking call (make method async)|<span title='Info'>ℹ️</span>|✔️|❌|
-|[MA0046](Rules/MA0046.md)|Design|Use EventHandler<T>|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0046](Rules/MA0046.md)|Design|Use EventHandler\<T\>|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0047](Rules/MA0047.md)|Design|Declare types in namespaces|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0048](Rules/MA0048.md)|Design|File name must match type name|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0049](Rules/MA0049.md)|Design|Type name should not match namespace|<span title='Error'>❌</span>|✔️|❌|
@@ -75,7 +75,7 @@
 |[MA0074](Rules/MA0074.md)|Usage|Avoid implicit culture-sensitive methods|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0075](Rules/MA0075.md)|Design|Do not use implicit culture-sensitive ToString|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0076](Rules/MA0076.md)|Design|Do not use implicit culture-sensitive ToString in interpolated strings|<span title='Info'>ℹ️</span>|✔️|❌|
-|[MA0077](Rules/MA0077.md)|Design|A class that provides Equals(T) should implement IEquatable<T>|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0077](Rules/MA0077.md)|Design|A class that provides Equals(T) should implement IEquatable\<T\>|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0078](Rules/MA0078.md)|Performance|Use 'Cast' instead of 'Select' to cast|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0079](Rules/MA0079.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0080](Rules/MA0080.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Hidden'>👻</span>|✔️|❌|
@@ -92,3 +92,8 @@
 |[MA0091](Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0092](Rules/MA0092.md)|Usage|Sender should be 'null' for instance events|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0093](Rules/MA0093.md)|Usage|EventArgs should not be null|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0094](Rules/MA0094.md)|Design|A class that provides CompareTo(T) should implement IComparable\<T\>|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0095](Rules/MA0095.md)|Design|A class that implements IEquatable\<T\> should override Equals(object)|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0096](Rules/MA0096.md)|Design|A class that implements IComparable\<T\> should also implement IEquatable\<T\>|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0097](Rules/MA0097.md)|Design|A class that implements IComparable\<T\> or IComparable should override comparison operators|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0098](Rules/MA0098.md)|Performance|Use indexer instead of extension methods|<span title='Info'>ℹ️</span>|✔️|✔️|

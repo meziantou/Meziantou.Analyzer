@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Encodings.Web;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -38,7 +39,25 @@ namespace DocumentationGenerator
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
                 var hasCodeFix = codeFixProviders.Any(codeFixProvider => codeFixProvider.FixableDiagnosticIds.Contains(diagnostic.Id));
-                sb.Append("|[").Append(diagnostic.Id).Append("](Rules/").Append(diagnostic.Id).Append(".md)|").Append(diagnostic.Category).Append('|').Append(diagnostic.Title).Append("|<span title='").Append(diagnostic.DefaultSeverity).Append("'>").Append(GetSeverity(diagnostic.DefaultSeverity)).Append("</span>|").Append(GetBoolean(diagnostic.IsEnabledByDefault)).Append('|').Append(GetBoolean(hasCodeFix)).Append('|').AppendLine();
+                sb
+                    .Append("|[")
+                    .Append(diagnostic.Id)
+                    .Append("](Rules/")
+                    .Append(diagnostic.Id)
+                    .Append(".md)|")
+                    .Append(diagnostic.Category)
+                    .Append('|')
+                    .Append(EscapeMarkdown(diagnostic.Title.ToString()))
+                    .Append("|<span title='")
+                    .Append(HtmlEncoder.Default.Encode(diagnostic.DefaultSeverity.ToString()))
+                    .Append("'>")
+                    .Append(GetSeverity(diagnostic.DefaultSeverity))
+                    .Append("</span>|")
+                    .Append(GetBoolean(diagnostic.IsEnabledByDefault))
+                    .Append('|')
+                    .Append(GetBoolean(hasCodeFix))
+                    .Append('|')
+                    .AppendLine();
             }
 
             Console.WriteLine(sb.ToString());
@@ -49,7 +68,7 @@ namespace DocumentationGenerator
             // Write title in detail pages
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
-                var title = $"# {diagnostic.Id} - {diagnostic.Title}";
+                var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString())}";
                 var detailPath = Path.GetFullPath(Path.Combine(args[0], "Rules", diagnostic.Id + ".md"));
                 if (File.Exists(detailPath))
                 {
@@ -74,6 +93,13 @@ namespace DocumentationGenerator
                 DiagnosticSeverity.Error => "❌",
                 _ => throw new ArgumentOutOfRangeException(nameof(severity)),
             };
+        }
+
+        private static string EscapeMarkdown(string text)
+        {
+            return text
+                .Replace("<", "\\<")
+                .Replace(">", "\\>");
         }
 
         private static string GetBoolean(bool value)

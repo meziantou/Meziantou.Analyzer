@@ -26,7 +26,7 @@ namespace Meziantou.Analyzer.Rules
         
         private static readonly DiagnosticDescriptor s_indexerInsteadOfElementAtRule = new DiagnosticDescriptor(
             RuleIdentifiers.UseIndexerInsteadOfElementAt,
-            title: "Use indexer instead of extenion methods",
+            title: "Use indexer instead of extension methods",
             messageFormat: "Use '{0}' instead of '{1}()'",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
