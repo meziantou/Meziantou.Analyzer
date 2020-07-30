@@ -129,6 +129,57 @@ public class Test
 
             await project.ValidateAsync();
         }
+        
+        [Fact]
+        public async Task Properties_XmlSerializable_XmlIgnore()
+        {
+            var project = CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System.Collections.Generic;
+using System.Xml.Serialization;
+
+public class Test
+{
+    [XmlIgnore]
+    public [|List<int>|] A { get; set; }
+}");
+
+            await project.ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task Properties_XmlSerializable_PropertyAttribute()
+        {
+            var project = CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System.Collections.Generic;
+using System.Xml.Serialization;
+
+public class Test
+{
+    [XmlArray(""sample"")]
+    public List<int> A { get; set; }
+}");
+
+            await project.ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task Properties_XmlSerializable_ClassAttribute()
+        {
+            var project = CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System.Collections.Generic;
+using System.Xml.Serialization;
+
+[XmlRoot(""sample"")]
+public class Test
+{
+    public List<int> A { get; set; }
+}");
+
+            await project.ValidateAsync();
+        }
 
         [Theory]
         [MemberData(nameof(ReturnTypeValues))]

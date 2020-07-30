@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
@@ -13,7 +14,7 @@ namespace Meziantou.Analyzer
             return SymbolEqualityComparer.Default.Equals(expectedType, symbol);
         }
 
-        public static bool IsVisibleOutsideOfAssembly(this ISymbol? symbol)
+        public static bool IsVisibleOutsideOfAssembly([NotNullWhen(true)]this ISymbol? symbol)
         {
             if (symbol == null)
                 return false;

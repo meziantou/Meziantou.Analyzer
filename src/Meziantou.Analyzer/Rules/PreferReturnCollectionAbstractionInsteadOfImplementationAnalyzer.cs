@@ -30,172 +30,208 @@ namespace Meziantou.Analyzer.Rules
 
             context.RegisterCompilationStartAction(ctx =>
             {
-                var analyzerContext = AnalyzerContext.Create(ctx.Compilation);
+                var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
-                ctx.RegisterSyntaxNodeAction(c => AnalyzeDelegate(c, analyzerContext), SyntaxKind.DelegateDeclaration);
-                ctx.RegisterSyntaxNodeAction(c => AnalyzeField(c, analyzerContext), SyntaxKind.FieldDeclaration);
-                ctx.RegisterSyntaxNodeAction(c => AnalyzeIndexer(c, analyzerContext), SyntaxKind.IndexerDeclaration);
-                ctx.RegisterSyntaxNodeAction(c => AnalyzeMethod(c, analyzerContext), SyntaxKind.MethodDeclaration);
-                ctx.RegisterSyntaxNodeAction(c => AnalyzeProperty(c, analyzerContext), SyntaxKind.PropertyDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => analyzerContext.AnalyzeDelegate(c), SyntaxKind.DelegateDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => analyzerContext.AnalyzeField(c), SyntaxKind.FieldDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => analyzerContext.AnalyzeIndexer(c), SyntaxKind.IndexerDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => analyzerContext.AnalyzeMethod(c), SyntaxKind.MethodDeclaration);
+                ctx.RegisterSyntaxNodeAction(c => analyzerContext.AnalyzeProperty(c), SyntaxKind.PropertyDeclaration);
             });
-        }
-
-        private void AnalyzeField(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
-        {
-            var node = (FieldDeclarationSyntax)context.Node;
-            if (node == null || node.Declaration == null)
-                return;
-
-            var firstVariable = node.Declaration.Variables.FirstOrDefault();
-            if (firstVariable == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) as IFieldSymbol;
-            if (symbol == null)
-                return;
-
-            if (!symbol.IsVisibleOutsideOfAssembly())
-                return;
-
-            if (IsValidType(analyzerContext, symbol.Type))
-                return;
-
-            context.ReportDiagnostic(s_rule, node.Declaration.Type);
-        }
-
-        private void AnalyzeDelegate(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
-        {
-            var node = (DelegateDeclarationSyntax)context.Node;
-            if (node == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisibleOutsideOfAssembly())
-                return;
-
-            var type = node.ReturnType;
-            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
-            {
-                context.ReportDiagnostic(s_rule, type);
-            }
-
-            AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
-        }
-
-        private void AnalyzeIndexer(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
-        {
-            var node = (IndexerDeclarationSyntax)context.Node;
-            if (node == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
-                return;
-
-            var type = node.Type;
-            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
-            {
-                context.ReportDiagnostic(s_rule, type);
-            }
-
-            AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
-        }
-
-        private void AnalyzeProperty(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
-        {
-            var node = (PropertyDeclarationSyntax)context.Node;
-            if (node == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
-                return;
-
-            var type = node.Type;
-            if (type == null || IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
-                return;
-
-            context.ReportDiagnostic(s_rule, type);
-        }
-
-        private void AnalyzeMethod(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
-        {
-            var node = (MethodDeclarationSyntax)context.Node;
-            if (node == null)
-                return;
-
-            var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
-                return;
-
-            var type = node.ReturnType;
-            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
-            {
-                context.ReportDiagnostic(s_rule, type);
-            }
-
-            AnalyzeParameters(context, analyzerContext, node.ParameterList?.Parameters);
-        }
-
-        private void AnalyzeParameters(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext, IEnumerable<ParameterSyntax>? parameters)
-        {
-            if (parameters != null)
-            {
-                foreach (var parameter in parameters)
-                {
-                    AnalyzeParameter(context, analyzerContext, parameter);
-                }
-            }
-        }
-
-        private void AnalyzeParameter(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext, ParameterSyntax parameter)
-        {
-            var type = parameter.Type;
-            if (type != null && !IsValidType(analyzerContext, context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
-            {
-                context.ReportDiagnostic(s_rule, parameter);
-            }
-        }
-
-        private bool IsValidType(AnalyzerContext analyzerContext, ITypeSymbol? symbol)
-        {
-            if (symbol == null)
-                return true;
-
-            var originalDefinition = symbol.OriginalDefinition;
-            if (analyzerContext.ConcreteCollectionSymbols.Any(t => t.IsEqualTo(originalDefinition)))
-                return false;
-
-            var namedTypeSymbol = symbol as INamedTypeSymbol;
-            if (namedTypeSymbol != null)
-            {
-                if (analyzerContext.TaskSymbols.Any(t => t.IsEqualTo(symbol.OriginalDefinition)))
-                {
-                    return IsValidType(analyzerContext, namedTypeSymbol.TypeArguments[0]);
-                }
-            }
-
-            return true;
         }
 
         private sealed class AnalyzerContext
         {
-            public static AnalyzerContext Create(Compilation compilation)
+            public AnalyzerContext(Compilation compilation)
             {
-                var context = new AnalyzerContext();
+                ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"));
+                ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
+                ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
+                ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1"));
 
-                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"));
-                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
-                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
-                context.ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1"));
+                TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
+                TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
 
-                context.TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
-                context.TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
-                return context;
+                XmlIgnoreAttributeSymbol = compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlIgnoreAttribute");
+
+                XmlClassAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlTypeAttribute"));
+                XmlClassAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlRootAttribute"));
+
+                XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlElementAttribute"));
+                XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlArrayAttribute"));
+                XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlAnyAttributeAttribute"));
+                XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlAnyElementAttribute"));
+                XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlArrayItemAttribute"));
+                XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlTextAttribute"));
             }
 
             public List<ITypeSymbol> ConcreteCollectionSymbols { get; } = new List<ITypeSymbol>();
             public List<ITypeSymbol> TaskSymbols { get; } = new List<ITypeSymbol>();
+
+            public ITypeSymbol? XmlIgnoreAttributeSymbol { get; set; }
+            public List<ITypeSymbol> XmlClassAttributeSymbols { get; } = new List<ITypeSymbol>();
+            public List<ITypeSymbol> XmlPropertyAttributeSymbols { get; } = new List<ITypeSymbol>();
+
+            public void AnalyzeField(SyntaxNodeAnalysisContext context)
+            {
+                var node = (FieldDeclarationSyntax)context.Node;
+                if (node == null || node.Declaration == null)
+                    return;
+
+                var firstVariable = node.Declaration.Variables.FirstOrDefault();
+                if (firstVariable == null)
+                    return;
+
+                var symbol = context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) as IFieldSymbol;
+                if (symbol == null)
+                    return;
+
+                if (!symbol.IsVisibleOutsideOfAssembly())
+                    return;
+
+                if (IsValidType(symbol.Type))
+                    return;
+
+                context.ReportDiagnostic(s_rule, node.Declaration.Type);
+            }
+
+            public void AnalyzeDelegate(SyntaxNodeAnalysisContext context)
+            {
+                var node = (DelegateDeclarationSyntax)context.Node;
+                if (node == null)
+                    return;
+
+                var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
+                if (!symbol.IsVisibleOutsideOfAssembly())
+                    return;
+
+                var type = node.ReturnType;
+                if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+                {
+                    context.ReportDiagnostic(s_rule, type);
+                }
+
+                AnalyzeParameters(context, node.ParameterList?.Parameters);
+            }
+
+            public void AnalyzeIndexer(SyntaxNodeAnalysisContext context)
+            {
+                var node = (IndexerDeclarationSyntax)context.Node;
+                if (node == null)
+                    return;
+
+                var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
+                if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
+                    return;
+
+                var type = node.Type;
+                if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+                {
+                    context.ReportDiagnostic(s_rule, type);
+                }
+
+                AnalyzeParameters(context, node.ParameterList?.Parameters);
+            }
+
+            public void AnalyzeProperty(SyntaxNodeAnalysisContext context)
+            {
+                var node = (PropertyDeclarationSyntax)context.Node;
+                if (node == null)
+                    return;
+
+                var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
+                if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
+                    return;
+
+                var type = node.Type;
+                if (type == null || IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+                    return;
+
+                if (IsXmlSerializableProperty(symbol))
+                    return;
+
+                context.ReportDiagnostic(s_rule, type);
+            }
+
+            public void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+            {
+                var node = (MethodDeclarationSyntax)context.Node;
+                if (node == null)
+                    return;
+
+                var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
+                if (!symbol.IsVisibleOutsideOfAssembly() || symbol.IsOverrideOrInterfaceImplementation())
+                    return;
+
+                var type = node.ReturnType;
+                if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+                {
+                    context.ReportDiagnostic(s_rule, type);
+                }
+
+                AnalyzeParameters(context, node.ParameterList?.Parameters);
+            }
+
+            public void AnalyzeParameters(SyntaxNodeAnalysisContext context, IEnumerable<ParameterSyntax>? parameters)
+            {
+                if (parameters != null)
+                {
+                    foreach (var parameter in parameters)
+                    {
+                        AnalyzeParameter(context, parameter);
+                    }
+                }
+            }
+
+            public void AnalyzeParameter(SyntaxNodeAnalysisContext context, ParameterSyntax parameter)
+            {
+                var type = parameter.Type;
+                if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+                {
+                    context.ReportDiagnostic(s_rule, parameter);
+                }
+            }
+
+            private bool IsValidType(ITypeSymbol? symbol)
+            {
+                if (symbol == null)
+                    return true;
+
+                var originalDefinition = symbol.OriginalDefinition;
+                if (ConcreteCollectionSymbols.Any(t => t.IsEqualTo(originalDefinition)))
+                    return false;
+
+                var namedTypeSymbol = symbol as INamedTypeSymbol;
+                if (namedTypeSymbol != null)
+                {
+                    if (TaskSymbols.Any(t => t.IsEqualTo(symbol.OriginalDefinition)))
+                    {
+                        return IsValidType(namedTypeSymbol.TypeArguments[0]);
+                    }
+                }
+
+                return true;
+            }
+
+            private bool IsXmlSerializableProperty(IPropertySymbol property)
+            {
+                if (property.HasAttribute(XmlIgnoreAttributeSymbol))
+                    return false;
+
+                foreach (var attribute in XmlPropertyAttributeSymbols)
+                {
+                    if (property.HasAttribute(attribute))
+                        return true;
+                }
+
+                foreach (var attribute in XmlClassAttributeSymbols)
+                {
+                    if (property.ContainingType.HasAttribute(attribute))
+                        return true;
+                }
+
+                return false;
+            }
         }
     }
 }
