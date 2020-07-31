@@ -21,8 +21,8 @@ namespace Meziantou.Analyzer.Rules
             title: "Use a cancellation token",
             messageFormat: "Specify a CancellationToken",
             RuleCategories.Usage,
-            DiagnosticSeverity.Hidden,
-            isEnabledByDefault: true,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: false,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationToken));
 
@@ -41,8 +41,8 @@ namespace Meziantou.Analyzer.Rules
             title: "Use a cancellation token using .WithCancellation()",
             messageFormat: "Specify a CancellationToken",
             RuleCategories.Usage,
-            DiagnosticSeverity.Hidden,
-            isEnabledByDefault: true,
+            DiagnosticSeverity.Info,
+            isEnabledByDefault: false,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEach));
 

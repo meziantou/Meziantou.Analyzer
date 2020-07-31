@@ -28,7 +28,7 @@ namespace Meziantou.Analyzer.Rules
             messageFormat: "{0}",
             RuleCategories.Design,
             DiagnosticSeverity.Info,
-            isEnabledByDefault: true,
+            isEnabledByDefault: false,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBlockingCall));
 
