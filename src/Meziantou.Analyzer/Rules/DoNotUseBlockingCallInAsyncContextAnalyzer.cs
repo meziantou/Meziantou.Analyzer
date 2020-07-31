@@ -64,17 +64,33 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 CancellationTokenSymbol = _compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
+
                 TaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                 TaskOfTSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
                 TaskAwaiterSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
+                TaskAwaiterOfTSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter`1");
+
+                ValueTaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+                ValueTaskOfTSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+                ValueTaskAwaiterSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
+                ValueTaskAwaiterOfTSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
+
                 ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
             }
 
             private ISymbol[]? ConsoleErrorAndOutSymbols { get; }
             private INamedTypeSymbol? CancellationTokenSymbol { get; }
+
             private INamedTypeSymbol? TaskSymbol { get; }
             private INamedTypeSymbol? TaskOfTSymbol { get; }
             private INamedTypeSymbol? TaskAwaiterSymbol { get; }
+            private INamedTypeSymbol? TaskAwaiterOfTSymbol { get; }
+
+            private INamedTypeSymbol? ValueTaskSymbol { get; }
+            private INamedTypeSymbol? ValueTaskOfTSymbol { get; }
+            private INamedTypeSymbol? ValueTaskAwaiterSymbol { get; }
+            private INamedTypeSymbol? ValueTaskAwaiterOfTSymbol { get; }
+
             private INamedTypeSymbol[] ThreadSymbols { get; }
 
             public bool IsValid => TaskSymbol != null && TaskOfTSymbol != null && TaskAwaiterSymbol != null;
@@ -101,7 +117,7 @@ namespace Meziantou.Analyzer.Rules
                 // Task.GetAwaiter().GetResult()
                 if (string.Equals(targetMethod.Name, nameof(TaskAwaiter.GetResult), StringComparison.Ordinal))
                 {
-                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualTo(TaskAwaiterSymbol))
+                    if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(TaskAwaiterSymbol, TaskAwaiterOfTSymbol, ValueTaskAwaiterSymbol, ValueTaskAwaiterOfTSymbol))
                     {
                         ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'GetResult()'");
                         return;
@@ -153,7 +169,7 @@ namespace Meziantou.Analyzer.Rules
                             if (!string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) && !string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal))
                                 return false;
 
-                            if (!methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
+                            if (!methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol))
                                 return false;
 
                             if (methodSymbol.IsObsolete(context.Compilation))
@@ -180,7 +196,7 @@ namespace Meziantou.Analyzer.Rules
                 // Task`1.Result
                 if (string.Equals(operation.Property.Name, nameof(Task<int>.Result), StringComparison.Ordinal))
                 {
-                    if (operation.Member.ContainingType.OriginalDefinition.IsEqualTo(TaskOfTSymbol))
+                    if (operation.Member.ContainingType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol))
                     {
                         ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'Result'");
                     }
@@ -209,7 +225,7 @@ namespace Meziantou.Analyzer.Rules
                 var methodSymbol = operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart) as IMethodSymbol;
                 if (methodSymbol != null)
                 {
-                    return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol);
+                    return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol);
                 }
 
                 return false;

@@ -10,6 +10,7 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
+                .WithTargetFramework(TargetFramework.NetStandard2_1)
                 .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042");
         }
 
@@ -38,6 +39,36 @@ class Test
     public async Task A()
     {
         _ = [||]Task.FromResult(1).Result;
+    }
+}")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task Async_ValueTask_Result_Diagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        _ = [||]new ValueTask<int>(10).Result;
+    }
+}")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task Async_ValueTask_GetAwaiter_Diagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        _ = [||]new ValueTask<int>(10).GetAwaiter().GetResult();
     }
 }")
                   .ValidateAsync();
@@ -146,6 +177,26 @@ class Test
 
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
+}")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public void A()
+    {
+        Local();
+
+        async Task Local() => [||]Write();
+    }
+
+    public void Write() => throw null;
+    public ValueTask WriteAsync() => throw null;
 }")
                   .ValidateAsync();
         }
