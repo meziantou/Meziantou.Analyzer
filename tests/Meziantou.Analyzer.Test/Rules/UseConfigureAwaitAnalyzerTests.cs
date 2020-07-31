@@ -117,7 +117,32 @@ class ClassTest
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
-        
+
+        [Fact]
+        public async Task MissingConfigureAwait_AwaitForeach_WithConfigureAwait()
+        {
+            const string SourceCode = @"
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        IAsyncEnumerable<int> Enumerable() => throw null;
+
+        CancellationToken ct = default;
+        await foreach(var item in Enumerable().ConfigureAwait(false))
+        {
+        }
+    }
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
         [Fact]
         public async Task MissingConfigureAwait_AwaitDispose_ShouldReportError()
         {
@@ -155,7 +180,7 @@ class AsyncDisposable : IAsyncDisposable
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task MissingConfigureAwait_AwaitDispose_Block_ShouldReportError()
         {

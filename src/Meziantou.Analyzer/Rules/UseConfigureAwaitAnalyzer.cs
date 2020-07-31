@@ -113,8 +113,12 @@ namespace Meziantou.Analyzer.Rules
 
                 // ConfiguredCancelableAsyncEnumerable
                 var collectionType = operation.Collection.GetActualType();
-                if (collectionType.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
-                    return;
+                if (collectionType.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
+                {
+                    // Enumerable().WithCancellation(ct) or Enumerable().ConfigureAwait(false)
+                    if (HasConfigureAwait(operation.Collection) && HasPartOfTypeIAsyncEnumerable(operation.Collection))
+                        return;
+                }
 
                 if (!CanAddConfigureAwait(collectionType))
                     return;
@@ -122,6 +126,37 @@ namespace Meziantou.Analyzer.Rules
                 if (MustUseConfigureAwait(operation.SemanticModel, operation.Syntax, context.CancellationToken))
                 {
                     context.ReportDiagnostic(s_rule, operation.Collection);
+                }
+
+                static bool HasConfigureAwait(IOperation operation)
+                {
+                    if (operation is IInvocationOperation invocation)
+                    {
+                        if (invocation.TargetMethod.Name == "ConfigureAwait")
+                            return true;
+                    }
+
+                    foreach (var child in operation.Children)
+                    {
+                        if (HasConfigureAwait(child))
+                            return true;
+                    }
+
+                    return false;
+                }
+
+                bool HasPartOfTypeIAsyncEnumerable(IOperation operation)
+                {
+                    if (operation.Type.IsEqualTo(IAsyncEnumerableSymbol))
+                        return true;
+
+                    foreach (var child in operation.Children)
+                    {
+                        if (HasConfigureAwait(child))
+                            return true;
+                    }
+
+                    return false;
                 }
             }
 
