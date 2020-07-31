@@ -49,18 +49,31 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
 
-            var syntax = (AwaitExpressionSyntax)nodeToFix;
-            if (syntax == null || syntax.Expression == null)
-                return document;
+            if (nodeToFix is AwaitExpressionSyntax awaitSyntax)
+            {
+                if (awaitSyntax?.Expression != null)
+                {
+                    var newExpression = (ExpressionSyntax)generator.InvocationExpression(
+                        generator.MemberAccessExpression(awaitSyntax.Expression, nameof(Task.ConfigureAwait)),
+                        generator.LiteralExpression(value));
 
-            var newExpression = (ExpressionSyntax)generator.InvocationExpression(
-                generator.MemberAccessExpression(syntax.Expression, nameof(Task.ConfigureAwait)),
-                generator.LiteralExpression(value));
+                    var newInvokeExpression = awaitSyntax.WithExpression(newExpression);
 
-            var newInvokeExpression = syntax.WithExpression(newExpression);
+                    editor.ReplaceNode(nodeToFix, newInvokeExpression);
+                    return editor.GetChangedDocument();
+                }
+            }
+            else if(nodeToFix is ExpressionSyntax expressionSyntax)
+            {
+                var newExpression = (ExpressionSyntax)generator.InvocationExpression(
+                        generator.MemberAccessExpression(expressionSyntax, nameof(Task.ConfigureAwait)),
+                        generator.LiteralExpression(value));
 
-            editor.ReplaceNode(nodeToFix, newInvokeExpression);
-            return editor.GetChangedDocument();
+                editor.ReplaceNode(nodeToFix, newExpression);
+                return editor.GetChangedDocument();
+            }
+
+            return document;
         }
     }
 }

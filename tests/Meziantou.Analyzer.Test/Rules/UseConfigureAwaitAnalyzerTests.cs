@@ -1,7 +1,7 @@
-﻿using Meziantou.Analyzer.Rules;
-using Xunit;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using TestHelper;
-using System.Threading.Tasks;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -10,6 +10,7 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
+                .WithTargetFramework(TargetFramework.NetStandard2_1)
                 .WithAnalyzer<UseConfigureAwaitAnalyzer>()
                 .WithCodeFixProvider<UseConfigureAwaitFixer>();
         }
@@ -32,6 +33,164 @@ class ClassTest
     {
         await Task.Delay(1).ConfigureAwait(false);
     }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task MissingConfigureAwait_AwaitForeach_ShouldReportError()
+        {
+            const string SourceCode = @"
+using System.Collections.Generic;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        IAsyncEnumerable<int> Enumerable() => throw null;
+
+        await foreach(var item in [||]Enumerable())
+        {
+        }
+    }
+}";
+            const string CodeFix = @"
+using System.Collections.Generic;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        IAsyncEnumerable<int> Enumerable() => throw null;
+
+        await foreach(var item in Enumerable().ConfigureAwait(false))
+        {
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task MissingConfigureAwait_AwaitForeach_WithCancellation_ShouldReportError()
+        {
+            const string SourceCode = @"
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        IAsyncEnumerable<int> Enumerable() => throw null;
+
+        CancellationToken ct = default;
+        await foreach(var item in [||]Enumerable().WithCancellation(ct))
+        {
+        }
+    }
+}";
+            const string CodeFix = @"
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        IAsyncEnumerable<int> Enumerable() => throw null;
+
+        CancellationToken ct = default;
+        await foreach(var item in Enumerable().WithCancellation(ct).ConfigureAwait(false))
+        {
+        }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task MissingConfigureAwait_AwaitDispose_ShouldReportError()
+        {
+            const string SourceCode = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        await using var a = [||]new AsyncDisposable();
+    }
+}
+class AsyncDisposable : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => throw null;
+}";
+
+            const string CodeFix = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        await using var a = new AsyncDisposable().ConfigureAwait(false);
+    }
+}
+class AsyncDisposable : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => throw null;
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task MissingConfigureAwait_AwaitDispose_Block_ShouldReportError()
+        {
+            const string SourceCode = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        await using (var a = [||]new AsyncDisposable())
+        {
+        }
+    }
+}
+class AsyncDisposable : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => throw null;
+}";
+
+            const string CodeFix = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        await using (var a = new AsyncDisposable().ConfigureAwait(false))
+        {
+        }
+    }
+}
+class AsyncDisposable : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => throw null;
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)

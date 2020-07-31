@@ -75,22 +75,13 @@ namespace Meziantou.Analyzer.Rules
                                 if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
                                     return;
 
+                                if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name == nameof(Task.ConfigureAwait))
+                                    return;
+
                                 if (IsMethod(methodSymbol, objectType, nameof(object.Equals)))
                                     return;
 
                                 if (IsMethod(methodSymbol, objectType, nameof(object.ReferenceEquals)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, taskTokenType, nameof(Task.ConfigureAwait)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, taskGenericTokenType, nameof(Task.ConfigureAwait)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, valueTaskTokenType, nameof(Task.ConfigureAwait)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, valueTaskGenericTokenType, nameof(Task.ConfigureAwait)))
                                     return;
 
                                 if (IsMethod(methodSymbol, taskTokenType, nameof(Task.FromResult)))
