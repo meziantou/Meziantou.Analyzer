@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer
             return operation.Ancestors().OfType<INameOfOperation>().Any();
         }
 
-        public static ITypeSymbol GetActualType(this IOperation operation)
+        public static ITypeSymbol? GetActualType(this IOperation operation)
         {
             if (operation is IConversionOperation conversionOperation)
             {

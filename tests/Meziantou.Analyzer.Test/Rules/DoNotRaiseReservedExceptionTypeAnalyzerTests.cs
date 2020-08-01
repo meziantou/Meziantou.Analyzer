@@ -46,5 +46,21 @@ class TestAttribute
                   .ShouldReportDiagnosticWithMessage("'System.IndexOutOfRangeException' is a reserved exception type")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ThrowNull()
+        {
+            const string SourceCode = @"using System;
+class TestAttribute
+{
+    void Test()
+    {
+        throw null;
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }

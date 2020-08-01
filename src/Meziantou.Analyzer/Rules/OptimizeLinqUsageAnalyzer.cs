@@ -23,7 +23,7 @@ namespace Meziantou.Analyzer.Rules
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods));
-        
+
         private static readonly DiagnosticDescriptor s_indexerInsteadOfElementAtRule = new DiagnosticDescriptor(
             RuleIdentifiers.UseIndexerInsteadOfElementAt,
             title: "Use indexer instead of extension methods",
@@ -167,7 +167,10 @@ namespace Meziantou.Analyzer.Rules
                 if (collectionOfTSymbol == null && readOnlyCollectionOfTSymbol == null)
                     return;
 
-                var actualType = GetActualType(operation.Arguments[0]);
+                var actualType = operation.Arguments[0].Value.GetActualType();
+                if (actualType == null)
+                    return;
+
                 if (actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLengthProperty);
@@ -189,8 +192,8 @@ namespace Meziantou.Analyzer.Rules
             }
             else if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.LongCount), StringComparison.Ordinal))
             {
-                var actualType = GetActualType(operation.Arguments[0]);
-                if (actualType.TypeKind == TypeKind.Array)
+                var actualType = operation.Arguments[0].Value.GetActualType();
+                if (actualType != null && actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
                     context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "LongLength", operation.TargetMethod.Name);
@@ -207,7 +210,11 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var listSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
-            if (GetActualType(operation.Arguments[0]).OriginalDefinition.IsEqualTo(listSymbol))
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType();
+            if (firstArgumentType == null)
+                return;
+
+            if (firstArgumentType.OriginalDefinition.IsEqualTo(listSymbol))
             {
                 var properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
                 context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
@@ -246,7 +253,10 @@ namespace Meziantou.Analyzer.Rules
             if (listSymbol == null && readOnlyListSymbol == null)
                 return;
 
-            var actualType = GetActualType(operation.Arguments[0]);
+            var actualType = operation.Arguments[0].Value.GetActualType();
+            if (actualType == null)
+                return;
+
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(listSymbol) || i.OriginalDefinition.IsEqualTo(readOnlyListSymbol)))
             {
                 context.ReportDiagnostic(s_indexerInsteadOfElementAtRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
@@ -633,11 +643,6 @@ namespace Meziantou.Analyzer.Rules
                .Add("CastType", castType);
 
             context.ReportDiagnostic(s_useCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
-        }
-
-        private static ITypeSymbol GetActualType(IArgumentOperation argument)
-        {
-            return argument.Value.GetActualType();
         }
 
         private static IInvocationOperation? GetParentLinqOperation(IOperation op)

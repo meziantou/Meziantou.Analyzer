@@ -113,6 +113,9 @@ namespace Meziantou.Analyzer.Rules
 
                 // ConfiguredCancelableAsyncEnumerable
                 var collectionType = operation.Collection.GetActualType();
+                if (collectionType == null)
+                    return;
+
                 if (collectionType.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
                 {
                     // Enumerable().WithCancellation(ct) or Enumerable().ConfigureAwait(false)
@@ -193,7 +196,7 @@ namespace Meziantou.Analyzer.Rules
 
                         // ConfiguredCancelableAsyncEnumerable
                         var variableType = declarator.Initializer.Value.GetActualType();
-                        if (variableType.IsEqualTo(ConfiguredAsyncDisposableSymbol))
+                        if (variableType == null || variableType.IsEqualTo(ConfiguredAsyncDisposableSymbol))
                             return;
 
                         if (!CanAddConfigureAwait(variableType))
