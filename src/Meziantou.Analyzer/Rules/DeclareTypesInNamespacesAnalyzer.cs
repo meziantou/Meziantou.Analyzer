@@ -30,6 +30,9 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
+            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass)
+                return;
+
             if (symbol.ContainingType == null && (symbol.ContainingNamespace?.IsGlobalNamespace ?? true))
             {
                 context.ReportDiagnostic(s_rule, symbol);

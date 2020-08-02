@@ -227,11 +227,5 @@ namespace Meziantou.Analyzer.Rules
             symbol.DeclaredAccessibility == Accessibility.Public &&
             !symbol.IsStatic;
         }
-
-        private static bool HasComparisonOperators(INamedTypeSymbol symbol)
-        {
-            // TODO
-            return false;
-        }
     }
 }

@@ -33,6 +33,9 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
+            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass)
+                return;
+
             foreach (var location in symbol.Locations)
             {
                 if (!location.IsInSource || string.IsNullOrEmpty(location.SourceTree?.FilePath))
