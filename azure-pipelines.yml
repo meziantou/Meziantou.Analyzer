@@ -14,7 +14,7 @@ jobs:
     steps:
     - script: docker pull github/super-linter:latest
       displayName: Get GitHub Super-Linter image
-    - script: >-        
+    - script: >-
         docker run \
           -e RUN_LOCAL=true \
           -e VALIDATE_POWERSHELL=false \
