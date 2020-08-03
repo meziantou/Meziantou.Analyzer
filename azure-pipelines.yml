@@ -11,9 +11,6 @@ jobs:
   - job: linter
     pool:
       vmImage: 'ubuntu-16.04'
-    container: github/super-linter:latest
-    variables:
-      RUN_LOCAL: true
     steps:
     - script: |
         docker pull github/super-linter:latest
