@@ -33,6 +33,8 @@ namespace DocumentationGenerator
                 .ToList();
 
             var sb = new StringBuilder();
+            sb.AppendLine("# Meziantou.Analyzer's rules");
+            sb.AppendLine();
             sb.AppendLine("|Id|Category|Description|Severity|Is enabled|Code fix|");
             sb.AppendLine("|--|--------|-----------|:------:|:--------:|:------:|");
 
