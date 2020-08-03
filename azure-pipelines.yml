@@ -14,7 +14,7 @@ jobs:
     steps:
     - script: |
         docker pull github/super-linter:latest
-        docker run -e RUN_LOCAL=true -v $(System.DefaultWorkingDirectory):/tmp/lint github/super-linter
+        docker run -e RUN_LOCAL=true -e VALIDATE_POWERSHELL=false -v $(System.DefaultWorkingDirectory):/tmp/lint github/super-linter
       displayName: 'GitHub Super-Linter'
 
   - job: build
@@ -23,7 +23,7 @@ jobs:
     variables:
       solution: '**/*.sln'
       buildPlatform: 'Any CPU'
-      buildConfiguration: 'Release'      
+      buildConfiguration: 'Release'
     steps:
     - task: UseDotNet@2
       inputs:
@@ -46,7 +46,7 @@ jobs:
         command: 'restore'
 
     - task: DotNetCoreCLI@2
-      displayName: 
+      displayName:
       inputs:
         command: 'restore'
         projects: 'tests/**/*.csproj'
