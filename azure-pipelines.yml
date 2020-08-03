@@ -13,7 +13,7 @@ jobs:
       vmImage: 'ubuntu-20.04'
     steps:
     - script: docker pull github/super-linter:latest
-      displayName: Get GitHub Super-Linter image
+      displayName: Pull GitHub Super-Linter image
     - script: >-
         docker run \
           -e RUN_LOCAL=true \
