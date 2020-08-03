@@ -1,68 +1,82 @@
 trigger:
 - '*'
 
-pool:
-  vmImage: 'windows-2019'
-
 variables:
   patch: $[counter('versioncounter', 89)]
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
 
 name: 1.0.$(patch)
 
-steps:
-- task: UseDotNet@2
-  inputs:
-    packageType: 'sdk'
-    version: '3.1.x'
+jobs:
+  - job: linter
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - script: docker pull github/super-linter:latest
+      displayName: Pull GitHub Super-Linter image
+    - script: >-
+        docker run \
+          -e RUN_LOCAL=true \
+          -e VALIDATE_POWERSHELL=false \
+          -v $(System.DefaultWorkingDirectory):/tmp/lint \
+          github/super-linter
+      displayName: 'Run GitHub Super-Linter'
 
-- task: NuGetToolInstaller@1
-  inputs:
-    versionSpec: 5.6.0
+  - job: build
+    pool:
+      vmImage: 'windows-2019'
+    variables:
+      solution: '**/*.sln'
+      buildPlatform: 'Any CPU'
+      buildConfiguration: 'Release'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '3.1.x'
 
-- task: PowerShell@2
-  displayName: Update version
-  inputs:
-    filePath: 'build\update-version.ps1'
-    arguments: '$(Build.BuildNumber)'
-    pwsh: true
+    - task: NuGetToolInstaller@1
+      inputs:
+        versionSpec: 5.6.0
 
-- task: NuGetCommand@2
-  inputs:
-    command: 'restore'
+    - task: PowerShell@2
+      displayName: Update version
+      inputs:
+        filePath: 'build\update-version.ps1'
+        arguments: '$(Build.BuildNumber)'
+        pwsh: true
 
-- task: DotNetCoreCLI@2
-  displayName: 
-  inputs:
-    command: 'restore'
-    projects: 'tests/**/*.csproj'
+    - task: NuGetCommand@2
+      inputs:
+        command: 'restore'
 
-- task: VSBuild@1
-  inputs:
-    solution: '**\*.sln'
-    maximumCpuCount: true
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    - task: DotNetCoreCLI@2
+      displayName:
+      inputs:
+        command: 'restore'
+        projects: 'tests/**/*.csproj'
 
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    - task: VSBuild@1
+      inputs:
+        solution: '**\*.sln'
+        maximumCpuCount: true
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
 
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: '$(Build.SourcesDirectory)'
-    Contents: |
-      README.md
-      build/**
-      **/*.vsix
-      **/*.nupkg
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: VSTest@2
+      inputs:
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
 
-- task: PublishPipelineArtifact@0
-  inputs:
-    artifactName: 'drop'
-    targetPath: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: |
+          README.md
+          build/**
+          **/*.vsix
+          **/*.nupkg
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: drop

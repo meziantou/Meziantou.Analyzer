@@ -1,3 +1,5 @@
+# Meziantou.Analyzer's rules
+
 |Id|Category|Description|Severity|Is enabled|Code fix|
 |--|--------|-----------|:------:|:--------:|:------:|
 |[MA0001](Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|
@@ -31,7 +33,7 @@
 |[MA0029](Rules/MA0029.md)|Performance|Optimize LINQ usage|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0030](Rules/MA0030.md)|Performance|Optimize LINQ usage|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0031](Rules/MA0031.md)|Performance|Optimize Enumerable.Count usage|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0032](Rules/MA0032.md)|Usage|Use a cancellation token|<span title='Hidden'>👻</span>|✔️|❌|
+|[MA0032](Rules/MA0032.md)|Usage|Use a cancellation token|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0033](Rules/MA0033.md)|Design|Don't tag instance fields with ThreadStaticAttribute|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0035](Rules/MA0035.md)|Usage|Don't use dangerous threading methods|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0036](Rules/MA0036.md)|Design|Make class static|<span title='Info'>ℹ️</span>|✔️|✔️|
@@ -43,7 +45,7 @@
 |[MA0042](Rules/MA0042.md)|Design|Do not use blocking call|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0043](Rules/MA0043.md)|Usage|Use nameof operator|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0044](Rules/MA0044.md)|Performance|Remove ToString call|<span title='Info'>ℹ️</span>|✔️|❌|
-|[MA0045](Rules/MA0045.md)|Design|Do not use blocking call (make method async)|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0045](Rules/MA0045.md)|Design|Do not use blocking call (make method async)|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0046](Rules/MA0046.md)|Design|Use EventHandler\<T\>|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0047](Rules/MA0047.md)|Design|Declare types in namespaces|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0048](Rules/MA0048.md)|Design|File name must match type name|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -78,7 +80,7 @@
 |[MA0077](Rules/MA0077.md)|Design|A class that provides Equals(T) should implement IEquatable\<T\>|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0078](Rules/MA0078.md)|Performance|Use 'Cast' instead of 'Select' to cast|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0079](Rules/MA0079.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Info'>ℹ️</span>|✔️|❌|
-|[MA0080](Rules/MA0080.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Hidden'>👻</span>|✔️|❌|
+|[MA0080](Rules/MA0080.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0081](Rules/MA0081.md)|Design|Method overrides should not omit params keyword|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0082](Rules/MA0082.md)|Design|NaN should not be used in comparisons|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0083](Rules/MA0083.md)|Design|ConstructorArgument parameters should exist in constructors|<span title='Warning'>⚠️</span>|✔️|❌|
