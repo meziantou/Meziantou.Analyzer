@@ -17,61 +17,61 @@ jobs:
         docker run -e RUN_LOCAL=true -v $(System.DefaultWorkingDirectory):/tmp/lint github/super-linter
       displayName: 'GitHub Super-Linter'
 
-  # - job: build
-  #   pool:
-  #     vmImage: 'windows-2019'
-  #   variables:
-  #     solution: '**/*.sln'
-  #     buildPlatform: 'Any CPU'
-  #     buildConfiguration: 'Release'      
-  #   steps:
-  #   - task: UseDotNet@2
-  #     inputs:
-  #       packageType: 'sdk'
-  #       version: '3.1.x'
+  - job: build
+    pool:
+      vmImage: 'windows-2019'
+    variables:
+      solution: '**/*.sln'
+      buildPlatform: 'Any CPU'
+      buildConfiguration: 'Release'      
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '3.1.x'
 
-  #   - task: NuGetToolInstaller@1
-  #     inputs:
-  #       versionSpec: 5.6.0
+    - task: NuGetToolInstaller@1
+      inputs:
+        versionSpec: 5.6.0
 
-  #   - task: PowerShell@2
-  #     displayName: Update version
-  #     inputs:
-  #       filePath: 'build\update-version.ps1'
-  #       arguments: '$(Build.BuildNumber)'
-  #       pwsh: true
+    - task: PowerShell@2
+      displayName: Update version
+      inputs:
+        filePath: 'build\update-version.ps1'
+        arguments: '$(Build.BuildNumber)'
+        pwsh: true
 
-  #   - task: NuGetCommand@2
-  #     inputs:
-  #       command: 'restore'
+    - task: NuGetCommand@2
+      inputs:
+        command: 'restore'
 
-  #   - task: DotNetCoreCLI@2
-  #     displayName: 
-  #     inputs:
-  #       command: 'restore'
-  #       projects: 'tests/**/*.csproj'
+    - task: DotNetCoreCLI@2
+      displayName: 
+      inputs:
+        command: 'restore'
+        projects: 'tests/**/*.csproj'
 
-  #   - task: VSBuild@1
-  #     inputs:
-  #       solution: '**\*.sln'
-  #       maximumCpuCount: true
-  #       platform: '$(buildPlatform)'
-  #       configuration: '$(buildConfiguration)'
+    - task: VSBuild@1
+      inputs:
+        solution: '**\*.sln'
+        maximumCpuCount: true
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
 
-  #   - task: VSTest@2
-  #     inputs:
-  #       platform: '$(buildPlatform)'
-  #       configuration: '$(buildConfiguration)'
+    - task: VSTest@2
+      inputs:
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
 
-  #   - task: CopyFiles@2
-  #     inputs:
-  #       SourceFolder: '$(Build.SourcesDirectory)'
-  #       Contents: |
-  #         README.md
-  #         build/**
-  #         **/*.vsix
-  #         **/*.nupkg
-  #       TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: |
+          README.md
+          build/**
+          **/*.vsix
+          **/*.nupkg
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
-  #   - publish: $(Build.ArtifactStagingDirectory)
-  #     artifact: drop
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: drop
