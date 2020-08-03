@@ -15,7 +15,10 @@ jobs:
     variables:
       RUN_LOCAL: true
     steps:
-    - script: printenv
+    - script: |
+        docker pull github/super-linter:latest
+        docker run -e RUN_LOCAL=true -v $(System.DefaultWorkingDirectory):/tmp/lint github/super-linter
+      displayName: 'GitHub Super-Linter'
 
   # - job: build
   #   pool:
