@@ -12,10 +12,15 @@ jobs:
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
-    - script: |
-        docker pull github/super-linter:latest
-        docker run -e RUN_LOCAL=true -e VALIDATE_POWERSHELL=false -v $(System.DefaultWorkingDirectory):/tmp/lint github/super-linter
-      displayName: 'GitHub Super-Linter'
+    - script: docker pull github/super-linter:latest
+      displayName: Get GitHub Super-Linter image
+    - script: >-        
+        docker run 
+          -e RUN_LOCAL=true 
+          -e VALIDATE_POWERSHELL=false 
+          -v $(System.DefaultWorkingDirectory):/tmp/lint 
+          github/super-linter
+      displayName: 'Run GitHub Super-Linter'
 
   - job: build
     pool:
