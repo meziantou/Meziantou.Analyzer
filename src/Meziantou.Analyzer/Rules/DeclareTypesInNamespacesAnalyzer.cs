@@ -30,7 +30,7 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass)
+            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains("$"))
                 return;
 
             if (symbol.ContainingType == null && (symbol.ContainingNamespace?.IsGlobalNamespace ?? true))

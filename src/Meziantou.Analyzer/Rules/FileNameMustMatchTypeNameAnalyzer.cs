@@ -33,7 +33,7 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass)
+            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains("$"))
                 return;
 
             foreach (var location in symbol.Locations)
