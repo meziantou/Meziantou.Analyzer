@@ -100,6 +100,9 @@ namespace Meziantou.Analyzer.Rules
                 var operation = (IInvocationOperation)context.Operation;
                 var targetMethod = operation.TargetMethod;
 
+                if (IsTaskSymbol(targetMethod.ReturnType))
+                    return;
+
                 if (operation.IsInNameofOperation())
                     return;
 
@@ -135,12 +138,12 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 // Console.Out|Error.Write
-                if(string.Equals(targetMethod.Name, "Write", StringComparison.Ordinal) ||
+                if (string.Equals(targetMethod.Name, "Write", StringComparison.Ordinal) ||
                    string.Equals(targetMethod.Name, "WriteLine", StringComparison.Ordinal) ||
                    string.Equals(targetMethod.Name, "Flush", StringComparison.Ordinal))
                 {
                     var left = operation.Children.FirstOrDefault();
-                    if(left is IMemberReferenceOperation memberReference)
+                    if (left is IMemberReferenceOperation memberReference)
                     {
                         if (ConsoleErrorAndOutSymbols?.Contains(memberReference.Member) == true)
                             return;
@@ -169,7 +172,7 @@ namespace Meziantou.Analyzer.Rules
                             if (!string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) && !string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal))
                                 return false;
 
-                            if (!methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol))
+                            if (!IsTaskSymbol(methodSymbol.ReturnType))
                                 return false;
 
                             if (methodSymbol.IsObsolete(context.Compilation))
@@ -184,6 +187,11 @@ namespace Meziantou.Analyzer.Rules
                         return false;
                     }
                 }
+            }
+
+            private bool IsTaskSymbol(ITypeSymbol symbol)
+            {
+                return symbol.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol);
             }
 
             internal void AnalyzePropertyReference(OperationAnalysisContext context)
