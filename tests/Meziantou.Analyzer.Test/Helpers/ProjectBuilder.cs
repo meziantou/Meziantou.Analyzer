@@ -134,6 +134,8 @@ namespace TestHelper
             ;
 
         public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
+        
+        public ProjectBuilder AddSystemTextJson() => AddNuGetReference("System.Text.Json", "4.7.2", "lib/netstandard2.0/");
 
         public ProjectBuilder WithSourceCode(string sourceCode)
         {

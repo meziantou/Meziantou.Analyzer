@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Xunit;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -43,7 +43,7 @@ class Test
 }")
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task Async_ValueTask_Result_Diagnostic()
         {
@@ -58,7 +58,7 @@ class Test
 }")
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task Async_ValueTask_GetAwaiter_Diagnostic()
         {
@@ -180,7 +180,7 @@ class Test
 }")
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
         {
@@ -200,7 +200,34 @@ class Test
 }")
                   .ValidateAsync();
         }
-        
+
+        [Fact]
+        [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/169")]
+        public async Task AsyncMethodWithAsyncOverload()
+        {
+            await CreateProjectBuilder()
+                    .AddSystemTextJson()
+                    .WithSourceCode(@"
+using System;
+using System.IO;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        var responseStream = new MemoryStream();
+        var SerializerOptions = new JsonSerializerOptions();
+        var ct = CancellationToken.None;
+        await JsonSerializer.DeserializeAsync<Program>(responseStream, SerializerOptions, ct).ConfigureAwait(false);
+    }
+}
+")
+                  .ValidateAsync();
+        }
+
         [Fact]
         public async Task Method_NoOverload_NoDiagnostic()
         {
