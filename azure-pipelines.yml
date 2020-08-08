@@ -1,5 +1,18 @@
 trigger:
-- '*'
+  branches:
+    include:
+    - '*'
+  paths:
+    include:
+    - src/*
+    - tests/*
+    - Directory.Build.props
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - '*'
 
 variables:
   patch: $[counter('versioncounter', 89)]
