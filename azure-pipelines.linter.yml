@@ -1,0 +1,27 @@
+trigger:
+  branches:
+    include:
+    - '*'
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - '*'
+
+stages:
+- stage: build
+  jobs:
+  - job: linter
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - script: docker pull github/super-linter:latest
+      displayName: Pull GitHub Super-Linter image
+    - script: >-
+        docker run \
+          -e RUN_LOCAL=true \
+          -e VALIDATE_POWERSHELL=false \
+          -v $(System.DefaultWorkingDirectory):/tmp/lint \
+          github/super-linter
+      displayName: 'Run GitHub Super-Linter'
