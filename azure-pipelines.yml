@@ -7,7 +7,9 @@ variables:
 
 name: 1.0.$(patch)
 
-jobs:
+stages:
+- stage: build
+  jobs:
   - job: linter
     pool:
       vmImage: 'ubuntu-20.04'
@@ -80,3 +82,42 @@ jobs:
 
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: drop
+
+- stage: deploy
+  dependsOn:
+    - build
+  condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+  jobs:
+  - deployment: publish_nuget
+    displayName: Publish NuGet package
+    pool:
+      vmImage: 'windows-2019'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: NuGetCommand@2
+            displayName: 'NuGet push'
+            inputs:
+              command: push
+              packagesToPush: '$(System.DefaultWorkingDirectory)/**/*.nupkg'
+              nuGetFeedType: external
+              publishFeedCredentials: 'Nuget.org - VSTS Token'
+              
+  - deployment: publish_vsix
+    displayName: Publish VSIX package
+    pool:
+      vmImage: 'windows-2019'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: PowerShell@2
+            displayName: 'Publish VSIX to marketplace'
+            inputs:
+              targetType: filePath
+              filePath: './$(System.DefaultWorkingDirectory)/_meziantou.Meziantou.Analyzer/drop/build/publish-vsix.ps1'
+              arguments: '$(MarketplacePAT)'
+              pwsh: true
