@@ -100,7 +100,7 @@ stages:
             displayName: 'NuGet push'
             inputs:
               command: push
-              packagesToPush: '$(System.DefaultWorkingDirectory)/**/*.nupkg'
+              packagesToPush: '$(Pipeline.Workspace)/drop/**/*.nupkg'
               nuGetFeedType: external
               publishFeedCredentials: 'Nuget.org - VSTS Token'
               
@@ -117,6 +117,6 @@ stages:
             displayName: 'Publish VSIX to marketplace'
             inputs:
               targetType: filePath
-              filePath: './$(System.DefaultWorkingDirectory)/_meziantou.Meziantou.Analyzer/drop/build/publish-vsix.ps1'
+              filePath: './$(Pipeline.Workspace)/drop/build/publish-vsix.ps1'
               arguments: '$(MarketplacePAT)'
               pwsh: true
