@@ -126,7 +126,12 @@ namespace Meziantou.Analyzer
 
         public static bool IsEnumeration(this ITypeSymbol? symbol)
         {
-            return symbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.EnumUnderlyingType != null;
+            return GetEnumerationType(symbol) != null;
+        }
+        
+        public static INamedTypeSymbol? GetEnumerationType(this ITypeSymbol? symbol)
+        {
+            return (symbol as INamedTypeSymbol)?.EnumUnderlyingType;
         }
 
         public static bool IsNumberType(this ITypeSymbol? symbol)

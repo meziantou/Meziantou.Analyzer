@@ -246,5 +246,76 @@ class Test
                   .ShouldFixCodeWith(fixedCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task OptimizeLinq_IntEnumToByte()
+        {
+            var originalCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+enum TestEnum
+{
+    A,
+    B,
+}
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<TestEnum>();
+        source.Select(item => (byte)item);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task OptimizeLinq_ByteEnumToByte()
+        {
+            var originalCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+enum TestEnum : byte
+{
+    A,
+    B,
+}
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<TestEnum>();
+        source.[|Select|](item => (byte)item);
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+enum TestEnum : byte
+{
+    A,
+    B,
+}
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<TestEnum>();
+        source.Cast<byte>();
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(fixedCode)
+                  .ValidateAsync();
+        }
     }
 }

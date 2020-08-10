@@ -632,7 +632,7 @@ namespace Meziantou.Analyzer.Rules
             // Ensure the code is valid after replacement. The semantic may be different if you use Cast<T>() instead of Select(x => (T)x).
             // Current conversion: (Type)value
             // Cast<T>() conversion: (Type)(object)value
-            if (castOp.Conversion.IsUserDefined || castOp.Conversion.IsNumeric)
+            if (!CanReplaceByCast(castOp))
                 return;
 
             // Determine if we're casting to a nullable type.
@@ -648,6 +648,24 @@ namespace Meziantou.Analyzer.Rules
                .Add("CastType", castType);
 
             context.ReportDiagnostic(s_useCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
+
+            static bool CanReplaceByCast(IConversionOperation op)
+            {
+                if (op.Conversion.IsUserDefined || op.Conversion.IsNumeric)
+                    return false;
+
+                // Handle enums: source.Select<MyEnum, byte>(item => (byte)item);
+                // Using Cast<T> is only possible when the enum underlying type is the same as the conversion type
+                var operandActualType = op.Operand.GetActualType();
+                var enumerationType = operandActualType.GetEnumerationType();
+                if (enumerationType != null)
+                {
+                    if (!enumerationType.IsEqualTo(op.Type))
+                        return false;
+                }
+
+                return true;
+            }
         }
 
         private static IInvocationOperation? GetParentLinqOperation(IOperation op)
