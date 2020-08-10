@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Xunit;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -96,6 +96,225 @@ class Test
 }}";
             await CreateProjectBuilder()
                   .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task OptimizeLinq_ExplicitCastIsRequired()
+        {
+            var originalCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<int>();
+        source.Select(item => (byte)item);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
+        public async Task OptimizeLinq_UserDefinedImplicitOperator()
+        {
+            var originalCode = @"
+using System;
+using System.Linq;
+
+static class P
+{
+    static void Main()
+    {
+        var foos = new[] { new Foo(""1""), new Foo(""42"") };
+        foreach (var i in foos.Select(x => (int)x))
+        {
+            Console.WriteLine(i);
+        }
+    }
+}
+
+class Foo
+{
+    private readonly string _value;
+    public Foo(string value) => _value = value;
+
+    public static implicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
+        public async Task OptimizeLinq_UserDefinedImplicitOperator_ImplicitUse()
+        {
+            var originalCode = @"
+using System;
+using System.Linq;
+
+static class P
+{
+    static void Main()
+    {
+        var foos = new[] { new Foo(""1""), new Foo(""42"") };
+        foreach (var i in foos.Select<Foo, int>(x => x))
+        {
+            Console.WriteLine(i);
+        }
+    }
+}
+
+class Foo
+{
+    private readonly string _value;
+    public Foo(string value) => _value = value;
+
+    public static implicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task OptimizeLinq_UserDefinedExplicitOperator()
+        {
+            var originalCode = @"
+using System;
+using System.Linq;
+
+static class P
+{
+    static void Main()
+    {
+        var foos = new[] { new Foo(""1""), new Foo(""42"") };
+        foreach (var i in foos.Select(x => (int)x))
+        {
+            Console.WriteLine(i);
+        }
+    }
+}
+
+class Foo
+{
+    private readonly string _value;
+    public Foo(string value) => _value = value;
+
+    public static explicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task OptimizeLinq_IntToObject()
+        {
+            var originalCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<int>();
+        source.[|Select|](item => (object)item);
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<int>();
+        source.Cast<object>();
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(fixedCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task OptimizeLinq_IntEnumToByte()
+        {
+            var originalCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+enum TestEnum
+{
+    A,
+    B,
+}
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<TestEnum>();
+        source.Select(item => (byte)item);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task OptimizeLinq_ByteEnumToByte()
+        {
+            var originalCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+enum TestEnum : byte
+{
+    A,
+    B,
+}
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<TestEnum>();
+        source.[|Select|](item => (byte)item);
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+using System.Collections.Generic;
+
+enum TestEnum : byte
+{
+    A,
+    B,
+}
+
+class Test
+{
+    public Test()
+    {
+        var source = System.Linq.Enumerable.Empty<TestEnum>();
+        source.Cast<byte>();
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(originalCode)
+                  .ShouldFixCodeWith(fixedCode)
                   .ValidateAsync();
         }
     }

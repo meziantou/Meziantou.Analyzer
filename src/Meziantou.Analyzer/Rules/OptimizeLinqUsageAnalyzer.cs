@@ -617,7 +617,6 @@ namespace Meziantou.Analyzer.Rules
 
             var selectorArg = operation.Arguments[1];
 
-            // Get the selector's return operation
             var returnOp = selectorArg.Descendants().OfType<IReturnOperation>().FirstOrDefault();
             if (returnOp is null)
                 return;
@@ -628,6 +627,12 @@ namespace Meziantou.Analyzer.Rules
 
             // If the cast is not applied directly to the source element (one of the selector's arguments)
             if (castOp.Operand.Kind != OperationKind.ParameterReference)
+                return;
+
+            // Ensure the code is valid after replacement. The semantic may be different if you use Cast<T>() instead of Select(x => (T)x).
+            // Current conversion: (Type)value
+            // Cast<T>() conversion: (Type)(object)value
+            if (!CanReplaceByCast(castOp))
                 return;
 
             // Determine if we're casting to a nullable type.
@@ -643,6 +648,24 @@ namespace Meziantou.Analyzer.Rules
                .Add("CastType", castType);
 
             context.ReportDiagnostic(s_useCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
+
+            static bool CanReplaceByCast(IConversionOperation op)
+            {
+                if (op.Conversion.IsUserDefined || op.Conversion.IsNumeric)
+                    return false;
+
+                // Handle enums: source.Select<MyEnum, byte>(item => (byte)item);
+                // Using Cast<T> is only possible when the enum underlying type is the same as the conversion type
+                var operandActualType = op.Operand.GetActualType();
+                var enumerationType = operandActualType.GetEnumerationType();
+                if (enumerationType != null)
+                {
+                    if (!enumerationType.IsEqualTo(op.Type))
+                        return false;
+                }
+
+                return true;
+            }
         }
 
         private static IInvocationOperation? GetParentLinqOperation(IOperation op)
