@@ -6,7 +6,9 @@ trigger:
     include:
     - src/*
     - tests/*
+    - azure-pipelines.yml
     - Directory.Build.props
+    - Meziantou.Analyzer.sln
 
 pr:
   autoCancel: true
