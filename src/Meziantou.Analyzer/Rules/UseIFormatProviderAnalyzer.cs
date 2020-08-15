@@ -47,6 +47,10 @@ namespace Meziantou.Analyzer.Rules
                 if (operation.TargetMethod.ContainingType.IsBoolean())
                     return;
 
+                // Char.ToString(IFormatProvider) should not be used
+                if (operation.TargetMethod.ContainingType.IsChar())
+                    return;
+
                 // Guid.ToString(IFormatProvider) should not be used
                 if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
                     return;

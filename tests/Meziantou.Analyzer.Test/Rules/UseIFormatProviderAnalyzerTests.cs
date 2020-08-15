@@ -1,7 +1,7 @@
-﻿using Meziantou.Analyzer.Rules;
-using Xunit;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using TestHelper;
-using System.Threading.Tasks;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -72,6 +72,22 @@ class TypeName
     {
         default(System.Guid).ToString();
         default(System.Guid).ToString(""D"");
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task SystemCharToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        ' '.ToString();
     }
 }";
             await CreateProjectBuilder()
