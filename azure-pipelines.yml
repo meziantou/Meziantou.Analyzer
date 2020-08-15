@@ -34,13 +34,15 @@ stages:
       buildConfiguration: 'Release'
     steps:
     - task: UseDotNet@2
+      displayName: Install .NET SDK
       inputs:
         packageType: 'sdk'
-        version: '3.1.x'
+        version: '3.1.302'
 
     - task: NuGetToolInstaller@1
+      displayName: Install NuGet
       inputs:
-        versionSpec: 5.6.0
+        versionSpec: 5.7.0
 
     - task: PowerShell@2
       displayName: Update version
@@ -50,16 +52,12 @@ stages:
         pwsh: true
 
     - task: NuGetCommand@2
+      displayName: NuGet Restore
       inputs:
         command: 'restore'
-
-    - task: DotNetCoreCLI@2
-      displayName:
-      inputs:
-        command: 'restore'
-        projects: 'tests/**/*.csproj'
 
     - task: VSBuild@1
+      displayName: Build solution
       inputs:
         solution: '**\*.sln'
         maximumCpuCount: true
@@ -67,11 +65,13 @@ stages:
         configuration: '$(buildConfiguration)'
 
     - task: VSTest@2
+      displayName: Run tests
       inputs:
         platform: '$(buildPlatform)'
         configuration: '$(buildConfiguration)'
 
     - task: CopyFiles@2
+      displayName: Prepare artifacts
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)'
         Contents: |
