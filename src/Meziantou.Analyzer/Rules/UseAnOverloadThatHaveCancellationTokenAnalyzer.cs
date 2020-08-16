@@ -155,7 +155,7 @@ namespace Meziantou.Analyzer.Rules
                     collection = conversion.Operand;
                 }
 
-                if (collection is IInvocationOperation invocation)
+                while (collection is IInvocationOperation invocation)
                 {
                     if (HasExplicitCancellationTokenArgument(invocation))
                         return;
@@ -163,6 +163,8 @@ namespace Meziantou.Analyzer.Rules
                     // Already handled by AnalyzeInvocation
                     if (HasAnOverloadWithCancellationToken(invocation))
                         return;
+
+                    collection = invocation.Children.FirstOrDefault();
                 }
 
                 var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(op));

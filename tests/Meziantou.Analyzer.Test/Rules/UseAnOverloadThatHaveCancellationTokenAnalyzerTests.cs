@@ -361,5 +361,31 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task AwaitForEach_IAsyncEnumerable_WithCancellationAndConfigureAwait()
+        {
+            const string SourceCode = @"
+using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+class Test
+{
+    public static async Task A(IAsyncEnumerable<int> enumerable)
+    {
+        var ct = new CancellationToken();
+        await foreach (var item in enumerable.WithCancellation(ct).ConfigureAwait(false))
+        {
+        }
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .AddAsyncInterfaceApi()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
