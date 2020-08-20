@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Xunit;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {

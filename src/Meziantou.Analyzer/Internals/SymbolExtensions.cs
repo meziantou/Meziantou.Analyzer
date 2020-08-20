@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer
             return SymbolEqualityComparer.Default.Equals(expectedType, symbol);
         }
 
-        public static bool IsVisibleOutsideOfAssembly([NotNullWhen(true)]this ISymbol? symbol)
+        public static bool IsVisibleOutsideOfAssembly([NotNullWhen(true)] this ISymbol? symbol)
         {
             if (symbol == null)
                 return false;

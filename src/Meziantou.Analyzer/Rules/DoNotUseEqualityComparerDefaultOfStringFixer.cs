@@ -27,7 +27,7 @@ namespace Meziantou.Analyzer.Rules
 
             RegisterCodeFix(nameof(StringComparer.Ordinal));
             RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
-            
+
             void RegisterCodeFix(string comparerName)
             {
                 var title = "Use StringComparer." + comparerName;

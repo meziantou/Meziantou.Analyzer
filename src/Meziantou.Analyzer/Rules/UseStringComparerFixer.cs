@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer.Rules
         {
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
-            var semanticModel = editor.SemanticModel;            
+            var semanticModel = editor.SemanticModel;
 
             var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
             var newArgument = (ArgumentSyntax)generator.Argument(

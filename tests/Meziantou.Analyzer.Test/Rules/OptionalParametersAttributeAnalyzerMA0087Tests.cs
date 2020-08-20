@@ -27,7 +27,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task BothAttributes()
         {

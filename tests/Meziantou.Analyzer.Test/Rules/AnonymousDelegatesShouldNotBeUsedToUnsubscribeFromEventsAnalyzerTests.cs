@@ -31,7 +31,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task UnsubscribeWithAction()
         {
@@ -51,7 +51,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-         
+
         [Fact]
         public async Task UnsubscribeWithLocalFunction()
         {
@@ -72,7 +72,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task UnsubscribeWithDelegate()
         {

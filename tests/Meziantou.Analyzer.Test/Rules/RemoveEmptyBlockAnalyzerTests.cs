@@ -33,7 +33,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task ElseBlockContainingABlock()
         {
@@ -78,7 +78,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task ElseBlockWithMultilineComment()
         {

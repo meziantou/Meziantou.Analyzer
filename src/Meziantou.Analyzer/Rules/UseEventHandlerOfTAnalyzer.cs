@@ -57,7 +57,7 @@ namespace Meziantou.Analyzer.Rules
                 context.ReportDiagnostic(s_rule, symbol, message);
             }
 
-            private bool IsValidSignature(IMethodSymbol methodSymbol, [NotNullWhen(false)]out string? message)
+            private bool IsValidSignature(IMethodSymbol methodSymbol, [NotNullWhen(false)] out string? message)
             {
                 if (!methodSymbol.ReturnsVoid)
                 {
