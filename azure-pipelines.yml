@@ -35,6 +35,7 @@ stages:
         docker run \
           -e RUN_LOCAL=true \
           -e VALIDATE_POWERSHELL=false \
+          -e VALIDATE_EDITORCONFIG=false \
           -v $(System.DefaultWorkingDirectory):/tmp/lint \
           github/super-linter
       displayName: 'Run GitHub Super-Linter'
