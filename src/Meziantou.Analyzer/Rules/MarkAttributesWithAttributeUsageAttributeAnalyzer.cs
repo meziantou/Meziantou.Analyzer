@@ -35,10 +35,29 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (!symbol.InheritsFrom(attributeType) || symbol.HasAttribute(attributeUsageAttributeType))
+            if (symbol.IsAbstract)
+                return;
+
+            if (!symbol.InheritsFrom(attributeType))
+                return;
+
+            if (HasAttributeUsageAttribute(symbol, attributeType, attributeUsageAttributeType))
                 return;
 
             context.ReportDiagnostic(s_rule, symbol);
+        }
+
+        private static bool HasAttributeUsageAttribute(INamedTypeSymbol? symbol, ITypeSymbol attributeSymbol, ITypeSymbol attributeUsageSymbol)
+        {
+            while (symbol != null && !symbol.IsEqualTo(attributeSymbol))
+            {
+                if (symbol.HasAttribute(attributeUsageSymbol))
+                    return true;
+
+                symbol = symbol.BaseType;
+            }
+
+            return false;
         }
     }
 }

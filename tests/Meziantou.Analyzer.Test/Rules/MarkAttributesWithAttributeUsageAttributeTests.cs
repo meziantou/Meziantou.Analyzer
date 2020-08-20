@@ -47,5 +47,32 @@ class TestAttribute : System.Attribute { }";
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task AbstractClass_ShouldNotReportError()
+        {
+            const string SourceCode = @"
+abstract class TestAttribute : System.Attribute { }
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task ParentClassHasAttribute_ShouldNotReportError()
+        {
+            const string SourceCode = @"
+[System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
+class TestAttribute : System.Attribute { }
+class ChildTestAttribute : TestAttribute { }
+class GrandChildTestAttribute : ChildTestAttribute { }
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
