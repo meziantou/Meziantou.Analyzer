@@ -25,6 +25,43 @@ name: 1.0.$(patch)
 stages:
 - stage: build
   jobs:
+  - job: linter_global
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - script: docker pull github/super-linter:latest
+      displayName: Pull GitHub Super-Linter image
+    - script: >-
+        docker run \
+          -e RUN_LOCAL=true \
+          -e VALIDATE_POWERSHELL=false \
+          -v $(System.DefaultWorkingDirectory):/tmp/lint \
+          github/super-linter
+      displayName: 'Run GitHub Super-Linter'
+
+  - job: linter_dotnet
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '3.1.101'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Install dotnet format'
+      inputs:
+        command: 'custom'
+        custom: 'tool'
+        arguments: 'update -g dotnet-format'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Lint dotnet'
+      inputs:
+        command: 'custom'
+        custom: 'format'
+        arguments: '--dry-run --check --verbosity diagnostic'
+
   - job: build
     pool:
       vmImage: 'windows-2019'

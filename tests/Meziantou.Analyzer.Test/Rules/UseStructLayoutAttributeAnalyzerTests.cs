@@ -1,7 +1,7 @@
-﻿using Meziantou.Analyzer.Rules;
-using Xunit;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using TestHelper;
-using System.Threading.Tasks;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -28,7 +28,7 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithSourceCode(SourceCode)
                 .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task MissingAttribute_ShouldReportDiagnostic()
         {

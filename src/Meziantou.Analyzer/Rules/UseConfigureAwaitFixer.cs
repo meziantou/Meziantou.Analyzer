@@ -63,7 +63,7 @@ namespace Meziantou.Analyzer.Rules
                     return editor.GetChangedDocument();
                 }
             }
-            else if(nodeToFix is ExpressionSyntax expressionSyntax)
+            else if (nodeToFix is ExpressionSyntax expressionSyntax)
             {
                 var newExpression = (ExpressionSyntax)generator.InvocationExpression(
                         generator.MemberAccessExpression(expressionSyntax, nameof(Task.ConfigureAwait)),

@@ -128,7 +128,7 @@ namespace Meziantou.Analyzer
         {
             return GetEnumerationType(symbol) != null;
         }
-        
+
         public static INamedTypeSymbol? GetEnumerationType(this ITypeSymbol? symbol)
         {
             return (symbol as INamedTypeSymbol)?.EnumUnderlyingType;

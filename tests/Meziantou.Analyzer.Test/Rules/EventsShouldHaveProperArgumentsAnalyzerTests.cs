@@ -31,7 +31,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task ValidArguments_InstanceEvent()
         {
@@ -50,7 +50,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task InvalidSender_Instance()
         {
@@ -69,7 +69,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task InvalidSender_Static()
         {
@@ -88,7 +88,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task InvalidEventArgs()
         {
@@ -107,7 +107,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task EventIsStoredInVariable()
         {
@@ -130,7 +130,7 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task EventIsStoredInVariableInVariable()
         {

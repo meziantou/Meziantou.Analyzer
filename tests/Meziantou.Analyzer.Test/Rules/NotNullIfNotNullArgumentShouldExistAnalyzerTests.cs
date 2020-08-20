@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Xunit;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -34,7 +34,7 @@ namespace System.Diagnostics.CodeAnalysis
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task ParameterExists()
         {

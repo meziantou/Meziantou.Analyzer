@@ -15,7 +15,7 @@ namespace Meziantou.Analyzer.Configurations
             _projectEditorConfigFile = rootEditorConfigFile;
         }
 
-        public bool TryGetValue(string filePath, string key, [NotNullWhen(true)]out string? result)
+        public bool TryGetValue(string filePath, string key, [NotNullWhen(true)] out string? result)
         {
             if (_projectEditorConfigFile.TryGetValue(key, out result))
                 return true;

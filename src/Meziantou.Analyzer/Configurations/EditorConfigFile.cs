@@ -16,7 +16,7 @@ namespace Meziantou.Analyzer.Configurations
             _configurations = configurations ?? throw new ArgumentNullException(nameof(configurations));
         }
 
-        public bool TryGetValue(string key, [NotNullWhen(true)]out string? result)
+        public bool TryGetValue(string key, [NotNullWhen(true)] out string? result)
         {
             return _configurations.TryGetValue(key, out result);
         }

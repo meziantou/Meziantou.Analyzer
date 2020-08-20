@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Xunit;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -323,7 +323,7 @@ class Test
 }")
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task AppendLine_InterpolatedString_FinishWithChar()
         {

@@ -655,10 +655,10 @@ class TestClass
                   .ValidateAsync();
         }
 
-[Fact]
-public async Task Test_EmptyIf()
-{
-    var originalCode = @"
+        [Fact]
+        public async Task Test_EmptyIf()
+        {
+            var originalCode = @"
 using System;
 class TestClass
 {
@@ -681,9 +681,9 @@ void Test()
     }
 }
 }";
-    await CreateProjectBuilder()
-            .WithSourceCode(originalCode)
-            .ValidateAsync();
-}
+            await CreateProjectBuilder()
+                    .WithSourceCode(originalCode)
+                    .ValidateAsync();
+        }
     }
 }

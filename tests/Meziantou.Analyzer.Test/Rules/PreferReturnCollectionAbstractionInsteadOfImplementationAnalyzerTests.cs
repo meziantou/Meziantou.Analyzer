@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
-using Xunit;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -129,7 +129,7 @@ public class Test
 
             await project.ValidateAsync();
         }
-        
+
         [Fact]
         public async Task Properties_XmlSerializable_XmlIgnore()
         {
@@ -146,7 +146,7 @@ public class Test
 
             await project.ValidateAsync();
         }
-        
+
         [Fact]
         public async Task Properties_XmlSerializable_PropertyAttribute()
         {
@@ -163,7 +163,7 @@ public class Test
 
             await project.ValidateAsync();
         }
-        
+
         [Fact]
         public async Task Properties_XmlSerializable_ClassAttribute()
         {

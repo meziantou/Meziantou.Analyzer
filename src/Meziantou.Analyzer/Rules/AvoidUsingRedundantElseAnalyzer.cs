@@ -80,7 +80,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)
         {
-            foreach(var child in node.DescendantNodes())
+            foreach (var child in node.DescendantNodes())
             {
                 switch (child)
                 {

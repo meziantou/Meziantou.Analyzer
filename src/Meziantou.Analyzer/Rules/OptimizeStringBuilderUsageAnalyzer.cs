@@ -238,7 +238,7 @@ namespace Meziantou.Analyzer.Rules
             return TryGetConstStringValue(operation, out _);
         }
 
-        private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)]out string? value)
+        private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)] out string? value)
         {
             var sb = new StringBuilder();
             if (TryGetConstStringValue(operation, sb))
