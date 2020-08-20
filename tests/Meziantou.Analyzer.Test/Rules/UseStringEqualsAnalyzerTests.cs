@@ -1,7 +1,7 @@
-﻿using Meziantou.Analyzer.Rules;
-using Xunit;
+﻿using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using TestHelper;
-using System.Threading.Tasks;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
@@ -72,18 +72,16 @@ class TypeName
             const string SourceCode = @"
 class TypeName
 {
-    public void Test()
+    public void Test(string str)
     {
-        string str = """";
         var a = [||]str == ""v"";
     }
 }";
             const string CodeFix = @"
 class TypeName
 {
-    public void Test()
+    public void Test(string str)
     {
-        string str = """";
         var a = string.Equals(str, ""v"", System.StringComparison.Ordinal);
     }
 }";
@@ -95,7 +93,7 @@ class TypeName
         }
 
         [Fact]
-        public async Task Equals_ObjectVariable_stringLiteral_ShouldReportDiagnostic()
+        public async Task Equals_ObjectVariable_stringLiteral_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
@@ -112,15 +110,15 @@ class TypeName
         }
 
         [Fact]
-        public async Task Equals_stringLiteral_null_ShouldReportDiagnostic()
+        public async Task Equals_stringLiteral_null_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
 class TypeName
 {
     public void Test()
     {
-        var a = """" == null;
-        var b = null == """";
+        var a = ""a"" == null;
+        var b = null == ""a"";
     }
 }";
             await CreateProjectBuilder()
@@ -138,6 +136,38 @@ class TypeName
     {
         IQueryable<string> query = null;
         query = query.Where(i => i == ""test"");
+    }
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Equals_EmptyString_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = """" == ""v"";
+    }
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Equals_StringEmpty_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = string.Empty == ""v"";
     }
 }";
             await CreateProjectBuilder()

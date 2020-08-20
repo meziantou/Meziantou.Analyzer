@@ -30,7 +30,7 @@ class [|Test|] : IComparable<string>
     public static bool operator ==(Test a, Test b) => throw null;
     public static bool operator !=(Test a, Test b) => throw null;
 }";
-          
+
             await CreateProjectBuilder()
                   .WithSourceCode(originalCode)
                   .ValidateAsync();

@@ -654,5 +654,36 @@ class TestClass
                   .ShouldFixCodeWith(modifiedCode)
                   .ValidateAsync();
         }
+
+[Fact]
+public async Task Test_EmptyIf()
+{
+    var originalCode = @"
+using System;
+class TestClass
+{
+void Test()
+{
+    try
+    {
+        //DoSomething();
+    }
+    catch (Exception ex)
+    {
+        if (ex is ArgumentException)
+        {
+            // test
+        }
+        else
+        {
+            throw;
+        }
+    }
+}
+}";
+    await CreateProjectBuilder()
+            .WithSourceCode(originalCode)
+            .ValidateAsync();
+}
     }
 }

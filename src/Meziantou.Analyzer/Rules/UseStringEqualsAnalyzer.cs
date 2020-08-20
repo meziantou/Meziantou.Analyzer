@@ -39,6 +39,9 @@ namespace Meziantou.Analyzer.Rules
                     if (IsNull(operation.LeftOperand) || IsNull(operation.RightOperand))
                         return;
 
+                    if (IsStringEmpty(operation.LeftOperand) || IsStringEmpty(operation.RightOperand))
+                        return;
+
                     // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                     // https://github.com/aspnet/EntityFrameworkCore/issues/1222
                     if (operation.IsInExpressionArgument())
@@ -52,6 +55,17 @@ namespace Meziantou.Analyzer.Rules
         private static bool IsNull(IOperation operation)
         {
             return operation.ConstantValue.HasValue && operation.ConstantValue.Value == null;
+        }
+
+        private static bool IsStringEmpty(IOperation operation)
+        {
+            if (operation.ConstantValue.HasValue && (operation.ConstantValue.Value is string str) && str == string.Empty)
+                return true;
+
+            if (operation is IMemberReferenceOperation memberReferenceOperation && memberReferenceOperation.Member.ContainingType.IsString() && memberReferenceOperation.Member.Name == nameof(string.Empty))
+                return true;
+
+            return false;
         }
     }
 }
