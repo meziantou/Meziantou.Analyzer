@@ -8,7 +8,7 @@
     <Authors>Meziantou</Authors>
     <Company>Meziantou</Company>
     <PackageProjectUrl>https://github.com/meziantou/Meziantou.Analyzer</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/meziantou/Meziantou.Analyzer</RepositoryUrl>
+    <RepositoryUrl>https://github.com/meziantou/Meziantou.Analyzer.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseUrl>https://github.com/meziantou/Meziantou.Analyzer/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
@@ -17,5 +17,16 @@
     <Deterministic>true</Deterministic>
     <Features>strict</Features>
   </PropertyGroup>
+
+  <!-- sourcelink: https://www.meziantou.net/2018/07/09/how-to-debug-nuget-packages-using-sourcelink -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(TF_BUILD)' == 'true'">True</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+  </ItemGroup>
 
 </Project>
