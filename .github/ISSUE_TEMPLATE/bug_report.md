@@ -8,9 +8,9 @@ assignees: ''
 ---
 
 **Context**
-Rule identifier: MA0000
-Target Framework: .NET 5.0
-Language version: 9.0
+Rule identifier: _MA0000_
+Target Framework: _.NET 5.0_
+Language version: _9.0_
 
 **Describe the bug**
 A clear and concise description of what the bug is.
