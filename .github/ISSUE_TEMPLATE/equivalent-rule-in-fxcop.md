@@ -7,5 +7,5 @@ assignees: ''
 
 ---
 
-- Rule: MA0000
-- Link to the equivalent rule documentation: <>
+- Rule: _MA0000_
+- Link to the equivalent rule documentation: <insert link here>
