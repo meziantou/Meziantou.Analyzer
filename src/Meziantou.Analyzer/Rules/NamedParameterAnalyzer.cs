@@ -74,6 +74,9 @@ namespace Meziantou.Analyzer.Rules
 
                                 if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
                                     return;
+                                
+                                if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Enable", StringComparison.Ordinal))
+                                    return;
 
                                 if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name == nameof(Task.ConfigureAwait))
                                     return;

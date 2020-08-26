@@ -369,6 +369,24 @@ namespace Microsoft.CodeAnalysis
 ")
                   .ValidateAsync();
         }
+        
+        [Fact]
+        public async Task SyntaxNode_EnablePrefix()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        EnableTest(false);
+    }
+
+    void EnableTest(bool value) { }
+}
+")
+                  .ValidateAsync();
+        }
 
         [Fact]
         public async Task TaskCompletionSouce_SetResult()
