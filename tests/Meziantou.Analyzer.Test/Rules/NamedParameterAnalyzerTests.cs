@@ -233,6 +233,68 @@ class TypeName
         }
 
         [Fact]
+        public async Task CtorChaining()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public TypeName()
+        : this([||]null)
+    {
+    }
+
+    public TypeName(string a) { }
+}";
+            const string CodeFix = @"
+class TypeName
+{
+    public TypeName()
+        : this(a: null)
+    {
+    }
+
+    public TypeName(string a) { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task CtorBase()
+        {
+            const string SourceCode = @"
+class BaseType
+{
+    protected BaseType(string a) { }
+}
+class TypeName: BaseType
+{
+    public TypeName()
+        : base([||]null)
+    {
+    }
+}";
+            const string CodeFix = @"
+class BaseType
+{
+    protected BaseType(string a) { }
+}
+class TypeName: BaseType
+{
+    public TypeName()
+        : base(a: null)
+    {
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
+        [Fact]
         public async Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
         {
             const string SourceCode = @"
