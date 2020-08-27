@@ -92,7 +92,7 @@
 |[MA0089](Rules/MA0089.md)|Performance|Optimize string method usage|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0090](Rules/MA0090.md)|Design|Remove empty block|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0091](Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0092](Rules/MA0092.md)|Usage|Sender should be 'null' for instance events|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0092](Rules/MA0092.md)|Usage|Sender should be 'null' for static events|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0093](Rules/MA0093.md)|Usage|EventArgs should not be null|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0094](Rules/MA0094.md)|Design|A class that provides CompareTo(T) should implement IComparable\<T\>|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0095](Rules/MA0095.md)|Design|A class that implements IEquatable\<T\> should override Equals(object)|<span title='Warning'>⚠️</span>|✔️|❌|
