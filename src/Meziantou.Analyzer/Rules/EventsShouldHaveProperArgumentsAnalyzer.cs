@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static readonly DiagnosticDescriptor s_senderStaticRule = new DiagnosticDescriptor(
             RuleIdentifiers.SenderShouldBeNullForStaticEvents,
-            title: "Sender should be 'null' for instance events",
+            title: "Sender should be 'null' for static events",
             messageFormat: "Sender parameter should be 'null' for static events",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
