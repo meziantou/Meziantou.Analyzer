@@ -431,7 +431,7 @@ namespace Microsoft.CodeAnalysis
 ")
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task SyntaxNode_EnablePrefix()
         {
