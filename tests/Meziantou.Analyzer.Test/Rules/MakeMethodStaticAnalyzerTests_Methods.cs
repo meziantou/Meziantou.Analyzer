@@ -544,7 +544,7 @@ public class CustomMiddleware : IMiddleware
         }
 
         [Fact]
-        public async Task AbstractMethod_ShouldNotReportDiagnostic()
+        public async Task AbstractMethod_NoDiagnostic()
         {
             const string SourceCode = @"
 abstract class Test
@@ -556,9 +556,26 @@ abstract class Test
                   .ValidateAsync();
         }
 
+        [Fact]
+        public async Task PartialMethod_NoDiagnostic()
+        {
+            const string SourceCode = @"
+partial class Test
+{
+    partial void A();
+}
+
+partial class Test
+{
+    partial void A() { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
 
         [Fact]
-        public async Task XamlEventHandler_ShouldNotReportDiagnostic()
+        public async Task XamlEventHandler_NoDiagnostic()
         {
             const string SourceCode = @"
 #pragma checksum ""..\..\MainWindow.xaml"" ""{8829d00f-11b8-4213-878b-770e8597ac16}"" ""25B36A30BAFC7BB7D58C2E7472CEB827253914A46567E515A46D7429205241EB""
