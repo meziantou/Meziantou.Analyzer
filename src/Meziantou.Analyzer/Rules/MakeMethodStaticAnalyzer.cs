@@ -175,7 +175,8 @@ namespace Meziantou.Analyzer.Rules
                     !symbol.IsVirtual &&
                     !symbol.IsOverride &&
                     !symbol.IsStatic &&
-                    !symbol.IsInterfaceImplementation();
+                    !symbol.IsInterfaceImplementation() &&
+                    symbol.PartialDefinitionPart == null;
             }
 
             private static bool IsPotentialStatic(IPropertySymbol symbol)
