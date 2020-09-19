@@ -181,5 +181,44 @@ class TypeName
                   .ShouldReportDiagnosticWithMessage("Use an overload of 'AppendFormat' that has a 'System.IFormatProvider' parameter")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task EnumValueToString()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        _ = A.Value1.ToString();
+    }
+}
+
+enum A
+{
+   Value1
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task EnumToString()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test(System.Enum value)
+    {
+        _ = value.ToString();
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }

@@ -54,11 +54,16 @@ namespace Meziantou.Analyzer.Rules
                 // Guid.ToString(IFormatProvider) should not be used
                 if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
                     return;
+
+                // Enum.ToString(IFormatProvider) should not be used
+                if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Enum")))
+                    return;
             }
 
             if (formatProviderType != null && !operation.HasArgumentOfType(formatProviderType))
             {
-                if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType) ||
+                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, formatProviderType);
+                if (overload != null ||
                     (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType, numberStyleType)) ||
                     (operation.TargetMethod.ContainingType.IsDateTime() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType, dateTimeStyleType)))
                 {
@@ -69,7 +74,8 @@ namespace Meziantou.Analyzer.Rules
 
             if (cultureInfoType != null && !operation.HasArgumentOfType(cultureInfoType))
             {
-                if (operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, cultureInfoType) != null)
+                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, cultureInfoType);
+                if (overload != null)
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, cultureInfoType.ToDisplayString());
                     return;
