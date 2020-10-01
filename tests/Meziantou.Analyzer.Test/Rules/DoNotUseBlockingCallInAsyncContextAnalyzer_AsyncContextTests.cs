@@ -284,5 +284,24 @@ class Test
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ProcessWaitForExit_NoDiagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        var process = new Process();
+        process.WaitForExit();
+    }
+}")
+                  .ValidateAsync();
+        }
     }
 }

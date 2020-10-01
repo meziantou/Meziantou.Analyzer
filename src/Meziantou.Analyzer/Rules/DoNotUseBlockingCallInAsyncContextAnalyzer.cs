@@ -63,6 +63,7 @@ namespace Meziantou.Analyzer.Rules
                     ConsoleErrorAndOutSymbols = consoleSymbol.GetMembers(nameof(Console.Out)).Concat(consoleSymbol.GetMembers(nameof(Console.Error))).ToArray();
                 }
 
+                ProcessSymbol = _compilation.GetTypeByMetadataName("System.Diagnostics.Process");
                 CancellationTokenSymbol = _compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
 
                 TaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
@@ -78,6 +79,7 @@ namespace Meziantou.Analyzer.Rules
                 ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
             }
 
+            private ISymbol? ProcessSymbol { get; }
             private ISymbol[]? ConsoleErrorAndOutSymbols { get; }
             private INamedTypeSymbol? CancellationTokenSymbol { get; }
 
@@ -105,6 +107,13 @@ namespace Meziantou.Analyzer.Rules
 
                 if (operation.IsInNameofOperation())
                     return;
+
+                // Process.WaitForExit => Skip because the async method is not equivalent https://github.com/dotnet/runtime/issues/42556
+                if (string.Equals(targetMethod.Name, nameof(System.Diagnostics.Process.WaitForExit), StringComparison.Ordinal) &&
+                    targetMethod.ContainingType.OriginalDefinition.IsEqualTo(ProcessSymbol))
+                {
+                    return;
+                }
 
                 // Task.Wait()
                 // Task`1.Wait()
