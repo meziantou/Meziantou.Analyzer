@@ -387,5 +387,37 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task AwaitForEach_NoNeedForCancellationToken()
+        {
+            const string SourceCode = @"
+using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+class Test
+{
+    public static async Task A()
+    {
+        var ct = new CancellationToken();
+        await foreach (var item in AsyncEnumerable(ct).ConfigureAwait(false))
+        {
+        }
+    }
+
+    static async IAsyncEnumerable<int> AsyncEnumerable([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        yield return 0;
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .AddAsyncInterfaceApi()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
     }
 }

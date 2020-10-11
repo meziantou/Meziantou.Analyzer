@@ -165,6 +165,10 @@ namespace Meziantou.Analyzer.Rules
                         return;
 
                     collection = invocation.Children.FirstOrDefault();
+                    if (collection is IArgumentOperation argOperation)
+                    {
+                        collection = argOperation.Value;
+                    }
                 }
 
                 var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(op));
