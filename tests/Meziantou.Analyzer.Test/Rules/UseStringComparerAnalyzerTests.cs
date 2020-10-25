@@ -30,6 +30,33 @@ class TypeName
                   .ValidateAsync();
         }
 
+
+        [Fact]
+        public async Task SortedList_string_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        [||]new System.Collections.Generic.SortedList<string, int>();
+    }
+}";
+
+            const string CodeFix = @"
+class TypeName
+{
+    public void Test()
+    {
+        new System.Collections.Generic.SortedList<string, int>(System.StringComparer.Ordinal);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
         [Fact]
         public async Task HashSet_String_ShouldReportDiagnostic()
         {

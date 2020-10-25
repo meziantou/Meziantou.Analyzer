@@ -35,8 +35,8 @@ namespace Meziantou.Analyzer.Rules
 
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.UseStringComparer,
-            title: "IEqualityComparer<string> is missing",
-            messageFormat: "Use an overload that has a IEqualityComparer<string> parameter",
+            title: "IEqualityComparer<string> or IComparer<string> is missing",
+            messageFormat: "Use an overload that has a IEqualityComparer<string> or IComparer<string> parameter",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -50,125 +50,130 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterCompilationStartAction(AnalyzeConstructors);
-            context.RegisterCompilationStartAction(AnalyzeEnumerableMethods);
-        }
-
-        private static INamedTypeSymbol? GetIComparableString(Compilation compilation)
-        {
-            var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
-            if (equalityComparerInterfaceType == null)
-                return null;
-
-            var stringType = compilation.GetSpecialType(SpecialType.System_String);
-            if (stringType == null)
-                return null;
-
-            return equalityComparerInterfaceType.Construct(stringType);
-        }
-
-        private static void AnalyzeConstructors(CompilationStartAnalysisContext compilationContext)
-        {
-            var stringEqualityComparerInterfaceType = GetIComparableString(compilationContext.Compilation);
-            if (stringEqualityComparerInterfaceType == null)
-                return;
-
-            var types = new List<INamedTypeSymbol>();
-            types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
-            types.AddIfNotNull(compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
-            types.AddIfNotNull(compilationContext.Compilation.GetTypesByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
-
-            if (types.Count > 0)
+            context.RegisterCompilationStartAction(ctx =>
             {
-                compilationContext.RegisterOperationAction(operationContext =>
-                {
-                    var operation = (IObjectCreationOperation)operationContext.Operation;
-                    var type = operation.Type as INamedTypeSymbol;
-                    if (type?.OriginalDefinition == null)
-                        return;
+                var analyzerContext = new AnalyzerContext(ctx.Compilation);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeConstructor, OperationKind.ObjectCreation);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+            });
+        }
 
-                    if (types.Any(t => type.OriginalDefinition.IsEqualTo(t)))
-                    {
-                        // We only care about dictionaries that use a string as the key
-                        if (!type.TypeArguments[0].IsString())
-                            return;
-
-                        if (!HasEqualityComparerArgument(stringEqualityComparerInterfaceType, operation.Arguments))
-                        {
-                            operationContext.ReportDiagnostic(s_rule, operation);
-                        }
-                    }
-                }, OperationKind.ObjectCreation);
+        private sealed class AnalyzerContext
+        {
+            public AnalyzerContext(Compilation compilation)
+            {
+                EqualityComparerStringType = GetIEqualityComparerString(compilation);
+                ComparerStringType = GetIComparerString(compilation);
+                EnumerableType = compilation.GetTypeByMetadataName("System.Linq.Enumerable");
             }
-        }
 
-        private static void AnalyzeEnumerableMethods(CompilationStartAnalysisContext compilationContext)
-        {
-            var stringEqualityComparerInterfaceType = GetIComparableString(compilationContext.Compilation);
-            if (stringEqualityComparerInterfaceType == null)
-                return;
+            public INamedTypeSymbol? EqualityComparerStringType { get; }
+            public INamedTypeSymbol? ComparerStringType { get; }
+            public INamedTypeSymbol? EnumerableType { get; }
 
-            var enumerableType = compilationContext.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
-            if (enumerableType == null)
-                return;
-
-            compilationContext.RegisterOperationAction(operationContext =>
+            public void AnalyzeConstructor(OperationAnalysisContext ctx)
             {
-                var operation = (IInvocationOperation)operationContext.Operation;
-                if (operation == null)
+                var operation = (IObjectCreationOperation)ctx.Operation;
+                if (HasEqualityComparerArgument(operation.Arguments))
+                    return;
+
+                var method = operation.Constructor;
+                if (method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, EqualityComparerStringType) ||
+                    method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, ComparerStringType))
+                {
+                    ctx.ReportDiagnostic(s_rule, operation);
+                }
+            }
+
+            public void AnalyzeInvocation(OperationAnalysisContext ctx)
+            {
+                var operation = (IInvocationOperation)ctx.Operation;
+                if (HasEqualityComparerArgument(operation.Arguments))
                     return;
 
                 var method = operation.TargetMethod;
-                if (!method.ContainingType.IsEqualTo(enumerableType))
+                if (method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, EqualityComparerStringType) ||
+                    method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, ComparerStringType))
+                {
+                    ctx.ReportDiagnostic(s_rule, operation);
                     return;
-
-                if (method.Arity == 0)
-                    return;
-
-                if (method.Arity == 1)
-                {
-                    if (!s_enumerableMethods.Contains(method.Name, StringComparer.Ordinal))
-                        return;
-
-                    if (!method.TypeArguments[0].IsString())
-                        return;
-                }
-                else
-                {
-                    if (!s_arityIndex.TryGetValue(method.Name, out var arityIndex))
-                        return;
-
-                    if (arityIndex >= method.Arity)
-                        return;
-
-                    if (!method.TypeArguments[arityIndex].IsString())
-                        return;
                 }
 
-                if (!HasEqualityComparerArgument(stringEqualityComparerInterfaceType, operation.Arguments))
+                if (EnumerableType != null)
                 {
-                    operationContext.ReportDiagnostic(s_rule, operation);
-                }
-            }, OperationKind.Invocation);
-        }
+                    if (!method.ContainingType.IsEqualTo(EnumerableType))
+                        return;
 
-        private static bool HasEqualityComparerArgument(INamedTypeSymbol stringEqualityComparerInterfaceType, ImmutableArray<IArgumentOperation> arguments)
-        {
-            var hasEqualityComparer = false;
-            foreach (var argument in arguments)
-            {
-                var argumentType = argument.Value.Type;
-                if (argumentType == null)
-                    continue;
+                    if (method.Arity == 0)
+                        return;
 
-                if (argumentType.GetAllInterfacesIncludingThis().Any(i => stringEqualityComparerInterfaceType.IsEqualTo(i)))
-                {
-                    hasEqualityComparer = true;
-                    break;
+                    if (method.Arity == 1)
+                    {
+                        if (!s_enumerableMethods.Contains(method.Name, StringComparer.Ordinal))
+                            return;
+
+                        if (!method.TypeArguments[0].IsString())
+                            return;
+                    }
+                    else
+                    {
+                        if (!s_arityIndex.TryGetValue(method.Name, out var arityIndex))
+                            return;
+
+                        if (arityIndex >= method.Arity)
+                            return;
+
+                        if (!method.TypeArguments[arityIndex].IsString())
+                            return;
+                    }
+
+                    if (!HasEqualityComparerArgument(operation.Arguments))
+                    {
+                        ctx.ReportDiagnostic(s_rule, operation);
+                    }
                 }
             }
 
-            return hasEqualityComparer;
+            private bool HasEqualityComparerArgument(ImmutableArray<IArgumentOperation> arguments)
+            {
+                foreach (var argument in arguments)
+                {
+                    var argumentType = argument.Value.Type;
+                    if (argumentType == null)
+                        continue;
+
+                    if (argumentType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i)))
+                        return true;
+                }
+
+                return false;
+            }
+
+            private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
+            {
+                var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+                if (equalityComparerInterfaceType == null)
+                    return null;
+
+                var stringType = compilation.GetSpecialType(SpecialType.System_String);
+                if (stringType == null)
+                    return null;
+
+                return equalityComparerInterfaceType.Construct(stringType);
+            }
+
+            private static INamedTypeSymbol? GetIComparerString(Compilation compilation)
+            {
+                var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IComparer`1");
+                if (equalityComparerInterfaceType == null)
+                    return null;
+
+                var stringType = compilation.GetSpecialType(SpecialType.System_String);
+                if (stringType == null)
+                    return null;
+
+                return equalityComparerInterfaceType.Construct(stringType);
+            }
         }
     }
 }
