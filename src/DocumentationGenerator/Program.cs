@@ -40,6 +40,11 @@ namespace DocumentationGenerator
 
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
+                if (!diagnostic.HelpLinkUri.Contains(diagnostic.Id))
+                {
+                    throw new Exception("Invalid help link for " + diagnostic.Id);
+                }
+
                 var hasCodeFix = codeFixProviders.Any(codeFixProvider => codeFixProvider.FixableDiagnosticIds.Contains(diagnostic.Id));
                 sb
                     .Append("|[")
