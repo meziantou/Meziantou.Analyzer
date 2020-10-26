@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Rules
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AbstractTypesShouldNotHaveConstructors));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EmbedCaughtExceptionAsInnerException));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 

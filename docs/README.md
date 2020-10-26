@@ -3,7 +3,7 @@
 |Id|Category|Description|Severity|Is enabled|Code fix|
 |--|--------|-----------|:------:|:--------:|:------:|
 |[MA0001](Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0002](Rules/MA0002.md)|Usage|IEqualityComparer\<string\> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0002](Rules/MA0002.md)|Usage|IEqualityComparer\<string\> or IComparer\<string\> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0003](Rules/MA0003.md)|Style|Name parameter|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0004](Rules/MA0004.md)|Usage|Use .ConfigureAwait(false)|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0005](Rules/MA0005.md)|Performance|Use Array.Empty\<T\>()|<span title='Warning'>⚠️</span>|✔️|✔️|

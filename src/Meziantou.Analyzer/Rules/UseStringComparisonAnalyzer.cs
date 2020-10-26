@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Rules
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparison));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidCultureSensitiveMethod));
 
         private static readonly DiagnosticDescriptor s_useStringComparisonRule = new DiagnosticDescriptor(
             RuleIdentifiers.UseStringComparison,
