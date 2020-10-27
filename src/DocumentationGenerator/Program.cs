@@ -67,6 +67,39 @@ namespace DocumentationGenerator
                     .AppendLine();
             }
 
+            sb.AppendLine();
+
+            sb.AppendLine("# .editorconfig - default values");
+            sb.AppendLine();
+            sb.AppendLine("```");
+            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+            {
+                sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = ").Append(
+                    diagnostic.DefaultSeverity switch
+                    {
+                        DiagnosticSeverity.Hidden => "silent    ",
+                        DiagnosticSeverity.Info => "suggestion",
+                        DiagnosticSeverity.Warning => "warning   ",
+                        DiagnosticSeverity.Error => "error     ",
+                        _ => throw new Exception($"{diagnostic.DefaultSeverity} not supported"),
+                    })
+                    .Append(" # ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title)
+                    .AppendLine();
+            }
+            sb.AppendLine("```");
+            sb.AppendLine();
+
+            sb.AppendLine("# .editorconfig - all rules disabled");
+            sb.AppendLine();
+            sb.AppendLine("```");
+            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+            {
+                sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = none      ")
+                    .Append(" # ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title)
+                    .AppendLine();
+            }
+            sb.AppendLine("```");
+
             Console.WriteLine(sb.ToString());
             var path = Path.GetFullPath(Path.Combine(args[0], @"README.md"));
             Console.WriteLine(path);
