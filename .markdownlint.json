@@ -1,0 +1,22 @@
+{
+  "MD007": {
+    "indent": 4,
+    "start_indented": false
+  },
+  "MD013": false,
+  "MD025": false,
+  "MD026": false,
+  "MD029": {
+    "style": "one_or_ordered"
+  },
+  "MD032": false,
+  "MD033": {
+    "allowed_elements": [
+      "kbd"
+    ]
+  },
+  "MD036": false,
+  "MD040": false,
+  "MD041": false,
+  "MD045": false
+}

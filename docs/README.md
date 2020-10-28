@@ -102,7 +102,7 @@
 
 # .editorconfig - default values
 
-```
+```editorconfig
 dotnet_diagnostic.MA0001.severity = suggestion # MA0001: StringComparison is missing
 dotnet_diagnostic.MA0002.severity = warning    # MA0002: IEqualityComparer<string> or IComparer<string> is missing
 dotnet_diagnostic.MA0003.severity = suggestion # MA0003: Name parameter
@@ -204,7 +204,7 @@ dotnet_diagnostic.MA0098.severity = suggestion # MA0098: Use indexer instead of 
 
 # .editorconfig - all rules disabled
 
-```
+```editorconfig
 dotnet_diagnostic.MA0001.severity = none       # MA0001: StringComparison is missing
 dotnet_diagnostic.MA0002.severity = none       # MA0002: IEqualityComparer<string> or IComparer<string> is missing
 dotnet_diagnostic.MA0003.severity = none       # MA0003: Name parameter

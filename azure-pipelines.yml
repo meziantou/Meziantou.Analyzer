@@ -34,6 +34,7 @@ stages:
     - script: >-
         docker run \
           -e RUN_LOCAL=true \
+          -e VALIDATE_CSHARP=false \
           -e VALIDATE_POWERSHELL=false \
           -e VALIDATE_EDITORCONFIG=false \
           -v $(System.DefaultWorkingDirectory):/tmp/lint \
@@ -47,7 +48,7 @@ stages:
     - task: UseDotNet@2
       inputs:
         packageType: 'sdk'
-        version: '3.1.101'
+        version: '3.1.x'
 
     - task: DotNetCoreCLI@2
       displayName: 'Install dotnet format'
@@ -75,7 +76,7 @@ stages:
       displayName: Install .NET SDK
       inputs:
         packageType: 'sdk'
-        version: '3.1.302'
+        version: '3.1.x'
 
     - task: NuGetToolInstaller@1
       displayName: Install NuGet

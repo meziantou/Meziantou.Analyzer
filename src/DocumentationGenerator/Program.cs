@@ -71,7 +71,7 @@ namespace DocumentationGenerator
 
             sb.AppendLine("# .editorconfig - default values");
             sb.AppendLine();
-            sb.AppendLine("```");
+            sb.AppendLine("```editorconfig");
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
                 sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = ").Append(
@@ -91,7 +91,7 @@ namespace DocumentationGenerator
 
             sb.AppendLine("# .editorconfig - all rules disabled");
             sb.AppendLine();
-            sb.AppendLine("```");
+            sb.AppendLine("```editorconfig");
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
                 sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = none      ")
