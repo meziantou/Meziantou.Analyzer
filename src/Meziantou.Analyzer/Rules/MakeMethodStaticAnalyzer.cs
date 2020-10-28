@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer.Rules
 
                 ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeMethod, SyntaxKind.MethodDeclaration);
                 ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeProperty, SyntaxKind.PropertyDeclaration);
-                ctx.RegisterOperationAction(analyzerContext.AnalyzeEventAssignment, OperationKind.EventAssignment);
+                ctx.RegisterOperationAction(analyzerContext.AnalyzeDelegateCreation, OperationKind.DelegateCreation);
                 ctx.RegisterCompilationEndAction(analyzerContext.CompilationEnd);
             });
         }
@@ -113,7 +113,7 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeProperty(SyntaxNodeAnalysisContext context)
             {
                 var node = (PropertyDeclarationSyntax)context.Node;
-                var propertySymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IPropertySymbol;
+                var propertySymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
                 if (propertySymbol == null)
                     return;
 
@@ -147,14 +147,10 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            public void AnalyzeEventAssignment(OperationAnalysisContext context)
+            public void AnalyzeDelegateCreation(OperationAnalysisContext context)
             {
-                var operation = (IEventAssignmentOperation)context.Operation;
-                var delegateOperation = operation.HandlerValue as IDelegateCreationOperation;
-                if (delegateOperation == null)
-                    return;
-
-                var methodReference = delegateOperation.Target as IMethodReferenceOperation;
+                var operation = (IDelegateCreationOperation)context.Operation;
+                var methodReference = operation.Target as IMethodReferenceOperation;
                 if (methodReference == null)
                     return;
 
