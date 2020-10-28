@@ -575,7 +575,7 @@ partial class Test
         }
 
         [Fact]
-        public async Task XamlEventHandler_NoDiagnostic()
+        public async Task XamlEventHandler_Add_NoDiagnostic()
         {
             const string SourceCode = @"
 #pragma checksum ""..\..\MainWindow.xaml"" ""{8829d00f-11b8-4213-878b-770e8597ac16}"" ""25B36A30BAFC7BB7D58C2E7472CEB827253914A46567E515A46D7429205241EB""
@@ -595,6 +595,32 @@ partial class Test
     void Handler(object sender, System.EventArgs e) => throw null;
 }
 
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task XamlEventHandler_Assignement_NoDiagnostic()
+        {
+            const string SourceCode = @"
+#pragma checksum ""..\..\MainWindow.xaml"" ""{8829d00f-11b8-4213-878b-770e8597ac16}"" ""25B36A30BAFC7BB7D58C2E7472CEB827253914A46567E515A46D7429205241EB""
+
+partial class Test
+{
+    event System.EventHandler<System.EventArgs> TestEvent;
+    void Initialize()
+    {
+#line 4 ""App.xaml""
+        TestEvent = Handler;
+    }
+}
+
+partial class Test
+{
+    void Handler(object sender, System.EventArgs e) => throw null;
+}
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
