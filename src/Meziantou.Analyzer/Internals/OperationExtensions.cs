@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer
@@ -65,6 +66,17 @@ namespace Meziantou.Analyzer
             }
 
             return false;
+        }
+
+        public static IMethodSymbol? GetContainingMethod(this IOperation operation)
+        {
+            foreach (var syntax in operation.Syntax.AncestorsAndSelf())
+            {
+                if (syntax is MethodDeclarationSyntax method)
+                    return operation.SemanticModel.GetDeclaredSymbol(method) as IMethodSymbol;
+            }
+
+            return null;
         }
     }
 }

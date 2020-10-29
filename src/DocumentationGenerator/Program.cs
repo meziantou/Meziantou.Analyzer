@@ -74,15 +74,18 @@ namespace DocumentationGenerator
             sb.AppendLine("```editorconfig");
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
-                sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = ").Append(
-                    diagnostic.DefaultSeverity switch
-                    {
-                        DiagnosticSeverity.Hidden => "silent    ",
-                        DiagnosticSeverity.Info => "suggestion",
-                        DiagnosticSeverity.Warning => "warning   ",
-                        DiagnosticSeverity.Error => "error     ",
-                        _ => throw new Exception($"{diagnostic.DefaultSeverity} not supported"),
-                    })
+                var severity = diagnostic.IsEnabledByDefault ?
+                                    diagnostic.DefaultSeverity switch
+                                    {
+                                        DiagnosticSeverity.Hidden => "silent    ",
+                                        DiagnosticSeverity.Info => "suggestion",
+                                        DiagnosticSeverity.Warning => "warning   ",
+                                        DiagnosticSeverity.Error => "error     ",
+                                        _ => throw new Exception($"{diagnostic.DefaultSeverity} not supported"),
+                                    }
+                                    : "none      ";
+
+                sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = ").Append(severity)
                     .Append(" # ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title)
                     .AppendLine();
             }

@@ -419,5 +419,33 @@ class Test
                   .ValidateAsync();
         }
 
+        [Fact]
+        public async Task DisposeAsync_NoNeedForCancellationToken()
+        {
+            const string SourceCode = @"
+using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+class Test : System.IAsyncDisposable
+{
+    public ValueTask DisposeAsync()
+    {
+        A();
+        return default;
+    }
+
+    static void A(CancellationToken cancellationToken = default)
+    {
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .AddAsyncInterfaceApi()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }

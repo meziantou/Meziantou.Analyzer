@@ -129,6 +129,10 @@ namespace Meziantou.Analyzer.Rules
                 }
                 else
                 {
+                    var parentMethod = operation.GetContainingMethod();
+                    if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
+                        return;
+
                     context.ReportDiagnostic(s_useAnOverloadThatHaveCancellationTokenRule, operation, possibleCancellationTokens);
                 }
             }
@@ -178,6 +182,10 @@ namespace Meziantou.Analyzer.Rules
                 }
                 else
                 {
+                    var parentMethod = op.GetContainingMethod();
+                    if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
+                        return;
+
                     context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRule, op.Collection, possibleCancellationTokens);
                 }
             }
