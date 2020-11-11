@@ -50,6 +50,12 @@ class Sample
             throw new System.ArgumentNullException(nameof(a));
         }
     }
+
+    public static Sample operator +(Sample first, Sample second)
+    {
+        throw new System.ArgumentNullException(nameof(first));
+        throw new System.ArgumentNullException(nameof(second));
+    }
 }";
 
             await CreateProjectBuilder()
