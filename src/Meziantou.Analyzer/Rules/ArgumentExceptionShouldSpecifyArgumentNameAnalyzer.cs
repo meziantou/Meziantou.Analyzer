@@ -167,6 +167,18 @@ namespace Meziantou.Analyzer.Rules
 
                             yield break;
                         }
+
+                    case OperatorDeclarationSyntax operatorDeclaration:
+                        {
+                            var symbol = semanticModel.GetDeclaredSymbol(operatorDeclaration);
+                            if (symbol != null)
+                            {
+                                foreach (var parameter in symbol.Parameters)
+                                    yield return parameter.Name;
+                            }
+
+                            yield break;
+                        }
                 }
 
                 node = node.Parent;

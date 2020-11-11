@@ -69,5 +69,32 @@ class Sample
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Operator()
+        {
+            const string SourceCode = @"
+class Sample
+{
+    public static Sample operator +(Sample first, Sample second)
+    {
+        throw new System.ArgumentNullException([||]""first"");
+    }
+}";
+
+            const string CodeFix = @"
+class Sample
+{
+    public static Sample operator +(Sample first, Sample second)
+    {
+        throw new System.ArgumentNullException(nameof(first));
+    }
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
     }
 }
