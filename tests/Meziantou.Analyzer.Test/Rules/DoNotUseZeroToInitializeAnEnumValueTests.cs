@@ -27,8 +27,9 @@ class Test
         MyEnum b = (MyEnum)0;
         MyEnum c = MyEnum.A;
         MyEnum d = MyEnum.B;
-        long e = 0;
-        long f = (long)0;
+        MyEnum e = default;
+        long f = 0;
+        long g = (long)0;
     }
 }
 ";
@@ -52,6 +53,7 @@ class Test
         A((MyEnum)0);
         A(MyEnum.A);
         A(MyEnum.B);
+        A(default);
     }
 }
 ";

@@ -37,7 +37,8 @@ namespace Meziantou.Analyzer.Rules
             if (!operation.Type.IsEnumeration())
                 return;
 
-            if (operation.Operand.ConstantValue.Value is int i && i == 0)
+            // Skip "default" keyword
+            if (operation.Operand is ILiteralOperation && operation.Operand.ConstantValue.HasValue && operation.Operand.ConstantValue.Value is int i && i == 0)
             {
                 context.ReportDiagnostic(s_rule, operation);
             }
