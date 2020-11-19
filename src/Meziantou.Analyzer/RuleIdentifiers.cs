@@ -101,6 +101,7 @@ namespace Meziantou.Analyzer
         public const string ClassImplementingIComparableTShouldImplementIEquatableT = "MA0096";
         public const string TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable = "MA0097";
         public const string UseIndexerInsteadOfElementAt = "MA0098";
+        public const string DoNotUseZeroToInitializeAnEnumValue = "MA0099";
 
         public static string GetHelpUri(string idenfifier)
         {
