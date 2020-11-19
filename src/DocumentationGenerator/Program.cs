@@ -21,7 +21,7 @@ namespace DocumentationGenerator
 
             var outputFolder = Path.GetFullPath(args[0]);
 
-            if(args.Length > 1)
+            if (args.Length > 1)
             {
                 var assemblyPath = Path.GetFullPath(args[0]);
             }
