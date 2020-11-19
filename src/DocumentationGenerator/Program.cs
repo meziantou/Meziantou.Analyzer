@@ -13,13 +13,18 @@ namespace DocumentationGenerator
     {
         private static void Main(string[] args)
         {
-            if (args.Length != 1)
+            if (args.Length == 0)
             {
                 Console.Error.WriteLine("You must specify the output folder");
                 return;
             }
 
-            var outputFolder = args[0];
+            var outputFolder = Path.GetFullPath(args[0]);
+
+            if(args.Length > 1)
+            {
+                var assemblyPath = Path.GetFullPath(args[0]);
+            }
 
             var assembly = typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly;
             var diagnosticAnalyzers = assembly.GetExportedTypes()
@@ -33,7 +38,7 @@ namespace DocumentationGenerator
                 .ToList();
 
             var sb = new StringBuilder();
-            sb.AppendLine("# Meziantou.Analyzer's rules");
+            sb.AppendLine($"# {assembly.GetName().Name}'s rules");
             sb.AppendLine();
             sb.AppendLine("|Id|Category|Description|Severity|Is enabled|Code fix|");
             sb.AppendLine("|--|--------|-----------|:------:|:--------:|:------:|");
@@ -49,9 +54,9 @@ namespace DocumentationGenerator
                 sb
                     .Append("|[")
                     .Append(diagnostic.Id)
-                    .Append("](Rules/")
-                    .Append(diagnostic.Id)
-                    .Append(".md)|")
+                    .Append("](")
+                    .Append(diagnostic.HelpLinkUri)
+                    .Append(")|")
                     .Append(diagnostic.Category)
                     .Append('|')
                     .Append(EscapeMarkdown(diagnostic.Title.ToString()))
@@ -104,7 +109,7 @@ namespace DocumentationGenerator
             sb.AppendLine("```");
 
             Console.WriteLine(sb.ToString());
-            var path = Path.GetFullPath(Path.Combine(args[0], @"README.md"));
+            var path = Path.GetFullPath(Path.Combine(outputFolder, @"README.md"));
             Console.WriteLine(path);
             File.WriteAllText(path, sb.ToString());
 
@@ -112,7 +117,7 @@ namespace DocumentationGenerator
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
                 var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString())}";
-                var detailPath = Path.GetFullPath(Path.Combine(args[0], "Rules", diagnostic.Id + ".md"));
+                var detailPath = Path.GetFullPath(Path.Combine(outputFolder, "Rules", diagnostic.Id + ".md"));
                 if (File.Exists(detailPath))
                 {
                     var lines = File.ReadAllLines(detailPath);
