@@ -24,7 +24,9 @@ class Test
     void A()
     {
         MyEnum a = [|0|];
+        a = [|0|];
         MyEnum b = (MyEnum)0;
+        b = (MyEnum)0;
         MyEnum c = MyEnum.A;
         MyEnum d = MyEnum.B;
         MyEnum e = default;
@@ -62,5 +64,25 @@ class Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task OptionalParameter()
+        {
+            const string SourceCode = @"
+enum MyEnum { A = 0, B = 1 }
+class Test
+{
+    void A(MyEnum a = MyEnum.A)
+    {
+        A();
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
     }
 }

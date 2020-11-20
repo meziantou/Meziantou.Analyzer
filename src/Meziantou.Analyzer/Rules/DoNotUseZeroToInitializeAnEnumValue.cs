@@ -25,12 +25,43 @@ namespace Meziantou.Analyzer.Rules
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 
-            context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Conversion);
+            context.RegisterOperationAction(AnalyzeSimpleAssignment, OperationKind.SimpleAssignment);
+            context.RegisterOperationAction(AnalyzeVariableInitializer, OperationKind.VariableInitializer);
+            context.RegisterOperationAction(AnalyzeArgument, OperationKind.Argument);
         }
 
-        private static void AnalyzeInvocation(OperationAnalysisContext context)
+        private void AnalyzeArgument(OperationAnalysisContext context)
         {
-            var operation = (IConversionOperation)context.Operation;
+            var operation = (IArgumentOperation)context.Operation;
+            if (operation.IsImplicit)
+                return;
+
+            if (operation.Value is IConversionOperation conversionOperation)
+            {
+                ValidateConversionOperation(context, conversionOperation);
+            }
+        }
+
+        private static void AnalyzeSimpleAssignment(OperationAnalysisContext context)
+        {
+            var operation = (ISimpleAssignmentOperation)context.Operation;
+            if (operation.Value is IConversionOperation conversionOperation)
+            {
+                ValidateConversionOperation(context, conversionOperation);
+            }
+        }
+        
+        private static void AnalyzeVariableInitializer(OperationAnalysisContext context)
+        {
+            var operation = (IVariableInitializerOperation)context.Operation;
+            if (operation.Value is IConversionOperation conversionOperation)
+            {
+                ValidateConversionOperation(context, conversionOperation);
+            }
+        }
+
+        private static void ValidateConversionOperation(OperationAnalysisContext context, IConversionOperation operation)
+        {
             if (!operation.IsImplicit)
                 return;
 
