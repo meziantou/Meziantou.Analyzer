@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue,
             title: "Use Explicit enum value instead of 0",
-            messageFormat: "Use Explicit enum value instead of 0",
+            messageFormat: "Use Explicit enum value for '{0}' instead of 0",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -50,7 +50,7 @@ namespace Meziantou.Analyzer.Rules
                 ValidateConversionOperation(context, conversionOperation);
             }
         }
-        
+
         private static void AnalyzeVariableInitializer(OperationAnalysisContext context)
         {
             var operation = (IVariableInitializerOperation)context.Operation;
@@ -71,7 +71,7 @@ namespace Meziantou.Analyzer.Rules
             // Skip "default" keyword
             if (operation.Operand is ILiteralOperation && operation.Operand.ConstantValue.HasValue && operation.Operand.ConstantValue.Value is int i && i == 0)
             {
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(s_rule, operation, operation.Type.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat));
             }
         }
     }
