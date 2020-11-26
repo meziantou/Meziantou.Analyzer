@@ -271,7 +271,7 @@ namespace Meziantou.Analyzer.Rules
                 if (operation.TargetMethod.Parameters.Length != 2)
                     return;
 
-                if (!(operation.TargetMethod.Parameters[1].Type is INamedTypeSymbol type))
+                if (operation.TargetMethod.Parameters[1].Type is not INamedTypeSymbol type)
                     return;
 
                 if (type.TypeArguments.Length == 3)
@@ -622,7 +622,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             // If what's returned is not a cast value or the cast is done by 'as' operator
-            if (!(returnOp.ReturnedValue is IConversionOperation castOp) || castOp.IsTryCast)
+            if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast)
                 return;
 
             // If the cast is not applied directly to the source element (one of the selector's arguments)

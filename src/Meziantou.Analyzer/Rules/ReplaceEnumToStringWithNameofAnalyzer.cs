@@ -39,8 +39,7 @@ namespace Meziantou.Analyzer.Rules
             if (!operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetSpecialType(SpecialType.System_Enum)))
                 return;
 
-            var expression = operation.Children.First() as IMemberReferenceOperation;
-            if (expression == null)
+            if (operation.Children.First() is not IMemberReferenceOperation expression)
                 return;
 
             if (expression.Member.ContainingType.EnumUnderlyingType == null)

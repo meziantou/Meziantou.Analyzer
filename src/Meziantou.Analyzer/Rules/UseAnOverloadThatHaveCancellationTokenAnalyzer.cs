@@ -139,8 +139,7 @@ namespace Meziantou.Analyzer.Rules
 
             public void AnalyzeLoop(OperationAnalysisContext context)
             {
-                var op = context.Operation as IForEachLoopOperation;
-                if (op == null)
+                if (context.Operation is not IForEachLoopOperation op)
                     return;
 
                 if (!op.IsAsynchronous)
@@ -356,8 +355,7 @@ namespace Meziantou.Analyzer.Rules
 
                         case LocalFunctionStatementSyntax localFunctionStatement:
                             {
-                                var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
-                                if (symbol != null)
+                                if (semanticModel.GetDeclaredSymbol(localFunctionStatement) is IMethodSymbol symbol)
                                 {
                                     foreach (var parameter in symbol.Parameters)
                                         yield return new NameAndType(parameter.Name, parameter.Type);

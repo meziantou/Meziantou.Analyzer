@@ -104,8 +104,7 @@ namespace Meziantou.Analyzer.Rules
 
             public void AnalyzeForEachStatement(OperationAnalysisContext context)
             {
-                var operation = context.Operation as IForEachLoopOperation;
-                if (operation == null)
+                if (context.Operation is not IForEachLoopOperation operation)
                     return;
 
                 if (!operation.IsAsynchronous)
@@ -169,8 +168,7 @@ namespace Meziantou.Analyzer.Rules
                 if (!operation.IsAsynchronous)
                     return;
 
-                var declarationGroup = operation.Children.FirstOrDefault() as IVariableDeclarationGroupOperation;
-                if (declarationGroup == null)
+                if (operation.Children.FirstOrDefault() is not IVariableDeclarationGroupOperation declarationGroup)
                     return;
 
                 AnalyzeVariableDeclarationGroupOperation(context, declarationGroup);

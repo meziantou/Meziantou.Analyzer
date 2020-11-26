@@ -74,8 +74,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 foreach (var syntaxReference in parameter.DeclaringSyntaxReferences)
                 {
-                    var syntax = syntaxReference.GetSyntax(cancellationToken) as ParameterSyntax;
-                    if (syntax == null)
+                    if (syntaxReference.GetSyntax(cancellationToken) is not ParameterSyntax syntax)
                         continue;
 
                     if (syntax.Modifiers.Any(modifier => modifier.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.ParamsKeyword)))

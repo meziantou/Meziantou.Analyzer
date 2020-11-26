@@ -287,8 +287,7 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
             var newExpression = (InvocationExpressionSyntax)nodeToFix;
-            var expression = newExpression.Expression as MemberAccessExpressionSyntax;
-            if (expression != null)
+            if (newExpression.Expression is MemberAccessExpressionSyntax expression)
             {
                 editor.ReplaceNode(nodeToFix, expression.Expression);
             }

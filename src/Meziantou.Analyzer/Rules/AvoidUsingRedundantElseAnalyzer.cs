@@ -37,7 +37,7 @@ namespace Meziantou.Analyzer.Rules
             if (elseClause is null)
                 return;
 
-            if (!(elseClause.Parent is IfStatementSyntax ifStatement))
+            if (elseClause.Parent is not IfStatementSyntax ifStatement)
                 return;
 
             var thenStatement = ifStatement.Statement;

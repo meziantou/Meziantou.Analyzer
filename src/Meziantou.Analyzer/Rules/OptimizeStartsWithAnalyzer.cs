@@ -118,15 +118,13 @@ namespace Meziantou.Analyzer.Rules
                     if (operation.Arguments.Length == 0)
                         return;
 
-                    var prefix = operation.Arguments[0].Value.ConstantValue.Value as string;
-                    if (prefix == null || prefix.Length != 1)
+                    if (operation.Arguments[0].Value.ConstantValue.Value is not string prefix || prefix.Length != 1)
                         return;
 
                     // Ensure the StringComparison is compatible
                     if (operation.Arguments.Length == 2)
                     {
-                        var argumentValue = operation.Arguments[1].Value as IMemberReferenceOperation;
-                        if (argumentValue == null)
+                        if (operation.Arguments[1].Value is not IMemberReferenceOperation argumentValue)
                             return;
 
                         if (!argumentValue.Member.IsEqualTo(StringComparison_Ordinal) &&

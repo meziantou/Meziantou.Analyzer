@@ -32,7 +32,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static void AnalyzeFinallyClause(SyntaxNodeAnalysisContext context)
         {
-            if (!(context.Node is FinallyClauseSyntax finallyClause))
+            if (context.Node is not FinallyClauseSyntax finallyClause)
                 return;
 
             var finallyBlock = finallyClause.Block;

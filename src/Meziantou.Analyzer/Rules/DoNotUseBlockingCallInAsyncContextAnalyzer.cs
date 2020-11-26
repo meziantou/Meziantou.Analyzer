@@ -239,8 +239,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 // lamdba, delegate, method, local function
                 // Check if returns Task or async void
-                var methodSymbol = operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart) as IMethodSymbol;
-                if (methodSymbol != null)
+                if (operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart) is IMethodSymbol methodSymbol)
                 {
                     return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol);
                 }

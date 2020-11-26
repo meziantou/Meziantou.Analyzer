@@ -43,7 +43,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> RemoveComparisonWithBoolConstant(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            if (!(nodeToFix is BinaryExpressionSyntax binaryExpressionSyntax))
+            if (nodeToFix is not BinaryExpressionSyntax binaryExpressionSyntax)
                 return document;
 
             if (binaryExpressionSyntax.Left is null || binaryExpressionSyntax.Right is null)

@@ -34,8 +34,7 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeConstructorSyntax(SyntaxNodeAnalysisContext context)
         {
             var node = (ConstructorDeclarationSyntax)context.Node;
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IMethodSymbol;
-            if (methodSymbol == null || methodSymbol.MethodKind != MethodKind.Constructor)
+            if (context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) is not IMethodSymbol methodSymbol || methodSymbol.MethodKind != MethodKind.Constructor)
                 return;
 
             // A sealed class cannot contains virtual methods

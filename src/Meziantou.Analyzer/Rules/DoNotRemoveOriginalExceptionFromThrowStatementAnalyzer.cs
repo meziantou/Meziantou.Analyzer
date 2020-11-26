@@ -35,8 +35,7 @@ namespace Meziantou.Analyzer.Rules
             if (operation.Exception == null)
                 return;
 
-            var localReferenceOperation = operation.Exception as ILocalReferenceOperation;
-            if (localReferenceOperation == null)
+            if (operation.Exception is not ILocalReferenceOperation localReferenceOperation)
                 return;
 
             var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();

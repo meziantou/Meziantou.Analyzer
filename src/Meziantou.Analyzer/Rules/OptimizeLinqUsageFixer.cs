@@ -156,8 +156,7 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var semanticModel = editor.SemanticModel;
-            var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
-            if (countOperation == null)
+            if (semanticModel.GetOperation(countNode, cancellationToken) is not IInvocationOperation countOperation)
                 return document;
 
             var generator = editor.Generator;
@@ -189,9 +188,8 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var semanticModel = editor.SemanticModel;
-            var countOperation = semanticModel?.GetOperation(countNode, cancellationToken) as IInvocationOperation;
             var operandOperation = semanticModel?.GetOperation(operandNode, cancellationToken);
-            if (countOperation == null || operandOperation == null)
+            if (semanticModel?.GetOperation(countNode, cancellationToken) is not IInvocationOperation countOperation || operandOperation == null)
                 return document;
 
             var generator = editor.Generator;
@@ -240,9 +238,8 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var semanticModel = editor.SemanticModel;
-            var countOperation = semanticModel.GetOperation(countNode, cancellationToken) as IInvocationOperation;
             var operandOperation = semanticModel.GetOperation(operandNode, cancellationToken);
-            if (countOperation == null || operandOperation == null)
+            if (semanticModel.GetOperation(countNode, cancellationToken) is not IInvocationOperation countOperation || operandOperation == null)
                 return document;
 
             var generator = editor.Generator;
@@ -296,10 +293,10 @@ namespace Meziantou.Analyzer.Rules
 
         private async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            if (!(nodeToFix is InvocationExpressionSyntax selectInvocationExpression))
+            if (nodeToFix is not InvocationExpressionSyntax selectInvocationExpression)
                 return document;
 
-            if (!(selectInvocationExpression.Expression is MemberAccessExpressionSyntax memberAccessExpression))
+            if (selectInvocationExpression.Expression is not MemberAccessExpressionSyntax memberAccessExpression)
                 return document;
 
             // Build the 'Cast<CastType>' name
@@ -411,8 +408,7 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
             var semanticModel = editor.SemanticModel;
-            var operation = semanticModel.GetOperation(nodeToFix, cancellationToken) as IInvocationOperation;
-            if (operation == null)
+            if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
                 return document;
 
 
@@ -431,8 +427,7 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
             var semanticModel = editor.SemanticModel;
-            var operation = semanticModel.GetOperation(nodeToFix, cancellationToken) as IInvocationOperation;
-            if (operation == null)
+            if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
                 return document;
 
             var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, generator.LiteralExpression(0));
@@ -450,8 +445,7 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
             var semanticModel = editor.SemanticModel;
-            var operation = semanticModel.GetOperation(nodeToFix, cancellationToken) as IInvocationOperation;
-            if (operation == null)
+            if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
                 return document;
 
             var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax,
@@ -490,9 +484,7 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var semanticModel = editor.SemanticModel;
-            var firstOperation = semanticModel?.GetOperation(firstNode, cancellationToken) as IInvocationOperation;
-            var lastOperation = semanticModel?.GetOperation(lastNode, cancellationToken) as IInvocationOperation;
-            if (firstOperation == null || lastOperation == null)
+            if (semanticModel?.GetOperation(firstNode, cancellationToken) is not IInvocationOperation firstOperation || semanticModel?.GetOperation(lastNode, cancellationToken) is not IInvocationOperation lastOperation)
                 return document;
 
             var method = editor.Generator.MemberAccessExpression(firstOperation.Arguments[0].Syntax, lastOperation.TargetMethod.Name);
@@ -543,9 +535,7 @@ namespace Meziantou.Analyzer.Rules
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var semanticModel = editor.SemanticModel;
-            var firstOperation = semanticModel?.GetOperation(firstNode, cancellationToken) as IInvocationOperation;
-            var lastOperation = semanticModel?.GetOperation(lastNode, cancellationToken) as IInvocationOperation;
-            if (firstOperation == null || lastOperation == null)
+            if (semanticModel?.GetOperation(firstNode, cancellationToken) is not IInvocationOperation firstOperation || semanticModel?.GetOperation(lastNode, cancellationToken) is not IInvocationOperation lastOperation)
                 return document;
 
             var generator = editor.Generator;
@@ -563,10 +553,7 @@ namespace Meziantou.Analyzer.Rules
 
                 if (argument1 == null)
                     return argument2?.Syntax;
-
-                var value1 = argument1.Value as IDelegateCreationOperation;
-                var value2 = argument2.Value as IDelegateCreationOperation;
-                if (value1 == null || value2 == null)
+                if (argument1.Value is not IDelegateCreationOperation value1 || argument2.Value is not IDelegateCreationOperation value2)
                     return null;
 
                 var anonymousMethod1 = value1.Target as IAnonymousFunctionOperation;
@@ -586,14 +573,12 @@ namespace Meziantou.Analyzer.Rules
 
             static SyntaxNode PrepareSyntaxNode(SyntaxGenerator generator, IDelegateCreationOperation delegateCreationOperation, string parameterName)
             {
-                var anonymousMethod = delegateCreationOperation.Target as IAnonymousFunctionOperation;
-                if (anonymousMethod != null)
+                if (delegateCreationOperation.Target is IAnonymousFunctionOperation anonymousMethod)
                 {
                     return ReplaceParameter(anonymousMethod, parameterName);
                 }
 
-                var method = delegateCreationOperation.Target as IMethodReferenceOperation;
-                if (method != null)
+                if (delegateCreationOperation.Target is IMethodReferenceOperation)
                 {
                     return generator.InvocationExpression(
                         delegateCreationOperation.Syntax,
@@ -613,8 +598,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static MemberAccessExpressionSyntax? GetMemberAccessExpression(SyntaxNode invocationExpressionSyntax)
         {
-            var invocationExpression = invocationExpressionSyntax as InvocationExpressionSyntax;
-            if (invocationExpression == null)
+            if (invocationExpressionSyntax is not InvocationExpressionSyntax invocationExpression)
                 return null;
 
             return invocationExpression.Expression as MemberAccessExpressionSyntax;

@@ -150,8 +150,7 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeDelegateCreation(OperationAnalysisContext context)
             {
                 var operation = (IDelegateCreationOperation)context.Operation;
-                var methodReference = operation.Target as IMethodReferenceOperation;
-                if (methodReference == null)
+                if (operation.Target is not IMethodReferenceOperation methodReference)
                     return;
 
                 // xaml cannot add event to static methods

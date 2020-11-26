@@ -21,8 +21,7 @@ namespace Meziantou.Analyzer.Rules
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true) as InvocationExpressionSyntax;
-            if (nodeToFix == null)
+            if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax nodeToFix)
                 return;
 
             if (!(nodeToFix.Expression is MemberAccessExpressionSyntax))

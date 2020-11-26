@@ -47,8 +47,7 @@ namespace Meziantou.Analyzer.Rules
             if (context.Compilation == null)
                 return;
 
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
-            if (methodSymbol == null || !IsTaskType(context.Compilation, methodSymbol.ReturnType))
+            if (context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol || !IsTaskType(context.Compilation, methodSymbol.ReturnType))
                 return;
 
             AnalyzeOperation(context, context.SemanticModel.GetOperation(node.Body, context.CancellationToken));
@@ -63,8 +62,7 @@ namespace Meziantou.Analyzer.Rules
             if (context.Compilation == null)
                 return;
 
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol as IMethodSymbol;
-            if (methodSymbol == null || !IsTaskType(context.Compilation, methodSymbol.ReturnType))
+            if (context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol || !IsTaskType(context.Compilation, methodSymbol.ReturnType))
                 return;
 
             if (node.Body is BlockSyntax)

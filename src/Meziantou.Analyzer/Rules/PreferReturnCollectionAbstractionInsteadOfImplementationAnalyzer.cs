@@ -82,8 +82,7 @@ namespace Meziantou.Analyzer.Rules
                 if (firstVariable == null)
                     return;
 
-                var symbol = context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) as IFieldSymbol;
-                if (symbol == null)
+                if (context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) is not IFieldSymbol symbol)
                     return;
 
                 if (!symbol.IsVisibleOutsideOfAssembly())
@@ -201,8 +200,7 @@ namespace Meziantou.Analyzer.Rules
                 if (ConcreteCollectionSymbols.Any(t => t.IsEqualTo(originalDefinition)))
                     return false;
 
-                var namedTypeSymbol = symbol as INamedTypeSymbol;
-                if (namedTypeSymbol != null)
+                if (symbol is INamedTypeSymbol namedTypeSymbol)
                 {
                     if (TaskSymbols.Any(t => t.IsEqualTo(symbol.OriginalDefinition)))
                     {

@@ -38,7 +38,7 @@ namespace Meziantou.Analyzer.Rules
         {
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
-            if (semanticModel == null || !(semanticModel.GetDeclaredSymbol(nodeToFix) is ITypeSymbol declaredTypeSymbol))
+            if (semanticModel == null || semanticModel.GetDeclaredSymbol(nodeToFix) is not ITypeSymbol declaredTypeSymbol)
                 return document;
 
             var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IEquatable`1");

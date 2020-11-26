@@ -22,37 +22,22 @@ namespace Meziantou.Analyzer
 
         public override Task<CodeAction?> GetFixAsync(FixAllContext fixAllContext)
         {
-            CodeAction? fixAction;
-            switch (fixAllContext.Scope)
+            return Task.FromResult(fixAllContext.Scope switch
             {
-                case FixAllScope.Document:
-                    fixAction = CodeAction.Create(
-                        CodeActionTitle,
-                        cancellationToken => GetDocumentFixesAsync(fixAllContext.WithCancellationToken(cancellationToken)),
-                        nameof(DocumentBasedFixAllProvider));
-                    break;
-
-                case FixAllScope.Project:
-                    fixAction = CodeAction.Create(
-                        CodeActionTitle,
-                        cancellationToken => GetProjectFixesAsync(fixAllContext.WithCancellationToken(cancellationToken), fixAllContext.Project),
-                        nameof(DocumentBasedFixAllProvider));
-                    break;
-
-                case FixAllScope.Solution:
-                    fixAction = CodeAction.Create(
-                        CodeActionTitle,
-                        cancellationToken => GetSolutionFixesAsync(fixAllContext.WithCancellationToken(cancellationToken)),
-                        nameof(DocumentBasedFixAllProvider));
-                    break;
-
-                case FixAllScope.Custom:
-                default:
-                    fixAction = null;
-                    break;
-            }
-
-            return Task.FromResult(fixAction);
+                FixAllScope.Document => CodeAction.Create(
+                                            CodeActionTitle,
+                                            cancellationToken => GetDocumentFixesAsync(fixAllContext.WithCancellationToken(cancellationToken)),
+                                            nameof(DocumentBasedFixAllProvider)),
+                FixAllScope.Project => CodeAction.Create(
+                                            CodeActionTitle,
+                                            cancellationToken => GetProjectFixesAsync(fixAllContext.WithCancellationToken(cancellationToken), fixAllContext.Project),
+                                            nameof(DocumentBasedFixAllProvider)),
+                FixAllScope.Solution => CodeAction.Create(
+                                            CodeActionTitle,
+                                            cancellationToken => GetSolutionFixesAsync(fixAllContext.WithCancellationToken(cancellationToken)),
+                                            nameof(DocumentBasedFixAllProvider)),
+                _ => null,
+            });
         }
 
         /// <summary>

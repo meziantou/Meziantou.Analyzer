@@ -58,8 +58,7 @@ namespace Meziantou.Analyzer.Rules
                     if (attribute.ConstructorArguments.Length == 0)
                         continue;
 
-                    var name = attribute.ConstructorArguments[0].Value as string;
-                    if (name == null)
+                    if (attribute.ConstructorArguments[0].Value is not string name)
                         continue;
 
                     if (HasConstructorMatchingAttribute(property.ContainingType, name))

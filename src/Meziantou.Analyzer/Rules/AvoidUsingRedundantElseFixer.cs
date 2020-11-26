@@ -57,10 +57,10 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> RemoveRedundantElse(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            if (!(nodeToFix is ElseClauseSyntax elseClause))
+            if (nodeToFix is not ElseClauseSyntax elseClause)
                 return document;
 
-            if (!(elseClause.Parent is IfStatementSyntax ifStatement))
+            if (elseClause.Parent is not IfStatementSyntax ifStatement)
                 return document;
 
             var ifStatementParent = ifStatement.Parent;

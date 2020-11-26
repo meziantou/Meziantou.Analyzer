@@ -146,8 +146,7 @@ namespace Meziantou.Analyzer.Rules
 
                     case LocalFunctionStatementSyntax localFunctionStatement:
                         {
-                            var symbol = semanticModel.GetDeclaredSymbol(localFunctionStatement) as IMethodSymbol;
-                            if (symbol != null)
+                            if (semanticModel.GetDeclaredSymbol(localFunctionStatement) is IMethodSymbol symbol)
                             {
                                 foreach (var parameter in symbol.Parameters)
                                     yield return parameter.Name;
