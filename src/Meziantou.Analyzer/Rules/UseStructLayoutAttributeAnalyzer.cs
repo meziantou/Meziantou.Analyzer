@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.MissingStructLayoutAttribute,
             title: "Add StructLayoutAttribute",
             messageFormat: "Add StructLayoutAttribute",

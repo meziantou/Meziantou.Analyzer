@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotUseServerCertificateValidationCallback,
             title: "Do not write your own certificate validation method",
             messageFormat: "Do not write your own certificate validation method",

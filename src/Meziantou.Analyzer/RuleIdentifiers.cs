@@ -32,7 +32,7 @@ namespace Meziantou.Analyzer
         public const string FixToDo = "MA0026";
         public const string DoNotRemoveOriginalExceptionFromThrowStatement = "MA0027";
         public const string OptimizeStringBuilderUsage = "MA0028";
-        public const string OptimizeLinqUsage = "MA0029";
+        public const string OptimizeEnumerable_CombineMethods = "MA0029";
         public const string DuplicateEnumerable_OrderBy = "MA0030";
         public const string OptimizeEnumerable_Count = "MA0031";
         public const string UseAnOverloadThatHaveCancellationToken = "MA0032";

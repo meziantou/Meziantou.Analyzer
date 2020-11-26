@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.LocalVariablesShouldNotHideSymbols,
             title: "Local variable should not hide other symbols",
             messageFormat: "Local variable '{0}' should not hide {1}",

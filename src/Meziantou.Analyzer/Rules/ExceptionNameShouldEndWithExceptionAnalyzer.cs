@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class ExceptionNameShouldEndWithExceptionAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.ExceptionNameShouldEndWithException,
             title: "Class name should end with 'Exception'",
             messageFormat: "Class name should end with 'Exception'",

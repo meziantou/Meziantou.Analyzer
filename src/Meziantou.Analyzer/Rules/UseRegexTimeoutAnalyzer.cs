@@ -13,9 +13,9 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly string[] s_methodNames = { "IsMatch", "Match", "Matches", "Replace", "Split" };
 
-        private static readonly DiagnosticDescriptor s_timeoutRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_timeoutRule = new(
             RuleIdentifiers.MissingTimeoutParameterForRegex,
-            title: "Add timeout parameter",
+            title: "Add regex evaluation timeout",
             messageFormat: "Regular expressions should not be vulnerable to Denial of Service attacks",
             RuleCategories.Security,
             DiagnosticSeverity.Warning,
@@ -23,11 +23,11 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingTimeoutParameterForRegex));
 
-        private static readonly DiagnosticDescriptor s_explicitCaptureRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_explicitCaptureRule = new(
             RuleIdentifiers.UseRegexExplicitCaptureOptions,
             title: "Add RegexOptions.ExplicitCapture",
-            messageFormat: "Add RegexOptions.ExplicitCapture",
-            RuleCategories.Security,
+            messageFormat: "Add RegexOptions.ExplicitCapture to prevent capturing unneeded groups",
+            RuleCategories.Performance,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: "",

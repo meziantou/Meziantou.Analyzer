@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.NonConstantStaticFieldsShouldNotBeVisible,
             title: "Non-constant static fields should not be visible",
             messageFormat: "Non-constant static fields should not be visible",

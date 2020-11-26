@@ -12,10 +12,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.UseConfigureAwaitFalse,
-            title: "Use .ConfigureAwait(false)",
-            messageFormat: "Use ConfigureAwait(false) as the current SynchronizationContext is not needed",
+            title: "Use Task.ConfigureAwait(false)",
+            messageFormat: "Use Task.ConfigureAwait(false) as the current SynchronizationContext is not needed",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotDeclareStaticMembersOnGenericTypes,
             title: "Do not declare static members on generic types",
             messageFormat: "Do not declare static members on generic types",

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.MarkAttributesWithAttributeUsageAttribute,
             title: "Mark attributes with AttributeUsageAttribute",
             messageFormat: "Mark attributes with AttributeUsageAttribute",

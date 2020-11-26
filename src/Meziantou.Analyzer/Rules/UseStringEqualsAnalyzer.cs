@@ -8,9 +8,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.UseStringEquals,
-            title: "use String.Equals",
+            title: "Use String.Equals instead of equality operator",
             messageFormat: "Use string.Equals instead of {0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,

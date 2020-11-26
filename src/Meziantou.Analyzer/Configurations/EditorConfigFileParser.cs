@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Configurations
     internal static class EditorConfigFileParser
     {
         // Matches EditorConfig property such as "indent_style = space", see http://editorconfig.org for details
-        private static readonly Regex s_propertyMatcher = new Regex(@"^\s*(?<key>[\w\.\-_]+)\s*[=:]\s*(?<value>.*?)\s*([#;].*)?$", RegexOptions.Compiled | RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(2));
+        private static readonly Regex s_propertyMatcher = new(@"^\s*(?<key>[\w\.\-_]+)\s*[=:]\s*(?<value>.*?)\s*([#;].*)?$", RegexOptions.Compiled | RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(2));
 
         private static readonly StringComparer s_keyComparer = CaseInsensitiveComparison.Comparer;
 

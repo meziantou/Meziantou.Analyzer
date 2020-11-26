@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.ReturnTaskFromResultInsteadOfReturningNull,
             title: "Return Task.FromResult instead of returning null",
             messageFormat: "Return Task.FromResult instead of returning null",

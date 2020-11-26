@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.OptimizeStartsWith,
             title: "Optimize string method usage",
             messageFormat: "Replace string.{0}(\"{1}\") with string.{0}('{1}')",

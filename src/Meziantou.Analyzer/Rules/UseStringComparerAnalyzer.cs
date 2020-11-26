@@ -24,7 +24,7 @@ namespace Meziantou.Analyzer.Rules
             "Union",
         };
 
-        private static readonly Dictionary<string, int> s_arityIndex = new Dictionary<string, int>(StringComparer.Ordinal)
+        private static readonly Dictionary<string, int> s_arityIndex = new(StringComparer.Ordinal)
         {
             { "GroupBy", 1 },
             { "GroupJoin", 2 },
@@ -33,7 +33,7 @@ namespace Meziantou.Analyzer.Rules
             { "ToLookup", 1 },
         };
 
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.UseStringComparer,
             title: "IEqualityComparer<string> or IComparer<string> is missing",
             messageFormat: "Use an overload that has a IEqualityComparer<string> or IComparer<string> parameter",

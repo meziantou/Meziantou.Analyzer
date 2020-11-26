@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_senderInstanceRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_senderInstanceRule = new(
             RuleIdentifiers.SenderShouldBeThisForInstanceEvents,
             title: "Sender should be 'this' for instance events",
             messageFormat: "Sender parameter should be 'this' for instance events",
@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SenderShouldBeThisForInstanceEvents));
 
-        private static readonly DiagnosticDescriptor s_senderStaticRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_senderStaticRule = new(
             RuleIdentifiers.SenderShouldBeNullForStaticEvents,
             title: "Sender should be 'null' for static events",
             messageFormat: "Sender parameter should be 'null' for static events",
@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SenderShouldBeNullForStaticEvents));
 
-        private static readonly DiagnosticDescriptor s_eventArgsRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_eventArgsRule = new(
             RuleIdentifiers.EventArgsSenderShouldNotBeNullForEvents,
             title: "EventArgs should not be null",
             messageFormat: "EventArgs should not be null, use 'EventArgs.Empty' instead",

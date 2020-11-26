@@ -9,10 +9,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.ReplaceEnumToStringWithNameof,
-            title: "Replace with nameof",
-            messageFormat: "Replace with nameof",
+            title: "Replace constant Enum.ToString with nameof",
+            messageFormat: "Replace constant Enum.ToString with nameof",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,

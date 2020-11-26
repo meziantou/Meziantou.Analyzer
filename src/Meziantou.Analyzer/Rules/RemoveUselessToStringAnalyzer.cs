@@ -9,10 +9,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class RemoveUselessToStringAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.RemoveUselessToString,
-            title: "Remove ToString call",
-            messageFormat: "Remove ToString call",
+            title: "Remove useless ToString call",
+            messageFormat: "Remove useless ToString call",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,

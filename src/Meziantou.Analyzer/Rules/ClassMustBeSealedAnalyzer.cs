@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.ClassMustBeSealed,
             title: "Make class sealed",
             messageFormat: "Make class sealed",
@@ -38,8 +38,8 @@ namespace Meziantou.Analyzer.Rules
 
         private sealed class AnalyzerContext
         {
-            private readonly List<ITypeSymbol> _potentialClasses = new List<ITypeSymbol>();
-            private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new HashSet<ITypeSymbol>();
+            private readonly List<ITypeSymbol> _potentialClasses = new();
+            private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new();
 
             private INamedTypeSymbol? ExceptionSymbol { get; }
 

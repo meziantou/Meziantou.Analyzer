@@ -8,10 +8,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class TypeNameMustNotMatchNamespaceAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.TypeNameMustNotMatchNamespace,
-            title: "Type name should not match namespace",
-            messageFormat: "Type name should not match namespace",
+            title: "Type name should not match containing namespace",
+            messageFormat: "Type name should not match containing namespace",
             RuleCategories.Design,
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,

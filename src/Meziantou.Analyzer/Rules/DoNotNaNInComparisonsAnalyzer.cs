@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotNaNInComparisons,
             title: "NaN should not be used in comparisons",
             messageFormat: "{0}.NaN should not be used in comparisons",

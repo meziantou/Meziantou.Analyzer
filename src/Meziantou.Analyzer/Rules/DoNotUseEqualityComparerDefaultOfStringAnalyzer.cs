@@ -10,10 +10,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotUseEqualityComparerDefaultOfString,
-            title: "Use StringComparer.Ordinal",
-            messageFormat: "Use StringComparer.Ordinal",
+            title: "Use an explicit StringComparer when possible",
+            messageFormat: "Use an overload of '{0}' with a StringComparer",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -46,7 +46,7 @@ namespace Meziantou.Analyzer.Rules
                 if (operation.IsInNameofOperation())
                     return;
 
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(s_rule, operation, operation.Member.Name);
             }
         }
     }

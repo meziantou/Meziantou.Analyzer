@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.MethodShouldNotBeTooLong,
             title: "Method is too long",
             messageFormat: "Method is too long ({0})",

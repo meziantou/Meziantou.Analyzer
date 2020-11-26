@@ -10,9 +10,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class RemoveEmptyBlockAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.RemoveEmptyBlock,
-            title: "Remove empty block",
+            title: "Remove empty else/finally block",
             messageFormat: "Remove empty {0} block",
             RuleCategories.Design,
             DiagnosticSeverity.Info,

@@ -12,9 +12,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotUseBlockingCallInAsyncContext,
-            title: "Do not use blocking call",
+            title: "Do not use blocking calls in an async method",
             messageFormat: "{0}",
             RuleCategories.Design,
             DiagnosticSeverity.Info,
@@ -22,9 +22,9 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext));
 
-        private static readonly DiagnosticDescriptor s_rule2 = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule2 = new(
             RuleIdentifiers.DoNotUseBlockingCall,
-            title: "Do not use blocking call (make method async)",
+            title: "Do not use blocking call in a sync method (need to make containing method async)",
             messageFormat: "{0}",
             RuleCategories.Design,
             DiagnosticSeverity.Info,

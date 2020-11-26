@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotRaiseApplicationException,
             title: "Do not raise System.ApplicationException type",
             messageFormat: "Do not raise System.ApplicationException type",

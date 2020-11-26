@@ -8,9 +8,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.UseEventHandlerOfT,
-            title: "Use EventHandler<T>",
+            title: "Use EventHandler<T> to declare events",
             messageFormat: "{0}",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,

@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Configurations
     public static class AnalyzerOptionsExtensions
     {
         private static readonly ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy> s_cachedOptions
-            = new ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy>();
+            = new();
 
         public static bool GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, bool defaultValue)
         {

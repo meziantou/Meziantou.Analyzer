@@ -12,9 +12,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.UseNamedParameter,
-            title: "Name parameter",
+            title: "Add argument name to improve readability",
             messageFormat: "Name the parameter to improve the readability of the code",
             RuleCategories.Style,
             DiagnosticSeverity.Info,

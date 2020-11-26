@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.TheReturnValueOfStreamReadShouldBeUsed,
             title: "The value returned by Stream.Read is not used",
             messageFormat: "The value returned by Stream.Read is not used",

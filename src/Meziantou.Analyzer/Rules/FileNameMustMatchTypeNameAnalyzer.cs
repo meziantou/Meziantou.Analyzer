@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.FileNameMustMatchTypeName,
             title: "File name must match type name",
             messageFormat: "File name must match type name",

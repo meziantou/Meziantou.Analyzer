@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEvents,
             title: "Anonymous delegates should not be used to unsubscribe from Events",
             messageFormat: "Anonymous delegates should not be used to unsubscribe from Events",

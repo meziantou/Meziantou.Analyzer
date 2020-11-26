@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.AbstractTypesShouldNotHaveConstructors,
             title: "Abstract types should not have public or internal constructors",
             messageFormat: "Abstract types should not have public or internal constructors",

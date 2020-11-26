@@ -8,10 +8,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotRaiseNotImplementedExceptionAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotRaiseNotImplementedException,
-            title: "TODO Implement the functionality",
-            messageFormat: "TODO Implement the functionality (or raise NotSupportedException or PlatformNotSupportedException)",
+            title: "Implement the functionality instead of throwing NotImplementedException",
+            messageFormat: "Implement the functionality (or raise NotSupportedException or PlatformNotSupportedException)",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,

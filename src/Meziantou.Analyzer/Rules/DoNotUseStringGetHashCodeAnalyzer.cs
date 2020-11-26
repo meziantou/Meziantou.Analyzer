@@ -9,10 +9,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotUseStringGetHashCode,
-            title: "Use StringComparer.GetHashCode",
-            messageFormat: "Use StringComparer.GetHashCode",
+            title: "Use StringComparer.GetHashCode instead of string.GetHashCode",
+            messageFormat: "Use an explicit StringComparer to compute hash codes",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,

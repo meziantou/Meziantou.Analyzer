@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue,
             title: "Use Explicit enum value instead of 0",
             messageFormat: "Use Explicit enum value for '{0}' instead of 0",

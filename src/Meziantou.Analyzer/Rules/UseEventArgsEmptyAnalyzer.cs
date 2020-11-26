@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.UseEventArgsEmpty,
             title: "Use EventArgs.Empty",
             messageFormat: "Use EventArgs.Empty instead of new EventArgs()",

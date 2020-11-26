@@ -11,10 +11,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class CommaAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.MissingCommaInObjectInitializer,
-            title: "Add comma after the last property",
-            messageFormat: "Add comma after the last property",
+            title: "Add a comma after the last value",
+            messageFormat: "Add comma after the last value",
             RuleCategories.Style,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,

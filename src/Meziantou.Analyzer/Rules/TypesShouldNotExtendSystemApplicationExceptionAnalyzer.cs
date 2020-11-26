@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.TypesShouldNotExtendSystemApplicationException,
             title: "Types should not extend System.ApplicationException",
             messageFormat: "Types should not extend System.ApplicationException",

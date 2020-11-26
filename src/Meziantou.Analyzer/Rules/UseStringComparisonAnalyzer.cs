@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_avoidCultureSensitiveMethodRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_avoidCultureSensitiveMethodRule = new(
             RuleIdentifiers.AvoidCultureSensitiveMethod,
             title: "Avoid implicit culture-sensitive methods",
             messageFormat: "Use an overload of '{0}' that has a StringComparison parameter",
@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidCultureSensitiveMethod));
 
-        private static readonly DiagnosticDescriptor s_useStringComparisonRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_useStringComparisonRule = new(
             RuleIdentifiers.UseStringComparison,
             title: "StringComparison is missing",
             messageFormat: "Use an overload of '{0}' that has a StringComparison parameter",

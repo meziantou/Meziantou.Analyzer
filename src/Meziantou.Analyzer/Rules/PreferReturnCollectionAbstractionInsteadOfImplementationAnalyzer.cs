@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.PreferReturnCollectionAbstractionInsteadOfImplementation,
             title: "Prefer return collection abstraction instead of implementation",
             messageFormat: "Prefer return collection abstraction instead of implementation",

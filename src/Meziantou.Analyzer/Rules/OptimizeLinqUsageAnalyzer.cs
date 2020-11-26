@@ -14,9 +14,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_listMethodsRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_listMethodsRule = new(
             RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,
-            title: "Use direct methods instead of extension methods",
+            title: "Use direct methods instead of LINQ methods",
             messageFormat: "Use '{0}' instead of '{1}()'",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
@@ -24,9 +24,9 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods));
 
-        private static readonly DiagnosticDescriptor s_indexerInsteadOfElementAtRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_indexerInsteadOfElementAtRule = new(
             RuleIdentifiers.UseIndexerInsteadOfElementAt,
-            title: "Use indexer instead of extension methods",
+            title: "Use indexer instead of LINQ methods",
             messageFormat: "Use '{0}' instead of '{1}()'",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
@@ -34,29 +34,29 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseIndexerInsteadOfElementAt));
 
-        private static readonly DiagnosticDescriptor s_combineLinqMethodsRule = new DiagnosticDescriptor(
-            RuleIdentifiers.OptimizeLinqUsage,
-            title: "Optimize LINQ usage",
+        private static readonly DiagnosticDescriptor s_combineLinqMethodsRule = new(
+            RuleIdentifiers.OptimizeEnumerable_CombineMethods,
+            title: "Combine LINQ methods",
             messageFormat: "Combine '{0}' with '{1}'",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeLinqUsage));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_CombineMethods));
 
-        private static readonly DiagnosticDescriptor s_duplicateOrderByMethodsRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_duplicateOrderByMethodsRule = new(
             RuleIdentifiers.DuplicateEnumerable_OrderBy,
-            title: "Optimize LINQ usage",
+            title: "Remove useless OrderBy call",
             messageFormat: "Remove the first '{0}' method or use '{1}'",
             RuleCategories.Performance,
-            DiagnosticSeverity.Info,
+            DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DuplicateEnumerable_OrderBy));
 
-        private static readonly DiagnosticDescriptor s_optimizeCountRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_optimizeCountRule = new(
             RuleIdentifiers.OptimizeEnumerable_Count,
-            title: "Optimize Enumerable.Count usage",
+            title: "Optimize Enumerable.Count() usage",
             messageFormat: "{0}",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
@@ -64,9 +64,9 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_Count));
 
-        private static readonly DiagnosticDescriptor s_optimizeWhereAndOrderByRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_optimizeWhereAndOrderByRule = new(
             RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy,
-            title: "Optimize Enumerable.OrderBy usage",
+            title: "Use Where before OrderBy",
             messageFormat: "Call 'Where' before '{0}'",
             RuleCategories.Performance,
             DiagnosticSeverity.Info,
@@ -74,7 +74,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy));
 
-        private static readonly DiagnosticDescriptor s_useCastInsteadOfSelect = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_useCastInsteadOfSelect = new(
             RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect,
             title: "Use 'Cast' instead of 'Select' to cast",
             messageFormat: "Use 'Cast<{0}>' instead of 'Select' to cast",

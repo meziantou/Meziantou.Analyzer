@@ -25,7 +25,7 @@ namespace Meziantou.Analyzer.Rules
             RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,
             RuleIdentifiers.UseIndexerInsteadOfElementAt,
             RuleIdentifiers.DuplicateEnumerable_OrderBy,
-            RuleIdentifiers.OptimizeLinqUsage,
+            RuleIdentifiers.OptimizeEnumerable_CombineMethods,
             RuleIdentifiers.OptimizeEnumerable_Count,
             RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect);
 

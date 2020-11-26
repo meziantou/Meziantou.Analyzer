@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_optionalRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_optionalRule = new(
             RuleIdentifiers.ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter,
             title: "Parameters with [DefaultParameterValue] attributes should also be marked [Optional]",
             messageFormat: "Parameters with [DefaultParameterValue] attributes should also be marked [Optional]",
@@ -17,7 +17,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter));
 
-        private static readonly DiagnosticDescriptor s_defaultValueRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_defaultValueRule = new(
             RuleIdentifiers.DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant,
             title: "Use [DefaultParameterValue] instead of [DefaultValue]",
             messageFormat: "[DefaultValue] should not be used when [DefaultParameterValue] is meant",

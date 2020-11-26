@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_methodRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_methodRule = new(
             RuleIdentifiers.MakeMethodStatic,
             title: "Make method static",
             messageFormat: "Make method static",
@@ -23,7 +23,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeMethodStatic));
 
-        private static readonly DiagnosticDescriptor s_propertyRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_propertyRule = new(
          RuleIdentifiers.MakePropertyStatic,
          title: "Make property static",
          messageFormat: "Make property static",
@@ -53,8 +53,8 @@ namespace Meziantou.Analyzer.Rules
 
         private sealed class AnalyzerContext
         {
-            private readonly HashSet<ISymbol> _potentialSymbols = new HashSet<ISymbol>();
-            private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new HashSet<ISymbol>();
+            private readonly HashSet<ISymbol> _potentialSymbols = new();
+            private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new();
 
             public void CompilationEnd(CompilationAnalysisContext context)
             {

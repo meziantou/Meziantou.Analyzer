@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.AvoidLockingOnPubliclyAccessibleInstance,
             title: "Avoid locking on publicly accessible instance",
             messageFormat: "Avoid locking on publicly accessible instance",

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Configurations
 {
     internal sealed class ConfigurationHierarchy
     {
-        private readonly ConcurrentDictionary<string, EditorConfigFile> _configurationFiles = new ConcurrentDictionary<string, EditorConfigFile>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, EditorConfigFile> _configurationFiles = new(StringComparer.OrdinalIgnoreCase);
         private readonly EditorConfigFile _projectEditorConfigFile;
 
         public ConfigurationHierarchy(EditorConfigFile rootEditorConfigFile)

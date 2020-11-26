@@ -8,9 +8,9 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class NotNullIfNotNullArgumentShouldExistAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.NotNullIfNotNullArgumentShouldExist,
-            title: "Invalid parameter name",
+            title: "Invalid parameter name for nullable attribute",
             messageFormat: "Parameter '{0}' does not exist",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,

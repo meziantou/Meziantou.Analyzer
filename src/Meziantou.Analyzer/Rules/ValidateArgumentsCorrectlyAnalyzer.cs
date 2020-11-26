@@ -13,10 +13,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.ValidateArgumentsCorrectly,
-            title: "Validate arguments correctly",
-            messageFormat: "Validate arguments correctly",
+            title: "Validate arguments correctly in iterator methods",
+            messageFormat: "Validate arguments correctly in iterator methods",
             RuleCategories.Design,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
@@ -67,7 +67,7 @@ namespace Meziantou.Analyzer.Rules
             internal void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
             {
                 var node = (MethodDeclarationSyntax)context.Node;
-                var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) as IMethodSymbol;
+                var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
                 if (methodSymbol == null || !CanContainsYield(methodSymbol))
                     return;
 

@@ -9,10 +9,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DontUseDangerousThreadingMethodsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DontUseDangerousThreadingMethods,
-            title: "Don't use dangerous threading methods",
-            messageFormat: "Don't use dangerous threading methods",
+            title: "Do not use dangerous threading methods",
+            messageFormat: "Do not use dangerous threading methods",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,

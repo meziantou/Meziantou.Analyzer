@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_stringConcatRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_stringConcatRule = new(
             RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString,
             title: "Do not use implicit culture-sensitive ToString",
             messageFormat: "Do not use implicit culture-sensitive ToString",
@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString));
 
-        private static readonly DiagnosticDescriptor s_stringInterpolationRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_stringInterpolationRule = new(
             RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation,
             title: "Do not use implicit culture-sensitive ToString in interpolated strings",
             messageFormat: "Do not use implicit culture-sensitive ToString in interpolated strings",

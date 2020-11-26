@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.ConstructorArgumentParametersShouldExistInConstructors,
             title: "ConstructorArgument parameters should exist in constructors",
             messageFormat: "No constructor found with a parameter named '{0}'",

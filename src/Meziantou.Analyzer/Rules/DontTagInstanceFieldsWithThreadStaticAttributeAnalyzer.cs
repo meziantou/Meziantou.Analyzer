@@ -7,10 +7,10 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DontTagInstanceFieldsWithThreadStaticAttribute,
-            title: "Don't tag instance fields with ThreadStaticAttribute",
-            messageFormat: "Don't tag instance fields with ThreadStaticAttribute",
+            title: "Do not tag instance fields with ThreadStaticAttribute",
+            messageFormat: "Do not tag instance fields with ThreadStaticAttribute",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,

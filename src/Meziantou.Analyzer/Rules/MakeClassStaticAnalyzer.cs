@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.MakeClassStatic,
             title: "Make class static",
             messageFormat: "Make class static",
@@ -56,8 +56,8 @@ namespace Meziantou.Analyzer.Rules
 
         private sealed class AnalyzerContext
         {
-            private readonly List<ITypeSymbol> _potentialClasses = new List<ITypeSymbol>();
-            private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new HashSet<ITypeSymbol>();
+            private readonly List<ITypeSymbol> _potentialClasses = new();
+            private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new();
 
             public AnalyzerContext(Compilation compilation)
             {

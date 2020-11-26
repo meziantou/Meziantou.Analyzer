@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class AttributeNameShouldEndWithAttributeAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.AttributeNameShouldEndWithAttribute,
             title: "Class name should end with 'Attribute'",
             messageFormat: "Class name should end with 'Attribute'",

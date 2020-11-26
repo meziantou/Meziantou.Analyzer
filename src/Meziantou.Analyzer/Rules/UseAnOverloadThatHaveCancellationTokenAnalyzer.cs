@@ -16,27 +16,27 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenRule = new(
             RuleIdentifiers.UseAnOverloadThatHaveCancellationToken,
-            title: "Use a cancellation token",
-            messageFormat: "Specify a CancellationToken",
+            title: "Use an overload with a CancellationToken argument",
+            messageFormat: "Use an overload with a CancellationToken",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: false,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationToken));
 
-        private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule = new(
             RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable,
-            title: "Use a cancellation token",
-            messageFormat: "Specify a CancellationToken. Available tokens: {0}",
+            title: "Flow the cancellation token",
+            messageFormat: "Use an overload with a CancellationToken. Available tokens: {0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable));
 
-        private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRule = new(
             RuleIdentifiers.FlowCancellationTokenInAwaitForEach,
             title: "Use a cancellation token using .WithCancellation()",
             messageFormat: "Specify a CancellationToken",
@@ -46,9 +46,9 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEach));
 
-        private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule = new(
             RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable,
-            title: "Use a cancellation token using .WithCancellation()",
+            title: "Flow the cancellation token using .WithCancellation()",
             messageFormat: "Specify a CancellationToken using WithCancellation(). Available tokens: {0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
@@ -76,7 +76,7 @@ namespace Meziantou.Analyzer.Rules
 
         private sealed class AnalyzerContext
         {
-            private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>> _membersByType = new ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>>();
+            private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>> _membersByType = new();
 
             public AnalyzerContext(Compilation compilation)
             {

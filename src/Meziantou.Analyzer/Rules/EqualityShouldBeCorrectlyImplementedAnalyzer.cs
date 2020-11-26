@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_implementIEquatableRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_implementIEquatableRule = new(
             RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT,
             title: "A class that provides Equals(T) should implement IEquatable<T>",
             messageFormat: "A class that provides Equals(T) should implement IEquatable<T>",
@@ -19,7 +19,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT));
 
-        private static readonly DiagnosticDescriptor s_implementIComparableOfTRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_implementIComparableOfTRule = new(
             RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT,
             title: "A class that provides CompareTo(T) should implement IComparable<T>",
             messageFormat: "A class that provides CompareTo(T) should implement IComparable<T>",
@@ -29,7 +29,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT));
 
-        private static readonly DiagnosticDescriptor s_overrideEqualsObjectRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_overrideEqualsObjectRule = new(
             RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject,
             title: "A class that implements IEquatable<T> should override Equals(object)",
             messageFormat: "A class that implements IEquatable<T> should override Equals(object)",
@@ -39,7 +39,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject));
 
-        private static readonly DiagnosticDescriptor s_implementIEquatableWhenIComparableRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_implementIEquatableWhenIComparableRule = new(
             RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT,
             title: "A class that implements IComparable<T> should also implement IEquatable<T>",
             messageFormat: "A class that implements IComparable<T> should also implement IEquatable<T>",
@@ -49,7 +49,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT));
 
-        private static readonly DiagnosticDescriptor s_addComparisonRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_addComparisonRule = new(
             RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable,
             title: "A class that implements IComparable<T> or IComparable should override comparison operators",
             messageFormat: "A class that implements IComparable<T> or IComparable should override comparison operators",

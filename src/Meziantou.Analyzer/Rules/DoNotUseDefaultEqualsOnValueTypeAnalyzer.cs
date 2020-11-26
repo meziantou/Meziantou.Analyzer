@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DoNotUseDefaultEqualsOnValueType,
             title: "Default ValueType.Equals or HashCode is used for struct's equality",
             messageFormat: "Default ValueType.Equals or HashCode is used for struct's equality",
@@ -21,7 +21,7 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseDefaultEqualsOnValueType));
 
-        private static readonly DiagnosticDescriptor s_rule2 = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule2 = new(
             RuleIdentifiers.StructWithDefaultEqualsImplementationUsedAsAKey,
             title: "Hash table unfriendly type is used in a hash table",
             messageFormat: "Hash table unfriendly type is used in a hash table",

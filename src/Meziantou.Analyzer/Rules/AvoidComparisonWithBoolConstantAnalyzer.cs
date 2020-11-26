@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
     {
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.AvoidComparisonWithBoolConstant,
             title: "Avoid comparison with bool constant",
             messageFormat: "Avoid comparison with bool constant",

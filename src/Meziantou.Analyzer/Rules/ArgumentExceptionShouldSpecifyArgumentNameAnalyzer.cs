@@ -15,9 +15,9 @@ namespace Meziantou.Analyzer.Rules
     {
         internal const string ArgumentNameKey = "ArgumentName";
 
-        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName,
-            title: "Specify the parameter name",
+            title: "Specify the parameter name in ArgumentException",
             messageFormat: "{0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
@@ -25,9 +25,9 @@ namespace Meziantou.Analyzer.Rules
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName));
 
-        private static readonly DiagnosticDescriptor s_nameofRule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_nameofRule = new(
             RuleIdentifiers.UseNameofOperator,
-            title: "Use nameof operator",
+            title: "Use nameof operator in ArgumentException",
             messageFormat: "Use nameof operator",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,

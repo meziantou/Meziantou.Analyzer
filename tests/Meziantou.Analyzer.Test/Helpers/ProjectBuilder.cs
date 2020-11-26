@@ -19,7 +19,7 @@ namespace TestHelper
 {
     public sealed partial class ProjectBuilder
     {
-        private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> s_cache = new ConcurrentDictionary<string, Lazy<Task<string[]>>>(StringComparer.Ordinal);
+        private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> s_cache = new(StringComparer.Ordinal);
 
         private int _diagnosticMessageIndex = 0;
 
