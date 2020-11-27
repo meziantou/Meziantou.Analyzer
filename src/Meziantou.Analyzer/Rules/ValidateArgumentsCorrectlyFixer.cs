@@ -58,6 +58,10 @@ namespace Meziantou.Analyzer.Rules
             // Create local function
             var returnTypeSyntax = generator.TypeExpression(symbol.ReturnType);
             var localFunctionSyntaxNode = LocalFunctionStatement((TypeSyntax)returnTypeSyntax, symbol.Name);
+            if (methodSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)))
+            {
+                localFunctionSyntaxNode = localFunctionSyntaxNode.AddModifiers(Token(SyntaxKind.AsyncKeyword));
+            }
 
             var localFunctionStatements = new List<StatementSyntax>();
             var statements = methodSyntaxNode.Body.Statements;
@@ -80,7 +84,10 @@ namespace Meziantou.Analyzer.Rules
 
             statements = statements.Add(localFunctionSyntaxNode);
 
-            methodSyntaxNode = methodSyntaxNode.WithBody(Block(statements)).WithAdditionalAnnotations(Formatter.Annotation);
+            methodSyntaxNode = methodSyntaxNode
+                .WithModifiers(methodSyntaxNode.Modifiers.Remove(SyntaxKind.AsyncKeyword))
+                .WithBody(Block(statements))
+                .WithAdditionalAnnotations(Formatter.Annotation);
             editor.ReplaceNode(nodeToFix, methodSyntaxNode);
             return editor.GetChangedDocument();
         }

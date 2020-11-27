@@ -49,8 +49,10 @@ namespace Meziantou.Analyzer.Rules
                 var symbols = new List<ISymbol>();
                 symbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.IEnumerable"));
                 symbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1"));
+                symbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1"));
                 symbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.IEnumerator"));
                 symbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerator`1"));
+                symbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1"));
                 _symbols = symbols;
 
                 _argumentExceptionSymbol = compilation.GetTypeByMetadataName("System.ArgumentException");

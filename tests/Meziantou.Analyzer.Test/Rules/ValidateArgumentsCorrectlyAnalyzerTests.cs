@@ -163,6 +163,7 @@ class TypeName
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+
         [Fact]
         public async Task ValidValidation()
         {
@@ -191,5 +192,48 @@ class TypeName
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ReportDiagnostic_IAsyncEnumerable()
+        {
+            const string SourceCode = @"using System.Collections.Generic;
+class TypeName
+{
+    async IAsyncEnumerable<int> [||]A(string a)
+    {
+        if (a == null)
+            throw new System.ArgumentNullException(nameof(a));
+
+        await System.Threading.Tasks.Task.Delay(1);
+        yield return 0;
+        
+    }
+}";
+
+            const string CodeFix = @"using System.Collections.Generic;
+class TypeName
+{
+    IAsyncEnumerable<int> A(string a)
+    {
+        if (a == null)
+            throw new System.ArgumentNullException(nameof(a));
+
+        return A();
+
+        async IAsyncEnumerable<int> A()
+        {
+            await System.Threading.Tasks.Task.Delay(1);
+            yield return 0;
+        }
+    }
+}";
+
+            await CreateProjectBuilder()
+                  .AddAsyncInterfaceApi()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
     }
 }
