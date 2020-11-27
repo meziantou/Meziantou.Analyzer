@@ -11,8 +11,8 @@ namespace Meziantou.Analyzer.Rules
     {
         private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.TheReturnValueOfStreamReadShouldBeUsed,
-            title: "The value returned by Stream.Read is not used",
-            messageFormat: "The value returned by Stream.Read is not used",
+            title: "The value returned by Stream.Read/Stream.ReadAsync is not used",
+            messageFormat: "The value returned by '{0}' is not used",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -48,7 +48,7 @@ namespace Meziantou.Analyzer.Rules
 
             if (parent == null || parent is IBlockOperation || parent is IExpressionStatementOperation)
             {
-                context.ReportDiagnostic(s_rule, invocation);
+                context.ReportDiagnostic(s_rule, invocation, targetMethod.Name);
             }
         }
     }
