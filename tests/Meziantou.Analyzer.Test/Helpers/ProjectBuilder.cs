@@ -101,24 +101,6 @@ namespace TestHelper
             return this;
         }
 
-        private ProjectBuilder AddApiReference(string name)
-        {
-            using (var stream = typeof(ProjectBuilder).Assembly.GetManifestResourceStream("Meziantou.Analyzer.Test.References." + name + ".txt"))
-            {
-                if (stream == null)
-                {
-                    var names = typeof(ProjectBuilder).Assembly.GetManifestResourceNames();
-                    throw new Exception("File not found. Available values:" + Environment.NewLine + string.Join(Environment.NewLine, names));
-                }
-
-                using var sr = new StreamReader(stream);
-                var content = sr.ReadToEnd();
-                ApiReferences.Add(content);
-            }
-
-            return this;
-        }
-
         public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
 
         public ProjectBuilder AddNUnitApi() => AddNuGetReference("NUnit", "3.12.0", "lib/netstandard2.0/");
@@ -130,10 +112,7 @@ namespace TestHelper
         public ProjectBuilder AddAsyncInterfaceApi() =>
             AddNuGetReference("Microsoft.Bcl.AsyncInterfaces", "1.1.1", "ref/netstandard2.0/")
             .AddNuGetReference("System.Threading.Tasks.Extensions", "4.5.4", "lib/netstandard2.0/")
-            .AddNuGetReference("System.Runtime.CompilerServices.Unsafe", "4.7.1", "ref/netstandard2.0/")
-            ;
-
-        public ProjectBuilder AddMicrosoftAspNetCoreApi() => AddApiReference("Microsoft.AspNetCore");
+            .AddNuGetReference("System.Runtime.CompilerServices.Unsafe", "4.7.1", "ref/netstandard2.0/");
 
         public ProjectBuilder AddSystemTextJson() => AddNuGetReference("System.Text.Json", "4.7.2", "lib/netstandard2.0/");
 
