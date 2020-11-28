@@ -102,6 +102,7 @@ namespace Meziantou.Analyzer
         public const string TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable = "MA0097";
         public const string UseIndexerInsteadOfElementAt = "MA0098";
         public const string DoNotUseZeroToInitializeAnEnumValue = "MA0099";
+        public const string AwaitTaskBeforeDisposingResources = "MA0100";
 
         public static string GetHelpUri(string idenfifier)
         {

@@ -170,6 +170,18 @@ namespace TestHelper
                 case TargetFramework.Net48:
                     AddNuGetReference("Microsoft.NETFramework.ReferenceAssemblies.net48", "1.0.0", "build/.NETFramework/v4.8/");
                     break;
+
+                case TargetFramework.Net50:
+                    AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
+                    break;
+
+                case TargetFramework.AspNetCore50:
+                    AddNuGetReference("Microsoft.AspNetCore.App.Ref", "5.0.0", "ref/net5.0/");
+                    break;
+
+                case TargetFramework.WindowsDesktop50:
+                    AddNuGetReference("Microsoft.WindowsDesktop.App.Ref", "5.0.0", "ref/net5.0/");
+                    break;
             }
 
             AddNuGetReference("System.Collections.Immutable", "1.5.0", "lib/netstandard2.0/");

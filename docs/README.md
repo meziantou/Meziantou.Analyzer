@@ -60,7 +60,7 @@
 |[MA0057](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0057.md)|Naming|Class name should end with 'Attribute'|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0058](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0058.md)|Naming|Class name should end with 'Exception'|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0059](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0059.md)|Naming|Class name should end with 'EventArgs'|<span title='Info'>ℹ️</span>|✔️|❌|
-|[MA0060](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0060.md)|Design|The value returned by Stream.Read is not used|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0060](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0060.md)|Design|The value returned by Stream.Read/Stream.ReadAsync is not used|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0061](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0061.md)|Design|Method overrides should not change parameter defaults|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0062](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0062.md)|Design|Non-flags enums should not be marked with "FlagsAttribute"|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0063](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0063.md)|Performance|Use Where before OrderBy|<span title='Info'>ℹ️</span>|✔️|❌|
@@ -100,6 +100,7 @@
 |[MA0097](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0097.md)|Design|A class that implements IComparable\<T\> or IComparable should override comparison operators|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0098](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0098.md)|Performance|Use indexer instead of LINQ methods|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0099](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0099.md)|Usage|Use Explicit enum value instead of 0|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0100](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0100.md)|Usage|Await task before disposing resources|<span title='Warning'>⚠️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -162,7 +163,7 @@ dotnet_diagnostic.MA0056.severity = warning    # MA0056: Do not call overridable
 dotnet_diagnostic.MA0057.severity = suggestion # MA0057: Class name should end with 'Attribute'
 dotnet_diagnostic.MA0058.severity = suggestion # MA0058: Class name should end with 'Exception'
 dotnet_diagnostic.MA0059.severity = suggestion # MA0059: Class name should end with 'EventArgs'
-dotnet_diagnostic.MA0060.severity = warning    # MA0060: The value returned by Stream.Read is not used
+dotnet_diagnostic.MA0060.severity = warning    # MA0060: The value returned by Stream.Read/Stream.ReadAsync is not used
 dotnet_diagnostic.MA0061.severity = warning    # MA0061: Method overrides should not change parameter defaults
 dotnet_diagnostic.MA0062.severity = warning    # MA0062: Non-flags enums should not be marked with "FlagsAttribute"
 dotnet_diagnostic.MA0063.severity = suggestion # MA0063: Use Where before OrderBy
@@ -202,6 +203,7 @@ dotnet_diagnostic.MA0096.severity = warning    # MA0096: A class that implements
 dotnet_diagnostic.MA0097.severity = warning    # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.MA0098.severity = suggestion # MA0098: Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0099.severity = warning    # MA0099: Use Explicit enum value instead of 0
+dotnet_diagnostic.MA0100.severity = warning    # MA0100: Await task before disposing resources
 ```
 
 # .editorconfig - all rules disabled
@@ -265,7 +267,7 @@ dotnet_diagnostic.MA0056.severity = none       # MA0056: Do not call overridable
 dotnet_diagnostic.MA0057.severity = none       # MA0057: Class name should end with 'Attribute'
 dotnet_diagnostic.MA0058.severity = none       # MA0058: Class name should end with 'Exception'
 dotnet_diagnostic.MA0059.severity = none       # MA0059: Class name should end with 'EventArgs'
-dotnet_diagnostic.MA0060.severity = none       # MA0060: The value returned by Stream.Read is not used
+dotnet_diagnostic.MA0060.severity = none       # MA0060: The value returned by Stream.Read/Stream.ReadAsync is not used
 dotnet_diagnostic.MA0061.severity = none       # MA0061: Method overrides should not change parameter defaults
 dotnet_diagnostic.MA0062.severity = none       # MA0062: Non-flags enums should not be marked with "FlagsAttribute"
 dotnet_diagnostic.MA0063.severity = none       # MA0063: Use Where before OrderBy
@@ -305,4 +307,5 @@ dotnet_diagnostic.MA0096.severity = none       # MA0096: A class that implements
 dotnet_diagnostic.MA0097.severity = none       # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.MA0098.severity = none       # MA0098: Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0099.severity = none       # MA0099: Use Explicit enum value instead of 0
+dotnet_diagnostic.MA0100.severity = none       # MA0100: Await task before disposing resources
 ```
