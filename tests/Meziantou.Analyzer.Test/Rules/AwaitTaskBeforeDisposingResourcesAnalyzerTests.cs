@@ -254,6 +254,7 @@ class TestClass
                     .WithSourceCode(originalCode)
                     .ValidateAsync();
         }
+
         [Fact]
         public async Task NotAwaitedTaskCompleted_InUsing()
         {
@@ -268,6 +269,23 @@ class TestClass
         {
             return Task.CompletedTask;
         }
+    }
+}";
+
+            await CreateProjectBuilder()
+                    .WithSourceCode(originalCode)
+                    .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task ReturnWithoutValue()
+        {
+            var originalCode = @"
+class TestClass
+{
+    void Test()
+    {
+        return;
     }
 }";
 

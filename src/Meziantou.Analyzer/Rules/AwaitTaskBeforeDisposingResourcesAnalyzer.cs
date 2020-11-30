@@ -54,9 +54,9 @@ namespace Meziantou.Analyzer.Rules
                 context.ReportDiagnostic(s_rule, op);
             }
 
-            bool IsTaskLike(ITypeSymbol symbol)
+            bool IsTaskLike(ITypeSymbol? symbol)
             {
-                return symbol.OriginalDefinition.IsEqualToAny(taskSymbol, taskOfTSymbol, valueTaskSymbol, valueTaskOfTSymbol);
+                return symbol != null && symbol.OriginalDefinition.IsEqualToAny(taskSymbol, taskOfTSymbol, valueTaskSymbol, valueTaskOfTSymbol);
             }
 
             bool NeedAwait(IOperation operation)
@@ -65,6 +65,9 @@ namespace Meziantou.Analyzer.Rules
                 {
                     operation = conversion.Operand;
                 }
+
+                if (operation == null)
+                    return false;
 
                 // default(Task)
                 if (operation is IDefaultValueOperation)
