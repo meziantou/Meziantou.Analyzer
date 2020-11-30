@@ -74,7 +74,7 @@ namespace Meziantou.Analyzer.Rules
                 binaryOperation.OperatorKind == BinaryOperatorKind.NotEquals :
                 binaryOperation.OperatorKind == BinaryOperatorKind.Equals;
 
-            var properties = ImmutableDictionary.Create<string, string>()
+            var properties = ImmutableDictionary.Create<string, string?>()
                 .Add("NodeToKeepSpanStart", nodeToKeep.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
                 .Add("NodeToKeepSpanLength", nodeToKeep.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
                 .Add("LogicalNotOperatorNeeded", logicalNotOperatorNeeded.ToString());

@@ -62,6 +62,10 @@ namespace Meziantou.Analyzer.Rules
                 {
                     ConsoleErrorAndOutSymbols = consoleSymbol.GetMembers(nameof(Console.Out)).Concat(consoleSymbol.GetMembers(nameof(Console.Error))).ToArray();
                 }
+                else
+                {
+                    ConsoleErrorAndOutSymbols = Array.Empty<ISymbol>();
+                }
 
                 ProcessSymbol = _compilation.GetTypeByMetadataName("System.Diagnostics.Process");
                 CancellationTokenSymbol = _compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
@@ -80,7 +84,7 @@ namespace Meziantou.Analyzer.Rules
             }
 
             private ISymbol? ProcessSymbol { get; }
-            private ISymbol[]? ConsoleErrorAndOutSymbols { get; }
+            private ISymbol[] ConsoleErrorAndOutSymbols { get; }
             private INamedTypeSymbol? CancellationTokenSymbol { get; }
 
             private INamedTypeSymbol? TaskSymbol { get; }
@@ -154,7 +158,7 @@ namespace Meziantou.Analyzer.Rules
                     var left = operation.Children.FirstOrDefault();
                     if (left is IMemberReferenceOperation memberReference)
                     {
-                        if (ConsoleErrorAndOutSymbols?.Contains(memberReference.Member) == true)
+                        if (ConsoleErrorAndOutSymbols.Contains(memberReference.Member, SymbolEqualityComparer.Default))
                             return;
                     }
                 }

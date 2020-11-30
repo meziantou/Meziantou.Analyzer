@@ -39,7 +39,7 @@ namespace Meziantou.Analyzer.Rules
         private sealed class AnalyzerContext
         {
             private readonly List<ITypeSymbol> _potentialClasses = new();
-            private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new();
+            private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
 
             private INamedTypeSymbol? ExceptionSymbol { get; }
 

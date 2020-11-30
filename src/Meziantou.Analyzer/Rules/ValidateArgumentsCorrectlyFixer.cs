@@ -50,7 +50,10 @@ namespace Meziantou.Analyzer.Rules
             var generator = editor.Generator;
 
             var index = int.Parse(diagnostic.Properties["Index"], CultureInfo.InvariantCulture);
-            var symbol = (IMethodSymbol)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
+            var symbol = (IMethodSymbol?)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
+            if (symbol == null)
+                return document;
+
             var methodSyntaxNode = (MethodDeclarationSyntax)nodeToFix;
             if (methodSyntaxNode.Body == null)
                 return document;

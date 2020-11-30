@@ -57,7 +57,7 @@ namespace Meziantou.Analyzer.Rules
         private sealed class AnalyzerContext
         {
             private readonly List<ITypeSymbol> _potentialClasses = new();
-            private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new();
+            private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new(SymbolEqualityComparer.Default);
 
             public AnalyzerContext(Compilation compilation)
             {

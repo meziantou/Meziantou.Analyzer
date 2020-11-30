@@ -53,8 +53,8 @@ namespace Meziantou.Analyzer.Rules
 
         private sealed class AnalyzerContext
         {
-            private readonly HashSet<ISymbol> _potentialSymbols = new();
-            private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new();
+            private readonly HashSet<ISymbol> _potentialSymbols = new(SymbolEqualityComparer.Default);
+            private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new(SymbolEqualityComparer.Default);
 
             public void CompilationEnd(CompilationAnalysisContext context)
             {

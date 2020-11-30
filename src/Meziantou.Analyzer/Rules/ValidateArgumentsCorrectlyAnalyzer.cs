@@ -90,7 +90,7 @@ namespace Meziantou.Analyzer.Rules
 
                 if (lastThrowIndex != null && firstYieldIndex != null && lastThrowIndex < firstYieldIndex)
                 {
-                    var properties = ImmutableDictionary.Create<string, string>()
+                    var properties = ImmutableDictionary.Create<string, string?>()
                         .Add("Index", lastThrowIndex.Value.ToString(CultureInfo.InvariantCulture));
 
                     context.ReportDiagnostic(s_rule, properties, methodSymbol);
