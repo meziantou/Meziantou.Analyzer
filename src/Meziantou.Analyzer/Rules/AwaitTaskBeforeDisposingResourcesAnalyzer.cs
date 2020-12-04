@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -45,13 +44,27 @@ namespace Meziantou.Analyzer.Rules
             if (IsTaskLike(returnedValue.Type))
             {
                 // Must be in a using block
-                if (!op.Ancestors().OfType<IUsingOperation>().Any())
+                if (!IsInUsingOperation(op))
                     return;
 
                 if (!NeedAwait(returnedValue))
                     return;
 
                 context.ReportDiagnostic(s_rule, op);
+            }
+
+            static bool IsInUsingOperation(IOperation operation)
+            {
+                foreach (var parent in operation.Ancestors())
+                {
+                    if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
+                        return false;
+
+                    if (parent is IUsingOperation)
+                        return true;
+                }
+
+                return false;
             }
 
             bool IsTaskLike(ITypeSymbol? symbol)

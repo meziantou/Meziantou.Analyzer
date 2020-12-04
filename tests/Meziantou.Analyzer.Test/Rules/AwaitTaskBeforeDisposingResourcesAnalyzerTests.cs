@@ -127,6 +127,26 @@ class TestClass
         }
 
         [Fact]
+        public async Task NonAwaitedTaskFromResultInUsingVariable()
+        {
+            var originalCode = @"
+using System;
+using System.Threading.Tasks;
+class TestClass
+{
+    Task<int> Test()
+    {
+        using var a = (IDisposable)null;
+        return Task.FromResult(1);
+    }
+}";
+
+            await CreateProjectBuilder()
+                    .WithSourceCode(originalCode)
+                    .ValidateAsync();
+        }
+
+        [Fact]
         public async Task NotAwaitedTask_NotInUsing()
         {
             var originalCode = @"
@@ -286,6 +306,28 @@ class TestClass
     void Test()
     {
         return;
+    }
+}";
+
+            await CreateProjectBuilder()
+                    .WithSourceCode(originalCode)
+                    .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task TaskRun()
+        {
+            var originalCode = @"
+using System;
+using System.Threading.Tasks;
+class TestClass
+{
+    async Task Test()
+    {
+        using ((IDisposable)null)
+        {
+            await Task.Run(() => Task.Delay(1));
+        }
     }
 }";
 

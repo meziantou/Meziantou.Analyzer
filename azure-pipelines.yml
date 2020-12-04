@@ -62,7 +62,7 @@ stages:
       inputs:
         command: 'custom'
         custom: 'format'
-        arguments: '--dry-run --check --verbosity diagnostic'
+        arguments: '--check --verbosity diagnostic'
 
   - job: build
     pool:
