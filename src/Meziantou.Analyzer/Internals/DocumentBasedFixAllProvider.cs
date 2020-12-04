@@ -55,19 +55,20 @@ namespace Meziantou.Analyzer
 
         private async Task<Document> GetDocumentFixesAsync(FixAllContext fixAllContext)
         {
+            var document = fixAllContext.Document!;
             var documentDiagnosticsToFix = await FixAllContextHelper.GetDocumentDiagnosticsToFixAsync(fixAllContext).ConfigureAwait(false);
-            if (!documentDiagnosticsToFix.TryGetValue(fixAllContext.Document, out var diagnostics))
+            if (!documentDiagnosticsToFix.TryGetValue(document, out var diagnostics))
             {
-                return fixAllContext.Document;
+                return document;
             }
 
-            var newRoot = await FixAllInDocumentAsync(fixAllContext, fixAllContext.Document, diagnostics).ConfigureAwait(false);
+            var newRoot = await FixAllInDocumentAsync(fixAllContext, document, diagnostics).ConfigureAwait(false);
             if (newRoot == null)
             {
-                return fixAllContext.Document;
+                return document;
             }
 
-            return fixAllContext.Document.WithSyntaxRoot(newRoot);
+            return document.WithSyntaxRoot(newRoot);
         }
 
         private async Task<Solution> GetSolutionFixesAsync(FixAllContext fixAllContext, ImmutableArray<Document> documents)
