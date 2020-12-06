@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
@@ -39,6 +40,8 @@ namespace Meziantou.Analyzer.Rules
         private sealed class AnalyzerContext
         {
             private readonly List<ITypeSymbol> _potentialClasses = new();
+
+            [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1024:Compare symbols correctly", Justification = "False positive")]
             private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
 
             private INamedTypeSymbol? ExceptionSymbol { get; }
