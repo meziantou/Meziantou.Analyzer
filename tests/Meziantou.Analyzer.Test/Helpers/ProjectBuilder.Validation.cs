@@ -511,7 +511,7 @@ namespace TestHelper
 
             public override async Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
             {
-                var documentRoot = await document.GetSyntaxRootAsync().ConfigureAwait(false);
+                var documentRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
                 return _diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot());
             }
 

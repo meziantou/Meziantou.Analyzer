@@ -257,7 +257,7 @@ namespace Meziantou.Analyzer.Rules
                 return from item in all
                        let members = GetMembers(item.TypeSymbol, maxDepth: 1)
                        from member in members
-                       where member.All(IsSymbolAccessible) && (item.Name != null || !isStatic || (member.FirstOrDefault()?.IsStatic ?? true))
+                       where member.All(IsSymbolAccessible) && (item.Name != null || !isStatic || member.Count == 0 || member[0].IsStatic)
                        let fullPath = ComputeFullPath(item.Name, member)
                        orderby fullPath.Count(c => c == '.'), fullPath
                        select fullPath;

@@ -291,7 +291,7 @@ namespace Meziantou.Analyzer.Rules
             return editor.GetChangedDocument();
         }
 
-        private async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             if (nodeToFix is not InvocationExpressionSyntax selectInvocationExpression)
                 return document;
