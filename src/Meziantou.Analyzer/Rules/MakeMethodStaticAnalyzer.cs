@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -53,8 +54,11 @@ namespace Meziantou.Analyzer.Rules
 
         private sealed class AnalyzerContext
         {
-            private readonly HashSet<ISymbol> _potentialSymbols = new();
-            private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new();
+            [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1024:Compare symbols correctly", Justification = "False positive")]
+            private readonly HashSet<ISymbol> _potentialSymbols = new(SymbolEqualityComparer.Default);
+
+            [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1024:Compare symbols correctly", Justification = "False positive")]
+            private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new(SymbolEqualityComparer.Default);
 
             public void CompilationEnd(CompilationAnalysisContext context)
             {

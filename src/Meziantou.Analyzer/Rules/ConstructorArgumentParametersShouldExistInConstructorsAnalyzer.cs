@@ -75,7 +75,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            private bool HasConstructorMatchingAttribute(INamedTypeSymbol type, string expectedParameterName)
+            private static bool HasConstructorMatchingAttribute(INamedTypeSymbol type, string expectedParameterName)
             {
                 if (string.IsNullOrEmpty(expectedParameterName))
                     return false;

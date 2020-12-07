@@ -259,7 +259,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> ReplaceArgWithCharacter(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
-            var constValue = diagnostic.Properties["ConstantValue"][0];
+            var constValue = diagnostic.Properties["ConstantValue"]![0];
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
             var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();

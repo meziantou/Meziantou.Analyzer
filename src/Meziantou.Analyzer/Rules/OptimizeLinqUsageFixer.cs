@@ -291,7 +291,7 @@ namespace Meziantou.Analyzer.Rules
             return editor.GetChangedDocument();
         }
 
-        private async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+        private static async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
         {
             if (nodeToFix is not InvocationExpressionSyntax selectInvocationExpression)
                 return document;
@@ -305,7 +305,7 @@ namespace Meziantou.Analyzer.Rules
                 .WithTypeArgumentList(
                     TypeArgumentList(
                         SingletonSeparatedList<TypeSyntax>(
-                            IdentifierName(castType))));
+                            IdentifierName(castType!))));
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
@@ -498,7 +498,7 @@ namespace Meziantou.Analyzer.Rules
         {
             var lastOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
             var lastOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var expectedMethodName = diagnostic.Properties["ExpectedMethodName"];
+            var expectedMethodName = diagnostic.Properties["ExpectedMethodName"]!;
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var nodeToFix = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
@@ -546,7 +546,7 @@ namespace Meziantou.Analyzer.Rules
             editor.ReplaceNode(lastOperation.Syntax, newExpression);
             return editor.GetChangedDocument();
 
-            SyntaxNode? CombineArguments(IArgumentOperation argument1, IArgumentOperation argument2)
+            SyntaxNode? CombineArguments(IArgumentOperation? argument1, IArgumentOperation? argument2)
             {
                 if (argument2 == null)
                     return argument1?.Syntax;

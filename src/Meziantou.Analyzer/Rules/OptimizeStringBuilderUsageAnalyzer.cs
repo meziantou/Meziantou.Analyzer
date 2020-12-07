@@ -70,9 +70,9 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static ImmutableDictionary<string, string> CreateProperties(OptimizeStringBuilderUsageData data)
+        private static ImmutableDictionary<string, string?> CreateProperties(OptimizeStringBuilderUsageData data)
         {
-            return ImmutableDictionary.Create<string, string>().Add("Data", data.ToString());
+            return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
         }
 
         private static bool IsOptimizable(OperationAnalysisContext context, IOperation operation, string methodName, IArgumentOperation argument)

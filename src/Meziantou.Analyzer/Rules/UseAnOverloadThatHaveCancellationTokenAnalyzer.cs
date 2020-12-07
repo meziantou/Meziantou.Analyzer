@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule = new(
             RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable,
             title: "Flow the cancellation token",
-            messageFormat: "Use an overload with a CancellationToken. Available tokens: {0}",
+            messageFormat: "Use an overload with a CancellationToken, available tokens: {0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
@@ -49,7 +50,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule = new(
             RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable,
             title: "Flow the cancellation token using .WithCancellation()",
-            messageFormat: "Specify a CancellationToken using WithCancellation(). Available tokens: {0}",
+            messageFormat: "Specify a CancellationToken using WithCancellation(), available tokens: {0}",
             RuleCategories.Usage,
             DiagnosticSeverity.Info,
             isEnabledByDefault: true,
@@ -76,7 +77,8 @@ namespace Meziantou.Analyzer.Rules
 
         private sealed class AnalyzerContext
         {
-            private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>> _membersByType = new();
+            [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1024:Compare symbols correctly", Justification = "False positive")]
+            private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>> _membersByType = new(SymbolEqualityComparer.Default);
 
             public AnalyzerContext(Compilation compilation)
             {
@@ -255,7 +257,7 @@ namespace Meziantou.Analyzer.Rules
                 return from item in all
                        let members = GetMembers(item.TypeSymbol, maxDepth: 1)
                        from member in members
-                       where member.All(IsSymbolAccessible) && (item.Name != null || !isStatic || (member.FirstOrDefault()?.IsStatic ?? true))
+                       where member.All(IsSymbolAccessible) && (item.Name != null || !isStatic || member.Count == 0 || member[0].IsStatic)
                        let fullPath = ComputeFullPath(item.Name, member)
                        orderby fullPath.Count(c => c == '.'), fullPath
                        select fullPath;

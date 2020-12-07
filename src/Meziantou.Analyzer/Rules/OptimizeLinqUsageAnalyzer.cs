@@ -127,9 +127,9 @@ namespace Meziantou.Analyzer.Rules
             UseCastInsteadOfSelect(context, operation);
         }
 
-        private static ImmutableDictionary<string, string> CreateProperties(OptimizeLinqUsageData data)
+        private static ImmutableDictionary<string, string?> CreateProperties(OptimizeLinqUsageData data)
         {
-            return ImmutableDictionary.Create<string, string>().Add("Data", data.ToString());
+            return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
         }
 
         private static void WhereShouldBeBeforeOrderBy(OperationAnalysisContext context, IInvocationOperation operation, List<INamedTypeSymbol> enumerableSymbols)
@@ -223,7 +223,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static void UseIndexerInsteadOfElementAt(OperationAnalysisContext context, IInvocationOperation operation)
         {
-            ImmutableDictionary<string, string>? properties = null;
+            ImmutableDictionary<string, string?>? properties = null;
 
             var argCount = -1;
             if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ElementAt), StringComparison.Ordinal))
@@ -279,7 +279,7 @@ namespace Meziantou.Analyzer.Rules
 
                 // Check parent methods
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType))
+                if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
                 {
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.First), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.FirstOrDefault), StringComparison.Ordinal) ||
@@ -313,7 +313,7 @@ namespace Meziantou.Analyzer.Rules
                 string.Equals(operation.TargetMethod.Name, nameof(Enumerable.ThenByDescending), StringComparison.Ordinal))
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType))
+                if (parent != null && enumerableSymbols.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
                 {
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
@@ -354,7 +354,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             string? message = null;
-            var properties = ImmutableDictionary<string, string>.Empty;
+            var properties = ImmutableDictionary<string, string?>.Empty;
             if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
             {
                 switch (opKind)
@@ -598,7 +598,7 @@ namespace Meziantou.Analyzer.Rules
                 if (op == null)
                     return false;
 
-                return string.Equals(op.TargetMethod.Name, nameof(Enumerable.Take), StringComparison.Ordinal) && enumerableSymbols.Contains(op.TargetMethod.ContainingType);
+                return string.Equals(op.TargetMethod.Name, nameof(Enumerable.Take), StringComparison.Ordinal) && enumerableSymbols.Contains(op.TargetMethod.ContainingType, SymbolEqualityComparer.Default);
             }
         }
 

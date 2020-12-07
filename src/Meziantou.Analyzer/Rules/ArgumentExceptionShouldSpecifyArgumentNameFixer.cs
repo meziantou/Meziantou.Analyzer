@@ -25,7 +25,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             var diagnostic = context.Diagnostics.First();
-            if (!diagnostic.Properties.TryGetValue(ArgumentExceptionShouldSpecifyArgumentNameAnalyzer.ArgumentNameKey, out var argumentName))
+            if (!diagnostic.Properties.TryGetValue(ArgumentExceptionShouldSpecifyArgumentNameAnalyzer.ArgumentNameKey, out var argumentName) || argumentName is null)
                 return;
 
             var title = "Use nameof";

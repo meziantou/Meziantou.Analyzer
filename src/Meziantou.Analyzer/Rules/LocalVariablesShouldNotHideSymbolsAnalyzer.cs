@@ -71,7 +71,7 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private IEnumerable<ISymbol> GetSymbols(INamedTypeSymbol? type, string name)
+        private static IEnumerable<ISymbol> GetSymbols(INamedTypeSymbol? type, string name)
         {
             while (type != null)
             {

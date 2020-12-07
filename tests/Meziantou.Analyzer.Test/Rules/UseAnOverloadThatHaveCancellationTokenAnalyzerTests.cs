@@ -125,7 +125,7 @@ class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken. Available tokens: cancellationToken")
+                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: cancellationToken")
                   .ValidateAsync();
         }
 
@@ -150,7 +150,7 @@ class HttpRequest
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken. Available tokens: request.RequestAborted")
+                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
                   .ValidateAsync();
         }
 
@@ -182,7 +182,7 @@ class HttpContext
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken. Available tokens: MyCancellationToken, Context.RequestAborted")
+                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted")
                   .ValidateAsync();
         }
 
@@ -210,7 +210,7 @@ class HttpContext
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken. Available tokens: MyCancellationToken")
+                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken")
                   .ValidateAsync();
         }
 
@@ -236,7 +236,7 @@ class Test
 ";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken. Available tokens: a")
+                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
                   .ValidateAsync();
         }
 

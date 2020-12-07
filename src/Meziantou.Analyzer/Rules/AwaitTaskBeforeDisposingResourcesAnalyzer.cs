@@ -16,7 +16,7 @@ namespace Meziantou.Analyzer.Rules
             RuleCategories.Usage,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
-            description: "Await the task before the end of the enclosing using block",
+            description: "Await the task before the end of the enclosing using block.",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AwaitTaskBeforeDisposingResources));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
