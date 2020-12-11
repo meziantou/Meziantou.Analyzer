@@ -45,10 +45,12 @@ namespace Meziantou.Analyzer.Rules
             private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
 
             private INamedTypeSymbol? ExceptionSymbol { get; }
+            private INamedTypeSymbol? ComImportSymbol { get; }
 
             public AnalyzerContext(Compilation compilation)
             {
                 ExceptionSymbol = compilation.GetTypeByMetadataName("System.Exception");
+                ComImportSymbol = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
             }
 
             public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
@@ -95,6 +97,9 @@ namespace Meziantou.Analyzer.Rules
                     return false;
 
                 if (symbol.InheritsFrom(ExceptionSymbol))
+                    return false;
+
+                if (symbol.HasAttribute(ComImportSymbol))
                     return false;
 
                 if (symbol.GetMembers().Any(member => member.IsVirtual) && !SealedClassWithVirtualMember(options, symbol))

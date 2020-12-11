@@ -178,5 +178,20 @@ internal class [||]SampleException
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ComImport()
+        {
+            const string SourceCode = @"
+[System.Runtime.InteropServices.ComImport]
+[System.Runtime.InteropServices.Guid(""1A894A19-2FCD-4F87-A5A2-83C64F9FA833"")]
+internal class SampleException
+{
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
