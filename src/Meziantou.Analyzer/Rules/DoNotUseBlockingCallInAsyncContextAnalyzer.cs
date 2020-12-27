@@ -46,6 +46,8 @@ namespace Meziantou.Analyzer.Rules
                 {
                     ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
                     ctx.RegisterOperationAction(analyzerContext.AnalyzePropertyReference, OperationKind.PropertyReference);
+                    ctx.RegisterOperationAction(analyzerContext.AnalyzeUsing, OperationKind.Using);
+                    ctx.RegisterOperationAction(analyzerContext.AnalyzeUsingDeclaration, OperationKind.UsingDeclaration);
                 }
             });
         }
@@ -269,6 +271,90 @@ namespace Meziantou.Analyzer.Rules
                     return false;
 
                 return true;
+            }
+
+            private bool HasDisposeAsyncMethod(INamedTypeSymbol symbol)
+            {
+                var members = symbol.GetMembers("DisposeAsync");
+                foreach (var member in members.OfType<IMethodSymbol>())
+                {
+                    if (member.Parameters.Length != 0)
+                        continue;
+
+                    if (member.IsGenericMethod)
+                        continue;
+
+                    if (member.IsStatic)
+                        continue;
+
+                    if (!member.ReturnType.IsEqualTo(ValueTaskSymbol))
+                        continue;
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            private bool CanBeAwaitUsing(IOperation operation)
+            {
+                if (operation.GetActualType() is not INamedTypeSymbol type)
+                    return false;
+
+                return HasDisposeAsyncMethod(type);
+            }
+
+            private bool ReportIfCanBeAwaitUsing(OperationAnalysisContext context, IOperation usingOperation, IVariableDeclarationGroupOperation operation)
+            {
+                foreach (var declaration in operation.Declarations)
+                {
+                    if (declaration.Initializer?.Value != null)
+                    {
+                        if (CanBeAwaitUsing(declaration.Initializer.Value))
+                        {
+                            ReportDiagnosticIfNeeded(context, usingOperation, "Prefer using 'await using'");
+                            return true;
+                        }
+                    }
+
+                    foreach (var declarator in declaration.Declarators)
+                    {
+                        if (CanBeAwaitUsing(declarator.Initializer.Value))
+                        {
+                            ReportDiagnosticIfNeeded(context, usingOperation, "Prefer using 'await using'");
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            internal void AnalyzeUsing(OperationAnalysisContext context)
+            {
+                var operation = (IUsingOperation)context.Operation;
+                if (operation.IsAsynchronous)
+                    return;
+
+                if (operation.Resources is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
+                {
+                    if (ReportIfCanBeAwaitUsing(context, operation, variableDeclarationGroupOperation))
+                        return;
+                }
+
+                if (CanBeAwaitUsing(operation.Resources))
+                {
+                    ReportDiagnosticIfNeeded(context, operation, "Prefer using 'await using'");
+                }
+            }
+
+            internal void AnalyzeUsingDeclaration(OperationAnalysisContext context)
+            {
+                var operation = (IUsingDeclarationOperation)context.Operation;
+                if (operation.IsAsynchronous)
+                    return;
+
+                ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup);
             }
         }
     }

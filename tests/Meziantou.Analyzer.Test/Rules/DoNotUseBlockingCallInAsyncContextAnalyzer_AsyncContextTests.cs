@@ -303,5 +303,64 @@ class Test
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Using_NoDiagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+                  .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        using var a = new Sample();
+        using (var b = new Sample()) { }
+        
+    }
+
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+    }
+}")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Using_Diagnostic()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        [||]using var a = new Sample();
+        [||]using (var b = new Sample()) { }
+
+        var sample = new Sample();
+        [||]using (sample) { }
+
+        await using var c = new Sample();
+        await using (var d = new Sample()) { }
+    }
+
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+        public ValueTask DisposeAsync() => throw null;
+    }
+}")
+                  .ValidateAsync();
+        }
     }
 }
