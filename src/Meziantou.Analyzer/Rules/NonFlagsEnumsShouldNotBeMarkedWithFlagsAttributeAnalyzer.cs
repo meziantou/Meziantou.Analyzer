@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -106,6 +107,7 @@ namespace Meziantou.Analyzer.Rules
             };
         }
 
+        [SuppressMessage("Style", "IDE0004:Remove Unnecessary Cast", Justification = "Clearer")]
         private static object RemoveValue(object o, object valueToRemove)
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum

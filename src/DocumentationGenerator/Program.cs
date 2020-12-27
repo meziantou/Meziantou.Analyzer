@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -43,11 +44,11 @@ namespace DocumentationGenerator
             sb.AppendLine("|Id|Category|Description|Severity|Is enabled|Code fix|");
             sb.AppendLine("|--|--------|-----------|:------:|:--------:|:------:|");
 
-            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id, StringComparer.Ordinal))
             {
-                if (!diagnostic.HelpLinkUri.Contains(diagnostic.Id))
+                if (!diagnostic.HelpLinkUri.Contains(diagnostic.Id, StringComparison.Ordinal))
                 {
-                    throw new Exception("Invalid help link for " + diagnostic.Id);
+                    throw new InvalidOperationException("Invalid help link for " + diagnostic.Id);
                 }
 
                 var hasCodeFix = codeFixProviders.Any(codeFixProvider => codeFixProvider.FixableDiagnosticIds.Contains(diagnostic.Id));
@@ -59,7 +60,7 @@ namespace DocumentationGenerator
                     .Append(")|")
                     .Append(diagnostic.Category)
                     .Append('|')
-                    .Append(EscapeMarkdown(diagnostic.Title.ToString()))
+                    .Append(EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture)))
                     .Append("|<span title='")
                     .Append(HtmlEncoder.Default.Encode(diagnostic.DefaultSeverity.ToString()))
                     .Append("'>")
@@ -86,7 +87,7 @@ namespace DocumentationGenerator
                                         DiagnosticSeverity.Info => "suggestion",
                                         DiagnosticSeverity.Warning => "warning   ",
                                         DiagnosticSeverity.Error => "error     ",
-                                        _ => throw new Exception($"{diagnostic.DefaultSeverity} not supported"),
+                                        _ => throw new InvalidOperationException($"{diagnostic.DefaultSeverity} not supported"),
                                     }
                                     : "none      ";
 
@@ -116,7 +117,7 @@ namespace DocumentationGenerator
             // Write title in detail pages
             foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
             {
-                var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString())}";
+                var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
                 var detailPath = Path.GetFullPath(Path.Combine(outputFolder, "Rules", diagnostic.Id + ".md"));
                 if (File.Exists(detailPath))
                 {
@@ -146,8 +147,8 @@ namespace DocumentationGenerator
         private static string EscapeMarkdown(string text)
         {
             return text
-                .Replace("<", "\\<")
-                .Replace(">", "\\>");
+                .Replace("<", "\\<", StringComparison.Ordinal)
+                .Replace(">", "\\>", StringComparison.Ordinal);
         }
 
         private static string GetBoolean(bool value)

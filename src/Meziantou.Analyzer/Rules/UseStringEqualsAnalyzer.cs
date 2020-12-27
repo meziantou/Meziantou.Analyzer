@@ -59,7 +59,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsStringEmpty(IOperation operation)
         {
-            if (operation.ConstantValue.HasValue && (operation.ConstantValue.Value is string str) && str == string.Empty)
+            if (operation.ConstantValue.HasValue && (operation.ConstantValue.Value is string str) && string.IsNullOrEmpty(str))
                 return true;
 
             if (operation is IMemberReferenceOperation memberReferenceOperation && memberReferenceOperation.Member.ContainingType.IsString() && memberReferenceOperation.Member.Name == nameof(string.Empty))

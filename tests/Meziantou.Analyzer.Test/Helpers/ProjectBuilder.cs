@@ -21,7 +21,7 @@ namespace TestHelper
     {
         private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> s_cache = new(StringComparer.Ordinal);
 
-        private int _diagnosticMessageIndex = 0;
+        private int _diagnosticMessageIndex;
 
         public string FileName { get; private set; }
         public string SourceCode { get; private set; } = "";
@@ -56,7 +56,7 @@ namespace TestHelper
                 {
                     Directory.CreateDirectory(tempFolder);
                     using var httpClient = new HttpClient();
-                    using var stream = await httpClient.GetStreamAsync($"https://www.nuget.org/api/v2/package/{packageName}/{version}").ConfigureAwait(false);
+                    using var stream = await httpClient.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
                     using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
                     foreach (var entry in zip.Entries.Where(file => file.FullName.StartsWith(path, StringComparison.Ordinal)))

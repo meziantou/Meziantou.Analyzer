@@ -162,7 +162,7 @@ namespace Meziantou.Analyzer.Rules
                 var operation = (IFieldReferenceOperation)context.Operation;
                 if (operation.Field.Name == "Empty")
                 {
-                    var type = operation.Field.ContainingType as INamedTypeSymbol;
+                    var type = operation.Field.ContainingType;
                     if (type?.OriginalDefinition == null)
                         return;
 

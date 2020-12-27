@@ -98,7 +98,7 @@ namespace Meziantou.Analyzer.Rules
                     if (text == null)
                         return document; // This should not happen
 
-                    var newArgument = generator.LiteralExpression(text.Length == 1 ? (object)text[0] : text);
+                    var newArgument = generator.LiteralExpression(text.Length == 1 ? text[0] : text);
                     if (shouldAppendLastAppendLine && part == argument.Parts.Last())
                     {
                         if (text.Length == 1)

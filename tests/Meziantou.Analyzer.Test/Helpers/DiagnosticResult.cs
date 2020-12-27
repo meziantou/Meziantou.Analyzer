@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace TestHelper
 {
     public sealed class DiagnosticResult
     {
-        private DiagnosticResultLocation[] _locations;
+        private IReadOnlyList<DiagnosticResultLocation> _locations;
 
-        public DiagnosticResultLocation[] Locations
+        public IReadOnlyList<DiagnosticResultLocation> Locations
         {
             get => _locations ??= Array.Empty<DiagnosticResultLocation>();
             set => _locations = value;
@@ -19,10 +20,10 @@ namespace TestHelper
 
         public string Message { get; set; }
 
-        public string Path => Locations.Length > 0 ? Locations[0].Path : "";
+        public string Path => Locations.Count > 0 ? Locations[0].Path : "";
 
-        public int Line => Locations.Length > 0 ? Locations[0].LineStart : -1;
+        public int Line => Locations.Count > 0 ? Locations[0].LineStart : -1;
 
-        public int Column => Locations.Length > 0 ? Locations[0].ColumnStart : -1;
+        public int Column => Locations.Count > 0 ? Locations[0].ColumnStart : -1;
     }
 }

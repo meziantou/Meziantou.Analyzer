@@ -19,7 +19,6 @@ namespace Meziantou.Analyzer.Test.Rules
             get
             {
                 yield return new object[] { "private", "List<int>", true };
-                yield return new object[] { "private", "List<int>", true };
                 yield return new object[] { "public", "Task<List<int>>", false };
                 yield return new object[] { "public", "List<int>", false };
                 yield return new object[] { "protected", "List<int>", false };
