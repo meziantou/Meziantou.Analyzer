@@ -101,6 +101,7 @@
 |[MA0098](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0098.md)|Performance|Use indexer instead of LINQ methods|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0099](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0099.md)|Usage|Use Explicit enum value instead of 0|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0100](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0100.md)|Usage|Await task before disposing resources|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0101](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/MA0101.md)|Usage|String contains an implicit end of line character|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 # .editorconfig - default values
 
@@ -204,6 +205,7 @@ dotnet_diagnostic.MA0097.severity = warning    # MA0097: A class that implements
 dotnet_diagnostic.MA0098.severity = suggestion # MA0098: Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0099.severity = warning    # MA0099: Use Explicit enum value instead of 0
 dotnet_diagnostic.MA0100.severity = warning    # MA0100: Await task before disposing resources
+dotnet_diagnostic.MA0101.severity = suggestion # MA0101: String contains an implicit end of line character
 ```
 
 # .editorconfig - all rules disabled
@@ -308,4 +310,5 @@ dotnet_diagnostic.MA0097.severity = none       # MA0097: A class that implements
 dotnet_diagnostic.MA0098.severity = none       # MA0098: Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0099.severity = none       # MA0099: Use Explicit enum value instead of 0
 dotnet_diagnostic.MA0100.severity = none       # MA0100: Await task before disposing resources
+dotnet_diagnostic.MA0101.severity = none       # MA0101: String contains an implicit end of line character
 ```
