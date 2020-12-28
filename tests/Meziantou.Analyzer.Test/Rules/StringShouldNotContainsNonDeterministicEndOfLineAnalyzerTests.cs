@@ -59,7 +59,7 @@ class Dummy
 {
     void Test()
     {
-        _ = ""line1\\n"" +
+        _ = ""line1\n"" +
             ""line2"";
     }
 }
@@ -89,7 +89,7 @@ class Dummy
 {
     void Test()
     {
-        _ = ""line1\\t\\r\\n"" +
+        _ = ""line1\\t\r\n"" +
             ""line2"";
     }
 }

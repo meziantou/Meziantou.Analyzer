@@ -28,12 +28,12 @@ namespace Meziantou.Analyzer.Rules
             if (nodeToFix == null)
                 return;
 
-            foreach (var newLine in new[] { null, "\\n", "\\r\\n" })
+            foreach (var newLine in new[] { null, "\n", "\r\n" })
             {
                 var title = "Use explicit " + (newLine switch
                 {
                     null => "new lines",
-                    _ => $"new lines ({newLine})",
+                    _ => $"new lines ({newLine.Replace("\r", "\\r").Replace("\n", "\\n")})",
                 });
                 var codeAction = CodeAction.Create(
                     title,
