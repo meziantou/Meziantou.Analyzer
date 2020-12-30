@@ -358,7 +358,7 @@ namespace TestHelper
         {
             var actualSpan = actual.GetLineSpan();
 
-            Assert.True(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.", StringComparison.Ordinal) && expected.Path.Contains("Test.", StringComparison.Ordinal)),
+            Assert.True(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.StartsWith("Test", StringComparison.Ordinal) && expected.Path.EndsWith(".cs", StringComparison.Ordinal)),
                 string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to be in file \"{0}\" was actually in file \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                     expected.Path, actualSpan.Path, FormatDiagnostics(analyzer, diagnostic)));
 

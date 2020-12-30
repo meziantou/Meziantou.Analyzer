@@ -92,5 +92,49 @@ class Test0
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task Brackets_MatchType()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(fileName: "Test0{T}.cs", @"
+class Test0<T>
+{
+}")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Brackets_MatchTypes()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(fileName: "Test0{TKey,TValue}.cs", @"
+class Test0<TKey, TValue>
+{
+}")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Brackets_DoesNotMatchTypeCount()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(fileName: "Test0{TKey}.cs", @"
+class [||]Test0<TKey, TValue>
+{
+}")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task Brackets_DoesNotMatchTypeName()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(fileName: "Test0{TKey,TNotSame}.cs", @"
+class [||]Test0<TKey, TValue>
+{
+}")
+                  .ValidateAsync();
+        }
     }
 }
