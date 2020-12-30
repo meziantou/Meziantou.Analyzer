@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -55,6 +56,10 @@ namespace Meziantou.Analyzer.Rules
                 {
                     // Type`1
                     if (string.Equals(fileName, symbolName + "`" + symbol.Arity.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    // Type{T}
+                    if (string.Equals(fileName, symbolName + '{' + string.Join(",", symbol.TypeParameters.Select(t => t.Name)) + '}', StringComparison.OrdinalIgnoreCase))
                         continue;
                 }
 
