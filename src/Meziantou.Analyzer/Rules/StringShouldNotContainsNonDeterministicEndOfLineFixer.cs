@@ -73,7 +73,7 @@ namespace Meziantou.Analyzer.Rules
             SyntaxNode? node = null;
             foreach (var (line, eol) in text.SplitLines())
             {
-                var newText = eol.Length > 0 ? string.Concat(line.ToString(), newLine ?? eol.ToString()) : line.ToString();
+                var newText = eol.Length > 0 ? string.Concat(line.ToString().Replace("\"\"", "\""), newLine ?? eol.ToString()) : line.ToString();
                 var literal = generator.LiteralExpression(newText);
                 if (node == null)
                 {

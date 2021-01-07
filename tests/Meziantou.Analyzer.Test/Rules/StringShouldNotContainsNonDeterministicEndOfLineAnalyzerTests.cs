@@ -78,7 +78,7 @@ class Dummy
 {
     void Test()
     {
-        _ = [|@""line1\t
+        _ = [|@""line1""""\t
 line2""|];
     }
 }
@@ -89,7 +89,7 @@ class Dummy
 {
     void Test()
     {
-        _ = ""line1\\t\r\n"" +
+        _ = ""line1\""\\t\r\n"" +
             ""line2"";
     }
 }
