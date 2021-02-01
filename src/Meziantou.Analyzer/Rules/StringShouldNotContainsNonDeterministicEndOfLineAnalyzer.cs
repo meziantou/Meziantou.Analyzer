@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Rules
             title: "String contains an implicit end of line character",
             messageFormat: "String contains an implicit end of line character",
             RuleCategories.Usage,
-            DiagnosticSeverity.Info,
+            DiagnosticSeverity.Hidden,
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine));
