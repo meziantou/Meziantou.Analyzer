@@ -335,5 +335,40 @@ class TestClass
                     .WithSourceCode(originalCode)
                     .ValidateAsync();
         }
+
+        [Fact]
+        [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/219")]
+        public async Task Lambda()
+        {
+            var originalCode = @"
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+class TestClass
+{
+    public static async Task AnalyzerExample()
+    {
+        using ((IDisposable)null)
+        {
+            await ExecuteAsync(() => new HttpClient().GetAsync(new Uri(""https://www.meziantou.net/""))).ConfigureAwait(false);
+        }
+
+        using ((IDisposable)null)
+        {
+            await ExecuteAsync(async () => await new HttpClient().GetAsync(new Uri(""https://www.meziantou.net/""))).ConfigureAwait(false);
+        }
+
+        async Task ExecuteAsync(Func<Task> operation)
+        {
+            // we await the operation there
+            await operation().ConfigureAwait(false);
+        }
+    }
+}";
+
+            await CreateProjectBuilder()
+                    .WithSourceCode(originalCode)
+                    .ValidateAsync();
+        }
     }
 }
