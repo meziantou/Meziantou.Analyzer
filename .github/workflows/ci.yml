@@ -17,39 +17,6 @@ defaults:
     shell: pwsh
 
 jobs:
-  lint_csharp:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-
-    - name: Add dotnet-format problem matcher
-      uses: xt0rted/dotnet-format-problem-matcher@v1
-
-    - name: Install dotnet format
-      run: dotnet tool update --global dotnet-format
-
-    - name: Run dotnet format
-      run: dotnet format --check --verbosity:diagnostic
-
-  lint:
-    name: GitHub Super linter
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Lint Code Base
-      uses: github/super-linter@v3.15.3
-      env:
-        VALIDATE_ALL_CODEBASE: false
-        DEFAULT_BRANCH: main
-        GITHUB_TOKEN: ${{ github.token }}
-        FILTER_REGEX_EXCLUDE: '\.cs$'
-
   create_nuget:
     runs-on: ubuntu-20.04
     steps:
@@ -100,7 +67,7 @@ jobs:
 
   deploy:
     runs-on: 'ubuntu-20.04'
-    needs: [ lint, lint_csharp, create_nuget, build_and_test ]
+    needs: [ create_nuget, build_and_test ]
     steps:
     - uses: actions/download-artifact@v2
       with:
