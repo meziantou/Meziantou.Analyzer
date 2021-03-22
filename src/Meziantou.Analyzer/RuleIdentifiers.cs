@@ -107,7 +107,7 @@ namespace Meziantou.Analyzer
 
         public static string GetHelpUri(string idenfifier)
         {
-            return string.Format(CultureInfo.InvariantCulture, "https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/Rules/{0}.md", idenfifier);
+            return string.Format(CultureInfo.InvariantCulture, "https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/{0}.md", idenfifier);
         }
     }
 }
