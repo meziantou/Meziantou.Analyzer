@@ -99,7 +99,7 @@ namespace Meziantou.Analyzer.Rules
 
             private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
             {
-                return operation.Arguments.Any(arg => !arg.IsImplicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
+                return operation.Arguments.Any(arg => arg.ArgumentKind == ArgumentKind.Explicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
             }
 
             private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation)
