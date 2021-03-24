@@ -447,5 +447,31 @@ class Test : System.IAsyncDisposable
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ExtensionMethodOnCancellationToken_NoNeedForCancellationToken()
+        {
+            const string SourceCode = @"
+using System.Threading;
+using System.Threading.Tasks;
+
+static class Test
+{
+    public static void WaitAsync(this CancellationToken cancellationToken)
+    {
+    }
+
+    private static void A()
+    {
+        CancellationToken cancellationToken = default;
+        cancellationToken.WaitAsync();
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
