@@ -5,16 +5,16 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public sealed class DoNotThrowFromDestructorAnalyzerTests
+    public sealed class DoNotThrowFromFinalizerAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<DoNotThrowFromDestructorAnalyzer>();
+                .WithAnalyzer<DoNotThrowFromFinalizerAnalyzer>();
         }
 
         [Fact]
-        public async Task Destructor_DiagnosticIsReported()
+        public async Task Finalizer_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -30,7 +30,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task DestructorDoesNotThrow_NoDiagnosticReported()
+        public async Task FinalizerDoesNotThrow_NoDiagnosticReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -53,7 +53,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task DestructorThrowsFromNestedBlock_DiagnosticIsReported()
+        public async Task FinalizerThrowsFromNestedBlock_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass
@@ -80,7 +80,7 @@ class TestClass
         }
 
         [Fact]
-        public async Task DestructorThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
+        public async Task FinalizerThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
         {
             const string SourceCode = @"
 class TestClass

@@ -57,7 +57,7 @@ namespace Meziantou.Analyzer
         public const string ReplaceEnumToStringWithNameof = "MA0052";
         public const string ClassMustBeSealed = "MA0053";
         public const string EmbedCaughtExceptionAsInnerException = "MA0054";
-        public const string DoNotUseDestructor = "MA0055";
+        public const string DoNotUseFinalizer = "MA0055";
         public const string DoNotCallVirtualMethodInConstructor = "MA0056";
         public const string AttributeNameShouldEndWithAttribute = "MA0057";
         public const string ExceptionNameShouldEndWithException = "MA0058";
@@ -88,7 +88,7 @@ namespace Meziantou.Analyzer
         public const string ConstructorArgumentParametersShouldExistInConstructors = "MA0083";
         public const string LocalVariablesShouldNotHideSymbols = "MA0084";
         public const string AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEvents = "MA0085";
-        public const string DoNotThrowFromDestructor = "MA0086";
+        public const string DoNotThrowFromFinalizer = "MA0086";
         public const string ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter = "MA0087";
         public const string DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant = "MA0088";
         public const string OptimizeStartsWith = "MA0089";
