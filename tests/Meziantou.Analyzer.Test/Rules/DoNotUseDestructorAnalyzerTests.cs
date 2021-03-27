@@ -5,16 +5,16 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public sealed class DoNotUseDestructorAnalyzerTests
+    public sealed class DoNotUseFinalizerAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithAnalyzer<DoNotUseDestructorAnalyzer>();
+                .WithAnalyzer<DoNotUseFinalizerAnalyzer>();
         }
 
         [Fact]
-        public async Task TestDestructorReportError()
+        public async Task TestFinalizerReportError()
         {
             const string SourceCode = @"
 class Test

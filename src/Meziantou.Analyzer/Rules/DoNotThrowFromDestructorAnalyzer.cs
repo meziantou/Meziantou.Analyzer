@@ -8,17 +8,17 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class DoNotThrowFromDestructorAnalyzer : DiagnosticAnalyzer
+    public sealed class DoNotThrowFromFinalizerAnalyzer : DiagnosticAnalyzer
     {
         private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.DoNotThrowFromDestructor,
-            title: "Do not throw from a destructor",
-            messageFormat: "Do not throw from a destructor",
+            RuleIdentifiers.DoNotThrowFromFinalizer,
+            title: "Do not throw from a finalizer",
+            messageFormat: "Do not throw from a finalizer",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotThrowFromDestructor));
+            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotThrowFromFinalizer));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
@@ -27,10 +27,10 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterSyntaxNodeAction(AnalyzeDestructor, SyntaxKind.DestructorDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeFinalizer, SyntaxKind.DestructorDeclaration);
         }
 
-        private static void AnalyzeDestructor(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeFinalizer(SyntaxNodeAnalysisContext context)
         {
             var node = (DestructorDeclarationSyntax)context.Node;
             foreach (var throwStatement in node.DescendantNodes().Where(IsThrowStatement))
