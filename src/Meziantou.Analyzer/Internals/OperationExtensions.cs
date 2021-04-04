@@ -56,6 +56,16 @@ namespace Meziantou.Analyzer
 
             return operation.Type;
         }
+        
+        public static IOperation UnwrapImplicitConversionOperations(this IOperation operation)
+        {
+            if (operation is IConversionOperation conversionOperation && conversionOperation.IsImplicit)
+            {
+                return UnwrapImplicitConversionOperations(conversionOperation.Operand);
+            }
+
+            return operation;
+        }
 
         public static bool HasArgumentOfType(this IInvocationOperation operation, ITypeSymbol argumentTypeSymbol)
         {

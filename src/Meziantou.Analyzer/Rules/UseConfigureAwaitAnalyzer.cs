@@ -43,12 +43,9 @@ namespace Meziantou.Analyzer.Rules
         {
             public AnalyzerContext(Compilation compilation)
             {
-                IAsyncDisposableSymbol = compilation.GetTypeByMetadataName("System.IAsyncDisposable");
                 ConfiguredAsyncDisposableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredAsyncDisposable");
-                IAsyncDisposable_ConfigureAwaitSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.TaskAsyncEnumerableExtensions")?.GetMembers("ConfigureAwait").FirstOrDefault() as IMethodSymbol;
 
                 IAsyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
-                IAsyncEnumerable_ConfigureAwaitSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.TaskAsyncEnumerableExtensions")?.GetMembers("ConfigureAwait").FirstOrDefault() as IMethodSymbol;
                 ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
                 ConfiguredTaskAwaitableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
                 ConfiguredTaskAwaitableOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
@@ -66,12 +63,9 @@ namespace Meziantou.Analyzer.Rules
                 AspNetCore_IComponent = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
             }
 
-            private INamedTypeSymbol? IAsyncDisposableSymbol { get; }
             private INamedTypeSymbol? ConfiguredAsyncDisposableSymbol { get; }
-            private IMethodSymbol? IAsyncDisposable_ConfigureAwaitSymbol { get; }
 
             private INamedTypeSymbol? IAsyncEnumerableSymbol { get; }
-            private IMethodSymbol? IAsyncEnumerable_ConfigureAwaitSymbol { get; }
             private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; }
             private INamedTypeSymbol? ConfiguredTaskAwaitableSymbol { get; }
             private INamedTypeSymbol? ConfiguredTaskAwaitableOfTSymbol { get; }
@@ -120,9 +114,15 @@ namespace Meziantou.Analyzer.Rules
                     // Enumerable().WithCancellation(ct) or Enumerable().ConfigureAwait(false)
                     if (HasConfigureAwait(operation.Collection) && HasPartOfTypeIAsyncEnumerable(operation.Collection))
                         return;
+
+                    // Check if it's a variable reference that is already configured
+                    // note: this doesn't check if the value is well-configured
+                    // https://github.com/meziantou/Meziantou.Analyzer/issues/232
+                    if (operation.Collection.UnwrapImplicitConversionOperations() is ILocalReferenceOperation)
+                        return;
                 }
 
-                if (!CanAddConfigureAwait(collectionType))
+                if (!CanAddConfigureAwait(collectionType, operation.Collection))
                     return;
 
                 if (MustUseConfigureAwait(operation.SemanticModel, operation.Syntax, context.CancellationToken))
@@ -197,7 +197,7 @@ namespace Meziantou.Analyzer.Rules
                         if (variableType == null || variableType.IsEqualTo(ConfiguredAsyncDisposableSymbol))
                             return;
 
-                        if (!CanAddConfigureAwait(variableType))
+                        if (!CanAddConfigureAwait(variableType, declarator.Initializer.Value))
                             return;
 
                         if (MustUseConfigureAwait(declarator.SemanticModel, declarator.Syntax, context.CancellationToken))
@@ -293,25 +293,25 @@ namespace Meziantou.Analyzer.Rules
                 return true;
             }
 
-            private bool CanAddConfigureAwait(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
+            private static bool CanAddConfigureAwait(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
             {
                 var awaitExpressionType = semanticModel.GetTypeInfo(awaitSyntax.Expression, cancellationToken).Type;
                 if (awaitExpressionType == null)
                     return false;
 
-                return CanAddConfigureAwait(awaitExpressionType);
+                return CanAddConfigureAwait(awaitExpressionType, semanticModel, awaitSyntax.Expression);
             }
 
-            private bool CanAddConfigureAwait(ITypeSymbol awaitedType)
+            private static bool CanAddConfigureAwait(ITypeSymbol awaitedType, IOperation operation)
             {
-                var members = awaitedType.GetMembers("ConfigureAwait");
-                if (members.OfType<IMethodSymbol>().Any(member => !member.ReturnsVoid && member.TypeParameters.Length == 0 && member.Parameters.Length == 1 && member.Parameters[0].Type.IsBoolean()))
-                    return true;
+                return CanAddConfigureAwait(awaitedType, operation.SemanticModel, operation.Syntax);
+            }
 
-                if (awaitedType.OriginalDefinition.IsEqualTo(IAsyncEnumerableSymbol) && IAsyncEnumerable_ConfigureAwaitSymbol != null)
-                    return true;
-
-                if (awaitedType.Implements(IAsyncDisposableSymbol) && IAsyncDisposable_ConfigureAwaitSymbol != null)
+            private static bool CanAddConfigureAwait(ITypeSymbol awaitedType, SemanticModel semanticModel, SyntaxNode node)
+            {
+                var location = node.GetLocation().SourceSpan.End;
+                var result = semanticModel.LookupSymbols(location, container: awaitedType, name: "ConfigureAwait", includeReducedExtensionMethods: true);
+                if (result.Length > 0)
                     return true;
 
                 return false;
