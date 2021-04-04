@@ -55,7 +55,7 @@ namespace Meziantou.Analyzer.Rules
                     return;
 
                 // Check if there is an overload with a StringComparison
-                if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, stringComparisonType))
+                if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, stringComparisonType))
                 {
                     if (IsNonCultureSensitiveMethod(operation))
                     {

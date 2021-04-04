@@ -62,10 +62,10 @@ namespace Meziantou.Analyzer.Rules
 
             if (formatProviderType != null && !operation.HasArgumentOfType(formatProviderType))
             {
-                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, formatProviderType);
+                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, formatProviderType);
                 if (overload != null ||
-                    (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType, numberStyleType)) ||
-                    (operation.TargetMethod.ContainingType.IsDateTime() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(context.Compilation, formatProviderType, dateTimeStyleType)))
+                    (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, numberStyleType)) ||
+                    (operation.TargetMethod.ContainingType.IsDateTime() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, dateTimeStyleType)))
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
                     return;
