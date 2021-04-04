@@ -92,8 +92,8 @@ namespace Meziantou.Analyzer.Rules
                     return;
 
                 var method = operation.TargetMethod;
-                if (method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, EqualityComparerStringType) ||
-                    method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, ComparerStringType))
+                if (method.HasOverloadWithAdditionalParameterOfType(operation, EqualityComparerStringType) ||
+                    method.HasOverloadWithAdditionalParameterOfType(operation, ComparerStringType))
                 {
                     ctx.ReportDiagnostic(s_rule, operation);
                     return;

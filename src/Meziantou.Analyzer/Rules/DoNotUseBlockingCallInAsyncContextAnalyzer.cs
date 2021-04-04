@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -168,7 +169,16 @@ namespace Meziantou.Analyzer.Rules
                 // Search async equivalent: sample.Write() => sample.WriteAsync()
                 if (!targetMethod.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
                 {
-                    var potentialMethod = targetMethod.ContainingType.GetMembers().FirstOrDefault(IsPotentialMember);
+                    var position = operation.Syntax.GetLocation().SourceSpan.End;
+
+                    var potentionalMethods = new List<ISymbol>();
+                    potentionalMethods.AddRange(operation.SemanticModel.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
+                    if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
+                    {
+                        potentionalMethods.AddRange(operation.SemanticModel.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
+                    }
+
+                    var potentialMethod = potentionalMethods.FirstOrDefault(IsPotentialMember);
                     if (potentialMethod != null)
                     {
                         ReportDiagnosticIfNeeded(context, operation, $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'");
@@ -182,9 +192,6 @@ namespace Meziantou.Analyzer.Rules
                         if (memberSymbol is IMethodSymbol methodSymbol)
                         {
                             if (targetMethod.IsStatic && !methodSymbol.IsStatic)
-                                return false;
-
-                            if (!string.Equals(methodSymbol.Name, targetMethod.Name, StringComparison.Ordinal) && !string.Equals(methodSymbol.Name, targetMethod.Name + "Async", StringComparison.Ordinal))
                                 return false;
 
                             if (!IsTaskSymbol(methodSymbol.ReturnType))

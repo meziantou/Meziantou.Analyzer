@@ -362,5 +362,40 @@ class Test
 }")
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ExtensionMethod()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public void A()
+    {
+    }
+}
+
+static class TestExtensions
+{
+    public static async Task AAsync(this Test test, CancellationToken token)
+    {
+    }
+}
+
+class demo
+{
+    public async Task a()
+    {
+        [||]new Test().A();
+    }
+}
+")
+                  .ValidateAsync();
+        }
     }
 }

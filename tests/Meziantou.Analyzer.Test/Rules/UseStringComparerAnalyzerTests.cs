@@ -201,5 +201,63 @@ class TypeName
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task FindExtensionMethods()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+    }
+}
+
+static class Extensions
+{
+    public static void Test(this TypeName type, System.Collections.Generic.IEqualityComparer<string> comparer)
+    {
+    }
+}
+
+class Usage
+{
+    void A()
+    {
+        var a = new TypeName();
+        [||]a.Test();
+    }
+}
+";
+            const string CodeFix = @"
+class TypeName
+{
+    public void Test()
+    {
+    }
+}
+
+static class Extensions
+{
+    public static void Test(this TypeName type, System.Collections.Generic.IEqualityComparer<string> comparer)
+    {
+    }
+}
+
+class Usage
+{
+    void A()
+    {
+        var a = new TypeName();
+        a.Test(System.StringComparer.Ordinal);
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
     }
 }
