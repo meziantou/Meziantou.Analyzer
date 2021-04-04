@@ -428,5 +428,29 @@ class ClassTest : Microsoft.AspNetCore.Components.IComponent
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task AwaitForEach_VariableAlreadyAwaited()
+        {
+            const string SourceCode = @"
+using System.Collections.Generic;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        IAsyncEnumerable<int> Enumerable() => throw null;
+
+        var temp = Enumerable().ConfigureAwait(false);
+        await foreach(var item in temp)
+        {
+        }
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
