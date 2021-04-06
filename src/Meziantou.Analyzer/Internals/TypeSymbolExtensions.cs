@@ -46,6 +46,14 @@ namespace Meziantou.Analyzer
             return classSymbol.AllInterfaces.Any(i => interfaceType.IsEqualTo(i));
         }
 
+        public static bool IsOrImplements(this ITypeSymbol symbol, ITypeSymbol? interfaceType)
+        {
+            if (interfaceType == null)
+                return false;
+
+            return GetAllInterfacesIncludingThis(symbol).Any(i => interfaceType.IsEqualTo(i));
+        }
+
         public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType)
         {
             if (attributeType == null)

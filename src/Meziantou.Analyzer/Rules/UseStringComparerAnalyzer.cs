@@ -65,11 +65,13 @@ namespace Meziantou.Analyzer.Rules
                 EqualityComparerStringType = GetIEqualityComparerString(compilation);
                 ComparerStringType = GetIComparerString(compilation);
                 EnumerableType = compilation.GetTypeByMetadataName("System.Linq.Enumerable");
+                ISetType = compilation.GetTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
             }
 
             public INamedTypeSymbol? EqualityComparerStringType { get; }
             public INamedTypeSymbol? ComparerStringType { get; }
             public INamedTypeSymbol? EnumerableType { get; }
+            public INamedTypeSymbol? ISetType { get; }
 
             public void AnalyzeConstructor(OperationAnalysisContext ctx)
             {
@@ -92,6 +94,13 @@ namespace Meziantou.Analyzer.Rules
                     return;
 
                 var method = operation.TargetMethod;
+
+                // Most ISet implementation already configured the IEqualityComparer in this constructor,
+                // so it should be ok to skip method calls on those types.
+                // A concret use-case is HashSet<string>.Contains which has an extension method IEnumerable.Contains(value, comparer)
+                if (ISetType != null && method.ContainingType.IsOrImplements(ISetType))
+                    return;
+
                 if (method.HasOverloadWithAdditionalParameterOfType(operation, EqualityComparerStringType) ||
                     method.HasOverloadWithAdditionalParameterOfType(operation, ComparerStringType))
                 {

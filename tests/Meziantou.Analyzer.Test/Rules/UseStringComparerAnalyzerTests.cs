@@ -259,5 +259,22 @@ class Usage
                   .ValidateAsync();
         }
 
+        [Fact]
+        public async Task HashSet_Contain()
+        {
+            const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.HashSet<string> obj = null;
+        obj.Contains("""");
+    }
+}";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }
