@@ -131,8 +131,28 @@ namespace Meziantou.Analyzer
         {
             foreach (var location in symbol.Locations)
             {
-                context.ReportDiagnostic(CreateDiagnostic(descriptor, location, properties, messageArgs));
+                ReportDiagnostic(context, descriptor, properties, location, messageArgs);
             }
+        }
+
+        public static void ReportDiagnostic(this OperationBlockAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxNode syntax, params string[] messageArgs)
+        {
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, syntax.GetLocation(), messageArgs);
+        }
+        
+        public static void ReportDiagnostic(this OperationBlockAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxToken token, params string[] messageArgs)
+        {
+            ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, token.GetLocation(), messageArgs);
+        }
+
+        public static void ReportDiagnostic(this OperationBlockAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, SyntaxNode syntax, params string[] messageArgs)
+        {
+            ReportDiagnostic(context, descriptor, properties, syntax.GetLocation(), messageArgs);
+        }
+
+        public static void ReportDiagnostic(this OperationBlockAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, Location location, params string[] messageArgs)
+        {
+            context.ReportDiagnostic(CreateDiagnostic(descriptor, location, properties, messageArgs));
         }
     }
 }

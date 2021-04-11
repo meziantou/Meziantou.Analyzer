@@ -478,7 +478,7 @@ namespace TestHelper
 
             //after applying all of the code fixes, compare the resulting string to the inputted one
             var actual = await GetStringFromDocument(document).ConfigureAwait(false);
-            Assert.Equal(newSource, actual);
+            Assert.Equal(newSource, actual, ignoreLineEndingDifferences: true);
         }
 
         private static async Task<Document> ApplyFix(Document document, CodeAction codeAction)

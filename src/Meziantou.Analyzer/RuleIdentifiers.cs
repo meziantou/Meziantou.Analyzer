@@ -104,6 +104,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseZeroToInitializeAnEnumValue = "MA0099";
         public const string AwaitTaskBeforeDisposingResources = "MA0100";
         public const string StringShouldNotContainsNonDeterministicEndOfLine = "MA0101";
+        public const string MakeStructMemberReadOnly = "MA0102";
 
         public static string GetHelpUri(string idenfifier)
         {
