@@ -59,6 +59,81 @@ readonly struct Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+        
+        [Fact]
+        public async Task CannotBeReadOnly_Constructor()
+        {
+            const string SourceCode = @"
+struct Test
+{
+    Test(int a) { }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task CannotBeReadOnly_StaticConstructor()
+        {
+            const string SourceCode = @"
+struct Test
+{
+    static Test() { }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task CannotBeReadOnly_LocalFunction()
+        {
+            const string SourceCode = @"
+struct Test
+{
+    int a;
+
+    void A()
+    {
+        a = 0;
+        B();
+
+        void B() { }
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task CannotBeReadOnly_Delegate()
+        {
+            const string SourceCode = @"
+using System.Linq;
+struct Test
+{
+    int a;
+
+    void A()
+    {
+        a = 0;
+        new int[1].Where(item => item > 0);
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
 
         [Fact]
         public async Task CannotBeReadOnly_ReadOnlyStructMethod()
