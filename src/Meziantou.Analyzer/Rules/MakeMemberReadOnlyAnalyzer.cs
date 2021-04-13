@@ -109,7 +109,8 @@ namespace Meziantou.Analyzer.Rules
                 if (method.IsReadOnly || method.IsStatic)
                     return false;
 
-                return CouldBeReadOnly(symbol.ContainingType);
+                if (method.MethodKind is MethodKind.Ordinary or MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove or MethodKind.ExplicitInterfaceImplementation)
+                    return CouldBeReadOnly(symbol.ContainingType);
             }
 
             return false;
