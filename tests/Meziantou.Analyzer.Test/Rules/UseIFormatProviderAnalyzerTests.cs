@@ -139,7 +139,24 @@ class TypeName
 {
     public void Test()
     {
-        [||]float.TryParse("""", out _);
+        [||]System.DateTime.TryParse("""", out _);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task DateTimeOffsetTryParseWithoutCultureInfo_ShouldReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        [||]System.DateTimeOffset.TryParse("""", out _);
     }
 }";
             await CreateProjectBuilder()
@@ -220,5 +237,77 @@ class TypeName
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task InvariantDateTimeFormat()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        _ = default(System.DateTime).ToString(""o"");
+        _ = default(System.DateTime).ToString(""O"");
+        _ = default(System.DateTime).ToString(""r"");
+        _ = default(System.DateTime).ToString(""R"");
+        _ = default(System.DateTime).ToString(""s"");
+        _ = default(System.DateTime).ToString(""u"");
+        _ = default(System.DateTimeOffset).ToString(""o"");
+        _ = default(System.DateTimeOffset).ToString(""O"");
+        _ = default(System.DateTimeOffset).ToString(""r"");
+        _ = default(System.DateTimeOffset).ToString(""R"");
+        _ = default(System.DateTimeOffset).ToString(""s"");
+        _ = default(System.DateTimeOffset).ToString(""u"");
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+        [Fact]
+        public async Task DateTimeToString()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        _ = [||]default(System.DateTime).ToString(""yyyy"");
+    }
+}
+";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task DateTimeTryParseInvariantFormat()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        System.DateTime.TryParse(""o"", out _);
+        System.DateTime.TryParse(""O"", out _);
+        System.DateTime.TryParse(""r"", out _);
+        System.DateTime.TryParse(""R"", out _);
+        System.DateTime.TryParse(""s"", out _);
+        System.DateTime.TryParse(""u"", out _);
+        System.DateTimeOffset.TryParse(""o"", out _);
+        System.DateTimeOffset.TryParse(""O"", out _);
+        System.DateTimeOffset.TryParse(""r"", out _);
+        System.DateTimeOffset.TryParse(""R"", out _);
+        System.DateTimeOffset.TryParse(""s"", out _);
+        System.DateTimeOffset.TryParse(""u"", out _);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
     }
 }

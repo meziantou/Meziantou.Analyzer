@@ -58,17 +58,41 @@ namespace Meziantou.Analyzer.Rules
                 // Enum.ToString(IFormatProvider) should not be used
                 if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Enum")))
                     return;
+
+                // DateTime.ToString() or DateTimeOffset.ToString() with invariant formats (o, O, r, R, s, u)
+                if (operation.Arguments.Length == 1 && operation.TargetMethod.ContainingType.IsEqualToAny(context.Compilation.GetTypeByMetadataName("System.DateTime"), context.Compilation.GetTypeByMetadataName("System.DateTimeOffset")))
+                {
+                    if (IsInvariantDateTimeFormat(operation.Arguments[0].Value))
+                        return;
+                }
             }
 
             if (formatProviderType != null && !operation.HasArgumentOfType(formatProviderType))
             {
                 var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, formatProviderType);
-                if (overload != null ||
-                    (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, numberStyleType)) ||
-                    (operation.TargetMethod.ContainingType.IsDateTime() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, dateTimeStyleType)))
+                if (overload != null)
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
                     return;
+                }
+
+                if (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, numberStyleType))
+                {
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
+                    return;
+                }
+
+                var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.DateTimeOffset"));
+                if (isDateTime)
+                {
+                    if (operation.Arguments.Length >= 1 && IsInvariantDateTimeFormat(operation.Arguments[0].Value))
+                        return;
+
+                    if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, dateTimeStyleType))
+                    {
+                        context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
+                        return;
+                    }
                 }
             }
 
@@ -81,6 +105,11 @@ namespace Meziantou.Analyzer.Rules
                     return;
                 }
             }
+        }
+
+        private static bool IsInvariantDateTimeFormat(IOperation valueOperation)
+        {
+            return valueOperation.ConstantValue.HasValue && valueOperation.ConstantValue.Value is "o" or "O" or "r" or "R" or "s" or "u";
         }
     }
 }
