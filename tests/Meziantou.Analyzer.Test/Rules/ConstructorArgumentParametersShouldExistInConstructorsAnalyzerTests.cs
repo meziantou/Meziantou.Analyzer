@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Test.Rules
         {
             return new ProjectBuilder()
                 .WithAnalyzer<ConstructorArgumentParametersShouldExistInConstructorsAnalyzer>()
-                .WithTargetFramework(TargetFramework.Net48);
+                .WithTargetFramework(TargetFramework.Net4_8);
         }
 
         [Fact]

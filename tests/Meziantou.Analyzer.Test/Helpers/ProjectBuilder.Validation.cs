@@ -168,20 +168,24 @@ namespace TestHelper
                     AddNuGetReference("NETStandard.Library.Ref", "2.1.0", "ref/netstandard2.1/");
                     break;
 
-                case TargetFramework.Net48:
+                case TargetFramework.Net4_8:
                     AddNuGetReference("Microsoft.NETFramework.ReferenceAssemblies.net48", "1.0.0", "build/.NETFramework/v4.8/");
                     break;
 
-                case TargetFramework.Net50:
+                case TargetFramework.Net5_0:
                     AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
                     break;
 
-                case TargetFramework.AspNetCore50:
+                case TargetFramework.Net6_0:
+                    AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.0-preview.3.21201.4", "ref/net6.0/");
+                    break;
+
+                case TargetFramework.AspNetCore5_0:
                     AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
                     AddNuGetReference("Microsoft.AspNetCore.App.Ref", "5.0.0", "ref/net5.0/");
                     break;
 
-                case TargetFramework.WindowsDesktop50:
+                case TargetFramework.WindowsDesktop5_0:
                     AddNuGetReference("Microsoft.WindowsDesktop.App.Ref", "5.0.0", "ref/net5.0/");
                     break;
             }

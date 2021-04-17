@@ -4,9 +4,10 @@
     {
         NetStandard2_0,
         NetStandard2_1,
-        Net48,
-        Net50,
-        AspNetCore50,
-        WindowsDesktop50,
+        Net4_8,
+        Net5_0,
+        Net6_0,
+        AspNetCore5_0,
+        WindowsDesktop5_0,
     }
 }

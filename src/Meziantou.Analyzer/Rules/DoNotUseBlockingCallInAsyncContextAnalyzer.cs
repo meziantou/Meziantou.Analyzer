@@ -117,9 +117,10 @@ namespace Meziantou.Analyzer.Rules
 
                 // Process.WaitForExit => Skip because the async method is not equivalent https://github.com/dotnet/runtime/issues/42556
                 if (string.Equals(targetMethod.Name, nameof(System.Diagnostics.Process.WaitForExit), StringComparison.Ordinal) &&
-                    targetMethod.ContainingType.OriginalDefinition.IsEqualTo(ProcessSymbol))
+                    targetMethod.ContainingType.IsEqualTo(ProcessSymbol))
                 {
-                    return;
+                    if (targetMethod.ContainingType.ContainingAssembly.Identity.Version < new Version(6, 0, 0, 0))
+                        return;
                 }
 
                 // Task.Wait()

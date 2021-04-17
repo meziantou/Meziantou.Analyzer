@@ -286,9 +286,10 @@ class Test
         }
 
         [Fact]
-        public async Task ProcessWaitForExit_NoDiagnostic()
+        public async Task ProcessWaitForExit_NET5()
         {
             await CreateProjectBuilder()
+                  .WithTargetFramework(TargetFramework.Net5_0)
                   .WithSourceCode(@"
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -299,6 +300,26 @@ class Test
     {
         var process = new Process();
         process.WaitForExit();
+    }
+}")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task ProcessWaitForExit_NET6()
+        {
+            await CreateProjectBuilder()
+                  .WithTargetFramework(TargetFramework.Net6_0)
+                  .WithSourceCode(@"
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        var process = new Process();
+        [||]process.WaitForExit();
     }
 }")
                   .ValidateAsync();

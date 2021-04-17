@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
-                .WithTargetFramework(TargetFramework.Net50)
+                .WithTargetFramework(TargetFramework.Net5_0)
                 .WithAnalyzer<AwaitTaskBeforeDisposingResourcesAnalyzer>();
         }
 

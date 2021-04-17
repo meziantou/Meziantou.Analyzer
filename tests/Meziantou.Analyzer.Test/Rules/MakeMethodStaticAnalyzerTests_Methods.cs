@@ -471,7 +471,7 @@ public class Startup
 }
 ";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.AspNetCore50)
+                  .WithTargetFramework(TargetFramework.AspNetCore5_0)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -496,7 +496,7 @@ public class CustomMiddleware
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.AspNetCore50)
+                  .WithTargetFramework(TargetFramework.AspNetCore5_0)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -517,7 +517,7 @@ public class CustomMiddleware : IMiddleware
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.AspNetCore50)
+                  .WithTargetFramework(TargetFramework.AspNetCore5_0)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -538,7 +538,7 @@ public class CustomMiddleware : IMiddleware
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.AspNetCore50)
+                  .WithTargetFramework(TargetFramework.AspNetCore5_0)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }

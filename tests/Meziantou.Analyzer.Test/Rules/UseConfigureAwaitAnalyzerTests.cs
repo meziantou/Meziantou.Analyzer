@@ -267,7 +267,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net48)
+                  .WithTargetFramework(TargetFramework.Net4_8)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -288,7 +288,7 @@ class MyClass : System.Windows.Input.ICommand
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net48)
+                  .WithTargetFramework(TargetFramework.Net4_8)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -317,7 +317,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net48)
+                  .WithTargetFramework(TargetFramework.Net4_8)
                   .WithSourceCode(SourceCode)
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
@@ -342,7 +342,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net48)
+                  .WithTargetFramework(TargetFramework.Net4_8)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
@@ -367,7 +367,7 @@ class MyClass : System.Windows.Window
     }
 }";
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net48)
+                  .WithTargetFramework(TargetFramework.Net4_8)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
