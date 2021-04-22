@@ -1,5 +1,5 @@
 ﻿// File initially copied from
-//  https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/StyleCop.Analyzers/StyleCop.Analyzers.CodeFixes/Helpers/DocumentBasedFixAllProvider.cs
+//  https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/4d9b3e3bb785a55f73b3029a843f0c0b73cc9ea7/StyleCop.Analyzers/StyleCop.Analyzers.CodeFixes/Helpers/DocumentBasedFixAllProvider.cs
 // Original copyright statement:
 //  Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
 //  Licensed under the MIT License. See LICENSE in the project root for license information.

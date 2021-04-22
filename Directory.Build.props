@@ -17,11 +17,19 @@
     <Authors>Meziantou</Authors>
     <Company>Meziantou</Company>
     <PackageProjectUrl>https://github.com/meziantou/Meziantou.Analyzer</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/meziantou/Meziantou.Analyzer</RepositoryUrl>
+    <RepositoryUrl>https://github.com/meziantou/Meziantou.Analyzer.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseUrl>https://github.com/meziantou/Meziantou.Analyzer/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\icon.png" Pack="true" PackagePath="" />
+    <None Include="$(MSBuildThisFileDirectory)\LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="$(MSBuildThisFileDirectory)\README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
       <PrivateAssets>all</PrivateAssets>

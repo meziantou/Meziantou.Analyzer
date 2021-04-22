@@ -6,9 +6,9 @@ A Roslyn analyzer to enforce some good practices in C# in terms of design, usage
 
 ## Rules
 
-You'll find the rules in the documentation: [the rules and their explanation](https://github.com/meziantou/Meziantou.Analyzer/tree/master/docs)
+You'll find the rules in the documentation: [the rules and their explanation](https://github.com/meziantou/Meziantou.Analyzer/tree/main/docs)
 
-If you are already using other analyzers, you can check which [rules are duplicated with well-known analyzers](https://github.com/meziantou/Meziantou.Analyzer/blob/master/docs/comparison-with-other-analyzers.md)
+If you are already using other analyzers, you can check [which rules are duplicated with well-known analyzers](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md)
 
 ## Installation
 
