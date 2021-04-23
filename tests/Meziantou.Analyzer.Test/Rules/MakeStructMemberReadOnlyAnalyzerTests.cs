@@ -59,7 +59,7 @@ readonly struct Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task CannotBeReadOnly_Constructor()
         {
@@ -74,7 +74,7 @@ struct Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task CannotBeReadOnly_StaticConstructor()
         {
@@ -89,7 +89,7 @@ struct Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task CannotBeReadOnly_LocalFunction()
         {
@@ -112,7 +112,7 @@ struct Test
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task CannotBeReadOnly_Delegate()
         {
@@ -533,6 +533,72 @@ struct Test
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
                   .ShouldBatchFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task CannotBeReadonly_CallNonReadOnlyMethod()
+        {
+            const string SourceCode = @"
+struct Test
+{
+    int _a;
+
+    void A() => _a = 1;
+    void B() => A(); // Should not be readonly (CS8656)
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task CannotBeReadonly_CallNonReadOnlyPropertyGetFromMethod()
+        {
+            const string SourceCode = @"
+struct Test
+{
+    int _a;
+
+    int A { get { _a = 1; return 0; } }
+    void B() => _ = A; // Should not be readonly (CS8656)
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task CannotBeReadonly_AccessNonReadOnlyMember()
+        {
+            const string SourceCode = @"
+using System;
+internal ref struct PathReader
+{
+    private int _currentSegmentLength;
+
+    public ReadOnlySpan<char> CurrentText { get; private set; }
+    public ReadOnlySpan<char> CurrentSegment => CurrentText.Slice(0, CurrentSegmentLength);                  // Should not be readonly
+    public ReadOnlySpan<char> CurrentSegment2 { get { return CurrentText.Slice(0, CurrentSegmentLength); } } // Should not be readonly
+
+    public int CurrentSegmentLength
+    {
+        get
+        {
+            _currentSegmentLength = CurrentText.Length;
+            return _currentSegmentLength;
+        }
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithTargetFramework(TargetFramework.Net5_0)
+                  .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
     }

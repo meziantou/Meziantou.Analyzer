@@ -28,58 +28,55 @@ namespace Meziantou.Analyzer.Rules
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-            context.RegisterOperationBlockStartAction(ctx =>
+            context.RegisterSymbolStartAction(ctx =>
             {
-                if (!CouldBeReadOnly(ctx.OwningSymbol))
+                var symbol = (INamedTypeSymbol)ctx.Symbol;
+                if (!CouldBeReadOnly(symbol))
                     return;
 
-                var analyzerContext = new AnalyzerContext();
-                ctx.RegisterOperationAction(analyzerContext.AnalyzeMethodBody, OperationKind.MethodBody);
-                ctx.RegisterOperationBlockEndAction(analyzerContext.AnalyzeEnd);
-            });
+                ctx.RegisterOperationBlockStartAction(ctx =>
+                {
+                    if (!CouldBeReadOnly(ctx.OwningSymbol))
+                        return;
+
+                    if (ctx.OperationBlocks.Length > 0)
+                    {
+                        if (!EnsureLanguageVersion(ctx.OperationBlocks[0]))
+                            return;
+                    }
+
+                    var analyzerContext = new AnalyzerContext(symbol);
+                    ctx.RegisterOperationAction(analyzerContext.AnalyzeBlock, OperationKind.Block);
+                    ctx.RegisterOperationBlockEndAction(analyzerContext.AnalyzeEnd);
+                });
+            }, SymbolKind.NamedType);
         }
 
         private sealed class AnalyzerContext
         {
             private bool _canBeReadOnly = true;
+            private readonly INamedTypeSymbol _currentSymbol;
 
-            public void AnalyzeMethodBody(OperationAnalysisContext context)
+            public AnalyzerContext(INamedTypeSymbol currentSymbol)
             {
-                // Readonly instance members are available with C# 8
-                if (context.Operation.Syntax.SyntaxTree.Options is CSharpParseOptions options)
+                _currentSymbol = currentSymbol;
+            }
+
+            public void AnalyzeBlock(OperationAnalysisContext context)
+            {
+                var operation = (IBlockOperation)context.Operation;
+
+                var arg = GetDataFlowArgument(operation.Syntax);
+                if (arg == null)
+                    return;
+
+                var dataFlow = operation.SemanticModel.AnalyzeDataFlow(arg);
+                foreach (var symbol in dataFlow.WrittenInside)
                 {
-                    if (options.LanguageVersion < LanguageVersion.CSharp8)
+                    if (symbol is IParameterSymbol parameter && parameter.IsThis)
                     {
                         _canBeReadOnly = false;
-                        return;
                     }
-                }
-
-                var operation = (IMethodBodyOperation)context.Operation;
-                var arg = GetDataFlowArgument((operation.BlockBody ?? operation.ExpressionBody).Syntax);
-                if (arg != null)
-                {
-                    var dataFlow = operation.SemanticModel.AnalyzeDataFlow(arg);
-                    foreach (var symbol in dataFlow.WrittenInside)
-                    {
-                        if (symbol is IParameterSymbol parameter && parameter.IsThis)
-                        {
-                            _canBeReadOnly = false;
-                        }
-                    }
-                }
-
-                static SyntaxNode? GetDataFlowArgument(SyntaxNode node)
-                {
-                    if (node == null)
-                        return null;
-
-                    if (node is ArrowExpressionClauseSyntax expression)
-                    {
-                        return expression.Expression;
-                    }
-
-                    return node;
                 }
             }
 
@@ -90,7 +87,7 @@ namespace Meziantou.Analyzer.Rules
                     if (context.OwningSymbol is IMethodSymbol method && method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet)
                     {
                         var parent = context.OperationBlocks.FirstOrDefault()?.Syntax.Parent;
-                        if (parent?.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PropertyDeclaration) == true)
+                        if (parent?.IsKind(SyntaxKind.PropertyDeclaration) == true)
                         {
                             context.ReportDiagnostic(s_rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
                             return;
@@ -100,6 +97,25 @@ namespace Meziantou.Analyzer.Rules
                     context.ReportDiagnostic(s_rule, context.OwningSymbol, context.OwningSymbol.Name);
                 }
             }
+
+            private static SyntaxNode? GetDataFlowArgument(SyntaxNode node)
+            {
+                if (node == null)
+                    return null;
+
+                if (node is ArrowExpressionClauseSyntax expression)
+                {
+                    return expression.Expression;
+                }
+
+                return node;
+            }
+        }
+
+        private static bool EnsureLanguageVersion(IOperation operation)
+        {
+            // Readonly instance members are available with C# 8
+            return operation.Syntax.SyntaxTree.Options is CSharpParseOptions options && options.LanguageVersion >= LanguageVersion.CSharp8;
         }
 
         private static bool CouldBeReadOnly(ISymbol symbol)
