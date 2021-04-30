@@ -119,7 +119,7 @@ namespace Meziantou.Analyzer.Rules
                     && !node.IsKind(SyntaxKind.LocalFunctionStatement);
             }
 
-            private static int? GetEndOfBlockIndex(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode)
+            private static int? GetEndOfBlockIndex(SyntaxNodeAnalysisContext context, SyntaxNode? syntaxNode)
             {
                 if (syntaxNode == null)
                     return null;

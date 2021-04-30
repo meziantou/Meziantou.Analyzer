@@ -96,13 +96,13 @@ namespace Meziantou.Analyzer.Rules
             if (regexOptionsSymbol == null)
                 return;
 
-            var arg = arguments.FirstOrDefault(a => a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
+            var arg = arguments.FirstOrDefault(a => a.Parameter != null && a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
             if (arg == null || arg.Value == null)
                 return;
 
             if (arg.Value.ConstantValue.HasValue)
             {
-                var value = ((RegexOptions)arg.Value.ConstantValue.Value);
+                var value = ((RegexOptions)arg.Value.ConstantValue.Value!);
                 if (!value.HasFlag(RegexOptions.ExplicitCapture) && !value.HasFlag(RegexOptions.ECMAScript)) // The 2 options are exclusives
                 {
                     if (HasUnnamedGroups(value))

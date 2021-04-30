@@ -99,7 +99,7 @@ namespace Meziantou.Analyzer.Rules
 
             private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
             {
-                return operation.Arguments.Any(arg => arg.ArgumentKind == ArgumentKind.Explicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
+                return operation.Arguments.Any(arg => arg.ArgumentKind == ArgumentKind.Explicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
             }
 
             private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation)
@@ -108,7 +108,7 @@ namespace Meziantou.Analyzer.Rules
                 if (string.Equals(method.Name, nameof(CancellationTokenSource.CreateLinkedTokenSource), StringComparison.Ordinal) && method.ContainingType.IsEqualTo(CancellationTokenSourceSymbol))
                     return false;
 
-                var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
+                var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
                 if (!isImplicitlyDeclared && !operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, CancellationTokenSymbol))
                     return false;
 
@@ -276,7 +276,7 @@ namespace Meziantou.Analyzer.Rules
 
                 bool IsSymbolAccessible(ISymbol symbol)
                 {
-                    return operation.SemanticModel.IsAccessible(operation.Syntax.Span.Start, symbol);
+                    return operation.SemanticModel!.IsAccessible(operation.Syntax.Span.Start, symbol);
                 }
             }
 
@@ -286,7 +286,7 @@ namespace Meziantou.Analyzer.Rules
                 if (ancestor == null)
                     return null;
 
-                return operation.SemanticModel.GetDeclaredSymbol(ancestor) as ITypeSymbol;
+                return operation.SemanticModel!.GetDeclaredSymbol(ancestor) as ITypeSymbol;
             }
 
             private static bool IsStaticMember(IOperation operation)
@@ -295,7 +295,7 @@ namespace Meziantou.Analyzer.Rules
                 if (memberDeclarationSyntax == null)
                     return false;
 
-                var symbol = operation.SemanticModel.GetDeclaredSymbol(memberDeclarationSyntax);
+                var symbol = operation.SemanticModel!.GetDeclaredSymbol(memberDeclarationSyntax);
                 if (symbol == null)
                     return false;
 
@@ -304,7 +304,7 @@ namespace Meziantou.Analyzer.Rules
 
             private static IEnumerable<NameAndType> GetParameters(IOperation operation)
             {
-                var semanticModel = operation.SemanticModel;
+                var semanticModel = operation.SemanticModel!;
                 var node = operation.Syntax;
                 while (node != null)
                 {
@@ -386,11 +386,11 @@ namespace Meziantou.Analyzer.Rules
             private static IEnumerable<NameAndType> GetVariables(IOperation operation)
             {
                 var previousOperation = operation;
-                operation = operation.Parent;
+                var currentOperation = operation.Parent;
 
-                while (operation != null)
+                while (currentOperation != null)
                 {
-                    if (operation is IBlockOperation blockOperation)
+                    if (currentOperation is IBlockOperation blockOperation)
                     {
                         foreach (var childOperation in blockOperation.Children)
                         {
@@ -419,8 +419,8 @@ namespace Meziantou.Analyzer.Rules
                         }
                     }
 
-                    previousOperation = operation;
-                    operation = operation.Parent;
+                    previousOperation = currentOperation;
+                    currentOperation = currentOperation.Parent;
                 }
             }
 

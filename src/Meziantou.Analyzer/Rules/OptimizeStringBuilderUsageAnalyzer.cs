@@ -171,7 +171,7 @@ namespace Meziantou.Analyzer.Rules
                 {
                     if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
                     {
-                        if (invocationOperation.Instance.Type.IsValueType && !IsPrimitive(invocationOperation.Instance.Type))
+                        if (invocationOperation.Instance?.Type?.IsValueType == true && !IsPrimitive(invocationOperation.Instance.Type))
                             return false;
 
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);

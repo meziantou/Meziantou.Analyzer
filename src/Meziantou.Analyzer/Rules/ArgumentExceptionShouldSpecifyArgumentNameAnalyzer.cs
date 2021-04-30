@@ -70,7 +70,7 @@ namespace Meziantou.Analyzer.Rules
 
             foreach (var argument in op.Arguments)
             {
-                if (!string.Equals(argument.Parameter.Name, parameterName, StringComparison.Ordinal))
+                if (argument.Parameter == null || !string.Equals(argument.Parameter.Name, parameterName, StringComparison.Ordinal))
                     continue;
 
                 if (argument.Value.ConstantValue.HasValue)
@@ -103,7 +103,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static IEnumerable<string> GetParameterNames(IOperation operation)
         {
-            var semanticModel = operation.SemanticModel;
+            var semanticModel = operation.SemanticModel!;
             var node = operation.Syntax;
             while (node != null)
             {

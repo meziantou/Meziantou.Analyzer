@@ -45,7 +45,7 @@ namespace Meziantou.Analyzer.Rules
                             return;
                     }
 
-                    var analyzerContext = new AnalyzerContext(symbol);
+                    var analyzerContext = new AnalyzerContext();
                     ctx.RegisterOperationAction(analyzerContext.AnalyzeBlock, OperationKind.Block);
                     ctx.RegisterOperationBlockEndAction(analyzerContext.AnalyzeEnd);
                 });
@@ -55,22 +55,17 @@ namespace Meziantou.Analyzer.Rules
         private sealed class AnalyzerContext
         {
             private bool _canBeReadOnly = true;
-            private readonly INamedTypeSymbol _currentSymbol;
-
-            public AnalyzerContext(INamedTypeSymbol currentSymbol)
-            {
-                _currentSymbol = currentSymbol;
-            }
 
             public void AnalyzeBlock(OperationAnalysisContext context)
             {
                 var operation = (IBlockOperation)context.Operation;
+                var semanticModel = operation.SemanticModel!;
 
                 var arg = GetDataFlowArgument(operation.Syntax);
                 if (arg == null)
                     return;
 
-                var dataFlow = operation.SemanticModel.AnalyzeDataFlow(arg);
+                var dataFlow = semanticModel.AnalyzeDataFlow(arg);
                 foreach (var symbol in dataFlow.WrittenInside)
                 {
                     if (symbol is IParameterSymbol parameter && parameter.IsThis)

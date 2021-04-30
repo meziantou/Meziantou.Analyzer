@@ -34,7 +34,7 @@ namespace Meziantou.Analyzer.Rules
         private static void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains("$"))
+            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains('$', StringComparison.Ordinal))
                 return;
 
             foreach (var location in symbol.Locations)
@@ -77,7 +77,7 @@ namespace Meziantou.Analyzer.Rules
         private static string GetFileName(string filePath)
         {
             var fileName = Path.GetFileName(filePath);
-            var index = fileName.IndexOf('.');
+            var index = fileName.IndexOf('.', StringComparison.Ordinal);
             if (index < 0)
                 return fileName;
 

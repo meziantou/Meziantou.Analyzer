@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
@@ -132,9 +133,9 @@ namespace Meziantou.Analyzer
             return symbol.SpecialType == SpecialType.System_DateTime;
         }
 
-        public static bool IsEnumeration(this ITypeSymbol? symbol)
+        public static bool IsEnumeration([NotNullWhen(returnValue: true)]this ITypeSymbol? symbol)
         {
-            return GetEnumerationType(symbol) != null;
+            return symbol != null && GetEnumerationType(symbol) != null;
         }
 
         public static INamedTypeSymbol? GetEnumerationType(this ITypeSymbol? symbol)

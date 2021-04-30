@@ -70,7 +70,7 @@ namespace Meziantou.Analyzer.Rules
             }
 
             // The fixer will need to prefix the remaining operand with '!' if the original comparison is "!= true" or "== false"
-            var logicalNotOperatorNeeded = (bool)nodeToRemove.ConstantValue.Value ?
+            var logicalNotOperatorNeeded = (bool)nodeToRemove.ConstantValue.Value! ?
                 binaryOperation.OperatorKind == BinaryOperatorKind.NotEquals :
                 binaryOperation.OperatorKind == BinaryOperatorKind.Equals;
 

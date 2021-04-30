@@ -125,7 +125,7 @@ namespace Meziantou.Analyzer.Rules
                 if (!CanAddConfigureAwait(collectionType, operation.Collection))
                     return;
 
-                if (MustUseConfigureAwait(operation.SemanticModel, operation.Syntax, context.CancellationToken))
+                if (MustUseConfigureAwait(operation.SemanticModel!, operation.Syntax, context.CancellationToken))
                 {
                     context.ReportDiagnostic(s_rule, operation.Collection);
                 }
@@ -200,7 +200,7 @@ namespace Meziantou.Analyzer.Rules
                         if (!CanAddConfigureAwait(variableType, declarator.Initializer.Value))
                             return;
 
-                        if (MustUseConfigureAwait(declarator.SemanticModel, declarator.Syntax, context.CancellationToken))
+                        if (MustUseConfigureAwait(declarator.SemanticModel!, declarator.Syntax, context.CancellationToken))
                         {
                             context.ReportDiagnostic(s_rule, declarator.Initializer.Value);
                         }
@@ -304,7 +304,7 @@ namespace Meziantou.Analyzer.Rules
 
             private static bool CanAddConfigureAwait(ITypeSymbol awaitedType, IOperation operation)
             {
-                return CanAddConfigureAwait(awaitedType, operation.SemanticModel, operation.Syntax);
+                return CanAddConfigureAwait(awaitedType, operation.SemanticModel!, operation.Syntax);
             }
 
             private static bool CanAddConfigureAwait(ITypeSymbol awaitedType, SemanticModel semanticModel, SyntaxNode node)

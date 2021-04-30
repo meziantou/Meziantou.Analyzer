@@ -32,6 +32,7 @@ namespace Meziantou.Analyzer.Rules
         private void AnalyzeVariableDeclaration(OperationAnalysisContext context)
         {
             var operation = (IVariableDeclaratorOperation)context.Operation;
+            var semanticModel = operation.SemanticModel!;
             var localSymbol = operation.Symbol;
             if (localSymbol.IsImplicitlyDeclared || !localSymbol.CanBeReferencedByName)
                 return;
@@ -42,7 +43,7 @@ namespace Meziantou.Analyzer.Rules
 
             foreach (var member in GetSymbols(containingType, localSymbol.Name))
             {
-                if (!operation.SemanticModel.IsAccessible(operation.Syntax.SpanStart, member))
+                if (!semanticModel.IsAccessible(operation.Syntax.SpanStart, member))
                     continue;
 
                 if (member is IFieldSymbol)

@@ -106,6 +106,9 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeObjectCreation(OperationAnalysisContext context)
             {
                 var operation = (IObjectCreationOperation)context.Operation;
+                if (operation.Constructor == null)
+                    return;
+
                 AddCannotBeStaticType(operation.Constructor.ContainingType);
                 foreach (var typeArgument in operation.Constructor.TypeArguments)
                 {
@@ -116,7 +119,10 @@ namespace Meziantou.Analyzer.Rules
             public void AnalyzeArrayCreation(OperationAnalysisContext context)
             {
                 var operation = (IArrayCreationOperation)context.Operation;
-                AddCannotBeStaticType(operation.Type);
+                if (operation.Type != null)
+                {
+                    AddCannotBeStaticType(operation.Type);
+                }
             }
 
             public void AnalyzeInvocation(OperationAnalysisContext context)

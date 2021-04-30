@@ -80,7 +80,7 @@ namespace Meziantou.Analyzer.Rules
             return !symbol.IsSealed && (symbol.IsVirtual || symbol.IsAbstract || symbol.IsOverride);
         }
 
-        private static bool IsCurrentInstanceMethod(IOperation operation)
+        private static bool IsCurrentInstanceMethod(IOperation? operation)
         {
             if (operation == null)
                 return false;

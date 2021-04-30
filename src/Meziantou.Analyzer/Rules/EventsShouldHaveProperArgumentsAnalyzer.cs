@@ -138,7 +138,7 @@ namespace Meziantou.Analyzer.Rules
 
             public override void VisitConditionalAccessInstance(IConditionalAccessInstanceOperation operation)
             {
-                var semanticModel = operation.SemanticModel;
+                var semanticModel = operation.SemanticModel!;
                 var syntax = operation.Syntax;
                 var symbol = semanticModel.GetSymbolInfo(syntax).Symbol;
                 if (symbol != null)
@@ -180,7 +180,11 @@ namespace Meziantou.Analyzer.Rules
 
             public override void VisitLocalReference(ILocalReferenceOperation operation)
             {
-                FindFromLocalSymbol(operation.SemanticModel, operation.Local);
+                if (operation.SemanticModel != null)
+                {
+                    FindFromLocalSymbol(operation.SemanticModel, operation.Local);
+                }
+
                 base.VisitLocalReference(operation);
             }
         }

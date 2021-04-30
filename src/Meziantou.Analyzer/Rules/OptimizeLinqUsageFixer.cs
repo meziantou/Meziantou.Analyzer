@@ -146,8 +146,8 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> UseAny(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)
         {
-            var countOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var countOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationStart = int.Parse(diagnostic.Properties["CountOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationLength = int.Parse(diagnostic.Properties["CountOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
@@ -175,10 +175,10 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> UseTakeAndCount(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
         {
-            var countOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var countOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var operandOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var operandOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationStart = int.Parse(diagnostic.Properties["CountOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationLength = int.Parse(diagnostic.Properties["CountOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationStart = int.Parse(diagnostic.Properties["OperandOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationLength = int.Parse(diagnostic.Properties["OperandOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
@@ -224,10 +224,10 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> UseSkipAndAny(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, bool comparandValue, CancellationToken cancellationToken)
         {
-            var countOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var countOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("CountOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var operandOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var operandOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("OperandOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationStart = int.Parse(diagnostic.Properties["CountOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var countOperationLength = int.Parse(diagnostic.Properties["CountOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationStart = int.Parse(diagnostic.Properties["OperandOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var operandOperationLength = int.Parse(diagnostic.Properties["OperandOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
             var skipMinusOne = diagnostic.Properties.ContainsKey("SkipMinusOne");
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -471,10 +471,10 @@ namespace Meziantou.Analyzer.Rules
         {
             // a."b()".c()
             // a.c()
-            var firstOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("FirstOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var firstOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("FirstOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var lastOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var lastOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var firstOperationStart = int.Parse(diagnostic.Properties["FirstOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var firstOperationLength = int.Parse(diagnostic.Properties["FirstOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
@@ -496,8 +496,8 @@ namespace Meziantou.Analyzer.Rules
 
         private static async Task<Document> UseThenBy(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
         {
-            var lastOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var lastOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
             var expectedMethodName = diagnostic.Properties["ExpectedMethodName"]!;
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -522,10 +522,10 @@ namespace Meziantou.Analyzer.Rules
             // enumerable.Where(x=> x).C() => enumerable.C(x=> x)
             // enumerable.Where(x=> x).C(y=>y) => enumerable.C(y=> y && y)
             // enumerable.Where(Condition).C(y=>y) => enumerable.C(y=> Condition(y) && y)
-            var firstOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("FirstOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var firstOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("FirstOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var lastOperationStart = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var lastOperationLength = int.Parse(diagnostic.Properties.GetValueOrDefault("LastOperationLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var firstOperationStart = int.Parse(diagnostic.Properties["FirstOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var firstOperationLength = int.Parse(diagnostic.Properties["FirstOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
@@ -591,7 +591,7 @@ namespace Meziantou.Analyzer.Rules
 
         private static SyntaxNode ReplaceParameter(IAnonymousFunctionOperation method, string newParameterName)
         {
-            var semanticModel = method.SemanticModel;
+            var semanticModel = method.SemanticModel!;
             var parameterSymbol = method.Symbol.Parameters[0];
             return new ParameterRewriter(semanticModel, parameterSymbol, newParameterName).Visit(method.Body.Syntax);
         }

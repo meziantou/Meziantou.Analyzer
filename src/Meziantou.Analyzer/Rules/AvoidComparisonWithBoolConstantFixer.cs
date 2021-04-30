@@ -49,9 +49,9 @@ namespace Meziantou.Analyzer.Rules
             if (binaryExpressionSyntax.Left is null || binaryExpressionSyntax.Right is null)
                 return document;
 
-            var nodeToKeepSpanStart = int.Parse(diagnostic.Properties.GetValueOrDefault("NodeToKeepSpanStart"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var nodeToKeepSpanLength = int.Parse(diagnostic.Properties.GetValueOrDefault("NodeToKeepSpanLength"), NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var logicalNotOperatorNeeded = bool.Parse(diagnostic.Properties.GetValueOrDefault("LogicalNotOperatorNeeded"));
+            var nodeToKeepSpanStart = int.Parse(diagnostic.Properties["NodeToKeepSpanStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var nodeToKeepSpanLength = int.Parse(diagnostic.Properties["NodeToKeepSpanLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var logicalNotOperatorNeeded = bool.Parse(diagnostic.Properties["LogicalNotOperatorNeeded"]!);
 
             var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             if (syntaxRoot == null)
