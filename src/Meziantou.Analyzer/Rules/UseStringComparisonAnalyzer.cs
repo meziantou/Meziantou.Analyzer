@@ -111,7 +111,7 @@ namespace Meziantou.Analyzer.Rules
                 return true;
 
             // JObject.Property / TryGetValue / GetValue
-            var jobjectType = operation.SemanticModel.Compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
+            var jobjectType = operation.SemanticModel!.Compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
             if (method.ContainingType.IsEqualTo(jobjectType))
                 return true;
 

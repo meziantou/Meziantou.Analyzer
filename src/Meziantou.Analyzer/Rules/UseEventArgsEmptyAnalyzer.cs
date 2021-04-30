@@ -31,7 +31,7 @@ namespace Meziantou.Analyzer.Rules
         private static void Analyze(OperationAnalysisContext context)
         {
             var operation = (IObjectCreationOperation)context.Operation;
-            if (operation == null)
+            if (operation == null || operation.Constructor == null)
                 return;
 
             if (operation.Arguments.Length > 0)

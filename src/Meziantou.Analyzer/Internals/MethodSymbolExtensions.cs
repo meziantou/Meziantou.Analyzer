@@ -89,6 +89,9 @@ namespace Meziantou.Analyzer
             IOperation currentOperation,
             params ITypeSymbol?[] additionalParameterTypes)
         {
+            if (currentOperation.SemanticModel == null)
+                return false;
+
             return FindOverloadWithAdditionalParameterOfType(methodSymbol, currentOperation.SemanticModel.Compilation, syntaxNode: currentOperation.Syntax, includeObsoleteMethods: false, additionalParameterTypes) != null;
         }
 
@@ -115,6 +118,9 @@ namespace Meziantou.Analyzer
             bool includeObsoleteMethods,
             params ITypeSymbol?[] additionalParameterTypes)
         {
+            if (operation.SemanticModel == null)
+                return null;
+
             return FindOverloadWithAdditionalParameterOfType(methodSymbol, operation.SemanticModel.Compilation, operation.Syntax, includeObsoleteMethods, additionalParameterTypes);
         }
 

@@ -33,7 +33,7 @@ namespace Meziantou.Analyzer.Rules
                 var title = "Use explicit " + (newLine switch
                 {
                     null => "new lines",
-                    _ => $"new lines ({newLine.Replace("\r", "\\r").Replace("\n", "\\n")})",
+                    _ => $"new lines ({newLine.ReplaceOrdinal("\r", "\\r").ReplaceOrdinal("\n", "\\n")})",
                 });
                 var codeAction = CodeAction.Create(
                     title,
@@ -73,7 +73,7 @@ namespace Meziantou.Analyzer.Rules
             SyntaxNode? node = null;
             foreach (var (line, eol) in text.SplitLines())
             {
-                var newText = eol.Length > 0 ? string.Concat(line.ToString().Replace("\"\"", "\""), newLine ?? eol.ToString()) : line.ToString();
+                var newText = eol.Length > 0 ? string.Concat(line.ToString().ReplaceOrdinal("\"\"", "\""), newLine ?? eol.ToString()) : line.ToString();
                 var literal = generator.LiteralExpression(newText);
                 if (node == null)
                 {

@@ -104,15 +104,18 @@ namespace Meziantou.Analyzer.Rules
 
                 // new ValueTask()
                 if (operation is IObjectCreationOperation create &&
+                    create.Type != null &&
                     create.Type.OriginalDefinition.IsEqualTo(valueTaskSymbol) &&
                     create.Arguments.Length == 0)
                     return false;
 
                 // new ValueTask<T>(T value)
                 if (operation is IObjectCreationOperation create2 &&
+                    create2.Type != null &&
                     create2.Type.OriginalDefinition.IsEqualTo(valueTaskOfTSymbol) &&
                     create2.Arguments.Length == 1 &&
-                    create2.Arguments[0].Parameter.Type.IsEqualTo(((INamedTypeSymbol)create2.Type).TypeArguments[0]))
+                    create2.Arguments[0].Parameter is { } firstParameter &&
+                    firstParameter.Type.IsEqualTo(((INamedTypeSymbol?)create2.Type)?.TypeArguments[0]))
                     return false;
 
                 return true;

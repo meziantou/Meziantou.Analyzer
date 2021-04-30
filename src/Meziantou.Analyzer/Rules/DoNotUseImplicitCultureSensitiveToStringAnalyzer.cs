@@ -82,6 +82,9 @@ namespace Meziantou.Analyzer.Rules
             {
                 var expression = part.Expression;
                 var type = expression.Type;
+                if (expression == null || type == null)
+                    continue;
+
                 if (IsFormattableType(context.Compilation, type) && !IsConstantPositiveNumber(expression))
                 {
                     context.ReportDiagnostic(s_stringInterpolationRule, part);
@@ -95,9 +98,9 @@ namespace Meziantou.Analyzer.Rules
             if (operand is null)
                 return true;
 
-            if (operand is IConversionOperation conversion && conversion.IsImplicit && conversion.Type.IsObject())
+            if (operand is IConversionOperation conversion && conversion.IsImplicit && conversion.Type.IsObject() && conversion.Operand.Type != null)
             {
-                if (IsFormattableType(operand.SemanticModel.Compilation, conversion.Operand.Type) && !IsConstantPositiveNumber(conversion.Operand))
+                if (IsFormattableType(operand.SemanticModel!.Compilation, conversion.Operand.Type) && !IsConstantPositiveNumber(conversion.Operand))
                     return false;
             }
 
@@ -146,19 +149,19 @@ namespace Meziantou.Analyzer.Rules
         // For instance, https://source.dot.net/#System.Private.CoreLib/Int32.cs,8d6f2d8bc0589463
         private static bool IsConstantPositiveNumber(IOperation operation)
         {
-            if (operation.ConstantValue.HasValue)
+            if (operation.Type != null && operation.ConstantValue.HasValue)
             {
                 var constantValue = operation.ConstantValue.Value;
                 bool? result = operation.Type.SpecialType switch
                 {
-                    SpecialType.System_Byte => (byte)constantValue >= 0,
-                    SpecialType.System_SByte => (sbyte)constantValue >= 0,
-                    SpecialType.System_Int16 => (short)constantValue >= 0,
-                    SpecialType.System_Int32 => (int)constantValue >= 0,
-                    SpecialType.System_Int64 => (long)constantValue >= 0,
-                    SpecialType.System_Single => (float)constantValue >= 0,
-                    SpecialType.System_Double => (double)constantValue >= 0,
-                    SpecialType.System_Decimal => (decimal)constantValue >= 0,
+                    SpecialType.System_Byte => (byte)constantValue! >= 0,
+                    SpecialType.System_SByte => (sbyte)constantValue! >= 0,
+                    SpecialType.System_Int16 => (short)constantValue! >= 0,
+                    SpecialType.System_Int32 => (int)constantValue! >= 0,
+                    SpecialType.System_Int64 => (long)constantValue! >= 0,
+                    SpecialType.System_Single => (float)constantValue! >= 0,
+                    SpecialType.System_Double => (double)constantValue! >= 0,
+                    SpecialType.System_Decimal => (decimal)constantValue! >= 0,
                     SpecialType.System_UInt16 => true,
                     SpecialType.System_UInt32 => true,
                     SpecialType.System_UInt64 => true,

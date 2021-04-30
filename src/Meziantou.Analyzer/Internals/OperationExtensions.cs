@@ -10,20 +10,24 @@ namespace Meziantou.Analyzer
     {
         public static IEnumerable<IOperation> Ancestors(this IOperation operation)
         {
-            operation = operation.Parent;
-            while (operation != null)
+            var parent = operation.Parent;
+            while (parent != null)
             {
-                yield return operation;
-                operation = operation.Parent;
+                yield return parent;
+                parent = parent.Parent;
             }
         }
 
         public static bool IsInQueryableExpressionArgument(this IOperation operation)
         {
+            var semanticModel = operation.SemanticModel;
+            if (semanticModel == null)
+                return false;
+
             foreach (var invocationOperation in operation.Ancestors().OfType<IInvocationOperation>())
             {
                 var type = invocationOperation.TargetMethod.ContainingType;
-                if (type.IsEqualTo(operation.SemanticModel.Compilation.GetTypeByMetadataName("System.Linq.Queryable")))
+                if (type.IsEqualTo(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Queryable")))
                     return true;
             }
 
@@ -32,10 +36,17 @@ namespace Meziantou.Analyzer
 
         public static bool IsInExpressionArgument(this IOperation operation)
         {
+            var semanticModel = operation.SemanticModel;
+            if (semanticModel == null)
+                return false;
+
             foreach (var op in operation.Ancestors().OfType<IArgumentOperation>())
             {
+                if (op.Parameter == null)
+                    continue;
+
                 var type = op.Parameter.Type;
-                if (type.InheritsFrom(operation.SemanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
+                if (type.InheritsFrom(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
                     return true;
             }
 
@@ -56,7 +67,7 @@ namespace Meziantou.Analyzer
 
             return operation.Type;
         }
-        
+
         public static IOperation UnwrapImplicitConversionOperations(this IOperation operation)
         {
             if (operation is IConversionOperation conversionOperation && conversionOperation.IsImplicit)
@@ -80,6 +91,9 @@ namespace Meziantou.Analyzer
 
         public static IMethodSymbol? GetContainingMethod(this IOperation operation)
         {
+            if (operation.SemanticModel == null)
+                return null;
+
             foreach (var syntax in operation.Syntax.AncestorsAndSelf())
             {
                 if (syntax is MethodDeclarationSyntax method)

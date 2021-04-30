@@ -66,7 +66,7 @@ namespace Meziantou.Analyzer.Rules
             var dimensionSize = operation.DimensionSizes[0].ConstantValue;
             return dimensionSize.HasValue && IsZero(dimensionSize.Value);
 
-            static bool IsZero(object value)
+            static bool IsZero(object? value)
             {
                 return value switch
                 {
@@ -85,10 +85,10 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool IsCompilerGeneratedParamsArray(IArrayCreationOperation arrayCreationExpression, OperationAnalysisContext context)
         {
-            var model = context.Operation.SemanticModel;
+            var semanticModel = context.Operation.SemanticModel!;
 
             // Compiler generated array creation seems to just use the syntax from the parent.
-            var parent = model.GetOperation(arrayCreationExpression.Syntax, context.CancellationToken);
+            var parent = semanticModel.GetOperation(arrayCreationExpression.Syntax, context.CancellationToken);
             if (parent == null)
                 return false;
 

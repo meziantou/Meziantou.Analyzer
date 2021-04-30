@@ -183,6 +183,9 @@ namespace Meziantou.Analyzer.Rules
                 if (type?.OriginalDefinition == null)
                     return;
 
+                if (operation.Constructor == null)
+                    return;
+
                 if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
                 {
                     if (operation.Constructor.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol?.Construct(type.TypeArguments[0]))))

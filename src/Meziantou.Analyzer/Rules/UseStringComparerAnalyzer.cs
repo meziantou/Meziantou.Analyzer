@@ -80,6 +80,9 @@ namespace Meziantou.Analyzer.Rules
                     return;
 
                 var method = operation.Constructor;
+                if (method == null)
+                    return;
+
                 if (method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, EqualityComparerStringType) ||
                     method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, ComparerStringType))
                 {

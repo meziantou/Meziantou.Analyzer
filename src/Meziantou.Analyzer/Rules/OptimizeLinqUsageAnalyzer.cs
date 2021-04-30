@@ -318,7 +318,7 @@ namespace Meziantou.Analyzer.Rules
                     if (string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderBy), StringComparison.Ordinal) ||
                         string.Equals(parent.TargetMethod.Name, nameof(Enumerable.OrderByDescending), StringComparison.Ordinal))
                     {
-                        var expectedMethodName = parent.TargetMethod.Name.Replace("OrderBy", "ThenBy");
+                        var expectedMethodName = parent.TargetMethod.Name.ReplaceOrdinal("OrderBy", "ThenBy");
                         var properties = CreateProperties(OptimizeLinqUsageData.DuplicatedOrderBy)
                             .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
                             .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
@@ -604,6 +604,8 @@ namespace Meziantou.Analyzer.Rules
 
         private static void UseCastInsteadOfSelect(OperationAnalysisContext context, IInvocationOperation operation)
         {
+            var semanticModel = operation.SemanticModel!;
+
             if (!string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Select), StringComparison.Ordinal))
                 return;
 
@@ -622,7 +624,7 @@ namespace Meziantou.Analyzer.Rules
                 return;
 
             // If what's returned is not a cast value or the cast is done by 'as' operator
-            if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast)
+            if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast || castOp.Type == null)
                 return;
 
             // If the cast is not applied directly to the source element (one of the selector's arguments)
@@ -637,13 +639,13 @@ namespace Meziantou.Analyzer.Rules
 
             // Determine if we're casting to a nullable type.
             // TODO: Revisit this once https://github.com/dotnet/roslyn/pull/42403 is merged.
-            var selectMethodSymbol = operation.SemanticModel.GetSymbolInfo(operation.Syntax).Symbol as IMethodSymbol;
+            var selectMethodSymbol = semanticModel.GetSymbolInfo(operation.Syntax).Symbol as IMethodSymbol;
             var nullableFlowState = selectMethodSymbol?.TypeArgumentNullableAnnotations[1] == NullableAnnotation.Annotated ?
                 NullableFlowState.MaybeNull :
                 NullableFlowState.None;
 
             // Get the cast type's minimally qualified name, in the current context
-            var castType = castOp.Type.ToMinimalDisplayString(operation.SemanticModel, nullableFlowState, operation.Syntax.SpanStart);
+            var castType = castOp.Type.ToMinimalDisplayString(semanticModel, nullableFlowState, operation.Syntax.SpanStart);
             var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
                .Add("CastType", castType);
 

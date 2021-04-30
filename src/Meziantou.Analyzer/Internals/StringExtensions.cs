@@ -5,6 +5,35 @@ namespace Meziantou.Analyzer.Rules
 {
     internal static partial class StringExtensions
     {
+#if NETSTANDARD2_0
+        public static bool Contains(this string str, string value, StringComparison stringComparison)
+        {
+            return str.IndexOf(value, stringComparison) >= 0;
+        }
+
+        public static bool Contains(this string str, char value, StringComparison stringComparison)
+        {
+            return str.IndexOf(value, stringComparison) >= 0;
+        }
+
+        public static int IndexOf(this string str, char value, StringComparison stringComparison)
+        {
+            if (stringComparison == StringComparison.Ordinal)
+                return str.IndexOf(value);
+
+            return str.IndexOf(value.ToString(), stringComparison);
+        }
+#endif
+
+        public static string ReplaceOrdinal(this string str, string oldValue, string newValue)
+        {
+#if NET5_0_OR_GREATER
+            return str.Replace(oldValue, newValue,StringComparison.Ordinal);
+#else
+            return str.Replace(oldValue, newValue);
+#endif
+        }
+
         public static LineSplitEnumerator SplitLines(this string str) => new(str.AsSpan());
 
         [StructLayout(LayoutKind.Auto)]

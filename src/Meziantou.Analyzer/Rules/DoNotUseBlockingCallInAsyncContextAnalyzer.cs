@@ -173,7 +173,7 @@ namespace Meziantou.Analyzer.Rules
                     var position = operation.Syntax.GetLocation().SourceSpan.End;
 
                     var potentionalMethods = new List<ISymbol>();
-                    potentionalMethods.AddRange(operation.SemanticModel.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
+                    potentionalMethods.AddRange(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
                     if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
                     {
                         potentionalMethods.AddRange(operation.SemanticModel.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
@@ -253,7 +253,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 // lamdba, delegate, method, local function
                 // Check if returns Task or async void
-                if (operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart) is IMethodSymbol methodSymbol)
+                if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart) is IMethodSymbol methodSymbol)
                 {
                     return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol);
                 }
@@ -263,7 +263,7 @@ namespace Meziantou.Analyzer.Rules
 
             private static bool CanChangeParentMethodSignature(IOperation operation)
             {
-                var symbol = operation.SemanticModel.GetEnclosingSymbol(operation.Syntax.SpanStart);
+                var symbol = operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart);
                 if (symbol is IMethodSymbol methodSymbol)
                 {
                     return !methodSymbol.IsOverrideOrInterfaceImplementation()
@@ -327,7 +327,7 @@ namespace Meziantou.Analyzer.Rules
 
                     foreach (var declarator in declaration.Declarators)
                     {
-                        if (CanBeAwaitUsing(declarator.Initializer.Value))
+                        if (declarator.Initializer != null && CanBeAwaitUsing(declarator.Initializer.Value))
                         {
                             ReportDiagnosticIfNeeded(context, usingOperation, "Prefer using 'await using'");
                             return true;

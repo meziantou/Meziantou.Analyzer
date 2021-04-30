@@ -49,7 +49,7 @@ namespace Meziantou.Analyzer.Rules
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
 
-            var index = int.Parse(diagnostic.Properties["Index"], CultureInfo.InvariantCulture);
+            var index = int.Parse(diagnostic.Properties["Index"]!, CultureInfo.InvariantCulture);
             var symbol = (IMethodSymbol?)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
             if (symbol == null)
                 return document;

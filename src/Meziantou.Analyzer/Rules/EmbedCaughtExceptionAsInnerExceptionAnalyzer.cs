@@ -46,7 +46,10 @@ namespace Meziantou.Analyzer.Rules
 
             if (operation.Exception is IObjectCreationOperation objectCreationOperation)
             {
-                var argument = objectCreationOperation.Arguments.FirstOrDefault(arg => IsPotentialParameter(arg.Parameter, exceptionSymbol));
+                if (objectCreationOperation.Constructor == null)
+                    return;
+
+                var argument = objectCreationOperation.Arguments.FirstOrDefault(arg => IsPotentialParameter(arg?.Parameter, exceptionSymbol));
                 if (argument == null)
                 {
                     if (objectCreationOperation.Constructor.HasOverloadWithAdditionalParameterOfType(context.Compilation, exceptionSymbol))
@@ -57,8 +60,11 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static bool IsPotentialParameter(IParameterSymbol parameter, ITypeSymbol exceptionSymbol)
+        private static bool IsPotentialParameter(IParameterSymbol? parameter, ITypeSymbol exceptionSymbol)
         {
+            if (parameter == null)
+                return false;
+
             return parameter.Type.IsOrInheritFrom(exceptionSymbol);
         }
     }

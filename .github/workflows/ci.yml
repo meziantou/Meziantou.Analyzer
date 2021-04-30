@@ -30,7 +30,7 @@ jobs:
         Write-Host "::set-output name=package_version::$NewVersion"
       name: Compute version
       id: compute-version
-    - run: dotnet build --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /bl
+    - run: dotnet pack --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /bl
     - uses: actions/upload-artifact@v2
       with:
         name: nuget
@@ -46,6 +46,7 @@ jobs:
       matrix:
         runs-on: [ ubuntu-20.04, windows-2019 ]
         configuration: [ Debug, Release ]
+        use-latest-roslyn-version: [ 'true', 'false' ]
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
@@ -55,7 +56,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.x'
-    - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --results-directory "${{ env.TestResultsDirectory }}"
+    - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --results-directory "${{ env.TestResultsDirectory }}" /p:WarningsAsErrors=true /p:UseLatestRoslynVersion=${{ matrix.use-latest-roslyn-version}}
       name: Run tests
     - uses: actions/upload-artifact@v2
       if: always()
