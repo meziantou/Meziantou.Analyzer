@@ -117,6 +117,9 @@ namespace Meziantou.Analyzer.Rules
 
                 if (typeSymbol.SpecialType == SpecialType.System_Byte)
                     return false;
+                
+                if (typeSymbol.SpecialType == SpecialType.System_Char)
+                    return false;
 
                 if (typeSymbol.SpecialType == SpecialType.System_UInt16)
                     return false;

@@ -71,6 +71,7 @@ class Test
         [InlineData("\"abc\"", "new System.Uri(\"\")")]
         [InlineData("\"abc\"", "new System.TimeSpan()")]
         [InlineData("\"abc\"", @"$""test{new System.Uri("""")}""")]
+        [InlineData("\"abc\"", @"' '")]
         public async Task ConcatNoDiagnostic(string left, string right)
         {
             var sourceCode = @"
