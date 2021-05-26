@@ -139,7 +139,7 @@ class TypeName
 {
     public void Test()
     {
-        _= new
+        _ = new
         {
             A = 1,
             B = 2,
@@ -160,7 +160,7 @@ class TypeName
 {
     public void Test()
     {
-        _= new
+        _ = new
         {
             A = 1,
             [||]B = 2
@@ -172,7 +172,46 @@ class TypeName
 {
     public void Test()
     {
-        _= new
+        _ = new
+        {
+            A = 1,
+            B = 2,
+        };
+    }
+}";
+            await CreateProjectBuilder()
+                .WithSourceCode(SourceCode)
+                .ShouldFixCodeWith(CodeFix)
+                .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task ImplicitCtorWithoutLeadingComma()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public int A { get; set; }
+    public int B { get; set; }
+
+    public void Test()
+    {
+        TypeName a = new()
+        {
+            A = 1,
+            [||]B = 2
+        };
+    }
+}";
+            const string CodeFix = @"
+class TypeName
+{
+    public int A { get; set; }
+    public int B { get; set; }
+
+    public void Test()
+    {
+        TypeName a = new()
         {
             A = 1,
             B = 2,

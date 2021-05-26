@@ -10,6 +10,7 @@ namespace Meziantou.Analyzer.Test.Rules
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
+                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
                 .WithAnalyzer<UseStringComparerAnalyzer>()
                 .WithCodeFixProvider<UseStringComparerFixer>();
         }
@@ -29,7 +30,6 @@ class TypeName
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-
 
         [Fact]
         public async Task SortedList_string_ShouldNotReportDiagnostic()
@@ -74,6 +74,31 @@ class TypeName
     public void Test()
     {
         new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task HashSet_String__ShortNew_ShouldReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.HashSet<string> a = [||]new();
+    }
+}";
+            const string CodeFix = @"
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.HashSet<string> a = new(System.StringComparer.Ordinal);
     }
 }";
             await CreateProjectBuilder()

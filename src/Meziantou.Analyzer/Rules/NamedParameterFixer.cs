@@ -77,6 +77,10 @@ namespace Meziantou.Analyzer.Rules
                     case ObjectCreationExpressionSyntax objectCreationExpression:
                         var ctor = (IMethodSymbol?)semanticModel.GetSymbolInfo(objectCreationExpression).Symbol;
                         return ctor?.Parameters;
+                        
+                    case ImplicitObjectCreationExpressionSyntax implicitObjectCreationExpression:
+                        var implicitCtor = (IMethodSymbol?)semanticModel.GetSymbolInfo(implicitObjectCreationExpression).Symbol;
+                        return implicitCtor?.Parameters;
 
                     case ConstructorInitializerSyntax constructorInitializerSyntax:
                         var ctor2 = (IMethodSymbol?)semanticModel.GetSymbolInfo(constructorInitializerSyntax).Symbol;
