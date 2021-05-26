@@ -59,6 +59,10 @@ namespace Meziantou.Analyzer.Rules
                 case ObjectCreationExpressionSyntax creationExpression:
                     editor.ReplaceNode(creationExpression, creationExpression.AddArgumentListArguments(newArgument));
                     break;
+                    
+                case ImplicitObjectCreationExpressionSyntax implicitCreationExpression:
+                    editor.ReplaceNode(implicitCreationExpression, implicitCreationExpression.AddArgumentListArguments(newArgument));
+                    break;
 
                 case InvocationExpressionSyntax invocationExpression:
                     editor.ReplaceNode(invocationExpression, invocationExpression.AddArgumentListArguments(newArgument));

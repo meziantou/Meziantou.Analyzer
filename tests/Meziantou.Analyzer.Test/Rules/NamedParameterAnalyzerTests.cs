@@ -231,6 +231,35 @@ class TypeName
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+        
+        [Fact]
+        public async Task ImplicitCtor_ShouldUseTheRightParameterName()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        TypeName a = new([||]null);
+    }
+
+    TypeName(string a) { }
+}";
+            const string CodeFix = @"
+class TypeName
+{
+    public void Test()
+    {
+        TypeName a = new(a: null);
+    }
+
+    TypeName(string a) { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .ShouldFixCodeWith(CodeFix)
+                  .ValidateAsync();
+        }
 
         [Fact]
         public async Task CtorChaining()
