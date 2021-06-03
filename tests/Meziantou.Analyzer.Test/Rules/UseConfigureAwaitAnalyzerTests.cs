@@ -428,7 +428,7 @@ class ClassTest : Microsoft.AspNetCore.Components.IComponent
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
-        
+
         [Fact]
         public async Task Blazor_ConfigurationAlways_ShouldReportDiagnostic()
         {
@@ -448,7 +448,7 @@ class ClassTest : Microsoft.AspNetCore.Components.IComponent
     }
 }";
             await CreateProjectBuilder()
-                  .WithEditorConfig("MA0004.report = always")
+                  .AddAnalyzerConfiguration("MA0004.report", "always")
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }

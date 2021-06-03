@@ -115,7 +115,7 @@ public sealed class Test
 }";
             await CreateProjectBuilder()
                   .WithSourceCode(SourceCode)
-                  .WithEditorConfig("MA0053.public_class_should_be_sealed = true")
+                  .AddAnalyzerConfiguration("MA0053.public_class_should_be_sealed", "true")
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
@@ -174,7 +174,7 @@ internal class [||]SampleException
 }";
 
             await CreateProjectBuilder()
-                  .WithEditorConfig("MA0053.class_with_virtual_member_shoud_be_sealed = true")
+                  .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true")
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }

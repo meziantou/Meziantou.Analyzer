@@ -212,7 +212,7 @@ namespace Meziantou.Analyzer.Rules
 
             private bool MustUseConfigureAwait(SemanticModel semanticModel, AnalyzerOptions options, SyntaxNode node, CancellationToken cancellationToken)
             {
-                var modeValue = options.GetConfigurationValue(node.SyntaxTree.FilePath, RuleIdentifiers.UseConfigureAwaitFalse + ".report", "");
+                var modeValue = options.GetConfigurationValue(node.SyntaxTree, RuleIdentifiers.UseConfigureAwaitFalse + ".report", "");
                 if (Enum.TryParse<ReportMode>(modeValue, ignoreCase: true, out var mode))
                 {
                     if (mode == ReportMode.Always)

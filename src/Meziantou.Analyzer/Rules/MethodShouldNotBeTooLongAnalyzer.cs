@@ -131,8 +131,8 @@ namespace Meziantou.Analyzer.Rules
 
         private static bool GetSkipLocalFunctions(SyntaxNodeAnalysisContext context)
         {
-            var file = context.Node?.SyntaxTree.FilePath;
-            if (file != null && context.Options != null && context.Options.GetConfigurationValue(file, $"{s_rule.Id}.skip_local_functions", defaultValue: false))
+            var syntaxTree = context.Node?.SyntaxTree;
+            if (syntaxTree != null && context.Options != null && context.Options.GetConfigurationValue(syntaxTree, $"{s_rule.Id}.skip_local_functions", defaultValue: false))
                 return true;
 
             return false;
@@ -140,14 +140,14 @@ namespace Meziantou.Analyzer.Rules
 
         private static int GetMaximumNumberOfStatements(SyntaxNodeAnalysisContext context)
         {
-            var file = context.Node.SyntaxTree.FilePath;
-            return context.Options.GetConfigurationValue(file, $"{s_rule.Id}.maximum_statements_per_method", defaultValue: 40);
+            var syntaxTree = context.Node.SyntaxTree;
+            return context.Options.GetConfigurationValue(syntaxTree, $"{s_rule.Id}.maximum_statements_per_method", defaultValue: 40);
         }
 
         private static int GetMaximumNumberOfLines(SyntaxNodeAnalysisContext context)
         {
-            var file = context.Node.SyntaxTree.FilePath;
-            return context.Options.GetConfigurationValue(file, $"{s_rule.Id}.maximum_lines_per_method", 60);
+            var syntaxTree = context.Node.SyntaxTree;
+            return context.Options.GetConfigurationValue(syntaxTree, $"{s_rule.Id}.maximum_lines_per_method", 60);
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -268,14 +269,11 @@ namespace TestHelper
                 }
 
                 var additionalFiles = ImmutableArray<AdditionalText>.Empty;
-                if (EditorConfig != null)
-                {
-                    additionalFiles = additionalFiles.Add(new TestAdditionalFile(".editorconfig", EditorConfig));
-                }
+                var analyzerOptionsProvider = new TestAnalyzerConfigOptionsProvider(AnalyzerConfiguration);
 
                 var compilationWithAnalyzers = compilation.WithAnalyzers(
                     ImmutableArray.Create(analyzer),
-                    new AnalyzerOptions(additionalFiles));
+                    new AnalyzerOptions(additionalFiles, analyzerOptionsProvider));
                 var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(compilationWithAnalyzers.CancellationToken).ConfigureAwait(false);
                 foreach (var diag in diags)
                 {
