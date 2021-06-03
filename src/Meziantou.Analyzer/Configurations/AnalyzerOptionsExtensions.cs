@@ -13,6 +13,15 @@ namespace Meziantou.Analyzer.Configurations
         private static readonly ConditionalWeakTable<AnalyzerOptions, ConfigurationHierarchy> s_cachedOptions
             = new();
 
+        public static string GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, string defaultValue)
+        {
+            var configuration = GetConfigurationHierarchy(options);
+            if (configuration.TryGetValue(filePath, key, out var value))
+                return value;
+
+            return defaultValue;
+        }
+
         public static bool GetConfigurationValue(this AnalyzerOptions options, string filePath, string key, bool defaultValue)
         {
             var configuration = GetConfigurationHierarchy(options);

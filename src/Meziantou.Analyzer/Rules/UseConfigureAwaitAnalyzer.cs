@@ -1,6 +1,8 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -90,7 +92,7 @@ namespace Meziantou.Analyzer.Rules
                 if (!CanAddConfigureAwait(context.SemanticModel, node, context.CancellationToken))
                     return;
 
-                if (MustUseConfigureAwait(context.SemanticModel, node, context.CancellationToken))
+                if (MustUseConfigureAwait(context.SemanticModel, context.Options, node, context.CancellationToken))
                 {
                     context.ReportDiagnostic(s_rule, context.Node);
                 }
@@ -125,7 +127,7 @@ namespace Meziantou.Analyzer.Rules
                 if (!CanAddConfigureAwait(collectionType, operation.Collection))
                     return;
 
-                if (MustUseConfigureAwait(operation.SemanticModel!, operation.Syntax, context.CancellationToken))
+                if (MustUseConfigureAwait(operation.SemanticModel!, context.Options, operation.Syntax, context.CancellationToken))
                 {
                     context.ReportDiagnostic(s_rule, operation.Collection);
                 }
@@ -200,7 +202,7 @@ namespace Meziantou.Analyzer.Rules
                         if (!CanAddConfigureAwait(variableType, declarator.Initializer.Value))
                             return;
 
-                        if (MustUseConfigureAwait(declarator.SemanticModel!, declarator.Syntax, context.CancellationToken))
+                        if (MustUseConfigureAwait(declarator.SemanticModel!, context.Options, declarator.Syntax, context.CancellationToken))
                         {
                             context.ReportDiagnostic(s_rule, declarator.Initializer.Value);
                         }
@@ -208,8 +210,15 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            private bool MustUseConfigureAwait(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken)
+            private bool MustUseConfigureAwait(SemanticModel semanticModel, AnalyzerOptions options, SyntaxNode node, CancellationToken cancellationToken)
             {
+                var modeValue = options.GetConfigurationValue(node.SyntaxTree.FilePath, RuleIdentifiers.UseConfigureAwaitFalse + ".report", "");
+                if (Enum.TryParse<ReportMode>(modeValue, ignoreCase: true, out var mode))
+                {
+                    if (mode == ReportMode.Always)
+                        return true;
+                }
+
                 if (HasPreviousConfigureAwait(semanticModel, node, cancellationToken))
                     return true;
 
@@ -339,6 +348,12 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 return default;
+            }
+
+            private enum ReportMode
+            {
+                DetectContext,
+                Always,
             }
         }
     }

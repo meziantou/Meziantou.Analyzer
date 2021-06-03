@@ -428,6 +428,30 @@ class ClassTest : Microsoft.AspNetCore.Components.IComponent
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+        
+        [Fact]
+        public async Task Blazor_ConfigurationAlways_ShouldReportDiagnostic()
+        {
+            const string SourceCode = @"using System.Threading.Tasks;
+namespace Microsoft.AspNetCore.Components
+{
+    public interface IComponent
+    {
+    }
+}
+
+class ClassTest : Microsoft.AspNetCore.Components.IComponent
+{
+    async Task Test()
+    {
+        [||]await Task.Delay(1);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithEditorConfig("MA0004.report = always")
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
 
         [Fact]
         public async Task AwaitForEach_VariableAlreadyAwaited()
