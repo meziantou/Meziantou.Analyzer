@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -58,83 +60,124 @@ namespace Meziantou.Analyzer.Rules
                     if (argument.Expression == null)
                         return;
 
-                    var kind = argument.Expression.Kind();
-                    if (kind == SyntaxKind.TrueLiteralExpression ||
-                        kind == SyntaxKind.FalseLiteralExpression ||
-                        kind == SyntaxKind.NullLiteralExpression)
+                    var expression = argument.Expression;
+                    if (expression.IsKind(SyntaxKind.NullLiteralExpression))
                     {
-                        // Exclude in some methods such as ConfigureAwait(false)
-                        var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
-                        if (invocationExpression != null)
+                        if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Null))
+                            return;
+                    }
+                    else if (expression.IsKind(SyntaxKind.NumericLiteralExpression))
+                    {
+                        if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Numeric))
+                            return;
+                    }
+                    else if (IsBooleanExpression(expression))
+                    {
+                        if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Boolean))
+                            return;
+                    }
+                    else if (IsStringExpression(expression))
+                    {
+                        if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.String))
+                            return;
+                    }
+                    else
+                    {
+                        return;
+                    }
+
+                    // Exclude in some methods such as ConfigureAwait(false)
+                    var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+                    if (invocationExpression != null)
+                    {
+                        var methodSymbol = (IMethodSymbol?)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                        if (methodSymbol != null)
                         {
-                            var methodSymbol = (IMethodSymbol?)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
-                            if (methodSymbol != null)
+                            var argumentIndex = ArgumentIndex(argument);
+
+                            if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
+                                return;
+
+                            if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Enable", StringComparison.Ordinal))
+                                return;
+
+                            if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name == nameof(Task.ConfigureAwait))
+                                return;
+
+                            if (IsMethod(methodSymbol, objectType, nameof(object.Equals)))
+                                return;
+
+                            if (IsMethod(methodSymbol, objectType, nameof(object.ReferenceEquals)))
+                                return;
+
+                            if (IsMethod(methodSymbol, taskTokenType, nameof(Task.FromResult)))
+                                return;
+
+                            if (IsMethod(methodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.SetResult)))
+                                return;
+
+                            if (IsMethod(methodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.TrySetResult)))
+                                return;
+
+                            if (IsMethod(methodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.SetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.GetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.SetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
+                                return;
+
+                            if (IsMethod(methodSymbol, msTestAssertTokenType, "*"))
+                                return;
+
+                            if (IsMethod(methodSymbol, nunitAssertTokenType, "*"))
+                                return;
+
+                            if (IsMethod(methodSymbol, xunitAssertTokenType, "*"))
+                                return;
+
+                            if ((string.Equals(methodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(methodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
+                                return;
+
+                            // e.g. SyntaxNode.WithElse
+                            if (methodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && methodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
+                                return;
+
+                            var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
+                            if (operation != null && operation.IsInExpressionArgument())
+                                return;
+
+                            if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))
                             {
-                                var argumentIndex = ArgumentIndex(argument);
-
-                                if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
-                                    return;
-
-                                if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Enable", StringComparison.Ordinal))
-                                    return;
-
-                                if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name == nameof(Task.ConfigureAwait))
-                                    return;
-
-                                if (IsMethod(methodSymbol, objectType, nameof(object.Equals)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, objectType, nameof(object.ReferenceEquals)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, taskTokenType, nameof(Task.FromResult)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.SetResult)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.TrySetResult)))
-                                    return;
-
-                                if (IsMethod(methodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
-                                    return;
-
-                                if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.SetValue)) && argumentIndex == 0)
-                                    return;
-
-                                if (IsMethod(methodSymbol, fieldInfoTokenType, nameof(FieldInfo.GetValue)) && argumentIndex == 0)
-                                    return;
-
-                                if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.SetValue)) && argumentIndex == 0)
-                                    return;
-
-                                if (IsMethod(methodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
-                                    return;
-
-                                if (IsMethod(methodSymbol, msTestAssertTokenType, "*"))
-                                    return;
-
-                                if (IsMethod(methodSymbol, nunitAssertTokenType, "*"))
-                                    return;
-
-                                if (IsMethod(methodSymbol, xunitAssertTokenType, "*"))
-                                    return;
-
-                                if ((string.Equals(methodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(methodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
-                                    return;
-
-                                // e.g. SyntaxNode.WithElse
-                                if (methodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && methodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
-                                    return;
-
-                                var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
-                                if (operation != null && operation.IsInExpressionArgument())
+                                var declarationId = DocumentationCommentId.CreateDeclarationId(methodSymbol);
+                                if (Regex.IsMatch(declarationId, excludedMethodsRegex))
                                     return;
                             }
-                        }
 
-                        syntaxContext.ReportDiagnostic(s_rule, syntaxContext.Node);
+                            if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods", out var excludedMethods))
+                            {
+                                var types = excludedMethods.Split('|');
+                                foreach (var type in types)
+                                {
+                                    var declarationId = DocumentationCommentId.CreateDeclarationId(methodSymbol);
+                                    if (type == declarationId)
+                                        return;
+                                }
+                            }
+                        }
                     }
+
+                    syntaxContext.ReportDiagnostic(s_rule, syntaxContext.Node);
+
+                    static bool IsBooleanExpression(SyntaxNode node) => node.IsKind(SyntaxKind.TrueLiteralExpression) || node.IsKind(SyntaxKind.FalseLiteralExpression);
+                    static bool IsStringExpression(SyntaxNode node) => node.IsKind(SyntaxKind.StringLiteralExpression) || node.IsKind(SyntaxKind.InterpolatedStringExpression);
                 }, SyntaxKind.Argument);
             });
         }
@@ -166,6 +209,29 @@ namespace Meziantou.Analyzer.Rules
             }
 
             return -1;
+        }
+
+        private static ArgumentExpressionKinds GetConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
+        {
+            var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
+            if (options.TryGetValue(RuleIdentifiers.UseNamedParameter + ".expression_kinds", out var value))
+            {
+                if (Enum.TryParse<ArgumentExpressionKinds>(value, ignoreCase: true, out var result))
+                    return result;
+            }
+
+            return ArgumentExpressionKinds.Default;
+        }
+
+        [Flags]
+        private enum ArgumentExpressionKinds
+        {
+            None = 0,
+            Null = 1,
+            Boolean = 2,
+            Numeric = 4,
+            String = 8,
+            Default = Null | Boolean,
         }
     }
 }

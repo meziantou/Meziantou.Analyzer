@@ -33,7 +33,6 @@ namespace Meziantou.Analyzer.Rules
             return str.Replace(oldValue, newValue);
 #endif
         }
-
         public static LineSplitEnumerator SplitLines(this string str) => new(str.AsSpan());
 
         [StructLayout(LayoutKind.Auto)]

@@ -87,6 +87,80 @@ class TypeName
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+        
+        [Fact]
+        public async Task True_WithOptions_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = string.Compare("""", """", true);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .AddAnalyzerConfiguration("MA0003.expression_kinds", "None")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task String_WithOptions_ShouldReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = string.Compare(
+                        [||]"""",
+                        [||]"""",
+                        [||]true);
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task Int32_WithOptions_ShouldReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        A([||]1, [||]1L, [||]3);
+        void A(int a, long b, short c) { }
+    }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task Int32_ExcludedMethod_ShouldNotReportDiagnostic()
+        {
+            const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        MyMethod(1, 1L, 3);
+    }
+
+    void MyMethod(int a, long b, short c) { }
+}";
+            await CreateProjectBuilder()
+                  .WithSourceCode(SourceCode)
+                  .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "M[a-z][A-Z]ethod")
+                  .ValidateAsync();
+        }
 
         [Fact]
         public async Task False_ShouldReportDiagnostic()
