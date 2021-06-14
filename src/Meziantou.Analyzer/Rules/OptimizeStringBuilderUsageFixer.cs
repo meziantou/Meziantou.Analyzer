@@ -212,7 +212,7 @@ namespace Meziantou.Analyzer.Rules
 
             var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.Children.First().Syntax, "AppendFormat"),
                 toStringOperation.Arguments[1].Syntax,
-                toStringOperation.Arguments[0].Syntax,
+                GetFormatExpression(toStringOperation.Arguments[0].Value),
                 toStringOperation.Children.First().Syntax);
 
             if (isAppendLine)
@@ -222,6 +222,19 @@ namespace Meziantou.Analyzer.Rules
 
             editor.ReplaceNode(nodeToFix, newExpression);
             return editor.GetChangedDocument();
+
+            SyntaxNode GetFormatExpression(IOperation formatOperation)
+            {
+                if (formatOperation.ConstantValue.HasValue)
+                {
+                    return generator.LiteralExpression("{0:" + (string)formatOperation.ConstantValue.Value + "}");
+                }
+
+                return generator.AddExpression(generator.AddExpression(
+                    generator.LiteralExpression("{0:"),
+                    formatOperation.Syntax),
+                    generator.LiteralExpression("}"));
+            }
         }
 
         private static async Task<Document> ReplaceSubstring(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
