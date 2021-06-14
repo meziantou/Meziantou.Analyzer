@@ -475,7 +475,7 @@ class Test
 {
     void A()
     {
-        [||]new StringBuilder().Append(1.ToString(""{0}"", null));
+        [||]new StringBuilder().Append(1.ToString(""N"", null));
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -483,7 +483,22 @@ class Test
 {
     void A()
     {
-        new StringBuilder().AppendFormat(null, ""{0}"", 1);
+        new StringBuilder().AppendFormat(null, ""{0:N}"", 1);
+    }
+}")
+                  .ValidateAsync();
+        }
+        
+        [Fact]
+        public async Task Append_AppendFormat_Variable()
+        {
+            await CreateProjectBuilder()
+                  .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A(string format)
+    {
+        new StringBuilder().Append(1.ToString(format, null));
     }
 }")
                   .ValidateAsync();
@@ -498,7 +513,7 @@ class Test
 {
     void A()
     {
-        [||]new StringBuilder().AppendLine(1.ToString(""{0}"", null));
+        [||]new StringBuilder().AppendLine(1.ToString(""N"", null));
     }
 }")
                   .ShouldFixCodeWith(@"using System.Text;
@@ -506,7 +521,7 @@ class Test
 {
     void A()
     {
-        new StringBuilder().AppendFormat(null, ""{0}"", 1).AppendLine();
+        new StringBuilder().AppendFormat(null, ""{0:N}"", 1).AppendLine();
     }
 }")
                   .ValidateAsync();

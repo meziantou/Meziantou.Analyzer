@@ -51,7 +51,7 @@ namespace TestHelper
 
             async Task<string[]> Download()
             {
-                var tempFolder = Path.Combine(Path.GetTempPath(), "Meziantou.AnalyzerTests", "ref", packageName + '@' + version);
+                var tempFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Meziantou.AnalyzerTests", "ref", packageName + '@' + version);
                 if (!Directory.Exists(tempFolder) || !Directory.EnumerateFileSystemEntries(tempFolder).Any())
                 {
                     Directory.CreateDirectory(tempFolder);
