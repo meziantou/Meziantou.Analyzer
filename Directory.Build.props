@@ -8,6 +8,7 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <NoWarn>$(NoWarn);CA1014</NoWarn>
+    <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Debug'">true</TreatWarningsAsErrors>
 
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
     <RestoreSources>https://api.nuget.org/v3/index.json</RestoreSources>
@@ -31,7 +32,7 @@
   </ItemGroup>
 
   <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net461'">
     <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 

@@ -103,6 +103,7 @@
 |[MA0100](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0100.md)|Usage|Await task before disposing resources|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0101](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0101.md)|Usage|String contains an implicit end of line character|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0102](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0102.md)|Design|Make member readonly|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0103](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0103.md)|Usage|Use SequenceEqual instead of equality operator|<span title='Warning'>⚠️</span>|✔️|✔️|
 
 # .editorconfig - default values
 
@@ -208,6 +209,7 @@ dotnet_diagnostic.MA0099.severity = warning    # MA0099: Use Explicit enum value
 dotnet_diagnostic.MA0100.severity = warning    # MA0100: Await task before disposing resources
 dotnet_diagnostic.MA0101.severity = silent     # MA0101: String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = suggestion # MA0102: Make member readonly
+dotnet_diagnostic.MA0103.severity = warning    # MA0103: Use SequenceEqual instead of equality operator
 ```
 
 # .editorconfig - all rules disabled
@@ -314,4 +316,5 @@ dotnet_diagnostic.MA0099.severity = none       # MA0099: Use Explicit enum value
 dotnet_diagnostic.MA0100.severity = none       # MA0100: Await task before disposing resources
 dotnet_diagnostic.MA0101.severity = none       # MA0101: String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = none       # MA0102: Make member readonly
+dotnet_diagnostic.MA0103.severity = none       # MA0103: Use SequenceEqual instead of equality operator
 ```

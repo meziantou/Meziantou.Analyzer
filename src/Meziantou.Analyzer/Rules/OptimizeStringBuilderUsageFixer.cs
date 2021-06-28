@@ -227,7 +227,7 @@ namespace Meziantou.Analyzer.Rules
             {
                 if (formatOperation.ConstantValue.HasValue)
                 {
-                    return generator.LiteralExpression("{0:" + (string)formatOperation.ConstantValue.Value + "}");
+                    return generator.LiteralExpression("{0:" + (string?)formatOperation.ConstantValue.Value + "}");
                 }
 
                 return generator.AddExpression(generator.AddExpression(
