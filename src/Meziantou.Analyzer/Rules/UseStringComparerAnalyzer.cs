@@ -104,6 +104,9 @@ namespace Meziantou.Analyzer.Rules
                 if (ISetType != null && method.ContainingType.IsOrImplements(ISetType))
                     return;
 
+                if (operation.Instance != null && operation.Instance.GetActualType()?.IsOrImplements(ISetType) == true)
+                    return;
+
                 if (method.HasOverloadWithAdditionalParameterOfType(operation, EqualityComparerStringType) ||
                     method.HasOverloadWithAdditionalParameterOfType(operation, ComparerStringType))
                 {

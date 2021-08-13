@@ -309,7 +309,7 @@ class Test
         public async Task ProcessWaitForExit_NET6()
         {
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net6_0_Preview3)
+                  .WithTargetFramework(TargetFramework.Net6_0_Preview7)
                   .WithSourceCode(@"
 using System.Threading.Tasks;
 using System.Diagnostics;

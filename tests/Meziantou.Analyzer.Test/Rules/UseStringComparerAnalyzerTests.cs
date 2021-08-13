@@ -301,5 +301,24 @@ class TypeName
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task ISet_Contain()
+        {
+            const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.ISet<string> obj = null;
+        obj.Contains("""");
+    }
+}";
+
+            await CreateProjectBuilder()
+                  .WithTargetFramework(TargetFramework.Net6_0_Preview7)
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
     }
 }

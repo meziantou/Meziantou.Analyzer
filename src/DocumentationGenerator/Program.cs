@@ -1,7 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.IO;
-using System.Linq;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.CodeAnalysis;
@@ -39,7 +36,7 @@ namespace DocumentationGenerator
                 .ToList();
 
             var sb = new StringBuilder();
-            sb.AppendLine($"# {assembly.GetName().Name}'s rules");
+            sb.Append("# ").Append(assembly.GetName().Name).Append("'s rules");
             sb.AppendLine();
             sb.AppendLine("|Id|Category|Description|Severity|Is enabled|Code fix|");
             sb.AppendLine("|--|--------|-----------|:------:|:--------:|:------:|");
@@ -52,25 +49,24 @@ namespace DocumentationGenerator
                 }
 
                 var hasCodeFix = codeFixProviders.Any(codeFixProvider => codeFixProvider.FixableDiagnosticIds.Contains(diagnostic.Id));
-                sb
-                    .Append("|[")
-                    .Append(diagnostic.Id)
-                    .Append("](")
-                    .Append(diagnostic.HelpLinkUri)
-                    .Append(")|")
-                    .Append(diagnostic.Category)
-                    .Append('|')
-                    .Append(EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture)))
-                    .Append("|<span title='")
-                    .Append(HtmlEncoder.Default.Encode(diagnostic.DefaultSeverity.ToString()))
-                    .Append("'>")
-                    .Append(GetSeverity(diagnostic.DefaultSeverity))
-                    .Append("</span>|")
-                    .Append(GetBoolean(diagnostic.IsEnabledByDefault))
-                    .Append('|')
-                    .Append(GetBoolean(hasCodeFix))
-                    .Append('|')
-                    .AppendLine();
+                sb.Append("|[")
+                  .Append(diagnostic.Id)
+                  .Append("](")
+                  .Append(diagnostic.HelpLinkUri)
+                  .Append(")|")
+                  .Append(diagnostic.Category)
+                  .Append('|')
+                  .Append(EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture)))
+                  .Append("|<span title='")
+                  .Append(HtmlEncoder.Default.Encode(diagnostic.DefaultSeverity.ToString()))
+                  .Append("'>")
+                  .Append(GetSeverity(diagnostic.DefaultSeverity))
+                  .Append("</span>|")
+                  .Append(GetBoolean(diagnostic.IsEnabledByDefault))
+                  .Append('|')
+                  .Append(GetBoolean(hasCodeFix))
+                  .Append('|')
+                  .AppendLine();
             }
 
             sb.AppendLine();
