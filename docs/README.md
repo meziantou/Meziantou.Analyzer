@@ -1,5 +1,4 @@
 # Meziantou.Analyzer's rules
-
 |Id|Category|Description|Severity|Is enabled|Code fix|
 |--|--------|-----------|:------:|:--------:|:------:|
 |[MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|
@@ -104,6 +103,7 @@
 |[MA0101](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0101.md)|Usage|String contains an implicit end of line character|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0102](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0102.md)|Design|Make member readonly|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0103](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0103.md)|Usage|Use SequenceEqual instead of equality operator|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0104](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0104.md)|Design|Do not create a type with a name from the BCL|<span title='Warning'>⚠️</span>|❌|❌|
 
 # .editorconfig - default values
 
@@ -210,6 +210,7 @@ dotnet_diagnostic.MA0100.severity = warning    # MA0100: Await task before dispo
 dotnet_diagnostic.MA0101.severity = silent     # MA0101: String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = suggestion # MA0102: Make member readonly
 dotnet_diagnostic.MA0103.severity = warning    # MA0103: Use SequenceEqual instead of equality operator
+dotnet_diagnostic.MA0104.severity = none       # MA0104: Do not create a type with a name from the BCL
 ```
 
 # .editorconfig - all rules disabled
@@ -317,4 +318,5 @@ dotnet_diagnostic.MA0100.severity = none       # MA0100: Await task before dispo
 dotnet_diagnostic.MA0101.severity = none       # MA0101: String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = none       # MA0102: Make member readonly
 dotnet_diagnostic.MA0103.severity = none       # MA0103: Use SequenceEqual instead of equality operator
+dotnet_diagnostic.MA0104.severity = none       # MA0104: Do not create a type with a name from the BCL
 ```
