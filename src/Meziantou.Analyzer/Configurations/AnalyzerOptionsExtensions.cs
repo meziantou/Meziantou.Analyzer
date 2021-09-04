@@ -56,6 +56,18 @@ namespace Meziantou.Analyzer.Configurations
             return defaultValue;
         }
 
+        public static string GetConfigurationValue(this AnalyzerOptions options, ISymbol symbol, string key, string defaultValue)
+        {
+            foreach (var location in symbol.Locations)
+            {
+                var syntaxTree = location.SourceTree;
+                if (syntaxTree != null && options.TryGetConfigurationValue(syntaxTree, key, out var str))
+                    return str;
+            }
+
+            return defaultValue;
+        }
+        
         public static bool GetConfigurationValue(this AnalyzerOptions options, ISymbol symbol, string key, bool defaultValue)
         {
             foreach (var location in symbol.Locations)
