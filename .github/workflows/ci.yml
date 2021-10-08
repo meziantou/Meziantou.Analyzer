@@ -46,7 +46,7 @@ jobs:
       matrix:
         runs-on: [ ubuntu-20.04, windows-2019 ]
         configuration: [ Debug, Release ]
-        use-latest-roslyn-version: [ 'true', 'false' ]
+        roslyn-version: [ 'minimal', 'stable', 'preview' ]
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
