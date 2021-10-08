@@ -5,6 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <ImplicitUsings>true</ImplicitUsings>
   </PropertyGroup>
 
 </Project>

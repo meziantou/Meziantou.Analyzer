@@ -5,9 +5,9 @@ using System.Reflection.PortableExecutable;
 
 var packages = new (string PackageName, string PackageVersion)[]
 {
-    ("Microsoft.NETCore.App.Ref", "6.0.0-preview.7.21377.19"),
-    ("Microsoft.AspNetCore.App.Ref", "6.0.0-preview.7.21378.6"),
-    ("Microsoft.WindowsDesktop.App.Ref", "6.0.0-preview.7.21378.9"),
+    ("Microsoft.NETCore.App.Ref", "6.0.0-rc.1.21451.13"),       // https://www.nuget.org/packages/Microsoft.NETCore.App.Ref
+    ("Microsoft.AspNetCore.App.Ref", "6.0.0-rc.1.21452.15"),    // https://www.nuget.org/packages/Microsoft.AspNetCore.App.Ref
+    ("Microsoft.WindowsDesktop.App.Ref", "6.0.0-rc.1.21451.3"), // https://www.nuget.org/packages/Microsoft.WindowsDesktop.App.Ref
 };
 
 using var httpClient = new HttpClient();
@@ -42,7 +42,7 @@ foreach (var (packageName, packageVersion) in packages)
     }
 }
 
-File.WriteAllLines("../../../../Meziantou.Analyzer/Resources/bcl.txt", types.OrderBy(t => t));
+File.WriteAllLines(args.Length > 0 ? args[0] : "../../../../Meziantou.Analyzer/Resources/bcl.txt", types.OrderBy(t => t));
 
 static MemoryStream CopyToMemoryStream(ZipArchiveEntry entry)
 {
