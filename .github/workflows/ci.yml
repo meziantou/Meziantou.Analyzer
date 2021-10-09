@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
-    - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/bcl.txt
+    - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
     - run: |
         $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.1\.0\.([0-9]+).nupkg$"
         $NewVersion = "1.0.$([int]$Matches.1 + 1)"

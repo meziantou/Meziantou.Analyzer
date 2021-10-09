@@ -8,4 +8,8 @@
     <ImplicitUsings>true</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NuGet.Protocol" Version="5.11.0" />
+  </ItemGroup>
+
 </Project>
