@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    
+
     public sealed class DotNotUseNameFromBCLAnalyzerTests
     {
         private static ProjectBuilder CreateProjectBuilder()
@@ -20,6 +20,19 @@ namespace Meziantou.Analyzer.Test.Rules
         [InlineData("Func<T1, T2>")]
         [InlineData("String")]
         public async Task ReportDiagnostic(string typeName)
+        {
+            await CreateProjectBuilder()
+                  .AddAnalyzerConfiguration("MA0104.use_preview_types", "true")
+                  .WithSourceCode("public class [||]" + typeName + " { }")
+                  .ValidateAsync();
+        }
+
+        [Theory]
+        [InlineData("Action")]
+        [InlineData("Action<T>")]
+        [InlineData("Func<T1, T2>")]
+        [InlineData("String")]
+        public async Task ReportDiagnostic_UsePreviewTypes(string typeName)
         {
             await CreateProjectBuilder()
                   .WithSourceCode("public class [||]" + typeName + " { }")

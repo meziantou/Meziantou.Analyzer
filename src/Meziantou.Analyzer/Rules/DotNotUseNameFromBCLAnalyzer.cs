@@ -23,12 +23,14 @@ namespace Meziantou.Analyzer.Rules
             helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DotNotUseNameFromBCL));
 
         private static Dictionary<string, List<string>>? s_types;
+        private static Dictionary<string, List<string>>? s_typesPreview;
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
         public override void Initialize(AnalysisContext context)
         {
-            s_types ??= LoadTypes();
+            s_types ??= LoadTypes(preview: false);
+            s_typesPreview ??= LoadTypes(preview: true);
 
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
@@ -42,7 +44,9 @@ namespace Meziantou.Analyzer.Rules
             if (symbol.ContainingType != null)
                 return; // Do not consider nested types
 
-            if (s_types!.TryGetValue(symbol.MetadataName, out var namespaces))
+            var usePreviewTypes = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
+            var types = usePreviewTypes ? s_typesPreview : s_types;
+            if (types!.TryGetValue(symbol.MetadataName, out var namespaces))
             {
                 var regex = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", "^System($|\\.)");
                 foreach (var ns in namespaces)
@@ -56,11 +60,12 @@ namespace Meziantou.Analyzer.Rules
             }
         }
 
-        private static Dictionary<string, List<string>> LoadTypes()
+        private static Dictionary<string, List<string>> LoadTypes(bool preview)
         {
             var types = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
-            using var stream = typeof(DotNotUseNameFromBCLAnalyzer).Assembly.GetManifestResourceStream("Meziantou.Analyzer.Resources.bcl.txt")!;
+            var resourceName = preview ? "Meziantou.Analyzer.Resources.bcl-preview.txt" : "Meziantou.Analyzer.Resources.bcl.txt";
+            using var stream = typeof(DotNotUseNameFromBCLAnalyzer).Assembly.GetManifestResourceStream(resourceName)!;
             using var sr = new StreamReader(stream);
             while (sr.ReadLine() is { } line)
             {
