@@ -8,7 +8,7 @@
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
   <ItemGroup Condition="$(RoslynVersion) == 'minimal'">
     <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.11.0" />
   </ItemGroup>  
   
   <ItemGroup Condition="$(RoslynVersion) == 'stable'">
@@ -18,7 +18,7 @@
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
     <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.0.0-4.final" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.11.0" />
   </ItemGroup>
 
 </Project>
