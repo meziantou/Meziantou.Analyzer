@@ -316,7 +316,7 @@ class TypeName
 }";
 
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net6_0_Preview7)
+                  .WithTargetFramework(TargetFramework.Net6_0_rc2)
                   .WithSourceCode(SourceCode)
                   .ValidateAsync();
         }
