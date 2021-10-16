@@ -84,11 +84,21 @@ namespace Meziantou.Analyzer.Rules
                 ValueTaskAwaiterOfTSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
 
                 ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
+
+                ServiceProviderServiceExtensionsSymbol = _compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
+                if (ServiceProviderServiceExtensionsSymbol != null)
+                {
+                    ServiceProviderServiceExtensions_CreateScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateScope").FirstOrDefault();
+                    ServiceProviderServiceExtensions_CreateAsyncScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateAsyncScope").FirstOrDefault();
+                }
             }
 
             private ISymbol? ProcessSymbol { get; }
             private ISymbol[] ConsoleErrorAndOutSymbols { get; }
             private INamedTypeSymbol? CancellationTokenSymbol { get; }
+            private INamedTypeSymbol? ServiceProviderServiceExtensionsSymbol { get; }
+            private ISymbol? ServiceProviderServiceExtensions_CreateScopeSymbol { get; }
+            private ISymbol? ServiceProviderServiceExtensions_CreateAsyncScopeSymbol { get; }
 
             private INamedTypeSymbol? TaskSymbol { get; }
             private INamedTypeSymbol? TaskOfTSymbol { get; }
@@ -165,6 +175,12 @@ namespace Meziantou.Analyzer.Rules
                         if (ConsoleErrorAndOutSymbols.Contains(memberReference.Member, SymbolEqualityComparer.Default))
                             return;
                     }
+                }
+
+                if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol != null && ServiceProviderServiceExtensions_CreateScopeSymbol != null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
+                {
+                    ReportDiagnosticIfNeeded(context, operation, $"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'");
+                    return;
                 }
 
                 // Search async equivalent: sample.Write() => sample.WriteAsync()

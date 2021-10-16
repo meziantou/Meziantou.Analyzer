@@ -309,7 +309,7 @@ class Test
         public async Task ProcessWaitForExit_NET6()
         {
             await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net6_0_Preview7)
+                  .WithTargetFramework(TargetFramework.Net6_0_rc2)
                   .WithSourceCode(@"
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -413,6 +413,51 @@ class demo
     public async Task a()
     {
         [||]new Test().A();
+    }
+}
+")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task CreateAsyncScope()
+        {
+            await CreateProjectBuilder()
+                  .WithTargetFramework(TargetFramework.AspNetCore6_0_rc2)
+                  .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+
+class demo
+{
+    public async Task a()
+    {
+        IServiceProvider provider = null;
+        await using var scope1 = provider.CreateAsyncScope();
+        using var scope2 = [||]provider.CreateScope();
+    }
+}
+")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task CreateAsyncScope_net5()
+        {
+            await CreateProjectBuilder()
+                  .WithTargetFramework(TargetFramework.AspNetCore5_0)
+                  .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+
+class demo
+{
+    public async Task a()
+    {
+        IServiceProvider provider = null;
+        using var scope = provider.CreateScope();
     }
 }
 ")
