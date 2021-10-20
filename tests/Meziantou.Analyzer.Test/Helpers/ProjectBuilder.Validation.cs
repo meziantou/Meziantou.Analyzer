@@ -250,7 +250,7 @@ namespace TestHelper
             var diagnostics = new List<Diagnostic>();
             foreach (var project in projects)
             {
-                var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+                var options = new CSharpCompilationOptions(OutputKind);
 
                 // Enable diagnostic
                 options = options.WithSpecificDiagnosticOptions(analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag))));

@@ -23,6 +23,7 @@ namespace TestHelper
 
         private int _diagnosticMessageIndex;
 
+        public OutputKind OutputKind { get; private set; } = OutputKind.DynamicallyLinkedLibrary;
         public string FileName { get; private set; }
         public string SourceCode { get; private set; } = "";
         public Dictionary<string, string> AnalyzerConfiguration { get; private set; }
@@ -115,6 +116,12 @@ namespace TestHelper
             .AddNuGetReference("System.Runtime.CompilerServices.Unsafe", "4.7.1", "ref/netstandard2.0/");
 
         public ProjectBuilder AddSystemTextJson() => AddNuGetReference("System.Text.Json", "4.7.2", "lib/netstandard2.0/");
+
+        public ProjectBuilder WithOutputKind(OutputKind outputKind)
+        {
+            OutputKind = outputKind;
+            return this;
+        }
 
         public ProjectBuilder WithSourceCode(string sourceCode)
         {
