@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -10,7 +11,7 @@ namespace Meziantou.Analyzer.Rules
         private static readonly DiagnosticDescriptor s_rule = new(
             RuleIdentifiers.DeclareTypesInNamespaces,
             title: "Declare types in namespaces",
-            messageFormat: "Declare types in namespaces",
+            messageFormat: "Declare type '{0}' in a namespace",
             RuleCategories.Design,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
@@ -33,10 +34,28 @@ namespace Meziantou.Analyzer.Rules
             if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains('$', System.StringComparison.Ordinal))
                 return;
 
+            if (IsTopLevelStatement(symbol, context.CancellationToken))
+                return;
+
             if (symbol.ContainingType == null && (symbol.ContainingNamespace?.IsGlobalNamespace ?? true))
             {
-                context.ReportDiagnostic(s_rule, symbol);
+                context.ReportDiagnostic(s_rule, symbol, symbol.Name);
             }
+        }
+
+        private static bool IsTopLevelStatement(ISymbol symbol, CancellationToken cancellationToken)
+        {
+            if (symbol.DeclaringSyntaxReferences.Length == 0)
+                return false;
+
+            foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
+            {
+                var syntax = syntaxReference.GetSyntax(cancellationToken);
+                if (!syntax.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.CompilationUnit))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

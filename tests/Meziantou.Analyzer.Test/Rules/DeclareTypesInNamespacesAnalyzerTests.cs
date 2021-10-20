@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Microsoft.CodeAnalysis;
 using TestHelper;
 using Xunit;
 
@@ -36,6 +37,16 @@ class [||]Sample
 {
     class Nested { }
 }")
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task TopLevelProgram()
+        {
+            await CreateProjectBuilder()
+                  .WithOutputKind(OutputKind.ConsoleApplication)
+                  .WithSourceCode(@"
+System.Console.WriteLine();")
                   .ValidateAsync();
         }
     }
