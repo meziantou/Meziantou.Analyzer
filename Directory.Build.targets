@@ -8,7 +8,7 @@
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
   <ItemGroup Condition="$(RoslynVersion) == 'minimal'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'minimal'">
