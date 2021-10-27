@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -40,13 +41,14 @@ namespace Meziantou.Analyzer.Rules
             });
         }
 
-        private static bool IsPotentialStatic(INamedTypeSymbol symbol)
+        private static bool IsPotentialStatic(INamedTypeSymbol symbol, CancellationToken cancellationToken)
         {
             return !symbol.IsAbstract &&
                 !symbol.IsStatic &&
                 !symbol.Interfaces.Any() &&
                 !HasBaseClass() &&
                 !symbol.IsUnitTestClass() &&
+                !symbol.IsTopLevelStatement(cancellationToken) &&
                 symbol.GetMembers().All(member => (member.IsStatic || member.IsImplicitlyDeclared) && !member.IsOperator());
 
             bool HasBaseClass()
@@ -74,7 +76,7 @@ namespace Meziantou.Analyzer.Rules
                 switch (symbol.TypeKind)
                 {
                     case TypeKind.Class:
-                        if (IsPotentialStatic(symbol))
+                        if (IsPotentialStatic(symbol, context.CancellationToken))
                         {
                             lock (_potentialClasses)
                             {
