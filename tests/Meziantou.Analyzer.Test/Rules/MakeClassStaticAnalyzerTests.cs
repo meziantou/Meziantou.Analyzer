@@ -276,5 +276,35 @@ public static partial class Test
                   .ShouldFixCodeWith(CodeFix)
                   .ValidateAsync();
         }
+
+        [Fact]
+        public async Task TopLevelStatement_9()
+        {
+            const string SourceCode = @"
+System.Console.WriteLine();
+";
+
+            await CreateProjectBuilder()
+                  .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+
+#if CSHARP10_OR_GREATER
+        [Fact]
+        public async Task TopLevelStatement_10()
+        {
+            const string SourceCode = @"
+System.Console.WriteLine();
+";
+
+            await CreateProjectBuilder()
+                  .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+                  .WithSourceCode(SourceCode)
+                  .ValidateAsync();
+        }
+#endif
     }
 }

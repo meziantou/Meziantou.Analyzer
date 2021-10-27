@@ -34,28 +34,13 @@ namespace Meziantou.Analyzer.Rules
             if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains('$', System.StringComparison.Ordinal))
                 return;
 
-            if (IsTopLevelStatement(symbol, context.CancellationToken))
+            if (symbol.IsTopLevelStatement(context.CancellationToken))
                 return;
 
             if (symbol.ContainingType == null && (symbol.ContainingNamespace?.IsGlobalNamespace ?? true))
             {
                 context.ReportDiagnostic(s_rule, symbol, symbol.Name);
             }
-        }
-
-        private static bool IsTopLevelStatement(ISymbol symbol, CancellationToken cancellationToken)
-        {
-            if (symbol.DeclaringSyntaxReferences.Length == 0)
-                return false;
-
-            foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
-            {
-                var syntax = syntaxReference.GetSyntax(cancellationToken);
-                if (!syntax.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.CompilationUnit))
-                    return false;
-            }
-
-            return true;
         }
     }
 }

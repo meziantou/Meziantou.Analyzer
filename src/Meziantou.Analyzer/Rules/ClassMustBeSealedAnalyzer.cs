@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -59,7 +60,7 @@ namespace Meziantou.Analyzer.Rules
                 switch (symbol.TypeKind)
                 {
                     case TypeKind.Class:
-                        if (IsPotentialSealed(context.Options, symbol))
+                        if (IsPotentialSealed(context.Options, symbol, context.CancellationToken))
                         {
                             lock (_potentialClasses)
                             {
@@ -91,7 +92,7 @@ namespace Meziantou.Analyzer.Rules
                 }
             }
 
-            private bool IsPotentialSealed(AnalyzerOptions options, INamedTypeSymbol symbol)
+            private bool IsPotentialSealed(AnalyzerOptions options, INamedTypeSymbol symbol, CancellationToken cancellationToken)
             {
                 if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType)
                     return false;
@@ -100,6 +101,9 @@ namespace Meziantou.Analyzer.Rules
                     return false;
 
                 if (symbol.HasAttribute(ComImportSymbol))
+                    return false;
+
+                if (symbol.IsTopLevelStatement(cancellationToken))
                     return false;
 
                 if (symbol.GetMembers().Any(member => member.IsVirtual) && !SealedClassWithVirtualMember(options, symbol))

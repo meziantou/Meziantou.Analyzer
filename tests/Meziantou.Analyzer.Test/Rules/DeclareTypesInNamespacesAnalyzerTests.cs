@@ -41,13 +41,27 @@ class [||]Sample
         }
 
         [Fact]
-        public async Task TopLevelProgram()
+        public async Task TopLevelProgram_9()
         {
             await CreateProjectBuilder()
+                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
                   .WithOutputKind(OutputKind.ConsoleApplication)
                   .WithSourceCode(@"
 System.Console.WriteLine();")
                   .ValidateAsync();
         }
+
+#if CSHARP10_OR_GREATER
+        [Fact]
+        public async Task TopLevelProgram_10()
+        {
+            await CreateProjectBuilder()
+                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+                  .WithOutputKind(OutputKind.ConsoleApplication)
+                  .WithSourceCode(@"
+System.Console.WriteLine();")
+                  .ValidateAsync();
+        }
+#endif
     }
 }

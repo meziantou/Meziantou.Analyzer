@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer
@@ -70,6 +71,21 @@ namespace Meziantou.Analyzer
 
                 symbol = symbol.BaseType;
             }
+        }
+
+        public static bool IsTopLevelStatement(this ISymbol symbol, CancellationToken cancellationToken)
+        {
+            if (symbol.DeclaringSyntaxReferences.Length == 0)
+                return false;
+
+            foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
+            {
+                var syntax = syntaxReference.GetSyntax(cancellationToken);
+                if (!syntax.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.CompilationUnit))
+                    return false;
+            }
+
+            return true;
         }
     }
 }
