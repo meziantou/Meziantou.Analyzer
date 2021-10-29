@@ -31,7 +31,7 @@ jobs:
         Write-Host "::set-output name=package_version::$NewVersion"
       name: Compute version
       id: compute-version
-    - run: dotnet pack --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /bl
+    - run: dotnet pack --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /bl
     - uses: actions/upload-artifact@v2
       with:
         name: nuget
