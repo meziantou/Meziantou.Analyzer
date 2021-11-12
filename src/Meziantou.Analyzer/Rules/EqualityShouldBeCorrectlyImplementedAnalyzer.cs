@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -177,7 +178,7 @@ namespace Meziantou.Analyzer.Rules
                 "op_Inequality",
             };
 
-            foreach (var member in parentType.GetMembers().OfType<IMethodSymbol>())
+            foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
             {
                 if (member.MethodKind == MethodKind.UserDefinedOperator)
                 {
