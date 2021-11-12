@@ -57,7 +57,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.x'
-    - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --results-directory "${{ env.TestResultsDirectory }}" /p:WarningsAsErrors=true /p:RoslynVersion=${{ matrix.roslyn-version}}
+    - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --logger "GitHubActions;report-warnings=false" --collect:"XPlat Code Coverage" --blame-hang --blame-hang-timeout 2min --results-directory "${{ env.TestResultsDirectory }}" /p:WarningsAsErrors=true /p:RoslynVersion=${{ matrix.roslyn-version}}
       name: Run tests
     - uses: actions/upload-artifact@v2
       if: always()
@@ -65,7 +65,8 @@ jobs:
         name: test-results-${{ matrix.runs-on }}-${{ matrix.configuration }}
         if-no-files-found: error
         retention-days: 3
-        path: ${{ env.TestResultsDirectory }}/*.trx
+        path: ${{ env.TestResultsDirectory }}/**/*
+    - uses: codecov/codecov-action@v2
 
   deploy:
     runs-on: 'ubuntu-20.04'
