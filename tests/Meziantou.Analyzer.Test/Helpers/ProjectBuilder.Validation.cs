@@ -177,8 +177,8 @@ namespace TestHelper
                     AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
                     break;
 
-                case TargetFramework.Net6_0_rc2:
-                    AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.0-rc.2.21480.5", "ref/net6.0/");
+                case TargetFramework.Net6_0:
+                    AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.0", "ref/net6.0/");
                     break;
 
                 case TargetFramework.AspNetCore5_0:
