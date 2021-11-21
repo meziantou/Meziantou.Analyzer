@@ -25,7 +25,7 @@
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
     <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.0.0-4.final" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0-1.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
