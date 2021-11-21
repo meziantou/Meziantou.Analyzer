@@ -107,6 +107,7 @@ namespace Meziantou.Analyzer
         public const string MakeStructMemberReadOnly = "MA0102";
         public const string DoNotUseEqualityOperatorsForSpanOfChar = "MA0103";
         public const string DotNotUseNameFromBCL = "MA0104";
+        public const string AvoidClosureWhenUsingConcurrentDictionary = "MA0105";
 
         public static string GetHelpUri(string idenfifier)
         {
