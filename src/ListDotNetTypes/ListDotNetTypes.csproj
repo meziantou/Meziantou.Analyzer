@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NuGet.Protocol" Version="5.11.0" />
+    <PackageReference Include="NuGet.Protocol" Version="6.0.0" />
   </ItemGroup>
 
 </Project>
