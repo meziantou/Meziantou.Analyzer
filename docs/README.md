@@ -105,6 +105,7 @@
 |[MA0103](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0103.md)|Usage|Use SequenceEqual instead of equality operator|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0104](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0104.md)|Design|Do not create a type with a name from the BCL|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0105](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0105.md)|Performance|Use the lambda parameters instead of using a closure|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0106](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0106.md)|Performance|Avoid closure by using an overload with the 'factoryArgument' parameter|<span title='Info'>ℹ️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -213,6 +214,7 @@ dotnet_diagnostic.MA0102.severity = suggestion # MA0102: Make member readonly
 dotnet_diagnostic.MA0103.severity = warning    # MA0103: Use SequenceEqual instead of equality operator
 dotnet_diagnostic.MA0104.severity = none       # MA0104: Do not create a type with a name from the BCL
 dotnet_diagnostic.MA0105.severity = suggestion # MA0105: Use the lambda parameters instead of using a closure
+dotnet_diagnostic.MA0106.severity = suggestion # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
 ```
 
 # .editorconfig - all rules disabled
@@ -322,4 +324,5 @@ dotnet_diagnostic.MA0102.severity = none       # MA0102: Make member readonly
 dotnet_diagnostic.MA0103.severity = none       # MA0103: Use SequenceEqual instead of equality operator
 dotnet_diagnostic.MA0104.severity = none       # MA0104: Do not create a type with a name from the BCL
 dotnet_diagnostic.MA0105.severity = none       # MA0105: Use the lambda parameters instead of using a closure
+dotnet_diagnostic.MA0106.severity = none       # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
 ```

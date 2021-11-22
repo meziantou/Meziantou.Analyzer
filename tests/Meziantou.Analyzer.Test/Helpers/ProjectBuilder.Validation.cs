@@ -62,9 +62,14 @@ namespace TestHelper
         }
 
         [DebuggerStepThrough]
-        private static void VerifyDiagnosticResults(IEnumerable<Diagnostic> actualResults, DiagnosticAnalyzer analyzer, IList<DiagnosticResult> expectedResults)
+        private void VerifyDiagnosticResults(IEnumerable<Diagnostic> actualResults, DiagnosticAnalyzer analyzer, IList<DiagnosticResult> expectedResults)
         {
             var expectedCount = expectedResults.Count;
+            if (DefaultAnalyzerId != null)
+            {
+                actualResults = actualResults.Where(diagnostic => diagnostic.Id == DefaultAnalyzerId).ToArray();
+            }
+
             var actualCount = actualResults.Count();
 
             if (expectedCount != actualCount)
@@ -185,7 +190,7 @@ namespace TestHelper
                     AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
                     AddNuGetReference("Microsoft.AspNetCore.App.Ref", "5.0.0", "ref/net5.0/");
                     break;
-                    
+
                 case TargetFramework.AspNetCore6_0_rc2:
                     AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.0-rc.2.21480.5", "ref/net6.0/");
                     AddNuGetReference("Microsoft.AspNetCore.App.Ref", "6.0.0-rc.2.21480.10", "ref/net6.0/");

@@ -5,13 +5,13 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules
 {
-    public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTests
+    public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTests_MA0105
     {
         private static ProjectBuilder CreateProjectBuilder()
         {
             return new ProjectBuilder()
                 .WithTargetFramework(TargetFramework.Net6_0)
-                .WithAnalyzer<AvoidClosureWhenUsingConcurrentDictionaryAnalyzer>();
+                .WithAnalyzer<AvoidClosureWhenUsingConcurrentDictionaryAnalyzer>(id: "MA0105");
         }
 
         [Fact]

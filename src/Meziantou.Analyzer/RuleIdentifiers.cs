@@ -108,6 +108,7 @@ namespace Meziantou.Analyzer
         public const string DoNotUseEqualityOperatorsForSpanOfChar = "MA0103";
         public const string DotNotUseNameFromBCL = "MA0104";
         public const string AvoidClosureWhenUsingConcurrentDictionary = "MA0105";
+        public const string AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg = "MA0106";
 
         public static string GetHelpUri(string idenfifier)
         {
