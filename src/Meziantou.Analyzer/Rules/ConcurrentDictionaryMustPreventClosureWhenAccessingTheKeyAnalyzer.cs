@@ -16,14 +16,24 @@ namespace Meziantou.Analyzer.Rules
             private static readonly DiagnosticDescriptor s_rule = new(
                 RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary,
                 title: "Use the lambda parameters instead of using a closure",
-                messageFormat: "Use the lambda parameters instead of using a closure",
+                messageFormat: "Use the lambda parameters instead of using a closure (captured variable: {0})",
                 RuleCategories.Performance,
                 DiagnosticSeverity.Info,
                 isEnabledByDefault: true,
                 description: "",
                 helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary));
 
-            public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+            private static readonly DiagnosticDescriptor s_ruleFactoryArg = new(
+                RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg,
+                title: "Avoid closure by using an overload with the 'factoryArgument' parameter",
+                messageFormat: "Avoid closure by using an overload with the 'factoryArgument' parameter (captured variable: {0})",
+                RuleCategories.Performance,
+                DiagnosticSeverity.Info,
+                isEnabledByDefault: true,
+                description: "",
+                helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg));
+
+            public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleFactoryArg);
 
             /// <inheritdoc/>
             public override void Initialize(AnalysisContext context)
@@ -31,59 +41,87 @@ namespace Meziantou.Analyzer.Rules
                 context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
                 context.EnableConcurrentExecution();
 
-                context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+                context.RegisterCompilationStartAction(ctx =>
+                {
+                    var symbol = ctx.Compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
+                    if (symbol == null)
+                        return;
+
+                    var members = symbol.GetMembers("GetOrAdd");
+                    var hasOverloadWithArg = members.OfType<IMethodSymbol>().Any(m => m.Parameters.Any(p => p.Name == "factoryArgument"));
+
+                    ctx.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, hasOverloadWithArg), OperationKind.Invocation);
+                });
+
             }
 
-            private void AnalyzeInvocation(OperationAnalysisContext context)
+            private void AnalyzeInvocation(OperationAnalysisContext context, bool hasOverloadWithArg)
             {
                 var op = (IInvocationOperation)context.Operation;
                 var concurrentDictionarySymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
+                if (!op.TargetMethod.ContainingSymbol.OriginalDefinition.IsEqualTo(concurrentDictionarySymbol))
+                    return;
+
                 var func2Symbol = context.Compilation.GetTypeByMetadataName("System.Func`2");
                 var func3Symbol = context.Compilation.GetTypeByMetadataName("System.Func`3");
                 var func4Symbol = context.Compilation.GetTypeByMetadataName("System.Func`4");
-                if (op.TargetMethod.Name is "GetOrAdd" && op.TargetMethod.ContainingSymbol.OriginalDefinition.IsEqualTo(concurrentDictionarySymbol))
+
+                // Check if the key/value parameter should be used
+                var handled = false;
+                if (op.TargetMethod.Name is "GetOrAdd")
                 {
                     // a.GetOrAdd(key, (k) => key);
                     if (op.Arguments.Length == 2 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func2Symbol))
                     {
-                        DetectBadUsage(context, op.Arguments[1].Value, op.Arguments[0]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
                     }
                     // a.GetOrAdd(key, (k, arg) => key, arg);
                     else if (op.Arguments.Length == 3 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol))
                     {
-                        DetectBadUsage(context, op.Arguments[1].Value, op.Arguments[0]);
-                        DetectBadUsage(context, op.Arguments[1].Value, op.Arguments[2]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[2]);
                     }
 
                 }
-                else if (op.TargetMethod.Name is "AddOrUpdate" && op.TargetMethod.ContainingSymbol.OriginalDefinition.IsEqualTo(concurrentDictionarySymbol))
+                else if (op.TargetMethod.Name is "AddOrUpdate")
                 {
                     // a.AddOrUpdate(key, (k) => k, (k, v) => k + v + 1);
                     if (op.Arguments.Length == 3 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func2Symbol) && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol))
                     {
-                        DetectBadUsage(context, op.Arguments[1].Value, op.Arguments[0]);
-                        DetectBadUsage(context, op.Arguments[2].Value, op.Arguments[0]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[0]);
                     }
                     // a.AddOrUpdate(key, value, (k, v) => k + v);
                     else if (op.Arguments.Length == 3 && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol))
                     {
-                        DetectBadUsage(context, op.Arguments[2].Value, op.Arguments[1]);
-                        DetectBadUsage(context, op.Arguments[2].Value, op.Arguments[2]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[1]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[2]);
                     }
                     // a.AddOrUpdate(key, (k, arg) => k + arg, (k, v, arg) => k + v + arg, factoryArg);
                     else if (op.Arguments.Length == 4 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol) && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(func4Symbol))
                     {
-                        DetectBadUsage(context, op.Arguments[1].Value, op.Arguments[0]);
-                        DetectBadUsage(context, op.Arguments[1].Value, op.Arguments[3]);
-                        DetectBadUsage(context, op.Arguments[2].Value, op.Arguments[0]);
-                        DetectBadUsage(context, op.Arguments[2].Value, op.Arguments[3]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[3]);
+
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[0]);
+                        handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[3]);
+                    }
+                }
+
+                if (!handled && hasOverloadWithArg && op.TargetMethod.Name is "AddOrUpdate" or "GetOrAdd")
+                {
+                    foreach (var arg in op.Arguments)
+                    {
+                        if (arg.Parameter!.OriginalDefinition.Type.OriginalDefinition.IsEqualToAny(func2Symbol, func3Symbol, func4Symbol))
+                        {
+                            DetectClosure(context, arg.Value);
+                        }
                     }
                 }
             }
 
-            private static void DetectBadUsage(OperationAnalysisContext context, IOperation argumentOperation, IArgumentOperation potentialVariableOperation)
+            private static bool DetectPotentialUsageOfLambdaParameter(OperationAnalysisContext context, IOperation argumentOperation, IArgumentOperation potentialVariableOperation)
             {
-                // Check if potential is a _reference_ (variable / parameter)
                 var value = potentialVariableOperation.Value;
                 ISymbol? symbol = null;
 
@@ -97,7 +135,7 @@ namespace Meziantou.Analyzer.Rules
                 }
 
                 if (symbol is null)
-                    return;
+                    return false;
 
                 if (argumentOperation is IAnonymousFunctionOperation or IDelegateCreationOperation)
                 {
@@ -111,11 +149,28 @@ namespace Meziantou.Analyzer.Rules
                             foreach (var written in dataFlow.WrittenInside)
                             {
                                 if (written.IsEqualTo(symbol))
-                                    return;
+                                    return false;
                             }
 
-                            context.ReportDiagnostic(s_rule, argumentOperation);
+                            context.ReportDiagnostic(s_rule, argumentOperation, read.Name);
+                            return true;
                         }
+                    }
+                }
+
+                return false;
+            }
+
+            private static void DetectClosure(OperationAnalysisContext context, IOperation argumentOperation)
+            {
+                if (argumentOperation is IAnonymousFunctionOperation or IDelegateCreationOperation)
+                {
+                    var syntax = GetDataFlowArgument(argumentOperation.Syntax);
+                    var semanticModel = context.Operation.SemanticModel!;
+                    var dataFlow = semanticModel.AnalyzeDataFlow(syntax);
+                    if (dataFlow.CapturedInside.Length > 0)
+                    {
+                        context.ReportDiagnostic(s_ruleFactoryArg, argumentOperation, string.Join(", ", dataFlow.Captured.Select(symbol => symbol.Name)));
                     }
                 }
             }
