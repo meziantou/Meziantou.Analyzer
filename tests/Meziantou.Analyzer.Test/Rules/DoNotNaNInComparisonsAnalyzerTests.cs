@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotNaNInComparisonsAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotNaNInComparisonsAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Comparisons()
-        {
-            const string SourceCode = @"
+public sealed class DoNotNaNInComparisonsAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotNaNInComparisonsAnalyzer>();
+    }
+
+    [Fact]
+    public async Task Comparisons()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -39,9 +39,8 @@ class Test
         
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

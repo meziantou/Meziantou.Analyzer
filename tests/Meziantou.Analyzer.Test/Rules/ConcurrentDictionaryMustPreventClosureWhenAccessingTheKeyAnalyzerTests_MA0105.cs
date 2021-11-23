@@ -1,23 +1,23 @@
 ﻿using System.Threading.Tasks;
-using Meziantou.Analyzer.Rules.Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTests_MA0105
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithTargetFramework(TargetFramework.Net6_0)
-                .WithAnalyzer<AvoidClosureWhenUsingConcurrentDictionaryAnalyzer>(id: "MA0105");
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task GetOrAdd_IsValid()
-        {
-            const string SourceCode = @"
+public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTests_MA0105
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net6_0)
+            .WithAnalyzer<AvoidClosureWhenUsingConcurrentDictionaryAnalyzer>(id: "MA0105");
+    }
+
+    [Fact]
+    public async Task GetOrAdd_IsValid()
+    {
+        const string SourceCode = @"
 using System.Collections.Concurrent;
 
 var key = 1;
@@ -31,16 +31,16 @@ a.GetOrAdd(key, (k, v) =>
     return key + v; // ok to use the value if it is written
 }, factoryArg);
 ";
-            await CreateProjectBuilder()
-                .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-                .WithSourceCode(SourceCode)
-                .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AddOrUpdate_IsValid()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AddOrUpdate_IsValid()
+    {
+        const string SourceCode = @"
 using System.Collections.Concurrent;
 
 var key = 1;
@@ -51,16 +51,16 @@ a.AddOrUpdate(key, value, (k, v) => k + v);
 a.AddOrUpdate(key, (k) => k, (k, v) => k + v + 1);
 a.AddOrUpdate(key, (k, arg) => k + arg, (k, v, arg) => k + v + arg, factoryArg);
 ";
-            await CreateProjectBuilder()
-                .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-                .WithSourceCode(SourceCode)
-                .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task GetOrAdd()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task GetOrAdd()
+    {
+        const string SourceCode = @"
 using System.Collections.Concurrent;
 
 var key = 1;
@@ -68,16 +68,16 @@ var value = 1;
 var a = new ConcurrentDictionary<int, int>();
 a.GetOrAdd(key, [|k => key|]);
 ";
-            await CreateProjectBuilder()
-                .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-                .WithSourceCode(SourceCode)
-                .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task GetOrAdd_StringInterpolation()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task GetOrAdd_StringInterpolation()
+    {
+        const string SourceCode = @"
 using System.Collections.Concurrent;
 
 var key = 1;
@@ -85,16 +85,16 @@ var value = 1;
 var dict = new ConcurrentDictionary<int, string>();
 dict.GetOrAdd(key, [|k => $""{key}""|]);
 ";
-            await CreateProjectBuilder()
-                .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-                .WithSourceCode(SourceCode)
-                .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AddOrUpdate_Parameter()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AddOrUpdate_Parameter()
+    {
+        const string SourceCode = @"
 using System.Collections.Concurrent;
 
 class Test
@@ -107,15 +107,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                .WithSourceCode(SourceCode)
-                .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AddOrUpdate_Parameter_IsValid()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AddOrUpdate_Parameter_IsValid()
+    {
+        const string SourceCode = @"
 using System.Collections.Concurrent;
 
 class Test
@@ -128,15 +128,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                .WithSourceCode(SourceCode)
-                .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AddOrUpdate_Variable_IsValid()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AddOrUpdate_Variable_IsValid()
+    {
+        const string SourceCode = @"
 using System.Collections.Concurrent;
 
 class Test
@@ -151,9 +151,8 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                .WithSourceCode(SourceCode)
-                .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
     }
 }

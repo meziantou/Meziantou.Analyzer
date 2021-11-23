@@ -3,22 +3,22 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class UseConfigureAwaitAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithTargetFramework(TargetFramework.NetStandard2_1)
-                .WithAnalyzer<UseConfigureAwaitAnalyzer>()
-                .WithCodeFixProvider<UseConfigureAwaitFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task MissingConfigureAwait_ShouldReportError()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+public sealed class UseConfigureAwaitAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetStandard2_1)
+            .WithAnalyzer<UseConfigureAwaitAnalyzer>()
+            .WithCodeFixProvider<UseConfigureAwaitFixer>();
+    }
+
+    [Fact]
+    public async Task MissingConfigureAwait_ShouldReportError()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -26,7 +26,7 @@ class ClassTest
         [||]await Task.Delay(1);
     }
 }";
-            const string CodeFix = @"using System.Threading.Tasks;
+        const string CodeFix = @"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -34,16 +34,16 @@ class ClassTest
         await Task.Delay(1).ConfigureAwait(false);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MissingConfigureAwait_AwaitForeach_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitForeach_ShouldReportError()
+    {
+        const string SourceCode = @"
 using System.Collections.Generic;
 using System.Threading.Tasks;
 class ClassTest
@@ -57,7 +57,7 @@ class ClassTest
         }
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System.Collections.Generic;
 using System.Threading.Tasks;
 class ClassTest
@@ -71,16 +71,16 @@ class ClassTest
         }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MissingConfigureAwait_AwaitForeach_WithCancellation_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitForeach_WithCancellation_ShouldReportError()
+    {
+        const string SourceCode = @"
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,7 +96,7 @@ class ClassTest
         }
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -112,16 +112,16 @@ class ClassTest
         }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MissingConfigureAwait_AwaitForeach_WithConfigureAwait()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitForeach_WithConfigureAwait()
+    {
+        const string SourceCode = @"
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -138,15 +138,15 @@ class ClassTest
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MissingConfigureAwait_AwaitDispose_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitDispose_ShouldReportError()
+    {
+        const string SourceCode = @"
 using System;
 using System.Threading.Tasks;
 class ClassTest
@@ -161,7 +161,7 @@ class AsyncDisposable : IAsyncDisposable
     public ValueTask DisposeAsync() => throw null;
 }";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Threading.Tasks;
 class ClassTest
@@ -175,16 +175,16 @@ class AsyncDisposable : IAsyncDisposable
 {
     public ValueTask DisposeAsync() => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MissingConfigureAwait_AwaitDispose_Block_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitDispose_Block_ShouldReportError()
+    {
+        const string SourceCode = @"
 using System;
 using System.Threading.Tasks;
 class ClassTest
@@ -201,7 +201,7 @@ class AsyncDisposable : IAsyncDisposable
     public ValueTask DisposeAsync() => throw null;
 }";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Threading.Tasks;
 class ClassTest
@@ -217,16 +217,16 @@ class AsyncDisposable : IAsyncDisposable
 {
     public ValueTask DisposeAsync() => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ConfigureAwaitIsPresent_ShouldNotReportError()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task ConfigureAwaitIsPresent_ShouldNotReportError()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -234,15 +234,15 @@ class ClassTest
         await Task.Delay(1).ConfigureAwait(true);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ConfigureAwaitOfTIsPresent_ShouldNotReportError()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task ConfigureAwaitOfTIsPresent_ShouldNotReportError()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -250,15 +250,15 @@ class ClassTest
         await Task.Run(() => 10).ConfigureAwait(true);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MissingConfigureAwaitInWpfWindowClass_ShouldNotReportError()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task MissingConfigureAwaitInWpfWindowClass_ShouldNotReportError()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -266,16 +266,16 @@ class MyClass : System.Windows.Window
         await Task.Delay(1);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net4_8)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MissingConfigureAwaitInWpfCommandClass_ShouldNotReportError()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task MissingConfigureAwaitInWpfCommandClass_ShouldNotReportError()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Input.ICommand
 {
     public void Execute(object o) => throw null;
@@ -287,16 +287,16 @@ class MyClass : System.Windows.Input.ICommand
         await Task.Delay(1);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net4_8)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AfterConfigureAwaitFalse_AllAwaitShouldUseConfigureAwait()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task AfterConfigureAwaitFalse_AllAwaitShouldUseConfigureAwait()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -306,7 +306,7 @@ class MyClass : System.Windows.Window
         [||]await Task.Delay(1);
     }
 }";
-            const string CodeFix = @"using System.Threading.Tasks;
+        const string CodeFix = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -316,17 +316,17 @@ class MyClass : System.Windows.Window
         await Task.Delay(1).ConfigureAwait(false);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net4_8)
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AfterConfigureAwaitFalseInANonAccessibleBranch_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task AfterConfigureAwaitFalseInANonAccessibleBranch_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -341,16 +341,16 @@ class MyClass : System.Windows.Window
         await Task.Delay(1);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net4_8)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AfterConfigureAwaitFalseInNonAccessibleBranch2_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task AfterConfigureAwaitFalseInNonAccessibleBranch2_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class MyClass : System.Windows.Window
 {
     async Task Test()
@@ -366,16 +366,16 @@ class MyClass : System.Windows.Window
         }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net4_8)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task TaskYield_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task TaskYield_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
 {
     async Task Test()
@@ -383,15 +383,15 @@ class ClassTest
         await Task.Yield();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task XUnitAttribute_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task XUnitAttribute_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class ClassTest
 {
     [Xunit.Fact]
@@ -400,16 +400,16 @@ class ClassTest
         await Task.Delay(1);
     }
 }";
-            await CreateProjectBuilder()
-                  .AddXUnitApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddXUnitApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Blazor_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task Blazor_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 namespace Microsoft.AspNetCore.Components
 {
     public interface IComponent
@@ -424,15 +424,15 @@ class ClassTest : Microsoft.AspNetCore.Components.IComponent
         await Task.Delay(1);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Blazor_ConfigurationAlways_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task Blazor_ConfigurationAlways_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 namespace Microsoft.AspNetCore.Components
 {
     public interface IComponent
@@ -447,16 +447,16 @@ class ClassTest : Microsoft.AspNetCore.Components.IComponent
         [||]await Task.Delay(1);
     }
 }";
-            await CreateProjectBuilder()
-                  .AddAnalyzerConfiguration("MA0004.report", "always")
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0004.report", "always")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AwaitForEach_VariableAlreadyAwaited()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AwaitForEach_VariableAlreadyAwaited()
+    {
+        const string SourceCode = @"
 using System.Collections.Generic;
 using System.Threading.Tasks;
 class ClassTest
@@ -472,9 +472,8 @@ class ClassTest
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<ValueReturnedByStreamReadShouldBeUsedAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Read_ReturnValueNotUsed()
-        {
-            const string SourceCode = @"using System.IO;
+public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<ValueReturnedByStreamReadShouldBeUsedAnalyzer>();
+    }
+
+    [Fact]
+    public async Task Read_ReturnValueNotUsed()
+    {
+        const string SourceCode = @"using System.IO;
 class Test
 {
     void A()
@@ -26,15 +26,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ReadAsync_ReturnValueNotUsed()
-        {
-            const string SourceCode = @"using System.IO;
+    [Fact]
+    public async Task ReadAsync_ReturnValueNotUsed()
+    {
+        const string SourceCode = @"using System.IO;
 class Test
 {
     async void A()
@@ -44,15 +44,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ReadAsync_ReturnValueUsed_DiscardOperator()
-        {
-            const string SourceCode = @"using System.IO;
+    [Fact]
+    public async Task ReadAsync_ReturnValueUsed_DiscardOperator()
+    {
+        const string SourceCode = @"using System.IO;
 class Test
 {
     async void A()
@@ -62,15 +62,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Read_ReturnValueUsed_MethodCall()
-        {
-            const string SourceCode = @"using System.IO;
+    [Fact]
+    public async Task Read_ReturnValueUsed_MethodCall()
+    {
+        const string SourceCode = @"using System.IO;
 class Test
 {
     async void A()
@@ -80,9 +80,8 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

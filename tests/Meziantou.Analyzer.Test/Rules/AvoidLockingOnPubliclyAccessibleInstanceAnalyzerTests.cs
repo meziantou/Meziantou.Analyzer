@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<AvoidLockingOnPubliclyAccessibleInstanceAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task LockThis()
-        {
-            const string SourceCode = @"
+public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<AvoidLockingOnPubliclyAccessibleInstanceAnalyzer>();
+    }
+
+    [Fact]
+    public async Task LockThis()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -24,15 +24,15 @@ class Test
         lock ([||]this) {}
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LockTypeof()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LockTypeof()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -43,15 +43,15 @@ class Test
         }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LockVariableOfTypeSystemType()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LockVariableOfTypeSystemType()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -60,15 +60,15 @@ class Test
         lock ([||]type) {}
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LockPubliclyAccessibleField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LockPubliclyAccessibleField()
+    {
+        const string SourceCode = @"
 public class Test
 {
     public string TestField;
@@ -77,15 +77,15 @@ public class Test
         lock ([||]TestField) {}
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LockPrivateFieldShouldNotReport()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LockPrivateFieldShouldNotReport()
+    {
+        const string SourceCode = @"
 public class Test
 {
     private string TestField;
@@ -94,15 +94,15 @@ public class Test
         lock (TestField) {}
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LockVariableOfTypeStringShouldNotReport()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LockVariableOfTypeStringShouldNotReport()
+    {
+        const string SourceCode = @"
 public class Test
 {
     private string TestField;
@@ -112,9 +112,8 @@ public class Test
         lock (test) {}
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

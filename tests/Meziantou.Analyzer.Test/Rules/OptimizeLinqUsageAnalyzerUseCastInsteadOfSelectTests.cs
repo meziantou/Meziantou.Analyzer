@@ -3,44 +3,44 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class OptimizeLinqUsageAnalyzerUseCastInsteadOfSelectTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect)
-                .WithCodeFixProvider<OptimizeLinqUsageFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Theory]
-        [InlineData("source.[|Select|](dt => (BaseType)dt)",
-                    "source.Cast<BaseType>()")]
-        [InlineData("Enumerable.[|Select|](source, dt => (Test.BaseType)dt).FirstOrDefault()",
-                    "source.Cast<BaseType>().FirstOrDefault()")]
-        [InlineData("System.Linq.Enumerable.Empty<DerivedType>().[|Select|](dt => (Gen.IList<string>)dt)",
-                                "Enumerable.Empty<DerivedType>().Cast<Gen.IList<string>>()")]
-        [InlineData("Enumerable.Range(0, 1).[|Select<int, object>|](i => i)",
-                    "Enumerable.Range(0, 1).Cast<object>()")]
-        [InlineData("source.[|Select|](i => (object?)i)",
-                    "source.Cast<object?>()",
-                    true)]
-        [InlineData("source.[|Select|](i => (object)i)",
-                    "source.Cast<object>()",
-                    true)]
-        [InlineData("source.[|Select<DerivedType, object?>|](i => i)",
-                    "source.Cast<object?>()",
-                    true)]
-        [InlineData("source.[|Select<DerivedType, object>|](i => i)",
-                    "source.Cast<object>()",
-                    true)]
-        public async Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(
-            string selectInvocation,
-            string expectedReplacement,
-            bool enableNullable = false)
-        {
-            var originalCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
+public sealed class OptimizeLinqUsageAnalyzerUseCastInsteadOfSelectTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect)
+            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+    }
+
+    [Theory]
+    [InlineData("source.[|Select|](dt => (BaseType)dt)",
+                "source.Cast<BaseType>()")]
+    [InlineData("Enumerable.[|Select|](source, dt => (Test.BaseType)dt).FirstOrDefault()",
+                "source.Cast<BaseType>().FirstOrDefault()")]
+    [InlineData("System.Linq.Enumerable.Empty<DerivedType>().[|Select|](dt => (Gen.IList<string>)dt)",
+                            "Enumerable.Empty<DerivedType>().Cast<Gen.IList<string>>()")]
+    [InlineData("Enumerable.Range(0, 1).[|Select<int, object>|](i => i)",
+                "Enumerable.Range(0, 1).Cast<object>()")]
+    [InlineData("source.[|Select|](i => (object?)i)",
+                "source.Cast<object?>()",
+                true)]
+    [InlineData("source.[|Select|](i => (object)i)",
+                "source.Cast<object>()",
+                true)]
+    [InlineData("source.[|Select<DerivedType, object?>|](i => i)",
+                "source.Cast<object?>()",
+                true)]
+    [InlineData("source.[|Select<DerivedType, object>|](i => i)",
+                "source.Cast<object>()",
+                true)]
+    public async Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(
+        string selectInvocation,
+        string expectedReplacement,
+        bool enableNullable = false)
+    {
+        var originalCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
 using System.Linq;
 using Gen = System.Collections.Generic;
 
@@ -55,7 +55,7 @@ class Test
         {selectInvocation};
     }}
 }}";
-            var modifiedCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
+        var modifiedCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
 using System.Linq;
 using Gen = System.Collections.Generic;
 
@@ -70,19 +70,19 @@ class Test
         {expectedReplacement};
     }}
 }}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ShouldFixCodeWith(modifiedCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(modifiedCode)
+              .ValidateAsync();
+    }
 
-        [Theory]
-        [InlineData("source.Select(dt => dt.Name)")]            // No cast
-        [InlineData("source.Select(dt => (object)dt.Name)")]    // Cast of property, not of element itself
-        [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
-        public async Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
-        {
-            var originalCode = $@"using System.Linq;
+    [Theory]
+    [InlineData("source.Select(dt => dt.Name)")]            // No cast
+    [InlineData("source.Select(dt => (object)dt.Name)")]    // Cast of property, not of element itself
+    [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
+    public async Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
+    {
+        var originalCode = $@"using System.Linq;
 class Test
 {{
     class BaseType {{ public string Name {{ get; set; }} }}
@@ -94,15 +94,15 @@ class Test
         {selectInvocation};
     }}
 }}";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OptimizeLinq_ExplicitCastIsRequired()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task OptimizeLinq_ExplicitCastIsRequired()
+    {
+        var originalCode = @"
 using System.Linq;
 using System.Collections.Generic;
 
@@ -114,16 +114,16 @@ class Test
         source.Select(item => (byte)item);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
-        public async Task OptimizeLinq_UserDefinedImplicitOperator()
-        {
-            var originalCode = @"
+    [Fact]
+    [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
+    public async Task OptimizeLinq_UserDefinedImplicitOperator()
+    {
+        var originalCode = @"
 using System;
 using System.Linq;
 
@@ -146,16 +146,16 @@ class Foo
 
     public static implicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
-        public async Task OptimizeLinq_UserDefinedImplicitOperator_ImplicitUse()
-        {
-            var originalCode = @"
+    [Fact]
+    [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
+    public async Task OptimizeLinq_UserDefinedImplicitOperator_ImplicitUse()
+    {
+        var originalCode = @"
 using System;
 using System.Linq;
 
@@ -178,15 +178,15 @@ class Foo
 
     public static implicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OptimizeLinq_UserDefinedExplicitOperator()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task OptimizeLinq_UserDefinedExplicitOperator()
+    {
+        var originalCode = @"
 using System;
 using System.Linq;
 
@@ -209,15 +209,15 @@ class Foo
 
     public static explicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OptimizeLinq_IntToObject()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task OptimizeLinq_IntToObject()
+    {
+        var originalCode = @"
 using System.Linq;
 using System.Collections.Generic;
 
@@ -229,7 +229,7 @@ class Test
         source.[|Select|](item => (object)item);
     }
 }";
-            var fixedCode = @"
+        var fixedCode = @"
 using System.Linq;
 using System.Collections.Generic;
 
@@ -241,16 +241,16 @@ class Test
         source.Cast<object>();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ShouldFixCodeWith(fixedCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(fixedCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OptimizeLinq_IntEnumToByte()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task OptimizeLinq_IntEnumToByte()
+    {
+        var originalCode = @"
 using System.Linq;
 using System.Collections.Generic;
 
@@ -268,15 +268,15 @@ class Test
         source.Select(item => (byte)item);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OptimizeLinq_ByteEnumToByte()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task OptimizeLinq_ByteEnumToByte()
+    {
+        var originalCode = @"
 using System.Linq;
 using System.Collections.Generic;
 
@@ -294,7 +294,7 @@ class Test
         source.[|Select|](item => (byte)item);
     }
 }";
-            var fixedCode = @"
+        var fixedCode = @"
 using System.Linq;
 using System.Collections.Generic;
 
@@ -312,10 +312,9 @@ class Test
         source.Cast<byte>();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ShouldFixCodeWith(fixedCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(fixedCode)
+              .ValidateAsync();
     }
 }

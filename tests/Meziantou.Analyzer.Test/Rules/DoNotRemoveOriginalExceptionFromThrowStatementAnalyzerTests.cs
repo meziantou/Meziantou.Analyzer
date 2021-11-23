@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer>()
-                .WithCodeFixProvider<DoNotRemoveOriginalExceptionFromThrowStatementFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task NoDiagnostic()
-        {
-            const string SourceCode = @"
+public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer>()
+            .WithCodeFixProvider<DoNotRemoveOriginalExceptionFromThrowStatementFixer>();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     internal void Sample()
@@ -35,15 +35,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     internal void Sample()
@@ -59,7 +59,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class Test
 {
     internal void Sample()
@@ -75,10 +75,9 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
     }
 }

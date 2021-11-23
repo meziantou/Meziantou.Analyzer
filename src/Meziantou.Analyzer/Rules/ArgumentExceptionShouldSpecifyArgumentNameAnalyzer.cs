@@ -8,180 +8,179 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
+    internal const string ArgumentNameKey = "ArgumentName";
+
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName,
+        title: "Specify the parameter name in ArgumentException",
+        messageFormat: "{0}",
+        RuleCategories.Usage,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName));
+
+    private static readonly DiagnosticDescriptor s_nameofRule = new(
+        RuleIdentifiers.UseNameofOperator,
+        title: "Use nameof operator in ArgumentException",
+        messageFormat: "Use nameof operator",
+        RuleCategories.Usage,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNameofOperator));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_nameofRule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        internal const string ArgumentNameKey = "ArgumentName";
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName,
-            title: "Specify the parameter name in ArgumentException",
-            messageFormat: "{0}",
-            RuleCategories.Usage,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName));
+        context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
+    }
 
-        private static readonly DiagnosticDescriptor s_nameofRule = new(
-            RuleIdentifiers.UseNameofOperator,
-            title: "Use nameof operator in ArgumentException",
-            messageFormat: "Use nameof operator",
-            RuleCategories.Usage,
-            DiagnosticSeverity.Info,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNameofOperator));
+    private static void Analyze(OperationAnalysisContext context)
+    {
+        var op = (IObjectCreationOperation)context.Operation;
+        if (op == null)
+            return;
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_nameofRule);
+        var type = op.Type;
+        if (type == null)
+            return;
 
-        public override void Initialize(AnalysisContext context)
+        var exceptionType = context.Compilation.GetTypeByMetadataName("System.ArgumentException");
+        if (exceptionType == null)
+            return;
+
+        if (!type.IsEqualTo(exceptionType) && !type.InheritsFrom(exceptionType))
+            return;
+
+        var parameterName = "paramName";
+        if (type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException")))
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-            context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
+            parameterName = "argumentName";
         }
 
-        private static void Analyze(OperationAnalysisContext context)
+        foreach (var argument in op.Arguments)
         {
-            var op = (IObjectCreationOperation)context.Operation;
-            if (op == null)
-                return;
+            if (argument.Parameter == null || !string.Equals(argument.Parameter.Name, parameterName, StringComparison.Ordinal))
+                continue;
 
-            var type = op.Type;
-            if (type == null)
-                return;
-
-            var exceptionType = context.Compilation.GetTypeByMetadataName("System.ArgumentException");
-            if (exceptionType == null)
-                return;
-
-            if (!type.IsEqualTo(exceptionType) && !type.InheritsFrom(exceptionType))
-                return;
-
-            var parameterName = "paramName";
-            if (type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException")))
+            if (argument.Value.ConstantValue.HasValue)
             {
-                parameterName = "argumentName";
-            }
-
-            foreach (var argument in op.Arguments)
-            {
-                if (argument.Parameter == null || !string.Equals(argument.Parameter.Name, parameterName, StringComparison.Ordinal))
-                    continue;
-
-                if (argument.Value.ConstantValue.HasValue)
+                if (argument.Value.ConstantValue.Value is string value)
                 {
-                    if (argument.Value.ConstantValue.Value is string value)
+                    var parameterNames = GetParameterNames(op);
+                    if (parameterNames.Contains(value, StringComparer.Ordinal))
                     {
-                        var parameterNames = GetParameterNames(op);
-                        if (parameterNames.Contains(value, StringComparer.Ordinal))
+                        if (argument.Value is not INameOfOperation)
                         {
-                            if (!(argument.Value is INameOfOperation))
-                            {
-                                var properties = ImmutableDictionary<string, string?>.Empty.Add(ArgumentNameKey, value);
-                                context.ReportDiagnostic(s_nameofRule, properties, argument.Value);
-                            }
-
-                            return;
+                            var properties = ImmutableDictionary<string, string?>.Empty.Add(ArgumentNameKey, value);
+                            context.ReportDiagnostic(s_nameofRule, properties, argument.Value);
                         }
 
-                        context.ReportDiagnostic(s_rule, argument, $"'{value}' is not a valid parameter name");
                         return;
                     }
-                }
 
-                // Cannot determine the value of the argument
-                return;
+                    context.ReportDiagnostic(s_rule, argument, $"'{value}' is not a valid parameter name");
+                    return;
+                }
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));
+            // Cannot determine the value of the argument
+            return;
         }
 
-        private static IEnumerable<string> GetParameterNames(IOperation operation)
+        context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));
+    }
+
+    private static IEnumerable<string> GetParameterNames(IOperation operation)
+    {
+        var semanticModel = operation.SemanticModel!;
+        var node = operation.Syntax;
+        while (node != null)
         {
-            var semanticModel = operation.SemanticModel!;
-            var node = operation.Syntax;
-            while (node != null)
+            switch (node)
             {
-                switch (node)
-                {
-                    case AccessorDeclarationSyntax accessor:
-                        if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
+                case AccessorDeclarationSyntax accessor:
+                    if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
+                    {
+                        yield return "value";
+                    }
+
+                    break;
+
+                case PropertyDeclarationSyntax _:
+                    yield break;
+
+                case IndexerDeclarationSyntax indexerDeclarationSyntax:
+                    {
+                        var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
+                        if (symbol != null)
                         {
-                            yield return "value";
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
+                        }
+
+                        yield break;
+                    }
+
+                case MethodDeclarationSyntax methodDeclaration:
+                    {
+                        var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
+                        if (symbol != null)
+                        {
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
+                        }
+
+                        yield break;
+                    }
+
+                case LocalFunctionStatementSyntax localFunctionStatement:
+                    {
+                        if (semanticModel.GetDeclaredSymbol(localFunctionStatement) is IMethodSymbol symbol)
+                        {
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
                         }
 
                         break;
+                    }
 
-                    case PropertyDeclarationSyntax _:
+                case ConstructorDeclarationSyntax constructorDeclaration:
+                    {
+                        var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
+                        if (symbol != null)
+                        {
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
+                        }
+
                         yield break;
+                    }
 
-                    case IndexerDeclarationSyntax indexerDeclarationSyntax:
+                case OperatorDeclarationSyntax operatorDeclaration:
+                    {
+                        var symbol = semanticModel.GetDeclaredSymbol(operatorDeclaration);
+                        if (symbol != null)
                         {
-                            var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
-                            if (symbol != null)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return parameter.Name;
-                            }
-
-                            yield break;
+                            foreach (var parameter in symbol.Parameters)
+                                yield return parameter.Name;
                         }
 
-                    case MethodDeclarationSyntax methodDeclaration:
-                        {
-                            var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
-                            if (symbol != null)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return parameter.Name;
-                            }
-
-                            yield break;
-                        }
-
-                    case LocalFunctionStatementSyntax localFunctionStatement:
-                        {
-                            if (semanticModel.GetDeclaredSymbol(localFunctionStatement) is IMethodSymbol symbol)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return parameter.Name;
-                            }
-
-                            break;
-                        }
-
-                    case ConstructorDeclarationSyntax constructorDeclaration:
-                        {
-                            var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
-                            if (symbol != null)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return parameter.Name;
-                            }
-
-                            yield break;
-                        }
-
-                    case OperatorDeclarationSyntax operatorDeclaration:
-                        {
-                            var symbol = semanticModel.GetDeclaredSymbol(operatorDeclaration);
-                            if (symbol != null)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                    yield return parameter.Name;
-                            }
-
-                            yield break;
-                        }
-                }
-
-                node = node.Parent;
+                        yield break;
+                    }
             }
+
+            node = node.Parent;
         }
     }
 }

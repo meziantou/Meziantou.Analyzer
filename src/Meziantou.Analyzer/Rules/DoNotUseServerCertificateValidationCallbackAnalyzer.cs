@@ -5,58 +5,57 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.DoNotUseServerCertificateValidationCallback,
+        title: "Do not write your own certificate validation method",
+        messageFormat: "Do not write your own certificate validation method",
+        RuleCategories.Security,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseServerCertificateValidationCallback));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.DoNotUseServerCertificateValidationCallback,
-            title: "Do not write your own certificate validation method",
-            messageFormat: "Do not write your own certificate validation method",
-            RuleCategories.Security,
-            DiagnosticSeverity.Error,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseServerCertificateValidationCallback));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
-
-        public override void Initialize(AnalysisContext context)
+        context.RegisterCompilationStartAction(ctx =>
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            var symbols = new List<ISymbol>();
 
-            context.RegisterCompilationStartAction(ctx =>
+            var servicePointManagerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.ServicePointManager");
+            if (servicePointManagerSymbol != null)
             {
-                var symbols = new List<ISymbol>();
-
-                var servicePointManagerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.ServicePointManager");
-                if (servicePointManagerSymbol != null)
-                {
-                    symbols.AddIfNotNull(servicePointManagerSymbol.GetMembers("ServerCertificateValidationCallback").FirstOrDefault());
-                }
-
-                var httpClientHandlerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClientHandler");
-                if (httpClientHandlerSymbol != null)
-                {
-                    symbols.AddIfNotNull(httpClientHandlerSymbol.GetMembers("ServerCertificateCustomValidationCallback").FirstOrDefault());
-                }
-
-                if (symbols.Any())
-                {
-                    ctx.RegisterOperationAction(c => Analyze(c, symbols), OperationKind.PropertyReference);
-                }
-            });
-        }
-
-        private static void Analyze(OperationAnalysisContext context, List<ISymbol> eventSymbols)
-        {
-            var operation = (IPropertyReferenceOperation)context.Operation;
-            if (eventSymbols.Contains(operation.Property))
-            {
-                context.ReportDiagnostic(s_rule, operation);
+                symbols.AddIfNotNull(servicePointManagerSymbol.GetMembers("ServerCertificateValidationCallback").FirstOrDefault());
             }
+
+            var httpClientHandlerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClientHandler");
+            if (httpClientHandlerSymbol != null)
+            {
+                symbols.AddIfNotNull(httpClientHandlerSymbol.GetMembers("ServerCertificateCustomValidationCallback").FirstOrDefault());
+            }
+
+            if (symbols.Any())
+            {
+                ctx.RegisterOperationAction(c => Analyze(c, symbols), OperationKind.PropertyReference);
+            }
+        });
+    }
+
+    private static void Analyze(OperationAnalysisContext context, List<ISymbol> eventSymbols)
+    {
+        var operation = (IPropertyReferenceOperation)context.Operation;
+        if (eventSymbols.Contains(operation.Property))
+        {
+            context.ReportDiagnostic(s_rule, operation);
         }
     }
 }

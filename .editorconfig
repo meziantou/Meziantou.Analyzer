@@ -71,6 +71,10 @@ dotnet_style_prefer_auto_properties = true : suggestion
 dotnet_style_prefer_inferred_tuple_names = true : suggestion
 dotnet_style_prefer_inferred_anonymous_type_member_names = true : suggestion
 
+csharp_using_directive_placement=outside_namespace:suggestion
+dotnet_code_quality_unused_parameters=all:warning
+csharp_style_namespace_declarations = file_scoped
+
 # CSharp code style settings:
 [*.cs]
 # Prefer "var" everywhere (Implicit and explicit types)

@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<OptionalParametersAttributeAnalyzer>(id: "MA0088");
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task DefaultParameterValue()
-        {
-            const string SourceCode = @"
+public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<OptionalParametersAttributeAnalyzer>(id: "MA0088");
+    }
+
+    [Fact]
+    public async Task DefaultParameterValue()
+    {
+        const string SourceCode = @"
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -26,15 +26,15 @@ class Test
     {
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task DefaultValue()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task DefaultValue()
+    {
+        const string SourceCode = @"
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -44,15 +44,15 @@ class Test
     {
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task BothAttributes()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task BothAttributes()
+    {
+        const string SourceCode = @"
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -62,10 +62,9 @@ class Test
     {
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+
 }

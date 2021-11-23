@@ -3,36 +3,36 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class ValidateArgumentsCorrectlyAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<ValidateArgumentsCorrectlyAnalyzer>()
-                .WithCodeFixProvider<ValidateArgumentsCorrectlyFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task ReturnVoid()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+public sealed class ValidateArgumentsCorrectlyAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<ValidateArgumentsCorrectlyAnalyzer>()
+            .WithCodeFixProvider<ValidateArgumentsCorrectlyFixer>();
+    }
+
+    [Fact]
+    public async Task ReturnVoid()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     void A()
     {
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ReturnString()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+    [Fact]
+    public async Task ReturnString()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     string A()
@@ -40,15 +40,15 @@ class TypeName
         throw null;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OutParameter()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+    [Fact]
+    public async Task OutParameter()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     IEnumerable<int> A(out int a)
@@ -56,15 +56,15 @@ class TypeName
         throw null;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NoValidation()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+    [Fact]
+    public async Task NoValidation()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     IEnumerable<int> A(string a)
@@ -72,15 +72,15 @@ class TypeName
         yield return 0;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SameBlock()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+    [Fact]
+    public async Task SameBlock()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     IEnumerable<int> A(string a)
@@ -92,15 +92,15 @@ class TypeName
         }        
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task StatementInMiddleOfArgumentValidation()
-        {
-            const string SourceCode = @"using System.Collections;
+    [Fact]
+    public async Task StatementInMiddleOfArgumentValidation()
+    {
+        const string SourceCode = @"using System.Collections;
 class TypeName
 {
     IEnumerable A(string a)
@@ -114,15 +114,15 @@ class TypeName
             throw new System.ArgumentNullException(nameof(a));
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+    [Fact]
+    public async Task ReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     IEnumerable<int> [||]A(string a)
@@ -138,7 +138,7 @@ class TypeName
     }
 }";
 
-            const string CodeFix = @"using System.Collections.Generic;
+        const string CodeFix = @"using System.Collections.Generic;
 class TypeName
 {
     IEnumerable<int> A(string a)
@@ -158,16 +158,16 @@ class TypeName
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ValidValidation()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+    [Fact]
+    public async Task ValidValidation()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     IEnumerable<int> A(string a)
@@ -188,15 +188,15 @@ class TypeName
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ReportDiagnostic_IAsyncEnumerable()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+    [Fact]
+    public async Task ReportDiagnostic_IAsyncEnumerable()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
     async IAsyncEnumerable<int> [||]A(string a)
@@ -210,7 +210,7 @@ class TypeName
     }
 }";
 
-            const string CodeFix = @"using System.Collections.Generic;
+        const string CodeFix = @"using System.Collections.Generic;
 class TypeName
 {
     IAsyncEnumerable<int> A(string a)
@@ -228,12 +228,11 @@ class TypeName
     }
 }";
 
-            await CreateProjectBuilder()
-                  .AddAsyncInterfaceApi()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .AddAsyncInterfaceApi()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
     }
+
 }

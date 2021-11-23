@@ -14,85 +14,84 @@ using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[ExportCodeFixProvider(LanguageNames.CSharp), Shared]
+public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
+    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.ValidateArgumentsCorrectly);
+
+    public override FixAllProvider GetFixAllProvider()
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.ValidateArgumentsCorrectly);
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
-        public override FixAllProvider GetFixAllProvider()
+    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    {
+        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
+        if (nodeToFix == null)
+            return;
+
+        var diagnostic = context.Diagnostics[0];
+
+        var title = "Use local function";
+        var codeAction = CodeAction.Create(
+            title,
+            ct => Refactor(context.Document, diagnostic, nodeToFix, ct),
+            equivalenceKey: title);
+
+        context.RegisterCodeFix(codeAction, context.Diagnostics);
+    }
+
+    private static async Task<Document> Refactor(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var generator = editor.Generator;
+
+        var index = int.Parse(diagnostic.Properties["Index"]!, CultureInfo.InvariantCulture);
+        var symbol = (IMethodSymbol?)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
+        if (symbol == null)
+            return document;
+
+        var methodSyntaxNode = (MethodDeclarationSyntax)nodeToFix;
+        if (methodSyntaxNode.Body == null)
+            return document;
+
+        // Create local function
+        var returnTypeSyntax = generator.TypeExpression(symbol.ReturnType);
+        var localFunctionSyntaxNode = LocalFunctionStatement((TypeSyntax)returnTypeSyntax, symbol.Name);
+        if (methodSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)))
         {
-            return WellKnownFixAllProviders.BatchFixer;
+            localFunctionSyntaxNode = localFunctionSyntaxNode.AddModifiers(Token(SyntaxKind.AsyncKeyword));
         }
 
-        public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+        var localFunctionStatements = new List<StatementSyntax>();
+        var statements = methodSyntaxNode.Body.Statements;
+        var statementsToMove = statements.IndexOf(statement => statement.Span.Start > index);
+
+        localFunctionStatements.AddRange(statements.Skip(statementsToMove));
+        while (statements.Count > statementsToMove)
         {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-            if (nodeToFix == null)
-                return;
-
-            var diagnostic = context.Diagnostics[0];
-
-            var title = "Use local function";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => Refactor(context.Document, diagnostic, nodeToFix, ct),
-                equivalenceKey: title);
-
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+            statements = statements.RemoveAt(statements.Count - 1);
         }
 
-        private static async Task<Document> Refactor(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
-        {
-            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var generator = editor.Generator;
+        localFunctionSyntaxNode = localFunctionSyntaxNode.WithBody(Block(localFunctionStatements));
 
-            var index = int.Parse(diagnostic.Properties["Index"]!, CultureInfo.InvariantCulture);
-            var symbol = (IMethodSymbol?)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
-            if (symbol == null)
-                return document;
+        // Add location function to the method
+        statements = statements.Add(
+            (StatementSyntax)generator.ReturnStatement(
+                generator.InvocationExpression(
+                    generator.IdentifierName(symbol.Name)))
+            .WithLeadingTrivia(LineFeed));
 
-            var methodSyntaxNode = (MethodDeclarationSyntax)nodeToFix;
-            if (methodSyntaxNode.Body == null)
-                return document;
+        statements = statements.Add(localFunctionSyntaxNode);
 
-            // Create local function
-            var returnTypeSyntax = generator.TypeExpression(symbol.ReturnType);
-            var localFunctionSyntaxNode = LocalFunctionStatement((TypeSyntax)returnTypeSyntax, symbol.Name);
-            if (methodSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)))
-            {
-                localFunctionSyntaxNode = localFunctionSyntaxNode.AddModifiers(Token(SyntaxKind.AsyncKeyword));
-            }
-
-            var localFunctionStatements = new List<StatementSyntax>();
-            var statements = methodSyntaxNode.Body.Statements;
-            var statementsToMove = statements.IndexOf(statement => statement.Span.Start > index);
-
-            localFunctionStatements.AddRange(statements.Skip(statementsToMove));
-            while (statements.Count > statementsToMove)
-            {
-                statements = statements.RemoveAt(statements.Count - 1);
-            }
-
-            localFunctionSyntaxNode = localFunctionSyntaxNode.WithBody(Block(localFunctionStatements));
-
-            // Add location function to the method
-            statements = statements.Add(
-                (StatementSyntax)generator.ReturnStatement(
-                    generator.InvocationExpression(
-                        generator.IdentifierName(symbol.Name)))
-                .WithLeadingTrivia(LineFeed));
-
-            statements = statements.Add(localFunctionSyntaxNode);
-
-            methodSyntaxNode = methodSyntaxNode
-                .WithModifiers(methodSyntaxNode.Modifiers.Remove(SyntaxKind.AsyncKeyword))
-                .WithBody(Block(statements))
-                .WithAdditionalAnnotations(Formatter.Annotation);
-            editor.ReplaceNode(nodeToFix, methodSyntaxNode);
-            return editor.GetChangedDocument();
-        }
+        methodSyntaxNode = methodSyntaxNode
+            .WithModifiers(methodSyntaxNode.Modifiers.Remove(SyntaxKind.AsyncKeyword))
+            .WithBody(Block(statements))
+            .WithAdditionalAnnotations(Formatter.Annotation);
+        editor.ReplaceNode(nodeToFix, methodSyntaxNode);
+        return editor.GetChangedDocument();
     }
 }

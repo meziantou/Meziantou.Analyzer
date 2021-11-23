@@ -3,22 +3,22 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
+namespace Meziantou.Analyzer.Test.Rules;
+
+public sealed class NamedParameterAnalyzerTests
 {
-    public sealed class NamedParameterAnalyzerTests
+    private static ProjectBuilder CreateProjectBuilder()
     {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<NamedParameterAnalyzer>()
-                .WithCodeFixProvider<NamedParameterFixer>();
-        }
+        return new ProjectBuilder()
+            .WithAnalyzer<NamedParameterAnalyzer>()
+            .WithCodeFixProvider<NamedParameterFixer>();
+    }
 
-        [Fact]
+    [Fact]
 
-        public async Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    public async Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
@@ -26,15 +26,15 @@ class TypeName
         await System.Threading.Tasks.Task.Run(()=>{}).ConfigureAwait(false);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
@@ -42,15 +42,15 @@ class TypeName
         await System.Threading.Tasks.Task.Run(() => 10).ConfigureAwait(true);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NamedParameter_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task NamedParameter_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -58,15 +58,15 @@ class TypeName
         object.Equals(objA: true, """");
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task True_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task True_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -74,7 +74,7 @@ class TypeName
         var a = string.Compare("""", """", [||]true);
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -82,16 +82,16 @@ class TypeName
         var a = string.Compare("""", """", ignoreCase: true);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
-        
-        [Fact]
-        public async Task True_WithOptions_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task True_WithOptions_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -99,16 +99,16 @@ class TypeName
         var a = string.Compare("""", """", true);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .AddAnalyzerConfiguration("MA0003.expression_kinds", "None")
-                  .ValidateAsync();
-        }
-        
-        [Fact]
-        public async Task String_WithOptions_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "None")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task String_WithOptions_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -119,16 +119,16 @@ class TypeName
                         [||]true);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
-                  .ValidateAsync();
-        }
-        
-        [Fact]
-        public async Task Int32_WithOptions_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Int32_WithOptions_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -137,16 +137,16 @@ class TypeName
         void A(int a, long b, short c) { }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
-                  .ValidateAsync();
-        }
-        
-        [Fact]
-        public async Task Int32_ExcludedMethod_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Int32_ExcludedMethod_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -156,16 +156,16 @@ class TypeName
 
     void MyMethod(int a, long b, short c) { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "M[a-z][A-Z]ethod")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "M[a-z][A-Z]ethod")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task False_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task False_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -173,15 +173,15 @@ class TypeName
         object.Equals(false, """");
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Null_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Null_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -189,15 +189,15 @@ class TypeName
         object.Equals(null, """");
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -205,15 +205,15 @@ class TypeName
         typeof(TypeName).GetMethod("""").Invoke(null, new object[0]);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MethodBaseInvoke_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MethodBaseInvoke_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -221,7 +221,7 @@ class TypeName
         typeof(TypeName).GetMethod("""").Invoke(null, [||]null);
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -229,58 +229,58 @@ class TypeName
         typeof(TypeName).GetMethod("""").Invoke(null, parameters: null);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MSTestAssert_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MSTestAssert_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
 }";
-            await CreateProjectBuilder()
-                  .AddMSTestApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddMSTestApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NunitAssert_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task NunitAssert_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
 }";
-            await CreateProjectBuilder()
-                  .AddNUnitApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddNUnitApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task XunitAssert_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task XunitAssert_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test() => Xunit.Assert.Equal(null, ""dummy"");
 }";
-            await CreateProjectBuilder()
-                  .AddXUnitApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddXUnitApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Ctor_ShouldUseTheRightParameterName()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Ctor_ShouldUseTheRightParameterName()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -290,7 +290,7 @@ class TypeName
 
     TypeName(string a) { }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -300,16 +300,16 @@ class TypeName
 
     TypeName(string a) { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
-        
-        [Fact]
-        public async Task ImplicitCtor_ShouldUseTheRightParameterName()
-        {
-            const string SourceCode = @"
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImplicitCtor_ShouldUseTheRightParameterName()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -319,7 +319,7 @@ class TypeName
 
     TypeName(string a) { }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -329,16 +329,16 @@ class TypeName
 
     TypeName(string a) { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorChaining()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorChaining()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public TypeName()
@@ -348,7 +348,7 @@ class TypeName
 
     public TypeName(string a) { }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public TypeName()
@@ -358,16 +358,16 @@ class TypeName
 
     public TypeName(string a) { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorBase()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorBase()
+    {
+        const string SourceCode = @"
 class BaseType
 {
     protected BaseType(string a) { }
@@ -379,7 +379,7 @@ class TypeName: BaseType
     {
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class BaseType
 {
     protected BaseType(string a) { }
@@ -391,16 +391,16 @@ class TypeName: BaseType
     {
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public async System.Threading.Tasks.Task Test()
@@ -417,15 +417,15 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Task_FromResult_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Task_FromResult_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -434,17 +434,17 @@ class TypeName
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Expression_ShouldNotReportDiagnostic()
-        {
+    [Fact]
+    public async Task Expression_ShouldNotReportDiagnostic()
+    {
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 using System.Linq;
 using System.Collections.Generic;
 
@@ -459,10 +459,10 @@ class Test
     static bool M(bool a) => false;
 }
 ")
-                  .ValidateAsync();
+              .ValidateAsync();
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -474,14 +474,14 @@ class Test
     static bool M(bool a) => false;
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Expression_ShouldNotReportDiagnostic2()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task Expression_ShouldNotReportDiagnostic2()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -507,14 +507,14 @@ class Mock<T>
     public void Setup<TResult>(Expression<Func<T, TResult>> expression) => throw null;
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SyntaxNode_With()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task SyntaxNode_With()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 class Test
 {
     void A()
@@ -532,14 +532,14 @@ namespace Microsoft.CodeAnalysis
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SyntaxNode_EnablePrefix()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task SyntaxNode_EnablePrefix()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 class Test
 {
     void A()
@@ -550,14 +550,14 @@ class Test
     void EnableTest(bool value) { }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task TaskCompletionSouce_SetResult()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task TaskCompletionSouce_SetResult()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 class Test
 {
     void A()
@@ -567,14 +567,14 @@ class Test
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task TaskCompletionSouce_TrySetResult()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task TaskCompletionSouce_TrySetResult()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 class Test
 {
     void A()
@@ -584,7 +584,6 @@ class Test
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
     }
 }

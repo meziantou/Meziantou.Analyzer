@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotCallVirtualMethodInConstructorAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task CtorWithVirtualCall()
-        {
-            const string SourceCode = @"
+public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotCallVirtualMethodInConstructorAnalyzer>();
+    }
+
+    [Fact]
+    public async Task CtorWithVirtualCall()
+    {
+        const string SourceCode = @"
 class Test
 {
     Test()
@@ -26,15 +26,15 @@ class Test
 
     public virtual void A() { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithAbstractCall()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithAbstractCall()
+    {
+        const string SourceCode = @"
 abstract class Test
 {
     Test()
@@ -44,15 +44,15 @@ abstract class Test
 
     public abstract void A();
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithNoVirtualCall()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithNoVirtualCall()
+    {
+        const string SourceCode = @"
 class Test
 {
     Test()
@@ -62,15 +62,15 @@ class Test
 
     public void A() { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithVirtualCallOnAnotherInstance()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithVirtualCallOnAnotherInstance()
+    {
+        const string SourceCode = @"
 class Test
 {
     Test()
@@ -81,15 +81,15 @@ class Test
 
     public virtual void A() { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithVirtualPropertyAssignment()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithVirtualPropertyAssignment()
+    {
+        const string SourceCode = @"
 class Test
 {
     Test()
@@ -99,15 +99,15 @@ class Test
 
     public virtual int A { get; set; }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithVirtualPropertyAssignmentOnAnotherInstance()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithVirtualPropertyAssignmentOnAnotherInstance()
+    {
+        const string SourceCode = @"
 class Test
 {
     Test()
@@ -118,15 +118,15 @@ class Test
 
     public virtual int A { get; set; }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithVirtualPropertyGet()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithVirtualPropertyGet()
+    {
+        const string SourceCode = @"
 class Test
 {
     Test()
@@ -136,15 +136,15 @@ class Test
 
     public virtual int A => 10;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithOverridedMethod()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithOverridedMethod()
+    {
+        const string SourceCode = @"
 class Base
 {
     public virtual void A() { }
@@ -159,15 +159,15 @@ class Test : Base
 
     public override void A() { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CtorWithVirtualPropertyReferenceInNameOf()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CtorWithVirtualPropertyReferenceInNameOf()
+    {
+        const string SourceCode = @"
 class Test
 {
     Test()
@@ -177,10 +177,9 @@ class Test
 
     public virtual int A => 10;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+
 }

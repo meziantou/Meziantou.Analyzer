@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotUseServerCertificateValidationCallbackAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task ServicePointManager_ServerCertificateValidationCallbackAsync()
-        {
-            const string SourceCode = @"
+public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotUseServerCertificateValidationCallbackAnalyzer>();
+    }
+
+    [Fact]
+    public async Task ServicePointManager_ServerCertificateValidationCallbackAsync()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -38,15 +38,15 @@ namespace System.Net.Security
     public delegate bool RemoteCertificateValidationCallback(object sender, object certificate, object chain, object sslPolicyErrors);
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -64,9 +64,8 @@ namespace System.Net.Http
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

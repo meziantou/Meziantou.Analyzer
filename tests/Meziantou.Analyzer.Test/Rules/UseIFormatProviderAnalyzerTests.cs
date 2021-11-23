@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class UseIFormatProviderAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<UseIFormatProviderAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Int32ToStringWithCultureInfo_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+public sealed class UseIFormatProviderAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<UseIFormatProviderAnalyzer>();
+    }
+
+    [Fact]
+    public async Task Int32ToStringWithCultureInfo_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -24,15 +24,15 @@ class TypeName
         1.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -40,16 +40,16 @@ class TypeName
         [||]1.ToString();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task BooleanToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task BooleanToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -57,15 +57,15 @@ class TypeName
         true.ToString();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SystemGuidToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task SystemGuidToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -74,15 +74,15 @@ class TypeName
         default(System.Guid).ToString(""D"");
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SystemCharToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task SystemCharToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -90,15 +90,15 @@ class TypeName
         ' '.ToString();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -107,17 +107,17 @@ class TypeName
         [||]int.Parse("""", System.Globalization.NumberStyles.Any);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -125,16 +125,16 @@ class TypeName
         [||]float.TryParse("""", out _);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task DateTimeTryParseWithoutCultureInfo_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task DateTimeTryParseWithoutCultureInfo_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -142,16 +142,16 @@ class TypeName
         [||]System.DateTime.TryParse("""", out _);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task DateTimeOffsetTryParseWithoutCultureInfo_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task DateTimeOffsetTryParseWithoutCultureInfo_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -159,16 +159,16 @@ class TypeName
         [||]System.DateTimeOffset.TryParse("""", out _);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task StringToLower_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task StringToLower_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -176,16 +176,16 @@ class TypeName
         [||]"""".ToLower();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'ToLower' that has a 'System.Globalization.CultureInfo' parameter")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'ToLower' that has a 'System.Globalization.CultureInfo' parameter")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task StringBuilderAppendFormat_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task StringBuilderAppendFormat_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -193,16 +193,16 @@ class TypeName
         [||]new System.Text.StringBuilder().AppendFormat(""{0}"", 10);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'AppendFormat' that has a 'System.IFormatProvider' parameter")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'AppendFormat' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task EnumValueToString()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task EnumValueToString()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -216,15 +216,15 @@ enum A
    Value1
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task EnumToString()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task EnumToString()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test(System.Enum value)
@@ -233,15 +233,15 @@ class TypeName
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task InvariantDateTimeFormat()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task InvariantDateTimeFormat()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -261,14 +261,14 @@ class TypeName
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-        [Fact]
-        public async Task DateTimeToString()
-        {
-            const string SourceCode = @"
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    [Fact]
+    public async Task DateTimeToString()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -277,15 +277,15 @@ class TypeName
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task DateTimeTryParseInvariantFormat()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task DateTimeTryParseInvariantFormat()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -304,10 +304,9 @@ class TypeName
         System.DateTimeOffset.TryParse(""u"", out _);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+
 }

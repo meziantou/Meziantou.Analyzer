@@ -2,42 +2,41 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.NonConstantStaticFieldsShouldNotBeVisible,
+        title: "Non-constant static fields should not be visible",
+        messageFormat: "Non-constant static fields should not be visible",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.NonConstantStaticFieldsShouldNotBeVisible));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.NonConstantStaticFieldsShouldNotBeVisible,
-            title: "Non-constant static fields should not be visible",
-            messageFormat: "Non-constant static fields should not be visible",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.NonConstantStaticFieldsShouldNotBeVisible));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.Field);
+    }
 
-        public override void Initialize(AnalysisContext context)
-        {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    {
+        var symbol = (IFieldSymbol)context.Symbol;
+        if (!symbol.IsStatic || symbol.IsReadOnly || symbol.IsConst || !symbol.IsVisibleOutsideOfAssembly())
+            return;
 
-            context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.Field);
-        }
+        // Skip enumerations
+        if (symbol.ContainingSymbol is INamedTypeSymbol typeSymbol && typeSymbol.EnumUnderlyingType != null)
+            return;
 
-        private static void AnalyzeSymbol(SymbolAnalysisContext context)
-        {
-            var symbol = (IFieldSymbol)context.Symbol;
-            if (!symbol.IsStatic || symbol.IsReadOnly || symbol.IsConst || !symbol.IsVisibleOutsideOfAssembly())
-                return;
-
-            // Skip enumerations
-            if (symbol.ContainingSymbol is INamedTypeSymbol typeSymbol && typeSymbol.EnumUnderlyingType != null)
-                return;
-
-            context.ReportDiagnostic(s_rule, symbol);
-        }
+        context.ReportDiagnostic(s_rule, symbol);
     }
 }

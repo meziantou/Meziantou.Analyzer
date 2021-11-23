@@ -3,22 +3,22 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class UseStringComparerAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-                .WithAnalyzer<UseStringComparerAnalyzer>()
-                .WithCodeFixProvider<UseStringComparerFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task HashSet_Int32_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+public sealed class UseStringComparerAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+            .WithAnalyzer<UseStringComparerAnalyzer>()
+            .WithCodeFixProvider<UseStringComparerFixer>();
+    }
+
+    [Fact]
+    public async Task HashSet_Int32_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -26,15 +26,15 @@ class TypeName
         new System.Collections.Generic.HashSet<int>();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SortedList_string_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task SortedList_string_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -43,7 +43,7 @@ class TypeName
     }
 }";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -51,16 +51,16 @@ class TypeName
         new System.Collections.Generic.SortedList<string, int>(System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task HashSet_String_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task HashSet_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -68,7 +68,7 @@ class TypeName
         [||]new System.Collections.Generic.HashSet<string>();
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -76,16 +76,16 @@ class TypeName
         new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
-        
-        [Fact]
-        public async Task HashSet_String__ShortNew_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HashSet_String__ShortNew_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -93,7 +93,7 @@ class TypeName
         System.Collections.Generic.HashSet<string> a = [||]new();
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -101,16 +101,16 @@ class TypeName
         System.Collections.Generic.HashSet<string> a = new(System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -118,15 +118,15 @@ class TypeName
         new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Dictionary_String_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Dictionary_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -134,7 +134,7 @@ class TypeName
         [||]new System.Collections.Generic.Dictionary<string, int>();
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -142,16 +142,16 @@ class TypeName
         new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ConcurrentDictionary_String_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ConcurrentDictionary_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -159,7 +159,7 @@ class TypeName
         [||]new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -167,16 +167,16 @@ class TypeName
         new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task EnumerableContains_String_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task EnumerableContains_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -185,7 +185,7 @@ class TypeName
         [||]obj.Contains("""");
     }
 }";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -194,16 +194,16 @@ class TypeName
         obj.Contains("""", System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task EnumerableToDictionary_String_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task EnumerableToDictionary_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -212,7 +212,7 @@ class TypeName
         [||]obj.ToDictionary(p => p);
     }
 }";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -221,16 +221,16 @@ class TypeName
         obj.ToDictionary(p => p, System.StringComparer.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task FindExtensionMethods()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task FindExtensionMethods()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -254,7 +254,7 @@ class Usage
     }
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -278,16 +278,16 @@ class Usage
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task HashSet_Contain()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task HashSet_Contain()
+    {
+        const string SourceCode = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -297,15 +297,15 @@ class TypeName
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ISet_Contain()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task ISet_Contain()
+    {
+        const string SourceCode = @"using System.Linq;
 class TypeName
 {
     public void Test()
@@ -315,10 +315,9 @@ class TypeName
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net6_0)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

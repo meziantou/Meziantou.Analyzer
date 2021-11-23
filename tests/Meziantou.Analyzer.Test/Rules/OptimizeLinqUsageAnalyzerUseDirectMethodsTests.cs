@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods)
-                .WithCodeFixProvider<OptimizeLinqUsageFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task FirstOrDefaultAsync()
-        {
-            const string SourceCode = @"using System.Linq;
+public sealed class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods)
+            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+    }
+
+    [Fact]
+    public async Task FirstOrDefaultAsync()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -31,7 +31,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -46,17 +46,17 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Count_IEnumerableAsync()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task Count_IEnumerableAsync()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -66,15 +66,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Count_ListAsync()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task Count_ListAsync()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -86,7 +86,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -98,17 +98,17 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use 'Count' instead of 'Count()'")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use 'Count' instead of 'Count()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Count_ICollectionExplicitImplementationAsync()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Count_ICollectionExplicitImplementationAsync()
+    {
+        const string SourceCode = @"
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -135,15 +135,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Count_ArrayAsync()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task Count_ArrayAsync()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -155,7 +155,7 @@ class Test
 }
 ";
 
-            const string Fix = @"using System.Linq;
+        const string Fix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -166,11 +166,10 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use 'Length' instead of 'Count()'")
-                  .ShouldFixCodeWith(Fix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use 'Length' instead of 'Count()'")
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
     }
 }

@@ -1,23 +1,22 @@
 ﻿using System.Collections.Generic;
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer;
+
+internal static class ListExtensions
 {
-    internal static class ListExtensions
+    public static void AddIfNotNull<T>(this IList<T> list, IEnumerable<T> items) where T : class
     {
-        public static void AddIfNotNull<T>(this IList<T> list, IEnumerable<T> items) where T : class
+        foreach (var item in items)
         {
-            foreach (var item in items)
-            {
-                AddIfNotNull(list, item);
-            }
+            AddIfNotNull(list, item);
         }
+    }
 
-        public static void AddIfNotNull<T>(this IList<T> list, T? item) where T : class
-        {
-            if (item is null)
-                return;
+    public static void AddIfNotNull<T>(this IList<T> list, T? item) where T : class
+    {
+        if (item is null)
+            return;
 
-            list.Add(item);
-        }
+        list.Add(item);
     }
 }

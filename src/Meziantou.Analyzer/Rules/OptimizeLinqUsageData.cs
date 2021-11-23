@@ -1,24 +1,23 @@
-﻿namespace Meziantou.Analyzer.Rules
+﻿namespace Meziantou.Analyzer.Rules;
+
+internal enum OptimizeLinqUsageData
 {
-    internal enum OptimizeLinqUsageData
-    {
-        None,
-        UseLengthProperty,
-        UseLongLengthProperty,
-        UseCountProperty,
-        UseFindMethod,
-        UseIndexer,
-        UseIndexerFirst,
-        UseIndexerLast,
-        DuplicatedOrderBy,
-        CombineWhereWithNextMethod,
-        UseFalse,
-        UseTrue,
-        UseAny,
-        UseNotAny,
-        UseTakeAndCount,
-        UseSkipAndNotAny,
-        UseSkipAndAny,
-        UseCastInsteadOfSelect,
-    }
+    None,
+    UseLengthProperty,
+    UseLongLengthProperty,
+    UseCountProperty,
+    UseFindMethod,
+    UseIndexer,
+    UseIndexerFirst,
+    UseIndexerLast,
+    DuplicatedOrderBy,
+    CombineWhereWithNextMethod,
+    UseFalse,
+    UseTrue,
+    UseAny,
+    UseNotAny,
+    UseTakeAndCount,
+    UseSkipAndNotAny,
+    UseSkipAndAny,
+    UseCastInsteadOfSelect,
 }

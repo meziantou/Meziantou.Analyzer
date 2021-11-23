@@ -2,21 +2,21 @@
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotUseEqualityComparerDefaultOfStringAnalyzer>()
-                .WithCodeFixProvider<DoNotUseEqualityComparerDefaultOfStringFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async System.Threading.Tasks.Task TestAsync()
-        {
-            const string SourceCode = @"using System.Collections.Generic;
+public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotUseEqualityComparerDefaultOfStringAnalyzer>()
+            .WithCodeFixProvider<DoNotUseEqualityComparerDefaultOfStringFixer>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task TestAsync()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
 class Test
 {
     internal void Sample()
@@ -26,7 +26,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"using System.Collections.Generic;
+        const string CodeFix = @"using System.Collections.Generic;
 class Test
 {
     internal void Sample()
@@ -36,10 +36,9 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
     }
 }

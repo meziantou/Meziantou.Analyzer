@@ -3,22 +3,22 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithTargetFramework(TargetFramework.NetStandard2_1)
-                .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042");
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Async_Wait_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetStandard2_1)
+            .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042");
+    }
+
+    [Fact]
+    public async Task Async_Wait_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -26,14 +26,14 @@ class Test
         [||]Task.Delay(1).Wait();
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Async_Result_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Async_Result_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -41,14 +41,14 @@ class Test
         _ = [||]Task.FromResult(1).Result;
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Async_ValueTask_Result_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Async_ValueTask_Result_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -56,14 +56,14 @@ class Test
         _ = [||]new ValueTask<int>(10).Result;
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Async_ValueTask_GetAwaiter_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Async_ValueTask_GetAwaiter_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -71,14 +71,14 @@ class Test
         _ = [||]new ValueTask<int>(10).GetAwaiter().GetResult();
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Async_ThreadSleep_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Async_ThreadSleep_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -86,14 +86,14 @@ class Test
         [||]System.Threading.Thread.Sleep(1);
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Async_SuggestOverload_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Async_SuggestOverload_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -104,14 +104,14 @@ class Test
     public void Write() => throw null;
     public Task Write(System.Threading.CancellationToken cancellationToken) => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Async_AsyncSuffix_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Async_AsyncSuffix_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -122,14 +122,14 @@ class Test
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Async_NoOverload_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Async_NoOverload_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -140,14 +140,14 @@ class Test
     public void Write() => throw null;
     public void WriteAsync() => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AsyncLambda_Overload_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task AsyncLambda_Overload_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -158,14 +158,14 @@ class Test
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AsyncLocalFunction_Overload_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task AsyncLocalFunction_Overload_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public void A()
@@ -178,14 +178,14 @@ class Test
     public void Write() => throw null;
     public Task WriteAsync() => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public void A()
@@ -198,16 +198,16 @@ class Test
     public void Write() => throw null;
     public ValueTask WriteAsync() => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/169")]
-        public async Task AsyncMethodWithAsyncOverload()
-        {
-            await CreateProjectBuilder()
-                    .AddSystemTextJson()
-                    .WithSourceCode(@"
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/169")]
+    public async Task AsyncMethodWithAsyncOverload()
+    {
+        await CreateProjectBuilder()
+                .AddSystemTextJson()
+                .WithSourceCode(@"
 using System;
 using System.IO;
 using System.Text.Json;
@@ -225,14 +225,14 @@ class Program
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Method_NoOverload_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Method_NoOverload_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -243,14 +243,14 @@ class Test
     public void Write() => throw null;
     public void Write(System.Threading.CancellationToken cancellationToken) => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Method_NoOverloadWithSameParameters_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Method_NoOverloadWithSameParameters_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -261,14 +261,14 @@ class Test
     public void Write() => throw null;
     public Task Write(int a) => throw null;
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Console_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Threading.Tasks;
+    [Fact]
+    public async Task Console_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
 class Test
 {
     public async Task A()
@@ -282,15 +282,15 @@ class Test
         System.Console.Error.Flush();
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ProcessWaitForExit_NET5()
-        {
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net5_0)
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task ProcessWaitForExit_NET5()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net5_0)
+              .WithSourceCode(@"
 using System.Threading.Tasks;
 using System.Diagnostics;
 
@@ -302,15 +302,15 @@ class Test
         process.WaitForExit();
     }
 }")
-                  .ValidateAsync();
-        }
-        
-        [Fact]
-        public async Task ProcessWaitForExit_NET6()
-        {
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net6_0)
-                  .WithSourceCode(@"
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ProcessWaitForExit_NET6()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(@"
 using System.Threading.Tasks;
 using System.Diagnostics;
 
@@ -322,15 +322,15 @@ class Test
         [||]process.WaitForExit();
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Using_NoDiagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task Using_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+              .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -349,14 +349,14 @@ class Test
         public void Dispose() => throw null;
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Using_Diagnostic()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task Using_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -381,14 +381,14 @@ class Test
         public ValueTask DisposeAsync() => throw null;
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ExtensionMethod()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task ExtensionMethod()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -416,15 +416,15 @@ class demo
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CreateAsyncScope()
-        {
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.AspNetCore6_0_rc2)
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task CreateAsyncScope()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore6_0_rc2)
+              .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -439,15 +439,15 @@ class demo
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CreateAsyncScope_net5()
-        {
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.AspNetCore5_0)
-                  .WithSourceCode(@"
+    [Fact]
+    public async Task CreateAsyncScope_net5()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore5_0)
+              .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -461,7 +461,6 @@ class demo
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
     }
 }

@@ -6,82 +6,81 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.FileNameMustMatchTypeName,
+        title: "File name must match type name",
+        messageFormat: "File name must match type name",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FileNameMustMatchTypeName));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.FileNameMustMatchTypeName,
-            title: "File name must match type name",
-            messageFormat: "File name must match type name",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FileNameMustMatchTypeName));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+    }
 
-        public override void Initialize(AnalysisContext context)
+    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    {
+        var symbol = (INamedTypeSymbol)context.Symbol;
+        if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains('$', StringComparison.Ordinal))
+            return;
+
+        foreach (var location in symbol.Locations)
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            if (!location.IsInSource || string.IsNullOrEmpty(location.SourceTree?.FilePath))
+                continue;
 
-            context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
-        }
+            // Nested type
+            if (symbol.ContainingType != null)
+                continue;
 
-        private static void AnalyzeSymbol(SymbolAnalysisContext context)
-        {
-            var symbol = (INamedTypeSymbol)context.Symbol;
-            if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains('$', StringComparison.Ordinal))
-                return;
+            var filePath = location.SourceTree?.FilePath;
+            var fileName = filePath == null ? null : GetFileName(filePath);
+            var symbolName = symbol.Name;
+            if (string.Equals(fileName, symbolName, StringComparison.OrdinalIgnoreCase))
+                continue;
 
-            foreach (var location in symbol.Locations)
+            if (symbol.Arity > 0)
             {
-                if (!location.IsInSource || string.IsNullOrEmpty(location.SourceTree?.FilePath))
+                // Type`1
+                if (string.Equals(fileName, symbolName + "`" + symbol.Arity.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Nested type
-                if (symbol.ContainingType != null)
+                // Type{T}
+                if (string.Equals(fileName, symbolName + '{' + string.Join(",", symbol.TypeParameters.Select(t => t.Name)) + '}', StringComparison.OrdinalIgnoreCase))
                     continue;
-
-                var filePath = location.SourceTree?.FilePath;
-                var fileName = filePath == null ? null : GetFileName(filePath);
-                var symbolName = symbol.Name;
-                if (string.Equals(fileName, symbolName, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                if (symbol.Arity > 0)
-                {
-                    // Type`1
-                    if (string.Equals(fileName, symbolName + "`" + symbol.Arity.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    // Type{T}
-                    if (string.Equals(fileName, symbolName + '{' + string.Join(",", symbol.TypeParameters.Select(t => t.Name)) + '}', StringComparison.OrdinalIgnoreCase))
-                        continue;
-                }
-
-                if (symbol.Arity == 1)
-                {
-                    // TypeOfT
-                    if (string.Equals(fileName, symbolName + "OfT", StringComparison.OrdinalIgnoreCase))
-                        continue;
-                }
-
-                context.ReportDiagnostic(s_rule, location);
             }
-        }
 
-        private static string GetFileName(string filePath)
-        {
-            var fileName = Path.GetFileName(filePath);
-            var index = fileName.IndexOf('.', StringComparison.Ordinal);
-            if (index < 0)
-                return fileName;
+            if (symbol.Arity == 1)
+            {
+                // TypeOfT
+                if (string.Equals(fileName, symbolName + "OfT", StringComparison.OrdinalIgnoreCase))
+                    continue;
+            }
 
-            return fileName.Substring(0, index);
+            context.ReportDiagnostic(s_rule, location);
         }
+    }
+
+    private static string GetFileName(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        var index = fileName.IndexOf('.', StringComparison.Ordinal);
+        if (index < 0)
+            return fileName;
+
+        return fileName.Substring(0, index);
     }
 }

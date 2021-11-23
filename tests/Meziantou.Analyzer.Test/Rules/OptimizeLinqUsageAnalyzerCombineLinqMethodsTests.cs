@@ -3,31 +3,31 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class OptimizeLinqUsageAnalyzerCombineLinqMethodsTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_CombineMethods)
-                .WithCodeFixProvider<OptimizeLinqUsageFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Theory]
-        [InlineData("Any")]
-        [InlineData("First")]
-        [InlineData("FirstOrDefault")]
-        [InlineData("Last")]
-        [InlineData("LastOrDefault")]
-        [InlineData("Single")]
-        [InlineData("SingleOrDefault")]
-        [InlineData("Count")]
-        [InlineData("LongCount")]
-        public async Task CombineWhereWithTheFollowingMethod(string methodName)
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+public sealed class OptimizeLinqUsageAnalyzerCombineLinqMethodsTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_CombineMethods)
+            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+    }
+
+    [Theory]
+    [InlineData("Any")]
+    [InlineData("First")]
+    [InlineData("FirstOrDefault")]
+    [InlineData("Last")]
+    [InlineData("LastOrDefault")]
+    [InlineData("Single")]
+    [InlineData("SingleOrDefault")]
+    [InlineData("Count")]
+    [InlineData("LongCount")]
+    public async Task CombineWhereWithTheFollowingMethod(string methodName)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -37,8 +37,8 @@ class Test
     }
 }
 ")
-                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with '{methodName}'")
-                  .ShouldFixCodeWith(@"using System.Linq;
+              .ShouldReportDiagnosticWithMessage($"Combine 'Where' with '{methodName}'")
+              .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
     public Test()
@@ -48,14 +48,14 @@ class Test
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CombineWhereWithTheFollowingWhereMethod()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Fact]
+    public async Task CombineWhereWithTheFollowingWhereMethod()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -65,8 +65,8 @@ class Test
     }
 }
 ")
-                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Where'")
-                  .ShouldFixCodeWith(@"using System.Linq;
+              .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Where'")
+              .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
     public Test()
@@ -76,14 +76,14 @@ class Test
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithNothing()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Fact]
+    public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithNothing()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -93,8 +93,8 @@ class Test
     }
 }
 ")
-                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Any'")
-                  .ShouldFixCodeWith(@"using System.Linq;
+              .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Any'")
+              .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
     public Test()
@@ -104,14 +104,14 @@ class Test
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithLambda()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Fact]
+    public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithLambda()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -121,8 +121,8 @@ class Test
     }
 }
 ")
-                  .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Any'")
-                  .ShouldFixCodeWith(@"using System.Linq;
+              .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Any'")
+              .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
     public Test()
@@ -132,14 +132,14 @@ class Test
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithNothing()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Fact]
+    public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithNothing()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -151,8 +151,8 @@ class Test
     bool Filter(int x) => true;
 }
 ")
-                  .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
-                  .ShouldFixCodeWith(@"using System.Linq;
+              .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
+              .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
     public Test()
@@ -164,14 +164,14 @@ class Test
     bool Filter(int x) => true;
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithMethodGroup()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Fact]
+    public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithMethodGroup()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -183,8 +183,8 @@ class Test
     bool Filter(int x) => true;
 }
 ")
-                  .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
-                  .ShouldFixCodeWith(@"using System.Linq;
+              .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
+              .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
     public Test()
@@ -196,14 +196,14 @@ class Test
     bool Filter(int x) => true;
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithLambda()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Fact]
+    public async Task CombineWhereWithTheFollowingMethod_CombineMethodGroupWithLambda()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -215,8 +215,8 @@ class Test
     bool Filter(int x) => true;
 }
 ")
-                  .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
-                  .ShouldFixCodeWith(@"using System.Linq;
+              .ShouldReportDiagnosticWithMessage("Combine 'Where' with 'Any'")
+              .ShouldFixCodeWith(@"using System.Linq;
 class Test
 {
     public Test()
@@ -228,14 +228,14 @@ class Test
     bool Filter(int x) => true;
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CombineWhereWithAny_DoNotReportForWhereWithIndex()
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Fact]
+    public async Task CombineWhereWithAny_DoNotReportForWhereWithIndex()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -247,7 +247,6 @@ class Test
     bool Filter(int x, int index) => true;
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
     }
 }

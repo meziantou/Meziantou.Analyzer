@@ -3,97 +3,97 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public class MakeMemberReadOnlyAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<MakeMemberReadOnlyAnalyzer>()
-                .WithCodeFixProvider<MakeMemberReadOnlyFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task CannotBeReadOnly_CSharp7()
-        {
-            const string SourceCode = @"
+public class MakeMemberReadOnlyAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<MakeMemberReadOnlyAnalyzer>()
+            .WithCodeFixProvider<MakeMemberReadOnlyFixer>();
+    }
+
+    [Fact]
+    public async Task CannotBeReadOnly_CSharp7()
+    {
+        const string SourceCode = @"
 struct Test
 {
     void A() { }
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7_3)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7_3)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_Class()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_Class()
+    {
+        const string SourceCode = @"
 class Test
 {
     int A => throw null;
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_ReadOnlyStruct()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_ReadOnlyStruct()
+    {
+        const string SourceCode = @"
 readonly struct Test
 {
     int A => throw null;
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_Constructor()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_Constructor()
+    {
+        const string SourceCode = @"
 struct Test
 {
     Test(int a) { }
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_StaticConstructor()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_StaticConstructor()
+    {
+        const string SourceCode = @"
 struct Test
 {
     static Test() { }
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_LocalFunction()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_LocalFunction()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -108,15 +108,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_Delegate()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_Delegate()
+    {
+        const string SourceCode = @"
 using System.Linq;
 struct Test
 {
@@ -130,15 +130,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_ReadOnlyStructMethod()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_ReadOnlyStructMethod()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -146,15 +146,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_ReadOnlyStructProperty()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_ReadOnlyStructProperty()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -162,60 +162,60 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_Events()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_Events()
+    {
+        const string SourceCode = @"
 struct Test
 {
     event System.Action<System.EventArgs> MyEvent;
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_StaticMethod()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_StaticMethod()
+    {
+        const string SourceCode = @"
 struct Test
 {
     static void A() { }
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_StaticProperty()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_StaticProperty()
+    {
+        const string SourceCode = @"
 struct Test
 {
     static int A => 0;
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_ReadOnlyStructPropertyGetter()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_ReadOnlyStructPropertyGetter()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -227,30 +227,30 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_SetThis()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_SetThis()
+    {
+        const string SourceCode = @"
 struct Test
 {
     void A() => this = default;
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_SetField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_SetField()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -258,15 +258,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_MethodBlock_SetField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_MethodBlock_SetField()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -274,15 +274,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadOnly_CallNonReadOnlyMember()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadOnly_CallNonReadOnlyMember()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -292,15 +292,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_MethodReferenceField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_MethodReferenceField()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -308,7 +308,7 @@ struct Test
     int [||]A() => a;
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     int a;
@@ -317,16 +317,16 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_PropertyGetOnlyReferenceField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_PropertyGetOnlyReferenceField()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -334,7 +334,7 @@ struct Test
     int [||]A => a;
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     int a;
@@ -342,16 +342,16 @@ struct Test
     readonly int A => a;
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_PropertyFullGetterAndSetterReferenceField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_PropertyFullGetterAndSetterReferenceField()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -363,7 +363,7 @@ struct Test
     }
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     int a;
@@ -376,16 +376,16 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldBatchFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldBatchFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_PropertyFullSetterReferenceField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_PropertyFullSetterReferenceField()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -397,7 +397,7 @@ struct Test
     }
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     int a;
@@ -410,16 +410,16 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_PropertyFullGetterReferenceField()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_PropertyFullGetterReferenceField()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -430,7 +430,7 @@ struct Test
     }
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     int a;
@@ -441,16 +441,16 @@ struct Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_SetArrayValue()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_SetArrayValue()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int[] a;
@@ -461,7 +461,7 @@ struct Test
     }
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     int[] a;
@@ -472,16 +472,16 @@ struct Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_CallReadOnlyMember()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_CallReadOnlyMember()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int a;
@@ -490,7 +490,7 @@ struct Test
     void [||]B() => A();
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     int a;
@@ -500,16 +500,16 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CanBeReadOnly_Event()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CanBeReadOnly_Event()
+    {
+        const string SourceCode = @"
 struct Test
 {
     public event System.Action<System.EventArgs> Event1
@@ -519,7 +519,7 @@ struct Test
     }
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 struct Test
 {
     public readonly event System.Action<System.EventArgs> Event1
@@ -530,16 +530,16 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldBatchFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldBatchFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadonly_CallNonReadOnlyMethod()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadonly_CallNonReadOnlyMethod()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int _a;
@@ -549,15 +549,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadonly_CallNonReadOnlyPropertyGetFromMethod()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadonly_CallNonReadOnlyPropertyGetFromMethod()
+    {
+        const string SourceCode = @"
 struct Test
 {
     int _a;
@@ -567,15 +567,15 @@ struct Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CannotBeReadonly_AccessNonReadOnlyMember()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CannotBeReadonly_AccessNonReadOnlyMember()
+    {
+        const string SourceCode = @"
 using System;
 internal ref struct PathReader
 {
@@ -596,10 +596,9 @@ internal ref struct PathReader
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithTargetFramework(TargetFramework.Net5_0)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net5_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

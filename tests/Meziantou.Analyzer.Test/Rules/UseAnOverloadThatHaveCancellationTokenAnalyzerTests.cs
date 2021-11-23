@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<UseAnOverloadThatHaveCancellationTokenAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task CallingMethodWithoutCancellationToken_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<UseAnOverloadThatHaveCancellationTokenAnalyzer>();
+    }
+
+    [Fact]
+    public async Task CallingMethodWithoutCancellationToken_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A()
@@ -27,15 +27,15 @@ class Test
     public void MethodWithCancellationToken() => throw null;
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithDefaultValueWithoutCancellationToken_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A()
@@ -45,15 +45,15 @@ class Test
 
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithCancellationToken_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithCancellationToken_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A()
@@ -64,15 +64,15 @@ class Test
     public void MethodWithCancellationToken() => throw null;
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithATaskInContext_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithATaskInContext_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A(System.Threading.Tasks.Task task)
@@ -84,16 +84,16 @@ class Test
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }";
 
-            // Should not report MA0040 with task.Factory.CancellationToken
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        // Should not report MA0040 with task.Factory.CancellationToken
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithATaskOfTInContext_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithATaskOfTInContext_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A(System.Threading.Tasks.Task<int> task)
@@ -104,15 +104,15 @@ class Test
     public void MethodWithCancellationToken() => throw null;
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterName()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithCancellationToken_ShouldReportDiagnosticWithParameterName()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A(System.Threading.CancellationToken cancellationToken)
@@ -123,16 +123,16 @@ class Test
     public void MethodWithCancellationToken() => throw null;
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: cancellationToken")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: cancellationToken")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithObjectThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
+    {
+        const string SourceCode = @"
 class Test
 {
     public static void A(HttpRequest request)
@@ -148,16 +148,16 @@ class HttpRequest
 {
     public System.Threading.CancellationToken RequestAborted { get; }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithProperty_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithProperty_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test : ControllerBase
 {
     public void A()
@@ -180,16 +180,16 @@ class HttpContext
 {
     public System.Threading.CancellationToken RequestAborted { get; }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethodWithInstanceProperty_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethodWithInstanceProperty_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public static void A()
@@ -208,16 +208,16 @@ class HttpContext
 {
     public System.Threading.CancellationToken RequestAborted { get; }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CallingMethod_ShouldReportDiagnosticWithVariables()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task CallingMethod_ShouldReportDiagnosticWithVariables()
+    {
+        const string SourceCode = @"
 class Test
 {
     public static void A()
@@ -234,16 +234,16 @@ class Test
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task CancellationTokenSourceCreate_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"using System.Threading;
+    [Fact]
+    public async Task CancellationTokenSourceCreate_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading;
 class Test
 {
     public static void A()
@@ -254,15 +254,15 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OverloadWithMultipleParametersOfSameType()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task OverloadWithMultipleParametersOfSameType()
+    {
+        const string SourceCode = @"
 class Test
 {
     public static void A()
@@ -274,15 +274,15 @@ class Test
     public static void Sample(string a, string b) { }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AwaitForEach()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AwaitForEach()
+    {
+        const string SourceCode = @"
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Threading;
@@ -304,16 +304,16 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .AddAsyncInterfaceApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddAsyncInterfaceApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AwaitForEach_IAsyncEnumerable()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AwaitForEach_IAsyncEnumerable()
+    {
+        const string SourceCode = @"
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Threading;
@@ -330,16 +330,16 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .AddAsyncInterfaceApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddAsyncInterfaceApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AwaitForEach_IAsyncEnumerable_WithCancellation()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AwaitForEach_IAsyncEnumerable_WithCancellation()
+    {
+        const string SourceCode = @"
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Threading;
@@ -356,16 +356,16 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .AddAsyncInterfaceApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddAsyncInterfaceApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AwaitForEach_IAsyncEnumerable_WithCancellationAndConfigureAwait()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AwaitForEach_IAsyncEnumerable_WithCancellationAndConfigureAwait()
+    {
+        const string SourceCode = @"
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Threading;
@@ -382,16 +382,16 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .AddAsyncInterfaceApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddAsyncInterfaceApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AwaitForEach_NoNeedForCancellationToken()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AwaitForEach_NoNeedForCancellationToken()
+    {
+        const string SourceCode = @"
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Threading;
@@ -413,16 +413,16 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .AddAsyncInterfaceApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddAsyncInterfaceApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task DisposeAsync_NoNeedForCancellationToken()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task DisposeAsync_NoNeedForCancellationToken()
+    {
+        const string SourceCode = @"
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Threading;
@@ -442,16 +442,16 @@ class Test : System.IAsyncDisposable
 }
 ";
 
-            await CreateProjectBuilder()
-                  .AddAsyncInterfaceApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddAsyncInterfaceApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ExtensionMethodOnCancellationToken_NoNeedForCancellationToken()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ExtensionMethodOnCancellationToken_NoNeedForCancellationToken()
+    {
+        const string SourceCode = @"
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -469,9 +469,8 @@ static class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿#pragma warning disable CA1812
+using System.IO.Compression;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;

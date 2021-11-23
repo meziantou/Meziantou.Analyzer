@@ -3,24 +3,24 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class UseArrayEmptyAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<UseArrayEmptyAnalyzer>()
-                .WithCodeFixProvider<UseArrayEmptyFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Theory]
-        [InlineData("new int[0]")]
-        [InlineData("new int[] { }")]
-        public async Task EmptyArray_ShouldReportError(string code)
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode($@"
+public sealed class UseArrayEmptyAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<UseArrayEmptyAnalyzer>()
+            .WithCodeFixProvider<UseArrayEmptyFixer>();
+    }
+
+    [Theory]
+    [InlineData("new int[0]")]
+    [InlineData("new int[] { }")]
+    public async Task EmptyArray_ShouldReportError(string code)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($@"
 class TestClass
 {{
     void Test()
@@ -28,7 +28,7 @@ class TestClass
         var a = [||]{code};
     }}
 }}")
-                  .ShouldFixCodeWith(@"
+              .ShouldFixCodeWith(@"
 class TestClass
 {
     void Test()
@@ -36,16 +36,16 @@ class TestClass
         var a = System.Array.Empty<int>();
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Theory]
-        [InlineData("new int[1]")]
-        [InlineData("new int[] { 0 }")]
-        public async Task NonEmptyArray_ShouldReportError(string code)
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode($@"
+    [Theory]
+    [InlineData("new int[1]")]
+    [InlineData("new int[] { 0 }")]
+    public async Task NonEmptyArray_ShouldReportError(string code)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($@"
 class TestClass
 {{
     void Test()
@@ -53,13 +53,13 @@ class TestClass
         var a = {code};
     }}
 }}")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Length_ShouldNotReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Length_ShouldNotReportError()
+    {
+        const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -68,15 +68,15 @@ class TestClass
         var a = new int[length];
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ParamsMethod_ShouldNotReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ParamsMethod_ShouldNotReportError()
+    {
+        const string SourceCode = @"
 public class TestClass
 {
     public void Test(params string[] values)
@@ -88,23 +88,22 @@ public class TestClass
         Test();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task EmptyArrayInAttribute_ShouldNotReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task EmptyArrayInAttribute_ShouldNotReportError()
+    {
+        const string SourceCode = @"
 [Test(new int[0])]
 class TestAttribute : System.Attribute
 {
     public TestAttribute(int[] data) { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

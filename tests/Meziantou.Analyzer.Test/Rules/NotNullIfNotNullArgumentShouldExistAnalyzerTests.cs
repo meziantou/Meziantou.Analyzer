@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class NotNullIfNotNullArgumentShouldExistAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<NotNullIfNotNullArgumentShouldExistAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task ParameterDoesNotExist()
-        {
-            const string SourceCode = @"
+public sealed class NotNullIfNotNullArgumentShouldExistAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<NotNullIfNotNullArgumentShouldExistAnalyzer>();
+    }
+
+    [Fact]
+    public async Task ParameterDoesNotExist()
+    {
+        const string SourceCode = @"
 class Test
 {
     [[|System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(""unknown"")|]]
@@ -30,15 +30,15 @@ namespace System.Diagnostics.CodeAnalysis
         public NotNullIfNotNullAttribute (string parameterName) => throw null;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ParameterExists()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ParameterExists()
+    {
+        const string SourceCode = @"
 class Test
 {
     [System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(""a"")]
@@ -52,10 +52,9 @@ namespace System.Diagnostics.CodeAnalysis
         public NotNullIfNotNullAttribute (string parameterName) => throw null;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+
 }

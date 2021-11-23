@@ -2,41 +2,40 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.EventArgsNameShouldEndWithEventArgs,
+        title: "Class name should end with 'EventArgs'",
+        messageFormat: "Class name should end with 'EventArgs'",
+        RuleCategories.Naming,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EventArgsNameShouldEndWithEventArgs));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.EventArgsNameShouldEndWithEventArgs,
-            title: "Class name should end with 'EventArgs'",
-            messageFormat: "Class name should end with 'EventArgs'",
-            RuleCategories.Naming,
-            DiagnosticSeverity.Info,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EventArgsNameShouldEndWithEventArgs));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+    }
 
-        public override void Initialize(AnalysisContext context)
+    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    {
+        var symbol = (INamedTypeSymbol)context.Symbol;
+        if (symbol.Name == null)
+            return;
+
+        if (!symbol.Name.EndsWith("EventArgs", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.EventArgs")))
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-            context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
-        }
-
-        private static void AnalyzeSymbol(SymbolAnalysisContext context)
-        {
-            var symbol = (INamedTypeSymbol)context.Symbol;
-            if (symbol.Name == null)
-                return;
-
-            if (!symbol.Name.EndsWith("EventArgs", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.EventArgs")))
-            {
-                context.ReportDiagnostic(s_rule, symbol);
-            }
+            context.ReportDiagnostic(s_rule, symbol);
         }
     }
 }

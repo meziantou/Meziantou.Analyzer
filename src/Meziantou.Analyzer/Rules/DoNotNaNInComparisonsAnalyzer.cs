@@ -4,79 +4,78 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.DoNotNaNInComparisons,
+        title: "NaN should not be used in comparisons",
+        messageFormat: "{0}.NaN should not be used in comparisons",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotNaNInComparisons));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.DoNotNaNInComparisons,
-            title: "NaN should not be used in comparisons",
-            messageFormat: "{0}.NaN should not be used in comparisons",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotNaNInComparisons));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
-
-        public override void Initialize(AnalysisContext context)
+        context.RegisterCompilationStartAction(ctx =>
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeBinaryOperator, OperationKind.Binary);
+        });
+    }
 
-            context.RegisterCompilationStartAction(ctx =>
-            {
-                var analyzerContext = new AnalyzerContext(ctx.Compilation);
-                ctx.RegisterOperationAction(analyzerContext.AnalyzeBinaryOperator, OperationKind.Binary);
-            });
+    private sealed class AnalyzerContext
+    {
+        public ISymbol? DoubleNaN { get; }
+        public ISymbol? SingleNaN { get; }
+        public ISymbol? HalfNaN { get; }
+
+        public AnalyzerContext(Compilation compilation)
+        {
+            DoubleNaN = compilation.GetTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
+            SingleNaN = compilation.GetTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
+            HalfNaN = compilation.GetTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
         }
 
-        private sealed class AnalyzerContext
+        public void AnalyzeBinaryOperator(OperationAnalysisContext context)
         {
-            public ISymbol? DoubleNaN { get; }
-            public ISymbol? SingleNaN { get; }
-            public ISymbol? HalfNaN { get; }
-
-            public AnalyzerContext(Compilation compilation)
+            var operation = (IBinaryOperation)context.Operation;
+            if (operation.OperatorKind == BinaryOperatorKind.Equals || operation.OperatorKind == BinaryOperatorKind.NotEquals)
             {
-                DoubleNaN = compilation.GetTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
-                SingleNaN = compilation.GetTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
-                HalfNaN = compilation.GetTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
+                AnalyzeOperand(context, operation.LeftOperand);
+                AnalyzeOperand(context, operation.RightOperand);
+            }
+        }
+
+        private void AnalyzeOperand(OperationAnalysisContext context, IOperation operation)
+        {
+            while (operation is IConversionOperation conversion)
+            {
+                operation = conversion.Operand;
             }
 
-            public void AnalyzeBinaryOperator(OperationAnalysisContext context)
+            if (operation is IMemberReferenceOperation memberReference)
             {
-                var operation = (IBinaryOperation)context.Operation;
-                if (operation.OperatorKind == BinaryOperatorKind.Equals || operation.OperatorKind == BinaryOperatorKind.NotEquals)
+                if (memberReference.Member.IsEqualTo(DoubleNaN))
                 {
-                    AnalyzeOperand(context, operation.LeftOperand);
-                    AnalyzeOperand(context, operation.RightOperand);
+                    context.ReportDiagnostic(s_rule, operation, "System.Double");
                 }
-            }
-
-            private void AnalyzeOperand(OperationAnalysisContext context, IOperation operation)
-            {
-                while (operation is IConversionOperation conversion)
+                else if (memberReference.Member.IsEqualTo(SingleNaN))
                 {
-                    operation = conversion.Operand;
+                    context.ReportDiagnostic(s_rule, operation, "System.Single");
                 }
-
-                if (operation is IMemberReferenceOperation memberReference)
+                else if (memberReference.Member.IsEqualTo(HalfNaN))
                 {
-                    if (memberReference.Member.IsEqualTo(DoubleNaN))
-                    {
-                        context.ReportDiagnostic(s_rule, operation, "System.Double");
-                    }
-                    else if (memberReference.Member.IsEqualTo(SingleNaN))
-                    {
-                        context.ReportDiagnostic(s_rule, operation, "System.Single");
-                    }
-                    else if (memberReference.Member.IsEqualTo(HalfNaN))
-                    {
-                        context.ReportDiagnostic(s_rule, operation, "System.Half");
-                    }
+                    context.ReportDiagnostic(s_rule, operation, "System.Half");
                 }
             }
         }

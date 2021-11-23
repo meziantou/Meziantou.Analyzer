@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<LocalVariablesShouldNotHideSymbolsAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task LocalVariableHideField()
-        {
-            const string SourceCode = @"
+public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<LocalVariablesShouldNotHideSymbolsAnalyzer>();
+    }
+
+    [Fact]
+    public async Task LocalVariableHideField()
+    {
+        const string SourceCode = @"
 class Test
 {
     string a;
@@ -26,15 +26,15 @@ class Test
         var [|a|] = 10;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LocalVariableHideProperty()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LocalVariableHideProperty()
+    {
+        const string SourceCode = @"
 class Test
 {
     string Prop {get;set;}
@@ -44,15 +44,15 @@ class Test
         var [|Prop|] = 10;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LocalVariableHideVisibleFieldFromParentClass()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LocalVariableHideVisibleFieldFromParentClass()
+    {
+        const string SourceCode = @"
 class Base
 {
     protected string a;
@@ -65,15 +65,15 @@ class Test : Base
         var [|a|] = 10;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LocalVariableHideNotVisibleFieldFromParentClass()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LocalVariableHideNotVisibleFieldFromParentClass()
+    {
+        const string SourceCode = @"
 class Base
 {
     private string a;
@@ -86,15 +86,15 @@ class Test : Base
         var a = 10;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LocalVariableDoesNotHideSymbol()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task LocalVariableDoesNotHideSymbol()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -102,9 +102,8 @@ class Test
         var a = 10;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

@@ -2,41 +2,40 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.DontTagInstanceFieldsWithThreadStaticAttribute,
+        title: "Do not tag instance fields with ThreadStaticAttribute",
+        messageFormat: "Do not tag instance fields with ThreadStaticAttribute",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DontTagInstanceFieldsWithThreadStaticAttribute));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.DontTagInstanceFieldsWithThreadStaticAttribute,
-            title: "Do not tag instance fields with ThreadStaticAttribute",
-            messageFormat: "Do not tag instance fields with ThreadStaticAttribute",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DontTagInstanceFieldsWithThreadStaticAttribute));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        context.RegisterSymbolAction(Analyze, SymbolKind.Field);
+    }
 
-        public override void Initialize(AnalysisContext context)
+    private static void Analyze(SymbolAnalysisContext context)
+    {
+        var field = (IFieldSymbol)context.Symbol;
+        if (field.IsStatic)
+            return;
+
+        if (field.HasAttribute(context.Compilation.GetTypeByMetadataName("System.ThreadStaticAttribute")))
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-            context.RegisterSymbolAction(Analyze, SymbolKind.Field);
-        }
-
-        private static void Analyze(SymbolAnalysisContext context)
-        {
-            var field = (IFieldSymbol)context.Symbol;
-            if (field.IsStatic)
-                return;
-
-            if (field.HasAttribute(context.Compilation.GetTypeByMetadataName("System.ThreadStaticAttribute")))
-            {
-                context.ReportDiagnostic(s_rule, field);
-            }
+            context.ReportDiagnostic(s_rule, field);
         }
     }
 }

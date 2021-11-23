@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task NonPowerOfTwo()
-        {
-            const string SourceCode = @"
+public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer>();
+    }
+
+    [Fact]
+    public async Task NonPowerOfTwo()
+    {
+        const string SourceCode = @"
 [System.Flags]
 enum [||]Test : byte
 {
@@ -25,15 +25,15 @@ enum [||]Test : byte
     C = 5, // Non valid
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task PowerOfTwoOrCombination()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task PowerOfTwoOrCombination()
+    {
+        const string SourceCode = @"
 [System.Flags]
 enum Test : byte
 {
@@ -45,15 +45,15 @@ enum Test : byte
     F = 8,
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task PowerOfTwoOrCombinationUsingHexa()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task PowerOfTwoOrCombinationUsingHexa()
+    {
+        const string SourceCode = @"
 [System.Flags]
 enum Test
 {
@@ -65,9 +65,8 @@ enum Test
     F = 0x10,
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

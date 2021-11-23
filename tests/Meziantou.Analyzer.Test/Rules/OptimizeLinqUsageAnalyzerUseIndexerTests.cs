@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class OptimizeLinqUsageAnalyzerUseIndexerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.UseIndexerInsteadOfElementAt)
-                .WithCodeFixProvider<OptimizeLinqUsageFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task ElementAt_ListAsync()
-        {
-            const string SourceCode = @"using System.Linq;
+public sealed class OptimizeLinqUsageAnalyzerUseIndexerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.UseIndexerInsteadOfElementAt)
+            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+    }
+
+    [Fact]
+    public async Task ElementAt_ListAsync()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -28,7 +28,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -40,17 +40,17 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'ElementAt()'")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'ElementAt()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ElementAt_ArrayAsync()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task ElementAt_ArrayAsync()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -61,7 +61,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -72,17 +72,17 @@ class Test
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'ElementAt()'")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'ElementAt()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task First_ArrayAsync()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task First_ArrayAsync()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -93,7 +93,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -105,17 +105,17 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'First()'")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'First()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Last_Array()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task Last_Array()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -126,7 +126,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -138,17 +138,17 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Last_List()
-        {
-            const string SourceCode = @"using System.Linq;
+    [Fact]
+    public async Task Last_List()
+    {
+        const string SourceCode = @"using System.Linq;
 class Test
 {
     public Test()
@@ -159,7 +159,7 @@ class Test
     }
 }
 ";
-            const string CodeFix = @"using System.Linq;
+        const string CodeFix = @"using System.Linq;
 class Test
 {
     public Test()
@@ -171,11 +171,10 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
     }
 }

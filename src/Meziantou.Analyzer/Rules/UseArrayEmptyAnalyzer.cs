@@ -5,137 +5,136 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.UseArrayEmpty,
+        title: "Use Array.Empty<T>()",
+        messageFormat: "Use Array.Empty<T>()",
+        RuleCategories.Performance,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseArrayEmpty));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.UseArrayEmpty,
-            title: "Use Array.Empty<T>()",
-            messageFormat: "Use Array.Empty<T>()",
-            RuleCategories.Performance,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseArrayEmpty));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
-
-        public override void Initialize(AnalysisContext context)
+        context.RegisterCompilationStartAction(compilationContext =>
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            var typeSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.Array");
+            if (typeSymbol == null || typeSymbol.DeclaredAccessibility != Accessibility.Public)
+                return;
 
-            context.RegisterCompilationStartAction(compilationContext =>
+            if (typeSymbol.GetMembers("Empty").FirstOrDefault() is IMethodSymbol methodSymbol &&
+                methodSymbol.DeclaredAccessibility == Accessibility.Public &&
+                methodSymbol.IsStatic && methodSymbol.Arity == 1 && methodSymbol.Parameters.Length == 0)
             {
-                var typeSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.Array");
-                if (typeSymbol == null || typeSymbol.DeclaredAccessibility != Accessibility.Public)
-                    return;
-
-                if (typeSymbol.GetMembers("Empty").FirstOrDefault() is IMethodSymbol methodSymbol &&
-                    methodSymbol.DeclaredAccessibility == Accessibility.Public &&
-                    methodSymbol.IsStatic && methodSymbol.Arity == 1 && methodSymbol.Parameters.Length == 0)
-                {
-                    compilationContext.RegisterOperationAction(AnalyzeArrayCreationOperation, OperationKind.ArrayCreation);
-                }
-            });
-        }
-
-        private static void AnalyzeArrayCreationOperation(OperationAnalysisContext context)
-        {
-            var operation = (IArrayCreationOperation)context.Operation;
-            if (IsZeroLengthArrayCreation(operation))
-            {
-                // Cannot use Array.Empty<T>() as an attribute parameter
-                if (IsInAttribute(operation))
-                    return;
-
-                if (IsCompilerGeneratedParamsArray(operation, context))
-                    return;
-
-                context.ReportDiagnostic(s_rule, operation);
+                compilationContext.RegisterOperationAction(AnalyzeArrayCreationOperation, OperationKind.ArrayCreation);
             }
-        }
+        });
+    }
 
-        private static bool IsZeroLengthArrayCreation(IArrayCreationOperation operation)
+    private static void AnalyzeArrayCreationOperation(OperationAnalysisContext context)
+    {
+        var operation = (IArrayCreationOperation)context.Operation;
+        if (IsZeroLengthArrayCreation(operation))
         {
-            if (operation.DimensionSizes.Length != 1)
-                return false;
+            // Cannot use Array.Empty<T>() as an attribute parameter
+            if (IsInAttribute(operation))
+                return;
 
-            var dimensionSize = operation.DimensionSizes[0].ConstantValue;
-            return dimensionSize.HasValue && IsZero(dimensionSize.Value);
+            if (IsCompilerGeneratedParamsArray(operation, context))
+                return;
 
-            static bool IsZero(object? value)
-            {
-                return value switch
-                {
-                    int i => i == 0,
-                    long l => l == 0,
-                    uint ui => ui == 0,
-                    _ => false,
-                };
-            }
+            context.ReportDiagnostic(s_rule, operation);
         }
+    }
 
-        private static bool IsInAttribute(IArrayCreationOperation operation)
+    private static bool IsZeroLengthArrayCreation(IArrayCreationOperation operation)
+    {
+        if (operation.DimensionSizes.Length != 1)
+            return false;
+
+        var dimensionSize = operation.DimensionSizes[0].ConstantValue;
+        return dimensionSize.HasValue && IsZero(dimensionSize.Value);
+
+        static bool IsZero(object? value)
         {
-            return operation.Syntax.Ancestors().OfType<AttributeArgumentSyntax>().Any();
-        }
-
-        private static bool IsCompilerGeneratedParamsArray(IArrayCreationOperation arrayCreationExpression, OperationAnalysisContext context)
-        {
-            var semanticModel = context.Operation.SemanticModel!;
-
-            // Compiler generated array creation seems to just use the syntax from the parent.
-            var parent = semanticModel.GetOperation(arrayCreationExpression.Syntax, context.CancellationToken);
-            if (parent == null)
-                return false;
-
-            ISymbol? targetSymbol = null;
-            var arguments = ImmutableArray<IArgumentOperation>.Empty;
-            if (parent is IInvocationOperation invocation)
+            return value switch
             {
-                targetSymbol = invocation.TargetMethod;
-                arguments = invocation.Arguments;
-            }
-            else
-            {
-                if (parent is IObjectCreationOperation objectCreation)
-                {
-                    targetSymbol = objectCreation.Constructor;
-                    arguments = objectCreation.Arguments;
-                }
-                else if (parent is IPropertyReferenceOperation propertyReference)
-                {
-                    targetSymbol = propertyReference.Property;
-                    arguments = propertyReference.Arguments;
-                }
-            }
-
-            if (targetSymbol == null)
-                return false;
-
-            var parameters = GetParameters(targetSymbol);
-            if (parameters.Length == 0 || !parameters[parameters.Length - 1].IsParams)
-                return false;
-
-            // At this point the array creation is known to be compiler synthesized as part of a call
-            // to a method with a params parameter, and so it is probably sound to return true at this point.
-            // As a sanity check, verify that the last argument to the call is equivalent to the array creation.
-            // (Comparing for object identity does not work because the semantic model can return a fresh operation tree.)
-            var lastArgument = arguments.LastOrDefault();
-            return lastArgument != null && lastArgument.Value.Syntax == arrayCreationExpression.Syntax;
-        }
-
-        private static ImmutableArray<IParameterSymbol> GetParameters(ISymbol symbol)
-        {
-            return symbol.Kind switch
-            {
-                SymbolKind.Method => ((IMethodSymbol)symbol).Parameters,
-                SymbolKind.Property => ((IPropertySymbol)symbol).Parameters,
-                _ => ImmutableArray<IParameterSymbol>.Empty,
+                int i => i == 0,
+                long l => l == 0,
+                uint ui => ui == 0,
+                _ => false,
             };
         }
+    }
+
+    private static bool IsInAttribute(IArrayCreationOperation operation)
+    {
+        return operation.Syntax.Ancestors().OfType<AttributeArgumentSyntax>().Any();
+    }
+
+    private static bool IsCompilerGeneratedParamsArray(IArrayCreationOperation arrayCreationExpression, OperationAnalysisContext context)
+    {
+        var semanticModel = context.Operation.SemanticModel!;
+
+        // Compiler generated array creation seems to just use the syntax from the parent.
+        var parent = semanticModel.GetOperation(arrayCreationExpression.Syntax, context.CancellationToken);
+        if (parent == null)
+            return false;
+
+        ISymbol? targetSymbol = null;
+        var arguments = ImmutableArray<IArgumentOperation>.Empty;
+        if (parent is IInvocationOperation invocation)
+        {
+            targetSymbol = invocation.TargetMethod;
+            arguments = invocation.Arguments;
+        }
+        else
+        {
+            if (parent is IObjectCreationOperation objectCreation)
+            {
+                targetSymbol = objectCreation.Constructor;
+                arguments = objectCreation.Arguments;
+            }
+            else if (parent is IPropertyReferenceOperation propertyReference)
+            {
+                targetSymbol = propertyReference.Property;
+                arguments = propertyReference.Arguments;
+            }
+        }
+
+        if (targetSymbol == null)
+            return false;
+
+        var parameters = GetParameters(targetSymbol);
+        if (parameters.Length == 0 || !parameters[parameters.Length - 1].IsParams)
+            return false;
+
+        // At this point the array creation is known to be compiler synthesized as part of a call
+        // to a method with a params parameter, and so it is probably sound to return true at this point.
+        // As a sanity check, verify that the last argument to the call is equivalent to the array creation.
+        // (Comparing for object identity does not work because the semantic model can return a fresh operation tree.)
+        var lastArgument = arguments.LastOrDefault();
+        return lastArgument != null && lastArgument.Value.Syntax == arrayCreationExpression.Syntax;
+    }
+
+    private static ImmutableArray<IParameterSymbol> GetParameters(ISymbol symbol)
+    {
+        return symbol.Kind switch
+        {
+            SymbolKind.Method => ((IMethodSymbol)symbol).Parameters,
+            SymbolKind.Property => ((IPropertySymbol)symbol).Parameters,
+            _ => ImmutableArray<IParameterSymbol>.Empty,
+        };
     }
 }

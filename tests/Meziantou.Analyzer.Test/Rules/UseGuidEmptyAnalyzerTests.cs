@@ -3,23 +3,23 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class UseGuidEmptyAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<UseGuidEmptyAnalyzer>()
-                .WithCodeFixProvider<UseGuidEmptyFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Theory]
-        [InlineData("new System.Guid()")]
-        public async Task ShouldReportError(string code)
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode($@"
+public sealed class UseGuidEmptyAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<UseGuidEmptyAnalyzer>()
+            .WithCodeFixProvider<UseGuidEmptyFixer>();
+    }
+
+    [Theory]
+    [InlineData("new System.Guid()")]
+    public async Task ShouldReportError(string code)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($@"
 class TestClass
 {{
     void Test()
@@ -27,7 +27,7 @@ class TestClass
         _ = [||]{code};
     }}
 }}")
-                  .ShouldFixCodeWith(@"
+              .ShouldFixCodeWith(@"
 class TestClass
 {
     void Test()
@@ -35,15 +35,15 @@ class TestClass
         _ = System.Guid.Empty;
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Theory]
-        [InlineData("new System.Guid(\"\")")]
-        public async Task ShouldNotReportError(string code)
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode($@"
+    [Theory]
+    [InlineData("new System.Guid(\"\")")]
+    public async Task ShouldNotReportError(string code)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($@"
 class TestClass
 {{
     void Test()
@@ -51,7 +51,6 @@ class TestClass
         _ = {code};
     }}
 }}")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
     }
 }

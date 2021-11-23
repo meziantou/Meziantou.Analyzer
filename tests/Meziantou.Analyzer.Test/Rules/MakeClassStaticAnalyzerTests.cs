@@ -3,35 +3,35 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class MakeClassStaticAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<MakeClassStaticAnalyzer>()
-                .WithCodeFixProvider<MakeClassStaticFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task AbstractClass_NoDiagnostic()
-        {
-            const string SourceCode = @"
+public sealed class MakeClassStaticAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<MakeClassStaticAnalyzer>()
+            .WithCodeFixProvider<MakeClassStaticFixer>();
+    }
+
+    [Fact]
+    public async Task AbstractClass_NoDiagnostic()
+    {
+        const string SourceCode = @"
 abstract class AbstractClass
 {
     static void A() { }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Inherited_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Inherited_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     static void A() { }
@@ -39,91 +39,91 @@ class Test
 
 class Test2 : Test { }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task InstanceField_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task InstanceField_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test4
 {
     int _a;
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ImplementInterface_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ImplementInterface_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test : ITest
 {
 }
 
 interface ITest { }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task StaticMethodAndConstField_Diagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task StaticMethodAndConstField_Diagnostic()
+    {
+        const string SourceCode = @"
 public class [||]Test
 {
     const int a = 10;
     static void A() { }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 public static class Test
 {
     const int a = 10;
     static void A() { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ConversionOperator_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ConversionOperator_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public static implicit operator int(Test _) => 1;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AddOperator_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task AddOperator_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public static Test operator +(Test a, Test b) => throw null;
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ComImport_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ComImport_NoDiagnostic()
+    {
+        const string SourceCode = @"
 [System.Runtime.InteropServices.CoClass(typeof(Test))]
 interface ITest
 {
@@ -132,64 +132,64 @@ interface ITest
 class Test
 {
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Instantiation_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Instantiation_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public static void A() => new Test();
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MsTestClass_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MsTestClass_NoDiagnostic()
+    {
+        const string SourceCode = @"
 [Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
 class Test
 {
 }
 ";
-            await CreateProjectBuilder()
-                  .AddMSTestApi()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .AddMSTestApi()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task SealedClass_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task SealedClass_NoDiagnostic()
+    {
+        const string SourceCode = @"
 public sealed class [||]Test
 {
 }
 ";
-            const string CodeFix = @"
+        const string CodeFix = @"
 public static class Test
 {
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task GenericClass_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task GenericClass_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     static void A<T>() => throw null;
@@ -197,30 +197,30 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Array_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Array_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     static void A() => _ = new Test[0];
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task GenericObjectCreation_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task GenericObjectCreation_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     static void A() => new Test2<Test>();
@@ -231,15 +231,15 @@ class Test2<T>
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task GenericInvocation_NoDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task GenericInvocation_NoDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     static void A() => Test2.A<Test>();
@@ -251,60 +251,59 @@ static class Test2
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task FixShouldAddStaticBeforePartial()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task FixShouldAddStaticBeforePartial()
+    {
+        const string SourceCode = @"
 public partial class [||]Test
 {
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 public static partial class Test
 {
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task TopLevelStatement_9()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task TopLevelStatement_9()
+    {
+        const string SourceCode = @"
 System.Console.WriteLine();
 ";
 
-            await CreateProjectBuilder()
-                  .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
 #if CSHARP10_OR_GREATER
-        [Fact]
-        public async Task TopLevelStatement_10()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task TopLevelStatement_10()
+    {
+        const string SourceCode = @"
 System.Console.WriteLine();
 ";
 
-            await CreateProjectBuilder()
-                  .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-                  .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-#endif
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+#endif
 }

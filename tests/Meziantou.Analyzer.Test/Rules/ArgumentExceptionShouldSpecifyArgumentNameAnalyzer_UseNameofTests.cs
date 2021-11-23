@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameofTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0043")
-                .WithCodeFixProvider<ArgumentExceptionShouldSpecifyArgumentNameFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Property()
-        {
-            const string SourceCode = @"
+public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameofTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0043")
+            .WithCodeFixProvider<ArgumentExceptionShouldSpecifyArgumentNameFixer>();
+    }
+
+    [Fact]
+    public async Task Property()
+    {
+        const string SourceCode = @"
 class Sample
 {
     string Prop
@@ -27,7 +27,7 @@ class Sample
     }
 }";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 class Sample
 {
     string Prop
@@ -37,16 +37,16 @@ class Sample
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Method()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Method()
+    {
+        const string SourceCode = @"
 class Sample
 {
     string M(string arg0)
@@ -55,7 +55,7 @@ class Sample
     }
 }";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 class Sample
 {
     string M(string arg0)
@@ -64,16 +64,16 @@ class Sample
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Operator()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Operator()
+    {
+        const string SourceCode = @"
 class Sample
 {
     public static Sample operator +(Sample first, Sample second)
@@ -82,7 +82,7 @@ class Sample
     }
 }";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 class Sample
 {
     public static Sample operator +(Sample first, Sample second)
@@ -91,10 +91,9 @@ class Sample
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
     }
 }

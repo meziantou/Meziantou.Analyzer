@@ -4,57 +4,56 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine,
+        title: "String contains an implicit end of line character",
+        messageFormat: "String contains an implicit end of line character",
+        RuleCategories.Usage,
+        DiagnosticSeverity.Hidden,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine,
-            title: "String contains an implicit end of line character",
-            messageFormat: "String contains an implicit end of line character",
-            RuleCategories.Usage,
-            DiagnosticSeverity.Hidden,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        context.RegisterSyntaxNodeAction(AnalyzeStringLiteralExpression, SyntaxKind.StringLiteralExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeInterpolatedVerbatimStringStartToken, SyntaxKind.InterpolatedStringExpression);
+    }
 
-        public override void Initialize(AnalysisContext context)
+    private void AnalyzeInterpolatedVerbatimStringStartToken(SyntaxNodeAnalysisContext context)
+    {
+        var node = (InterpolatedStringExpressionSyntax)context.Node;
+        foreach (var item in node.Contents)
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-            context.RegisterSyntaxNodeAction(AnalyzeStringLiteralExpression, SyntaxKind.StringLiteralExpression);
-            context.RegisterSyntaxNodeAction(AnalyzeInterpolatedVerbatimStringStartToken, SyntaxKind.InterpolatedStringExpression);
-        }
-
-        private void AnalyzeInterpolatedVerbatimStringStartToken(SyntaxNodeAnalysisContext context)
-        {
-            var node = (InterpolatedStringExpressionSyntax)context.Node;
-            foreach (var item in node.Contents)
+            if (item is InterpolatedStringTextSyntax text)
             {
-                if (item is InterpolatedStringTextSyntax text)
+                var position = text.GetLocation().GetLineSpan();
+                if (position.StartLinePosition.Line != position.EndLinePosition.Line)
                 {
-                    var position = text.GetLocation().GetLineSpan();
-                    if (position.StartLinePosition.Line != position.EndLinePosition.Line)
-                    {
-                        context.ReportDiagnostic(s_rule, node);
-                        return;
-                    }
+                    context.ReportDiagnostic(s_rule, node);
+                    return;
                 }
             }
         }
+    }
 
-        private void AnalyzeStringLiteralExpression(SyntaxNodeAnalysisContext context)
+    private void AnalyzeStringLiteralExpression(SyntaxNodeAnalysisContext context)
+    {
+        var node = (LiteralExpressionSyntax)context.Node;
+        var position = node.GetLocation().GetLineSpan();
+        if (position.StartLinePosition.Line != position.EndLinePosition.Line)
         {
-            var node = (LiteralExpressionSyntax)context.Node;
-            var position = node.GetLocation().GetLineSpan();
-            if (position.StartLinePosition.Line != position.EndLinePosition.Line)
-            {
-                context.ReportDiagnostic(s_rule, node);
-            }
+            context.ReportDiagnostic(s_rule, node);
         }
     }
 }

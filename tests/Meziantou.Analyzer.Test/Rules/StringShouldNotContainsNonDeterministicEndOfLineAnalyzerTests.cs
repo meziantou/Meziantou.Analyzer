@@ -3,22 +3,22 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-                .WithAnalyzer<StringShouldNotContainsNonDeterministicEndOfLineAnalyzer>()
-                .WithCodeFixProvider<StringShouldNotContainsNonDeterministicEndOfLineFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Valid()
-        {
-            const string SourceCode = @"
+public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+            .WithAnalyzer<StringShouldNotContainsNonDeterministicEndOfLineAnalyzer>()
+            .WithCodeFixProvider<StringShouldNotContainsNonDeterministicEndOfLineFixer>();
+    }
+
+    [Fact]
+    public async Task Valid()
+    {
+        const string SourceCode = @"
 class Dummy
 {
     void Test()
@@ -35,15 +35,15 @@ class Dummy
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task VerbatimString()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task VerbatimString()
+    {
+        const string SourceCode = @"
 class Dummy
 {
     void Test()
@@ -54,7 +54,7 @@ line2""|];
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 class Dummy
 {
     void Test()
@@ -64,16 +64,16 @@ class Dummy
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(1, CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task VerbatimString2()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task VerbatimString2()
+    {
+        const string SourceCode = @"
 class Dummy
 {
     void Test()
@@ -84,7 +84,7 @@ line2""|];
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 class Dummy
 {
     void Test()
@@ -94,16 +94,16 @@ class Dummy
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(2, CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(2, CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task VerbatimInterpolatedString()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task VerbatimInterpolatedString()
+    {
+        const string SourceCode = @"
 class Dummy
 {
     void Test()
@@ -114,9 +114,8 @@ line2""|];
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

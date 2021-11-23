@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public class DoNotUseZeroToInitializeAnEnumValueTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotUseZeroToInitializeAnEnumValue>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Assignation()
-        {
-            const string SourceCode = @"
+public class DoNotUseZeroToInitializeAnEnumValueTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotUseZeroToInitializeAnEnumValue>();
+    }
+
+    [Fact]
+    public async Task Assignation()
+    {
+        const string SourceCode = @"
 enum MyEnum { A = 0, B = 1 }
 
 class Test
@@ -36,15 +36,15 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task MethodInvocation()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task MethodInvocation()
+    {
+        const string SourceCode = @"
 enum MyEnum { A = 0, B = 1 }
 
 class Test
@@ -60,15 +60,15 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OptionalParameter()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task OptionalParameter()
+    {
+        const string SourceCode = @"
 enum MyEnum { A = 0, B = 1 }
 class Test
 {
@@ -79,10 +79,9 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+
 }

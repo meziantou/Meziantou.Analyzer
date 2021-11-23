@@ -5,170 +5,170 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_implementIEquatableRule = new(
+        RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT,
+        title: "A class that provides Equals(T) should implement IEquatable<T>",
+        messageFormat: "A class that provides Equals(T) should implement IEquatable<T>",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT));
+
+    private static readonly DiagnosticDescriptor s_implementIComparableOfTRule = new(
+        RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT,
+        title: "A class that provides CompareTo(T) should implement IComparable<T>",
+        messageFormat: "A class that provides CompareTo(T) should implement IComparable<T>",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT));
+
+    private static readonly DiagnosticDescriptor s_overrideEqualsObjectRule = new(
+        RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject,
+        title: "A class that implements IEquatable<T> should override Equals(object)",
+        messageFormat: "A class that implements IEquatable<T> should override Equals(object)",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject));
+
+    private static readonly DiagnosticDescriptor s_implementIEquatableWhenIComparableRule = new(
+        RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT,
+        title: "A class that implements IComparable<T> should also implement IEquatable<T>",
+        messageFormat: "A class that implements IComparable<T> should also implement IEquatable<T>",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT));
+
+    private static readonly DiagnosticDescriptor s_addComparisonRule = new(
+        RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable,
+        title: "A class that implements IComparable<T> or IComparable should override comparison operators",
+        messageFormat: "A class that implements IComparable<T> or IComparable should override comparison operators",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        s_implementIEquatableWhenIComparableRule,
+        s_overrideEqualsObjectRule,
+        s_implementIEquatableRule,
+        s_implementIComparableOfTRule,
+        s_addComparisonRule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_implementIEquatableRule = new(
-            RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT,
-            title: "A class that provides Equals(T) should implement IEquatable<T>",
-            messageFormat: "A class that provides Equals(T) should implement IEquatable<T>",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        private static readonly DiagnosticDescriptor s_implementIComparableOfTRule = new(
-            RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT,
-            title: "A class that provides CompareTo(T) should implement IComparable<T>",
-            messageFormat: "A class that provides CompareTo(T) should implement IComparable<T>",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT));
-
-        private static readonly DiagnosticDescriptor s_overrideEqualsObjectRule = new(
-            RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject,
-            title: "A class that implements IEquatable<T> should override Equals(object)",
-            messageFormat: "A class that implements IEquatable<T> should override Equals(object)",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject));
-
-        private static readonly DiagnosticDescriptor s_implementIEquatableWhenIComparableRule = new(
-            RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT,
-            title: "A class that implements IComparable<T> should also implement IEquatable<T>",
-            messageFormat: "A class that implements IComparable<T> should also implement IEquatable<T>",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT));
-
-        private static readonly DiagnosticDescriptor s_addComparisonRule = new(
-            RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable,
-            title: "A class that implements IComparable<T> or IComparable should override comparison operators",
-            messageFormat: "A class that implements IComparable<T> or IComparable should override comparison operators",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable));
-
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
-            s_implementIEquatableWhenIComparableRule,
-            s_overrideEqualsObjectRule,
-            s_implementIEquatableRule,
-            s_implementIComparableOfTRule,
-            s_addComparisonRule);
-
-        public override void Initialize(AnalysisContext context)
+        context.RegisterCompilationStartAction(ctx =>
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
+            ctx.RegisterSymbolAction(analyzerContext.AnalyzeSymbol, SymbolKind.NamedType);
+        });
+    }
 
-            context.RegisterCompilationStartAction(ctx =>
-            {
-                var analyzerContext = new AnalyzerContext(ctx.Compilation);
-                ctx.RegisterSymbolAction(analyzerContext.AnalyzeSymbol, SymbolKind.NamedType);
-            });
+    private sealed class AnalyzerContext
+    {
+        public AnalyzerContext(Compilation compilation)
+        {
+            IComparableSymbol = compilation.GetTypeByMetadataName("System.IComparable");
+            IComparableOfTSymbol = compilation.GetTypeByMetadataName("System.IComparable`1");
+            IEquatableOfTSymbol = compilation.GetTypeByMetadataName("System.IEquatable`1");
         }
 
-        private sealed class AnalyzerContext
+        public INamedTypeSymbol? IComparableSymbol { get; set; }
+        public INamedTypeSymbol? IComparableOfTSymbol { get; set; }
+        public INamedTypeSymbol? IEquatableOfTSymbol { get; set; }
+
+        public void AnalyzeSymbol(SymbolAnalysisContext context)
         {
-            public AnalyzerContext(Compilation compilation)
+            var symbol = (INamedTypeSymbol)context.Symbol;
+            if (symbol.TypeKind != TypeKind.Class && symbol.TypeKind != TypeKind.Structure)
+                return;
+
+            var implementIComparable = false;
+            var implementIComparableOfT = false;
+            var implementIEquatableOfT = false;
+            foreach (var implementedInterface in symbol.AllInterfaces)
             {
-                IComparableSymbol = compilation.GetTypeByMetadataName("System.IComparable");
-                IComparableOfTSymbol = compilation.GetTypeByMetadataName("System.IComparable`1");
-                IEquatableOfTSymbol = compilation.GetTypeByMetadataName("System.IEquatable`1");
+                if (implementedInterface.IsEqualTo(IComparableSymbol))
+                {
+                    implementIComparable = true;
+                }
+                else if (IComparableOfTSymbol != null && implementedInterface.IsEqualTo(IComparableOfTSymbol.Construct(symbol)))
+                {
+                    implementIComparableOfT = true;
+                }
+                else if (IEquatableOfTSymbol != null && implementedInterface.IsEqualTo(IEquatableOfTSymbol.Construct(symbol)))
+                {
+                    implementIEquatableOfT = true;
+                }
             }
 
-            public INamedTypeSymbol? IComparableSymbol { get; set; }
-            public INamedTypeSymbol? IComparableOfTSymbol { get; set; }
-            public INamedTypeSymbol? IEquatableOfTSymbol { get; set; }
-
-            public void AnalyzeSymbol(SymbolAnalysisContext context)
+            // IComparable without IComparable<T>
+            if (implementIComparable && !implementIComparableOfT)
             {
-                var symbol = (INamedTypeSymbol)context.Symbol;
-                if (symbol.TypeKind != TypeKind.Class && symbol.TypeKind != TypeKind.Structure)
-                    return;
+                // TODO-design report?
+            }
 
-                var implementIComparable = false;
-                var implementIComparableOfT = false;
-                var implementIEquatableOfT = false;
-                foreach (var implementedInterface in symbol.AllInterfaces)
-                {
-                    if (implementedInterface.IsEqualTo(IComparableSymbol))
-                    {
-                        implementIComparable = true;
-                    }
-                    else if (IComparableOfTSymbol != null && implementedInterface.IsEqualTo(IComparableOfTSymbol.Construct(symbol)))
-                    {
-                        implementIComparableOfT = true;
-                    }
-                    else if (IEquatableOfTSymbol != null && implementedInterface.IsEqualTo(IEquatableOfTSymbol.Construct(symbol)))
-                    {
-                        implementIEquatableOfT = true;
-                    }
-                }
+            // IComparable<T> without IEquatable<T>
+            if (implementIComparableOfT && !implementIEquatableOfT)
+            {
+                context.ReportDiagnostic(s_implementIEquatableWhenIComparableRule, symbol);
+            }
 
-                // IComparable without IComparable<T>
-                if (implementIComparable && !implementIComparableOfT)
-                {
-                    // TODO-design report?
-                }
+            // IEquatable<T> without Equals(object)
+            if (implementIEquatableOfT && !HasMethod(symbol, IsEqualsMethod))
+            {
+                context.ReportDiagnostic(s_overrideEqualsObjectRule, symbol);
+            }
 
-                // IComparable<T> without IEquatable<T>
-                if (implementIComparableOfT && !implementIEquatableOfT)
-                {
-                    context.ReportDiagnostic(s_implementIEquatableWhenIComparableRule, symbol);
-                }
+            // Equals(T) without IEquatable<T>
+            if (!implementIEquatableOfT && HasMethod(symbol, IsEqualsOfTMethod))
+            {
+                context.ReportDiagnostic(s_implementIEquatableRule, symbol);
+            }
 
-                // IEquatable<T> without Equals(object)
-                if (implementIEquatableOfT && !HasMethod(symbol, IsEqualsMethod))
-                {
-                    context.ReportDiagnostic(s_overrideEqualsObjectRule, symbol);
-                }
+            // CompareTo(T) without IComparable<T>
+            if (!implementIComparableOfT && HasMethod(symbol, IsCompareToOfTMethod))
+            {
+                context.ReportDiagnostic(s_implementIComparableOfTRule, symbol);
+            }
 
-                // Equals(T) without IEquatable<T>
-                if (!implementIEquatableOfT && HasMethod(symbol, IsEqualsOfTMethod))
-                {
-                    context.ReportDiagnostic(s_implementIEquatableRule, symbol);
-                }
-
-                // CompareTo(T) without IComparable<T>
-                if (!implementIComparableOfT && HasMethod(symbol, IsCompareToOfTMethod))
-                {
-                    context.ReportDiagnostic(s_implementIComparableOfTRule, symbol);
-                }
-
-                // IComparable/IComparable<T> without operators
-                if ((implementIComparable || implementIComparableOfT) && !HasComparisonOperator(symbol))
-                {
-                    context.ReportDiagnostic(s_addComparisonRule, symbol);
-                }
+            // IComparable/IComparable<T> without operators
+            if ((implementIComparable || implementIComparableOfT) && !HasComparisonOperator(symbol))
+            {
+                context.ReportDiagnostic(s_addComparisonRule, symbol);
             }
         }
+    }
 
-        private static bool HasMethod(INamedTypeSymbol parentType, Func<IMethodSymbol, bool> predicate)
+    private static bool HasMethod(INamedTypeSymbol parentType, Func<IMethodSymbol, bool> predicate)
+    {
+        foreach (var member in parentType.GetMembers().OfType<IMethodSymbol>())
         {
-            foreach (var member in parentType.GetMembers().OfType<IMethodSymbol>())
-            {
-                if (predicate(member))
-                    return true;
-            }
-
-            return false;
+            if (predicate(member))
+                return true;
         }
 
-        private static bool HasComparisonOperator(INamedTypeSymbol parentType)
-        {
-            var operatorNames = new List<string>(6)
+        return false;
+    }
+
+    private static bool HasComparisonOperator(INamedTypeSymbol parentType)
+    {
+        var operatorNames = new List<string>(6)
             {
                 "op_LessThan",
                 "op_LessThanOrEqual",
@@ -178,55 +178,54 @@ namespace Meziantou.Analyzer.Rules
                 "op_Inequality",
             };
 
-            foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
+        foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
+        {
+            if (member.MethodKind == MethodKind.UserDefinedOperator)
             {
-                if (member.MethodKind == MethodKind.UserDefinedOperator)
-                {
-                    operatorNames.Remove(member.Name);
-                }
+                operatorNames.Remove(member.Name);
             }
-
-            return operatorNames.Count == 0;
         }
 
-        private static bool IsEqualsMethod(IMethodSymbol symbol)
-        {
-            return symbol.Name == nameof(object.Equals) &&
-            symbol.ReturnType.IsBoolean() &&
-            symbol.Parameters.Length == 1 &&
-            symbol.Parameters[0].Type.IsObject() &&
-            symbol.DeclaredAccessibility == Accessibility.Public &&
-            !symbol.IsStatic;
-        }
+        return operatorNames.Count == 0;
+    }
 
-        internal static bool IsEqualsOfTMethod(IMethodSymbol symbol)
-        {
-            return symbol.Name == nameof(object.Equals) &&
-            symbol.ReturnType.IsBoolean() &&
-            symbol.Parameters.Length == 1 &&
-            symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) &&
-            symbol.DeclaredAccessibility == Accessibility.Public &&
-            !symbol.IsStatic;
-        }
+    private static bool IsEqualsMethod(IMethodSymbol symbol)
+    {
+        return symbol.Name == nameof(object.Equals) &&
+        symbol.ReturnType.IsBoolean() &&
+        symbol.Parameters.Length == 1 &&
+        symbol.Parameters[0].Type.IsObject() &&
+        symbol.DeclaredAccessibility == Accessibility.Public &&
+        !symbol.IsStatic;
+    }
 
-        private static bool IsCompareToMethod(IMethodSymbol symbol)
-        {
-            return symbol.Name == nameof(IComparable.CompareTo) &&
-            symbol.ReturnType.IsInt32() &&
-            symbol.Parameters.Length == 1 &&
-            symbol.Parameters[0].Type.IsObject() &&
-            symbol.DeclaredAccessibility == Accessibility.Public &&
-            !symbol.IsStatic;
-        }
+    internal static bool IsEqualsOfTMethod(IMethodSymbol symbol)
+    {
+        return symbol.Name == nameof(object.Equals) &&
+        symbol.ReturnType.IsBoolean() &&
+        symbol.Parameters.Length == 1 &&
+        symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) &&
+        symbol.DeclaredAccessibility == Accessibility.Public &&
+        !symbol.IsStatic;
+    }
 
-        private static bool IsCompareToOfTMethod(IMethodSymbol symbol)
-        {
-            return symbol.Name == nameof(IComparable.CompareTo) &&
-            symbol.ReturnType.IsInt32() &&
-            symbol.Parameters.Length == 1 &&
-            symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) &&
-            symbol.DeclaredAccessibility == Accessibility.Public &&
-            !symbol.IsStatic;
-        }
+    private static bool IsCompareToMethod(IMethodSymbol symbol)
+    {
+        return symbol.Name == nameof(IComparable.CompareTo) &&
+        symbol.ReturnType.IsInt32() &&
+        symbol.Parameters.Length == 1 &&
+        symbol.Parameters[0].Type.IsObject() &&
+        symbol.DeclaredAccessibility == Accessibility.Public &&
+        !symbol.IsStatic;
+    }
+
+    private static bool IsCompareToOfTMethod(IMethodSymbol symbol)
+    {
+        return symbol.Name == nameof(IComparable.CompareTo) &&
+        symbol.ReturnType.IsInt32() &&
+        symbol.Parameters.Length == 1 &&
+        symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) &&
+        symbol.DeclaredAccessibility == Accessibility.Public &&
+        !symbol.IsStatic;
     }
 }

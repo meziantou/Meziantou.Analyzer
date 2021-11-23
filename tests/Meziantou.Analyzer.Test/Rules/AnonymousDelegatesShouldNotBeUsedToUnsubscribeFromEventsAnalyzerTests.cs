@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task UnsubscribeWithLambda()
-        {
-            const string SourceCode = @"
+public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzer>();
+    }
+
+    [Fact]
+    public async Task UnsubscribeWithLambda()
+    {
+        const string SourceCode = @"
 using System;
 class Test
 {
@@ -27,15 +27,15 @@ class Test
         [|MyEvent -= (sender, e) => { }|];
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task UnsubscribeWithAction()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task UnsubscribeWithAction()
+    {
+        const string SourceCode = @"
 using System;
 class Test
 {
@@ -47,15 +47,15 @@ class Test
         MyEvent -= handler;
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task UnsubscribeWithLocalFunction()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task UnsubscribeWithLocalFunction()
+    {
+        const string SourceCode = @"
 using System;
 class Test
 {
@@ -68,15 +68,15 @@ class Test
         void Handler(object sender, EventArgs e) { }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task UnsubscribeWithDelegate()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task UnsubscribeWithDelegate()
+    {
+        const string SourceCode = @"
 using System;
 class Test
 {
@@ -87,15 +87,15 @@ class Test
         [|MyEvent -= delegate (object sender, EventArgs e) { }|];
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task UnsubscribeWithMethod()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task UnsubscribeWithMethod()
+    {
+        const string SourceCode = @"
 using System;
 class Test
 {
@@ -108,9 +108,8 @@ class Test
 
     void Handler(object sender, EventArgs e) { }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

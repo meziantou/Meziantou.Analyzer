@@ -2,47 +2,46 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.TypesShouldNotExtendSystemApplicationException,
+        title: "Types should not extend System.ApplicationException",
+        messageFormat: "Types should not extend System.ApplicationException",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TypesShouldNotExtendSystemApplicationException));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.TypesShouldNotExtendSystemApplicationException,
-            title: "Types should not extend System.ApplicationException",
-            messageFormat: "Types should not extend System.ApplicationException",
-            RuleCategories.Design,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TypesShouldNotExtendSystemApplicationException));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
-
-        public override void Initialize(AnalysisContext context)
+        context.RegisterCompilationStartAction(ctx =>
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            var compilation = ctx.Compilation;
+            var type = compilation.GetTypeByMetadataName("System.ApplicationException");
 
-            context.RegisterCompilationStartAction(ctx =>
+            if (type != null)
             {
-                var compilation = ctx.Compilation;
-                var type = compilation.GetTypeByMetadataName("System.ApplicationException");
-
-                if (type != null)
-                {
-                    ctx.RegisterSymbolAction(_ => Analyze(_, type), SymbolKind.NamedType);
-                }
-            });
-        }
-
-        private static void Analyze(SymbolAnalysisContext context, INamedTypeSymbol applicationExceptionType)
-        {
-            var symbol = (INamedTypeSymbol)context.Symbol;
-            if (symbol.InheritsFrom(applicationExceptionType))
-            {
-                context.ReportDiagnostic(s_rule, symbol);
+                ctx.RegisterSymbolAction(_ => Analyze(_, type), SymbolKind.NamedType);
             }
+        });
+    }
+
+    private static void Analyze(SymbolAnalysisContext context, INamedTypeSymbol applicationExceptionType)
+    {
+        var symbol = (INamedTypeSymbol)context.Symbol;
+        if (symbol.InheritsFrom(applicationExceptionType))
+        {
+            context.ReportDiagnostic(s_rule, symbol);
         }
     }
 }

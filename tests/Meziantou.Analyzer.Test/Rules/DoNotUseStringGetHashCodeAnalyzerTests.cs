@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotUseStringGetHashCodeAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotUseStringGetHashCodeAnalyzer>()
-                .WithCodeFixProvider<DoNotUseStringGetHashCodeFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task GetHashCode_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+public sealed class DoNotUseStringGetHashCodeAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotUseStringGetHashCodeAnalyzer>()
+            .WithCodeFixProvider<DoNotUseStringGetHashCodeFixer>();
+    }
+
+    [Fact]
+    public async Task GetHashCode_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -27,7 +27,7 @@ class TypeName
         new object().GetHashCode();
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -37,10 +37,9 @@ class TypeName
         new object().GetHashCode();
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
     }
 }

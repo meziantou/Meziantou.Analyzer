@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0097Tests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<EqualityShouldBeCorrectlyImplementedAnalyzer>()
-                .WithCodeFixProvider<EqualityShouldBeCorrectlyImplementedFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task BaseClassImplementsOperators()
-        {
-            var originalCode = @"using System;
+public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0097Tests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<EqualityShouldBeCorrectlyImplementedAnalyzer>()
+            .WithCodeFixProvider<EqualityShouldBeCorrectlyImplementedFixer>();
+    }
+
+    [Fact]
+    public async Task BaseClassImplementsOperators()
+    {
+        var originalCode = @"using System;
 abstract class Test : IComparable
 {
     public int CompareTo(object other) => 0;
@@ -35,9 +35,8 @@ class InheritedTest : Test // should be ok as the operators are implemented in t
 {
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(originalCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
     }
 }

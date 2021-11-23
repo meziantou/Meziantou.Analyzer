@@ -3,23 +3,23 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class OptimizeLinqUsageAnalyzerWhereBeforeOrderByTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy);
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Theory]
-        [InlineData("OrderBy")]
-        [InlineData("OrderByDescending")]
-        public async Task Enumerable_WhereBeforeOrderBy_Valid(string a)
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+public sealed class OptimizeLinqUsageAnalyzerWhereBeforeOrderByTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy);
+    }
+
+    [Theory]
+    [InlineData("OrderBy")]
+    [InlineData("OrderByDescending")]
+    public async Task Enumerable_WhereBeforeOrderBy_Valid(string a)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -29,16 +29,16 @@ class Test
     }
 }
 ")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
+    }
 
-        [Theory]
-        [InlineData("OrderBy")]
-        [InlineData("OrderByDescending")]
-        public async Task Enumerable_WhereAfterOrderBy_Invalid(string a)
-        {
-            await CreateProjectBuilder()
-                  .WithSourceCode(@"using System.Linq;
+    [Theory]
+    [InlineData("OrderBy")]
+    [InlineData("OrderByDescending")]
+    public async Task Enumerable_WhereAfterOrderBy_Invalid(string a)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
 class Test
 {
     public Test()
@@ -48,8 +48,7 @@ class Test
     }
 }
 ")
-                  .ShouldReportDiagnosticWithMessage(message: $"Call 'Where' before '{a}'")
-                  .ValidateAsync();
-        }
+              .ShouldReportDiagnosticWithMessage(message: $"Call 'Where' before '{a}'")
+              .ValidateAsync();
     }
 }

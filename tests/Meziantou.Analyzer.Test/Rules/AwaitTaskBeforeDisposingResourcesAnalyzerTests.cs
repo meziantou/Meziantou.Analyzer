@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithTargetFramework(TargetFramework.Net5_0)
-                .WithAnalyzer<AwaitTaskBeforeDisposingResourcesAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task NotAwaitedTask_InUsing()
-        {
-            var originalCode = @"
+public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net5_0)
+            .WithAnalyzer<AwaitTaskBeforeDisposingResourcesAnalyzer>();
+    }
+
+    [Fact]
+    public async Task NotAwaitedTask_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -31,15 +31,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedTaskMethod_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedTaskMethod_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -55,15 +55,15 @@ class TestClass
     async ValueTask<int> TestAsync() => throw null;
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedValueTask_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedValueTask_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -77,15 +77,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AwaitedTaskInUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task AwaitedTaskInUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -99,15 +99,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NonAwaitedTaskFromResultInUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NonAwaitedTaskFromResultInUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -121,15 +121,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NonAwaitedTaskFromResultInUsingVariable()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NonAwaitedTaskFromResultInUsingVariable()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -141,15 +141,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedTask_NotInUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedTask_NotInUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -160,15 +160,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedValueTaskWithValue_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedValueTaskWithValue_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -182,15 +182,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedValueTaskWithTaskValue_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedValueTaskWithTaskValue_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -204,15 +204,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedNullTask_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedNullTask_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -226,15 +226,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedDefaultTask_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedDefaultTask_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -248,15 +248,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedNewValueTask_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedNewValueTask_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -270,15 +270,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NotAwaitedTaskCompleted_InUsing()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task NotAwaitedTaskCompleted_InUsing()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -292,15 +292,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ReturnWithoutValue()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task ReturnWithoutValue()
+    {
+        var originalCode = @"
 class TestClass
 {
     void Test()
@@ -309,15 +309,15 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task TaskRun()
-        {
-            var originalCode = @"
+    [Fact]
+    public async Task TaskRun()
+    {
+        var originalCode = @"
 using System;
 using System.Threading.Tasks;
 class TestClass
@@ -331,16 +331,16 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
-        [Fact]
-        [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/219")]
-        public async Task Lambda()
-        {
-            var originalCode = @"
+    [Fact]
+    [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/219")]
+    public async Task Lambda()
+    {
+        var originalCode = @"
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -366,9 +366,8 @@ class TestClass
     }
 }";
 
-            await CreateProjectBuilder()
-                    .WithSourceCode(originalCode)
-                    .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
     }
 }

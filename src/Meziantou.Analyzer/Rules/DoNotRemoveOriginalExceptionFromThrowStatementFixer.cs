@@ -9,41 +9,40 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[ExportCodeFixProvider(LanguageNames.CSharp), Shared]
+public sealed class DoNotRemoveOriginalExceptionFromThrowStatementFixer : CodeFixProvider
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public sealed class DoNotRemoveOriginalExceptionFromThrowStatementFixer : CodeFixProvider
+    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.DoNotRemoveOriginalExceptionFromThrowStatement);
+
+    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+
+    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.DoNotRemoveOriginalExceptionFromThrowStatement);
+        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
+        if (nodeToFix == null)
+            return;
 
-        public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+        var title = "Throw original exception";
+        var codeAction = CodeAction.Create(
+            title,
+            ct => Fix(context.Document, nodeToFix, ct),
+            equivalenceKey: title);
 
-        public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-        {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-            if (nodeToFix == null)
-                return;
+        context.RegisterCodeFix(codeAction, context.Diagnostics);
+    }
 
-            var title = "Throw original exception";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => Fix(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+    private static async Task<Document> Fix(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
-        }
+        var syntax = (ThrowStatementSyntax)nodeToFix;
+        if (syntax == null)
+            return document;
 
-        private static async Task<Document> Fix(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
-        {
-            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
-            var syntax = (ThrowStatementSyntax)nodeToFix;
-            if (syntax == null)
-                return document;
-
-            editor.ReplaceNode(syntax, syntax.WithExpression(null).WithAdditionalAnnotations(Formatter.Annotation));
-            return editor.GetChangedDocument();
-        }
+        editor.ReplaceNode(syntax, syntax.WithExpression(null).WithAdditionalAnnotations(Formatter.Annotation));
+        return editor.GetChangedDocument();
     }
 }

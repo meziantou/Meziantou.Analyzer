@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0015");
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task ArgumentNameIsSpecified_ShouldNotReportError()
-        {
-            var sourceCode = @"
+public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0015");
+    }
+
+    [Fact]
+    public async Task ArgumentNameIsSpecified_ShouldNotReportError()
+    {
+        var sourceCode = @"
 class Sample
 {
     string Prop
@@ -58,15 +58,15 @@ class Sample
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
+    {
+        const string SourceCode = @"
 class TestAttribute
 {
     string Prop
@@ -75,16 +75,16 @@ class TestAttribute
         set { throw new System.ArgumentNullException([||]""unknown""); }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task ArgumentNameDoesNotMatchAParameter_Methods_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task ArgumentNameDoesNotMatchAParameter_Methods_ShouldReportError()
+    {
+        const string SourceCode = @"
 class TestAttribute
 {
     void Test(string test)
@@ -92,16 +92,16 @@ class TestAttribute
         throw new System.ArgumentException(""message"", [||]""unknown"");
     }  
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OverloadWithoutParameterName_Properties_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task OverloadWithoutParameterName_Properties_ShouldReportError()
+    {
+        const string SourceCode = @"
 class TestAttribute
 {
     string Prop
@@ -110,15 +110,15 @@ class TestAttribute
         set { throw [||]new System.ArgumentNullException(); }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task OverloadWithoutParameterName_Methods_ShouldReportError()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task OverloadWithoutParameterName_Methods_ShouldReportError()
+    {
+        const string SourceCode = @"
 class TestAttribute
 {
     void Test(string test)
@@ -126,9 +126,8 @@ class TestAttribute
         throw [||]new System.ArgumentException(""message"");
     }    
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class UseStringComparisonAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<UseStringComparisonAnalyzer>("MA0074")
-                .WithCodeFixProvider<UseStringComparisonFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
-        {
-            const string SourceCode = @"
+public sealed class UseStringComparisonAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<UseStringComparisonAnalyzer>("MA0074")
+            .WithCodeFixProvider<UseStringComparisonFixer>();
+    }
+
+    [Fact]
+    public async Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -26,15 +26,15 @@ class TypeName
         string.Equals(a, ""v"", System.StringComparison.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -42,15 +42,15 @@ class TypeName
         ""a"".IndexOf(""v"", System.StringComparison.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task IndexOf_String_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task IndexOf_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -58,7 +58,7 @@ class TypeName
         [||]""a"".IndexOf(""v"");
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -66,17 +66,17 @@ class TypeName
         ""a"".IndexOf(""v"", System.StringComparison.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -84,15 +84,15 @@ class TypeName
         ""a"".StartsWith(""v"", System.StringComparison.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task StartsWith_String_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task StartsWith_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -100,7 +100,7 @@ class TypeName
         [||]""a"".StartsWith(""v"");
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -108,17 +108,17 @@ class TypeName
         ""a"".StartsWith(""v"", System.StringComparison.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'StartsWith' that has a StringComparison parameter")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'StartsWith' that has a StringComparison parameter")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Compare_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Compare_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -126,7 +126,7 @@ class TypeName
         [||]string.Compare(""a"", ""v"");
     }
 }";
-            const string CodeFix = @"
+        const string CodeFix = @"
 class TypeName
 {
     public void Test()
@@ -134,17 +134,17 @@ class TypeName
         string.Compare(""a"", ""v"", System.StringComparison.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldReportDiagnosticWithMessage("Use an overload of 'Compare' that has a StringComparison parameter")
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'Compare' that has a StringComparison parameter")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task Compare_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task Compare_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -152,15 +152,15 @@ class TypeName
         string.Compare(""a"", ""v"", ignoreCase: true);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task IndexOf_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task IndexOf_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class TypeName
 {
     public void Test()
@@ -168,9 +168,8 @@ class TypeName
         """".IndexOf("""", 0, System.StringComparison.Ordinal);
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

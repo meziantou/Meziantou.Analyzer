@@ -3,21 +3,21 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<ReplaceEnumToStringWithNameofAnalyzer>()
-                .WithCodeFixProvider<ReplaceEnumToStringWithNameofFixer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task ConstantEnumValueToString()
-        {
-            const string SourceCode = @"
+public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<ReplaceEnumToStringWithNameofAnalyzer>()
+            .WithCodeFixProvider<ReplaceEnumToStringWithNameofFixer>();
+    }
+
+    [Fact]
+    public async Task ConstantEnumValueToString()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -31,7 +31,7 @@ enum MyEnum
     A,
 }";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 class Test
 {
     void A()
@@ -44,16 +44,16 @@ enum MyEnum
 {
     A,
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task EnumVariableToString()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task EnumVariableToString()
+    {
+        const string SourceCode = @"
 class Test
 {
     void A()
@@ -68,9 +68,8 @@ enum MyEnum
     A,
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

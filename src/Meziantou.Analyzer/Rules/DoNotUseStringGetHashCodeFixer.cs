@@ -9,56 +9,55 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[ExportCodeFixProvider(LanguageNames.CSharp), Shared]
+public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-    public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
+    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.DoNotUseStringGetHashCode);
+
+    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+
+    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.DoNotUseStringGetHashCode);
+        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax nodeToFix)
+            return;
 
-        public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+        if (nodeToFix.Expression is not MemberAccessExpressionSyntax)
+            return;
 
-        public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-        {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax nodeToFix)
-                return;
+        var title = "Use StringComparer.Ordinal";
+        var codeAction = CodeAction.Create(
+            title,
+            ct => AddStringComparison(context.Document, nodeToFix, ct),
+            equivalenceKey: title);
 
-            if (!(nodeToFix.Expression is MemberAccessExpressionSyntax))
-                return;
+        context.RegisterCodeFix(codeAction, context.Diagnostics);
+    }
 
-            var title = "Use StringComparer.Ordinal";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => AddStringComparison(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
+    private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var semanticModel = editor.SemanticModel;
+        var generator = editor.Generator;
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
-        }
+        var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
+        if (invocationExpression == null)
+            return document;
 
-        private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
-        {
-            var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-            var semanticModel = editor.SemanticModel;
-            var generator = editor.Generator;
+        var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
+        var memberAccessExpression = (MemberAccessExpressionSyntax)invocationExpression.Expression;
 
-            var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
-            if (invocationExpression == null)
-                return document;
-
-            var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
-            var memberAccessExpression = (MemberAccessExpressionSyntax)invocationExpression.Expression;
-
-            var newExpression = generator.InvocationExpression(
+        var newExpression = generator.InvocationExpression(
+            generator.MemberAccessExpression(
                 generator.MemberAccessExpression(
-                    generator.MemberAccessExpression(
-                        generator.TypeExpression(stringComparer, addImport: true),
-                        nameof(StringComparer.Ordinal)),
-                    nameof(StringComparer.GetHashCode)),
-                memberAccessExpression.Expression);
+                    generator.TypeExpression(stringComparer, addImport: true),
+                    nameof(StringComparer.Ordinal)),
+                nameof(StringComparer.GetHashCode)),
+            memberAccessExpression.Expression);
 
-            editor.ReplaceNode(invocationExpression, newExpression);
-            return editor.GetChangedDocument();
-        }
+        editor.ReplaceNode(invocationExpression, newExpression);
+        return editor.GetChangedDocument();
     }
 }

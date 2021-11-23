@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<EmbedCaughtExceptionAsInnerExceptionAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task NotInCaughtException_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<EmbedCaughtExceptionAsInnerExceptionAnalyzer>();
+    }
+
+    [Fact]
+    public async Task NotInCaughtException_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A()
@@ -24,15 +24,15 @@ class Test
         throw new System.Exception("""");
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task InCaughtExceptionWithInnerException_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task InCaughtExceptionWithInnerException_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A()
@@ -46,15 +46,15 @@ class Test
         }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task InCaughtExceptionWithoutInnerException_ShouldReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task InCaughtExceptionWithoutInnerException_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A()
@@ -68,15 +68,15 @@ class Test
         }
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task InCaughtExceptionWithoutInnerException_NoConstructorWithInnerException_ShouldNotReportDiagnostic()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task InCaughtExceptionWithoutInnerException_NoConstructorWithInnerException_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
 class Test
 {
     public void A()
@@ -98,9 +98,8 @@ class CustomException : System.Exception
     }
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

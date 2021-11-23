@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<ReturnTaskFromResultInsteadOfReturningNullAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task Method()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<ReturnTaskFromResultInsteadOfReturningNullAnalyzer>();
+    }
+
+    [Fact]
+    public async Task Method()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     Task A() { [||]return null; }
@@ -24,15 +24,15 @@ class Test
     Task C() { [||]return ((Test)null)?.A(); }
     async Task<object> Valid() { return null; }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LocalFunction()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task LocalFunction()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -46,15 +46,15 @@ class Test
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task LambdaExpression()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task LambdaExpression()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -69,15 +69,15 @@ class Test
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AnonymousMethods()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task AnonymousMethods()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     void A()
@@ -91,15 +91,15 @@ class Test
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task AsyncLambdaInTask()
-        {
-            const string SourceCode = @"using System.Threading.Tasks;
+    [Fact]
+    public async Task AsyncLambdaInTask()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
 class Test
 {
     Task A()
@@ -110,10 +110,9 @@ class Test
     }
 }";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+
 }

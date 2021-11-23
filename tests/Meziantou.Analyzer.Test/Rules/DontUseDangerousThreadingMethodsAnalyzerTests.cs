@@ -3,25 +3,25 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
+namespace Meziantou.Analyzer.Test.Rules;
+
+public sealed class DontUseDangerousThreadingMethodsAnalyzerTests
 {
-    public sealed class DontUseDangerousThreadingMethodsAnalyzerTests
+    private static ProjectBuilder CreateProjectBuilder()
     {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DontUseDangerousThreadingMethodsAnalyzer>();
-        }
+        return new ProjectBuilder()
+            .WithAnalyzer<DontUseDangerousThreadingMethodsAnalyzer>();
+    }
 
-        [Theory]
-        [InlineData("Thread.CurrentThread.Abort()")]
-        [InlineData("Thread.CurrentThread.Suspend()")]
-        [InlineData("Thread.CurrentThread.Resume()")]
-        public async Task ReportDiagnostic(string text)
-        {
-            await CreateProjectBuilder()
+    [Theory]
+    [InlineData("Thread.CurrentThread.Abort()")]
+    [InlineData("Thread.CurrentThread.Suspend()")]
+    [InlineData("Thread.CurrentThread.Resume()")]
+    public async Task ReportDiagnostic(string text)
+    {
+        await CreateProjectBuilder()
 
-                  .WithSourceCode(@"using System.Threading;
+              .WithSourceCode(@"using System.Threading;
 public class Test
 {
     public void A()
@@ -29,7 +29,6 @@ public class Test
         [||]" + text + @";
     }
 }")
-                  .ValidateAsync();
-        }
+              .ValidateAsync();
     }
 }

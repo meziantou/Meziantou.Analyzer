@@ -3,20 +3,20 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<DoNotThrowFromFinallyBlockAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task FinallyThrowsDirectly_DiagnosticIsReported()
-        {
-            const string SourceCode = @"
+public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<DoNotThrowFromFinallyBlockAnalyzer>();
+    }
+
+    [Fact]
+    public async Task FinallyThrowsDirectly_DiagnosticIsReported()
+    {
+        const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -30,15 +30,15 @@ class TestClass
         }        
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task FinallyDoesNotThrow_NoDiagnosticReported()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task FinallyDoesNotThrow_NoDiagnosticReported()
+    {
+        const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -53,15 +53,15 @@ class TestClass
         }        
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task FinallyThrowsFromNestedBlock_DiagnosticIsReported()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task FinallyThrowsFromNestedBlock_DiagnosticIsReported()
+    {
+        const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -80,15 +80,15 @@ class TestClass
         }        
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
+    {
+        const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -108,15 +108,15 @@ class TestClass
         }        
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsUnhandled_DiagnosticIsReported()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsUnhandled_DiagnosticIsReported()
+    {
+        const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -136,15 +136,15 @@ class TestClass
         }        
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task FinallyThrowsFromSeveralLocations_DiagnosticIsReportedForEachOne()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task FinallyThrowsFromSeveralLocations_DiagnosticIsReportedForEachOne()
+    {
+        const string SourceCode = @"
 class TestClass
 {
     void Test()
@@ -165,9 +165,8 @@ class TestClass
         }        
     }
 }";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
 }

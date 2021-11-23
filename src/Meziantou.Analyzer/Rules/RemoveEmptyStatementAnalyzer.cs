@@ -4,45 +4,44 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Meziantou.Analyzer.Rules
+namespace Meziantou.Analyzer.Rules;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class RemoveEmptyStatementAnalyzer : DiagnosticAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class RemoveEmptyStatementAnalyzer : DiagnosticAnalyzer
+    private static readonly DiagnosticDescriptor s_rule = new(
+        RuleIdentifiers.RemoveEmptyStatement,
+        title: "Remove empty statement",
+        messageFormat: "Remove empty statement",
+        RuleCategories.Usage,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RemoveEmptyStatement));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+    public override void Initialize(AnalysisContext context)
     {
-        private static readonly DiagnosticDescriptor s_rule = new(
-            RuleIdentifiers.RemoveEmptyStatement,
-            title: "Remove empty statement",
-            messageFormat: "Remove empty statement",
-            RuleCategories.Usage,
-            DiagnosticSeverity.Error,
-            isEnabledByDefault: true,
-            description: "",
-            helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RemoveEmptyStatement));
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.EmptyStatement);
+    }
 
-        public override void Initialize(AnalysisContext context)
-        {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+    private static void Analyze(SyntaxNodeAnalysisContext context)
+    {
+        var node = (EmptyStatementSyntax)context.Node;
+        if (node == null)
+            return;
 
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.EmptyStatement);
-        }
+        var parent = node.Parent;
+        if (parent == null)
+            return;
 
-        private static void Analyze(SyntaxNodeAnalysisContext context)
-        {
-            var node = (EmptyStatementSyntax)context.Node;
-            if (node == null)
-                return;
+        if (parent.IsKind(SyntaxKind.LabeledStatement))
+            return;
 
-            var parent = node.Parent;
-            if (parent == null)
-                return;
-
-            if (parent.IsKind(SyntaxKind.LabeledStatement))
-                return;
-
-            context.ReportDiagnostic(s_rule, node);
-        }
+        context.ReportDiagnostic(s_rule, node);
     }
 }

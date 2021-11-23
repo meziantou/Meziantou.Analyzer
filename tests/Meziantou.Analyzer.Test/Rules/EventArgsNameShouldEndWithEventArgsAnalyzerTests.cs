@@ -3,41 +3,40 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithAnalyzer<EventArgsNameShouldEndWithEventArgsAnalyzer>();
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task NameEndsWithEventArgs()
-        {
-            const string SourceCode = @"
+public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithAnalyzer<EventArgsNameShouldEndWithEventArgsAnalyzer>();
+    }
+
+    [Fact]
+    public async Task NameEndsWithEventArgs()
+    {
+        const string SourceCode = @"
 class CustomEventArgs : System.EventArgs
 {
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NameDoesNotEndWithEventArgs()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task NameDoesNotEndWithEventArgs()
+    {
+        const string SourceCode = @"
 class [||]CustomArgs : System.EventArgs
 {
 }
 ";
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ValidateAsync();
-        }
-
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
+
 }
