@@ -103,4 +103,20 @@ a.GetOrAdd(key, [|_ => value|]);
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task GetOrAdd_ClosureWithLambdaParameter()
+    {
+        const string SourceCode = @"
+using System.Collections.Concurrent;
+
+var key = 1;
+var a = new ConcurrentDictionary<int, int>();
+a.GetOrAdd(key, k => new System.Func<int>(() => k)());
+";
+        await CreateProjectBuilder()
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 }

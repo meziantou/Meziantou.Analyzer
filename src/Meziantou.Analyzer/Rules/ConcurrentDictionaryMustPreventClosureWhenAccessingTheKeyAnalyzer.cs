@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -168,8 +169,27 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
             var dataFlow = semanticModel.AnalyzeDataFlow(syntax);
             if (dataFlow.CapturedInside.Length > 0)
             {
-                context.ReportDiagnostic(s_ruleFactoryArg, argumentOperation, string.Join(", ", dataFlow.Captured.Select(symbol => symbol.Name)));
+                var parameters = GetParameters(argumentOperation);
+                if (dataFlow.Captured.Any(s => !parameters.Contains(s, SymbolEqualityComparer.Default)))
+                {
+                    context.ReportDiagnostic(s_ruleFactoryArg, argumentOperation, string.Join(", ", dataFlow.Captured.Select(symbol => symbol.Name)));
+                }
             }
+        }
+
+        static IEnumerable<ISymbol> GetParameters(IOperation operation)
+        {
+            if (operation is IAnonymousFunctionOperation func)
+            {
+                return func.Symbol.Parameters;
+            }
+
+            if (operation is IDelegateCreationOperation delegateCreation)
+            {
+                return GetParameters(delegateCreation.Target);
+            }
+
+            return Enumerable.Empty<ISymbol>();
         }
     }
 
