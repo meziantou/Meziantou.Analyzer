@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -38,6 +39,9 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
         var operation = (IInvocationOperation)context.Operation;
         if (operation == null)
+            return;
+
+        if (IsExcludedMethod(context, operation))
             return;
 
         var methodName = operation.TargetMethod.Name;
@@ -110,5 +114,16 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
     private static bool IsInvariantDateTimeFormat(IOperation valueOperation)
     {
         return valueOperation.ConstantValue.HasValue && valueOperation.ConstantValue.Value is "o" or "O" or "r" or "R" or "s" or "u";
+    }
+
+    private static bool IsExcludedMethod(OperationAnalysisContext context, IOperation operation)
+    {
+        // ToString show culture-sensitive data by default
+        if (operation?.GetContainingMethod()?.Name == "ToString")
+        {
+            return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.exclude_tostring_methods", defaultValue: true);
+        }
+
+        return false;
     }
 }

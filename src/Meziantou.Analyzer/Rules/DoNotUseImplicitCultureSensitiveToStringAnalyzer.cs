@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -51,6 +52,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         if (operation.ConstantValue.HasValue)
             return;
 
+        if (IsExcludedMethod(context, s_stringConcatRule, operation))
+            return;
+
         if (!IsValidOperand(operation.LeftOperand))
         {
             context.ReportDiagnostic(s_stringConcatRule, operation.LeftOperand);
@@ -68,6 +72,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         var operation = (IInterpolatedStringOperation)context.Operation;
 
         if (operation.ConstantValue.HasValue)
+            return;
+
+        if (IsExcludedMethod(context, s_stringInterpolationRule, operation))
             return;
 
         var parent = operation.Parent;
@@ -90,6 +97,17 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 context.ReportDiagnostic(s_stringInterpolationRule, part);
             }
         }
+    }
+
+    private static bool IsExcludedMethod(OperationAnalysisContext context, DiagnosticDescriptor descriptor, IOperation operation)
+    {
+        // ToString show culture-sensitive data by default
+        if (operation?.GetContainingMethod()?.Name == "ToString")
+        {
+            return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, descriptor.Id + ".exclude_tostring_methods", defaultValue: true);
+        }
+
+        return false;
     }
 
     private static bool IsValidOperand(IOperation operand)
