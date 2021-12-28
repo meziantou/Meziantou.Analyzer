@@ -86,14 +86,38 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                    // Exclude in some methods such as ConfigureAwait(false)
-                    var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+                // Exclude in some methods such as ConfigureAwait(false)
+                var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
                 if (invocationExpression != null)
                 {
                     var methodSymbol = (IMethodSymbol?)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
                     if (methodSymbol != null)
                     {
                         var argumentIndex = ArgumentIndex(argument);
+
+                        bool IsParams(SyntaxNode node)
+                        {
+                            if (argumentIndex > methodSymbol.Parameters.Length - 1)
+                                return true;
+
+                            var lastParameter = methodSymbol.Parameters[methodSymbol.Parameters.Length - 1];
+                            if (argumentIndex == methodSymbol.Parameters.Length - 1 && lastParameter.IsParams)
+                            {
+                                if (invocationExpression.ArgumentList.Arguments.Count > methodSymbol.Parameters.Length)
+                                    return true;
+
+                                if (expression.IsKind(SyntaxKind.NullLiteralExpression))
+                                    return false;
+
+                                var type = syntaxContext.SemanticModel.GetTypeInfo(node).ConvertedType;
+                                return !type.IsEqualTo(lastParameter.Type);
+                            }
+
+                            return false;
+                        };
+
+                        if (IsParams(argument))
+                            return;
 
                         if (methodSymbol.Parameters.Length == 1 && methodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
                             return;
@@ -146,8 +170,8 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if ((string.Equals(methodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(methodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
                             return;
 
-                            // e.g. SyntaxNode.WithElse
-                            if (methodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && methodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
+                        // e.g. SyntaxNode.WithElse
+                        if (methodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && methodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
                             return;
 
                         var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);

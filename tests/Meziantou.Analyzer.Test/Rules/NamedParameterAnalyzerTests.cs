@@ -554,7 +554,7 @@ class Test
     }
 
     [Fact]
-    public async Task TaskCompletionSouce_SetResult()
+    public async Task TaskCompletionSource_SetResult()
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"
@@ -582,6 +582,72 @@ class Test
         var a = new System.Threading.Tasks.TaskCompletionSource<string>();
         _ = a.TrySetResult(null);
     }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_Params()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        string.Format(""Hi {0}, {1}, {2}, {3}."", null, null, null, null);
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_Array()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        string.Format(""Hi {0}, {1}, {2}, {3}."", new object[] { null, null, null, null });
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_Array_Null()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        string.Format(""Hi {0}, {1}, {2}, {3}."", (object[])null);
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Params_Array_Null()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        B([||]null);
+    }
+
+    void B(params int[] a) {}
 }
 ")
               .ValidateAsync();
