@@ -652,4 +652,22 @@ class Test
 ")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Ctor_Params_Null()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    public Test(params object[] a) { }
+
+    void A()
+    {
+        new Test(null, null);
+    }
+}
+")
+              .ValidateAsync();
+    }
 }

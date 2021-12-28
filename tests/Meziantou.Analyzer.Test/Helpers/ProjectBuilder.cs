@@ -92,9 +92,9 @@ public sealed partial class ProjectBuilder
         }
     }
 
-    private ProjectBuilder AddNuGetReference(string packageName, string version, string path)
+    public ProjectBuilder AddNuGetReference(string packageName, string version, string pathPrefix)
     {
-        foreach (var reference in GetNuGetReferences(packageName, version, path).Result)
+        foreach (var reference in GetNuGetReferences(packageName, version, pathPrefix).Result)
         {
             References.Add(MetadataReference.CreateFromFile(reference));
         }
