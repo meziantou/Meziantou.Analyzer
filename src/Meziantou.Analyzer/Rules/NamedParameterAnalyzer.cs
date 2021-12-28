@@ -87,9 +87,19 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                 }
 
                 // Exclude in some methods such as ConfigureAwait(false)
-                var invocationExpression = argument.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+                var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t is InvocationExpressionSyntax or ObjectCreationExpressionSyntax);
                 if (invocationExpression != null)
                 {
+                    var argumentList = invocationExpression switch
+                    {
+                        InvocationExpressionSyntax invocationExpressionSyntax => invocationExpressionSyntax.ArgumentList,
+                        ObjectCreationExpressionSyntax objectCreationExpressionSyntax => objectCreationExpressionSyntax.ArgumentList,
+                        _ => null,
+                    };
+
+                    if (argumentList is null)
+                        return;
+
                     var methodSymbol = (IMethodSymbol?)syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
                     if (methodSymbol != null)
                     {
@@ -103,7 +113,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                             var lastParameter = methodSymbol.Parameters[methodSymbol.Parameters.Length - 1];
                             if (argumentIndex == methodSymbol.Parameters.Length - 1 && lastParameter.IsParams)
                             {
-                                if (invocationExpression.ArgumentList.Arguments.Count > methodSymbol.Parameters.Length)
+                                if (argumentList.Arguments.Count > methodSymbol.Parameters.Length)
                                     return true;
 
                                 if (expression.IsKind(SyntaxKind.NullLiteralExpression))
