@@ -33,6 +33,7 @@ public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnal
         {
             yield return new object[] { "private", "List<int>", true };
             yield return new object[] { "public", "List<int>", false };
+            yield return new object[] { "public", "System.Collections.ObjectModel.Collection<int>", false };
             yield return new object[] { "protected", "List<int>", false };
             yield return new object[] { "private protected", "List<int>", true };
             yield return new object[] { "public", "string", true };

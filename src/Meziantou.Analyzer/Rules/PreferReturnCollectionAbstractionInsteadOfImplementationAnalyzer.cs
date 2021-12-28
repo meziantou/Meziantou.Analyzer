@@ -47,7 +47,7 @@ public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnal
             ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"));
             ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
             ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
-            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.ObjectModel`1"));
+            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.ObjectModel.Collection`1"));
 
             TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
             TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
