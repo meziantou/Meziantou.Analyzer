@@ -16,6 +16,29 @@ public sealed class NamedParameterAnalyzerTests
 
     [Fact]
 
+    public async Task MethodWithNoParameter()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    TypeName() { }
+    void A() { }
+    int B => 0;
+
+    public void Test()
+    {
+        _ = new TypeName();
+        A();
+        _ = B;
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+
     public async Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
     {
         const string SourceCode = @"
@@ -652,7 +675,7 @@ class Test
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Ctor_Params_Null()
     {
@@ -668,6 +691,60 @@ class Test
     }
 }
 ")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Indexer()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    public int this[string value] => 0;
+
+    void A()
+    {
+        _ = this[null];
+    }
+}
+")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Dictionary_Indexer()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        var dict = new System.Collections.Generic.Dictionary<bool, object>();
+        dict[false] = null;
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Indexer_MultipleArgument()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    public int this[int x, int y] => 0;
+
+    void A()
+    {
+        _ = this[[||]0, [||]0];
+    }
+}
+")
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
               .ValidateAsync();
     }
 }
