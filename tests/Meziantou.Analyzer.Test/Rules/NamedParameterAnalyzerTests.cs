@@ -36,7 +36,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
 
     public async Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
@@ -711,7 +711,7 @@ class Test
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Dictionary_Indexer()
     {
@@ -745,6 +745,24 @@ class Test
 }
 ")
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Tuples()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    public Test(string a) { }
+
+    void A()
+    {
+        _ = (false, new Test([||]null));
+    }
+}
+")
               .ValidateAsync();
     }
 }

@@ -86,8 +86,11 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
+                if (argument.Parent.IsKind(SyntaxKind.TupleExpression))
+                    return; // Don't consider tuple
+
                 // Exclude in some methods such as ConfigureAwait(false)
-                var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t is InvocationExpressionSyntax or ObjectCreationExpressionSyntax or ElementAccessExpressionSyntax);
+                var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t.IsKind(SyntaxKind.InvocationExpression) || t.IsKind(SyntaxKind.ObjectCreationExpression) || t.IsKind(SyntaxKind.ElementAccessExpression));
                 if (invocationExpression != null)
                 {
                     BaseArgumentListSyntax? argumentList = invocationExpression switch
