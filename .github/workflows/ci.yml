@@ -72,6 +72,9 @@ jobs:
     runs-on: 'ubuntu-20.04'
     needs: [ create_nuget, build_and_test ]
     steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
     - uses: actions/download-artifact@v2
       with:
         name: nuget
@@ -79,12 +82,16 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
     - run: |
+        $diff = git diff --name-only HEAD`^ HEAD
+        $SourceDiff = $diff | Where-Object { $_ -match '^src/Meziantou.Analyzer/' -or $_ -match '.(csproj|props|targets)$' }
+        $HasDiff = $SourceDiff.Length -gt 0
+        Write-Host "Has source diff: $HasDiff"
         Write-Host "Current ref: $env:GITHUB_REF"
         Write-Host "Searching nupkg in folder: ${{ env.NuGetDirectory }}"
         $files = Get-ChildItem "${{ env.NuGetDirectory }}/*" -Recurse -Include *.nupkg
         foreach($file in $files) {
             Write-Host "Pushing NuGet package: $($file.FullName)"
-            if ($env:GITHUB_REF -eq 'refs/heads/main')
+            if ($env:GITHUB_REF -eq 'refs/heads/main' -and $HasDiff)
             {
               & dotnet nuget push "$($file.FullName)" --api-key "$env:NuGetApiKey" --source https://api.nuget.org/v3/index.json --force-english-output --skip-duplicate
             }
