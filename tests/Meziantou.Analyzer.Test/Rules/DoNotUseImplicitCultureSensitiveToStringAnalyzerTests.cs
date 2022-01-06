@@ -176,4 +176,70 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringConcat_ToString_Int32ToString()
+    {
+        var sourceCode = @"
+class Test
+{
+    void ToString() { var a = ""abc"" + $""{-1}""; }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task StringConcat_ToString_Int32ToString_ConfigNotExcludeToString()
+    {
+        var sourceCode = @"
+class Test
+{
+    void ToString() { var a = ""abc"" + $""[|{-1}|]""; }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0076.exclude_tostring_methods", "false")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ObjectToString()
+    {
+        var sourceCode = @"
+class Test
+{
+    string A() => [|new object().ToString()|];
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Int32ToString()
+    {
+        var sourceCode = @"
+class Test
+{
+    string A() => (-1).ToString();
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SubClassToString()
+    {
+        var sourceCode = @"
+class Test
+{
+    string A() => new Test().ToString();
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
