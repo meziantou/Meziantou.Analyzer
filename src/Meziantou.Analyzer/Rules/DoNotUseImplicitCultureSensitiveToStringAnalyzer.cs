@@ -29,7 +29,17 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_stringConcatRule, s_stringInterpolationRule);
+    private static readonly DiagnosticDescriptor s_objectToStringRule = new(
+        RuleIdentifiers.DoNotUseCultureSensitiveObjectToString,
+        title: "Do not use culture-sensitive object.ToString",
+        messageFormat: "Do not use culture-sensitive object.ToString",
+        RuleCategories.Design,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: false,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseCultureSensitiveObjectToString));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_stringConcatRule, s_stringInterpolationRule, s_objectToStringRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -38,6 +48,22 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
         context.RegisterOperationAction(AnalyzeBinaryOperation, OperationKind.Binary);
         context.RegisterOperationAction(AnalyzeInterpolatedString, OperationKind.InterpolatedString);
+        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+    }
+
+    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    {
+        var operation = (IInvocationOperation)context.Operation;
+        if (IsExcludedMethod(context, s_objectToStringRule, operation))
+            return;
+
+        if (operation.TargetMethod.Name == "ToString" && operation.TargetMethod.ContainingType.IsObject() && operation.TargetMethod.Parameters.Length == 0)
+        {
+            if (operation.Instance != null && operation.Instance.Type.IsObject())
+            {
+                context.ReportDiagnostic(s_objectToStringRule, operation);
+            }
+        }
     }
 
     private static void AnalyzeBinaryOperation(OperationAnalysisContext context)

@@ -109,6 +109,7 @@ internal static class RuleIdentifiers
     public const string DotNotUseNameFromBCL = "MA0104";
     public const string AvoidClosureWhenUsingConcurrentDictionary = "MA0105";
     public const string AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg = "MA0106";
+    public const string DoNotUseCultureSensitiveObjectToString = "MA0107";
 
     public static string GetHelpUri(string idenfifier)
     {

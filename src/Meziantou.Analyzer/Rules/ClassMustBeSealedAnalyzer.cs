@@ -41,8 +41,6 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private readonly List<ITypeSymbol> _potentialClasses = new();
-
-        [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1024:Compare symbols correctly", Justification = "False positive")]
         private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
 
         private INamedTypeSymbol? ExceptionSymbol { get; }

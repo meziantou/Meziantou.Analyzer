@@ -60,7 +60,6 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private readonly List<ITypeSymbol> _potentialClasses = new();
-        [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1024:Compare symbols correctly", Justification = "False positive")]
         private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new(SymbolEqualityComparer.Default);
 
         public AnalyzerContext(Compilation compilation)
