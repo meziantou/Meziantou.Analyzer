@@ -12,9 +12,35 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
         return new ProjectBuilder()
             .WithAnalyzer<SimplifyCallerArgumentExpressionAnalyzer>()
             .WithCodeFixProvider<SimplifyCallerArgumentExpressionFixer>()
-            .WithTargetFramework(TargetFramework.Net6_0);
+            .WithTargetFramework(TargetFramework.Net6_0)
+#if CSHARP10_OR_GREATER
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+#endif
+            ;
     }
 
+    [Fact]
+    public async Task NotCSharp10()
+    {
+        const string SourceCode = @"
+using System.Runtime.CompilerServices;
+class Sample
+{
+    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
+
+    void A(string value)
+    {
+        NotNull(value, ""value"");
+    }
+}
+";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task ReportDiagnostic()
     {
@@ -47,7 +73,7 @@ class Sample
               .ShouldFixCodeWith(ExpectedCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task ReportDiagnostic_NamedParameter()
     {
@@ -120,4 +146,5 @@ class Sample
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+#endif
 }

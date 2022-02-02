@@ -13,7 +13,7 @@
   <PropertyGroup Condition="$(RoslynVersion) == 'minimal'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER</DefineConstants>
   </PropertyGroup>
-  
+
   <ItemGroup Condition="$(RoslynVersion) == 'stable'">
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.11.0" />
   </ItemGroup>
@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0-1.final" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0-3.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
