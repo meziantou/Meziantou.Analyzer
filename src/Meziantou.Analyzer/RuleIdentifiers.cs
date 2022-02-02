@@ -110,6 +110,7 @@ internal static class RuleIdentifiers
     public const string AvoidClosureWhenUsingConcurrentDictionary = "MA0105";
     public const string AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg = "MA0106";
     public const string DoNotUseCultureSensitiveObjectToString = "MA0107";
+    public const string SimplifyCallerArgumentExpression = "MA0108";
 
     public static string GetHelpUri(string idenfifier)
     {
