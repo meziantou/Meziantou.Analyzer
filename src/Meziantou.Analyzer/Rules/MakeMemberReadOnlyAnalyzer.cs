@@ -110,7 +110,7 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
     private static bool EnsureLanguageVersion(IOperation operation)
     {
         // Readonly instance members are available with C# 8
-        return operation.Syntax.SyntaxTree.Options is CSharpParseOptions options && options.LanguageVersion >= LanguageVersion.CSharp8;
+        return operation.GetCSharpLanguageVersion().IsCSharp8OrAbove();
     }
 
     private static bool CouldBeReadOnly(ISymbol symbol)

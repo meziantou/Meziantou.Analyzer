@@ -32,6 +32,9 @@ public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyze
     private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
         var operation = (IInvocationOperation)context.Operation;
+        if (!operation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
+            return;
+
         foreach (var argument in operation.Arguments)
         {
             AnalyzeArgument(context, operation, argument);

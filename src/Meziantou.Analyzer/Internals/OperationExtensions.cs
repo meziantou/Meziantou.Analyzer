@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -8,6 +9,14 @@ namespace Meziantou.Analyzer;
 
 internal static class OperationExtensions
 {
+    public static LanguageVersion GetCSharpLanguageVersion(this IOperation operation)
+    {
+        if (operation.Syntax.SyntaxTree.Options is CSharpParseOptions options)
+            return options.LanguageVersion;
+
+        return LanguageVersion.Default;
+    }
+
     public static IEnumerable<IOperation> Ancestors(this IOperation operation)
     {
         var parent = operation.Parent;
