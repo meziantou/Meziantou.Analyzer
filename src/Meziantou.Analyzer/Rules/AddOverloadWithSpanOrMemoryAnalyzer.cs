@@ -40,7 +40,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         if (method.MethodKind is not MethodKind.Ordinary and not MethodKind.Constructor)
             return;
 
-        if (!method.Parameters.Any(p => p.Type.TypeKind == TypeKind.Array && !p.IsParams))
+        if (!method.Parameters.Any(p => IsCandidateForSpanOrMemory(p)))
             return;
 
         var overloads = method.ContainingType.GetMembers(method.Name);
@@ -51,6 +51,11 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(s_rule, method);
+    }
+
+    private static bool IsCandidateForSpanOrMemory(IParameterSymbol param)
+    {
+        return param.Type.TypeKind is TypeKind.Array && !param.IsParams && param.RefKind is RefKind.None;
     }
 
     private static bool IsValidOverload(Compilation compilation, IMethodSymbol method, IMethodSymbol overload)
@@ -69,7 +74,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
             var methodParameterIsArray = methodParameter.TypeKind == TypeKind.Array;
             if (methodParameterIsArray)
             {
-                if (method.Parameters[i].IsParams && methodParameter.IsEqualTo(overloadParameter))
+                if (!IsCandidateForSpanOrMemory(method.Parameters[i]) && methodParameter.IsEqualTo(overloadParameter))
                     continue;
 
                 if (!IsSpanOrMemory(compilation, overloadParameter, methodParameter))

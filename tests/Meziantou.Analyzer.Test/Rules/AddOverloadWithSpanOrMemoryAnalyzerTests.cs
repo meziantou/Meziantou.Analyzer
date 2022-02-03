@@ -31,6 +31,20 @@ public class Test
     }
     
     [Fact]
+    public async Task StringArrayWithoutSpanOverload_Out()
+    {
+        const string SourceCode = @"
+public class Test
+{
+    public void A(out byte[] a) => throw null;
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
     public async Task StringArrayWithSpanOverload_Params()
     {
         const string SourceCode = @"
