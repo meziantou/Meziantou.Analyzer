@@ -15,6 +15,37 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
     }
 
     [Fact]
+    public async Task StringArrayWithoutSpanOverload_Params()
+    {
+        const string SourceCode = @"
+public class Test
+{
+    public void A(params string[] a)
+    {
+    }
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task StringArrayWithSpanOverload_Params()
+    {
+        const string SourceCode = @"
+public class Test
+{
+    public void A(params string[] a) { }
+    public void A(System.ReadOnlySpan<string> a) { }
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
     public async Task StringArrayWithoutSpanOverload()
     {
         const string SourceCode = @"
@@ -59,6 +90,25 @@ public class Test
 public class Test
 {
     public void A(string[] a) { }
+    public void A(" + overloadType + @" a) { }
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Theory]
+    [InlineData("System.Span<char>")]
+    [InlineData("System.ReadOnlySpan<char>")]
+    [InlineData("System.Memory<char>")]
+    [InlineData("System.ReadOnlyMemory<char>")]
+    public async Task StringArrayWithSpanOverload_String(string overloadType)
+    {
+        var sourceCode = @"
+public class Test
+{
+    public void A(string a) { }
     public void A(" + overloadType + @" a) { }
 }
 ";

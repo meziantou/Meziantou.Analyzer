@@ -40,7 +40,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         if (method.MethodKind is not MethodKind.Ordinary and not MethodKind.Constructor)
             return;
 
-        if (!method.Parameters.Any(p => p.Type.TypeKind == TypeKind.Array))
+        if (!method.Parameters.Any(p => p.Type.TypeKind == TypeKind.Array && !p.IsParams))
             return;
 
         var overloads = method.ContainingType.GetMembers(method.Name);
@@ -69,7 +69,10 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
             var methodParameterIsArray = methodParameter.TypeKind == TypeKind.Array;
             if (methodParameterIsArray)
             {
-                if (!IsSpanOrMemory(compilation, overloadParameter, ((IArrayTypeSymbol)methodParameter).ElementType))
+                if (method.Parameters[i].IsParams && methodParameter.IsEqualTo(overloadParameter))
+                    continue;
+
+                if (!IsSpanOrMemory(compilation, overloadParameter, methodParameter))
                     return false;
             }
             else
@@ -82,12 +85,22 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private static bool IsSpanOrMemory(Compilation compilation, ITypeSymbol typeSymbol, ITypeSymbol expectedArrayType)
+    private static bool IsSpanOrMemory(Compilation compilation, ITypeSymbol typeSymbol, ITypeSymbol arrayType)
     {
+        ITypeSymbol elementType;
+        if (arrayType.IsString())
+        {
+            elementType = compilation.GetSpecialType(SpecialType.System_Char);
+        }
+        else
+        {
+            elementType = ((IArrayTypeSymbol)arrayType).ElementType;
+        }
+
         var types = new string[] { "System.Span`1", "System.ReadOnlySpan`1", "System.Memory`1", "System.ReadOnlyMemory`1" };
         foreach (var type in types)
         {
-            if (typeSymbol.IsEqualTo(compilation.GetTypeByMetadataName(type)?.Construct(expectedArrayType)))
+            if (typeSymbol.IsEqualTo(compilation.GetTypeByMetadataName(type)?.Construct(elementType)))
                 return true;
         }
 
