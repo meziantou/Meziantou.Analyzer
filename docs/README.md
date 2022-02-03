@@ -108,6 +108,7 @@
 |[MA0106](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0106.md)|Performance|Avoid closure by using an overload with the 'factoryArgument' parameter|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use culture-sensitive object.ToString|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0108](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0108.md)|Usage|Remove redundant argument value|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0109](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0109.md)|Design|Consider adding an overload with a Span\<T\> or Memory\<T\>|<span title='Info'>ℹ️</span>|❌|❌|
 
 # .editorconfig - default values
 
@@ -219,6 +220,7 @@ dotnet_diagnostic.MA0105.severity = suggestion # MA0105: Use the lambda paramete
 dotnet_diagnostic.MA0106.severity = suggestion # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
 dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sensitive object.ToString
 dotnet_diagnostic.MA0108.severity = suggestion # MA0108: Remove redundant argument value
+dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
 ```
 
 # .editorconfig - all rules disabled
@@ -331,4 +333,5 @@ dotnet_diagnostic.MA0105.severity = none       # MA0105: Use the lambda paramete
 dotnet_diagnostic.MA0106.severity = none       # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
 dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sensitive object.ToString
 dotnet_diagnostic.MA0108.severity = none       # MA0108: Remove redundant argument value
+dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
 ```
