@@ -16,8 +16,8 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.UseNamedParameter,
-        title: "Add argument name to improve readability",
-        messageFormat: "Name the parameter to improve the readability of the code",
+        title: "Add parameter name to improve readability",
+        messageFormat: "Name the parameter to improve code readability",
         RuleCategories.Style,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,

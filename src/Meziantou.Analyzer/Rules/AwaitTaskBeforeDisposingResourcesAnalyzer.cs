@@ -11,8 +11,8 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.AwaitTaskBeforeDisposingResources,
-        title: "Await task before disposing resources",
-        messageFormat: "Await task before disposing resources",
+        title: "Await task before disposing of resources",
+        messageFormat: "Await task before disposing of resources",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
