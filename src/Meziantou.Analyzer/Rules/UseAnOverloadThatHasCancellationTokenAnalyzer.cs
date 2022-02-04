@@ -15,27 +15,27 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticAnalyzer
+public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenRule = new(
-        RuleIdentifiers.UseAnOverloadThatHaveCancellationToken,
+    private static readonly DiagnosticDescriptor s_useAnOverloadThatHasCancellationTokenRule = new(
+        RuleIdentifiers.UseAnOverloadThatHasCancellationToken,
         title: "Use an overload with a CancellationToken argument",
         messageFormat: "Use an overload with a CancellationToken",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationToken));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHasCancellationToken));
 
-    private static readonly DiagnosticDescriptor s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule = new(
-        RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable,
+    private static readonly DiagnosticDescriptor s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule = new(
+        RuleIdentifiers.UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable,
         title: "Flow the cancellation token",
         messageFormat: "Use an overload with a CancellationToken, available tokens: {0}",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable));
 
     private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRule = new(
         RuleIdentifiers.FlowCancellationTokenInAwaitForEach,
@@ -57,7 +57,7 @@ public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticA
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_useAnOverloadThatHaveCancellationTokenRule, s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule, s_flowCancellationTokenInAwaitForEachRule, s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_useAnOverloadThatHasCancellationTokenRule, s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, s_flowCancellationTokenInAwaitForEachRule, s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -126,7 +126,7 @@ public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticA
             var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(operation));
             if (!string.IsNullOrEmpty(possibleCancellationTokens))
             {
-                context.ReportDiagnostic(s_useAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailableRule, operation, possibleCancellationTokens);
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, operation, possibleCancellationTokens);
             }
             else
             {
@@ -134,7 +134,7 @@ public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzer : DiagnosticA
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_useAnOverloadThatHaveCancellationTokenRule, operation, possibleCancellationTokens);
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, operation, possibleCancellationTokens);
             }
         }
 

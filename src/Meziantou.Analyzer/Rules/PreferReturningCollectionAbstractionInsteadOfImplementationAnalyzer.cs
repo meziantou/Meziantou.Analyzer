@@ -9,17 +9,17 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer : DiagnosticAnalyzer
+public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
-        RuleIdentifiers.PreferReturnCollectionAbstractionInsteadOfImplementation,
-        title: "Prefer return collection abstraction instead of implementation",
-        messageFormat: "Prefer return collection abstraction instead of implementation",
+        RuleIdentifiers.PreferReturningCollectionAbstractionInsteadOfImplementation,
+        title: "Prefer returning collection abstraction instead of implementation",
+        messageFormat: "Prefer returning collection abstraction instead of implementation",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.PreferReturnCollectionAbstractionInsteadOfImplementation));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.PreferReturningCollectionAbstractionInsteadOfImplementation));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 

@@ -6,12 +6,12 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzerTests
+public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationAnalyzerTests
 {
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<PreferReturnCollectionAbstractionInsteadOfImplementationAnalyzer>();
+            .WithAnalyzer<PreferReturningCollectionAbstractionInsteadOfImplementationAnalyzer>();
     }
 
     public static IEnumerable<object[]> ReturnTypeValues

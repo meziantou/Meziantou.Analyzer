@@ -19,7 +19,7 @@ internal static class RuleIdentifiers
     public const string TypesShouldNotExtendSystemApplicationException = "MA0013";
     public const string DoNotRaiseApplicationException = "MA0014";
     public const string ArgumentExceptionShouldSpecifyArgumentName = "MA0015";
-    public const string PreferReturnCollectionAbstractionInsteadOfImplementation = "MA0016";
+    public const string PreferReturningCollectionAbstractionInsteadOfImplementation = "MA0016";
     public const string AbstractTypesShouldNotHaveConstructors = "MA0017";
     public const string DoNotDeclareStaticMembersOnGenericTypes = "MA0018";
     public const string UseEventArgsEmpty = "MA0019";
@@ -35,14 +35,14 @@ internal static class RuleIdentifiers
     public const string OptimizeEnumerable_CombineMethods = "MA0029";
     public const string DuplicateEnumerable_OrderBy = "MA0030";
     public const string OptimizeEnumerable_Count = "MA0031";
-    public const string UseAnOverloadThatHaveCancellationToken = "MA0032";
+    public const string UseAnOverloadThatHasCancellationToken = "MA0032";
     public const string DontTagInstanceFieldsWithThreadStaticAttribute = "MA0033";
     public const string DontUseDangerousThreadingMethods = "MA0035";
     public const string MakeClassStatic = "MA0036";
     public const string RemoveEmptyStatement = "MA0037";
     public const string MakeMethodStatic = "MA0038";
     public const string DoNotUseServerCertificateValidationCallback = "MA0039";
-    public const string UseAnOverloadThatHaveCancellationTokenWhenACancellationTokenIsAvailable = "MA0040";
+    public const string UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable = "MA0040";
     public const string MakePropertyStatic = "MA0041";
     public const string DoNotUseBlockingCallInAsyncContext = "MA0042";
     public const string UseNameofOperator = "MA0043";

@@ -5,12 +5,12 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class UseAnOverloadThatHaveCancellationTokenAnalyzerTests
+public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
 {
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<UseAnOverloadThatHaveCancellationTokenAnalyzer>();
+            .WithAnalyzer<UseAnOverloadThatHasCancellationTokenAnalyzer>();
     }
 
     [Fact]
