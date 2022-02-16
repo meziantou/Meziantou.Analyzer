@@ -51,7 +51,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         {
             // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
             // https://github.com/aspnet/EntityFrameworkCore/issues/1222
-            if (operation.IsInExpressionArgument())
+            if (operation.IsInExpressionContext())
                 return;
 
             // Check if there is an overload with a StringComparison
