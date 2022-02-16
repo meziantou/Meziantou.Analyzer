@@ -44,7 +44,7 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
 
                 // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                 // https://github.com/aspnet/EntityFrameworkCore/issues/1222
-                if (operation.IsInExpressionArgument())
+                if (operation.IsInExpressionContext())
                     return;
 
                 context.ReportDiagnostic(s_rule, operation, $"{operation.OperatorKind} operator");

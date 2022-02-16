@@ -43,20 +43,32 @@ internal static class OperationExtensions
         return false;
     }
 
-    public static bool IsInExpressionArgument(this IOperation operation)
+    public static bool IsInExpressionContext(this IOperation operation)
     {
         var semanticModel = operation.SemanticModel;
         if (semanticModel == null)
             return false;
 
-        foreach (var op in operation.Ancestors().OfType<IArgumentOperation>())
+        foreach (var op in operation.Ancestors())
         {
-            if (op.Parameter == null)
-                continue;
+            if (op is IArgumentOperation argumentOperation)
+            {
+                if (argumentOperation.Parameter == null)
+                    continue;
 
-            var type = op.Parameter.Type;
-            if (type.InheritsFrom(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
-                return true;
+                var type = argumentOperation.Parameter.Type;
+                if (type.InheritsFrom(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
+                    return true;
+            }
+            else if (op is IConversionOperation conversionOperation)
+            {
+                var type = conversionOperation.Type;
+                if (type is null)
+                    continue;
+
+                if (type.InheritsFrom(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
+                    return true;
+            }
         }
 
         return false;

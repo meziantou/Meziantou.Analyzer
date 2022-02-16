@@ -203,7 +203,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                             return;
 
                         var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
-                        if (operation != null && operation.IsInExpressionArgument())
+                        if (operation != null && operation.IsInExpressionContext())
                             return;
 
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))
