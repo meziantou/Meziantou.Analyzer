@@ -30,10 +30,4 @@
     <None Include="$(MSBuildThisFileDirectory)\LICENSE.txt" Pack="true" PackagePath="" />
     <None Include="$(MSBuildThisFileDirectory)\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
-
-  <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net461'">
-    <NoWarn>$(NoWarn);nullable</NoWarn>
-  </PropertyGroup>
-
 </Project>

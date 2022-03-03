@@ -154,6 +154,7 @@ class ClassTest
     async Task Test()
     {
         await using var a = [||]new AsyncDisposable();
+        Console.WriteLine();
     }
 }
 class AsyncDisposable : IAsyncDisposable
@@ -168,7 +169,11 @@ class ClassTest
 {
     async Task Test()
     {
-        await using var a = new AsyncDisposable().ConfigureAwait(false);
+        var a = new AsyncDisposable();
+        await using (a.ConfigureAwait(false))
+        {
+            Console.WriteLine();
+        }
     }
 }
 class AsyncDisposable : IAsyncDisposable
@@ -208,7 +213,50 @@ class ClassTest
 {
     async Task Test()
     {
-        await using (var a = new AsyncDisposable().ConfigureAwait(false))
+        var a = new AsyncDisposable();
+        await using (a.ConfigureAwait(false))
+        {
+        }
+    }
+}
+class AsyncDisposable : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => throw null;
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitDispose_BlockWithoutVariable()
+    {
+        const string SourceCode = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        await using ([||]new AsyncDisposable())
+        {
+        }
+    }
+}
+class AsyncDisposable : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => throw null;
+}";
+
+        const string CodeFix = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        await using (new AsyncDisposable().ConfigureAwait(false))
         {
         }
     }
