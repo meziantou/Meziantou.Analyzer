@@ -170,10 +170,26 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             if (!operation.IsAsynchronous)
                 return;
 
-            if (operation.Children.FirstOrDefault() is not IVariableDeclarationGroupOperation declarationGroup)
-                return;
+            var firstChild = operation.Children.FirstOrDefault();
+            if (firstChild is IVariableDeclarationGroupOperation declarationGroup)
+            {
+                // await using(var a = expr, b = expr)
+                AnalyzeVariableDeclarationGroupOperation(context, declarationGroup);
+            }
+            else if (firstChild != null)
+            {
+                // await using(expr)
+                if (firstChild.Type == null)
+                    return;
 
-            AnalyzeVariableDeclarationGroupOperation(context, declarationGroup);
+                if (!CanAddConfigureAwait(firstChild.Type, firstChild))
+                    return;
+
+                if (MustUseConfigureAwait(firstChild.SemanticModel!, context.Options, firstChild.Syntax, context.CancellationToken))
+                {
+                    context.ReportDiagnostic(s_rule, firstChild);
+                }
+            }
         }
 
         public void AnalyzeUsingDeclarationOperation(OperationAnalysisContext context)
