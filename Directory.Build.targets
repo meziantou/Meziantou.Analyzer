@@ -8,21 +8,21 @@
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
   <ItemGroup Condition="$(RoslynVersion) == 'minimal'">
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'minimal'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'stable'">
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.11.0" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'stable'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0-3.final" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
