@@ -188,6 +188,10 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
     {
         if (!regexOptions.HasFlag(RegexOptions.ExplicitCapture) && !regexOptions.HasFlag(RegexOptions.ECMAScript)) // The 2 options are exclusives
         {
+            // early exit
+            if (!pattern.Contains('(', StringComparison.Ordinal))
+                return false;
+
             return HasUnnamedGroups(pattern, regexOptions);
         }
 
@@ -197,6 +201,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         {
             try
             {
+                options &= ~RegexOptions.Compiled; // Compiled options doesn't change anything but is much more resource consuming
                 var regex1 = new Regex(pattern, options, Regex.InfiniteMatchTimeout);
                 var regex2 = new Regex(pattern, options | RegexOptions.ExplicitCapture, Regex.InfiniteMatchTimeout);
 

@@ -524,4 +524,28 @@ class ClassTest
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task AwaitUsing_ConfiguredNextStatement()
+    {
+        const string SourceCode = @"
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+class ClassTest
+{
+    async Task Test()
+    {
+        ServiceProvider services = null!;
+        AsyncServiceScope scope = services.CreateAsyncScope();
+        await using (scope.ConfigureAwait(false))
+        {
+        }
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
