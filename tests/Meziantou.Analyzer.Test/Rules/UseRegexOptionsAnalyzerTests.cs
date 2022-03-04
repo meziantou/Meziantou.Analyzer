@@ -53,4 +53,48 @@ class TestClass
 
         await project.ValidateAsync();
     }
+
+    [Theory]
+    [InlineData("(?<test>[a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase")]
+    [InlineData("[a-z]+", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase")]
+    [InlineData("[a-z]+", "RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase")]
+    [InlineData("[a-z]+", "RegexOptions.ECMAScript")]
+    [InlineData("([a-z]+)", "RegexOptions.ECMAScript")]
+    public async Task RegexGenerator_RegexOptions_Valid(string regex, string options)
+    {
+        var project = CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(@"using System.Text.RegularExpressions;
+partial class TestClass
+{
+    [RegexGenerator(""" + regex + @""", " + options + @", 0)]
+    private static partial Regex Test();
+
+    private static partial Regex Test() => throw null;
+}");
+
+        await project.ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase")]
+    public async Task RegexGenerator_RegexOptions_Invalid(string regex, string options)
+    {
+        var project = CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(@"using System.Text.RegularExpressions;
+partial class TestClass
+{
+    [[||][||]RegexGenerator(""" + regex + @""", " + options + @", 0)]
+    private static partial Regex Test();
+}
+partial class TestClass
+{
+    private static partial Regex Test() => throw null;
+}");
+
+        await project.ValidateAsync();
+    }
 }
