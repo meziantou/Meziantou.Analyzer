@@ -186,14 +186,18 @@ public sealed partial class ProjectBuilder
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.0", "ref/net6.0/");
                 break;
 
+            case TargetFramework.Net7_0:
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0-preview.1.22076.8", "ref/net7.0/");
+                break;
+
             case TargetFramework.AspNetCore5_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "5.0.0", "ref/net5.0/");
                 break;
 
-            case TargetFramework.AspNetCore6_0_rc2:
-                AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.0-rc.2.21480.5", "ref/net6.0/");
-                AddNuGetReference("Microsoft.AspNetCore.App.Ref", "6.0.0-rc.2.21480.10", "ref/net6.0/");
+            case TargetFramework.AspNetCore6_0:
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.0", "ref/net6.0/");
+                AddNuGetReference("Microsoft.AspNetCore.App.Ref", "6.0.0", "ref/net6.0/");
                 break;
 
             case TargetFramework.WindowsDesktop5_0:

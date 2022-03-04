@@ -7,7 +7,8 @@ public enum TargetFramework
     Net4_8,
     Net5_0,
     Net6_0,
+    Net7_0,
     AspNetCore5_0,
-    AspNetCore6_0_rc2,
+    AspNetCore6_0,
     WindowsDesktop5_0,
 }

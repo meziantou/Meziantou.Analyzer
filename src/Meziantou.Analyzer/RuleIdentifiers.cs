@@ -112,6 +112,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseCultureSensitiveObjectToString = "MA0107";
     public const string SimplifyCallerArgumentExpression = "MA0108";
     public const string AddOverloadWithSpanOrMemory = "MA0109";
+    public const string UseRegexSourceGenerator = "MA0110";
 
     public static string GetHelpUri(string idenfifier)
     {
