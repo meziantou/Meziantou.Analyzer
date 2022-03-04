@@ -423,7 +423,7 @@ class demo
     public async Task CreateAsyncScope()
     {
         await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.AspNetCore6_0_rc2)
+              .WithTargetFramework(TargetFramework.AspNetCore6_0)
               .WithSourceCode(@"
 using System;
 using System.Threading.Tasks;

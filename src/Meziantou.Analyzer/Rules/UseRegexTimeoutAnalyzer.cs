@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class RegexAnalyzers : DiagnosticAnalyzer
+public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
 {
     private static readonly string[] s_methodNames = { "IsMatch", "Match", "Matches", "Replace", "Split" };
 

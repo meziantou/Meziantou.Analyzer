@@ -10,7 +10,7 @@ public sealed class UseRegexOptionsAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<RegexAnalyzers>();
+            .WithAnalyzer<RegexUsageAnalyzer>();
     }
 
     [Theory]
