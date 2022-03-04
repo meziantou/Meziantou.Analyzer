@@ -3,7 +3,7 @@
 |--|--------|-----------|:------:|:--------:|:------:|
 |[MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0002](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0002.md)|Usage|IEqualityComparer\<string\> or IComparer\<string\> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
-|[MA0003](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0003.md)|Style|Add argument name to improve readability|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0003](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0003.md)|Style|Add parameter name to improve readability|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0004](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0004.md)|Usage|Use Task.ConfigureAwait(false)|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0005](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0005.md)|Performance|Use Array.Empty\<T\>()|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0006](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0006.md)|Usage|Use String.Equals instead of equality operator|<span title='Warning'>⚠️</span>|✔️|✔️|
@@ -16,7 +16,7 @@
 |[MA0013](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0013.md)|Design|Types should not extend System.ApplicationException|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0014](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0014.md)|Design|Do not raise System.ApplicationException type|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0015](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0015.md)|Usage|Specify the parameter name in ArgumentException|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0016](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0016.md)|Design|Prefer return collection abstraction instead of implementation|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0016](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0016.md)|Design|Prefer returning collection abstraction instead of implementation|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0017](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0017.md)|Design|Abstract types should not have public or internal constructors|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0018](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0018.md)|Design|Do not declare static members on generic types|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0019](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0019.md)|Usage|Use EventArgs.Empty|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -99,7 +99,7 @@
 |[MA0097](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0097.md)|Design|A class that implements IComparable\<T\> or IComparable should override comparison operators|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0098](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0098.md)|Performance|Use indexer instead of LINQ methods|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0099](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0099.md)|Usage|Use Explicit enum value instead of 0|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0100](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0100.md)|Usage|Await task before disposing resources|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0100](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0100.md)|Usage|Await task before disposing of resources|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0101](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0101.md)|Usage|String contains an implicit end of line character|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0102](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0102.md)|Design|Make member readonly|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0103](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0103.md)|Usage|Use SequenceEqual instead of equality operator|<span title='Warning'>⚠️</span>|✔️|✔️|
@@ -109,13 +109,14 @@
 |[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use culture-sensitive object.ToString|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0108](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0108.md)|Usage|Remove redundant argument value|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0109](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0109.md)|Design|Consider adding an overload with a Span\<T\> or Memory\<T\>|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0110](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0110.md)|Performance|Use the Regex source generator|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 # .editorconfig - default values
 
 ```editorconfig
 dotnet_diagnostic.MA0001.severity = suggestion # MA0001: StringComparison is missing
 dotnet_diagnostic.MA0002.severity = warning    # MA0002: IEqualityComparer<string> or IComparer<string> is missing
-dotnet_diagnostic.MA0003.severity = suggestion # MA0003: Add argument name to improve readability
+dotnet_diagnostic.MA0003.severity = suggestion # MA0003: Add parameter name to improve readability
 dotnet_diagnostic.MA0004.severity = warning    # MA0004: Use Task.ConfigureAwait(false)
 dotnet_diagnostic.MA0005.severity = warning    # MA0005: Use Array.Empty<T>()
 dotnet_diagnostic.MA0006.severity = warning    # MA0006: Use String.Equals instead of equality operator
@@ -128,7 +129,7 @@ dotnet_diagnostic.MA0012.severity = warning    # MA0012: Do not raise reserved e
 dotnet_diagnostic.MA0013.severity = warning    # MA0013: Types should not extend System.ApplicationException
 dotnet_diagnostic.MA0014.severity = warning    # MA0014: Do not raise System.ApplicationException type
 dotnet_diagnostic.MA0015.severity = warning    # MA0015: Specify the parameter name in ArgumentException
-dotnet_diagnostic.MA0016.severity = warning    # MA0016: Prefer return collection abstraction instead of implementation
+dotnet_diagnostic.MA0016.severity = warning    # MA0016: Prefer returning collection abstraction instead of implementation
 dotnet_diagnostic.MA0017.severity = warning    # MA0017: Abstract types should not have public or internal constructors
 dotnet_diagnostic.MA0018.severity = warning    # MA0018: Do not declare static members on generic types
 dotnet_diagnostic.MA0019.severity = warning    # MA0019: Use EventArgs.Empty
@@ -211,7 +212,7 @@ dotnet_diagnostic.MA0096.severity = warning    # MA0096: A class that implements
 dotnet_diagnostic.MA0097.severity = warning    # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.MA0098.severity = suggestion # MA0098: Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0099.severity = warning    # MA0099: Use Explicit enum value instead of 0
-dotnet_diagnostic.MA0100.severity = warning    # MA0100: Await task before disposing resources
+dotnet_diagnostic.MA0100.severity = warning    # MA0100: Await task before disposing of resources
 dotnet_diagnostic.MA0101.severity = silent     # MA0101: String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = suggestion # MA0102: Make member readonly
 dotnet_diagnostic.MA0103.severity = warning    # MA0103: Use SequenceEqual instead of equality operator
@@ -221,6 +222,7 @@ dotnet_diagnostic.MA0106.severity = suggestion # MA0106: Avoid closure by using 
 dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sensitive object.ToString
 dotnet_diagnostic.MA0108.severity = suggestion # MA0108: Remove redundant argument value
 dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
+dotnet_diagnostic.MA0110.severity = suggestion # MA0110: Use the Regex source generator
 ```
 
 # .editorconfig - all rules disabled
@@ -228,7 +230,7 @@ dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an over
 ```editorconfig
 dotnet_diagnostic.MA0001.severity = none       # MA0001: StringComparison is missing
 dotnet_diagnostic.MA0002.severity = none       # MA0002: IEqualityComparer<string> or IComparer<string> is missing
-dotnet_diagnostic.MA0003.severity = none       # MA0003: Add argument name to improve readability
+dotnet_diagnostic.MA0003.severity = none       # MA0003: Add parameter name to improve readability
 dotnet_diagnostic.MA0004.severity = none       # MA0004: Use Task.ConfigureAwait(false)
 dotnet_diagnostic.MA0005.severity = none       # MA0005: Use Array.Empty<T>()
 dotnet_diagnostic.MA0006.severity = none       # MA0006: Use String.Equals instead of equality operator
@@ -241,7 +243,7 @@ dotnet_diagnostic.MA0012.severity = none       # MA0012: Do not raise reserved e
 dotnet_diagnostic.MA0013.severity = none       # MA0013: Types should not extend System.ApplicationException
 dotnet_diagnostic.MA0014.severity = none       # MA0014: Do not raise System.ApplicationException type
 dotnet_diagnostic.MA0015.severity = none       # MA0015: Specify the parameter name in ArgumentException
-dotnet_diagnostic.MA0016.severity = none       # MA0016: Prefer return collection abstraction instead of implementation
+dotnet_diagnostic.MA0016.severity = none       # MA0016: Prefer returning collection abstraction instead of implementation
 dotnet_diagnostic.MA0017.severity = none       # MA0017: Abstract types should not have public or internal constructors
 dotnet_diagnostic.MA0018.severity = none       # MA0018: Do not declare static members on generic types
 dotnet_diagnostic.MA0019.severity = none       # MA0019: Use EventArgs.Empty
@@ -324,7 +326,7 @@ dotnet_diagnostic.MA0096.severity = none       # MA0096: A class that implements
 dotnet_diagnostic.MA0097.severity = none       # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.MA0098.severity = none       # MA0098: Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0099.severity = none       # MA0099: Use Explicit enum value instead of 0
-dotnet_diagnostic.MA0100.severity = none       # MA0100: Await task before disposing resources
+dotnet_diagnostic.MA0100.severity = none       # MA0100: Await task before disposing of resources
 dotnet_diagnostic.MA0101.severity = none       # MA0101: String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = none       # MA0102: Make member readonly
 dotnet_diagnostic.MA0103.severity = none       # MA0103: Use SequenceEqual instead of equality operator
@@ -334,4 +336,5 @@ dotnet_diagnostic.MA0106.severity = none       # MA0106: Avoid closure by using 
 dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sensitive object.ToString
 dotnet_diagnostic.MA0108.severity = none       # MA0108: Remove redundant argument value
 dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
+dotnet_diagnostic.MA0110.severity = none       # MA0110: Use the Regex source generator
 ```
