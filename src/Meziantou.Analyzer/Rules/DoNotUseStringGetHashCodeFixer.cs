@@ -47,6 +47,9 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
             return document;
 
         var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
+        if (stringComparer is null)
+            return document;
+
         var memberAccessExpression = (MemberAccessExpressionSyntax)invocationExpression.Expression;
 
         var newExpression = generator.InvocationExpression(

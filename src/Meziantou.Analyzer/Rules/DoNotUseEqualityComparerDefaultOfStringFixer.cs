@@ -49,6 +49,8 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringFixer : CodeFixProvid
         var syntax = (MemberAccessExpressionSyntax)nodeToFix;
 
         var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
+        if (stringComparer is null)
+            return document;
 
         var newSyntax = generator.MemberAccessExpression(
             generator.TypeExpression(stringComparer),

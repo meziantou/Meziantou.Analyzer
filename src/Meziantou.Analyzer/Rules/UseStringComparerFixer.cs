@@ -49,6 +49,9 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
 
         var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
+        if (stringComparer is null)
+            return document;
+
         var newArgument = (ArgumentSyntax)generator.Argument(
             generator.MemberAccessExpression(
                 generator.TypeExpression(stringComparer, addImport: true),

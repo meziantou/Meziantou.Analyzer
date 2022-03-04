@@ -53,6 +53,9 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
             return document;
 
         var stringComparison = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparison");
+        if (stringComparison is null)
+            return document;
+
         var newArgument = (ArgumentSyntax)generator.Argument(
             generator.MemberAccessExpression(
                 generator.TypeExpression(stringComparison, addImport: true),

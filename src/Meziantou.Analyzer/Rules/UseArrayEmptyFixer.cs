@@ -61,7 +61,7 @@ public sealed class UseArrayEmptyFixer : CodeFixProvider
 
     private static SyntaxNode GenerateArrayEmptyInvocation(SyntaxGenerator generator, ITypeSymbol elementType, SemanticModel semanticModel)
     {
-        var arrayTypeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Array");
+        var arrayTypeSymbol = semanticModel.Compilation.GetSpecialType(SpecialType.System_Array);
         var arrayEmptyName = generator.MemberAccessExpression(
             generator.TypeExpression(arrayTypeSymbol),
             generator.GenericName("Empty", elementType));

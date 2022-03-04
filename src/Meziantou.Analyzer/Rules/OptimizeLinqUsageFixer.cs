@@ -541,7 +541,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var generator = editor.Generator;
         var method = generator.MemberAccessExpression(firstOperation.Arguments[0].Syntax, lastOperation.TargetMethod.Name);
         var argument = CombineArguments(firstOperation.Arguments.ElementAtOrDefault(1), lastOperation.Arguments.ElementAtOrDefault(1));
-        var newExpression = generator.InvocationExpression(method, argument);
+        var newExpression = argument is null ? generator.InvocationExpression(method) : generator.InvocationExpression(method, argument);
 
         editor.ReplaceNode(lastOperation.Syntax, newExpression);
         return editor.GetChangedDocument();

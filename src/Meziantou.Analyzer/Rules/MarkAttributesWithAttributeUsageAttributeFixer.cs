@@ -48,6 +48,9 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
         var attributeUsageAttribute = semanticModel.Compilation.GetTypeByMetadataName("System.AttributeUsageAttribute");
         var attributeTargets = semanticModel.Compilation.GetTypeByMetadataName("System.AttributeTargets");
 
+        if (attributeUsageAttribute is null || attributeTargets is null)
+            return document;
+
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(attributeUsageAttribute, addImport: true),
             new[]
