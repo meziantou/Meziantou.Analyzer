@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class UseRegexTimeoutAnalyzer : DiagnosticAnalyzer
+public sealed class RegexAnalyzers : DiagnosticAnalyzer
 {
     private static readonly string[] s_methodNames = { "IsMatch", "Match", "Matches", "Replace", "Split" };
 
@@ -62,8 +62,7 @@ public sealed class UseRegexTimeoutAnalyzer : DiagnosticAnalyzer
         if (op.Arguments.Length == 0)
             return;
 
-        var arg = op.Arguments.Last();
-        if (arg.Value == null || !arg.Value.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
+        if (!CheckTimeout(context, op.Arguments))
         {
             context.ReportDiagnostic(s_timeoutRule, op);
         }
@@ -83,12 +82,17 @@ public sealed class UseRegexTimeoutAnalyzer : DiagnosticAnalyzer
         if (!op.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
             return;
 
-        if (!op.Arguments.Last().Value.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan")))
+        if (!CheckTimeout(context, op.Arguments))
         {
             context.ReportDiagnostic(s_timeoutRule, op);
         }
 
         CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
+    }
+
+    private static bool CheckTimeout(OperationAnalysisContext context, ImmutableArray<IArgumentOperation> args)
+    {
+        return args.Last().Value.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan"));
     }
 
     private static void CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)
@@ -137,4 +141,5 @@ public sealed class UseRegexTimeoutAnalyzer : DiagnosticAnalyzer
             return true;
         }
     }
+
 }

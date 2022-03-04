@@ -55,6 +55,8 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
             return document;
 
         var stringComparison = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparison");
+        if (stringComparison is null)
+            return document;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(generator.TypeExpression(SpecialType.System_String), nameof(string.Equals)),

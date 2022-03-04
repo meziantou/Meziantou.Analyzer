@@ -118,7 +118,7 @@ internal static class OperationExtensions
         foreach (var syntax in operation.Syntax.AncestorsAndSelf())
         {
             if (syntax is MethodDeclarationSyntax method)
-                return operation.SemanticModel.GetDeclaredSymbol(method) as IMethodSymbol;
+                return operation.SemanticModel.GetDeclaredSymbol(method);
         }
 
         return null;

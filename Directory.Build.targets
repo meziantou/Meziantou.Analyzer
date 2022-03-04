@@ -1,17 +1,19 @@
 <Project>
 
-<PropertyGroup>
-  <RoslynVersion Condition="$(RoslynVersion) == ''">minimal</RoslynVersion>
-  <RoslynVersion>preview</RoslynVersion>
-</PropertyGroup>
+  <PropertyGroup>
+    <RoslynVersion Condition="$(RoslynVersion) == ''">minimal</RoslynVersion>
+    <RoslynVersion>preview</RoslynVersion>
+  </PropertyGroup>
 
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
   <ItemGroup Condition="$(RoslynVersion) == 'minimal'">
+    <!-- Consider removing CS0618 when updating this version -->
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'minimal'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER</DefineConstants>
+    <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'stable'">
@@ -19,6 +21,7 @@
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'stable'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER</DefineConstants>
+    <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
@@ -26,10 +29,11 @@
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
   </PropertyGroup>
-  
+
   <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net461' OR $(RoslynVersion) == 'minimal'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net461'">
     <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 </Project>

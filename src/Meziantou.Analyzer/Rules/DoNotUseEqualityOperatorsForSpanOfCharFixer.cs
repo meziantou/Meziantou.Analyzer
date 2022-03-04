@@ -55,6 +55,8 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
             return document;
 
         var stringComparison = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparison");
+        if (stringComparison is null)
+            return document;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(operation.LeftOperand.Syntax, "SequenceEqual"),
