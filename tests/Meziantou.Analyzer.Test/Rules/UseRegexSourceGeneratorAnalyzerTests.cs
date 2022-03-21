@@ -401,7 +401,7 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [RegexGenerator(""testpattern"", RegexOptions.None)]
+    [RegexGenerator(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
     private static partial Regex MyRegex();
 }
 ";
@@ -435,7 +435,7 @@ partial class Test
 {
     bool a = MyRegex().IsMatch(""input"");
 
-    [RegexGenerator(""testpattern"", RegexOptions.None)]
+    [RegexGenerator(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
     private static partial Regex MyRegex();
 }
 ";
@@ -496,6 +496,50 @@ class Test
 
             await CreateProjectBuilder()
                   .WithSourceCode(sourceCode)
+                  .ValidateAsync();
+        }
+
+        [Fact]
+        public async Task NestedTypeShouldAddPartialToAllAncestorTypes()
+        {
+            var sourceCode = @"
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    private partial class Inner1
+    {
+        class Inner
+        {
+            bool a = [||]Regex.IsMatch(""input"", ""testpattern"");
+        }
+    }
+}
+";
+
+            var codeFix = @"
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    private partial class Inner1
+    {
+        partial class Inner
+        {
+            bool a = MyRegex().IsMatch(""input"");
+
+            [RegexGenerator(""testpattern"")]
+            private static partial Regex MyRegex();
+        }
+    }
+}
+";
+
+            await CreateProjectBuilder()
+                  .WithSourceCode(sourceCode)
+                  .ShouldFixCodeWith(codeFix)
                   .ValidateAsync();
         }
     }
