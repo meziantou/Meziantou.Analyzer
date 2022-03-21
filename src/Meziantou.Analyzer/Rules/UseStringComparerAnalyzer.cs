@@ -13,16 +13,16 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 {
     private static readonly string[] s_enumerableMethods =
     {
-            "Contains",
-            "Distinct",
-            "Except",
-            "Intersect",
-            "OrderBy",
-            "OrderByDescending",
-            "SequenceEqual",
-            "ToHashSet",
-            "Union",
-        };
+        "Contains",
+        "Distinct",
+        "Except",
+        "Intersect",
+        "OrderBy",
+        "OrderByDescending",
+        "SequenceEqual",
+        "ToHashSet",
+        "Union",
+    };
 
     private static readonly Dictionary<string, int> s_arityIndex = new(StringComparer.Ordinal)
     {

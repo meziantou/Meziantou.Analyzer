@@ -57,11 +57,10 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
         var typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-        if (root == null || typeDeclaration == null || nodeToFix == null)
+        if (root == null || nodeToFix == null || typeDeclaration == null)
             return document;
 
-        var newTypeDeclaration = typeDeclaration;
-
+        // Get type info before changing the root
         var properties = diagnostic.Properties;
         var operation = semanticModel.GetOperation(nodeToFix, cancellationToken);
         if (operation == null)
@@ -78,6 +77,30 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 methodName += "_";
             }
         }
+
+        // Add partial to the type hierarchy
+        var count = 0;
+        root = root.ReplaceNodes(nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>(), (_, r) =>
+        {
+            if (!r.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
+            {
+                count++;
+                return r.AddModifiers(Token(SyntaxKind.PartialKeyword)).WithAdditionalAnnotations(Simplifier.Annotation);
+            }
+
+            return r;
+        });
+
+        // Get the new node to fix in the new syntax tree
+        nodeToFix = root.FindNode(new Microsoft.CodeAnalysis.Text.TextSpan(nodeToFix.Span.Start + (count * "partial".Length), nodeToFix.Span.Length));
+        if (nodeToFix == null)
+            return document;
+
+        typeDeclaration = nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+        if (typeDeclaration == null)
+            return document;
+
+        var newTypeDeclaration = typeDeclaration;
 
         // Use new method
         if (operation is IObjectCreationOperation)
@@ -111,7 +134,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         SyntaxNode? timeoutValue = null;
 
         var timeout = TryParseInt32(properties, UseRegexSourceGeneratorAnalyzer.RegexTimeoutName);
-        if (timeout != null && timeout != -1) // Skip infinite timeout value
+        if (timeout != null)
         {
             timeoutValue = generator.LiteralExpression(timeout.Value);
         }
@@ -151,13 +174,6 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         newMethod = (MethodDeclarationSyntax)generator.AddAttributes(newMethod, attributes);
         newTypeDeclaration = newTypeDeclaration.AddMembers(newMethod);
-
-        // Make type partial
-        if (!newTypeDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
-        {
-            newTypeDeclaration = newTypeDeclaration.AddModifiers(Token(SyntaxKind.PartialKeyword)).WithoutAnnotations(Simplifier.Annotation);
-        }
-
         return document.WithSyntaxRoot(root.ReplaceNode(typeDeclaration, newTypeDeclaration));
     }
 
