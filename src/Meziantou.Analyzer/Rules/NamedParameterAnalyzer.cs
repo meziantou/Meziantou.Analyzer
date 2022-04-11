@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -33,7 +34,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var attributeTokenType = compilationContext.Compilation.GetTypeByMetadataName("SkipNamedAttribute");
+            var callerMustUseNamedArgumentType = compilationContext.Compilation.GetTypeByMetadataName("Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute");
 
             var objectType = compilationContext.Compilation.GetSpecialType(SpecialType.System_Object);
             var taskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
@@ -59,6 +60,24 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
 
                 if (argument.Expression == null)
                     return;
+
+                if (callerMustUseNamedArgumentType != null)
+                {
+                    var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
+                    if (operation?.Parameter != null)
+                    {
+                        var attribute = operation.Parameter.GetAttribute(callerMustUseNamedArgumentType);
+                        if (attribute != null)
+                        {
+                            var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
+                            if (requireNamedArgument)
+                            {
+                                syntaxContext.ReportDiagnostic(Diagnostic.Create(s_rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
+                                return;
+                            }
+                        }
+                    }
+                }
 
                 var expression = argument.Expression;
                 if (expression.IsKind(SyntaxKind.NullLiteralExpression))
