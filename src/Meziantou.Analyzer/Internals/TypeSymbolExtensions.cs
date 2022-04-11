@@ -55,18 +55,23 @@ internal static class TypeSymbolExtensions
         return GetAllInterfacesIncludingThis(symbol).Any(i => interfaceType.IsEqualTo(i));
     }
 
-    public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType)
+    public static AttributeData? GetAttribute(this ISymbol symbol, ITypeSymbol? attributeType)
     {
         if (attributeType == null)
-            return false;
+            return null;
 
         foreach (var attribute in symbol.GetAttributes())
         {
             if (attributeType.IsEqualTo(attribute.AttributeClass))
-                return true;
+                return attribute;
         }
 
-        return false;
+        return null;
+    }
+
+    public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType)
+    {
+        return GetAttribute(symbol, attributeType) != null;
     }
 
     public static bool IsOrInheritFrom(this ITypeSymbol symbol, ITypeSymbol? expectedType)

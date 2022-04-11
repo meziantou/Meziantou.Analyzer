@@ -765,4 +765,84 @@ class Test
 ")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object a) { }
+
+    void A()
+    {
+        _ = new Test([||]new object());
+    }
+}
+
+namespace Meziantou.Analyzer.Annotations
+{
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    internal class RequireNamedArgumentAttribute : System.Attribute {}
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_False()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(false)]object a) { }
+
+    void A()
+    {
+        _ = new Test(new object());
+    }
+}
+
+namespace Meziantou.Analyzer.Annotations
+{
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    internal class RequireNamedArgumentAttribute : System.Attribute
+    {
+        public RequireNamedArgumentAttribute() {}
+        public RequireNamedArgumentAttribute(bool value) {}
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_True()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
+
+    void A()
+    {
+        _ = new Test([||]new object());
+    }
+}
+
+namespace Meziantou.Analyzer.Annotations
+{
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    internal class RequireNamedArgumentAttribute : System.Attribute
+    {
+        public RequireNamedArgumentAttribute() {}
+        public RequireNamedArgumentAttribute(bool value) {}
+    }
+}
+")
+              .ValidateAsync();
+    }
 }
