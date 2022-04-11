@@ -32,7 +32,7 @@ jobs:
       name: Compute version
       id: compute-version
     - run: dotnet pack --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /bl
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: nuget
         if-no-files-found: error
@@ -59,7 +59,7 @@ jobs:
         dotnet-version: '3.1.x'
     - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --logger "GitHubActions;report-warnings=false" --collect:"XPlat Code Coverage" --blame-hang --blame-hang-timeout 2min --results-directory "${{ env.TestResultsDirectory }}" /p:WarningsAsErrors=true /p:RoslynVersion=${{ matrix.roslyn-version}}
       name: Run tests
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       if: always()
       with:
         name: test-results-${{ matrix.runs-on }}-${{ matrix.configuration }}
