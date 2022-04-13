@@ -25,7 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22116.1" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22168.1" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.2.0-2.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
