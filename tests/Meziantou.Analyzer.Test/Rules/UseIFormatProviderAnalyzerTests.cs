@@ -309,4 +309,21 @@ class TypeName
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task GuidParse()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        System.Guid.Parse(""o"");
+        System.Guid.TryParse(""o"", out _);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

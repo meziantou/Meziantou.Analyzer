@@ -70,6 +70,16 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
             }
         }
+        else if (string.Equals(methodName, "Parse", StringComparison.Ordinal) || string.Equals(methodName, "TryParse", StringComparison.Ordinal))
+        {
+            // Guid.Parse / Guid.TryParse are culture insensitive
+            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
+                return;
+
+            // Char.Parse / Char.TryParse are culture insensitive
+            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetSpecialType(SpecialType.System_Char)))
+                return;
+        }
 
         if (formatProviderType != null && !operation.HasArgumentOfType(formatProviderType))
         {
