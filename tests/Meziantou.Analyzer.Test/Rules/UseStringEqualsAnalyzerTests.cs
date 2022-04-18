@@ -174,4 +174,62 @@ class TypeName
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Replace_Meziantou_Framework_EqualsOrdinal()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = [|""a"" == ""b""|];
+    }
+}";
+        const string CodeFix = @"
+using Meziantou.Framework;
+
+class TypeName
+{
+    public void Test()
+    {
+        var a = ""a"".EqualsOrdinal(""b"");
+    }
+}";
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 2, CodeFix)
+            .AddNuGetReference("Meziantou.Framework", "3.0.23", "lib/net6.0/")
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Replace_Meziantou_Framework_EqualsIgnoreCase()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        var a = [|""a"" == ""b""|];
+    }
+}";
+        const string CodeFix = @"
+using Meziantou.Framework;
+
+class TypeName
+{
+    public void Test()
+    {
+        var a = ""a"".EqualsIgnoreCase(""b"");
+    }
+}";
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 3, CodeFix)
+            .AddNuGetReference("Meziantou.Framework", "3.0.23", "lib/net6.0/")
+            .ValidateAsync();
+    }
 }
