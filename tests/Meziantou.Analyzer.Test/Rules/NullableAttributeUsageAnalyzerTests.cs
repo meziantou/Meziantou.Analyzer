@@ -5,12 +5,12 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class NotNullIfNotNullArgumentShouldExistAnalyzerTests
+public sealed class NullableAttributeUsageAnalyzerTests
 {
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<NotNullIfNotNullArgumentShouldExistAnalyzer>();
+            .WithAnalyzer<NullableAttributeUsageAnalyzer>();
     }
 
     [Fact]
@@ -19,12 +19,15 @@ public sealed class NotNullIfNotNullArgumentShouldExistAnalyzerTests
         const string SourceCode = @"
 class Test
 {
-    [[|System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(""unknown"")|]]
+    [return: [|System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(""unknown"")|]]
     public void A(string a) { }
 }
 
 namespace System.Diagnostics.CodeAnalysis
 {
+    using System;
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter | AttributeTargets.ReturnValue, AllowMultiple = true, Inherited = false)]
     public class NotNullIfNotNullAttribute : System.Attribute
     {
         public NotNullIfNotNullAttribute (string parameterName) => throw null;
@@ -41,12 +44,15 @@ namespace System.Diagnostics.CodeAnalysis
         const string SourceCode = @"
 class Test
 {
-    [System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(""a"")]
+    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(""a"")]
     public void A(string a) { }
 }
 
 namespace System.Diagnostics.CodeAnalysis
 {
+    using System;
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter | AttributeTargets.ReturnValue, AllowMultiple = true, Inherited = false)]
     public class NotNullIfNotNullAttribute : System.Attribute
     {
         public NotNullIfNotNullAttribute (string parameterName) => throw null;

@@ -1,8 +1,8 @@
 <Project>
 
   <PropertyGroup>
-    <RoslynVersion Condition="$(RoslynVersion) == ''">minimal</RoslynVersion>
-    <RoslynVersion>preview</RoslynVersion>
+    <!-- minimal, latest, preview -->
+    <RoslynVersion Condition="$(RoslynVersion) == ''">preview</RoslynVersion>
   </PropertyGroup>
 
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
@@ -16,7 +16,7 @@
     <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup Condition="$(RoslynVersion) == 'stable'">
+  <ItemGroup Condition="$(RoslynVersion) == 'latest'">
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.1.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'stable'">
@@ -25,8 +25,8 @@
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22116.1" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.2.0-2.final" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22217.1" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0-1.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
@@ -34,7 +34,7 @@
   </PropertyGroup>
 
   <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net461'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net462'">
     <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 </Project>
