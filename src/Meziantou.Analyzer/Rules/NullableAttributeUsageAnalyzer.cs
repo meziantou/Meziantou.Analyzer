@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class NotNullIfNotNullArgumentShouldExistAnalyzer : DiagnosticAnalyzer
+public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.NotNullIfNotNullArgumentShouldExist,
@@ -38,7 +38,7 @@ public sealed class NotNullIfNotNullArgumentShouldExistAnalyzer : DiagnosticAnal
     private static void AnalyzeMethod(SymbolAnalysisContext context, INamedTypeSymbol notNullIfNotNullAttributeTypeSymbol)
     {
         var method = (IMethodSymbol)context.Symbol;
-        foreach (var attribute in method.GetAttributes())
+        foreach (var attribute in method.GetReturnTypeAttributes())
         {
             if (!attribute.AttributeClass.IsEqualTo(notNullIfNotNullAttributeTypeSymbol))
                 continue;
