@@ -40,7 +40,7 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
         if (operation == null)
             return document;
 
-        var newExpression = generator.NameOfExpression(operation.Children.First().Syntax);
+        var newExpression = generator.NameOfExpression(operation.GetChildOperations().First().Syntax);
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();

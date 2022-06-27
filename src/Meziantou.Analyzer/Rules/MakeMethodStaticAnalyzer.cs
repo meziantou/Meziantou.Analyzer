@@ -195,7 +195,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             while (operations.Count > 0)
             {
                 var op = operations.Dequeue();
-                foreach (var child in op.Children)
+                foreach (var child in op.GetChildOperations())
                 {
                     operations.Enqueue(child);
                 }

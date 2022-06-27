@@ -167,7 +167,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (HasAnOverloadWithCancellationToken(invocation))
                     return;
 
-                collection = invocation.Children.FirstOrDefault();
+                collection = invocation.GetChildOperations().FirstOrDefault();
                 if (collection is IArgumentOperation argOperation)
                 {
                     collection = argOperation.Value;
@@ -390,7 +390,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             {
                 if (currentOperation is IBlockOperation blockOperation)
                 {
-                    foreach (var childOperation in blockOperation.Children)
+                    foreach (var childOperation in blockOperation.GetChildOperations())
                     {
                         if (childOperation == previousOperation)
                             break;

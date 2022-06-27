@@ -176,7 +176,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
             yield return op;
             if (processChildren(op))
             {
-                foreach (var child in op.Children)
+                foreach (var child in op.GetChildOperations())
                 {
                     stack.Push(child);
                 }

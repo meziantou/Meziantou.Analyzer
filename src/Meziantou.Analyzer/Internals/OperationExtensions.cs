@@ -9,6 +9,18 @@ namespace Meziantou.Analyzer;
 
 internal static class OperationExtensions
 {
+#if ROSLYN3
+    public static IEnumerable<IOperation> GetChildOperations(this IOperation operation)
+    {
+        return operation.Children;
+    }
+#elif ROSLYN4
+    public static IOperation.OperationList GetChildOperations(this IOperation operation)
+    {
+        return operation.ChildOperations;
+    }
+#endif
+
     public static LanguageVersion GetCSharpLanguageVersion(this IOperation operation)
     {
         if (operation.Syntax.SyntaxTree.Options is CSharpParseOptions options)

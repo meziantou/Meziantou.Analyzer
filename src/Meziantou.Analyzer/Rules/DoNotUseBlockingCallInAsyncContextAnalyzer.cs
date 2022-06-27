@@ -169,7 +169,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                string.Equals(targetMethod.Name, "WriteLine", StringComparison.Ordinal) ||
                string.Equals(targetMethod.Name, "Flush", StringComparison.Ordinal))
             {
-                var left = operation.Children.FirstOrDefault();
+                var left = operation.GetChildOperations().FirstOrDefault();
                 if (left is IMemberReferenceOperation memberReference)
                 {
                     if (ConsoleErrorAndOutSymbols.Contains(memberReference.Member, SymbolEqualityComparer.Default))
