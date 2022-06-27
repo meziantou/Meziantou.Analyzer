@@ -89,7 +89,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var argument = (IInterpolatedStringOperation)operation.Arguments[0].Value;
 
         var shouldAppendLastAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
-        var newExpression = operation.Children.First().Syntax;
+        var newExpression = operation.GetChildOperations().First().Syntax;
         foreach (var part in argument.Parts)
         {
             if (part is IInterpolatedStringTextOperation str)
@@ -167,7 +167,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
 
         var binaryOperation = (IBinaryOperation)operation.Arguments[0].Value;
 
-        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.Children.First().Syntax, "Append"), binaryOperation.LeftOperand.Syntax);
+        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "Append"), binaryOperation.LeftOperand.Syntax);
         newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, isAppendLine ? "AppendLine" : "Append"), binaryOperation.RightOperand.Syntax);
 
         editor.ReplaceNode(nodeToFix, newExpression);
@@ -187,7 +187,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
 
         var toStringOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
-        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.Children.First().Syntax, "Append"), toStringOperation.Children.First().Syntax);
+        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "Append"), toStringOperation.GetChildOperations().First().Syntax);
         if (isAppendLine)
         {
             newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
@@ -210,10 +210,10 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
 
         var toStringOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
-        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.Children.First().Syntax, "AppendFormat"),
+        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendFormat"),
             toStringOperation.Arguments[1].Syntax,
             GetFormatExpression(toStringOperation.Arguments[0].Value),
-            toStringOperation.Children.First().Syntax);
+            toStringOperation.GetChildOperations().First().Syntax);
 
         if (isAppendLine)
         {
@@ -250,13 +250,13 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
 
         var toStringOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
-        var strSyntax = toStringOperation.Children.First().Syntax;
+        var strSyntax = toStringOperation.GetChildOperations().First().Syntax;
         var lengthArgument = toStringOperation.Arguments.Length == 2 ?
             toStringOperation.Arguments[1].Value.Syntax :
             generator.SubtractExpression(generator.MemberAccessExpression(strSyntax, "Length"), toStringOperation.Arguments[0].Value.Syntax);
 
         var newExpression = generator.InvocationExpression(
-                generator.MemberAccessExpression(operation.Children.First().Syntax, "Append"),
+                generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "Append"),
                 strSyntax,
                 toStringOperation.Arguments[0].Value.Syntax,
                 lengthArgument);

@@ -39,7 +39,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         if (!operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetSpecialType(SpecialType.System_Enum)))
             return;
 
-        if (operation.Children.First() is not IMemberReferenceOperation expression)
+        if (operation.GetChildOperations().First() is not IMemberReferenceOperation expression)
             return;
 
         if (expression.Member.ContainingType.EnumUnderlyingType == null)

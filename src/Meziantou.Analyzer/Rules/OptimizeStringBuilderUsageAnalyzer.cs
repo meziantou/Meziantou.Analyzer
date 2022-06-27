@@ -293,7 +293,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
         if (operation is IInterpolatedStringContentOperation interpolated)
         {
-            var op = interpolated.Children.SingleOrDefaultIfMultiple();
+            var op = interpolated.GetChildOperations().SingleOrDefaultIfMultiple();
             if (op == null)
                 return false;
 

@@ -140,7 +140,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                         return true;
                 }
 
-                foreach (var child in operation.Children)
+                foreach (var child in operation.GetChildOperations())
                 {
                     if (HasConfigureAwait(child))
                         return true;
@@ -154,7 +154,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 if (operation.Type.IsEqualTo(IAsyncEnumerableSymbol))
                     return true;
 
-                foreach (var child in operation.Children)
+                foreach (var child in operation.GetChildOperations())
                 {
                     if (HasConfigureAwait(child))
                         return true;
@@ -170,7 +170,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             if (!operation.IsAsynchronous)
                 return;
 
-            var firstChild = operation.Children.FirstOrDefault();
+            var firstChild = operation.GetChildOperations().FirstOrDefault();
             if (firstChild is IVariableDeclarationGroupOperation declarationGroup)
             {
                 // await using(var a = expr, b = expr)

@@ -66,7 +66,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
             var member = reference.Member;
             if (IsOverridable(member) && !reference.IsInNameofOperation())
             {
-                var children = reference.Children.Take(2).ToList();
+                var children = reference.GetChildOperations().Take(2).ToList();
                 if (children.Count == 1 && IsCurrentInstanceMethod(children[0]))
                 {
                     context.ReportDiagnostic(s_rule, reference.Syntax);
