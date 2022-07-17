@@ -48,7 +48,7 @@ internal static class OperationExtensions
         foreach (var invocationOperation in operation.Ancestors().OfType<IInvocationOperation>())
         {
             var type = invocationOperation.TargetMethod.ContainingType;
-            if (type.IsEqualTo(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Queryable")))
+            if (type.IsEqualTo(semanticModel.Compilation.GetBestTypeByMetadataName("System.Linq.Queryable")))
                 return true;
         }
 
@@ -69,7 +69,7 @@ internal static class OperationExtensions
                     continue;
 
                 var type = argumentOperation.Parameter.Type;
-                if (type.InheritsFrom(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
+                if (type.InheritsFrom(semanticModel.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression")))
                     return true;
             }
             else if (op is IConversionOperation conversionOperation)
@@ -78,7 +78,7 @@ internal static class OperationExtensions
                 if (type is null)
                     continue;
 
-                if (type.InheritsFrom(semanticModel.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")))
+                if (type.InheritsFrom(semanticModel.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression")))
                     return true;
             }
         }

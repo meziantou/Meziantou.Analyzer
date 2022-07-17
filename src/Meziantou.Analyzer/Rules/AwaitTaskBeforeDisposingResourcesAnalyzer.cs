@@ -36,10 +36,10 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         if (returnedValue is null)
             return;
 
-        var taskSymbol = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
-        var taskOfTSymbol = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
-        var valueTaskSymbol = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
-        var valueTaskOfTSymbol = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        var taskSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+        var taskOfTSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+        var valueTaskSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+        var valueTaskOfTSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
 
         if (IsTaskLike(returnedValue.Type))
         {

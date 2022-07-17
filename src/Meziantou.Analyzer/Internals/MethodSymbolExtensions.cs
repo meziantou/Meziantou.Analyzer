@@ -155,7 +155,7 @@ internal static class MethodSymbolExtensions
 
     public static bool IsObsolete(this IMethodSymbol methodSymbol, Compilation compilation)
     {
-        var obsoleteAttribute = compilation?.GetTypeByMetadataName("System.ObsoleteAttribute");
+        var obsoleteAttribute = compilation?.GetBestTypeByMetadataName("System.ObsoleteAttribute");
         if (obsoleteAttribute == null)
             return false;
 

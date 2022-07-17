@@ -43,7 +43,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : Diagnosti
         {
             context.ReportDiagnostic(s_rule, operation.LockedValue);
         }
-        else if (operation.LockedValue is ILocalReferenceOperation localReference && localReference.Local.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Type")))
+        else if (operation.LockedValue is ILocalReferenceOperation localReference && localReference.Local.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Type")))
         {
             context.ReportDiagnostic(s_rule, operation.LockedValue);
         }

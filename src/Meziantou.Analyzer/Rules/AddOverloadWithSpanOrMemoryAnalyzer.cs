@@ -105,7 +105,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         var types = new string[] { "System.Span`1", "System.ReadOnlySpan`1", "System.Memory`1", "System.ReadOnlyMemory`1" };
         foreach (var type in types)
         {
-            if (typeSymbol.IsEqualTo(compilation.GetTypeByMetadataName(type)?.Construct(elementType)))
+            if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName(type)?.Construct(elementType)))
                 return true;
         }
 

@@ -27,7 +27,7 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var reservedExceptionType = ctx.Compilation.GetTypeByMetadataName("System.ApplicationException");
+            var reservedExceptionType = ctx.Compilation.GetBestTypeByMetadataName("System.ApplicationException");
             if (reservedExceptionType != null)
             {
                 ctx.RegisterOperationAction(_ => Analyze(_, reservedExceptionType), OperationKind.Throw);

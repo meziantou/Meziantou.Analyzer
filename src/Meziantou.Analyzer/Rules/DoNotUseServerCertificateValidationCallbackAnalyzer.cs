@@ -31,13 +31,13 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : Diagno
         {
             var symbols = new List<ISymbol>();
 
-            var servicePointManagerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.ServicePointManager");
+            var servicePointManagerSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Net.ServicePointManager");
             if (servicePointManagerSymbol != null)
             {
                 symbols.AddIfNotNull(servicePointManagerSymbol.GetMembers("ServerCertificateValidationCallback").FirstOrDefault());
             }
 
-            var httpClientHandlerSymbol = ctx.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClientHandler");
+            var httpClientHandlerSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Net.Http.HttpClientHandler");
             if (httpClientHandlerSymbol != null)
             {
                 symbols.AddIfNotNull(httpClientHandlerSymbol.GetMembers("ServerCertificateCustomValidationCallback").FirstOrDefault());

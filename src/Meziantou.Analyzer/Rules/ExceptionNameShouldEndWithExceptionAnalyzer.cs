@@ -33,7 +33,7 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzer : DiagnosticAnal
         if (symbol.Name == null)
             return;
 
-        if (!symbol.Name.EndsWith("Exception", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Exception")))
+        if (!symbol.Name.EndsWith("Exception", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.Exception")))
         {
             context.ReportDiagnostic(s_rule, symbol);
         }

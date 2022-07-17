@@ -36,7 +36,7 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            EventArgsSymbol = compilation.GetTypeByMetadataName("System.EventArgs");
+            EventArgsSymbol = compilation.GetBestTypeByMetadataName("System.EventArgs");
         }
 
         public INamedTypeSymbol? EventArgsSymbol { get; }

@@ -26,7 +26,7 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var type = ctx.Compilation.GetTypeByMetadataName("System.ObsoleteAttribute");
+            var type = ctx.Compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
             if (type == null)
                 return;
 

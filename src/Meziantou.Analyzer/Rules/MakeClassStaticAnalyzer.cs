@@ -63,7 +63,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
 
         public AnalyzerContext(Compilation compilation)
         {
-            CoClassAttributeSymbol = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
+            CoClassAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
         }
 
         public INamedTypeSymbol? CoClassAttributeSymbol { get; }

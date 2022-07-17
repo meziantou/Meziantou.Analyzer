@@ -51,7 +51,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         if (method.MethodKind is not MethodKind.Ordinary)
             return;
 
-        var generatorAttributeSymbol = context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
+        var generatorAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
         if (generatorAttributeSymbol == null)
             return;
 
@@ -106,7 +106,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         if (!s_methodNames.Contains(op.TargetMethod.Name, StringComparer.Ordinal))
             return;
 
-        if (!op.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
+        if (!op.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
             return;
 
         if (op.Arguments.Length == 0)
@@ -117,7 +117,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(s_timeoutRule, op);
         }
 
-        CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
+        CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
     }
 
     private static void AnalyzeObjectCreation(OperationAnalysisContext context)
@@ -129,7 +129,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         if (op.Arguments.Length == 0)
             return;
 
-        if (!op.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
+        if (!op.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
             return;
 
         if (!CheckTimeout(context, op.Arguments))
@@ -137,12 +137,12 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(s_timeoutRule, op);
         }
 
-        CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
+        CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
     }
 
     private static bool CheckTimeout(OperationAnalysisContext context, ImmutableArray<IArgumentOperation> args)
     {
-        return args.Last().Value.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.TimeSpan"));
+        return args.Last().Value.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.TimeSpan"));
     }
 
     private static void CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)

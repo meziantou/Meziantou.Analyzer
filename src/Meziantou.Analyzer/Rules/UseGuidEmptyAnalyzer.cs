@@ -34,7 +34,7 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeObjectCreationOperation(OperationAnalysisContext context)
     {
         var operation = (IObjectCreationOperation)context.Operation;
-        var guidType = context.Compilation.GetTypeByMetadataName("System.Guid");
+        var guidType = context.Compilation.GetBestTypeByMetadataName("System.Guid");
         if (operation.Type.IsEqualTo(guidType) && operation.Arguments.Length == 0)
         {
             context.ReportDiagnostic(s_rule, operation);

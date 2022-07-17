@@ -27,8 +27,8 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var spanOfString = ctx.Compilation.GetTypeByMetadataName("System.Span`1")?.Construct(ctx.Compilation.GetSpecialType(SpecialType.System_Char));
-            var readOnlySpanOfString = ctx.Compilation.GetTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(ctx.Compilation.GetSpecialType(SpecialType.System_Char));
+            var spanOfString = ctx.Compilation.GetBestTypeByMetadataName("System.Span`1")?.Construct(ctx.Compilation.GetSpecialType(SpecialType.System_Char));
+            var readOnlySpanOfString = ctx.Compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(ctx.Compilation.GetSpecialType(SpecialType.System_Char));
             if (spanOfString is null && readOnlySpanOfString is null)
                 return;
 

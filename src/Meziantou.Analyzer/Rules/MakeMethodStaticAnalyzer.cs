@@ -215,14 +215,14 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             if (string.Equals(methodSymbol.Name, "Invoke", StringComparison.Ordinal) ||
                 string.Equals(methodSymbol.Name, "InvokeAsync", StringComparison.Ordinal))
             {
-                var httpContextSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
+                var httpContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
                 if (methodSymbol.Parameters.Length == 0 || !methodSymbol.Parameters[0].Type.IsEqualTo(httpContextSymbol))
                     return false;
 
                 return true;
             }
 
-            var imiddlewareSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.IMiddleware");
+            var imiddlewareSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.IMiddleware");
             if (imiddlewareSymbol != null)
             {
                 if (methodSymbol.ContainingType.Implements(imiddlewareSymbol))
@@ -245,7 +245,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             // void ConfigureServices Microsoft.Extensions.DependencyInjection.IServiceCollection
             if (string.Equals(methodSymbol.Name, "ConfigureServices", StringComparison.Ordinal))
             {
-                var iserviceCollectionSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
+                var iserviceCollectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
                 if (methodSymbol.ReturnsVoid && methodSymbol.Parameters.Length == 1 && methodSymbol.Parameters[0].Type.IsEqualTo(iserviceCollectionSymbol))
                     return true;
 
@@ -255,7 +255,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             // void Configure Microsoft.AspNetCore.Builder.IApplicationBuilder
             if (string.Equals(methodSymbol.Name, "Configure", StringComparison.Ordinal))
             {
-                var iapplicationBuilder = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
+                var iapplicationBuilder = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
                 if (methodSymbol.Parameters.Length > 0 && methodSymbol.Parameters[0].Type.IsEqualTo(iapplicationBuilder))
                     return true;
 

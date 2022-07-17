@@ -107,7 +107,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         if (parent is IConversionOperation conversionOperation)
         {
             // `FormattableString _ = $""` is valid whereas `string _ = $""` may not be
-            if (conversionOperation.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.FormattableString")))
+            if (conversionOperation.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.FormattableString")))
                 return;
         }
 
@@ -153,7 +153,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
     private static bool IsFormattableType(Compilation compilation, ITypeSymbol typeSymbol)
     {
-        var iformattableSymbol = compilation.GetTypeByMetadataName("System.IFormattable");
+        var iformattableSymbol = compilation.GetBestTypeByMetadataName("System.IFormattable");
         if (typeSymbol.Implements(iformattableSymbol))
         {
             if (typeSymbol.IsEnumeration())
@@ -174,16 +174,16 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (typeSymbol.SpecialType == SpecialType.System_UInt64)
                 return false;
 
-            if (typeSymbol.IsEqualTo(compilation.GetTypeByMetadataName("System.TimeSpan")))
+            if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.TimeSpan")))
                 return false;
 
-            if (typeSymbol.IsEqualTo(compilation.GetTypeByMetadataName("System.Guid")))
+            if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Guid")))
                 return false;
 
-            if (typeSymbol.IsEqualTo(compilation.GetTypeByMetadataName("System.Windows.FontStretch")))
+            if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Windows.FontStretch")))
                 return false;
 
-            if (typeSymbol.IsOrInheritFrom(compilation.GetTypeByMetadataName("System.Windows.Media.Brush")))
+            if (typeSymbol.IsOrInheritFrom(compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush")))
                 return false;
 
             return true;

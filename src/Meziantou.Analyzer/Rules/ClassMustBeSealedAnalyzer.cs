@@ -47,8 +47,8 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
         public AnalyzerContext(Compilation compilation)
         {
-            ExceptionSymbol = compilation.GetTypeByMetadataName("System.Exception");
-            ComImportSymbol = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
+            ExceptionSymbol = compilation.GetBestTypeByMetadataName("System.Exception");
+            ComImportSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
         }
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)

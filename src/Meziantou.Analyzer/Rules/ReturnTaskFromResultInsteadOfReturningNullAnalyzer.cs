@@ -162,8 +162,8 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
         if (typeSyntax == null)
             return false;
 
-        return typeSyntax.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task")) ||
-               (typeSyntax.OriginalDefinition != null && typeSyntax.OriginalDefinition.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1")));
+        return typeSyntax.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task")) ||
+               (typeSyntax.OriginalDefinition != null && typeSyntax.OriginalDefinition.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1")));
     }
 
     private static IEnumerable<IOperation> DescendantsAndSelf(IOperation operation, Func<IOperation, bool> processChildren)

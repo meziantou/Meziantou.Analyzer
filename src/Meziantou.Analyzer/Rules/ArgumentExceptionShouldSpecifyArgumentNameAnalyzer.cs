@@ -55,7 +55,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
         if (type == null)
             return;
 
-        var exceptionType = context.Compilation.GetTypeByMetadataName("System.ArgumentException");
+        var exceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
         if (exceptionType == null)
             return;
 
@@ -63,7 +63,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
             return;
 
         var parameterName = "paramName";
-        if (type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException")))
+        if (type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException")))
         {
             parameterName = "argumentName";
         }

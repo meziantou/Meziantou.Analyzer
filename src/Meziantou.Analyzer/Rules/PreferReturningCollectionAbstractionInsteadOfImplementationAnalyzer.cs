@@ -44,25 +44,25 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
     {
         public AnalyzerContext(Compilation compilation)
         {
-            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"));
-            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
-            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
-            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.ObjectModel.Collection`1"));
+            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.List`1"));
+            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.HashSet`1"));
+            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
+            ConcreteCollectionSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.ObjectModel.Collection`1"));
 
-            TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"));
-            TaskSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
+            TaskSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1"));
+            TaskSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
 
-            XmlIgnoreAttributeSymbol = compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlIgnoreAttribute");
+            XmlIgnoreAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlIgnoreAttribute");
 
-            XmlClassAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlTypeAttribute"));
-            XmlClassAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlRootAttribute"));
+            XmlClassAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlTypeAttribute"));
+            XmlClassAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlRootAttribute"));
 
-            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlElementAttribute"));
-            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlArrayAttribute"));
-            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlAnyAttributeAttribute"));
-            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlAnyElementAttribute"));
-            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlArrayItemAttribute"));
-            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetTypeByMetadataName("System.Xml.Serialization.XmlTextAttribute"));
+            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlElementAttribute"));
+            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlArrayAttribute"));
+            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlAnyAttributeAttribute"));
+            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlAnyElementAttribute"));
+            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlArrayItemAttribute"));
+            XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlTextAttribute"));
         }
 
         public List<ITypeSymbol> ConcreteCollectionSymbols { get; } = new List<ITypeSymbol>();

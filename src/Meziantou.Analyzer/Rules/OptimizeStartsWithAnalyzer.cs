@@ -41,7 +41,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            var stringComparisonSymbol = compilation.GetTypeByMetadataName("System.StringComparison");
+            var stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
             if (stringComparisonSymbol != null)
             {
                 StringComparison_Ordinal = stringComparisonSymbol.GetMembers(nameof(StringComparison.Ordinal)).FirstOrDefault();

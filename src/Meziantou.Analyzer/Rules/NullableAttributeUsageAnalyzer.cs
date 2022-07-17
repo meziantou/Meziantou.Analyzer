@@ -27,7 +27,7 @@ public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var type = ctx.Compilation.GetTypeByMetadataName("System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute");
+            var type = ctx.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute");
             if (type == null)
                 return;
 

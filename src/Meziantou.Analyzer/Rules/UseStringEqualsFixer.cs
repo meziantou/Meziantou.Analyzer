@@ -36,7 +36,7 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken);
         if (semanticModel != null)
         {
-            var type = semanticModel.Compilation.GetTypeByMetadataName("Meziantou.Framework.StringExtensions");
+            var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
             if (type != null)
             {
                 if (type.GetMembers("EqualsOrdinal").Length > 0)
@@ -85,7 +85,7 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         if (operation == null)
             return document;
 
-        var stringComparison = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparison");
+        var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
         if (stringComparison is null)
             return document;
 
@@ -114,7 +114,7 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         if (operation == null)
             return document;
 
-        var type = semanticModel.Compilation.GetTypeByMetadataName("Meziantou.Framework.StringExtensions");
+        var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
         if (type == null)
             return document;
 

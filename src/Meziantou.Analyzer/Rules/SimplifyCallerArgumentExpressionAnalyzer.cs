@@ -61,7 +61,7 @@ public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyze
         if (argument.Parameter.ExplicitDefaultValue is not null)
             return;
 
-        var attributeSymbol = context.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
+        var attributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
         if (attributeSymbol is null)
             return;
 

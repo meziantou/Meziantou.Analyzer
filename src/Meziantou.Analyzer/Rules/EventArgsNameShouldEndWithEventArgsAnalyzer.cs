@@ -33,7 +33,7 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnal
         if (symbol.Name == null)
             return;
 
-        if (!symbol.Name.EndsWith("EventArgs", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.EventArgs")))
+        if (!symbol.Name.EndsWith("EventArgs", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.EventArgs")))
         {
             context.ReportDiagnostic(s_rule, symbol);
         }

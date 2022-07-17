@@ -64,8 +64,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         {
             EqualityComparerStringType = GetIEqualityComparerString(compilation);
             ComparerStringType = GetIComparerString(compilation);
-            EnumerableType = compilation.GetTypeByMetadataName("System.Linq.Enumerable");
-            ISetType = compilation.GetTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+            EnumerableType = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
+            ISetType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         }
 
         public INamedTypeSymbol? EqualityComparerStringType { get; }
@@ -166,7 +166,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
         {
-            var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+            var equalityComparerInterfaceType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
             if (equalityComparerInterfaceType == null)
                 return null;
 
@@ -179,7 +179,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
         private static INamedTypeSymbol? GetIComparerString(Compilation compilation)
         {
-            var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IComparer`1");
+            var equalityComparerInterfaceType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
             if (equalityComparerInterfaceType == null)
                 return null;
 

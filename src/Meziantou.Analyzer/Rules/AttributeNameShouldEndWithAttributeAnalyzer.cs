@@ -33,7 +33,7 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzer : DiagnosticAnal
         if (symbol.Name == null)
             return;
 
-        if (!symbol.Name.EndsWith("Attribute", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetTypeByMetadataName("System.Attribute")))
+        if (!symbol.Name.EndsWith("Attribute", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.Attribute")))
         {
             context.ReportDiagnostic(s_rule, symbol);
         }

@@ -41,9 +41,9 @@ public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
 
         public AnalyzerContext(Compilation compilation)
         {
-            DoubleNaN = compilation.GetTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
-            SingleNaN = compilation.GetTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
-            HalfNaN = compilation.GetTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
+            DoubleNaN = compilation.GetBestTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
+            SingleNaN = compilation.GetBestTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
+            HalfNaN = compilation.GetBestTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
         }
 
         public void AnalyzeBinaryOperator(OperationAnalysisContext context)

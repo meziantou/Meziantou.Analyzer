@@ -36,7 +36,7 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzer : Diagnostic
         if (!string.Equals(operation.Member.Name, nameof(EqualityComparer<string>.Default), StringComparison.Ordinal))
             return;
 
-        var equalityComparerSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
+        var equalityComparerSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
         if (equalityComparerSymbol == null)
             return;
 

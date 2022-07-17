@@ -60,7 +60,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         public Context(Compilation compilation)
         {
             _compilation = compilation;
-            var consoleSymbol = _compilation.GetTypeByMetadataName("System.Console");
+            var consoleSymbol = _compilation.GetBestTypeByMetadataName("System.Console");
             if (consoleSymbol != null)
             {
                 ConsoleErrorAndOutSymbols = consoleSymbol.GetMembers(nameof(Console.Out)).Concat(consoleSymbol.GetMembers(nameof(Console.Error))).ToArray();
@@ -70,22 +70,22 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 ConsoleErrorAndOutSymbols = Array.Empty<ISymbol>();
             }
 
-            ProcessSymbol = _compilation.GetTypeByMetadataName("System.Diagnostics.Process");
-            CancellationTokenSymbol = _compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
+            ProcessSymbol = _compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
+            CancellationTokenSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
 
-            TaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
-            TaskAwaiterSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
-            TaskAwaiterOfTSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter`1");
+            TaskSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            TaskOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            TaskAwaiterSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
+            TaskAwaiterOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter`1");
 
-            ValueTaskSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
-            ValueTaskOfTSymbol = _compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-            ValueTaskAwaiterSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
-            ValueTaskAwaiterOfTSymbol = _compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
+            ValueTaskSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            ValueTaskOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            ValueTaskAwaiterSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
+            ValueTaskAwaiterOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
 
-            ThreadSymbols = _compilation.GetTypesByMetadataName("System.Threading.Thread").ToArray();
+            ThreadSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Thread");
 
-            ServiceProviderServiceExtensionsSymbol = _compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
+            ServiceProviderServiceExtensionsSymbol = _compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
             if (ServiceProviderServiceExtensionsSymbol != null)
             {
                 ServiceProviderServiceExtensions_CreateScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateScope").FirstOrDefault();
@@ -110,7 +110,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private INamedTypeSymbol? ValueTaskAwaiterSymbol { get; }
         private INamedTypeSymbol? ValueTaskAwaiterOfTSymbol { get; }
 
-        private INamedTypeSymbol[] ThreadSymbols { get; }
+        private INamedTypeSymbol? ThreadSymbol { get; }
 
         public bool IsValid => TaskSymbol != null && TaskOfTSymbol != null && TaskAwaiterSymbol != null;
 
@@ -157,7 +157,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Thread.Sleep => Task.Delay
             if (string.Equals(targetMethod.Name, "Sleep", StringComparison.Ordinal))
             {
-                if (targetMethod.ContainingType.IsEqualToAny(ThreadSymbols))
+                if (targetMethod.ContainingType.IsEqualTo(ThreadSymbol))
                 {
                     ReportDiagnosticIfNeeded(context, operation, "Use await and 'Task.Delay()' instead of 'Thread.Sleep()'");
                     return;

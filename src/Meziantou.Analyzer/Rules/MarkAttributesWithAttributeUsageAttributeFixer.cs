@@ -45,8 +45,8 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
 
         var classNode = (ClassDeclarationSyntax)nodeToFix;
 
-        var attributeUsageAttribute = semanticModel.Compilation.GetTypeByMetadataName("System.AttributeUsageAttribute");
-        var attributeTargets = semanticModel.Compilation.GetTypeByMetadataName("System.AttributeTargets");
+        var attributeUsageAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
+        var attributeTargets = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets");
 
         if (attributeUsageAttribute is null || attributeTargets is null)
             return document;

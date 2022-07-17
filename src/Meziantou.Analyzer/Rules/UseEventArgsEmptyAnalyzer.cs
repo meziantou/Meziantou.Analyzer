@@ -37,7 +37,7 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length > 0)
             return;
 
-        var type = context.Compilation.GetTypeByMetadataName("System.EventArgs");
+        var type = context.Compilation.GetBestTypeByMetadataName("System.EventArgs");
         if (operation.Constructor.ContainingType.IsEqualTo(type))
         {
             context.ReportDiagnostic(s_rule, operation);
