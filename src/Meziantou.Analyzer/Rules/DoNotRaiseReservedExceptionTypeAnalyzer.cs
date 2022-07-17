@@ -31,16 +31,16 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
         {
             var compilation = ctx.Compilation;
             var reservedExceptionTypes = new List<INamedTypeSymbol>();
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.AccessViolationException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.BadImageFormatException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.CannotUnloadAppDomainException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.DataMisalignedException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.ExecutionEngineException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.IndexOutOfRangeException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.InvalidProgramException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.NullReferenceException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.OutOfMemoryException"));
-            reservedExceptionTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.StackOverflowException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.AccessViolationException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.BadImageFormatException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.CannotUnloadAppDomainException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.DataMisalignedException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.ExecutionEngineException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.IndexOutOfRangeException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.InvalidProgramException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.NullReferenceException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.OutOfMemoryException"));
+            reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.StackOverflowException"));
 
             if (reservedExceptionTypes.Any())
             {

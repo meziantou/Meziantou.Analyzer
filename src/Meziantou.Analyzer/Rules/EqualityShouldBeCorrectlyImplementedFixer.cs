@@ -41,7 +41,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (semanticModel == null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not ITypeSymbol declaredTypeSymbol)
             return document;
 
-        var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IEquatable`1");
+        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
         if (genericInterfaceSymbol is null)
             return document;
 

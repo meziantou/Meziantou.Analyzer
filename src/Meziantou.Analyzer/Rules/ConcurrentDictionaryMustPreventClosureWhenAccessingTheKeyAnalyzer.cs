@@ -42,7 +42,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var symbol = ctx.Compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
+            var symbol = ctx.Compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
             if (symbol == null)
                 return;
 
@@ -57,13 +57,13 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
     private static void AnalyzeInvocation(OperationAnalysisContext context, bool hasOverloadWithArg)
     {
         var op = (IInvocationOperation)context.Operation;
-        var concurrentDictionarySymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
+        var concurrentDictionarySymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
         if (!op.TargetMethod.ContainingSymbol.OriginalDefinition.IsEqualTo(concurrentDictionarySymbol))
             return;
 
-        var func2Symbol = context.Compilation.GetTypeByMetadataName("System.Func`2");
-        var func3Symbol = context.Compilation.GetTypeByMetadataName("System.Func`3");
-        var func4Symbol = context.Compilation.GetTypeByMetadataName("System.Func`4");
+        var func2Symbol = context.Compilation.GetBestTypeByMetadataName("System.Func`2");
+        var func3Symbol = context.Compilation.GetBestTypeByMetadataName("System.Func`3");
+        var func4Symbol = context.Compilation.GetBestTypeByMetadataName("System.Func`4");
 
         // Check if the key/value parameter should be used
         var handled = false;

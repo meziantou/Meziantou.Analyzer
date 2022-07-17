@@ -83,9 +83,9 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAna
     {
         public AnalyzerContext(Compilation compilation)
         {
-            IComparableSymbol = compilation.GetTypeByMetadataName("System.IComparable");
-            IComparableOfTSymbol = compilation.GetTypeByMetadataName("System.IComparable`1");
-            IEquatableOfTSymbol = compilation.GetTypeByMetadataName("System.IEquatable`1");
+            IComparableSymbol = compilation.GetBestTypeByMetadataName("System.IComparable");
+            IComparableOfTSymbol = compilation.GetBestTypeByMetadataName("System.IComparable`1");
+            IEquatableOfTSymbol = compilation.GetBestTypeByMetadataName("System.IEquatable`1");
         }
 
         public INamedTypeSymbol? IComparableSymbol { get; set; }

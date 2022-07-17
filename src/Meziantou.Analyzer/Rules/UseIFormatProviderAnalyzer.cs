@@ -32,10 +32,10 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
-        var formatProviderType = context.Compilation.GetTypeByMetadataName("System.IFormatProvider");
-        var cultureInfoType = context.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
-        var numberStyleType = context.Compilation.GetTypeByMetadataName("System.Globalization.NumberStyles");
-        var dateTimeStyleType = context.Compilation.GetTypeByMetadataName("System.Globalization.DateTimeStyles");
+        var formatProviderType = context.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+        var cultureInfoType = context.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        var numberStyleType = context.Compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
+        var dateTimeStyleType = context.Compilation.GetBestTypeByMetadataName("System.Globalization.DateTimeStyles");
 
         var operation = (IInvocationOperation)context.Operation;
         if (operation == null)
@@ -56,15 +56,15 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 return;
 
             // Guid.ToString(IFormatProvider) should not be used
-            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
+            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Guid")))
                 return;
 
             // Enum.ToString(IFormatProvider) should not be used
-            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Enum")))
+            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Enum")))
                 return;
 
             // DateTime.ToString() or DateTimeOffset.ToString() with invariant formats (o, O, r, R, s, u)
-            if (operation.Arguments.Length == 1 && operation.TargetMethod.ContainingType.IsEqualToAny(context.Compilation.GetTypeByMetadataName("System.DateTime"), context.Compilation.GetTypeByMetadataName("System.DateTimeOffset")))
+            if (operation.Arguments.Length == 1 && operation.TargetMethod.ContainingType.IsEqualToAny(context.Compilation.GetBestTypeByMetadataName("System.DateTime"), context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset")))
             {
                 if (IsInvariantDateTimeFormat(operation.Arguments[0].Value))
                     return;
@@ -73,7 +73,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         else if (string.Equals(methodName, "Parse", StringComparison.Ordinal) || string.Equals(methodName, "TryParse", StringComparison.Ordinal))
         {
             // Guid.Parse / Guid.TryParse are culture insensitive
-            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Guid")))
+            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Guid")))
                 return;
 
             // Char.Parse / Char.TryParse are culture insensitive
@@ -96,7 +96,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.DateTimeOffset"));
+            var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset"));
             if (isDateTime)
             {
                 if (operation.Arguments.Length >= 1 && IsInvariantDateTimeFormat(operation.Arguments[0].Value))

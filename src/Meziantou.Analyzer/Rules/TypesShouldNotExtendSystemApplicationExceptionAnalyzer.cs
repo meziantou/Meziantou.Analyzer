@@ -27,7 +27,7 @@ public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzer : Dia
         context.RegisterCompilationStartAction(ctx =>
         {
             var compilation = ctx.Compilation;
-            var type = compilation.GetTypeByMetadataName("System.ApplicationException");
+            var type = compilation.GetBestTypeByMetadataName("System.ApplicationException");
 
             if (type != null)
             {

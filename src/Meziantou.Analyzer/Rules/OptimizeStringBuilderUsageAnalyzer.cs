@@ -36,7 +36,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length == 0)
             return;
 
-        var stringBuilderSymbol = context.Compilation.GetTypeByMetadataName("System.Text.StringBuilder");
+        var stringBuilderSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
         if (stringBuilderSymbol == null)
             return;
 
@@ -191,7 +191,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     targetMethod.ReturnType.IsString() &&
                     targetMethod.Parameters[0].Type.IsString() &&
                     invocationOperation.Arguments[0].Value.ConstantValue.HasValue && // Only replace for constant formats
-                    targetMethod.Parameters[1].Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.IFormatProvider")))
+                    targetMethod.Parameters[1].Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.IFormatProvider")))
                 {
                     if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                     {

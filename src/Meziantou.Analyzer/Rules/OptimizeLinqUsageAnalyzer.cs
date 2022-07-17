@@ -108,8 +108,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             return;
 
         var symbols = new List<INamedTypeSymbol>();
-        symbols.AddIfNotNull(context.Compilation.GetTypeByMetadataName("System.Linq.Enumerable"));
-        symbols.AddIfNotNull(context.Compilation.GetTypeByMetadataName("System.Linq.Queryable"));
+        symbols.AddIfNotNull(context.Compilation.GetBestTypeByMetadataName("System.Linq.Enumerable"));
+        symbols.AddIfNotNull(context.Compilation.GetBestTypeByMetadataName("System.Linq.Queryable"));
         if (!symbols.Any())
             return;
 
@@ -162,8 +162,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         if (string.Equals(operation.TargetMethod.Name, nameof(Enumerable.Count), StringComparison.Ordinal))
         {
-            var collectionOfTSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.ICollection`1");
-            var readOnlyCollectionOfTSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1");
+            var collectionOfTSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.ICollection`1");
+            var readOnlyCollectionOfTSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1");
             if (collectionOfTSymbol == null && readOnlyCollectionOfTSymbol == null)
                 return;
 
@@ -209,7 +209,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length != 2)
             return;
 
-        var listSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
+        var listSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.List`1");
         var firstArgumentType = operation.Arguments[0].Value.GetActualType();
         if (firstArgumentType == null)
             return;
@@ -248,8 +248,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length != argCount)
             return;
 
-        var listSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1");
-        var readOnlyListSymbol = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1");
+        var listSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IList`1");
+        var readOnlyListSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1");
         if (listSymbol == null && readOnlyListSymbol == null)
             return;
 

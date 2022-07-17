@@ -63,11 +63,11 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         if (!targetMethod.Parameters[0].Type.IsObject())
             return;
 
-        var eventArgsSymbol = context.Compilation.GetTypeByMetadataName("System.EventArgs");
+        var eventArgsSymbol = context.Compilation.GetBestTypeByMetadataName("System.EventArgs");
         if (!targetMethod.Parameters[1].Type.IsOrInheritFrom(eventArgsSymbol))
             return;
 
-        var multicastDelegateSymbol = context.Compilation.GetTypeByMetadataName("System.MulticastDelegate");
+        var multicastDelegateSymbol = context.Compilation.GetBestTypeByMetadataName("System.MulticastDelegate");
         if (!targetMethod.ContainingType.IsOrInheritFrom(multicastDelegateSymbol))
             return;
 

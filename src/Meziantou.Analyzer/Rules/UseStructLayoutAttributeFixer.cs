@@ -49,8 +49,8 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
         var generator = editor.Generator;
         var semanticModel = editor.SemanticModel;
 
-        var structLayoutAttribute = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
-        var layoutKindEnum = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
+        var structLayoutAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
+        var layoutKindEnum = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
         if (structLayoutAttribute is null || layoutKindEnum is null)
             return document;
 

@@ -36,7 +36,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
             return;
 
         var compilation = context.Compilation;
-        var exceptionSymbol = compilation.GetTypeByMetadataName("System.Exception");
+        var exceptionSymbol = compilation.GetBestTypeByMetadataName("System.Exception");
         if (exceptionSymbol == null)
             return;
 

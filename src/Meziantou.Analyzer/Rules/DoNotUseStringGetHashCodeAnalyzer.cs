@@ -35,7 +35,7 @@ public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
         if (string.Equals(operation.TargetMethod.Name, nameof(string.GetHashCode), StringComparison.Ordinal) &&
             operation.TargetMethod.ContainingType.IsString())
         {
-            var argumentTypeSymbol = context.Compilation.GetTypeByMetadataName("System.StringComparison");
+            var argumentTypeSymbol = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
             if (argumentTypeSymbol == null || operation.HasArgumentOfType(argumentTypeSymbol))
                 return;
 

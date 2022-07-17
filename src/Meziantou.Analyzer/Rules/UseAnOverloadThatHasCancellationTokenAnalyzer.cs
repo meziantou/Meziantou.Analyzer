@@ -81,11 +81,11 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         public AnalyzerContext(Compilation compilation)
         {
             Compilation = compilation;
-            CancellationTokenSymbol = compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
-            CancellationTokenSourceSymbol = compilation.GetTypeByMetadataName("System.Threading.CancellationTokenSource");
-            TaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
-            ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
+            CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
+            CancellationTokenSourceSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
+            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
         }
 
         public Compilation Compilation { get; }

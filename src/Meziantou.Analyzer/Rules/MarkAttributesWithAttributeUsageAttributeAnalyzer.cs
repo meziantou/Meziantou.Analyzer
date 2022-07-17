@@ -29,8 +29,8 @@ public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : Diagnost
 
     private static void Analyze(SymbolAnalysisContext context)
     {
-        var attributeType = context.Compilation.GetTypeByMetadataName("System.Attribute");
-        var attributeUsageAttributeType = context.Compilation.GetTypeByMetadataName("System.AttributeUsageAttribute");
+        var attributeType = context.Compilation.GetBestTypeByMetadataName("System.Attribute");
+        var attributeUsageAttributeType = context.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
         if (attributeType == null || attributeUsageAttributeType == null)
             return;
 

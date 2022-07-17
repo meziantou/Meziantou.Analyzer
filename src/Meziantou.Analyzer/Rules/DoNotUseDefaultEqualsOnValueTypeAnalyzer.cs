@@ -62,22 +62,22 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 
         public Context(Compilation compilation)
         {
-            IEqualityComparerSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
-            IComparerSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IComparer`1");
-            ValueTypeSymbol = compilation.GetTypeByMetadataName("System.ValueType");
+            IEqualityComparerSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+            IComparerSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
+            ValueTypeSymbol = compilation.GetBestTypeByMetadataName("System.ValueType");
             if (ValueTypeSymbol != null)
             {
                 ValueTypeEqualsSymbol = ValueTypeSymbol.GetMembers(nameof(ValueType.Equals)).OfType<IMethodSymbol>().FirstOrDefault();
                 ValueTypeGetHashCodeSymbol = ValueTypeSymbol.GetMembers(nameof(ValueType.Equals)).OfType<IMethodSymbol>().FirstOrDefault();
             }
 
-            ImmutableDictionarySymbol = compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary");
-            ImmutableHashSetSymbol = compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet");
-            ImmutableSortedDictionarySymbol = compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableSortedDictionary");
+            ImmutableDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary");
+            ImmutableHashSetSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet");
+            ImmutableSortedDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableSortedDictionary");
 
             var types = new List<ITypeSymbol>();
-            types.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
-            types.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
+            types.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.HashSet`1"));
+            types.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableHashSet`1"));
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableDictionary`2"));

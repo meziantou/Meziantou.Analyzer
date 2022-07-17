@@ -41,7 +41,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
-        var stringComparisonType = context.Compilation.GetTypeByMetadataName("System.StringComparison");
+        var stringComparisonType = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
         var operation = (IInvocationOperation)context.Operation;
 
         if (stringComparisonType == null)
@@ -111,12 +111,12 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
             return true;
 
         // JObject.Property / TryGetValue / GetValue
-        var jobjectType = operation.SemanticModel!.Compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
+        var jobjectType = operation.SemanticModel!.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
         if (method.ContainingType.IsEqualTo(jobjectType))
             return true;
 
         // Xunit.Assert.Contains/NotContains
-        var xunitAssertType = operation.SemanticModel.Compilation.GetTypeByMetadataName("XUnit.Assert");
+        var xunitAssertType = operation.SemanticModel.Compilation.GetBestTypeByMetadataName("XUnit.Assert");
         if (method.ContainingType.IsEqualTo(xunitAssertType))
             return true;
 

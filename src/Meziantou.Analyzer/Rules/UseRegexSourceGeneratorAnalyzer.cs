@@ -40,11 +40,11 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
     private static bool CanReport(IOperation operation)
     {
         var compilation = operation.SemanticModel!.Compilation;
-        var regexSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
+        var regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
         if (regexSymbol == null)
             return false;
 
-        var regexGeneratorAttributeSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
+        var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
         if (regexGeneratorAttributeSymbol == null)
             return false;
 
@@ -61,7 +61,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             return;
 
         var op = (IObjectCreationOperation)context.Operation;
-        if (!op.Type.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
+        if (!op.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
             return;
 
         foreach (var arg in op.Arguments)
@@ -88,7 +88,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 
         var op = (IInvocationOperation)context.Operation;
         var method = op.TargetMethod;
-        if (!method.IsStatic || !method.ContainingType.IsEqualTo(context.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
+        if (!method.IsStatic || !method.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
             return;
 
         if (method.Name is "IsMatch" or "Match" or "Matches" or "Split")
@@ -162,7 +162,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             return true;
 
         var compilation = argumentOperation.SemanticModel!.Compilation;
-        if (valueOperation.Type.IsEqualTo(compilation.GetTypeByMetadataName("System.TimeSpan")))
+        if (valueOperation.Type.IsEqualTo(compilation.GetBestTypeByMetadataName("System.TimeSpan")))
         {
             return GetMilliseconds(valueOperation).HasValue;
         }
@@ -203,7 +203,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             if (op is IInvocationOperation invocationOperation)
             {
                 var method = invocationOperation.TargetMethod;
-                if (method.IsStatic && method.ContainingType.IsEqualTo(compilation.GetTypeByMetadataName("System.TimeSpan")))
+                if (method.IsStatic && method.ContainingType.IsEqualTo(compilation.GetBestTypeByMetadataName("System.TimeSpan")))
                 {
                     return method.Name switch
                     {
@@ -223,7 +223,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             if (op is IFieldReferenceOperation fieldReferenceOperation)
             {
                 var member = fieldReferenceOperation.Member;
-                if (member.IsStatic && member.ContainingType.IsEqualTo(compilation.GetTypeByMetadataName("System.TimeSpan")))
+                if (member.IsStatic && member.ContainingType.IsEqualTo(compilation.GetBestTypeByMetadataName("System.TimeSpan")))
                 {
                     return member.Name switch
                     {
@@ -234,7 +234,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                     };
                 }
 
-                if (member.IsStatic && member.ContainingType.IsEqualTo(compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")))
+                if (member.IsStatic && member.ContainingType.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
                 {
                     return member.Name switch
                     {
@@ -243,7 +243,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                     };
                 }
 
-                if (member.IsStatic && member.ContainingType.IsEqualTo(compilation.GetTypeByMetadataName("System.Threading.Timeout")))
+                if (member.IsStatic && member.ContainingType.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Threading.Timeout")))
                 {
                     return member.Name switch
                     {
@@ -258,7 +258,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 
             if (op is IObjectCreationOperation objectCreationOperation)
             {
-                if (objectCreationOperation.Type.IsEqualTo(compilation.GetTypeByMetadataName("System.TimeSpan")))
+                if (objectCreationOperation.Type.IsEqualTo(compilation.GetBestTypeByMetadataName("System.TimeSpan")))
                 {
                     switch (objectCreationOperation.Arguments.Length)
                     {

@@ -27,7 +27,7 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var attributeType = compilationContext.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
+            var attributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
             if (attributeType == null)
                 return;
 
@@ -41,7 +41,7 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
         if (!symbol.IsValueType || symbol.EnumUnderlyingType != null) // Only support struct
             return;
 
-        var attributeType = context.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
+        var attributeType = context.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
         if (attributeType == null)
             return;
 

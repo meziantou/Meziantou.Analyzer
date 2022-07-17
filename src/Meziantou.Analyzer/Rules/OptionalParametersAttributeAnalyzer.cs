@@ -48,9 +48,9 @@ public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            OptionalAttributeSymbol = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.OptionalAttribute");
-            DefaultParameterValueAttributeSymbol = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.DefaultParameterValueAttribute");
-            DefaultValueAttributeSymbol = compilation.GetTypeByMetadataName("System.ComponentModel.DefaultValueAttribute");
+            OptionalAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.OptionalAttribute");
+            DefaultParameterValueAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.DefaultParameterValueAttribute");
+            DefaultValueAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ComponentModel.DefaultValueAttribute");
         }
 
         public INamedTypeSymbol? OptionalAttributeSymbol { get; set; }

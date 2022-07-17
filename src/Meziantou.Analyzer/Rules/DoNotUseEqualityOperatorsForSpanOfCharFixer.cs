@@ -54,7 +54,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         if (operation == null)
             return document;
 
-        var stringComparison = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparison");
+        var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
         if (stringComparison is null)
             return document;
 

@@ -33,7 +33,7 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : Dia
         if (field.IsStatic)
             return;
 
-        if (field.HasAttribute(context.Compilation.GetTypeByMetadataName("System.ThreadStaticAttribute")))
+        if (field.HasAttribute(context.Compilation.GetBestTypeByMetadataName("System.ThreadStaticAttribute")))
         {
             context.ReportDiagnostic(s_rule, field);
         }

@@ -34,23 +34,23 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var callerMustUseNamedArgumentType = compilationContext.Compilation.GetTypeByMetadataName("Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute");
+            var callerMustUseNamedArgumentType = compilationContext.Compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute");
 
             var objectType = compilationContext.Compilation.GetSpecialType(SpecialType.System_Object);
-            var taskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
-            var taskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
-            var valueTaskTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
-            var valueTaskGenericTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-            var taskCompletionSourceType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
-            var methodBaseTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
-            var fieldInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.FieldInfo");
-            var propertyInfoTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Reflection.PropertyInfo");
-            var msTestAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
-            var nunitAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("NUnit.Framework.Assert");
-            var xunitAssertTokenType = compilationContext.Compilation.GetTypeByMetadataName("Xunit.Assert");
-            var keyValuePairTokenType = compilationContext.Compilation.GetTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
-            var propertyBuilderType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
-            var syntaxNodeType = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
+            var taskTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            var taskGenericTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            var valueTaskTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            var valueTaskGenericTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            var taskCompletionSourceType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
+            var methodBaseTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Reflection.MethodBase");
+            var fieldInfoTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Reflection.FieldInfo");
+            var propertyInfoTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Reflection.PropertyInfo");
+            var msTestAssertTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+            var nunitAssertTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("NUnit.Framework.Assert");
+            var xunitAssertTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("Xunit.Assert");
+            var keyValuePairTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
+            var propertyBuilderType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
+            var syntaxNodeType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
 
             compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
             {

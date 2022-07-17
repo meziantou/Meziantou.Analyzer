@@ -49,8 +49,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
         var compilation = semanticModel!.Compilation;
 
-        var regexSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
-        var regexGeneratorAttributeSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
+        var regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
+        var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
         if (regexSymbol is null || regexGeneratorAttributeSymbol is null)
             return document;
 
@@ -152,7 +152,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (timeoutValue != null && regexOptionsValue is null)
         {
-            regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
+            regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
         }
 
         var newMethod = (MethodDeclarationSyntax)generator.MethodDeclaration(

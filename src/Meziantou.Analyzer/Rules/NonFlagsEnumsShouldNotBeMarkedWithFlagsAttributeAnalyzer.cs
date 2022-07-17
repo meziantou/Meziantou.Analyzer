@@ -36,7 +36,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
         if (symbol.EnumUnderlyingType == null)
             return;
 
-        if (!symbol.HasAttribute(context.Compilation.GetTypeByMetadataName("System.FlagsAttribute")))
+        if (!symbol.HasAttribute(context.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute")))
             return;
 
         if (!symbol.GetMembers().OfType<IFieldSymbol>().All(member => member.HasConstantValue && member.ConstantValue != null))

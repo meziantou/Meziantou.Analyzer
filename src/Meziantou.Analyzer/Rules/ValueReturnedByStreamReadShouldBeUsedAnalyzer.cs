@@ -36,7 +36,7 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAn
         if (targetMethod.Name != nameof(Stream.Read) && targetMethod.Name != nameof(Stream.ReadAsync))
             return;
 
-        var streamSymbol = context.Compilation.GetTypeByMetadataName("System.IO.Stream");
+        var streamSymbol = context.Compilation.GetBestTypeByMetadataName("System.IO.Stream");
         if (!targetMethod.ContainingType.IsOrInheritFrom(streamSymbol))
             return;
 

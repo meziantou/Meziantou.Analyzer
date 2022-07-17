@@ -48,7 +48,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         var generator = editor.Generator;
         var semanticModel = editor.SemanticModel;
 
-        var stringComparer = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
+        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
         if (stringComparer is null)
             return document;
 

@@ -45,24 +45,24 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            ConfiguredAsyncDisposableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredAsyncDisposable");
+            ConfiguredAsyncDisposableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredAsyncDisposable");
 
-            IAsyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
-            ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
-            ConfiguredTaskAwaitableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
-            ConfiguredTaskAwaitableOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
+            IAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
+            ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
+            ConfiguredTaskAwaitableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
+            ConfiguredTaskAwaitableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
 
-            WPF_DispatcherObject = compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject");
-            WPF_ICommand = compilation.GetTypeByMetadataName("System.Windows.Input.ICommand");
+            WPF_DispatcherObject = compilation.GetBestTypeByMetadataName("System.Windows.Threading.DispatcherObject");
+            WPF_ICommand = compilation.GetBestTypeByMetadataName("System.Windows.Input.ICommand");
 
-            WinForms_Control = compilation.GetTypeByMetadataName("System.Windows.Forms.Control");
-            WebForms_WebControl = compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl");
-            AspNetCore_ControllerBase = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase");
-            AspNetCore_IRazorPage = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Razor.IRazorPage");
-            AspNetCore_ITagHelper = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper");
-            AspNetCore_ITagHelperComponent = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent");
-            AspNetCore_IFilterMetadata = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata");
-            AspNetCore_IComponent = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
+            WinForms_Control = compilation.GetBestTypeByMetadataName("System.Windows.Forms.Control");
+            WebForms_WebControl = compilation.GetBestTypeByMetadataName("System.Web.UI.WebControls.WebControl");
+            AspNetCore_ControllerBase = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase");
+            AspNetCore_IRazorPage = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.Razor.IRazorPage");
+            AspNetCore_ITagHelper = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper");
+            AspNetCore_ITagHelperComponent = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent");
+            AspNetCore_IFilterMetadata = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata");
+            AspNetCore_IComponent = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
         }
 
         private INamedTypeSymbol? ConfiguredAsyncDisposableSymbol { get; }
