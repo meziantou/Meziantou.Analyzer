@@ -8,7 +8,7 @@
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
   <ItemGroup Condition="$(RoslynVersion) == 'minimal'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22310.1" />
     <!-- Consider removing CS0618 when updating this version -->
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
   </ItemGroup>
@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'latest'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22310.1" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.2.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'latest'">
@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22274.2" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22310.1" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0-2.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
