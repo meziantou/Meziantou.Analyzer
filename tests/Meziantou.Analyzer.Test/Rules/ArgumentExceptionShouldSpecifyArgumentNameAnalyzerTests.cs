@@ -172,6 +172,64 @@ class TestAttribute
     }
 
     [Fact]
+    public async Task InvalidParameterName_StaticLambda()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action<int>(static (int a) =>
+        {
+		    if (a < 0)
+                throw new System.ArgumentOutOfRangeException(paramName: [|""test""|], a, message: ""address out of range"");
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ValidParameterName_LambdaWithoutParentheses()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action<int>(a =>
+        {
+            throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: ""address out of range"");
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ValidParameterName_StaticLambdaWithoutParameter()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action(static () =>
+        {
+            throw new System.ArgumentNullException([|""test""|]);
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task InvalidParameterName_Delegate()
     {
         const string SourceCode = @"

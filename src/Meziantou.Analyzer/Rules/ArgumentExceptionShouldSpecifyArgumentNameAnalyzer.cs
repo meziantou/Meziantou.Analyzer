@@ -201,6 +201,19 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
                         break;
                     }
 
+                case SimpleLambdaExpressionSyntax lambdaExpressionSyntax:
+                    {
+                        if (!string.IsNullOrEmpty(lambdaExpressionSyntax.Parameter?.Identifier.ValueText))
+                        {
+                            yield return lambdaExpressionSyntax.Parameter.Identifier.ValueText;
+                        }
+
+                        if (lambdaExpressionSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)))
+                            yield break;
+
+                        break;
+                    }
+
                 case AnonymousMethodExpressionSyntax anonymousMethodExpressionSyntax:
                     {
                         if (anonymousMethodExpressionSyntax.ParameterList != null)
