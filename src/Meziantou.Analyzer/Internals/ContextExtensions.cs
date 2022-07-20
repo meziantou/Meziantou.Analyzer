@@ -86,6 +86,15 @@ internal static class ContextExtensions
         context.ReportDiagnostic(CreateDiagnostic(descriptor, token.GetLocation(), properties, messageArgs));
     }
 
+    public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, SyntaxNode node, params string[] messageArgs)
+    {
+        ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, node, messageArgs);
+    }
+
+    public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, SyntaxNode node, params string[] messageArgs)
+    {
+        context.ReportDiagnostic(CreateDiagnostic(descriptor, node.GetLocation(), properties, messageArgs));
+    }
 
     public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, IOperation operation, params string[] messageArgs)
     {
