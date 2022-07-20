@@ -130,4 +130,103 @@ class TestAttribute
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ValidParameterName_Lambda()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action<int>((int a) =>
+        {
+            throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: ""address out of range"");
+            throw new System.ArgumentOutOfRangeException(paramName: nameof(test), a, message: ""address out of range"");
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InvalidParameterName_Lambda()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action<int>((int a) =>
+        {
+		    if (a < 0)
+                throw new System.ArgumentOutOfRangeException(paramName: [|""dummy""|], a, message: ""address out of range"");
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InvalidParameterName_Delegate()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action<int>(delegate (int a)
+        {
+		    if (a < 0)
+                throw new System.ArgumentOutOfRangeException(paramName: [|""dummy""|], a, message: ""address out of range"");
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ValidParameterName_Delegate()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action<int>(delegate (int a)
+        {
+		    if (a < 0)
+                throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: ""address out of range"");
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InvalidParameterName_StaticDelegate()
+    {
+        const string SourceCode = @"
+class TestAttribute
+{
+    void Test(string test)
+    {
+        _ = new System.Action<int>(static delegate (int a)
+        {
+            throw new System.ArgumentOutOfRangeException(paramName: [|""test""|], a, message: ""address out of range"");
+	    });
+    }    
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

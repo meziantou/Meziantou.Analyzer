@@ -59,7 +59,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
         if (exceptionType == null)
             return;
 
-        if (!type.IsEqualTo(exceptionType) && !type.InheritsFrom(exceptionType))
+        if (!type.IsOrInheritFrom(exceptionType))
             return;
 
         var parameterName = "paramName";
@@ -89,7 +89,15 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
                         return;
                     }
 
-                    context.ReportDiagnostic(s_rule, argument, $"'{value}' is not a valid parameter name");
+                    if (argument.Syntax is ArgumentSyntax argumentSyntax)
+                    {
+                        context.ReportDiagnostic(s_rule, argumentSyntax.Expression, $"'{value}' is not a valid parameter name");
+                    }
+                    else
+                    {
+                        context.ReportDiagnostic(s_rule, argument, $"'{value}' is not a valid parameter name");
+                    }
+
                     return;
                 }
             }
@@ -177,6 +185,37 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
                         }
 
                         yield break;
+                    }
+
+                case ParenthesizedLambdaExpressionSyntax parenthesizedLambdaExpressionSyntax:
+                    {
+                        foreach (var parameter in parenthesizedLambdaExpressionSyntax.ParameterList.Parameters)
+                        {
+                            if (!string.IsNullOrEmpty(parameter.Identifier.ValueText))
+                                yield return parameter.Identifier.ValueText;
+                        }
+
+                        if (parenthesizedLambdaExpressionSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)))
+                            yield break;
+
+                        break;
+                    }
+
+                case AnonymousMethodExpressionSyntax anonymousMethodExpressionSyntax:
+                    {
+                        if (anonymousMethodExpressionSyntax.ParameterList != null)
+                        {
+                            foreach (var parameter in anonymousMethodExpressionSyntax.ParameterList.Parameters)
+                            {
+                                if (!string.IsNullOrEmpty(parameter.Identifier.ValueText))
+                                    yield return parameter.Identifier.ValueText;
+                            }
+                        }
+
+                        if (anonymousMethodExpressionSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)))
+                            yield break;
+
+                        break;
                     }
             }
 
