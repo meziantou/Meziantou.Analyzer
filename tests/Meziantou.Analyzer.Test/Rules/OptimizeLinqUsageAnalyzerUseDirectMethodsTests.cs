@@ -54,6 +54,59 @@ class Test
     }
 
     [Fact]
+    public async Task FirstOrDefaultAsync_Cast()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.FirstOrDefault(predicate);
+    }
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FirstOrDefaultAsync_Cast_ConfigureEnabled()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.[|FirstOrDefault|](predicate);
+    }
+}
+";
+        const string CodeFix = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.Find(new System.Predicate<int>(predicate));
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0020.report_when_conversion_needed", "true")
+              .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Count_IEnumerableAsync()
     {
         const string SourceCode = @"using System.Linq;

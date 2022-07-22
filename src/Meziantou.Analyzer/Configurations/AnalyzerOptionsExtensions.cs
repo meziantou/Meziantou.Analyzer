@@ -91,6 +91,11 @@ public static class AnalyzerOptionsExtensions
         return TryGetConfigurationValue(options, operation.Syntax.SyntaxTree, key, out value);
     }
 
+    public static bool GetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, bool defaultValue)
+    {
+        return GetConfigurationValue(options, operation.Syntax.SyntaxTree, key, defaultValue);
+    }
+
     private static bool ChangeType(string value, bool defaultValue)
     {
         if (value != null && bool.TryParse(value, out var result))
