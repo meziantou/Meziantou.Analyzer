@@ -69,7 +69,11 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.UseFindMethod:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseFindMethod(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseFindMethod(context.Document, nodeToFix, convertPredicate: false, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+
+            case OptimizeLinqUsageData.UseFindMethodWithConversion:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseFindMethod(context.Document, nodeToFix, convertPredicate: true, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseIndexer:
@@ -385,7 +389,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseFindMethod(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private async static Task<Document> UseFindMethod(Document document, SyntaxNode nodeToFix, bool convertPredicate, CancellationToken cancellationToken)
     {
         var expression = GetMemberAccessExpression(nodeToFix);
         if (expression == null)
@@ -394,8 +398,26 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var newExpression = expression.WithName(IdentifierName("Find"));
-
         editor.ReplaceNode(expression, newExpression);
+        if (convertPredicate)
+        {
+            var compilation = editor.SemanticModel.Compilation;
+            var type = editor.SemanticModel.GetTypeInfo(nodeToFix, cancellationToken).Type;
+            if (type != null)
+            {
+                var predicateType = compilation.GetBestTypeByMetadataName("System.Predicate`1")?.Construct(type);
+                if (predicateType != null)
+                {
+                    var predicate = ((InvocationExpressionSyntax)nodeToFix).ArgumentList.Arguments.Last().Expression;
+                    if (predicate != null)
+                    {
+                        var newObject = editor.Generator.ObjectCreationExpression(predicateType, predicate);
+                        editor.ReplaceNode(predicate, newObject);
+                    }
+                }
+            }
+        }
+
         return editor.GetChangedDocument();
     }
 

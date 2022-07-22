@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -216,7 +217,20 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         if (firstArgumentType.OriginalDefinition.IsEqualTo(listSymbol))
         {
-            var properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
+            ImmutableDictionary<string, string?> properties;
+            var predicateArgument = operation.Arguments[1].Value;
+            if (predicateArgument is IDelegateCreationOperation)
+            {
+                properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
+            }
+            else
+            {
+                if (!context.Options.GetConfigurationValue(operation, s_listMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                    return;
+
+                properties = CreateProperties(OptimizeLinqUsageData.UseFindMethodWithConversion);
+            }
+
             context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
         }
     }

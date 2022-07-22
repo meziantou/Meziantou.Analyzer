@@ -7,6 +7,7 @@ internal enum OptimizeLinqUsageData
     UseLongLengthProperty,
     UseCountProperty,
     UseFindMethod,
+    UseFindMethodWithConversion,
     UseIndexer,
     UseIndexerFirst,
     UseIndexerLast,
