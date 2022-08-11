@@ -125,6 +125,9 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                         return;
 
                     var invokedMethodSymbol = syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                    if (invokedMethodSymbol == null && invocationExpression.IsKind(SyntaxKind.ElementAccessExpression))
+                        return; // Skip Array[index]
+
                     if (invokedMethodSymbol != null)
                     {
                         var invokedMethodParameters = invokedMethodSymbol switch
