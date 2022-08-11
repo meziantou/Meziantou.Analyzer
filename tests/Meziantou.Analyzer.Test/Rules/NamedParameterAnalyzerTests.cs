@@ -695,6 +695,26 @@ class Test
     }
 
     [Fact]
+    public async Task ArrayIndexer()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        var d = new[] {""Foo""};
+        if (d[0] == ""X"")
+        {
+            d[0] = ""XXX"";
+        }
+    }
+}
+")
+              .ValidateAsync();
+    }
+    
+    [Fact]
     public async Task Indexer()
     {
         await CreateProjectBuilder()
@@ -840,6 +860,54 @@ namespace Meziantou.Analyzer.Annotations
     {
         public RequireNamedArgumentAttribute() {}
         public RequireNamedArgumentAttribute(bool value) {}
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MinimumNumberOfParameters_2_RequireNamedArgumentAttribute()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0003.minimum_method_parameters", "2")
+              .WithSourceCode(@"
+class Test
+{
+    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
+
+    void A()
+    {
+        _ = new Test([||]new object());
+    }
+}
+
+namespace Meziantou.Analyzer.Annotations
+{
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    internal class RequireNamedArgumentAttribute : System.Attribute
+    {
+        public RequireNamedArgumentAttribute() {}
+        public RequireNamedArgumentAttribute(bool value) {}
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MinimumNumberOfParameters_2()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0003.minimum_method_parameters", "2")
+              .WithSourceCode(@"
+class Test
+{
+    public Test(object a) { }
+
+    void A()
+    {
+        _ = new Test(new object());
     }
 }
 ")

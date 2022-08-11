@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -82,22 +83,22 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                 var expression = argument.Expression;
                 if (expression.IsKind(SyntaxKind.NullLiteralExpression))
                 {
-                    if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Null))
+                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Null))
                         return;
                 }
                 else if (expression.IsKind(SyntaxKind.NumericLiteralExpression))
                 {
-                    if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Numeric))
+                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Numeric))
                         return;
                 }
                 else if (IsBooleanExpression(expression))
                 {
-                    if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Boolean))
+                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Boolean))
                         return;
                 }
                 else if (IsStringExpression(expression))
                 {
-                    if (!GetConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.String))
+                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.String))
                         return;
                 }
                 else
@@ -132,6 +133,9 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                             IPropertySymbol propertySymbol => propertySymbol.Parameters,
                             _ => ImmutableArray<IParameterSymbol>.Empty,
                         };
+
+                        if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(syntaxContext.Options, expression))
+                            return;
 
                         var argumentIndex = ArgumentIndex(argument);
 
@@ -282,7 +286,19 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
         return -1;
     }
 
-    private static ArgumentExpressionKinds GetConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
+    private static int GetMinimumMethodArgumentsConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
+    {
+        var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
+        if (options.TryGetValue(RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters", out var value))
+        {
+            if (int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var result))
+                return result;
+        }
+
+        return 1;
+    }
+
+    private static ArgumentExpressionKinds GetExpressionKindsConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
     {
         var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
         if (options.TryGetValue(RuleIdentifiers.UseNamedParameter + ".expression_kinds", out var value))
