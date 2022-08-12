@@ -28,6 +28,9 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
 
         context.RegisterCompilationStartAction(ctx =>
         {
+            if (!ctx.Compilation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
+                return;
+
             var formatProviderSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
             var defaultInterpolatedStringHandlerSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 

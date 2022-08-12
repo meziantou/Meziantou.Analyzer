@@ -56,6 +56,27 @@ class TypeName
     }
 
     [Fact]
+    public async Task Charp9_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+class TypeName
+{
+    public void Test()
+    {
+        FormattableString.Invariant($"");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
     public async Task FormattableStringInvariant()
     {
         const string SourceCode = """
@@ -82,6 +103,7 @@ class TypeName
 }
 """;
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(Fix)
@@ -115,10 +137,11 @@ class TypeName
 }
 """;
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-
+#endif
 }
