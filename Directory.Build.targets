@@ -10,7 +10,7 @@
   <ItemGroup Condition="$(RoslynVersion) == 'minimal'">
     <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
     <!-- Consider removing CS0618 when updating this version -->
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0-3.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'minimal'">
     <DefineConstants>$(DefineConstants);ROSLYN3;CSHARP9_OR_GREATER</DefineConstants>
@@ -19,7 +19,7 @@
 
   <ItemGroup Condition="$(RoslynVersion) == 'latest'">
     <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.2.0" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0-3.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'latest'">
     <DefineConstants>$(DefineConstants);ROSLYN4;CSHARP9_OR_GREATER</DefineConstants>
