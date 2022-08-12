@@ -110,6 +110,7 @@
 |[MA0108](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0108.md)|Usage|Remove redundant argument value|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0109](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0109.md)|Design|Consider adding an overload with a Span\<T\> or Memory\<T\>|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0110](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0110.md)|Performance|Use the Regex source generator|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0111](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0111.md)|Performance|Use string.Create instead of FormattableString|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 # .editorconfig - default values
 
@@ -223,6 +224,7 @@ dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sens
 dotnet_diagnostic.MA0108.severity = suggestion # MA0108: Remove redundant argument value
 dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
 dotnet_diagnostic.MA0110.severity = suggestion # MA0110: Use the Regex source generator
+dotnet_diagnostic.MA0111.severity = suggestion # MA0111: Use string.Create instead of FormattableString
 ```
 
 # .editorconfig - all rules disabled
@@ -337,4 +339,5 @@ dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sens
 dotnet_diagnostic.MA0108.severity = none       # MA0108: Remove redundant argument value
 dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
 dotnet_diagnostic.MA0110.severity = none       # MA0110: Use the Regex source generator
+dotnet_diagnostic.MA0111.severity = none       # MA0111: Use string.Create instead of FormattableString
 ```

@@ -127,11 +127,11 @@ public sealed partial class ProjectBuilder
                         expected.Severity, actual.Severity, FormatDiagnostics(analyzer, actual)));
             }
 
-            if (expected.Message != null && !string.Equals(actual.GetMessage(), expected.Message, StringComparison.Ordinal))
+            if (expected.Message != null && !string.Equals(actual.GetMessage(CultureInfo.InvariantCulture), expected.Message, StringComparison.Ordinal))
             {
                 Assert.True(false,
                     string.Format(CultureInfo.InvariantCulture, "Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.Message, actual.GetMessage(), FormatDiagnostics(analyzer, actual)));
+                        expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzer, actual)));
             }
         }
     }
@@ -187,7 +187,7 @@ public sealed partial class ProjectBuilder
                 break;
 
             case TargetFramework.Net7_0:
-                AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0-preview.3.22175.4", "ref/net7.0/");
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0-preview.7.22375.6", "ref/net7.0/");
                 break;
 
             case TargetFramework.AspNetCore5_0:
