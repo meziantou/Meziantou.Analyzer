@@ -700,6 +700,10 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
     {
         if (operation.TargetMethod.Name == "Any" && operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Linq.Enumerable")))
         {
+            // Any(_ => true)
+            if (operation.Arguments.Length >= 2)
+                return;
+
             var operandType = operation.Arguments[0].Value.GetActualType();
             if (operandType == null)
                 return;

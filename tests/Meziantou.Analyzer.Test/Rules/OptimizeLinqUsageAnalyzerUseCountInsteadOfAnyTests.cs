@@ -69,7 +69,7 @@ class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Any_Dictionary()
     {
@@ -99,6 +99,25 @@ class Test
     {
         var collection = Enumerable.Empty<int>();
         _ = collection.Any();
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Any_Expression_Array()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var collection = new int[10];
+        _ = collection.Any(i => i > 1);
     }
 }
 ";
