@@ -54,7 +54,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringFixer : CodeFixProv
 
         var newInvocation = generator.InvocationExpression(
             generator.MemberAccessExpression(generator.TypeExpression(editor.SemanticModel.Compilation.GetSpecialType(SpecialType.System_String)), "Create"),
-            generator.MemberAccessExpression(generator.TypeExpression(cultureInfo).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation), methodName),
+            generator.MemberAccessExpression(generator.TypeExpression(cultureInfo).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation), methodName == "Invariant" ? "InvariantCulture" : "CurrentCulture"),
             nodeToFix.ArgumentList.Arguments[0].Expression);
 
         editor.ReplaceNode(nodeToFix, newInvocation);

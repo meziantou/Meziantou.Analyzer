@@ -98,7 +98,7 @@ class TypeName
 {
     public void Test()
     {
-        string.Create(CultureInfo.Invariant, $"");
+        string.Create(CultureInfo.InvariantCulture, $"");
     }
 }
 """;

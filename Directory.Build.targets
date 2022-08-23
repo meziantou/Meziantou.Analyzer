@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- minimal, latest, preview -->
-    <RoslynVersion Condition="$(RoslynVersion) == ''">minimal</RoslynVersion>
+    <RoslynVersion Condition="$(RoslynVersion) == ''">preview</RoslynVersion>
   </PropertyGroup>
 
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
