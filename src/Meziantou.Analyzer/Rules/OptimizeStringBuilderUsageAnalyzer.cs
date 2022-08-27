@@ -49,7 +49,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                 return;
 
-            if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
+            if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0], stringBuilderSymbol))
                 return;
         }
         else if (string.Equals(method.Name, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
@@ -57,14 +57,14 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
                 return;
 
-            if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
+            if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0], stringBuilderSymbol))
                 return;
         }
         else if (string.Equals(method.Name, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
         {
             if (method.Parameters.Length == 2 && method.Parameters[1].Type.IsString())
             {
-                if (!IsOptimizable(context, operation, method.Name, operation.Arguments[1]))
+                if (!IsOptimizable(context, operation, method.Name, operation.Arguments[1], stringBuilderSymbol))
                     return;
             }
         }
@@ -75,7 +75,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
         return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
     }
 
-    private static bool IsOptimizable(OperationAnalysisContext context, IOperation operation, string methodName, IArgumentOperation argument)
+    private static bool IsOptimizable(OperationAnalysisContext context, IOperation operation, string methodName, IArgumentOperation argument, ITypeSymbol stringBuilderSymbol)
     {
         if (argument.ConstantValue.HasValue)
             return false;
@@ -186,25 +186,37 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
                     return true;
                 }
-
-                if (targetMethod.Parameters.Length == 2 &&
-                    targetMethod.ReturnType.IsString() &&
-                    targetMethod.Parameters[0].Type.IsString() &&
-                    invocationOperation.Arguments[0].Value.ConstantValue.HasValue && // Only replace for constant formats
-                    targetMethod.Parameters[1].Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.IFormatProvider")))
+            }
+            else if (string.Equals(targetMethod.Name, nameof(string.Format), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
+            {
+                var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringFormatWithAppendFormat);
+                if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                 {
+                    context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendFormat().AppendLine()");
+                }
+                else
+                {
+                    context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendFormat()");
+                }
+
+                return true;
+            }
+            else if (string.Equals(targetMethod.Name, nameof(string.Join), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
+            {
+                // Check if StringBuilder.AppendJoin exists
+                if (stringBuilderSymbol.GetMembers("AppendJoin").Length > 0)
+                {
+                    var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringJoinWithAppendJoin);
                     if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                     {
-                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithAppendFormat);
-                        context.ReportDiagnostic(s_rule, properties, operation, "Use AppendFormat().AppendLine()");
-                        return true;
+                        context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendJoin().AppendLine()");
                     }
                     else
                     {
-                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithAppendFormat);
-                        context.ReportDiagnostic(s_rule, properties, operation, "Use AppendFormat");
-                        return true;
+                        context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendJoin()");
                     }
+
+                    return true;
                 }
             }
             else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())

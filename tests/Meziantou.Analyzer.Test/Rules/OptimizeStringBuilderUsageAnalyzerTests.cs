@@ -467,7 +467,7 @@ class Test
     }
 
     [Fact]
-    public async Task Append_AppendFormat()
+    public async Task Append_ToStringWithFormatAndCulture()
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"using System.Text;
@@ -475,15 +475,7 @@ class Test
 {
     void A()
     {
-        [||]new StringBuilder().Append(1.ToString(""N"", null));
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendFormat(null, ""{0:N}"", 1);
+        new StringBuilder().Append(1.ToString(""N"", null));
     }
 }")
               .ValidateAsync();
@@ -505,6 +497,29 @@ class Test
     }
 
     [Fact]
+    public async Task Append_StringFormat_AppendFormat()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A(string format)
+    {
+        [||]new StringBuilder().Append(string.Format(""{0:N2}-{1:N0}"", 1, 2));
+    }
+}")
+              .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A(string format)
+    {
+        new StringBuilder().AppendFormat(""{0:N2}-{1:N0}"", 1, 2);
+    }
+}")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task AppendLine_AppendFormat()
     {
         await CreateProjectBuilder()
@@ -513,7 +528,7 @@ class Test
 {
     void A()
     {
-        [||]new StringBuilder().AppendLine(1.ToString(""N"", null));
+        [||]new StringBuilder().AppendLine(string.Format(null, ""{0:N}"", 1));
     }
 }")
               .ShouldFixCodeWith(@"using System.Text;
@@ -524,6 +539,69 @@ class Test
         new StringBuilder().AppendFormat(null, ""{0:N}"", 1).AppendLine();
     }
 }")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Append_StringJoin_AppendJoin_OldTargetFramework()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A(string format)
+    {
+        new StringBuilder().Append(string.Join("", "", new[] { 1, 2, 3 }));
+    }
+}")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Append_StringJoin_AppendJoin()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A(string format)
+    {
+        [||]new StringBuilder().Append(string.Join("", "", new[] { 1, 2, 3 }));
+    }
+}")
+              .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A(string format)
+    {
+        new StringBuilder().AppendJoin("", "", new[] { 1, 2, 3 });
+    }
+}")
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AppendLine_AppendJoin()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        [||]new StringBuilder().AppendLine(string.Join("", "", new[] { 1, 2, 3 }));
+    }
+}")
+              .ShouldFixCodeWith(@"using System.Text;
+class Test
+{
+    void A()
+    {
+        new StringBuilder().AppendJoin("", "", new[] { 1, 2, 3 }).AppendLine();
+    }
+}")
+              .WithTargetFramework(TargetFramework.Net6_0)
               .ValidateAsync();
     }
 
