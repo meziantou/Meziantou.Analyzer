@@ -67,8 +67,16 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 context.RegisterCodeFix(CodeAction.Create(title, ct => RemoveToString(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
-            case OptimizeStringBuilderUsageData.ReplaceWithAppendFormat:
+            case OptimizeStringBuilderUsageData.ReplaceToStringWithAppendFormat:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceWithAppendFormat(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+
+            case OptimizeStringBuilderUsageData.ReplaceStringFormatWithAppendFormat:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceStringFormatWithAppendFormat(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+
+            case OptimizeStringBuilderUsageData.ReplaceStringJoinWithAppendJoin:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceStringJoinWithAppendJoin(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeStringBuilderUsageData.ReplaceSubstring:
@@ -235,6 +243,56 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 formatOperation.Syntax),
                 generator.LiteralExpression("}"));
         }
+    }
+
+    private static async Task<Document> ReplaceStringFormatWithAppendFormat(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var generator = editor.Generator;
+        var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+        if (operation == null)
+            return document;
+
+        var methodName = operation.TargetMethod.Name; // Append or AppendLine
+        var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+
+        var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
+
+        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendFormat"),
+            stringFormatOperation.Arguments.Select(a => a.Syntax).ToArray());
+
+        if (isAppendLine)
+        {
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
+        }
+
+        editor.ReplaceNode(nodeToFix, newExpression);
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> ReplaceStringJoinWithAppendJoin(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var generator = editor.Generator;
+        var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+        if (operation == null)
+            return document;
+
+        var methodName = operation.TargetMethod.Name; // Append or AppendLine
+        var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
+
+        var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
+
+        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendJoin"),
+            stringFormatOperation.Arguments.Select(a => a.Syntax).ToArray());
+
+        if (isAppendLine)
+        {
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
+        }
+
+        editor.ReplaceNode(nodeToFix, newExpression);
+        return editor.GetChangedDocument();
     }
 
     private static async Task<Document> ReplaceSubstring(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
