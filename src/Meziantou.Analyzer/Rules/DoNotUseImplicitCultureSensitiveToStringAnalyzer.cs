@@ -180,6 +180,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Guid")))
                 return false;
 
+            if (typeSymbol.IsOrInheritFrom(compilation.GetBestTypeByMetadataName("System.Version")))
+                return false;
+
             if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Windows.FontStretch")))
                 return false;
 
