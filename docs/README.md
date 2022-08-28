@@ -112,6 +112,8 @@
 |[MA0110](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0110.md)|Performance|Use the Regex source generator|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0111](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0111.md)|Performance|Use string.Create instead of FormattableString|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0112](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0112.md)|Performance|Use 'Count \> 0' instead of 'Any()'|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0113](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0113.md)|Design|Use DateTime.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0114](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0114.md)|Design|Use DateTimeOffset.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -227,6 +229,8 @@ dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an over
 dotnet_diagnostic.MA0110.severity = suggestion # MA0110: Use the Regex source generator
 dotnet_diagnostic.MA0111.severity = suggestion # MA0111: Use string.Create instead of FormattableString
 dotnet_diagnostic.MA0112.severity = none       # MA0112: Use 'Count > 0' instead of 'Any()'
+dotnet_diagnostic.MA0113.severity = suggestion # MA0113: Use DateTime.UnixEpoch
+dotnet_diagnostic.MA0114.severity = suggestion # MA0114: Use DateTimeOffset.UnixEpoch
 ```
 
 # .editorconfig - all rules disabled
@@ -343,4 +347,6 @@ dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an over
 dotnet_diagnostic.MA0110.severity = none       # MA0110: Use the Regex source generator
 dotnet_diagnostic.MA0111.severity = none       # MA0111: Use string.Create instead of FormattableString
 dotnet_diagnostic.MA0112.severity = none       # MA0112: Use 'Count > 0' instead of 'Any()'
+dotnet_diagnostic.MA0113.severity = none       # MA0113: Use DateTime.UnixEpoch
+dotnet_diagnostic.MA0114.severity = none       # MA0114: Use DateTimeOffset.UnixEpoch
 ```

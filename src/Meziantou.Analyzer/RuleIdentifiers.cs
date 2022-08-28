@@ -115,6 +115,8 @@ internal static class RuleIdentifiers
     public const string UseRegexSourceGenerator = "MA0110";
     public const string UseStringCreateInsteadOfFormattableString = "MA0111";
     public const string OptimizeEnumerable_UseCountInsteadOfAny = "MA0112";
+    public const string UseDateTimeUnixEpoch = "MA0113";
+    public const string UseDateTimeOffsetUnixEpoch = "MA0114";
 
     public static string GetHelpUri(string idenfifier)
     {
