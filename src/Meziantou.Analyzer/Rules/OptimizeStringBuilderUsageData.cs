@@ -9,6 +9,8 @@ internal enum OptimizeStringBuilderUsageData
     SplitStringInterpolation,
     SplitAddOperator,
     RemoveToString,
-    ReplaceWithAppendFormat,
+    ReplaceToStringWithAppendFormat,
+    ReplaceStringFormatWithAppendFormat,
     ReplaceSubstring,
+    ReplaceStringJoinWithAppendJoin,
 }

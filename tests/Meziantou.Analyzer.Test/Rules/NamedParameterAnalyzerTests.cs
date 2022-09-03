@@ -167,6 +167,28 @@ class TypeName
     }
 
     [Fact]
+    public async Task Int32_WithOptions_ShouldNotReportDiagnosticForArrayIndexer()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        int[] array = new[] {5, 4};
+
+        if (array[0] == 5)
+        {
+            array[0] = 6;
+        }
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Int32_ExcludedMethod_ShouldNotReportDiagnostic()
     {
         const string SourceCode = @"

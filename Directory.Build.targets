@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- minimal, latest, preview -->
-    <RoslynVersion Condition="$(RoslynVersion) == ''">minimal</RoslynVersion>
+    <RoslynVersion Condition="$(RoslynVersion) == ''">preview</RoslynVersion>
   </PropertyGroup>
 
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
@@ -27,8 +27,8 @@
   </PropertyGroup>
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22274.2" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0-2.final" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22362.3" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0-1.final" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
     <DefineConstants>$(DefineConstants);ROSLYN4;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>

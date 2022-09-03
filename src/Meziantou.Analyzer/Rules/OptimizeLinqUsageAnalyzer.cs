@@ -85,6 +85,16 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect));
 
+    private static readonly DiagnosticDescriptor s_useCountInsteadOfAny = new(
+        RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny,
+        title: "Use 'Count > 0' instead of 'Any()'",
+        messageFormat: "Use 'Count > 0' instead of 'Any()'",
+        RuleCategories.Performance,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: false,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny));
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         s_listMethodsRule,
         s_indexerInsteadOfElementAtRule,
@@ -92,7 +102,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         s_duplicateOrderByMethodsRule,
         s_optimizeCountRule,
         s_optimizeWhereAndOrderByRule,
-        s_useCastInsteadOfSelect);
+        s_useCastInsteadOfSelect,
+        s_useCountInsteadOfAny);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -126,6 +137,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         WhereShouldBeBeforeOrderBy(context, operation, symbols);
         OptimizeCountUsage(context, operation, symbols);
         UseCastInsteadOfSelect(context, operation);
+        UseCountInsteadOfAny(context, operation);
     }
 
     private static ImmutableDictionary<string, string?> CreateProperties(OptimizeLinqUsageData data)
@@ -681,6 +693,33 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             }
 
             return true;
+        }
+    }
+
+    private static void UseCountInsteadOfAny(OperationAnalysisContext context, IInvocationOperation operation)
+    {
+        if (operation.TargetMethod.Name == "Any" && operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Linq.Enumerable")))
+        {
+            // Any(_ => true)
+            if (operation.Arguments.Length >= 2)
+                return;
+
+            var operandType = operation.Arguments[0].Value.GetActualType();
+            if (operandType == null)
+                return;
+
+            var implementedInterfaces = operandType.GetAllInterfacesIncludingThis().Select(i => i.OriginalDefinition);
+            var collectionInterfaces = new[]
+            {
+                context.Compilation.GetBestTypeByMetadataName("System.Collections.ICollection"),
+                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.ICollection`1"),
+                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1"),
+            };
+
+            if (implementedInterfaces.Any(i => i.IsEqualToAny(collectionInterfaces)))
+            {
+                context.ReportDiagnostic(s_useCountInsteadOfAny, operation);
+            }
         }
     }
 

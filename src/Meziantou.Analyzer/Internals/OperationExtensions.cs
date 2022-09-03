@@ -28,6 +28,31 @@ internal static class OperationExtensions
 
         return LanguageVersion.Default;
     }
+    
+    public static LanguageVersion GetCSharpLanguageVersion(this SyntaxNode syntaxNode)
+    {
+        if (syntaxNode.SyntaxTree.Options is CSharpParseOptions options)
+            return options.LanguageVersion;
+
+        return LanguageVersion.Default;
+    }
+    
+    public static LanguageVersion GetCSharpLanguageVersion(this SyntaxTree syntaxTree)
+    {
+        if (syntaxTree.Options is CSharpParseOptions options)
+            return options.LanguageVersion;
+
+        return LanguageVersion.Default;
+    }
+
+    public static LanguageVersion GetCSharpLanguageVersion(this Compilation compilation)
+    {
+        var syntaxTree = compilation.SyntaxTrees.FirstOrDefault();
+        if (syntaxTree?.Options is CSharpParseOptions options)
+            return options.LanguageVersion;
+
+        return LanguageVersion.Default;
+    }
 
     public static IEnumerable<IOperation> Ancestors(this IOperation operation)
     {

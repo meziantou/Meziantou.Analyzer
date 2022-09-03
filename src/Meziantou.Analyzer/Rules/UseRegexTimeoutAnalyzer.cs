@@ -60,24 +60,13 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
             // https://github.com/dotnet/runtime/issues/58880
             if (attribute.AttributeClass.IsEqualTo(generatorAttributeSymbol))
             {
-                // Timeout
-                if (attribute.ConstructorArguments.Length < 3)
-                {
-                    if (attribute.ApplicationSyntaxReference != null)
-                    {
-                        context.ReportDiagnostic(s_timeoutRule, attribute.ApplicationSyntaxReference);
-                    }
-                    else
-                    {
-                        context.ReportDiagnostic(s_timeoutRule, method);
-                    }
-                }
+                var regexOptions = RegexOptions.None;
 
                 // RegexOptions.ExplicitCapture
                 if (attribute.ConstructorArguments.Length >= 2)
                 {
                     var pattern = attribute.ConstructorArguments[0].Value as string;
-                    var regexOptions = (RegexOptions)(int)attribute.ConstructorArguments[1].Value!;
+                    regexOptions = (RegexOptions)(int)attribute.ConstructorArguments[1].Value!;
                     if (pattern != null && ShouldAddExplicitCapture(pattern, regexOptions))
                     {
                         if (attribute.ApplicationSyntaxReference != null)
@@ -90,9 +79,24 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
                         }
                     }
                 }
+
+                // Timeout
+                if (!HasNonBacktracking(regexOptions) && attribute.ConstructorArguments.Length < 3)
+                {
+                    if (attribute.ApplicationSyntaxReference != null)
+                    {
+                        context.ReportDiagnostic(s_timeoutRule, attribute.ApplicationSyntaxReference);
+                    }
+                    else
+                    {
+                        context.ReportDiagnostic(s_timeoutRule, method);
+                    }
+                }
             }
         }
     }
+
+    private static bool HasNonBacktracking(RegexOptions options) => ((int)options & 1024) == 1024;
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
@@ -112,12 +116,11 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         if (op.Arguments.Length == 0)
             return;
 
-        if (!CheckTimeout(context, op.Arguments))
+        var regexOptions = CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
+        if (!HasNonBacktracking(regexOptions) && !CheckTimeout(context, op.Arguments))
         {
             context.ReportDiagnostic(s_timeoutRule, op);
         }
-
-        CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
     }
 
     private static void AnalyzeObjectCreation(OperationAnalysisContext context)
@@ -132,12 +135,11 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         if (!op.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
             return;
 
-        if (!CheckTimeout(context, op.Arguments))
+        var regexOptions = CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
+        if (!HasNonBacktracking(regexOptions) && !CheckTimeout(context, op.Arguments))
         {
             context.ReportDiagnostic(s_timeoutRule, op);
         }
-
-        CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
     }
 
     private static bool CheckTimeout(OperationAnalysisContext context, ImmutableArray<IArgumentOperation> args)
@@ -145,9 +147,8 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         return args.Last().Value.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.TimeSpan"));
     }
 
-    private static void CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)
+    private static RegexOptions CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)
     {
-
         var pattern = GetPattern();
         var (regexOptions, regexOptionsArgument) = GetRegexOptions();
         if (pattern != null && regexOptions != null && regexOptionsArgument != null)
@@ -157,6 +158,8 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(s_explicitCaptureRule, regexOptionsArgument);
             }
         }
+
+        return regexOptions ?? RegexOptions.None;
 
         string? GetPattern()
         {

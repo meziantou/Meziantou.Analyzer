@@ -208,6 +208,26 @@ System.Console.WriteLine();
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task BenchmarkDotNetAttributes()
+    {
+        const string SourceCode = @"
+using BenchmarkDotNet.Attributes;
+internal class Test
+{
+    [Benchmark(Baseline = true)]
+    public void A()
+    {
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .AddNuGetReference("BenchmarkDotNet.Annotations", "0.13.2", "lib/netstandard2.0/")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
 #if CSHARP10_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_10()

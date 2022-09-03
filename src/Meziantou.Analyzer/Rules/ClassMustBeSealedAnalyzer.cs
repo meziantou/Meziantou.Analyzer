@@ -33,6 +33,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
+            ctx.RegisterSymbolAction(analyzerContext.AnalyzeMethodSymbol, SymbolKind.Method);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
     }
@@ -44,11 +45,13 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
         private INamedTypeSymbol? ExceptionSymbol { get; }
         private INamedTypeSymbol? ComImportSymbol { get; }
+        private INamedTypeSymbol? BenchmarkSymbol { get; }
 
         public AnalyzerContext(Compilation compilation)
         {
             ExceptionSymbol = compilation.GetBestTypeByMetadataName("System.Exception");
             ComImportSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
+            BenchmarkSymbol = compilation.GetBestTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
         }
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
@@ -75,6 +78,19 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
                     }
 
                     break;
+            }
+        }
+
+        public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
+        {
+            var symbol = (IMethodSymbol)context.Symbol;
+            if (symbol.ContainingType != null && symbol.HasAttribute(BenchmarkSymbol))
+            {
+                lock (_cannotBeSealedClasses)
+                {
+                    _cannotBeSealedClasses.Add(symbol.ContainingType);
+                    _cannotBeSealedClasses.Add(symbol.ContainingType.OriginalDefinition);
+                }
             }
         }
 
