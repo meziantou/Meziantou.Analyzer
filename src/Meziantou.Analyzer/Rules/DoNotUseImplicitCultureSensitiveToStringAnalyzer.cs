@@ -204,14 +204,11 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             var constantValue = operation.ConstantValue.Value;
             bool? result = operation.Type.SpecialType switch
             {
-                SpecialType.System_Byte => (byte)constantValue! >= 0,
+                SpecialType.System_Byte => true,
                 SpecialType.System_SByte => (sbyte)constantValue! >= 0,
                 SpecialType.System_Int16 => (short)constantValue! >= 0,
                 SpecialType.System_Int32 => (int)constantValue! >= 0,
                 SpecialType.System_Int64 => (long)constantValue! >= 0,
-                SpecialType.System_Single => (float)constantValue! >= 0,
-                SpecialType.System_Double => (double)constantValue! >= 0,
-                SpecialType.System_Decimal => (decimal)constantValue! >= 0,
                 SpecialType.System_UInt16 => true,
                 SpecialType.System_UInt32 => true,
                 SpecialType.System_UInt64 => true,
