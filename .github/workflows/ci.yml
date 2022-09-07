@@ -31,13 +31,39 @@ jobs:
         Write-Host "::set-output name=package_version::$NewVersion"
       name: Compute version
       id: compute-version
-    - run: dotnet pack --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /bl
+    - run: dotnet pack --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /p:RepositoryBranch="${{github.ref}}" /bl
     - uses: actions/upload-artifact@v3
       with:
         name: nuget
         if-no-files-found: error
         retention-days: 3
         path: '**/*.nupkg'
+
+  validate_nuget:
+    runs-on: windows-2022
+    needs: [ create_nuget ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET Core (global.json)
+        uses: actions/setup-dotnet@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: nuget
+          path: ${{ env.NuGetDirectory }}
+      - name: Run dotnet validate
+        run: |
+          dotnet tool update Meziantou.Framework.NuGetPackageValidation.Tool --global
+          $files = Get-ChildItem "${{ env.NuGetDirectory }}/*" -Recurse -Include *.nupkg
+          $Errors = $false
+          foreach($file in $files) {
+              & meziantou.validate-nuget-package "$file"
+              if ($LASTEXITCODE -ne 0) {
+                $Errors = $true
+              }
+          }
+          if ($Errors) {
+            exit 1
+          }
 
   build_and_test:
     runs-on: ${{ matrix.runs-on }}
@@ -70,7 +96,7 @@ jobs:
 
   deploy:
     runs-on: 'ubuntu-20.04'
-    needs: [ create_nuget, build_and_test ]
+    needs: [ validate_nuget, build_and_test ]
     steps:
     - uses: actions/checkout@v3
       with:
