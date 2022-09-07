@@ -116,6 +116,7 @@ class Test
     [InlineData(@"$""a{1}""")]
     [InlineData(@"""a"" + 10")]
     [InlineData(@"10 + 20 + ""a""")]
+    [InlineData(@"string.Format(""{0}"", 0)")]
     public async Task Insert_NoDiagnostic(string text)
     {
         await CreateProjectBuilder()

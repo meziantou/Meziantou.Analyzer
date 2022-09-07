@@ -187,7 +187,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     return true;
                 }
             }
-            else if (string.Equals(targetMethod.Name, nameof(string.Format), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
+            else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Format), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
             {
                 var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringFormatWithAppendFormat);
                 if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
@@ -201,7 +201,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
                 return true;
             }
-            else if (string.Equals(targetMethod.Name, nameof(string.Join), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
+            else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Join), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
             {
                 // Check if StringBuilder.AppendJoin exists
                 if (stringBuilderSymbol.GetMembers("AppendJoin").Length > 0)
