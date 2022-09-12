@@ -463,4 +463,32 @@ class demo
 ")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task DbContext_Add()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .AddNuGetReference("Microsoft.EntityFrameworkCore", "6.0.8", "lib/net6.0/")
+              .AddNuGetReference("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8", "lib/net6.0/")
+              .WithSourceCode(@"
+using Microsoft.EntityFrameworkCore;
+
+class BloggingContext : DbContext
+{
+    public DbSet<object> Blogs { get; set; }
+}
+
+class Sample
+{
+    void A()
+    {
+        var context = new BloggingContext();
+        context.Add(new());
+        context.Blogs.Add(new());
+    }
+}
+")
+              .ValidateAsync();
+    }
 }
