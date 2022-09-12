@@ -85,6 +85,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             ThreadSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Thread");
 
+            DbContextSymbol = _compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
+
             ServiceProviderServiceExtensionsSymbol = _compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
             if (ServiceProviderServiceExtensionsSymbol != null)
             {
@@ -111,6 +113,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private INamedTypeSymbol? ValueTaskAwaiterOfTSymbol { get; }
 
         private INamedTypeSymbol? ThreadSymbol { get; }
+
+        private INamedTypeSymbol? DbContextSymbol { get; }
 
         public bool IsValid => TaskSymbol != null && TaskOfTSymbol != null && TaskAwaiterSymbol != null;
 
@@ -180,6 +184,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol != null && ServiceProviderServiceExtensions_CreateScopeSymbol != null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
             {
                 ReportDiagnosticIfNeeded(context, operation, $"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'");
+                return;
+            }
+
+            // https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-6.0&WT.mc_id=DT-MVP-5003978#overloads
+            if (DbContextSymbol != null && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.IsOrInheritFrom(DbContextSymbol))
+            {
                 return;
             }
 
