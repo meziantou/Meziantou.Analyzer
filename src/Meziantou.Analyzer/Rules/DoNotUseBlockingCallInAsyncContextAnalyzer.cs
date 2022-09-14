@@ -195,7 +195,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return;
             }
 
-            if (DbSetSymbol != null && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.IsEqualTo(DbSetSymbol))
+            if (DbSetSymbol != null && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualTo(DbSetSymbol))
             {
                 return;
             }

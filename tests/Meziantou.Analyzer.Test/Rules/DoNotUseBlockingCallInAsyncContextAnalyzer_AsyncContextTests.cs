@@ -472,6 +472,7 @@ class demo
               .AddNuGetReference("Microsoft.EntityFrameworkCore", "6.0.8", "lib/net6.0/")
               .AddNuGetReference("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8", "lib/net6.0/")
               .WithSourceCode(@"
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 class BloggingContext : DbContext
@@ -481,11 +482,12 @@ class BloggingContext : DbContext
 
 class Sample
 {
-    void A()
+    async Task A()
     {
         var context = new BloggingContext();
         context.Add(new());
         context.Blogs.Add(new());
+        await context.Blogs.AddAsync(new());
     }
 }
 ")
