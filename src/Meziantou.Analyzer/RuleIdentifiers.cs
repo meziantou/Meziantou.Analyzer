@@ -117,6 +117,7 @@ internal static class RuleIdentifiers
     public const string OptimizeEnumerable_UseCountInsteadOfAny = "MA0112";
     public const string UseDateTimeUnixEpoch = "MA0113";
     public const string UseDateTimeOffsetUnixEpoch = "MA0114";
+    public const string DoNotUseUnknownParameterForRazorComponent = "MA0115";
 
     public static string GetHelpUri(string idenfifier)
     {
