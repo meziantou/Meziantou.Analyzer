@@ -174,6 +174,12 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (typeSymbol.SpecialType == SpecialType.System_UInt64)
                 return false;
 
+            if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.UInt128")))
+                return false;
+            
+            if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.UIntPtr")))
+                return false;
+            
             if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName("System.TimeSpan")))
                 return false;
 
@@ -214,7 +220,6 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 SpecialType.System_UInt64 => true,
                 _ => null,
             };
-
             if (result.HasValue)
                 return result.Value;
         }

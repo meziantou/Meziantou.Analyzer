@@ -10,7 +10,8 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseImplicitCultureSensitiveToStringAnalyzer>();
+            .WithAnalyzer<DoNotUseImplicitCultureSensitiveToStringAnalyzer>()
+            .WithTargetFramework(TargetFramework.Net7_0);
     }
 
     [Theory]
@@ -83,6 +84,7 @@ class Test
     [InlineData("\"abc\"", "(int)1")]
     [InlineData("\"abc\"", "1L")]
     [InlineData("\"abc\"", "(long)1")]
+    [InlineData("\"abc\"", "(System.UInt128)1")]
     [InlineData("\"abc\"", "new System.Guid()")]
     [InlineData("\"abc\"", "new System.Uri(\"\")")]
     [InlineData("\"abc\"", "new System.TimeSpan()")]
@@ -124,6 +126,7 @@ class Test
     [InlineData("abc[|{(double)1}|]")]
     [InlineData("abc[|{(decimal)1}|]")]
     [InlineData(@"test[|{new int[0].Min()}|]")]
+    [InlineData(@"test[|{System.Int128.One}|]")]
     public async Task InterpolatedStringDiagnostic(string content)
     {
         var sourceCode = @"using System.Linq;
