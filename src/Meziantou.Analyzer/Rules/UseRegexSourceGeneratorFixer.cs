@@ -50,7 +50,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var compilation = semanticModel!.Compilation;
 
         var regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
-        var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
+        var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
         if (regexSymbol is null || regexGeneratorAttributeSymbol is null)
             return document;
 

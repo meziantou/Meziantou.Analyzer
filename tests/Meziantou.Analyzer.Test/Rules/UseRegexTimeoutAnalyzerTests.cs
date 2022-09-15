@@ -128,7 +128,7 @@ class TestClass
     }
 
     [Fact]
-    public async Task RegexGenerator_WithoutTimeout_NonBacktracking()
+    public async Task GeneratedRegex_WithoutTimeout_NonBacktracking()
     {
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
@@ -136,7 +136,7 @@ class TestClass
               .WithSourceCode(@"using System.Text.RegularExpressions;
 partial class TestClass
 {
-    [RegexGenerator(""pattern"", RegexOptions.NonBacktracking)]
+    [GeneratedRegex(""pattern"", RegexOptions.NonBacktracking)]
     private static partial Regex Test();
 }
 partial class TestClass

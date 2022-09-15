@@ -51,7 +51,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         if (method.MethodKind is not MethodKind.Ordinary)
             return;
 
-        var generatorAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
+        var generatorAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
         if (generatorAttributeSymbol == null)
             return;
 

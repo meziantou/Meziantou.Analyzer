@@ -37,7 +37,7 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [RegexGenerator(""testpattern"", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyRegex();
 }
 ";
@@ -69,7 +69,7 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [RegexGenerator(""testpattern"", RegexOptions.ExplicitCapture)]
+    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture)]
     private static partial Regex MyRegex();
 }
 ";
@@ -101,7 +101,7 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [RegexGenerator(""testpattern"")]
+    [GeneratedRegex(""testpattern"")]
     private static partial Regex MyRegex();
 }
 ";
@@ -133,7 +133,7 @@ partial class Test
 {
     bool a = MyRegex().IsMatch(""test"");
 
-    [RegexGenerator(""testpattern"", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyRegex();
 }
 ";
@@ -165,7 +165,7 @@ partial class Test
 {
     bool a = MyRegex().IsMatch(""test"");
 
-    [RegexGenerator(""testpattern"", RegexOptions.ExplicitCapture)]
+    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture)]
     private static partial Regex MyRegex();
 }
 ";
@@ -197,7 +197,7 @@ partial class Test
 {
     bool a = MyRegex().IsMatch(""test"");
 
-    [RegexGenerator(""testpattern"")]
+    [GeneratedRegex(""testpattern"")]
     private static partial Regex MyRegex();
 }
 ";
@@ -229,7 +229,7 @@ partial class Test
 {
     string a = MyRegex().Replace(""test"", ""newValue"");
 
-    [RegexGenerator(""testpattern"", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyRegex();
 }
 ";
@@ -261,7 +261,7 @@ partial class Test
 {
     string a = MyRegex().Replace(""test"", ""newValue"");
 
-    [RegexGenerator(""testpattern"", RegexOptions.ExplicitCapture)]
+    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture)]
     private static partial Regex MyRegex();
 }
 ";
@@ -293,7 +293,7 @@ partial class Test
 {
     string a = MyRegex().Replace(""test"", ""newValue"");
 
-    [RegexGenerator(""testpattern"")]
+    [GeneratedRegex(""testpattern"")]
     private static partial Regex MyRegex();
 }
 ";
@@ -325,7 +325,7 @@ partial class Test
 {
     string a = MyRegex().Replace(""test"", evaluator: match => """");
 
-    [RegexGenerator(""testpattern"")]
+    [GeneratedRegex(""testpattern"")]
     private static partial Regex MyRegex();
 }
 ";
@@ -367,7 +367,7 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [RegexGenerator(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: " + milliseconds + @")]
+    [GeneratedRegex(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: " + milliseconds + @")]
     private static partial Regex MyRegex();
 }
 ";
@@ -401,7 +401,7 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [RegexGenerator(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
+    [GeneratedRegex(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
     private static partial Regex MyRegex();
 }
 ";
@@ -435,7 +435,7 @@ partial class Test
 {
     bool a = MyRegex().IsMatch(""input"");
 
-    [RegexGenerator(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
+    [GeneratedRegex(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
     private static partial Regex MyRegex();
 }
 ";
@@ -470,7 +470,7 @@ partial class Test
     bool a = MyRegex_().IsMatch(""input"");
 
     private static Regex MyRegex() => throw null;
-    [RegexGenerator(""testpattern"")]
+    [GeneratedRegex(""testpattern"")]
     private static partial Regex MyRegex_();
 }
 ";
@@ -530,7 +530,7 @@ partial class Sample
         {
             bool a = MyRegex().IsMatch(""input"");
 
-            [RegexGenerator(""testpattern"")]
+            [GeneratedRegex(""testpattern"")]
             private static partial Regex MyRegex();
         }
     }

@@ -44,7 +44,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
         if (regexSymbol == null)
             return false;
 
-        var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexGeneratorAttribute");
+        var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
         if (regexGeneratorAttributeSymbol == null)
             return false;
 
