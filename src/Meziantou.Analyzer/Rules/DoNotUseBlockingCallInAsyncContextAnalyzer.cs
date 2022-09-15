@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -212,7 +213,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     potentionalMethods.AddRange(operation.SemanticModel.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
                 }
 
-                var potentialMethod = potentionalMethods.FirstOrDefault(IsPotentialMember);
+                var potentialMethod = potentionalMethods.Find(IsPotentialMember);
                 if (potentialMethod != null)
                 {
                     ReportDiagnosticIfNeeded(context, operation, $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'");
@@ -272,21 +273,21 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (!CanBeAsync(operation))
                 return;
 
-            if (IsAsyncContext(operation))
+            if (IsAsyncContext(operation, context.CancellationToken))
             {
                 context.ReportDiagnostic(s_rule, operation, message);
             }
-            else if (CanChangeParentMethodSignature(operation))
+            else if (CanChangeParentMethodSignature(operation, context.CancellationToken))
             {
                 context.ReportDiagnostic(s_rule2, operation, message + " and make method async");
             }
         }
 
-        private bool IsAsyncContext(IOperation operation)
+        private bool IsAsyncContext(IOperation operation, CancellationToken cancellationToken)
         {
             // lamdba, delegate, method, local function
             // Check if returns Task or async void
-            if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart) is IMethodSymbol methodSymbol)
+            if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken) is IMethodSymbol methodSymbol)
             {
                 return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol);
             }
@@ -294,9 +295,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        private static bool CanChangeParentMethodSignature(IOperation operation)
+        private static bool CanChangeParentMethodSignature(IOperation operation, CancellationToken cancellationToken)
         {
-            var symbol = operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart);
+            var symbol = operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken);
             if (symbol is IMethodSymbol methodSymbol)
             {
                 return !methodSymbol.IsOverrideOrInterfaceImplementation()

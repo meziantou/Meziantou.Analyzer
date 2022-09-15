@@ -128,7 +128,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
     private static bool IsExcludedMethod(OperationAnalysisContext context, DiagnosticDescriptor descriptor, IOperation operation)
     {
         // ToString show culture-sensitive data by default
-        if (operation?.GetContainingMethod()?.Name == "ToString")
+        if (operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
         {
             return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, descriptor.Id + ".exclude_tostring_methods", defaultValue: true);
         }

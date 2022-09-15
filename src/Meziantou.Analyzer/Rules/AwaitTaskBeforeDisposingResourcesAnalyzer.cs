@@ -29,7 +29,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         context.RegisterOperationAction(AnalyzeReturn, OperationKind.Return);
     }
 
-    private void AnalyzeReturn(OperationAnalysisContext context)
+    private static void AnalyzeReturn(OperationAnalysisContext context)
     {
         var op = (IReturnOperation)context.Operation;
         var returnedValue = op.ReturnedValue;

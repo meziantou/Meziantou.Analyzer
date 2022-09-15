@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
@@ -164,7 +165,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                             }
 
                             return false;
-                        };
+                        }
 
                         if (IsParams(argument))
                             return;
@@ -235,7 +236,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))
                         {
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
-                            if (Regex.IsMatch(declarationId, excludedMethodsRegex))
+                            if (Regex.IsMatch(declarationId, excludedMethodsRegex, RegexOptions.None, Timeout.InfiniteTimeSpan))
                                 return;
                         }
 

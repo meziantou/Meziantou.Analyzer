@@ -30,7 +30,7 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         context.RegisterOperationAction(AnalyzeArgument, OperationKind.Argument);
     }
 
-    private void AnalyzeArgument(OperationAnalysisContext context)
+    private static void AnalyzeArgument(OperationAnalysisContext context)
     {
         var operation = (IArgumentOperation)context.Operation;
         if (operation.IsImplicit)

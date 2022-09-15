@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -77,7 +78,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
             {
                 if (argument.Value.ConstantValue.Value is string value)
                 {
-                    var parameterNames = GetParameterNames(op);
+                    var parameterNames = GetParameterNames(op, context.CancellationToken);
                     if (parameterNames.Contains(value, StringComparer.Ordinal))
                     {
                         if (argument.Value is not INameOfOperation)
@@ -109,7 +110,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
         context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));
     }
 
-    private static IEnumerable<string> GetParameterNames(IOperation operation)
+    private static IEnumerable<string> GetParameterNames(IOperation operation, CancellationToken cancellationToken)
     {
         var semanticModel = operation.SemanticModel!;
         var node = operation.Syntax;
@@ -130,7 +131,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
 
                 case IndexerDeclarationSyntax indexerDeclarationSyntax:
                     {
-                        var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
+                        var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax, cancellationToken);
                         if (symbol != null)
                         {
                             foreach (var parameter in symbol.Parameters)
@@ -142,7 +143,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
 
                 case MethodDeclarationSyntax methodDeclaration:
                     {
-                        var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
+                        var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration, cancellationToken);
                         if (symbol != null)
                         {
                             foreach (var parameter in symbol.Parameters)
@@ -154,7 +155,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
 
                 case LocalFunctionStatementSyntax localFunctionStatement:
                     {
-                        if (semanticModel.GetDeclaredSymbol(localFunctionStatement) is IMethodSymbol symbol)
+                        if (semanticModel.GetDeclaredSymbol(localFunctionStatement, cancellationToken) is IMethodSymbol symbol)
                         {
                             foreach (var parameter in symbol.Parameters)
                                 yield return parameter.Name;
@@ -165,7 +166,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
 
                 case ConstructorDeclarationSyntax constructorDeclaration:
                     {
-                        var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
+                        var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration, cancellationToken);
                         if (symbol != null)
                         {
                             foreach (var parameter in symbol.Parameters)
@@ -177,7 +178,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
 
                 case OperatorDeclarationSyntax operatorDeclaration:
                     {
-                        var symbol = semanticModel.GetDeclaredSymbol(operatorDeclaration);
+                        var symbol = semanticModel.GetDeclaredSymbol(operatorDeclaration, cancellationToken);
                         if (symbol != null)
                         {
                             foreach (var parameter in symbol.Parameters)

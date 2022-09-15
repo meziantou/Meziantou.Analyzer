@@ -2,7 +2,10 @@
   <PropertyGroup>
     <TargetFrameworks>net7.0;netstandard2.0</TargetFrameworks>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <PackageId>Meziantou.Analyzer</PackageId>
+
+    <!-- Cannot use Meziantou.Analyzer, so the analyzer can be added to this project -->
+    <PackageId>Dummy</PackageId>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
     <developmentDependency>true</developmentDependency>
     <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
     <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
@@ -15,18 +18,22 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\*.txt" />
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)\BannedSymbols.txt"/>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)\BannedSymbols.txt" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.3">
       <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <IncludeAssets>analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
-  </ItemGroup>
 
+    <PackageReference Include="Meziantou.Analyzer" Version="1.0.727" Condition="'$(PackageId)' != 'Meziantou.Analyzer'">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />

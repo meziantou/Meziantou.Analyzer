@@ -111,7 +111,7 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
                 return null;
 
             var newDocument = await MakeReadOnly(document, diagnostics, fixAllContext.CancellationToken).ConfigureAwait(false);
-            return await newDocument.GetSyntaxRootAsync().ConfigureAwait(false);
+            return await newDocument.GetSyntaxRootAsync(fixAllContext.CancellationToken).ConfigureAwait(false);
         }
 
         internal static async Task<Document> MakeReadOnly(Document document, ImmutableArray<Diagnostic> diagnostics, CancellationToken cancellationToken)

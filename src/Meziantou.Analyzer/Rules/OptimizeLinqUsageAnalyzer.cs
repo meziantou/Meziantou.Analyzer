@@ -664,8 +664,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             return;
 
         // Determine if we're casting to a nullable type.
-        // TODO: Revisit this once https://github.com/dotnet/roslyn/pull/42403 is merged.
-        var selectMethodSymbol = semanticModel.GetSymbolInfo(operation.Syntax).Symbol as IMethodSymbol;
+        var selectMethodSymbol = semanticModel.GetSymbolInfo(operation.Syntax, context.CancellationToken).Symbol as IMethodSymbol;
         var nullableFlowState = selectMethodSymbol?.TypeArgumentNullableAnnotations[1] == NullableAnnotation.Annotated ?
             NullableFlowState.MaybeNull :
             NullableFlowState.None;

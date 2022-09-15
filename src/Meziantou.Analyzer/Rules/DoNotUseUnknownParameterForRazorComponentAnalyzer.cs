@@ -150,7 +150,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
 
         private sealed class ComponentDescriptor
         {
-            public ISet<string> Parameters { get; } = new HashSet<string>();
+            public ISet<string> Parameters { get; } = new HashSet<string>(System.StringComparer.Ordinal);
             public bool HasMatchUnmatchedParameters { get; set; }
         }
     }

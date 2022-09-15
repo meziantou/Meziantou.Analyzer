@@ -19,6 +19,6 @@ internal sealed class AvoidUsingRedundantElseFixAllProvider : DocumentBasedFixAl
 
         var newDocument = await AvoidUsingRedundantElseFixer.RemoveRedundantElseClausesInDocument(document, diagnostics, fixAllContext.CancellationToken).ConfigureAwait(false);
 
-        return await newDocument.GetSyntaxRootAsync().ConfigureAwait(false);
+        return await newDocument.GetSyntaxRootAsync(fixAllContext.CancellationToken).ConfigureAwait(false);
     }
 }

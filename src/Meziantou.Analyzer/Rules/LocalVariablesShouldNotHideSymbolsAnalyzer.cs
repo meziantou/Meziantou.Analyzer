@@ -29,7 +29,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         context.RegisterOperationAction(AnalyzeVariableDeclaration, OperationKind.VariableDeclarator);
     }
 
-    private void AnalyzeVariableDeclaration(OperationAnalysisContext context)
+    private static void AnalyzeVariableDeclaration(OperationAnalysisContext context)
     {
         var operation = (IVariableDeclaratorOperation)context.Operation;
         var semanticModel = operation.SemanticModel!;

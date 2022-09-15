@@ -49,7 +49,6 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        // TODO find await using
         if (nodeToFix is AwaitExpressionSyntax awaitSyntax)
         {
             if (awaitSyntax?.Expression != null)
