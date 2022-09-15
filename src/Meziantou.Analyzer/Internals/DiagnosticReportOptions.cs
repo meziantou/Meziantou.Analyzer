@@ -6,5 +6,5 @@ namespace Meziantou.Analyzer;
 public enum DiagnosticReportOptions
 {
     None = 0x0,
-    ReportOnMethodName = 0x1
+    ReportOnMethodName = 0x1,
 }

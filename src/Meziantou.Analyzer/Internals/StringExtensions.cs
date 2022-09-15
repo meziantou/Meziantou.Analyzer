@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Meziantou.Analyzer.Rules;
@@ -16,6 +17,7 @@ internal static partial class StringExtensions
         return str.IndexOf(value, stringComparison) >= 0;
     }
 
+    [SuppressMessage("Usage", "MA0001:StringComparison is missing", Justification = "Not needed")]
     public static int IndexOf(this string str, char value, StringComparison stringComparison)
     {
         if (stringComparison == StringComparison.Ordinal)
@@ -46,7 +48,7 @@ internal static partial class StringExtensions
             Current = default;
         }
 
-        public LineSplitEnumerator GetEnumerator() => this;
+        public readonly LineSplitEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
@@ -55,16 +57,16 @@ internal static partial class StringExtensions
 
             var span = _str;
             var index = span.IndexOfAny('\r', '\n');
-/* Unmerged change from project 'Meziantou.Analyzer (netstandard2.0)'
-Before:
-                if (index == -1)
-                {
-                    _str = ReadOnlySpan<char>.Empty;
-After:
-                if (index == -1)
-            {
-                _str = ReadOnlySpan<char>.Empty;
-*/
+            /* Unmerged change from project 'Meziantou.Analyzer (netstandard2.0)'
+            Before:
+                            if (index == -1)
+                            {
+                                _str = ReadOnlySpan<char>.Empty;
+            After:
+                            if (index == -1)
+                        {
+                            _str = ReadOnlySpan<char>.Empty;
+            */
 
             if (index == -1)
             {

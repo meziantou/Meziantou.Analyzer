@@ -30,7 +30,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
         context.RegisterSyntaxNodeAction(AnalyzeInterpolatedVerbatimStringStartToken, SyntaxKind.InterpolatedStringExpression);
     }
 
-    private void AnalyzeInterpolatedVerbatimStringStartToken(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInterpolatedVerbatimStringStartToken(SyntaxNodeAnalysisContext context)
     {
         var node = (InterpolatedStringExpressionSyntax)context.Node;
         foreach (var item in node.Contents)
@@ -47,7 +47,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
         }
     }
 
-    private void AnalyzeStringLiteralExpression(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeStringLiteralExpression(SyntaxNodeAnalysisContext context)
     {
         var node = (LiteralExpressionSyntax)context.Node;
         var position = node.GetLocation().GetLineSpan();

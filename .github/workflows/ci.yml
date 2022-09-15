@@ -31,13 +31,20 @@ jobs:
         Write-Host "::set-output name=package_version::$NewVersion"
       name: Compute version
       id: compute-version
-    - run: dotnet pack --configuration Release /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /p:RepositoryBranch="${{github.ref}}" /bl
+    - run: dotnet pack src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:PackageId=Meziantou.Analyzer /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /p:RepositoryBranch="${{github.ref}}" /bl
     - uses: actions/upload-artifact@v3
       with:
         name: nuget
         if-no-files-found: error
         retention-days: 3
         path: '**/*.nupkg'
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: binlog
+        if-no-files-found: error
+        retention-days: 3
+        path: '**/*.binlog'
 
   validate_nuget:
     runs-on: windows-2022

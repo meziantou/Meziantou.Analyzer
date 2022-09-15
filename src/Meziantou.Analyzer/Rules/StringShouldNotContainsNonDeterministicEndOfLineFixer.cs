@@ -49,10 +49,10 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var options = await document.GetOptionsAsync(cancellationToken);
+        var options = await document.GetOptionsAsync(cancellationToken).ConfigureAwait(false);
         var lineEnding = options.GetOption(FormattingOptions.NewLine, LanguageNames.CSharp);
 
-        var firstCharPosition = nodeToFix.GetLineSpan()?.StartLinePosition.Character ?? 0;
+        var firstCharPosition = nodeToFix.GetLineSpan(cancellationToken)?.StartLinePosition.Character ?? 0;
         var newLineTrivia = TriviaList(lineEnding == "\n" ? LineFeed : CarriageReturnLineFeed, Whitespace(new string(' ', firstCharPosition)));
 
         if (nodeToFix is LiteralExpressionSyntax literal)

@@ -28,7 +28,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
     }
 
-    private void AnalyzeMethod(SymbolAnalysisContext context)
+    private static void AnalyzeMethod(SymbolAnalysisContext context)
     {
         var method = (IMethodSymbol)context.Symbol;
         if (method.IsImplicitlyDeclared || method.IsOverrideOrInterfaceImplementation())

@@ -129,7 +129,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
     private static bool IsExcludedMethod(OperationAnalysisContext context, IOperation operation)
     {
         // ToString show culture-sensitive data by default
-        if (operation?.GetContainingMethod()?.Name == "ToString")
+        if (operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
         {
             return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.exclude_tostring_methods", defaultValue: true);
         }

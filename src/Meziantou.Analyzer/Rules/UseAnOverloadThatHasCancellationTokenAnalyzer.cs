@@ -122,14 +122,14 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (!HasAnOverloadWithCancellationToken(operation))
                 return;
 
-            var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(operation));
+            var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(operation, context.CancellationToken));
             if (!string.IsNullOrEmpty(possibleCancellationTokens))
             {
                 context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, operation, possibleCancellationTokens);
             }
             else
             {
-                var parentMethod = operation.GetContainingMethod();
+                var parentMethod = operation.GetContainingMethod(context.CancellationToken);
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
@@ -174,14 +174,14 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 }
             }
 
-            var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(op));
+            var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(op, context.CancellationToken));
             if (!string.IsNullOrEmpty(possibleCancellationTokens))
             {
                 context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, op.Collection, possibleCancellationTokens);
             }
             else
             {
-                var parentMethod = op.GetContainingMethod();
+                var parentMethod = op.GetContainingMethod(context.CancellationToken);
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
@@ -244,13 +244,13 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             });
         }
 
-        private IEnumerable<string> FindCancellationTokens(IOperation operation)
+        private IEnumerable<string> FindCancellationTokens(IOperation operation, CancellationToken cancellationToken)
         {
-            var isStatic = IsStaticMember(operation);
+            var isStatic = IsStaticMember(operation, cancellationToken);
 
-            var all = GetParameters(operation)
+            var all = GetParameters(operation, cancellationToken)
                 .Concat(GetVariables(operation))
-                .Concat(new[] { new NameAndType(name: null, GetContainingType(operation)) });
+                .Concat(new[] { new NameAndType(name: null, GetContainingType(operation, cancellationToken)) });
 
             return from item in all
                    let members = GetMembers(item.TypeSymbol, maxDepth: 1)
@@ -278,29 +278,29 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             }
         }
 
-        private static ITypeSymbol? GetContainingType(IOperation operation)
+        private static ITypeSymbol? GetContainingType(IOperation operation, CancellationToken cancellationToken)
         {
             var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is ClassDeclarationSyntax || node is StructDeclarationSyntax);
             if (ancestor == null)
                 return null;
 
-            return operation.SemanticModel!.GetDeclaredSymbol(ancestor) as ITypeSymbol;
+            return operation.SemanticModel!.GetDeclaredSymbol(ancestor, cancellationToken) as ITypeSymbol;
         }
 
-        private static bool IsStaticMember(IOperation operation)
+        private static bool IsStaticMember(IOperation operation, CancellationToken cancellationToken)
         {
             var memberDeclarationSyntax = operation.Syntax.Ancestors().FirstOrDefault(syntax => syntax is MemberDeclarationSyntax);
             if (memberDeclarationSyntax == null)
                 return false;
 
-            var symbol = operation.SemanticModel!.GetDeclaredSymbol(memberDeclarationSyntax);
+            var symbol = operation.SemanticModel!.GetDeclaredSymbol(memberDeclarationSyntax, cancellationToken);
             if (symbol == null)
                 return false;
 
             return symbol.IsStatic;
         }
 
-        private static IEnumerable<NameAndType> GetParameters(IOperation operation)
+        private static IEnumerable<NameAndType> GetParameters(IOperation operation, CancellationToken cancellationToken)
         {
             var semanticModel = operation.SemanticModel!;
             var node = operation.Syntax;
@@ -315,7 +315,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                                 var property = node.Ancestors().OfType<PropertyDeclarationSyntax>().FirstOrDefault();
                                 if (property != null)
                                 {
-                                    var symbol = operation.SemanticModel.GetDeclaredSymbol(property);
+                                    var symbol = operation.SemanticModel.GetDeclaredSymbol(property, cancellationToken);
                                     if (symbol != null)
                                     {
                                         yield return new NameAndType("value", symbol.Type);
@@ -331,7 +331,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
                     case IndexerDeclarationSyntax indexerDeclarationSyntax:
                         {
-                            var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax);
+                            var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax, cancellationToken);
                             if (symbol != null)
                             {
                                 foreach (var parameter in symbol.Parameters)
@@ -343,7 +343,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
                     case MethodDeclarationSyntax methodDeclaration:
                         {
-                            var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
+                            var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration, cancellationToken);
                             if (symbol != null)
                             {
                                 foreach (var parameter in symbol.Parameters)
@@ -355,7 +355,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
                     case LocalFunctionStatementSyntax localFunctionStatement:
                         {
-                            if (semanticModel.GetDeclaredSymbol(localFunctionStatement) is IMethodSymbol symbol)
+                            if (semanticModel.GetDeclaredSymbol(localFunctionStatement, cancellationToken) is IMethodSymbol symbol)
                             {
                                 foreach (var parameter in symbol.Parameters)
                                     yield return new NameAndType(parameter.Name, parameter.Type);
@@ -366,7 +366,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
                     case ConstructorDeclarationSyntax constructorDeclaration:
                         {
-                            var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration);
+                            var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration, cancellationToken);
                             if (symbol != null)
                             {
                                 foreach (var parameter in symbol.Parameters)

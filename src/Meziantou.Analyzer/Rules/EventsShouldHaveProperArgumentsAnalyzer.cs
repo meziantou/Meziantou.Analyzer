@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -150,21 +151,21 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
                 }
                 else if (symbol is ILocalSymbol localSymbol)
                 {
-                    FindFromLocalSymbol(semanticModel, localSymbol);
+                    FindFromLocalSymbol(semanticModel, localSymbol, CancellationToken.None);
                 }
             }
 
             base.VisitConditionalAccessInstance(operation);
         }
 
-        private void FindFromLocalSymbol(SemanticModel semanticModel, ILocalSymbol localSymbol)
+        private void FindFromLocalSymbol(SemanticModel semanticModel, ILocalSymbol localSymbol, CancellationToken cancellationToken)
         {
             foreach (var symbolLocation in localSymbol.DeclaringSyntaxReferences)
             {
-                var variableDeclarator = symbolLocation.GetSyntax() as Microsoft.CodeAnalysis.CSharp.Syntax.VariableDeclaratorSyntax;
+                var variableDeclarator = symbolLocation.GetSyntax(cancellationToken) as Microsoft.CodeAnalysis.CSharp.Syntax.VariableDeclaratorSyntax;
                 if (variableDeclarator?.Initializer?.Value != null)
                 {
-                    var initializerSymbol = semanticModel.GetSymbolInfo(variableDeclarator.Initializer.Value).Symbol;
+                    var initializerSymbol = semanticModel.GetSymbolInfo(variableDeclarator.Initializer.Value, cancellationToken).Symbol;
                     if (initializerSymbol is IEventSymbol initializerEventSymbol)
                     {
                         EventSymbol = initializerEventSymbol;
@@ -172,7 +173,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
                     }
                     else if (initializerSymbol is ILocalSymbol initializerLocalSymbol)
                     {
-                        FindFromLocalSymbol(semanticModel, initializerLocalSymbol);
+                        FindFromLocalSymbol(semanticModel, initializerLocalSymbol, cancellationToken);
                     }
                 }
             }
@@ -182,7 +183,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         {
             if (operation.SemanticModel != null)
             {
-                FindFromLocalSymbol(operation.SemanticModel, operation.Local);
+                FindFromLocalSymbol(operation.SemanticModel, operation.Local, CancellationToken.None);
             }
 
             base.VisitLocalReference(operation);

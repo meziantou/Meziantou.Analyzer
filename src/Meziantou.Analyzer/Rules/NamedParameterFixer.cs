@@ -49,7 +49,7 @@ public sealed class NamedParameterFixer : CodeFixProvider
         if (argument == null || argument.NameColon != null)
             return document;
 
-        var parameters = FindParameters(semanticModel, argument);
+        var parameters = FindParameters(semanticModel, argument, cancellationToken);
         if (parameters == null)
             return document;
 
@@ -64,26 +64,26 @@ public sealed class NamedParameterFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static IReadOnlyList<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node)
+    private static IReadOnlyList<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node, CancellationToken cancellationToken)
     {
         while (node != null)
         {
             switch (node)
             {
                 case InvocationExpressionSyntax invocationExpression:
-                    var method = (IMethodSymbol?)semanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                    var method = (IMethodSymbol?)semanticModel.GetSymbolInfo(invocationExpression, cancellationToken).Symbol;
                     return method?.Parameters;
 
                 case ObjectCreationExpressionSyntax objectCreationExpression:
-                    var ctor = (IMethodSymbol?)semanticModel.GetSymbolInfo(objectCreationExpression).Symbol;
+                    var ctor = (IMethodSymbol?)semanticModel.GetSymbolInfo(objectCreationExpression, cancellationToken).Symbol;
                     return ctor?.Parameters;
 
                 case ImplicitObjectCreationExpressionSyntax implicitObjectCreationExpression:
-                    var implicitCtor = (IMethodSymbol?)semanticModel.GetSymbolInfo(implicitObjectCreationExpression).Symbol;
+                    var implicitCtor = (IMethodSymbol?)semanticModel.GetSymbolInfo(implicitObjectCreationExpression, cancellationToken).Symbol;
                     return implicitCtor?.Parameters;
 
                 case ConstructorInitializerSyntax constructorInitializerSyntax:
-                    var ctor2 = (IMethodSymbol?)semanticModel.GetSymbolInfo(constructorInitializerSyntax).Symbol;
+                    var ctor2 = (IMethodSymbol?)semanticModel.GetSymbolInfo(constructorInitializerSyntax, cancellationToken).Symbol;
                     return ctor2?.Parameters;
             }
 

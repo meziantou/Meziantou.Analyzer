@@ -44,7 +44,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
     {
         var initializer = (EnumDeclarationSyntax)context.Node;
         var lastMember = initializer.Members.LastOrDefault();
-        if (lastMember == null || !initializer.SpansMultipleLines())
+        if (lastMember == null || !initializer.SpansMultipleLines(context.CancellationToken))
         {
             return;
         }
@@ -58,7 +58,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
     private static void HandleObjectInitializer(SyntaxNodeAnalysisContext context)
     {
         var initializer = (InitializerExpressionSyntax)context.Node;
-        if (initializer == null || !initializer.SpansMultipleLines())
+        if (initializer == null || !initializer.SpansMultipleLines(context.CancellationToken))
             return;
 
         if (initializer.Expressions.SeparatorCount < initializer.Expressions.Count)
@@ -70,7 +70,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
     private static void HandleAnonymousObjectInitializer(SyntaxNodeAnalysisContext context)
     {
         var initializer = (AnonymousObjectCreationExpressionSyntax)context.Node;
-        if (initializer == null || !initializer.SpansMultipleLines())
+        if (initializer == null || !initializer.SpansMultipleLines(context.CancellationToken))
             return;
 
         if (initializer.Initializers.SeparatorCount < initializer.Initializers.Count)

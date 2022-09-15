@@ -58,7 +58,7 @@ public sealed class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         // If there are conflicting local (variable or function) declarations in 'if' and 'else' blocks, return
         var thenLocalIdentifiers = FindLocalIdentifiersIn(thenStatement);
         var elseLocalIdentifiers = FindLocalIdentifiersIn(elseStatement);
-        if (thenLocalIdentifiers.Intersect(elseLocalIdentifiers).Any())
+        if (thenLocalIdentifiers.Intersect(elseLocalIdentifiers, System.StringComparer.Ordinal).Any())
             return;
 
         var controlFlowAnalysis = context.SemanticModel.AnalyzeControlFlow(thenStatement);

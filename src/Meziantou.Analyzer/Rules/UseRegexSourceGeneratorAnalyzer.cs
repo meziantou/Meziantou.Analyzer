@@ -55,7 +55,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private void AnalyzeObjectCreation(OperationAnalysisContext context)
+    private static void AnalyzeObjectCreation(OperationAnalysisContext context)
     {
         if (!CanReport(context.Operation))
             return;
@@ -81,7 +81,7 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(s_regexSourceGeneratorRule, properties, op);
     }
 
-    private void AnalyzeInvocation(OperationAnalysisContext context)
+    private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
         if (!CanReport(context.Operation))
             return;

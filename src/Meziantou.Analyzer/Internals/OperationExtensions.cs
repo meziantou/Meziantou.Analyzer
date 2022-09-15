@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -147,7 +148,7 @@ internal static class OperationExtensions
         return false;
     }
 
-    public static IMethodSymbol? GetContainingMethod(this IOperation operation)
+    public static IMethodSymbol? GetContainingMethod(this IOperation operation, CancellationToken cancellationToken)
     {
         if (operation.SemanticModel == null)
             return null;
@@ -155,7 +156,7 @@ internal static class OperationExtensions
         foreach (var syntax in operation.Syntax.AncestorsAndSelf())
         {
             if (syntax is MethodDeclarationSyntax method)
-                return operation.SemanticModel.GetDeclaredSymbol(method);
+                return operation.SemanticModel.GetDeclaredSymbol(method, cancellationToken);
         }
 
         return null;

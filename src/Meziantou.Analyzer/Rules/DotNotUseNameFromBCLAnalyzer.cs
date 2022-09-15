@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -51,7 +52,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
             var regex = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", "^System($|\\.)");
             foreach (var ns in namespaces)
             {
-                if (Regex.IsMatch(ns, regex, RegexOptions.None))
+                if (Regex.IsMatch(ns, regex, RegexOptions.None, Timeout.InfiniteTimeSpan))
                 {
                     context.ReportDiagnostic(s_rule, symbol, symbol.MetadataName, ns);
                     return;

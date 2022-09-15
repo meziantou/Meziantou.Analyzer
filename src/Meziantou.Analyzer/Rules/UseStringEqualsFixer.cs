@@ -33,7 +33,7 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         RegisterCodeFix(nameof(StringComparison.Ordinal));
         RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken);
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel != null)
         {
             var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
