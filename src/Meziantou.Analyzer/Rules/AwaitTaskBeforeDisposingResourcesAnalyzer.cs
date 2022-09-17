@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -26,34 +27,58 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeReturn, OperationKind.Return);
+        context.RegisterCompilationStartAction(ctx =>
+        {
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeReturn, OperationKind.Return);
+        });
     }
 
-    private static void AnalyzeReturn(OperationAnalysisContext context)
+    private sealed class AnalyzerContext
     {
-        var op = (IReturnOperation)context.Operation;
-        var returnedValue = op.ReturnedValue;
-        if (returnedValue is null)
-            return;
+        private readonly INamedTypeSymbol[] _taskLikeSymbols;
 
-        var taskSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        var taskOfTSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-        var valueTaskSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-        var valueTaskOfTSymbol = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-
-        if (IsTaskLike(returnedValue.Type))
+        public AnalyzerContext(Compilation compilation)
         {
-            // Must be in a using block
-            if (!IsInUsingOperation(op))
-                return;
+            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            ValueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
 
-            if (!NeedAwait(returnedValue))
-                return;
-
-            context.ReportDiagnostic(s_rule, op);
+            var taskLikeSymbols = new List<INamedTypeSymbol>(4);
+            taskLikeSymbols.AddIfNotNull(TaskSymbol);
+            taskLikeSymbols.AddIfNotNull(TaskOfTSymbol);
+            taskLikeSymbols.AddIfNotNull(ValueTaskSymbol);
+            taskLikeSymbols.AddIfNotNull(ValueTaskOfTSymbol);
+            _taskLikeSymbols = taskLikeSymbols.ToArray();
         }
 
-        static bool IsInUsingOperation(IOperation operation)
+        public INamedTypeSymbol? TaskSymbol { get; set; }
+        public INamedTypeSymbol? TaskOfTSymbol { get; set; }
+        public INamedTypeSymbol? ValueTaskSymbol { get; set; }
+        public INamedTypeSymbol? ValueTaskOfTSymbol { get; set; }
+
+        public void AnalyzeReturn(OperationAnalysisContext context)
+        {
+            var op = (IReturnOperation)context.Operation;
+            var returnedValue = op.ReturnedValue;
+            if (returnedValue is null)
+                return;
+
+            if (IsTaskLike(returnedValue.Type))
+            {
+                // Must be in a using block
+                if (!IsInUsingOperation(op))
+                    return;
+
+                if (!NeedAwait(returnedValue))
+                    return;
+
+                context.ReportDiagnostic(s_rule, op);
+            }
+        }
+
+        private static bool IsInUsingOperation(IOperation operation)
         {
             foreach (var parent in operation.Ancestors())
             {
@@ -67,12 +92,22 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        bool IsTaskLike(ITypeSymbol? symbol)
+        private bool IsTaskLike(ITypeSymbol? symbol)
         {
-            return symbol != null && symbol.OriginalDefinition.IsEqualToAny(taskSymbol, taskOfTSymbol, valueTaskSymbol, valueTaskOfTSymbol);
+            if (symbol is null)
+                return false;
+
+            var originalDefinition = symbol.OriginalDefinition;
+            foreach (var taskLikeSymbol in _taskLikeSymbols)
+            {
+                if (originalDefinition.IsEqualTo(taskLikeSymbol))
+                    return true;
+            }
+
+            return false;
         }
 
-        bool NeedAwait(IOperation operation)
+        private bool NeedAwait(IOperation operation)
         {
             while (operation is IConversionOperation conversion)
             {
@@ -82,8 +117,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             if (operation == null)
                 return false;
 
-            // default(Task)
-            if (operation is IDefaultValueOperation)
+            if (operation.Kind == OperationKind.DefaultValue)
                 return false;
 
             // (Task)null
@@ -91,32 +125,40 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                 return false;
 
             // Task.CompletedTask
-            if (operation is IPropertyReferenceOperation prop &&
-                prop.Property.Name == nameof(Task.CompletedTask) &&
-                prop.Property.ContainingType.IsEqualToAny(taskSymbol, valueTaskSymbol))
-                return false;
+            if (operation.Kind == OperationKind.PropertyReference)
+            {
+                var prop = (IPropertyReferenceOperation)operation;
+                if (prop.Property.Name == nameof(Task.CompletedTask) && prop.Property.ContainingType.IsEqualToAny(TaskSymbol, ValueTaskSymbol))
+                    return false;
+            }
 
             // Task.FromResult, Task.FromCanceled, FromException
-            if (operation is IInvocationOperation invocation &&
-                (invocation.TargetMethod.Name is nameof(Task.FromResult) or nameof(Task.FromCanceled) or nameof(Task.FromException)) &&
-                invocation.TargetMethod.ContainingType.IsEqualToAny(taskSymbol, valueTaskSymbol))
-                return false;
+            if (operation.Kind == OperationKind.Invocation)
+            {
+                var invocation = (IInvocationOperation)operation;
+                if (invocation.TargetMethod.Name is nameof(Task.FromResult) or nameof(Task.FromCanceled) or nameof(Task.FromException) &&
+                    invocation.TargetMethod.ContainingType.IsEqualToAny(TaskSymbol, ValueTaskSymbol))
+                    return false;
+            }
 
-            // new ValueTask()
-            if (operation is IObjectCreationOperation create &&
-                create.Type != null &&
-                create.Type.OriginalDefinition.IsEqualTo(valueTaskSymbol) &&
-                create.Arguments.Length == 0)
-                return false;
+            if (operation.Kind == OperationKind.ObjectCreation)
+            {
+                var create = (IObjectCreationOperation)operation;
+                if (create.Type is not null)
+                {
+                    // new ValueTask()
+                    if (create.Type.OriginalDefinition.IsEqualTo(ValueTaskSymbol) &&
+                        create.Arguments.Length == 0)
+                        return false;
 
-            // new ValueTask<T>(T value)
-            if (operation is IObjectCreationOperation create2 &&
-                create2.Type != null &&
-                create2.Type.OriginalDefinition.IsEqualTo(valueTaskOfTSymbol) &&
-                create2.Arguments.Length == 1 &&
-                create2.Arguments[0].Parameter is { } firstParameter &&
-                firstParameter.Type.IsEqualTo(((INamedTypeSymbol?)create2.Type)?.TypeArguments[0]))
-                return false;
+                    // new ValueTask<T>(T value)
+                    if (create.Type.OriginalDefinition.IsEqualTo(ValueTaskOfTSymbol) &&
+                        create.Arguments.Length == 1 &&
+                        create.Arguments[0].Parameter is { } firstParameter &&
+                        firstParameter.Type.IsEqualTo(((INamedTypeSymbol?)create.Type)?.TypeArguments[0]))
+                        return false;
+                }
+            }
 
             return true;
         }

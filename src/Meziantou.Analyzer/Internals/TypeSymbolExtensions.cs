@@ -99,6 +99,48 @@ internal static class TypeSymbolExtensions
         return expectedTypes.Any(t => t.IsEqualTo(symbol));
     }
 
+    public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1)
+    {
+        if (symbol == null)
+            return false;
+
+        if (expectedType1 is not null && symbol.IsEqualTo(expectedType1))
+            return true;
+
+        return false;
+    }
+
+    public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2)
+    {
+        if (symbol == null)
+            return false;
+
+        if (expectedType1 is not null && symbol.IsEqualTo(expectedType1))
+            return true;
+
+        if (expectedType2 is not null && symbol.IsEqualTo(expectedType2))
+            return true;
+
+        return false;
+    }
+
+    public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2, ITypeSymbol? expectedType3)
+    {
+        if (symbol == null)
+            return false;
+
+        if (expectedType1 is not null && symbol.IsEqualTo(expectedType1))
+            return true;
+
+        if (expectedType2 is not null && symbol.IsEqualTo(expectedType2))
+            return true;
+
+        if (expectedType3 is not null && symbol.IsEqualTo(expectedType3))
+            return true;
+
+        return false;
+    }
+
     public static bool IsObject(this ITypeSymbol? symbol)
     {
         if (symbol == null)
