@@ -76,12 +76,12 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
     private sealed class AnalyzerContext
     {
-        private readonly ConcurrentDictionary<ITypeSymbol, IEnumerable<IReadOnlyList<ISymbol>>> _membersByType = new(SymbolEqualityComparer.Default);
+        private readonly ConcurrentDictionary<(ITypeSymbol Symbol, int MaxDepth), List<IReadOnlyList<ISymbol>>?> _membersByType = new();
 
         public AnalyzerContext(Compilation compilation)
         {
             Compilation = compilation;
-            CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
+            CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
             CancellationTokenSourceSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
             TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
             TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
@@ -89,7 +89,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         }
 
         public Compilation Compilation { get; }
-        public INamedTypeSymbol? CancellationTokenSymbol { get; }
+        public INamedTypeSymbol CancellationTokenSymbol { get; }
         public INamedTypeSymbol? CancellationTokenSourceSymbol { get; }
         private INamedTypeSymbol? TaskSymbol { get; }
         private INamedTypeSymbol? TaskOfTSymbol { get; }
@@ -97,20 +97,36 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
         {
-            return operation.Arguments.Any(arg => arg.ArgumentKind == ArgumentKind.Explicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
+            foreach (var argument in operation.Arguments)
+            {
+                if (argument.ArgumentKind == ArgumentKind.Explicit && argument.Parameter != null && argument.Parameter.Type.IsEqualTo(CancellationTokenSymbol))
+                    return true;
+            }
+
+            return false;
         }
 
         private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation)
         {
             var method = operation.TargetMethod;
-            if (string.Equals(method.Name, nameof(CancellationTokenSource.CreateLinkedTokenSource), StringComparison.Ordinal) && method.ContainingType.IsEqualTo(CancellationTokenSourceSymbol))
+            if (method.Name == nameof(CancellationTokenSource.CreateLinkedTokenSource) && method.ContainingType.IsEqualTo(CancellationTokenSourceSymbol))
                 return false;
 
-            var isImplicitlyDeclared = operation.Arguments.Any(arg => arg.IsImplicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(CancellationTokenSymbol));
-            if (!isImplicitlyDeclared && !operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, CancellationTokenSymbol))
+            if (!IsImplicitlyDeclared(operation, CancellationTokenSymbol) && !operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, CancellationTokenSymbol))
                 return false;
 
             return true;
+
+            static bool IsImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol cancellationTokenSymbol)
+            {
+                foreach (var arg in invocationOperation.Arguments)
+                {
+                    if (arg.IsImplicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
+                        return true;
+                }
+
+                return false;
+            }
         }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
@@ -122,10 +138,10 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (!HasAnOverloadWithCancellationToken(operation))
                 return;
 
-            var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(operation, context.CancellationToken));
-            if (!string.IsNullOrEmpty(possibleCancellationTokens))
+            var availableCancellationTokens = FindCancellationTokens(operation, context.CancellationToken);
+            if (availableCancellationTokens.Length > 0)
             {
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, operation, possibleCancellationTokens);
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, operation, string.Join(", ", availableCancellationTokens));
             }
             else
             {
@@ -133,7 +149,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, operation, possibleCancellationTokens);
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, operation, string.Join(", ", availableCancellationTokens));
             }
         }
 
@@ -174,10 +190,10 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 }
             }
 
-            var possibleCancellationTokens = string.Join(", ", FindCancellationTokens(op, context.CancellationToken));
-            if (!string.IsNullOrEmpty(possibleCancellationTokens))
+            var availableCancellationTokens = FindCancellationTokens(op, context.CancellationToken);
+            if (availableCancellationTokens.Length > 0)
             {
-                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, op.Collection, possibleCancellationTokens);
+                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, op.Collection, string.Join(", ", availableCancellationTokens));
             }
             else
             {
@@ -185,28 +201,31 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRule, op.Collection, possibleCancellationTokens);
+                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRule, op.Collection, string.Join(", ", availableCancellationTokens));
             }
         }
 
-        private IEnumerable<IReadOnlyList<ISymbol>> GetMembers(ITypeSymbol? symbol, int maxDepth)
+        private List<IReadOnlyList<ISymbol>>? GetMembers(ITypeSymbol symbol, int maxDepth)
         {
-            if (maxDepth < 0 || symbol == null)
-                return Enumerable.Empty<IReadOnlyList<ISymbol>>();
-
-            if (symbol.IsEqualTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualTo(TaskOfTSymbol))
-                return Enumerable.Empty<IReadOnlyList<ISymbol>>();
-
-            return _membersByType.GetOrAdd(symbol, s =>
+            return _membersByType.GetOrAdd((symbol, maxDepth), item =>
             {
-                if (s.IsEqualTo(CancellationTokenSymbol))
-                {
-                    return new[] { Array.Empty<ISymbol>() };
-                }
+                var (symbol, maxDepth) = item;
+
+                if (maxDepth < 0)
+                    return null;
+
+                // quickly skips some basic types that are known to not contain CancellationToken
+                if ((int)symbol.SpecialType is >= 1 and <= 45)
+                    return null;
+
+                if (symbol.IsEqualTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualTo(TaskOfTSymbol))
+                    return null;
+
+                if (symbol.IsEqualTo(CancellationTokenSymbol))
+                    return new List<IReadOnlyList<ISymbol>>(capacity: 1) { Array.Empty<ISymbol>() };
 
                 var result = new List<IReadOnlyList<ISymbol>>();
-
-                var members = s.GetAllMembers();
+                var members = symbol.GetAllMembers();
                 foreach (var member in members)
                 {
                     if (member.IsImplicitlyDeclared)
@@ -233,32 +252,67 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     }
                     else
                     {
-                        foreach (var objectMembers in GetMembers(memberTypeSymbol, maxDepth - 1))
+                        var typeMembers = GetMembers(memberTypeSymbol, maxDepth - 1);
+                        if (typeMembers != null)
                         {
-                            result.Add(Prepend(member, objectMembers).ToList());
+                            foreach (var objectMember in typeMembers)
+                            {
+                                result.Add(Prepend(member, objectMember).ToList());
+                            }
                         }
                     }
                 }
-
                 return result;
             });
         }
 
-        private IEnumerable<string> FindCancellationTokens(IOperation operation, CancellationToken cancellationToken)
+        private string[] FindCancellationTokens(IOperation operation, CancellationToken cancellationToken)
         {
             var isStatic = IsStaticMember(operation, cancellationToken);
 
-            var all = GetParameters(operation, cancellationToken)
-                .Concat(GetVariables(operation))
-                .Concat(new[] { new NameAndType(name: null, GetContainingType(operation, cancellationToken)) });
+            var availableSymbols = new List<NameAndType>();
+            GetParameters(availableSymbols, operation, cancellationToken);
+            GetVariables(availableSymbols, operation);
+            availableSymbols.Add(new NameAndType(name: null, GetContainingType(operation, cancellationToken)));
 
-            return from item in all
-                   let members = GetMembers(item.TypeSymbol, maxDepth: 1)
-                   from member in members
-                   where member.All(IsSymbolAccessible) && (item.Name != null || !isStatic || member.Count == 0 || member[0].IsStatic)
-                   let fullPath = ComputeFullPath(item.Name, member)
-                   orderby fullPath.Count(c => c == '.'), fullPath
-                   select fullPath;
+            var paths = new List<string>();
+            foreach (var availableSymbol in availableSymbols)
+            {
+                if (availableSymbol.TypeSymbol == null)
+                    continue;
+
+                var members = GetMembers(availableSymbol.TypeSymbol, maxDepth: 1);
+                if (members != null)
+                {
+                    foreach (var member in members)
+                    {
+                        if (!AreAllSymbolsAccessibleFromOperation(member, operation))
+                            continue;
+
+                        if (availableSymbol.Name == null && isStatic && member.Count > 0 && !member[0].IsStatic)
+                            continue;
+
+                        var fullPath = ComputeFullPath(availableSymbol.Name, member);
+                        paths.Add(fullPath);
+                    }
+                }
+            }
+
+            if (paths.Count == 0)
+                return Array.Empty<string>();
+
+            return paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value).ToArray();
+
+            static bool AreAllSymbolsAccessibleFromOperation(IEnumerable<ISymbol> symbols, IOperation operation)
+            {
+                foreach (var item in symbols)
+                {
+                    if (!IsSymbolAccessibleFromOperation(item, operation))
+                        return false;
+                }
+
+                return true;
+            }
 
             static string ComputeFullPath(string? prefix, IEnumerable<ISymbol> symbols)
             {
@@ -272,7 +326,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return prefix + "." + suffix;
             }
 
-            bool IsSymbolAccessible(ISymbol symbol)
+            static bool IsSymbolAccessibleFromOperation(ISymbol symbol, IOperation operation)
             {
                 return operation.SemanticModel!.IsAccessible(operation.Syntax.Span.Start, symbol);
             }
@@ -280,7 +334,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private static ITypeSymbol? GetContainingType(IOperation operation, CancellationToken cancellationToken)
         {
-            var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is ClassDeclarationSyntax || node is StructDeclarationSyntax);
+            var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is TypeDeclarationSyntax);
             if (ancestor == null)
                 return null;
 
@@ -300,7 +354,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return symbol.IsStatic;
         }
 
-        private static IEnumerable<NameAndType> GetParameters(IOperation operation, CancellationToken cancellationToken)
+        private static void GetParameters(List<NameAndType> result, IOperation operation, CancellationToken cancellationToken)
         {
             var semanticModel = operation.SemanticModel!;
             var node = operation.Syntax;
@@ -318,7 +372,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                                     var symbol = operation.SemanticModel.GetDeclaredSymbol(property, cancellationToken);
                                     if (symbol != null)
                                     {
-                                        yield return new NameAndType("value", symbol.Type);
+                                        result.Add(new NameAndType("value", symbol.Type));
                                     }
                                 }
                             }
@@ -327,7 +381,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                         }
 
                     case PropertyDeclarationSyntax _:
-                        yield break;
+                        return;
 
                     case IndexerDeclarationSyntax indexerDeclarationSyntax:
                         {
@@ -335,10 +389,10 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                             if (symbol != null)
                             {
                                 foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
                             }
 
-                            yield break;
+                            return;
                         }
 
                     case MethodDeclarationSyntax methodDeclaration:
@@ -347,10 +401,12 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                             if (symbol != null)
                             {
                                 foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                {
+                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
+                                }
                             }
 
-                            yield break;
+                            return;
                         }
 
                     case LocalFunctionStatementSyntax localFunctionStatement:
@@ -358,7 +414,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                             if (semanticModel.GetDeclaredSymbol(localFunctionStatement, cancellationToken) is IMethodSymbol symbol)
                             {
                                 foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
                             }
 
                             break;
@@ -370,10 +426,12 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                             if (symbol != null)
                             {
                                 foreach (var parameter in symbol.Parameters)
-                                    yield return new NameAndType(parameter.Name, parameter.Type);
+                                {
+                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
+                                }
                             }
 
-                            yield break;
+                            return;
                         }
                 }
 
@@ -381,16 +439,17 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             }
         }
 
-        private static IEnumerable<NameAndType> GetVariables(IOperation operation)
+        private static void GetVariables(List<NameAndType> result, IOperation operation)
         {
             var previousOperation = operation;
             var currentOperation = operation.Parent;
 
             while (currentOperation != null)
             {
-                if (currentOperation is IBlockOperation blockOperation)
+                if (currentOperation.Kind == OperationKind.Block)
                 {
-                    foreach (var childOperation in blockOperation.GetChildOperations())
+                    var blockOperation = (IBlockOperation)currentOperation;
+                    foreach (var childOperation in blockOperation.Operations)
                     {
                         if (childOperation == previousOperation)
                             break;
@@ -402,7 +461,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                                 {
                                     foreach (var variable in declaration.GetDeclaredVariables())
                                     {
-                                        yield return new NameAndType(variable.Name, variable.Type);
+                                        result.Add(new NameAndType(variable.Name, variable.Type));
                                     }
                                 }
                                 break;
@@ -410,7 +469,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                             case IVariableDeclarationOperation variableDeclarationOperation:
                                 foreach (var variable in variableDeclarationOperation.GetDeclaredVariables())
                                 {
-                                    yield return new NameAndType(variable.Name, variable.Type);
+                                    result.Add(new NameAndType(variable.Name, variable.Type));
                                 }
                                 break;
                         }
