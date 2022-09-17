@@ -252,6 +252,28 @@ class TestClass
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task NotAwaitedDefaultValueTask_InUsing()
+    {
+        var originalCode = @"
+using System;
+using System.Threading.Tasks;
+class TestClass
+{
+    ValueTask Test()
+    {
+        using ((IDisposable)null)
+        {
+            return default;
+        }
+    }
+}";
+
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
     [Fact]
     public async Task NotAwaitedNewValueTask_InUsing()
