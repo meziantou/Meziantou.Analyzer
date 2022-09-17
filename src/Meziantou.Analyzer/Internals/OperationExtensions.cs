@@ -29,7 +29,7 @@ internal static class OperationExtensions
 
         return LanguageVersion.Default;
     }
-    
+
     public static LanguageVersion GetCSharpLanguageVersion(this SyntaxNode syntaxNode)
     {
         if (syntaxNode.SyntaxTree.Options is CSharpParseOptions options)
@@ -37,7 +37,7 @@ internal static class OperationExtensions
 
         return LanguageVersion.Default;
     }
-    
+
     public static LanguageVersion GetCSharpLanguageVersion(this SyntaxTree syntaxTree)
     {
         if (syntaxTree.Options is CSharpParseOptions options)
@@ -114,7 +114,16 @@ internal static class OperationExtensions
 
     public static bool IsInNameofOperation(this IOperation operation)
     {
-        return operation.Ancestors().OfType<INameOfOperation>().Any();
+        var parent = operation.Parent;
+        while (parent != null)
+        {
+            if (parent.Kind == OperationKind.NameOf)
+                return true;
+
+            parent = parent.Parent;
+        }
+
+        return false;
     }
 
     public static ITypeSymbol? GetActualType(this IOperation operation)

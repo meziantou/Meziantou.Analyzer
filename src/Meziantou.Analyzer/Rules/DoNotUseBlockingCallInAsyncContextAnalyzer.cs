@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -56,12 +57,15 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
     private sealed class Context
     {
-        private readonly Compilation _compilation;
+        private static readonly Version Version6 = new(6, 0, 0, 0);
+
+        private readonly INamedTypeSymbol[] _taskLikeSymbols;
+        private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
+        private readonly HashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
 
         public Context(Compilation compilation)
         {
-            _compilation = compilation;
-            var consoleSymbol = _compilation.GetBestTypeByMetadataName("System.Console");
+            var consoleSymbol = compilation.GetBestTypeByMetadataName("System.Console");
             if (consoleSymbol != null)
             {
                 ConsoleErrorAndOutSymbols = consoleSymbol.GetMembers(nameof(Console.Out)).Concat(consoleSymbol.GetMembers(nameof(Console.Error))).ToArray();
@@ -71,30 +75,44 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 ConsoleErrorAndOutSymbols = Array.Empty<ISymbol>();
             }
 
-            ProcessSymbol = _compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
-            CancellationTokenSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
+            ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
+            CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
 
-            TaskSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-            TaskAwaiterSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
-            TaskAwaiterOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter`1");
+            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            TaskAwaiterSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
+            TaskAwaiterOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter`1");
 
-            ValueTaskSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-            ValueTaskOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-            ValueTaskAwaiterSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
-            ValueTaskAwaiterOfTSymbol = _compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
+            ValueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            ValueTaskAwaiterSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
+            ValueTaskAwaiterOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
 
-            ThreadSymbol = _compilation.GetBestTypeByMetadataName("System.Threading.Thread");
+            ThreadSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Thread");
 
-            DbContextSymbol = _compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
-            DbSetSymbol = _compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
+            DbContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
+            DbSetSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
 
-            ServiceProviderServiceExtensionsSymbol = _compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
+            ServiceProviderServiceExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
             if (ServiceProviderServiceExtensionsSymbol != null)
             {
                 ServiceProviderServiceExtensions_CreateScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateScope").FirstOrDefault();
                 ServiceProviderServiceExtensions_CreateAsyncScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateAsyncScope").FirstOrDefault();
             }
+
+            var taskLikeSymbols = new List<INamedTypeSymbol>(4);
+            taskLikeSymbols.AddIfNotNull(TaskSymbol);
+            taskLikeSymbols.AddIfNotNull(TaskOfTSymbol);
+            taskLikeSymbols.AddIfNotNull(ValueTaskSymbol);
+            taskLikeSymbols.AddIfNotNull(ValueTaskOfTSymbol);
+            _taskLikeSymbols = taskLikeSymbols.ToArray();
+
+            var taskAwaiterLikeSymbols = new List<INamedTypeSymbol>(4);
+            taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterSymbol);
+            taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterOfTSymbol);
+            taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterSymbol);
+            taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterOfTSymbol);
+            _taskAwaiterLikeSymbols = taskAwaiterLikeSymbols.ToArray();
         }
 
         private ISymbol? ProcessSymbol { get; }
@@ -126,79 +144,88 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var operation = (IInvocationOperation)context.Operation;
             var targetMethod = operation.TargetMethod;
 
-            if (IsTaskSymbol(targetMethod.ReturnType))
+            // The cache only contains methods with no async equivalent methods.
+            // This optimize the best-case scenario where code is correctly written according to this analyzer.
+            if (_symbolsWithNoAsyncOverloads.Contains(targetMethod))
                 return;
 
-            if (operation.IsInNameofOperation())
-                return;
+            if (HasAsyncEquivalent(context.Compilation, operation, out var diagnosticMessage))
+            {
+                ReportDiagnosticIfNeeded(context, operation, diagnosticMessage);
+            }
+            else
+            {
+                _symbolsWithNoAsyncOverloads.Add(targetMethod);
+            }
+        }
+
+        private bool HasAsyncEquivalent(Compilation compilation, IInvocationOperation operation, [NotNullWhen(true)] out string? message)
+        {
+            message = null;
+            var targetMethod = operation.TargetMethod;
+
+            if (IsTaskSymbol(targetMethod.ReturnType))
+                return false;
 
             // Process.WaitForExit => Skip because the async method is not equivalent https://github.com/dotnet/runtime/issues/42556
-            if (string.Equals(targetMethod.Name, nameof(System.Diagnostics.Process.WaitForExit), StringComparison.Ordinal) &&
-                targetMethod.ContainingType.IsEqualTo(ProcessSymbol))
+            if (targetMethod.Name == nameof(System.Diagnostics.Process.WaitForExit) && targetMethod.ContainingType.IsEqualTo(ProcessSymbol))
             {
-                if (targetMethod.ContainingType.ContainingAssembly.Identity.Version < new Version(6, 0, 0, 0))
-                    return;
+                if (targetMethod.ContainingType.ContainingAssembly.Identity.Version < Version6)
+                    return false;
             }
 
             // Task.Wait()
             // Task`1.Wait()
-            if (string.Equals(targetMethod.Name, nameof(Task.Wait), StringComparison.Ordinal))
+            else if (targetMethod.Name == nameof(Task.Wait))
             {
                 if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
                 {
-                    ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'Wait()'");
-                    return;
+                    message = "Use await instead of 'Wait()'";
+                    return true;
                 }
             }
 
             // Task.GetAwaiter().GetResult()
-            if (string.Equals(targetMethod.Name, nameof(TaskAwaiter.GetResult), StringComparison.Ordinal))
+            else if (targetMethod.Name == nameof(TaskAwaiter.GetResult))
             {
-                if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(TaskAwaiterSymbol, TaskAwaiterOfTSymbol, ValueTaskAwaiterSymbol, ValueTaskAwaiterOfTSymbol))
+                if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(_taskAwaiterLikeSymbols))
                 {
-                    ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'GetResult()'");
-                    return;
+                    message = "Use await instead of 'GetResult()'";
+                    return true;
                 }
             }
 
             // Thread.Sleep => Task.Delay
-            if (string.Equals(targetMethod.Name, "Sleep", StringComparison.Ordinal))
+            else if (targetMethod.Name == "Sleep")
             {
                 if (targetMethod.ContainingType.IsEqualTo(ThreadSymbol))
                 {
-                    ReportDiagnosticIfNeeded(context, operation, "Use await and 'Task.Delay()' instead of 'Thread.Sleep()'");
-                    return;
+                    message = "Use await and 'Task.Delay()' instead of 'Thread.Sleep()'";
+                    return true;
                 }
             }
 
             // Console.Out|Error.Write
-            if (string.Equals(targetMethod.Name, "Write", StringComparison.Ordinal) ||
-               string.Equals(targetMethod.Name, "WriteLine", StringComparison.Ordinal) ||
-               string.Equals(targetMethod.Name, "Flush", StringComparison.Ordinal))
+            else if (targetMethod.Name == "WriteLine" || targetMethod.Name == "Write" || targetMethod.Name == "Flush")
             {
                 var left = operation.GetChildOperations().FirstOrDefault();
                 if (left is IMemberReferenceOperation memberReference)
                 {
                     if (ConsoleErrorAndOutSymbols.Contains(memberReference.Member, SymbolEqualityComparer.Default))
-                        return;
+                        return false;
                 }
             }
 
-            if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol != null && ServiceProviderServiceExtensions_CreateScopeSymbol != null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
+            else if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol != null && ServiceProviderServiceExtensions_CreateScopeSymbol != null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
             {
-                ReportDiagnosticIfNeeded(context, operation, $"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'");
-                return;
+                message = $"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'";
+                return true;
             }
 
             // https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-6.0&WT.mc_id=DT-MVP-5003978#overloads
-            if (DbContextSymbol != null && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.IsEqualTo(DbContextSymbol))
+            else if ((DbContextSymbol != null || DbSetSymbol != null) && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(DbContextSymbol, DbSetSymbol))
             {
-                return;
-            }
-
-            if (DbSetSymbol != null && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualTo(DbSetSymbol))
-            {
-                return;
+                return false;
             }
 
             // Search async equivalent: sample.Write() => sample.WriteAsync()
@@ -213,42 +240,57 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     potentionalMethods.AddRange(operation.SemanticModel.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
                 }
 
-                var potentialMethod = potentionalMethods.Find(IsPotentialMember);
-                if (potentialMethod != null)
+                foreach (var potentialMethod in potentionalMethods)
                 {
-                    ReportDiagnosticIfNeeded(context, operation, $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'");
-                }
-
-                bool IsPotentialMember(ISymbol memberSymbol)
-                {
-                    if (memberSymbol.IsEqualTo(targetMethod))
-                        return false;
-
-                    if (memberSymbol is IMethodSymbol methodSymbol)
+                    if (IsPotentialMember(compilation, targetMethod, potentialMethod))
                     {
-                        if (targetMethod.IsStatic && !methodSymbol.IsStatic)
-                            return false;
-
-                        if (!IsTaskSymbol(methodSymbol.ReturnType))
-                            return false;
-
-                        if (methodSymbol.IsObsolete(context.Compilation))
-                            return false;
-
-                        if (!targetMethod.HasSimilarParameters(methodSymbol) && !targetMethod.HasSimilarParameters(methodSymbol, CancellationTokenSymbol))
-                            return false;
-
+                        message = $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'";
                         return true;
                     }
-
-                    return false;
                 }
             }
+
+            return false;
         }
 
-        private bool IsTaskSymbol(ITypeSymbol symbol)
+        private bool IsPotentialMember(Compilation compilation, IMethodSymbol method, ISymbol potentialAsyncSymbol)
         {
-            return symbol.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol);
+            if (potentialAsyncSymbol.IsEqualTo(method))
+                return false;
+
+            if (potentialAsyncSymbol is IMethodSymbol methodSymbol)
+            {
+                if (method.IsStatic && !methodSymbol.IsStatic)
+                    return false;
+
+                if (!IsTaskSymbol(methodSymbol.ReturnType))
+                    return false;
+
+                if (methodSymbol.IsObsolete(compilation))
+                    return false;
+
+                if (!method.HasSimilarParameters(methodSymbol) && !method.HasSimilarParameters(methodSymbol, CancellationTokenSymbol))
+                    return false;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsTaskSymbol(ITypeSymbol? symbol)
+        {
+            if (symbol is null)
+                return false;
+
+            var originalDefinition = symbol.OriginalDefinition;
+            foreach (var taskLikeSymbol in _taskLikeSymbols)
+            {
+                if (originalDefinition.IsEqualTo(taskLikeSymbol))
+                    return true;
+            }
+
+            return false;
         }
 
         internal void AnalyzePropertyReference(OperationAnalysisContext context)
