@@ -13,19 +13,26 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
             .WithAnalyzer<ReturnTaskFromResultInsteadOfReturningNullAnalyzer>();
     }
 
-    [Fact]
-    public async Task Method()
+    [Theory]
+    [InlineData("Task A() { [||]return null; }")]
+    [InlineData("Task A() => [||]null;")]
+    [InlineData("Task A() { [||]return ((Test)null)?.A(); }")]
+    [InlineData("Task A() { [||]return 1 switch { _ => null }; }")]
+    [InlineData("Task A(int value) { [||]return value switch { 1 => A(0), _ => null }; }")]
+    [InlineData("Task A(bool a) { [||]return a ? null : A(a); }")]
+    [InlineData("async Task<object> Valid() { return null; }")]
+    [InlineData("object Valid() { return null; }")]
+    public async Task Method(string code)
     {
-        const string SourceCode = @"using System.Threading.Tasks;
+       var sourceCode = $$"""
+using System.Threading.Tasks;
 class Test
 {
-    Task A() { [||]return null; }
-    Task B() => [||]null;
-    Task C() { [||]return ((Test)null)?.A(); }
-    async Task<object> Valid() { return null; }
-}";
+    {{code}}
+}
+""";
         await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+              .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 
@@ -103,8 +110,7 @@ class Test
 class Test
 {
     Task A()
-    {
-        
+    {   
         System.Func<Task<object>> valid4 = async () => { return null; };
         return Task.CompletedTask;
     }
