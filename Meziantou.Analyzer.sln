@@ -16,11 +16,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.targets = Directory.Build.targets
 		global.json = global.json
 		README.md = README.md
+		renovate.json = renovate.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentationGenerator", "src\DocumentationGenerator\DocumentationGenerator.csproj", "{E7199E8B-465B-4487-B078-1FB85BAFD368}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListDotNetTypes", "src\ListDotNetTypes\ListDotNetTypes.csproj", "{B496BD9C-27CA-44BE-95A9-57CBC99314D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListDotNetTypes", "src\ListDotNetTypes\ListDotNetTypes.csproj", "{B496BD9C-27CA-44BE-95A9-57CBC99314D4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
