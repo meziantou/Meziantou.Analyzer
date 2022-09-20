@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Meziantou.Analyzer.Configurations;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -41,7 +42,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private readonly List<ITypeSymbol> _potentialClasses = new();
-        private readonly HashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
+        private readonly ConcurrentHashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
 
         private INamedTypeSymbol? ExceptionSymbol { get; }
         private INamedTypeSymbol? ComImportSymbol { get; }
@@ -86,11 +87,8 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
             var symbol = (IMethodSymbol)context.Symbol;
             if (symbol.ContainingType != null && symbol.HasAttribute(BenchmarkSymbol))
             {
-                lock (_cannotBeSealedClasses)
-                {
-                    _cannotBeSealedClasses.Add(symbol.ContainingType);
-                    _cannotBeSealedClasses.Add(symbol.ContainingType.OriginalDefinition);
-                }
+                _cannotBeSealedClasses.Add(symbol.ContainingType);
+                _cannotBeSealedClasses.Add(symbol.ContainingType.OriginalDefinition);
             }
         }
 
