@@ -12,7 +12,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.LocalVariablesShouldNotHideSymbols,
-        title: "Local variable should not hide other symbols",
+        title: "Local variables should not hide other symbols",
         messageFormat: "Local variable '{0}' should not hide {1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,

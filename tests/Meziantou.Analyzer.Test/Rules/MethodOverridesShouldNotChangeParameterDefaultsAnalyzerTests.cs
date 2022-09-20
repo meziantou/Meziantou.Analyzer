@@ -82,8 +82,8 @@ class TestDerived : Test
 }";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: '0'; current: '1')")
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: '1'; current: '2')")
+              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '0'; current: '1')")
+              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '1'; current: '2')")
               .ValidateAsync();
     }
 
@@ -120,7 +120,7 @@ class TestDerived : Test
 }";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: <no default value>; current: '1')")
+              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: <no default value>; current: '1')")
               .ValidateAsync();
     }
 
@@ -139,7 +139,7 @@ class TestDerived : Test
 }";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change parameter defaults (original: '0'; current: <no default value>)")
+              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '0'; current: <no default value>)")
               .ValidateAsync();
     }
 }

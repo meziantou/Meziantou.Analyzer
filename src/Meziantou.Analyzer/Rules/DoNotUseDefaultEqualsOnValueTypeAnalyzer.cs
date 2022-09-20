@@ -13,8 +13,8 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.DoNotUseDefaultEqualsOnValueType,
-        title: "Default ValueType.Equals or HashCode is used for struct's equality",
-        messageFormat: "Default ValueType.Equals or HashCode is used for struct's equality",
+        title: "Default ValueType.Equals or HashCode is used for struct equality",
+        messageFormat: "Default ValueType.Equals or HashCode is used for struct equality",
         RuleCategories.Performance,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,

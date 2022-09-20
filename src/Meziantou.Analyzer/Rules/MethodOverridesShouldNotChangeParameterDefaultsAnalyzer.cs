@@ -10,8 +10,8 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.MethodOverridesShouldNotChangeParameterDefaults,
-        title: "Method overrides should not change parameter defaults",
-        messageFormat: "Method overrides should not change parameter defaults (original: {0}; current: {1})",
+        title: "Method overrides should not change default values",
+        messageFormat: "Method overrides should not change default values (original: {0}; current: {1})",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,

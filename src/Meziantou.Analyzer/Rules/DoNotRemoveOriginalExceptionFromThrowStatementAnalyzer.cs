@@ -11,8 +11,8 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.DoNotRemoveOriginalExceptionFromThrowStatement,
-        title: "Do not remove original exception",
-        messageFormat: "Do not remove original exception",
+        title: "Prefer rethrowing an exception implicitly",
+        messageFormat: "Prefer rethrowing an exception implicitly",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
