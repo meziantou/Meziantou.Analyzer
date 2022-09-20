@@ -29,7 +29,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
     private static readonly DiagnosticDescriptor s_rule2 = new(
         RuleIdentifiers.DoNotUseBlockingCall,
-        title: "Do not use blocking call in a sync method (need to make containing method async)",
+        title: "Do not use blocking calls in a sync method (need to make calling method async)",
         messageFormat: "{0}",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
