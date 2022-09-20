@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -53,8 +54,8 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext
     {
-        private readonly HashSet<ISymbol> _potentialSymbols = new(SymbolEqualityComparer.Default);
-        private readonly HashSet<ISymbol> _cannotBeStaticSymbols = new(SymbolEqualityComparer.Default);
+        private readonly ConcurrentHashSet<ISymbol> _potentialSymbols = new(SymbolEqualityComparer.Default);
+        private readonly ConcurrentHashSet<ISymbol> _cannotBeStaticSymbols = new(SymbolEqualityComparer.Default);
 
         public void CompilationEnd(CompilationAnalysisContext context)
         {
@@ -104,10 +105,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             if (operation == null || HasInstanceUsages(operation))
                 return;
 
-            lock (_potentialSymbols)
-            {
-                _potentialSymbols.Add(methodSymbol);
-            }
+            _potentialSymbols.Add(methodSymbol);
         }
 
         public void AnalyzeProperty(SyntaxNodeAnalysisContext context)
@@ -141,10 +139,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            lock (_potentialSymbols)
-            {
-                _potentialSymbols.Add(propertySymbol);
-            }
+            _potentialSymbols.Add(propertySymbol);
         }
 
         public void AnalyzeDelegateCreation(OperationAnalysisContext context)
@@ -156,10 +151,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             // xaml cannot add event to static methods
             if (IsInXamlGeneratedFile(operation))
             {
-                lock (_cannotBeStaticSymbols)
-                {
-                    _cannotBeStaticSymbols.Add(methodReference.Method);
-                }
+                _cannotBeStaticSymbols.Add(methodReference.Method);
             }
         }
 
