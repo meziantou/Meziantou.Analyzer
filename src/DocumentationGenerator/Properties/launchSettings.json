@@ -2,7 +2,7 @@
   "profiles": {
     "DocumentationGenerator": {
       "commandName": "Project",
-      "commandLineArgs": "..\\..\\..\\..\\..\\docs"
+      "commandLineArgs": "..\\..\\..\\..\\.."
     }
   }
 }

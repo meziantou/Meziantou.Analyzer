@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -19,27 +20,70 @@ internal static class Program
 
         var outputFolder = Path.GetFullPath(args[0]);
 
-        if (args.Length > 1)
-        {
-            var assemblyPath = Path.GetFullPath(args[0]);
-        }
-
         var assembly = typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly;
         var diagnosticAnalyzers = assembly.GetExportedTypes()
             .Where(type => !type.IsAbstract && typeof(DiagnosticAnalyzer).IsAssignableFrom(type))
-            .Select(type => (DiagnosticAnalyzer)Activator.CreateInstance(type))
+            .Select(type => (DiagnosticAnalyzer)Activator.CreateInstance(type)!)
             .ToList();
 
         var codeFixProviders = assembly.GetExportedTypes()
             .Where(type => !type.IsAbstract && typeof(CodeFixProvider).IsAssignableFrom(type))
-            .Select(type => (CodeFixProvider)Activator.CreateInstance(type))
+            .Select(type => (CodeFixProvider)Activator.CreateInstance(type)!)
             .ToList();
 
         var sb = new StringBuilder();
-        sb.Append("# ").Append(assembly.GetName().Name).Append("'s rules");
-        sb.AppendLine();
-        sb.AppendLine("|Id|Category|Description|Severity|Is enabled|Code fix|");
-        sb.AppendLine("|--|--------|-----------|:------:|:--------:|:------:|");
+        sb.Append("# ").Append(assembly.GetName().Name).Append("'s rules\n");
+        var rulesTable = GenerateRulesTable(diagnosticAnalyzers, codeFixProviders);
+        sb.Append(rulesTable);
+
+        sb.Append("\n# .editorconfig - default values\n\n");
+        GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: null);
+
+        sb.Append("\n# .editorconfig - all rules disabled\n\n");
+        GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: "none");
+
+        Console.WriteLine(sb.ToString());
+
+        // Update home readme
+        {
+            var readmePath = Path.GetFullPath(Path.Combine(outputFolder, "README.md"));
+            var readmeContent = File.ReadAllText(readmePath);
+            var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + rulesTable + "\n", RegexOptions.Singleline);
+            File.WriteAllText(readmePath, newContent);
+        }
+
+        // Update doc readme
+        {
+            var path = Path.GetFullPath(Path.Combine(outputFolder, "docs", "README.md"));
+            Console.WriteLine(path);
+            File.WriteAllText(path, sb.ToString());
+        }
+
+        // Update title in rule pages
+        {
+            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+            {
+                var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
+                var detailPath = Path.GetFullPath(Path.Combine(outputFolder, "docs", "Rules", diagnostic.Id + ".md"));
+                if (File.Exists(detailPath))
+                {
+                    var lines = File.ReadAllLines(detailPath);
+                    lines[0] = title;
+                    File.WriteAllLines(detailPath, lines);
+                }
+                else
+                {
+                    File.WriteAllText(detailPath, title);
+                }
+            }
+        }
+    }
+
+    private static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, List<CodeFixProvider> codeFixProviders)
+    {
+        var sb = new StringBuilder();
+        sb.Append("|Id|Category|Description|Severity|Is enabled|Code fix|\n");
+        sb.Append("|--|--------|-----------|:------:|:--------:|:------:|\n");
 
         foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id, StringComparer.Ordinal))
         {
@@ -66,66 +110,50 @@ internal static class Program
               .Append('|')
               .Append(GetBoolean(hasCodeFix))
               .Append('|')
-              .AppendLine();
+              .Append('\n');
         }
 
-        sb.AppendLine();
+        return sb.ToString();
+    }
 
-        sb.AppendLine("# .editorconfig - default values");
-        sb.AppendLine();
-        sb.AppendLine("```editorconfig");
-        foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+    private static void GenerateEditorConfig(StringBuilder sb, List<DiagnosticAnalyzer> analyzers, string? overrideSeverity = null)
+    {
+        sb.Append("```editorconfig\n");
+        var first = true;
+        foreach (var diagnostic in analyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
         {
-            var severity = diagnostic.IsEnabledByDefault ?
-                                diagnostic.DefaultSeverity switch
-                                {
-                                    DiagnosticSeverity.Hidden => "silent    ",
-                                    DiagnosticSeverity.Info => "suggestion",
-                                    DiagnosticSeverity.Warning => "warning   ",
-                                    DiagnosticSeverity.Error => "error     ",
-                                    _ => throw new InvalidOperationException($"{diagnostic.DefaultSeverity} not supported"),
-                                }
-                                : "none      ";
-
-            sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = ").Append(severity)
-                .Append(" # ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title)
-                .AppendLine();
-        }
-        sb.AppendLine("```");
-        sb.AppendLine();
-
-        sb.AppendLine("# .editorconfig - all rules disabled");
-        sb.AppendLine();
-        sb.AppendLine("```editorconfig");
-        foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
-        {
-            sb.Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = none      ")
-                .Append(" # ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title)
-                .AppendLine();
-        }
-        sb.AppendLine("```");
-
-        Console.WriteLine(sb.ToString());
-        var path = Path.GetFullPath(Path.Combine(outputFolder, @"README.md"));
-        Console.WriteLine(path);
-        File.WriteAllText(path, sb.ToString());
-
-        // Write title in detail pages
-        foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
-        {
-            var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
-            var detailPath = Path.GetFullPath(Path.Combine(outputFolder, "Rules", diagnostic.Id + ".md"));
-            if (File.Exists(detailPath))
+            if (!first)
             {
-                var lines = File.ReadAllLines(detailPath);
-                lines[0] = title;
-                File.WriteAllLines(detailPath, lines);
+                sb.Append('\n');
             }
-            else
+
+            var severity = overrideSeverity;
+            if (severity is null)
             {
-                File.WriteAllText(detailPath, title);
+                if (diagnostic.IsEnabledByDefault)
+                {
+                    severity = diagnostic.DefaultSeverity switch
+                    {
+                        DiagnosticSeverity.Hidden => "silent",
+                        DiagnosticSeverity.Info => "suggestion",
+                        DiagnosticSeverity.Warning => "warning",
+                        DiagnosticSeverity.Error => "error",
+                        _ => throw new InvalidOperationException($"{diagnostic.DefaultSeverity} not supported"),
+                    };
+                }
+                else
+                {
+                    severity = "none";
+                }
             }
+
+            sb.Append(" # ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title).Append('\n')
+              .Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = ").Append(severity).Append('\n');
+
+            first = false;
         }
+
+        sb.Append("```\n");
     }
 
     private static string GetSeverity(DiagnosticSeverity severity)
@@ -143,6 +171,8 @@ internal static class Program
     private static string EscapeMarkdown(string text)
     {
         return text
+            .Replace("[", "\\[", StringComparison.Ordinal)
+            .Replace("]", "\\]", StringComparison.Ordinal)
             .Replace("<", "\\<", StringComparison.Ordinal)
             .Replace(">", "\\>", StringComparison.Ordinal);
     }

@@ -86,8 +86,8 @@
 |[MA0084](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0084.md)|Design|Local variables should not hide other symbols|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0085](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0085.md)|Usage|Anonymous delegates should not be used to unsubscribe from Events|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0086](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0086.md)|Design|Do not throw from a finalizer|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0087](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0087.md)|Design|Parameters with [DefaultParameterValue] attributes should also be marked [Optional]|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0088](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0088.md)|Design|Use [DefaultParameterValue] instead of [DefaultValue]|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0087](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0087.md)|Design|Parameters with \[DefaultParameterValue\] attributes should also be marked \[Optional\]|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0088](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0088.md)|Design|Use \[DefaultParameterValue\] instead of \[DefaultValue\]|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0089](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0089.md)|Performance|Optimize string method usage|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0090](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0090.md)|Design|Remove empty else/finally block|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0091](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -119,237 +119,691 @@
 # .editorconfig - default values
 
 ```editorconfig
-dotnet_diagnostic.MA0001.severity = suggestion # MA0001: StringComparison is missing
-dotnet_diagnostic.MA0002.severity = warning    # MA0002: IEqualityComparer<string> or IComparer<string> is missing
-dotnet_diagnostic.MA0003.severity = suggestion # MA0003: Add parameter name to improve readability
-dotnet_diagnostic.MA0004.severity = warning    # MA0004: Use Task.ConfigureAwait(false)
-dotnet_diagnostic.MA0005.severity = warning    # MA0005: Use Array.Empty<T>()
-dotnet_diagnostic.MA0006.severity = warning    # MA0006: Use String.Equals instead of equality operator
-dotnet_diagnostic.MA0007.severity = suggestion # MA0007: Add a comma after the last value
-dotnet_diagnostic.MA0008.severity = warning    # MA0008: Add StructLayoutAttribute
-dotnet_diagnostic.MA0009.severity = warning    # MA0009: Add regex evaluation timeout
-dotnet_diagnostic.MA0010.severity = warning    # MA0010: Mark attributes with AttributeUsageAttribute
-dotnet_diagnostic.MA0011.severity = warning    # MA0011: IFormatProvider is missing
-dotnet_diagnostic.MA0012.severity = warning    # MA0012: Do not raise reserved exception type
-dotnet_diagnostic.MA0013.severity = warning    # MA0013: Types should not extend System.ApplicationException
-dotnet_diagnostic.MA0014.severity = warning    # MA0014: Do not raise System.ApplicationException type
-dotnet_diagnostic.MA0015.severity = warning    # MA0015: Specify the parameter name in ArgumentException
-dotnet_diagnostic.MA0016.severity = warning    # MA0016: Prefer returning collection abstraction instead of implementation
-dotnet_diagnostic.MA0017.severity = warning    # MA0017: Abstract types should not have public or internal constructors
-dotnet_diagnostic.MA0018.severity = warning    # MA0018: Do not declare static members on generic types
-dotnet_diagnostic.MA0019.severity = warning    # MA0019: Use EventArgs.Empty
-dotnet_diagnostic.MA0020.severity = suggestion # MA0020: Use direct methods instead of LINQ methods
-dotnet_diagnostic.MA0021.severity = warning    # MA0021: Use StringComparer.GetHashCode instead of string.GetHashCode
-dotnet_diagnostic.MA0022.severity = warning    # MA0022: Return Task.FromResult instead of returning null
-dotnet_diagnostic.MA0023.severity = warning    # MA0023: Add RegexOptions.ExplicitCapture
-dotnet_diagnostic.MA0024.severity = warning    # MA0024: Use an explicit StringComparer when possible
-dotnet_diagnostic.MA0025.severity = warning    # MA0025: Implement the functionality instead of throwing NotImplementedException
-dotnet_diagnostic.MA0026.severity = warning    # MA0026: Fix TODO comment
-dotnet_diagnostic.MA0027.severity = warning    # MA0027: Prefer rethrowing an exception implicitly
-dotnet_diagnostic.MA0028.severity = suggestion # MA0028: Optimize StringBuilder usage
-dotnet_diagnostic.MA0029.severity = suggestion # MA0029: Combine LINQ methods
-dotnet_diagnostic.MA0030.severity = warning    # MA0030: Remove useless OrderBy call
-dotnet_diagnostic.MA0031.severity = suggestion # MA0031: Optimize Enumerable.Count() usage
-dotnet_diagnostic.MA0032.severity = none       # MA0032: Use an overload with a CancellationToken argument
-dotnet_diagnostic.MA0033.severity = warning    # MA0033: Do not tag instance fields with ThreadStaticAttribute
-dotnet_diagnostic.MA0035.severity = warning    # MA0035: Do not use dangerous threading methods
-dotnet_diagnostic.MA0036.severity = suggestion # MA0036: Make class static
-dotnet_diagnostic.MA0037.severity = error      # MA0037: Remove empty statement
-dotnet_diagnostic.MA0038.severity = suggestion # MA0038: Make method static
-dotnet_diagnostic.MA0039.severity = error      # MA0039: Do not write your own certificate validation method
-dotnet_diagnostic.MA0040.severity = suggestion # MA0040: Forward the CancellationToken parameter to methods that take one
-dotnet_diagnostic.MA0041.severity = suggestion # MA0041: Make property static
-dotnet_diagnostic.MA0042.severity = suggestion # MA0042: Do not use blocking calls in an async method
-dotnet_diagnostic.MA0043.severity = suggestion # MA0043: Use nameof operator in ArgumentException
-dotnet_diagnostic.MA0044.severity = suggestion # MA0044: Remove useless ToString call
-dotnet_diagnostic.MA0045.severity = none       # MA0045: Do not use blocking calls in a sync method (need to make calling method async)
-dotnet_diagnostic.MA0046.severity = warning    # MA0046: Use EventHandler<T> to declare events
-dotnet_diagnostic.MA0047.severity = warning    # MA0047: Declare types in namespaces
-dotnet_diagnostic.MA0048.severity = warning    # MA0048: File name must match type name
-dotnet_diagnostic.MA0049.severity = error      # MA0049: Type name should not match containing namespace
-dotnet_diagnostic.MA0050.severity = suggestion # MA0050: Validate arguments correctly in iterator methods
-dotnet_diagnostic.MA0051.severity = warning    # MA0051: Method is too long
-dotnet_diagnostic.MA0052.severity = suggestion # MA0052: Replace constant Enum.ToString with nameof
-dotnet_diagnostic.MA0053.severity = suggestion # MA0053: Make class sealed
-dotnet_diagnostic.MA0054.severity = warning    # MA0054: Embed the caught exception as innerException
-dotnet_diagnostic.MA0055.severity = warning    # MA0055: Do not use finalizer
-dotnet_diagnostic.MA0056.severity = warning    # MA0056: Do not call overridable members in constructor
-dotnet_diagnostic.MA0057.severity = suggestion # MA0057: Class name should end with 'Attribute'
-dotnet_diagnostic.MA0058.severity = suggestion # MA0058: Class name should end with 'Exception'
-dotnet_diagnostic.MA0059.severity = suggestion # MA0059: Class name should end with 'EventArgs'
-dotnet_diagnostic.MA0060.severity = warning    # MA0060: The value returned by Stream.Read/Stream.ReadAsync is not used
-dotnet_diagnostic.MA0061.severity = warning    # MA0061: Method overrides should not change default values
-dotnet_diagnostic.MA0062.severity = warning    # MA0062: Non-flags enums should not be marked with "FlagsAttribute"
-dotnet_diagnostic.MA0063.severity = suggestion # MA0063: Use Where before OrderBy
-dotnet_diagnostic.MA0064.severity = warning    # MA0064: Avoid locking on publicly accessible instance
-dotnet_diagnostic.MA0065.severity = warning    # MA0065: Default ValueType.Equals or HashCode is used for struct equality
-dotnet_diagnostic.MA0066.severity = warning    # MA0066: Hash table unfriendly type is used in a hash table
-dotnet_diagnostic.MA0067.severity = suggestion # MA0067: Use Guid.Empty
-dotnet_diagnostic.MA0068.severity = warning    # MA0068: Invalid parameter name for nullable attribute
-dotnet_diagnostic.MA0069.severity = warning    # MA0069: Non-constant static fields should not be visible
-dotnet_diagnostic.MA0070.severity = warning    # MA0070: Obsolete attributes should include explanations
-dotnet_diagnostic.MA0071.severity = suggestion # MA0071: Avoid using redundant else
-dotnet_diagnostic.MA0072.severity = warning    # MA0072: Do not throw from a finally block
-dotnet_diagnostic.MA0073.severity = suggestion # MA0073: Avoid comparison with bool constant
-dotnet_diagnostic.MA0074.severity = warning    # MA0074: Avoid implicit culture-sensitive methods
-dotnet_diagnostic.MA0075.severity = suggestion # MA0075: Do not use implicit culture-sensitive ToString
-dotnet_diagnostic.MA0076.severity = suggestion # MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
-dotnet_diagnostic.MA0077.severity = warning    # MA0077: A class that provides Equals(T) should implement IEquatable<T>
-dotnet_diagnostic.MA0078.severity = suggestion # MA0078: Use 'Cast' instead of 'Select' to cast
-dotnet_diagnostic.MA0079.severity = suggestion # MA0079: Forward the CancellationToken using .WithCancellation()
-dotnet_diagnostic.MA0080.severity = none       # MA0080: Use a cancellation token using .WithCancellation()
-dotnet_diagnostic.MA0081.severity = warning    # MA0081: Method overrides should not omit params keyword
-dotnet_diagnostic.MA0082.severity = warning    # MA0082: NaN should not be used in comparisons
-dotnet_diagnostic.MA0083.severity = warning    # MA0083: ConstructorArgument parameters should exist in constructors
-dotnet_diagnostic.MA0084.severity = warning    # MA0084: Local variables should not hide other symbols
-dotnet_diagnostic.MA0085.severity = warning    # MA0085: Anonymous delegates should not be used to unsubscribe from Events
-dotnet_diagnostic.MA0086.severity = warning    # MA0086: Do not throw from a finalizer
-dotnet_diagnostic.MA0087.severity = warning    # MA0087: Parameters with [DefaultParameterValue] attributes should also be marked [Optional]
-dotnet_diagnostic.MA0088.severity = warning    # MA0088: Use [DefaultParameterValue] instead of [DefaultValue]
-dotnet_diagnostic.MA0089.severity = suggestion # MA0089: Optimize string method usage
-dotnet_diagnostic.MA0090.severity = suggestion # MA0090: Remove empty else/finally block
-dotnet_diagnostic.MA0091.severity = warning    # MA0091: Sender should be 'this' for instance events
-dotnet_diagnostic.MA0092.severity = warning    # MA0092: Sender should be 'null' for static events
-dotnet_diagnostic.MA0093.severity = warning    # MA0093: EventArgs should not be null
-dotnet_diagnostic.MA0094.severity = warning    # MA0094: A class that provides CompareTo(T) should implement IComparable<T>
-dotnet_diagnostic.MA0095.severity = warning    # MA0095: A class that implements IEquatable<T> should override Equals(object)
-dotnet_diagnostic.MA0096.severity = warning    # MA0096: A class that implements IComparable<T> should also implement IEquatable<T>
-dotnet_diagnostic.MA0097.severity = warning    # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
-dotnet_diagnostic.MA0098.severity = suggestion # MA0098: Use indexer instead of LINQ methods
-dotnet_diagnostic.MA0099.severity = warning    # MA0099: Use Explicit enum value instead of 0
-dotnet_diagnostic.MA0100.severity = warning    # MA0100: Await task before disposing of resources
-dotnet_diagnostic.MA0101.severity = silent     # MA0101: String contains an implicit end of line character
-dotnet_diagnostic.MA0102.severity = suggestion # MA0102: Make member readonly
-dotnet_diagnostic.MA0103.severity = warning    # MA0103: Use SequenceEqual instead of equality operator
-dotnet_diagnostic.MA0104.severity = none       # MA0104: Do not create a type with a name from the BCL
-dotnet_diagnostic.MA0105.severity = suggestion # MA0105: Use the lambda parameters instead of using a closure
-dotnet_diagnostic.MA0106.severity = suggestion # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
-dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sensitive object.ToString
-dotnet_diagnostic.MA0108.severity = suggestion # MA0108: Remove redundant argument value
-dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
-dotnet_diagnostic.MA0110.severity = suggestion # MA0110: Use the Regex source generator
-dotnet_diagnostic.MA0111.severity = suggestion # MA0111: Use string.Create instead of FormattableString
-dotnet_diagnostic.MA0112.severity = none       # MA0112: Use 'Count > 0' instead of 'Any()'
-dotnet_diagnostic.MA0113.severity = suggestion # MA0113: Use DateTime.UnixEpoch
-dotnet_diagnostic.MA0114.severity = suggestion # MA0114: Use DateTimeOffset.UnixEpoch
-dotnet_diagnostic.MA0115.severity = warning    # MA0115: Unknown component parameter
+ # MA0001: StringComparison is missing
+dotnet_diagnostic.MA0001.severity = suggestion
+
+ # MA0002: IEqualityComparer<string> or IComparer<string> is missing
+dotnet_diagnostic.MA0002.severity = warning
+
+ # MA0003: Add parameter name to improve readability
+dotnet_diagnostic.MA0003.severity = suggestion
+
+ # MA0004: Use Task.ConfigureAwait(false)
+dotnet_diagnostic.MA0004.severity = warning
+
+ # MA0005: Use Array.Empty<T>()
+dotnet_diagnostic.MA0005.severity = warning
+
+ # MA0006: Use String.Equals instead of equality operator
+dotnet_diagnostic.MA0006.severity = warning
+
+ # MA0007: Add a comma after the last value
+dotnet_diagnostic.MA0007.severity = suggestion
+
+ # MA0008: Add StructLayoutAttribute
+dotnet_diagnostic.MA0008.severity = warning
+
+ # MA0009: Add regex evaluation timeout
+dotnet_diagnostic.MA0009.severity = warning
+
+ # MA0010: Mark attributes with AttributeUsageAttribute
+dotnet_diagnostic.MA0010.severity = warning
+
+ # MA0011: IFormatProvider is missing
+dotnet_diagnostic.MA0011.severity = warning
+
+ # MA0012: Do not raise reserved exception type
+dotnet_diagnostic.MA0012.severity = warning
+
+ # MA0013: Types should not extend System.ApplicationException
+dotnet_diagnostic.MA0013.severity = warning
+
+ # MA0014: Do not raise System.ApplicationException type
+dotnet_diagnostic.MA0014.severity = warning
+
+ # MA0015: Specify the parameter name in ArgumentException
+dotnet_diagnostic.MA0015.severity = warning
+
+ # MA0016: Prefer returning collection abstraction instead of implementation
+dotnet_diagnostic.MA0016.severity = warning
+
+ # MA0017: Abstract types should not have public or internal constructors
+dotnet_diagnostic.MA0017.severity = warning
+
+ # MA0018: Do not declare static members on generic types
+dotnet_diagnostic.MA0018.severity = warning
+
+ # MA0019: Use EventArgs.Empty
+dotnet_diagnostic.MA0019.severity = warning
+
+ # MA0020: Use direct methods instead of LINQ methods
+dotnet_diagnostic.MA0020.severity = suggestion
+
+ # MA0021: Use StringComparer.GetHashCode instead of string.GetHashCode
+dotnet_diagnostic.MA0021.severity = warning
+
+ # MA0022: Return Task.FromResult instead of returning null
+dotnet_diagnostic.MA0022.severity = warning
+
+ # MA0023: Add RegexOptions.ExplicitCapture
+dotnet_diagnostic.MA0023.severity = warning
+
+ # MA0024: Use an explicit StringComparer when possible
+dotnet_diagnostic.MA0024.severity = warning
+
+ # MA0025: Implement the functionality instead of throwing NotImplementedException
+dotnet_diagnostic.MA0025.severity = warning
+
+ # MA0026: Fix TODO comment
+dotnet_diagnostic.MA0026.severity = warning
+
+ # MA0027: Prefer rethrowing an exception implicitly
+dotnet_diagnostic.MA0027.severity = warning
+
+ # MA0028: Optimize StringBuilder usage
+dotnet_diagnostic.MA0028.severity = suggestion
+
+ # MA0029: Combine LINQ methods
+dotnet_diagnostic.MA0029.severity = suggestion
+
+ # MA0030: Remove useless OrderBy call
+dotnet_diagnostic.MA0030.severity = warning
+
+ # MA0031: Optimize Enumerable.Count() usage
+dotnet_diagnostic.MA0031.severity = suggestion
+
+ # MA0032: Use an overload with a CancellationToken argument
+dotnet_diagnostic.MA0032.severity = none
+
+ # MA0033: Do not tag instance fields with ThreadStaticAttribute
+dotnet_diagnostic.MA0033.severity = warning
+
+ # MA0035: Do not use dangerous threading methods
+dotnet_diagnostic.MA0035.severity = warning
+
+ # MA0036: Make class static
+dotnet_diagnostic.MA0036.severity = suggestion
+
+ # MA0037: Remove empty statement
+dotnet_diagnostic.MA0037.severity = error
+
+ # MA0038: Make method static
+dotnet_diagnostic.MA0038.severity = suggestion
+
+ # MA0039: Do not write your own certificate validation method
+dotnet_diagnostic.MA0039.severity = error
+
+ # MA0040: Forward the CancellationToken parameter to methods that take one
+dotnet_diagnostic.MA0040.severity = suggestion
+
+ # MA0041: Make property static
+dotnet_diagnostic.MA0041.severity = suggestion
+
+ # MA0042: Do not use blocking calls in an async method
+dotnet_diagnostic.MA0042.severity = suggestion
+
+ # MA0043: Use nameof operator in ArgumentException
+dotnet_diagnostic.MA0043.severity = suggestion
+
+ # MA0044: Remove useless ToString call
+dotnet_diagnostic.MA0044.severity = suggestion
+
+ # MA0045: Do not use blocking calls in a sync method (need to make calling method async)
+dotnet_diagnostic.MA0045.severity = none
+
+ # MA0046: Use EventHandler<T> to declare events
+dotnet_diagnostic.MA0046.severity = warning
+
+ # MA0047: Declare types in namespaces
+dotnet_diagnostic.MA0047.severity = warning
+
+ # MA0048: File name must match type name
+dotnet_diagnostic.MA0048.severity = warning
+
+ # MA0049: Type name should not match containing namespace
+dotnet_diagnostic.MA0049.severity = error
+
+ # MA0050: Validate arguments correctly in iterator methods
+dotnet_diagnostic.MA0050.severity = suggestion
+
+ # MA0051: Method is too long
+dotnet_diagnostic.MA0051.severity = warning
+
+ # MA0052: Replace constant Enum.ToString with nameof
+dotnet_diagnostic.MA0052.severity = suggestion
+
+ # MA0053: Make class sealed
+dotnet_diagnostic.MA0053.severity = suggestion
+
+ # MA0054: Embed the caught exception as innerException
+dotnet_diagnostic.MA0054.severity = warning
+
+ # MA0055: Do not use finalizer
+dotnet_diagnostic.MA0055.severity = warning
+
+ # MA0056: Do not call overridable members in constructor
+dotnet_diagnostic.MA0056.severity = warning
+
+ # MA0057: Class name should end with 'Attribute'
+dotnet_diagnostic.MA0057.severity = suggestion
+
+ # MA0058: Class name should end with 'Exception'
+dotnet_diagnostic.MA0058.severity = suggestion
+
+ # MA0059: Class name should end with 'EventArgs'
+dotnet_diagnostic.MA0059.severity = suggestion
+
+ # MA0060: The value returned by Stream.Read/Stream.ReadAsync is not used
+dotnet_diagnostic.MA0060.severity = warning
+
+ # MA0061: Method overrides should not change default values
+dotnet_diagnostic.MA0061.severity = warning
+
+ # MA0062: Non-flags enums should not be marked with "FlagsAttribute"
+dotnet_diagnostic.MA0062.severity = warning
+
+ # MA0063: Use Where before OrderBy
+dotnet_diagnostic.MA0063.severity = suggestion
+
+ # MA0064: Avoid locking on publicly accessible instance
+dotnet_diagnostic.MA0064.severity = warning
+
+ # MA0065: Default ValueType.Equals or HashCode is used for struct equality
+dotnet_diagnostic.MA0065.severity = warning
+
+ # MA0066: Hash table unfriendly type is used in a hash table
+dotnet_diagnostic.MA0066.severity = warning
+
+ # MA0067: Use Guid.Empty
+dotnet_diagnostic.MA0067.severity = suggestion
+
+ # MA0068: Invalid parameter name for nullable attribute
+dotnet_diagnostic.MA0068.severity = warning
+
+ # MA0069: Non-constant static fields should not be visible
+dotnet_diagnostic.MA0069.severity = warning
+
+ # MA0070: Obsolete attributes should include explanations
+dotnet_diagnostic.MA0070.severity = warning
+
+ # MA0071: Avoid using redundant else
+dotnet_diagnostic.MA0071.severity = suggestion
+
+ # MA0072: Do not throw from a finally block
+dotnet_diagnostic.MA0072.severity = warning
+
+ # MA0073: Avoid comparison with bool constant
+dotnet_diagnostic.MA0073.severity = suggestion
+
+ # MA0074: Avoid implicit culture-sensitive methods
+dotnet_diagnostic.MA0074.severity = warning
+
+ # MA0075: Do not use implicit culture-sensitive ToString
+dotnet_diagnostic.MA0075.severity = suggestion
+
+ # MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
+dotnet_diagnostic.MA0076.severity = suggestion
+
+ # MA0077: A class that provides Equals(T) should implement IEquatable<T>
+dotnet_diagnostic.MA0077.severity = warning
+
+ # MA0078: Use 'Cast' instead of 'Select' to cast
+dotnet_diagnostic.MA0078.severity = suggestion
+
+ # MA0079: Forward the CancellationToken using .WithCancellation()
+dotnet_diagnostic.MA0079.severity = suggestion
+
+ # MA0080: Use a cancellation token using .WithCancellation()
+dotnet_diagnostic.MA0080.severity = none
+
+ # MA0081: Method overrides should not omit params keyword
+dotnet_diagnostic.MA0081.severity = warning
+
+ # MA0082: NaN should not be used in comparisons
+dotnet_diagnostic.MA0082.severity = warning
+
+ # MA0083: ConstructorArgument parameters should exist in constructors
+dotnet_diagnostic.MA0083.severity = warning
+
+ # MA0084: Local variables should not hide other symbols
+dotnet_diagnostic.MA0084.severity = warning
+
+ # MA0085: Anonymous delegates should not be used to unsubscribe from Events
+dotnet_diagnostic.MA0085.severity = warning
+
+ # MA0086: Do not throw from a finalizer
+dotnet_diagnostic.MA0086.severity = warning
+
+ # MA0087: Parameters with [DefaultParameterValue] attributes should also be marked [Optional]
+dotnet_diagnostic.MA0087.severity = warning
+
+ # MA0088: Use [DefaultParameterValue] instead of [DefaultValue]
+dotnet_diagnostic.MA0088.severity = warning
+
+ # MA0089: Optimize string method usage
+dotnet_diagnostic.MA0089.severity = suggestion
+
+ # MA0090: Remove empty else/finally block
+dotnet_diagnostic.MA0090.severity = suggestion
+
+ # MA0091: Sender should be 'this' for instance events
+dotnet_diagnostic.MA0091.severity = warning
+
+ # MA0092: Sender should be 'null' for static events
+dotnet_diagnostic.MA0092.severity = warning
+
+ # MA0093: EventArgs should not be null
+dotnet_diagnostic.MA0093.severity = warning
+
+ # MA0094: A class that provides CompareTo(T) should implement IComparable<T>
+dotnet_diagnostic.MA0094.severity = warning
+
+ # MA0095: A class that implements IEquatable<T> should override Equals(object)
+dotnet_diagnostic.MA0095.severity = warning
+
+ # MA0096: A class that implements IComparable<T> should also implement IEquatable<T>
+dotnet_diagnostic.MA0096.severity = warning
+
+ # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
+dotnet_diagnostic.MA0097.severity = warning
+
+ # MA0098: Use indexer instead of LINQ methods
+dotnet_diagnostic.MA0098.severity = suggestion
+
+ # MA0099: Use Explicit enum value instead of 0
+dotnet_diagnostic.MA0099.severity = warning
+
+ # MA0100: Await task before disposing of resources
+dotnet_diagnostic.MA0100.severity = warning
+
+ # MA0101: String contains an implicit end of line character
+dotnet_diagnostic.MA0101.severity = silent
+
+ # MA0102: Make member readonly
+dotnet_diagnostic.MA0102.severity = suggestion
+
+ # MA0103: Use SequenceEqual instead of equality operator
+dotnet_diagnostic.MA0103.severity = warning
+
+ # MA0104: Do not create a type with a name from the BCL
+dotnet_diagnostic.MA0104.severity = none
+
+ # MA0105: Use the lambda parameters instead of using a closure
+dotnet_diagnostic.MA0105.severity = suggestion
+
+ # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
+dotnet_diagnostic.MA0106.severity = suggestion
+
+ # MA0107: Do not use culture-sensitive object.ToString
+dotnet_diagnostic.MA0107.severity = none
+
+ # MA0108: Remove redundant argument value
+dotnet_diagnostic.MA0108.severity = suggestion
+
+ # MA0109: Consider adding an overload with a Span<T> or Memory<T>
+dotnet_diagnostic.MA0109.severity = none
+
+ # MA0110: Use the Regex source generator
+dotnet_diagnostic.MA0110.severity = suggestion
+
+ # MA0111: Use string.Create instead of FormattableString
+dotnet_diagnostic.MA0111.severity = suggestion
+
+ # MA0112: Use 'Count > 0' instead of 'Any()'
+dotnet_diagnostic.MA0112.severity = none
+
+ # MA0113: Use DateTime.UnixEpoch
+dotnet_diagnostic.MA0113.severity = suggestion
+
+ # MA0114: Use DateTimeOffset.UnixEpoch
+dotnet_diagnostic.MA0114.severity = suggestion
+
+ # MA0115: Unknown component parameter
+dotnet_diagnostic.MA0115.severity = warning
 ```
 
 # .editorconfig - all rules disabled
 
 ```editorconfig
-dotnet_diagnostic.MA0001.severity = none       # MA0001: StringComparison is missing
-dotnet_diagnostic.MA0002.severity = none       # MA0002: IEqualityComparer<string> or IComparer<string> is missing
-dotnet_diagnostic.MA0003.severity = none       # MA0003: Add parameter name to improve readability
-dotnet_diagnostic.MA0004.severity = none       # MA0004: Use Task.ConfigureAwait(false)
-dotnet_diagnostic.MA0005.severity = none       # MA0005: Use Array.Empty<T>()
-dotnet_diagnostic.MA0006.severity = none       # MA0006: Use String.Equals instead of equality operator
-dotnet_diagnostic.MA0007.severity = none       # MA0007: Add a comma after the last value
-dotnet_diagnostic.MA0008.severity = none       # MA0008: Add StructLayoutAttribute
-dotnet_diagnostic.MA0009.severity = none       # MA0009: Add regex evaluation timeout
-dotnet_diagnostic.MA0010.severity = none       # MA0010: Mark attributes with AttributeUsageAttribute
-dotnet_diagnostic.MA0011.severity = none       # MA0011: IFormatProvider is missing
-dotnet_diagnostic.MA0012.severity = none       # MA0012: Do not raise reserved exception type
-dotnet_diagnostic.MA0013.severity = none       # MA0013: Types should not extend System.ApplicationException
-dotnet_diagnostic.MA0014.severity = none       # MA0014: Do not raise System.ApplicationException type
-dotnet_diagnostic.MA0015.severity = none       # MA0015: Specify the parameter name in ArgumentException
-dotnet_diagnostic.MA0016.severity = none       # MA0016: Prefer returning collection abstraction instead of implementation
-dotnet_diagnostic.MA0017.severity = none       # MA0017: Abstract types should not have public or internal constructors
-dotnet_diagnostic.MA0018.severity = none       # MA0018: Do not declare static members on generic types
-dotnet_diagnostic.MA0019.severity = none       # MA0019: Use EventArgs.Empty
-dotnet_diagnostic.MA0020.severity = none       # MA0020: Use direct methods instead of LINQ methods
-dotnet_diagnostic.MA0021.severity = none       # MA0021: Use StringComparer.GetHashCode instead of string.GetHashCode
-dotnet_diagnostic.MA0022.severity = none       # MA0022: Return Task.FromResult instead of returning null
-dotnet_diagnostic.MA0023.severity = none       # MA0023: Add RegexOptions.ExplicitCapture
-dotnet_diagnostic.MA0024.severity = none       # MA0024: Use an explicit StringComparer when possible
-dotnet_diagnostic.MA0025.severity = none       # MA0025: Implement the functionality instead of throwing NotImplementedException
-dotnet_diagnostic.MA0026.severity = none       # MA0026: Fix TODO comment
-dotnet_diagnostic.MA0027.severity = none       # MA0027: Prefer rethrowing an exception implicitly
-dotnet_diagnostic.MA0028.severity = none       # MA0028: Optimize StringBuilder usage
-dotnet_diagnostic.MA0029.severity = none       # MA0029: Combine LINQ methods
-dotnet_diagnostic.MA0030.severity = none       # MA0030: Remove useless OrderBy call
-dotnet_diagnostic.MA0031.severity = none       # MA0031: Optimize Enumerable.Count() usage
-dotnet_diagnostic.MA0032.severity = none       # MA0032: Use an overload with a CancellationToken argument
-dotnet_diagnostic.MA0033.severity = none       # MA0033: Do not tag instance fields with ThreadStaticAttribute
-dotnet_diagnostic.MA0035.severity = none       # MA0035: Do not use dangerous threading methods
-dotnet_diagnostic.MA0036.severity = none       # MA0036: Make class static
-dotnet_diagnostic.MA0037.severity = none       # MA0037: Remove empty statement
-dotnet_diagnostic.MA0038.severity = none       # MA0038: Make method static
-dotnet_diagnostic.MA0039.severity = none       # MA0039: Do not write your own certificate validation method
-dotnet_diagnostic.MA0040.severity = none       # MA0040: Forward the CancellationToken parameter to methods that take one
-dotnet_diagnostic.MA0041.severity = none       # MA0041: Make property static
-dotnet_diagnostic.MA0042.severity = none       # MA0042: Do not use blocking calls in an async method
-dotnet_diagnostic.MA0043.severity = none       # MA0043: Use nameof operator in ArgumentException
-dotnet_diagnostic.MA0044.severity = none       # MA0044: Remove useless ToString call
-dotnet_diagnostic.MA0045.severity = none       # MA0045: Do not use blocking calls in a sync method (need to make calling method async)
-dotnet_diagnostic.MA0046.severity = none       # MA0046: Use EventHandler<T> to declare events
-dotnet_diagnostic.MA0047.severity = none       # MA0047: Declare types in namespaces
-dotnet_diagnostic.MA0048.severity = none       # MA0048: File name must match type name
-dotnet_diagnostic.MA0049.severity = none       # MA0049: Type name should not match containing namespace
-dotnet_diagnostic.MA0050.severity = none       # MA0050: Validate arguments correctly in iterator methods
-dotnet_diagnostic.MA0051.severity = none       # MA0051: Method is too long
-dotnet_diagnostic.MA0052.severity = none       # MA0052: Replace constant Enum.ToString with nameof
-dotnet_diagnostic.MA0053.severity = none       # MA0053: Make class sealed
-dotnet_diagnostic.MA0054.severity = none       # MA0054: Embed the caught exception as innerException
-dotnet_diagnostic.MA0055.severity = none       # MA0055: Do not use finalizer
-dotnet_diagnostic.MA0056.severity = none       # MA0056: Do not call overridable members in constructor
-dotnet_diagnostic.MA0057.severity = none       # MA0057: Class name should end with 'Attribute'
-dotnet_diagnostic.MA0058.severity = none       # MA0058: Class name should end with 'Exception'
-dotnet_diagnostic.MA0059.severity = none       # MA0059: Class name should end with 'EventArgs'
-dotnet_diagnostic.MA0060.severity = none       # MA0060: The value returned by Stream.Read/Stream.ReadAsync is not used
-dotnet_diagnostic.MA0061.severity = none       # MA0061: Method overrides should not change default values
-dotnet_diagnostic.MA0062.severity = none       # MA0062: Non-flags enums should not be marked with "FlagsAttribute"
-dotnet_diagnostic.MA0063.severity = none       # MA0063: Use Where before OrderBy
-dotnet_diagnostic.MA0064.severity = none       # MA0064: Avoid locking on publicly accessible instance
-dotnet_diagnostic.MA0065.severity = none       # MA0065: Default ValueType.Equals or HashCode is used for struct equality
-dotnet_diagnostic.MA0066.severity = none       # MA0066: Hash table unfriendly type is used in a hash table
-dotnet_diagnostic.MA0067.severity = none       # MA0067: Use Guid.Empty
-dotnet_diagnostic.MA0068.severity = none       # MA0068: Invalid parameter name for nullable attribute
-dotnet_diagnostic.MA0069.severity = none       # MA0069: Non-constant static fields should not be visible
-dotnet_diagnostic.MA0070.severity = none       # MA0070: Obsolete attributes should include explanations
-dotnet_diagnostic.MA0071.severity = none       # MA0071: Avoid using redundant else
-dotnet_diagnostic.MA0072.severity = none       # MA0072: Do not throw from a finally block
-dotnet_diagnostic.MA0073.severity = none       # MA0073: Avoid comparison with bool constant
-dotnet_diagnostic.MA0074.severity = none       # MA0074: Avoid implicit culture-sensitive methods
-dotnet_diagnostic.MA0075.severity = none       # MA0075: Do not use implicit culture-sensitive ToString
-dotnet_diagnostic.MA0076.severity = none       # MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
-dotnet_diagnostic.MA0077.severity = none       # MA0077: A class that provides Equals(T) should implement IEquatable<T>
-dotnet_diagnostic.MA0078.severity = none       # MA0078: Use 'Cast' instead of 'Select' to cast
-dotnet_diagnostic.MA0079.severity = none       # MA0079: Forward the CancellationToken using .WithCancellation()
-dotnet_diagnostic.MA0080.severity = none       # MA0080: Use a cancellation token using .WithCancellation()
-dotnet_diagnostic.MA0081.severity = none       # MA0081: Method overrides should not omit params keyword
-dotnet_diagnostic.MA0082.severity = none       # MA0082: NaN should not be used in comparisons
-dotnet_diagnostic.MA0083.severity = none       # MA0083: ConstructorArgument parameters should exist in constructors
-dotnet_diagnostic.MA0084.severity = none       # MA0084: Local variables should not hide other symbols
-dotnet_diagnostic.MA0085.severity = none       # MA0085: Anonymous delegates should not be used to unsubscribe from Events
-dotnet_diagnostic.MA0086.severity = none       # MA0086: Do not throw from a finalizer
-dotnet_diagnostic.MA0087.severity = none       # MA0087: Parameters with [DefaultParameterValue] attributes should also be marked [Optional]
-dotnet_diagnostic.MA0088.severity = none       # MA0088: Use [DefaultParameterValue] instead of [DefaultValue]
-dotnet_diagnostic.MA0089.severity = none       # MA0089: Optimize string method usage
-dotnet_diagnostic.MA0090.severity = none       # MA0090: Remove empty else/finally block
-dotnet_diagnostic.MA0091.severity = none       # MA0091: Sender should be 'this' for instance events
-dotnet_diagnostic.MA0092.severity = none       # MA0092: Sender should be 'null' for static events
-dotnet_diagnostic.MA0093.severity = none       # MA0093: EventArgs should not be null
-dotnet_diagnostic.MA0094.severity = none       # MA0094: A class that provides CompareTo(T) should implement IComparable<T>
-dotnet_diagnostic.MA0095.severity = none       # MA0095: A class that implements IEquatable<T> should override Equals(object)
-dotnet_diagnostic.MA0096.severity = none       # MA0096: A class that implements IComparable<T> should also implement IEquatable<T>
-dotnet_diagnostic.MA0097.severity = none       # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
-dotnet_diagnostic.MA0098.severity = none       # MA0098: Use indexer instead of LINQ methods
-dotnet_diagnostic.MA0099.severity = none       # MA0099: Use Explicit enum value instead of 0
-dotnet_diagnostic.MA0100.severity = none       # MA0100: Await task before disposing of resources
-dotnet_diagnostic.MA0101.severity = none       # MA0101: String contains an implicit end of line character
-dotnet_diagnostic.MA0102.severity = none       # MA0102: Make member readonly
-dotnet_diagnostic.MA0103.severity = none       # MA0103: Use SequenceEqual instead of equality operator
-dotnet_diagnostic.MA0104.severity = none       # MA0104: Do not create a type with a name from the BCL
-dotnet_diagnostic.MA0105.severity = none       # MA0105: Use the lambda parameters instead of using a closure
-dotnet_diagnostic.MA0106.severity = none       # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
-dotnet_diagnostic.MA0107.severity = none       # MA0107: Do not use culture-sensitive object.ToString
-dotnet_diagnostic.MA0108.severity = none       # MA0108: Remove redundant argument value
-dotnet_diagnostic.MA0109.severity = none       # MA0109: Consider adding an overload with a Span<T> or Memory<T>
-dotnet_diagnostic.MA0110.severity = none       # MA0110: Use the Regex source generator
-dotnet_diagnostic.MA0111.severity = none       # MA0111: Use string.Create instead of FormattableString
-dotnet_diagnostic.MA0112.severity = none       # MA0112: Use 'Count > 0' instead of 'Any()'
-dotnet_diagnostic.MA0113.severity = none       # MA0113: Use DateTime.UnixEpoch
-dotnet_diagnostic.MA0114.severity = none       # MA0114: Use DateTimeOffset.UnixEpoch
-dotnet_diagnostic.MA0115.severity = none       # MA0115: Unknown component parameter
+ # MA0001: StringComparison is missing
+dotnet_diagnostic.MA0001.severity = none
+
+ # MA0002: IEqualityComparer<string> or IComparer<string> is missing
+dotnet_diagnostic.MA0002.severity = none
+
+ # MA0003: Add parameter name to improve readability
+dotnet_diagnostic.MA0003.severity = none
+
+ # MA0004: Use Task.ConfigureAwait(false)
+dotnet_diagnostic.MA0004.severity = none
+
+ # MA0005: Use Array.Empty<T>()
+dotnet_diagnostic.MA0005.severity = none
+
+ # MA0006: Use String.Equals instead of equality operator
+dotnet_diagnostic.MA0006.severity = none
+
+ # MA0007: Add a comma after the last value
+dotnet_diagnostic.MA0007.severity = none
+
+ # MA0008: Add StructLayoutAttribute
+dotnet_diagnostic.MA0008.severity = none
+
+ # MA0009: Add regex evaluation timeout
+dotnet_diagnostic.MA0009.severity = none
+
+ # MA0010: Mark attributes with AttributeUsageAttribute
+dotnet_diagnostic.MA0010.severity = none
+
+ # MA0011: IFormatProvider is missing
+dotnet_diagnostic.MA0011.severity = none
+
+ # MA0012: Do not raise reserved exception type
+dotnet_diagnostic.MA0012.severity = none
+
+ # MA0013: Types should not extend System.ApplicationException
+dotnet_diagnostic.MA0013.severity = none
+
+ # MA0014: Do not raise System.ApplicationException type
+dotnet_diagnostic.MA0014.severity = none
+
+ # MA0015: Specify the parameter name in ArgumentException
+dotnet_diagnostic.MA0015.severity = none
+
+ # MA0016: Prefer returning collection abstraction instead of implementation
+dotnet_diagnostic.MA0016.severity = none
+
+ # MA0017: Abstract types should not have public or internal constructors
+dotnet_diagnostic.MA0017.severity = none
+
+ # MA0018: Do not declare static members on generic types
+dotnet_diagnostic.MA0018.severity = none
+
+ # MA0019: Use EventArgs.Empty
+dotnet_diagnostic.MA0019.severity = none
+
+ # MA0020: Use direct methods instead of LINQ methods
+dotnet_diagnostic.MA0020.severity = none
+
+ # MA0021: Use StringComparer.GetHashCode instead of string.GetHashCode
+dotnet_diagnostic.MA0021.severity = none
+
+ # MA0022: Return Task.FromResult instead of returning null
+dotnet_diagnostic.MA0022.severity = none
+
+ # MA0023: Add RegexOptions.ExplicitCapture
+dotnet_diagnostic.MA0023.severity = none
+
+ # MA0024: Use an explicit StringComparer when possible
+dotnet_diagnostic.MA0024.severity = none
+
+ # MA0025: Implement the functionality instead of throwing NotImplementedException
+dotnet_diagnostic.MA0025.severity = none
+
+ # MA0026: Fix TODO comment
+dotnet_diagnostic.MA0026.severity = none
+
+ # MA0027: Prefer rethrowing an exception implicitly
+dotnet_diagnostic.MA0027.severity = none
+
+ # MA0028: Optimize StringBuilder usage
+dotnet_diagnostic.MA0028.severity = none
+
+ # MA0029: Combine LINQ methods
+dotnet_diagnostic.MA0029.severity = none
+
+ # MA0030: Remove useless OrderBy call
+dotnet_diagnostic.MA0030.severity = none
+
+ # MA0031: Optimize Enumerable.Count() usage
+dotnet_diagnostic.MA0031.severity = none
+
+ # MA0032: Use an overload with a CancellationToken argument
+dotnet_diagnostic.MA0032.severity = none
+
+ # MA0033: Do not tag instance fields with ThreadStaticAttribute
+dotnet_diagnostic.MA0033.severity = none
+
+ # MA0035: Do not use dangerous threading methods
+dotnet_diagnostic.MA0035.severity = none
+
+ # MA0036: Make class static
+dotnet_diagnostic.MA0036.severity = none
+
+ # MA0037: Remove empty statement
+dotnet_diagnostic.MA0037.severity = none
+
+ # MA0038: Make method static
+dotnet_diagnostic.MA0038.severity = none
+
+ # MA0039: Do not write your own certificate validation method
+dotnet_diagnostic.MA0039.severity = none
+
+ # MA0040: Forward the CancellationToken parameter to methods that take one
+dotnet_diagnostic.MA0040.severity = none
+
+ # MA0041: Make property static
+dotnet_diagnostic.MA0041.severity = none
+
+ # MA0042: Do not use blocking calls in an async method
+dotnet_diagnostic.MA0042.severity = none
+
+ # MA0043: Use nameof operator in ArgumentException
+dotnet_diagnostic.MA0043.severity = none
+
+ # MA0044: Remove useless ToString call
+dotnet_diagnostic.MA0044.severity = none
+
+ # MA0045: Do not use blocking calls in a sync method (need to make calling method async)
+dotnet_diagnostic.MA0045.severity = none
+
+ # MA0046: Use EventHandler<T> to declare events
+dotnet_diagnostic.MA0046.severity = none
+
+ # MA0047: Declare types in namespaces
+dotnet_diagnostic.MA0047.severity = none
+
+ # MA0048: File name must match type name
+dotnet_diagnostic.MA0048.severity = none
+
+ # MA0049: Type name should not match containing namespace
+dotnet_diagnostic.MA0049.severity = none
+
+ # MA0050: Validate arguments correctly in iterator methods
+dotnet_diagnostic.MA0050.severity = none
+
+ # MA0051: Method is too long
+dotnet_diagnostic.MA0051.severity = none
+
+ # MA0052: Replace constant Enum.ToString with nameof
+dotnet_diagnostic.MA0052.severity = none
+
+ # MA0053: Make class sealed
+dotnet_diagnostic.MA0053.severity = none
+
+ # MA0054: Embed the caught exception as innerException
+dotnet_diagnostic.MA0054.severity = none
+
+ # MA0055: Do not use finalizer
+dotnet_diagnostic.MA0055.severity = none
+
+ # MA0056: Do not call overridable members in constructor
+dotnet_diagnostic.MA0056.severity = none
+
+ # MA0057: Class name should end with 'Attribute'
+dotnet_diagnostic.MA0057.severity = none
+
+ # MA0058: Class name should end with 'Exception'
+dotnet_diagnostic.MA0058.severity = none
+
+ # MA0059: Class name should end with 'EventArgs'
+dotnet_diagnostic.MA0059.severity = none
+
+ # MA0060: The value returned by Stream.Read/Stream.ReadAsync is not used
+dotnet_diagnostic.MA0060.severity = none
+
+ # MA0061: Method overrides should not change default values
+dotnet_diagnostic.MA0061.severity = none
+
+ # MA0062: Non-flags enums should not be marked with "FlagsAttribute"
+dotnet_diagnostic.MA0062.severity = none
+
+ # MA0063: Use Where before OrderBy
+dotnet_diagnostic.MA0063.severity = none
+
+ # MA0064: Avoid locking on publicly accessible instance
+dotnet_diagnostic.MA0064.severity = none
+
+ # MA0065: Default ValueType.Equals or HashCode is used for struct equality
+dotnet_diagnostic.MA0065.severity = none
+
+ # MA0066: Hash table unfriendly type is used in a hash table
+dotnet_diagnostic.MA0066.severity = none
+
+ # MA0067: Use Guid.Empty
+dotnet_diagnostic.MA0067.severity = none
+
+ # MA0068: Invalid parameter name for nullable attribute
+dotnet_diagnostic.MA0068.severity = none
+
+ # MA0069: Non-constant static fields should not be visible
+dotnet_diagnostic.MA0069.severity = none
+
+ # MA0070: Obsolete attributes should include explanations
+dotnet_diagnostic.MA0070.severity = none
+
+ # MA0071: Avoid using redundant else
+dotnet_diagnostic.MA0071.severity = none
+
+ # MA0072: Do not throw from a finally block
+dotnet_diagnostic.MA0072.severity = none
+
+ # MA0073: Avoid comparison with bool constant
+dotnet_diagnostic.MA0073.severity = none
+
+ # MA0074: Avoid implicit culture-sensitive methods
+dotnet_diagnostic.MA0074.severity = none
+
+ # MA0075: Do not use implicit culture-sensitive ToString
+dotnet_diagnostic.MA0075.severity = none
+
+ # MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
+dotnet_diagnostic.MA0076.severity = none
+
+ # MA0077: A class that provides Equals(T) should implement IEquatable<T>
+dotnet_diagnostic.MA0077.severity = none
+
+ # MA0078: Use 'Cast' instead of 'Select' to cast
+dotnet_diagnostic.MA0078.severity = none
+
+ # MA0079: Forward the CancellationToken using .WithCancellation()
+dotnet_diagnostic.MA0079.severity = none
+
+ # MA0080: Use a cancellation token using .WithCancellation()
+dotnet_diagnostic.MA0080.severity = none
+
+ # MA0081: Method overrides should not omit params keyword
+dotnet_diagnostic.MA0081.severity = none
+
+ # MA0082: NaN should not be used in comparisons
+dotnet_diagnostic.MA0082.severity = none
+
+ # MA0083: ConstructorArgument parameters should exist in constructors
+dotnet_diagnostic.MA0083.severity = none
+
+ # MA0084: Local variables should not hide other symbols
+dotnet_diagnostic.MA0084.severity = none
+
+ # MA0085: Anonymous delegates should not be used to unsubscribe from Events
+dotnet_diagnostic.MA0085.severity = none
+
+ # MA0086: Do not throw from a finalizer
+dotnet_diagnostic.MA0086.severity = none
+
+ # MA0087: Parameters with [DefaultParameterValue] attributes should also be marked [Optional]
+dotnet_diagnostic.MA0087.severity = none
+
+ # MA0088: Use [DefaultParameterValue] instead of [DefaultValue]
+dotnet_diagnostic.MA0088.severity = none
+
+ # MA0089: Optimize string method usage
+dotnet_diagnostic.MA0089.severity = none
+
+ # MA0090: Remove empty else/finally block
+dotnet_diagnostic.MA0090.severity = none
+
+ # MA0091: Sender should be 'this' for instance events
+dotnet_diagnostic.MA0091.severity = none
+
+ # MA0092: Sender should be 'null' for static events
+dotnet_diagnostic.MA0092.severity = none
+
+ # MA0093: EventArgs should not be null
+dotnet_diagnostic.MA0093.severity = none
+
+ # MA0094: A class that provides CompareTo(T) should implement IComparable<T>
+dotnet_diagnostic.MA0094.severity = none
+
+ # MA0095: A class that implements IEquatable<T> should override Equals(object)
+dotnet_diagnostic.MA0095.severity = none
+
+ # MA0096: A class that implements IComparable<T> should also implement IEquatable<T>
+dotnet_diagnostic.MA0096.severity = none
+
+ # MA0097: A class that implements IComparable<T> or IComparable should override comparison operators
+dotnet_diagnostic.MA0097.severity = none
+
+ # MA0098: Use indexer instead of LINQ methods
+dotnet_diagnostic.MA0098.severity = none
+
+ # MA0099: Use Explicit enum value instead of 0
+dotnet_diagnostic.MA0099.severity = none
+
+ # MA0100: Await task before disposing of resources
+dotnet_diagnostic.MA0100.severity = none
+
+ # MA0101: String contains an implicit end of line character
+dotnet_diagnostic.MA0101.severity = none
+
+ # MA0102: Make member readonly
+dotnet_diagnostic.MA0102.severity = none
+
+ # MA0103: Use SequenceEqual instead of equality operator
+dotnet_diagnostic.MA0103.severity = none
+
+ # MA0104: Do not create a type with a name from the BCL
+dotnet_diagnostic.MA0104.severity = none
+
+ # MA0105: Use the lambda parameters instead of using a closure
+dotnet_diagnostic.MA0105.severity = none
+
+ # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
+dotnet_diagnostic.MA0106.severity = none
+
+ # MA0107: Do not use culture-sensitive object.ToString
+dotnet_diagnostic.MA0107.severity = none
+
+ # MA0108: Remove redundant argument value
+dotnet_diagnostic.MA0108.severity = none
+
+ # MA0109: Consider adding an overload with a Span<T> or Memory<T>
+dotnet_diagnostic.MA0109.severity = none
+
+ # MA0110: Use the Regex source generator
+dotnet_diagnostic.MA0110.severity = none
+
+ # MA0111: Use string.Create instead of FormattableString
+dotnet_diagnostic.MA0111.severity = none
+
+ # MA0112: Use 'Count > 0' instead of 'Any()'
+dotnet_diagnostic.MA0112.severity = none
+
+ # MA0113: Use DateTime.UnixEpoch
+dotnet_diagnostic.MA0113.severity = none
+
+ # MA0114: Use DateTimeOffset.UnixEpoch
+dotnet_diagnostic.MA0114.severity = none
+
+ # MA0115: Unknown component parameter
+dotnet_diagnostic.MA0115.severity = none
 ```
