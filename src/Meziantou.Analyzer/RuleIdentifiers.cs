@@ -118,6 +118,7 @@ internal static class RuleIdentifiers
     public const string UseDateTimeUnixEpoch = "MA0113";
     public const string UseDateTimeOffsetUnixEpoch = "MA0114";
     public const string DoNotUseUnknownParameterForRazorComponent = "MA0115";
+    public const string ReturnTaskDirectly = "MA0116";
 
     public static string GetHelpUri(string idenfifier)
     {
