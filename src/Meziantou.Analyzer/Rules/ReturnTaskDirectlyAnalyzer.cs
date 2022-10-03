@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -31,17 +30,13 @@ public sealed class ReturnTaskDirectlyAnalyzer : DiagnosticAnalyzer
 	}
 
 	private static void OnCompilationStart(CompilationStartAnalysisContext context)
-	{
-		context.RegisterSyntaxNodeAction(OnMethodAnalysis, SyntaxKind.MethodDeclaration, SyntaxKind.LocalFunctionStatement, SyntaxKind.ParenthesizedLambdaExpression);
+    {
+        var analyzerContext = new AnalyzerContext(context.Compilation);
+        context.RegisterSyntaxNodeAction(ctx => OnMethodAnalysis(ctx, analyzerContext), SyntaxKind.MethodDeclaration, SyntaxKind.LocalFunctionStatement, SyntaxKind.ParenthesizedLambdaExpression);
 	}
 
-	private static void OnMethodAnalysis(SyntaxNodeAnalysisContext context)
+	private static void OnMethodAnalysis(SyntaxNodeAnalysisContext context, AnalyzerContext analyzerContext)
 	{
-        var taskSymbol = context.Compilation.GetBestTypeByMetadataName(typeof(Task).FullName!);
-        var taskWithValueSymbol = context.Compilation.GetBestTypeByMetadataName(typeof(Task<>).FullName!);
-		var valueTaskSymbol = context.Compilation.GetBestTypeByMetadataName(typeof(ValueTask).FullName!);
-		var valueTaskWithValueSymbol = context.Compilation.GetBestTypeByMetadataName(typeof(ValueTask<>).FullName!);
-
 		var node = context.Node;
 
 		static bool IsMethodValid(SyntaxNode node, [NotNullWhen(true)] IMethodSymbol? methodSymbol)
@@ -75,8 +70,8 @@ public sealed class ReturnTaskDirectlyAnalyzer : DiagnosticAnalyzer
 				return;
 			}
 
-			body = (node as ParenthesizedLambdaExpressionSyntax)!.Block;
-			expressionBody = (node as ParenthesizedLambdaExpressionSyntax)!.ExpressionBody;
+			body = ((ParenthesizedLambdaExpressionSyntax)node).Block;
+			expressionBody = ((ParenthesizedLambdaExpressionSyntax)node).ExpressionBody;
 			returnTypeSymbol = lambdaSymbol.ReturnType;
 		}
 		else
@@ -92,8 +87,8 @@ public sealed class ReturnTaskDirectlyAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
-		if ((returnTypeSymbol.Equals(taskSymbol, SymbolEqualityComparer.Default)
-             || returnTypeSymbol.Equals(valueTaskSymbol, SymbolEqualityComparer.Default))
+		if ((returnTypeSymbol.Equals(analyzerContext.TaskSymbol, SymbolEqualityComparer.Default)
+             || returnTypeSymbol.Equals(analyzerContext.ValueTaskSymbol, SymbolEqualityComparer.Default))
 		    && body is not null
 		    && TryGetDiagnosticForTaskReturn(semanticModel, body, returnTypeSymbol, out diagnostic))
 		{
@@ -102,8 +97,8 @@ public sealed class ReturnTaskDirectlyAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
-		if ((returnTypeSymbol.OriginalDefinition.Equals(taskWithValueSymbol, SymbolEqualityComparer.Default)
-		     || returnTypeSymbol.OriginalDefinition.Equals(valueTaskWithValueSymbol, SymbolEqualityComparer.Default))
+		if ((returnTypeSymbol.OriginalDefinition.Equals(analyzerContext.TaskOfTSymbol, SymbolEqualityComparer.Default)
+		     || returnTypeSymbol.OriginalDefinition.Equals(analyzerContext.ValueTaskOfTSymbol, SymbolEqualityComparer.Default))
 		    && body is not null
 		    && TryGetDiagnosticForTaskWithValueReturn(semanticModel, body, returnTypeSymbol, out diagnostic))
 		{
@@ -190,10 +185,17 @@ public sealed class ReturnTaskDirectlyAnalyzer : DiagnosticAnalyzer
 
 	private static bool HasCovariantReturn(SemanticModel semanticModel, AwaitExpressionSyntax awaitExpression, ITypeSymbol returnTypeSymbol)
 	{
-		if (awaitExpression.Expression is InvocationExpressionSyntax invocation)
+        if (awaitExpression.Expression is InvocationExpressionSyntax invocation)
 		{
 			return HasCovariantReturn(semanticModel, invocation, returnTypeSymbol);
 		}
+
+        if (awaitExpression.Expression is ObjectCreationExpressionSyntax objectCreationExpression)
+        {
+            var typeSymbol = semanticModel.GetSymbolInfo(objectCreationExpression.Type).Symbol;
+
+            return typeSymbol is not null && !returnTypeSymbol.Equals(typeSymbol, SymbolEqualityComparer.Default);
+        }
 
 		return false;
 	}
@@ -212,4 +214,20 @@ public sealed class ReturnTaskDirectlyAnalyzer : DiagnosticAnalyzer
 	}
 
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(s_rule);
+
+    private sealed class AnalyzerContext
+    {
+        public AnalyzerContext(Compilation compilation)
+        {
+            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            ValueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        }
+
+        public INamedTypeSymbol? TaskSymbol { get; }
+        public INamedTypeSymbol? TaskOfTSymbol { get; }
+        public INamedTypeSymbol? ValueTaskSymbol { get; }
+        public INamedTypeSymbol? ValueTaskOfTSymbol { get; }
+    }
 }
