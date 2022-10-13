@@ -97,7 +97,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
             var statements = CountStatements(context, node);
             if (statements > maximumStatements)
             {
-                context.ReportDiagnostic(s_rule, reportNode, $"{statements} lines; maximum allowed: {maximumStatements}");
+                context.ReportDiagnostic(s_rule, reportNode, $"{statements} statements; maximum allowed: {maximumStatements}");
                 return;
             }
         }
