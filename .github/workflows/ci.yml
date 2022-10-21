@@ -28,7 +28,7 @@ jobs:
         $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.1\.0\.([0-9]+).nupkg$"
         $NewVersion = "1.0.$([int]$Matches.1 + 1)"
         Write-Host "New version: $NewVersion"
-        Write-Host "::set-output name=package_version::$NewVersion"
+        "package_version=$NewVersion" >> $env:GITHUB_OUTPUT
       name: Compute version
       id: compute-version
     - run: dotnet pack src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:PackageId=Meziantou.Analyzer /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /p:RepositoryBranch="${{github.ref}}" /bl
