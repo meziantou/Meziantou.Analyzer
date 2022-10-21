@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
     - run: |
         $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.1\.0\.([0-9]+).nupkg$"
@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET Core (global.json)
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v3
       - uses: actions/download-artifact@v3
         with:
           name: nuget
@@ -85,9 +85,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET Core (global.json)
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
     - name: Setup .NET Core (3.1)
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '3.1.x'
     - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --logger "GitHubActions;report-warnings=false" --collect:"XPlat Code Coverage" --blame-hang --blame-hang-timeout 2min --results-directory "${{ env.TestResultsDirectory }}" /p:WarningsAsErrors=true /p:RoslynVersion=${{ matrix.roslyn-version}}
@@ -113,7 +113,7 @@ jobs:
         name: nuget
         path: ${{ env.NuGetDirectory }}
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
     - run: |
         Write-Host "Current ref: $env:GITHUB_REF"
         Write-Host "Searching nupkg in folder: ${{ env.NuGetDirectory }}"

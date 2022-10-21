@@ -29,7 +29,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
 
-    <PackageReference Include="Meziantou.Analyzer" Version="1.0.730" Condition="'$(PackageId)' != 'Meziantou.Analyzer'">
+    <PackageReference Include="Meziantou.Analyzer" Version="1.0.735" Condition="'$(PackageId)' != 'Meziantou.Analyzer'">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>analyzers</IncludeAssets>
     </PackageReference>
