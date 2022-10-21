@@ -9,6 +9,7 @@
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <NoWarn>$(NoWarn);CA1014</NoWarn>
     <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Debug'">true</TreatWarningsAsErrors>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
     <RestoreSources>https://api.nuget.org/v3/index.json</RestoreSources>
