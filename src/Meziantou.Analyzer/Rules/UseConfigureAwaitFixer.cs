@@ -32,21 +32,21 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use ConfigureAwait(false)",
-                ct => AddConfigureAwait(context.Document, nodeToFix, value: false, ct),
+                ct => AddConfigureAwait(context, nodeToFix, value: false, ct),
                 equivalenceKey: "Use ConfigureAwait(false)"),
             context.Diagnostics);
 
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use ConfigureAwait(true)",
-                ct => AddConfigureAwait(context.Document, nodeToFix, value: true, ct),
+                ct => AddConfigureAwait(context, nodeToFix, value: true, ct),
                 equivalenceKey: "Use ConfigureAwait(true)"),
             context.Diagnostics);
     }
 
-    private static async Task<Document> AddConfigureAwait(Document document, SyntaxNode nodeToFix, bool value, CancellationToken cancellationToken)
+    private static async Task<Document> AddConfigureAwait(CodeFixContext context, SyntaxNode nodeToFix, bool value, CancellationToken cancellationToken)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var editor = await DocumentEditor.CreateAsync(context.Document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
         if (nodeToFix is AwaitExpressionSyntax awaitSyntax)
@@ -63,11 +63,11 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                 return editor.GetChangedDocument();
             }
         }
-        else if (nodeToFix is ExpressionSyntax expressionSyntax)
+        else if (nodeToFix is VariableDeclaratorSyntax or ExpressionSyntax)
         {
             // await using (var a = expr);
             // var a = expr; await using (a.ConfigureAwait(false));
-            var usingBlock = expressionSyntax.Ancestors(ascendOutOfTrivia: true).OfType<UsingStatementSyntax>().FirstOrDefault();
+            var usingBlock = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<UsingStatementSyntax>().FirstOrDefault();
             if (usingBlock != null)
             {
                 if (usingBlock.Declaration != null && usingBlock.Declaration.Variables.Count == 1)
@@ -90,7 +90,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             {
                 // await using var a = expr;
                 // var a = expr; await var aConfigured = a.ConfigureAwait(false);
-                var usingStatement = expressionSyntax.Ancestors(ascendOutOfTrivia: true).OfType<LocalDeclarationStatementSyntax>().FirstOrDefault();
+                var usingStatement = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<LocalDeclarationStatementSyntax>().FirstOrDefault();
                 if (usingStatement != null && usingStatement.Declaration.Variables.Count == 1)
                 {
                     var variablesStatement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(usingStatement.Declaration.Type, usingStatement.Declaration.Variables))
@@ -129,7 +129,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             return editor.GetChangedDocument();
         }
 
-        return document;
+        return context.Document;
 
         ExpressionSyntax AppendConfigureAwait(SyntaxNode expressionSyntax)
         {
