@@ -115,6 +115,8 @@
 |[MA0113](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0113.md)|Design|Use DateTime.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0114](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0114.md)|Design|Use DateTimeOffset.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0115](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0115.md)|Usage|Unknown component parameter|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0116](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0116.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes should also be marked as \[Parameter\] or \[CascadingParameter\]|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0117](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0117.md)|Design|Parameters with \[EditorRequired\] attributes should also be marked as \[Parameter\] or \[CascadingParameter\]|<span title='Warning'>⚠️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -460,6 +462,12 @@ dotnet_diagnostic.MA0114.severity = suggestion
 
  # MA0115: Unknown component parameter
 dotnet_diagnostic.MA0115.severity = warning
+
+ # MA0116: Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter] or [CascadingParameter]
+dotnet_diagnostic.MA0116.severity = warning
+
+ # MA0117: Parameters with [EditorRequired] attributes should also be marked as [Parameter] or [CascadingParameter]
+dotnet_diagnostic.MA0117.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -806,4 +814,10 @@ dotnet_diagnostic.MA0114.severity = none
 
  # MA0115: Unknown component parameter
 dotnet_diagnostic.MA0115.severity = none
+
+ # MA0116: Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter] or [CascadingParameter]
+dotnet_diagnostic.MA0116.severity = none
+
+ # MA0117: Parameters with [EditorRequired] attributes should also be marked as [Parameter] or [CascadingParameter]
+dotnet_diagnostic.MA0117.severity = none
 ```
