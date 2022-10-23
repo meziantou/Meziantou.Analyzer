@@ -64,7 +64,7 @@ class MyComponent : ComponentBase
     }
 
     [Fact]
-    public async Task OnInitializedAsync_ExtensionMethod_Report()
+    public async Task OnInitializedAsync_JsRuntimeExtensionMethod_Report()
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"
@@ -86,7 +86,7 @@ class MyComponent : ComponentBase
     }
 
     [Fact]
-    public async Task OnInitializedAsync_Instance_Report()
+    public async Task OnInitializedAsync_JsRuntimeInstance_Report()
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"
@@ -101,6 +101,28 @@ class MyComponent : ComponentBase
     {
         await [||]JS.InvokeAsync<object>(identifier: """", args: new object[0]);
         await base.OnInitializedAsync();
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task OnInitializedAsync_ProtectedLocalStorage_Report()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.JSInterop;
+class MyComponent : ComponentBase
+{
+    public ProtectedLocalStorage Storage { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await [||]Storage.GetAsync<string>("""");
     }
 }
 ")

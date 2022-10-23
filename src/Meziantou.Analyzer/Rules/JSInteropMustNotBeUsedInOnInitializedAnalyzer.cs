@@ -11,7 +11,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.JSRuntimeMustNotBeUsedInOnInitialized,
         title: "JSRuntime must not be used in OnInitialized or OnInitializedAsync",
-        messageFormat: "JSRuntime must not be used in OnInitialized or OnInitializedAsync",
+        messageFormat: "{0} must not be used in OnInitialized or OnInitializedAsync",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -40,6 +40,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
         {
             IJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
             JSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSRuntime");
+            ProtectedBrowserStorageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedBrowserStorage");
             WebAssemblyJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.WebAssembly.WebAssemblyJSRuntime");
             var componentBase = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
             if (componentBase != null)
@@ -51,6 +52,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
 
         public INamedTypeSymbol? IJSRuntimeSymbol { get; }
         public INamedTypeSymbol? JSRuntimeSymbol { get; }
+        public INamedTypeSymbol? ProtectedBrowserStorageSymbol { get; }
         public INamedTypeSymbol? WebAssemblyJSRuntimeSymbol { get; }
         public ISymbol? OnInitializedMethodSymbol { get; }
         public ISymbol? OnInitializedAsyncMethodSymbol { get; }
@@ -62,7 +64,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
                 if (WebAssemblyJSRuntimeSymbol != null)
                     return false; // There is no issue in WebAssembly
 
-                return (IJSRuntimeSymbol != null || JSRuntimeSymbol != null) && (OnInitializedMethodSymbol != null || OnInitializedAsyncMethodSymbol != null);
+                return (IJSRuntimeSymbol != null || JSRuntimeSymbol != null || ProtectedBrowserStorageSymbol != null) && (OnInitializedMethodSymbol != null || OnInitializedAsyncMethodSymbol != null);
             }
         }
 
@@ -96,9 +98,9 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
             if (type == null)
                 return;
 
-            if (type.IsEqualTo(IJSRuntimeSymbol) || type.IsEqualTo(JSRuntimeSymbol))
+            if (type.IsEqualTo(IJSRuntimeSymbol) || type.IsEqualTo(JSRuntimeSymbol) || type.IsOrInheritFrom(ProtectedBrowserStorageSymbol))
             {
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(s_rule, operation, type.Name);
             }
         }
     }
