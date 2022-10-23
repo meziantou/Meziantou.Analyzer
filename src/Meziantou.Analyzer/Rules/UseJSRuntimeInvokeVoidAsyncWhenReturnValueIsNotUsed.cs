@@ -38,7 +38,7 @@ public sealed class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsed : Diagno
     {
         public AnalyzerContext(Compilation compilation)
         {
-            IJSInProcessRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
+            IJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
             JSRuntimeExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSRuntimeExtensions");
             IJSInProcessRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSInProcessRuntime");
             JSInProcessRuntimeExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSInProcessRuntimeExtensions");

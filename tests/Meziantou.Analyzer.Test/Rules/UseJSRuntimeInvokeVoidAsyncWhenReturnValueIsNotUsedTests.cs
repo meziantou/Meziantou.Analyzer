@@ -32,6 +32,47 @@ class Sample
 ")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task IJSRuntime_InvokeAsyncExplicit_ReturnNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+class Sample
+{
+    async Task A()
+    {
+        IJSRuntime js = null;
+        await [||]JSRuntimeExtensions.InvokeAsync<string>(js, """", System.Array.Empty<object>());
+    }
+}
+")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task IJSRuntime_InvokeAsyncExplicitWithCancellationToken_ReturnNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+class Sample
+{
+    async Task A()
+    {
+        IJSRuntime js = null;
+        await [||]js.InvokeAsync<string>(""dummy"", CancellationToken.None, new object?[1] { null });
+    }
+}
+")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task IJSRuntime_InvokeAsync_ReturnAssigned()
