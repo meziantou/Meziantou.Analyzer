@@ -120,6 +120,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseUnknownParameterForRazorComponent = "MA0115";
     public const string SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent = "MA0116";
     public const string EditorRequiredRequiresParameterAttributeForRazorComponent = "MA0117";
+    public const string JSInvokableMethodsMustBePublic = "MA0118";
 
     public static string GetHelpUri(string idenfifier)
     {
