@@ -57,8 +57,11 @@ internal static class SymbolExtensions
         return false;
     }
 
-    public static bool Override(this IMethodSymbol? symbol, ISymbol baseSymbol)
+    public static bool Override(this IMethodSymbol? symbol, ISymbol? baseSymbol)
     {
+        if (baseSymbol is null)
+            return false;
+
         var currentMethod = symbol?.OverriddenMethod;
         while (currentMethod is not null)
         {
