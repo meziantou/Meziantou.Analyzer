@@ -118,6 +118,7 @@
 |[MA0116](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0116.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes should also be marked as \[Parameter\] or \[CascadingParameter\]|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0117](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0117.md)|Design|Parameters with \[EditorRequired\] attributes should also be marked as \[Parameter\] or \[CascadingParameter\]|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0118](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0118.md)|Design|\[JSInvokable\] methods must be public|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0119](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0119.md)|Design|JSRuntime must not be used in OnInitialized or OnInitializedAsync|<span title='Warning'>⚠️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -472,6 +473,9 @@ dotnet_diagnostic.MA0117.severity = warning
 
  # MA0118: [JSInvokable] methods must be public
 dotnet_diagnostic.MA0118.severity = warning
+
+ # MA0119: JSRuntime must not be used in OnInitialized or OnInitializedAsync
+dotnet_diagnostic.MA0119.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -827,4 +831,7 @@ dotnet_diagnostic.MA0117.severity = none
 
  # MA0118: [JSInvokable] methods must be public
 dotnet_diagnostic.MA0118.severity = none
+
+ # MA0119: JSRuntime must not be used in OnInitialized or OnInitializedAsync
+dotnet_diagnostic.MA0119.severity = none
 ```

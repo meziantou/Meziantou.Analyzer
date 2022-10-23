@@ -57,6 +57,20 @@ internal static class SymbolExtensions
         return false;
     }
 
+    public static bool Override(this IMethodSymbol? symbol, ISymbol baseSymbol)
+    {
+        var currentMethod = symbol?.OverriddenMethod;
+        while (currentMethod is not null)
+        {
+            if (SymbolEqualityComparer.Default.Equals(baseSymbol, currentMethod))
+                return true;
+
+            currentMethod = currentMethod.OverriddenMethod;
+        }
+
+        return false;
+    }
+
     public static bool IsConst(this ISymbol? symbol)
     {
         return symbol is IFieldSymbol field && field.IsConst;
