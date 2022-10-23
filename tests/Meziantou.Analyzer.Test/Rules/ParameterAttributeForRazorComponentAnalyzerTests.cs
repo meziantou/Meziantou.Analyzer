@@ -108,7 +108,7 @@ class Test
 {
     [CascadingParameter]
     [EditorRequired]
-    public int A { get; set; }
+    public int [||]A { get; set; }
 
     public int B { get; set; }
 }";

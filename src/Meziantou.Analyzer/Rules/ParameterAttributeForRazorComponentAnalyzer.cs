@@ -9,8 +9,8 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
 {
     private static readonly DiagnosticDescriptor s_supplyParameterFromQueryRule = new(
         RuleIdentifiers.SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent,
-        title: "Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter] or [CascadingParameter]",
-        messageFormat: "Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter] or [CascadingParameter]",
+        title: "Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter]",
+        messageFormat: "Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter]",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -19,8 +19,8 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
 
     private static readonly DiagnosticDescriptor s_editorRequiredRule = new(
         RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent,
-        title: "Parameters with [EditorRequired] attributes should also be marked as [Parameter] or [CascadingParameter]",
-        messageFormat: "Parameters with [EditorRequired] attributes should also be marked as [Parameter] or [CascadingParameter]",
+        title: "Parameters with [EditorRequired] attributes should also be marked as [Parameter]",
+        messageFormat: "Parameters with [EditorRequired] attributes should also be marked as [Parameter]",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -49,17 +49,15 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         public AnalyzerContext(Compilation compilation)
         {
             ParameterSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
-            CascadingParameterSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.CascadingParameterAttribute");
             SupplyParameterFromQuerySymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.SupplyParameterFromQueryAttribute");
             EditorRequiredSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.EditorRequiredAttribute");
         }
 
         public INamedTypeSymbol? ParameterSymbol { get; }
-        public INamedTypeSymbol? CascadingParameterSymbol { get; }
         public INamedTypeSymbol? SupplyParameterFromQuerySymbol { get; }
         public INamedTypeSymbol? EditorRequiredSymbol { get; }
 
-        public bool IsValid => (ParameterSymbol != null || CascadingParameterSymbol != null) && (SupplyParameterFromQuerySymbol != null || EditorRequiredSymbol != null);
+        public bool IsValid => ParameterSymbol != null && (SupplyParameterFromQuerySymbol != null || EditorRequiredSymbol != null);
 
         internal void AnalyzeProperty(SymbolAnalysisContext context)
         {
@@ -76,7 +74,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
 
             if (property.HasAttribute(EditorRequiredSymbol, inherits: false))
             {
-                if (!property.HasAttribute(ParameterSymbol, inherits: false) && !property.HasAttribute(CascadingParameterSymbol, inherits: false))
+                if (!property.HasAttribute(ParameterSymbol, inherits: false))
                 {
                     context.ReportDiagnostic(s_editorRequiredRule, property);
                 }
