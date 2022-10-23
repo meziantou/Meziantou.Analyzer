@@ -1,6 +1,9 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+
+#if NETSTANDARD2_0
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -57,17 +60,6 @@ internal static partial class StringExtensions
 
             var span = _str;
             var index = span.IndexOfAny('\r', '\n');
-            /* Unmerged change from project 'Meziantou.Analyzer (netstandard2.0)'
-            Before:
-                            if (index == -1)
-                            {
-                                _str = ReadOnlySpan<char>.Empty;
-            After:
-                            if (index == -1)
-                        {
-                            _str = ReadOnlySpan<char>.Empty;
-            */
-
             if (index == -1)
             {
                 _str = ReadOnlySpan<char>.Empty;
