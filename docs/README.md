@@ -120,6 +120,7 @@
 |[MA0118](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0118.md)|Design|\[JSInvokable\] methods must be public|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0119](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0119.md)|Design|JSRuntime must not be used in OnInitialized or OnInitializedAsync|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0120](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0120.md)|Performance|Use InvokeVoidAsync when the returned value is not used|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|<span title='Info'>ℹ️</span>|❌|❌|
 
 # .editorconfig - default values
 
@@ -480,6 +481,9 @@ dotnet_diagnostic.MA0119.severity = warning
 
  # MA0120: Use InvokeVoidAsync when the returned value is not used
 dotnet_diagnostic.MA0120.severity = suggestion
+
+ # MA0121: Do not overwrite parameter value
+dotnet_diagnostic.MA0121.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -841,4 +845,7 @@ dotnet_diagnostic.MA0119.severity = none
 
  # MA0120: Use InvokeVoidAsync when the returned value is not used
 dotnet_diagnostic.MA0120.severity = none
+
+ # MA0121: Do not overwrite parameter value
+dotnet_diagnostic.MA0121.severity = none
 ```
