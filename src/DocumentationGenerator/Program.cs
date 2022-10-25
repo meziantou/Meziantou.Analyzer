@@ -46,9 +46,11 @@ internal static class Program
 
         // Update home readme
         {
+            // The main readme is embedded into the NuGet package and rendered by nuget.org.
+            // nuget.org's markdown support is limited. Raw html in table is not supported.
             var readmePath = Path.GetFullPath(Path.Combine(outputFolder, "README.md"));
             var readmeContent = File.ReadAllText(readmePath);
-            var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + rulesTable + "\n", RegexOptions.Singleline);
+            var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + GenerateRulesTable(diagnosticAnalyzers, codeFixProviders, false) + "\n", RegexOptions.Singleline);
             File.WriteAllText(readmePath, newContent);
         }
 
@@ -79,7 +81,7 @@ internal static class Program
         }
     }
 
-    private static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, List<CodeFixProvider> codeFixProviders)
+    private static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, List<CodeFixProvider> codeFixProviders, bool addTitle = true)
     {
         var sb = new StringBuilder();
         sb.Append("|Id|Category|Description|Severity|Is enabled|Code fix|\n");
@@ -101,11 +103,21 @@ internal static class Program
               .Append(diagnostic.Category)
               .Append('|')
               .Append(EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture)))
-              .Append("|<span title='")
-              .Append(HtmlEncoder.Default.Encode(diagnostic.DefaultSeverity.ToString()))
-              .Append("'>")
-              .Append(GetSeverity(diagnostic.DefaultSeverity))
-              .Append("</span>|")
+              .Append('|');
+            if (addTitle)
+            {
+                sb.Append("<span title='")
+                  .Append(HtmlEncoder.Default.Encode(diagnostic.DefaultSeverity.ToString()))
+                  .Append("'>")
+                  .Append(GetSeverity(diagnostic.DefaultSeverity))
+                  .Append("</span>");
+            }
+            else
+            {
+                sb.Append(GetSeverity(diagnostic.DefaultSeverity));
+            }
+
+            sb.Append('|')
               .Append(GetBoolean(diagnostic.IsEnabledByDefault))
               .Append('|')
               .Append(GetBoolean(hasCodeFix))
