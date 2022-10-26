@@ -16,14 +16,16 @@ public sealed class ParameterAttributeForRazorComponentAnalyzerTests
     [Fact]
     public async Task SupplyParameterFromQuery_MissingParameter()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using Microsoft.AspNetCore.Components;
 
+[Route("/test")]
 class Test
 {
     [SupplyParameterFromQuery]
     public int [||]A { get; set; }
-}";
+}
+""";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -32,15 +34,17 @@ class Test
     [Fact]
     public async Task SupplyParameterFromQuery_WithParameter()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using Microsoft.AspNetCore.Components;
 
+[Route("/test")]
 class Test
 {
     [Parameter]
     [SupplyParameterFromQuery]
     public int A { get; set; }
-}";
+}
+""";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -49,15 +53,34 @@ class Test
     [Fact]
     public async Task SupplyParameterFromQuery_WithCascadingParameter()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using Microsoft.AspNetCore.Components;
 
+[Route("/test")]
 class Test
 {
     [CascadingParameter]
     [SupplyParameterFromQuery]
     public int [||]A { get; set; }
-}";
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SupplyParameterFromQuery_NonRoutable ()
+    {
+        const string SourceCode = """
+using Microsoft.AspNetCore.Components;
+
+class Test
+{
+    [Parameter, SupplyParameterFromQuery]
+    public int [||]A { get; set; }
+}
+""";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

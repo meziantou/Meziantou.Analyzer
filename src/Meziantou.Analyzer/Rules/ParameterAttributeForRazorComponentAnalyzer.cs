@@ -17,6 +17,16 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent));
 
+    private static readonly DiagnosticDescriptor s_supplyParameterFromQueryRoutableRule = new(
+        RuleIdentifiers.SupplyParameterFromQueryRequiresRoutableComponent,
+        title: "Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)",
+        messageFormat: "Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)",
+        RuleCategories.Design,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresRoutableComponent));
+
     private static readonly DiagnosticDescriptor s_editorRequiredRule = new(
         RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent,
         title: "Parameters with [EditorRequired] attributes should also be marked as [Parameter]",
@@ -27,7 +37,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_supplyParameterFromQueryRule, s_editorRequiredRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_supplyParameterFromQueryRule, s_editorRequiredRule, s_supplyParameterFromQueryRoutableRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -51,11 +61,13 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
             ParameterSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
             SupplyParameterFromQuerySymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.SupplyParameterFromQueryAttribute");
             EditorRequiredSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.EditorRequiredAttribute");
+            RouteAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.RouteAttribute");
         }
 
         public INamedTypeSymbol? ParameterSymbol { get; }
         public INamedTypeSymbol? SupplyParameterFromQuerySymbol { get; }
         public INamedTypeSymbol? EditorRequiredSymbol { get; }
+        public INamedTypeSymbol? RouteAttributeSymbol { get; }
 
         public bool IsValid => ParameterSymbol != null && (SupplyParameterFromQuerySymbol != null || EditorRequiredSymbol != null);
 
@@ -69,6 +81,11 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
                 if (!property.HasAttribute(ParameterSymbol, inherits: false))
                 {
                     context.ReportDiagnostic(s_supplyParameterFromQueryRule, property);
+                }
+
+                if (!property.ContainingType.HasAttribute(RouteAttributeSymbol))
+                {
+                    context.ReportDiagnostic(s_supplyParameterFromQueryRoutableRule, property);
                 }
             }
 

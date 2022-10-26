@@ -121,6 +121,7 @@
 |[MA0119](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0119.md)|Design|JSRuntime must not be used in OnInitialized or OnInitializedAsync|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0120](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0120.md)|Performance|Use InvokeVoidAsync when the returned value is not used|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0122](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0122.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes are only valid in routable components (@page)|<span title='Info'>ℹ️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -484,6 +485,9 @@ dotnet_diagnostic.MA0120.severity = suggestion
 
  # MA0121: Do not overwrite parameter value
 dotnet_diagnostic.MA0121.severity = none
+
+ # MA0122: Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)
+dotnet_diagnostic.MA0122.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -848,4 +852,7 @@ dotnet_diagnostic.MA0120.severity = none
 
  # MA0121: Do not overwrite parameter value
 dotnet_diagnostic.MA0121.severity = none
+
+ # MA0122: Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)
+dotnet_diagnostic.MA0122.severity = none
 ```
