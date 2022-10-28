@@ -133,7 +133,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
         private static bool SealedClassWithVirtualMember(AnalyzerOptions options, ISymbol symbol)
         {
-            return options.GetConfigurationValue(symbol, RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_shoud_be_sealed", defaultValue: false);
+            return options.GetConfigurationValue(symbol, RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_should_be_sealed", defaultValue: false);
         }
     }
 }
