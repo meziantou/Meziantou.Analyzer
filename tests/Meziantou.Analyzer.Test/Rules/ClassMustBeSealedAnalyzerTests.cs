@@ -174,7 +174,7 @@ internal class [||]SampleException
 }";
 
         await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true")
+              .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_should_be_sealed", "true")
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
