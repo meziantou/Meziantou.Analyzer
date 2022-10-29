@@ -122,6 +122,7 @@
 |[MA0120](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0120.md)|Performance|Use InvokeVoidAsync when the returned value is not used|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0122](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0122.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes are only valid in routable components (@page)|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0123](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0123.md)|Design|Sequence number must be a constant|<span title='Warning'>⚠️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -488,6 +489,9 @@ dotnet_diagnostic.MA0121.severity = none
 
  # MA0122: Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)
 dotnet_diagnostic.MA0122.severity = suggestion
+
+ # MA0123: Sequence number must be a constant
+dotnet_diagnostic.MA0123.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -855,4 +859,7 @@ dotnet_diagnostic.MA0121.severity = none
 
  # MA0122: Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)
 dotnet_diagnostic.MA0122.severity = none
+
+ # MA0123: Sequence number must be a constant
+dotnet_diagnostic.MA0123.severity = none
 ```
