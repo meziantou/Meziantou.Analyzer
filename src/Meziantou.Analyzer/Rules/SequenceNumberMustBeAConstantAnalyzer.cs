@@ -80,7 +80,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
                     if (IsValidExpression(operation.Arguments[0].Value))
                         return;
 
-                    context.ReportDiagnostic(s_rule, operation);
+                    context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
                 }
             }
             else if (targetMethod.ContainingType.IsEqualTo(WebRenderTreeBuilderExtensionsSymbol))
@@ -90,7 +90,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
                     if (IsValidExpression(operation.Arguments[1].Value))
                         return;
 
-                    context.ReportDiagnostic(s_rule, operation);
+                    context.ReportDiagnostic(s_rule, operation.Arguments[1].Value);
                 }
             }
 
