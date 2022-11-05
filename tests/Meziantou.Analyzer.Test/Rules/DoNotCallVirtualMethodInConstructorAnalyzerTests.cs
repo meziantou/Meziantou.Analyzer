@@ -181,5 +181,80 @@ class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task AssignVirtualEvent()
+    {
+        const string SourceCode = @"
+class Test
+{
+    protected virtual event System.Action SampleEvent;
+    
+    Test()
+    {
+        [||]SampleEvent += A;
+    }
 
+    public void A() { }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+     
+    [Fact]
+    public async Task AssignEvent()
+    {
+        const string SourceCode = @"
+class Test
+{
+    protected event System.Action SampleEvent;
+    
+    Test()
+    {
+        SampleEvent += A;
+    }
+
+    public void A() { }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task VirtualDelegate()
+    {
+        const string SourceCode = @"
+class Test
+{
+    Test()
+    {
+        System.Action a = A;
+    }
+
+    public virtual void A() { }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task VirtualDelegate2()
+    {
+        const string SourceCode = @"
+class Test
+{
+    Test()
+    {
+        System.Action a = () => A();
+    }
+
+    public virtual void A() { }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

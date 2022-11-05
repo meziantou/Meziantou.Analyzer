@@ -1,8 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -28,50 +26,55 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSyntaxNodeAction(AnalyzeConstructorSyntax, SyntaxKind.ConstructorDeclaration);
+        context.RegisterOperationBlockStartAction(ctx =>
+        {
+            if (ctx.OwningSymbol is IMethodSymbol methodSymbol)
+            {
+                if (methodSymbol.MethodKind != MethodKind.Constructor)
+                    return;
+
+                if (methodSymbol.ContainingType.IsSealed)
+                    return;
+
+                ctx.RegisterOperationAction(AnalyzeEventOperation, OperationKind.EventAssignment);
+                ctx.RegisterOperationAction(AnalyzeInvocationOperation, OperationKind.Invocation);
+                ctx.RegisterOperationAction(AnalyzePropertyReferenceOperation, OperationKind.PropertyReference);
+            }
+        });
     }
 
-    private static void AnalyzeConstructorSyntax(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeEventOperation(OperationAnalysisContext context)
     {
-        var node = (ConstructorDeclarationSyntax)context.Node;
-        if (context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken) is not IMethodSymbol methodSymbol || methodSymbol.MethodKind != MethodKind.Constructor)
-            return;
-
-        // A sealed class cannot contains virtual methods
-        if (methodSymbol.ContainingType.IsSealed)
-            return;
-
-        var body = (SyntaxNode?)node.Body ?? node.ExpressionBody;
-        if (body == null)
-            return;
-
-        var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
-        if (operation == null)
-            return;
-
-        // Check method calls
-        var invocationOperations = operation.DescendantsAndSelf().OfType<IInvocationOperation>();
-        foreach (var invocationOperation in invocationOperations)
+        var operation = (IEventAssignmentOperation)context.Operation;
+        if (operation.EventReference is IEventReferenceOperation eventReference)
         {
-            if (IsOverridable(invocationOperation.TargetMethod) && IsCurrentInstanceMethod(invocationOperation.Instance))
+            if (IsOverridable(eventReference.Member) && IsCurrentInstanceMethod(eventReference.Instance) && !IsInDelegate(operation))
             {
-                context.ReportDiagnostic(s_rule, invocationOperation.Syntax);
+                context.ReportDiagnostic(s_rule, operation);
             }
         }
+    }
 
-        // Check property access
-        var references = operation.DescendantsAndSelf().OfType<IMemberReferenceOperation>();
-        foreach (var reference in references)
+    private static void AnalyzePropertyReferenceOperation(OperationAnalysisContext context)
+    {
+        var operation = (IPropertyReferenceOperation)context.Operation;
+        var member = operation.Member;
+        if (IsOverridable(member) && !operation.IsInNameofOperation() && !IsInDelegate(operation))
         {
-            var member = reference.Member;
-            if (IsOverridable(member) && !reference.IsInNameofOperation())
+            var children = operation.GetChildOperations().Take(2).ToList();
+            if (children.Count == 1 && IsCurrentInstanceMethod(children[0]))
             {
-                var children = reference.GetChildOperations().Take(2).ToList();
-                if (children.Count == 1 && IsCurrentInstanceMethod(children[0]))
-                {
-                    context.ReportDiagnostic(s_rule, reference.Syntax);
-                }
+                context.ReportDiagnostic(s_rule, operation);
             }
+        }
+    }
+
+    private static void AnalyzeInvocationOperation(OperationAnalysisContext context)
+    {
+        var operation = (IInvocationOperation)context.Operation;
+        if (IsOverridable(operation.TargetMethod) && IsCurrentInstanceMethod(operation.Instance) && !IsInDelegate(operation))
+        {
+            context.ReportDiagnostic(s_rule, operation);
         }
     }
 
@@ -86,5 +89,18 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
             return false;
 
         return operation is IInstanceReferenceOperation i && i.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance;
+    }
+
+    private static bool IsInDelegate(IOperation? operation)
+    {
+        while (operation != null)
+        {
+            if (operation.Kind is OperationKind.DelegateCreation)
+                return true;
+
+            operation = operation.Parent;
+        }
+
+        return false;
     }
 }
