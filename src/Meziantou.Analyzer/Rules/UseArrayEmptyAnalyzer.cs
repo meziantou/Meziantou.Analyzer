@@ -80,7 +80,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 
     private static bool IsInAttribute(IArrayCreationOperation operation)
     {
-        return operation.Syntax.Ancestors().OfType<AttributeArgumentSyntax>().Any();
+        return operation.Syntax.AncestorsAndSelf().OfType<AttributeArgumentSyntax>().Any();
     }
 
     private static bool IsCompilerGeneratedParamsArray(IArrayCreationOperation arrayCreationExpression, OperationAnalysisContext context)

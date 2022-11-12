@@ -110,12 +110,13 @@ class TestAttribute : System.Attribute
     [Fact]
     public async Task ImplicitEmptyArrayInAttribute_ShouldNotReportError()
     {
-        const string SourceCode = @"
-[Test()]
+        const string SourceCode = """
+[Test("test")]
 class TestAttribute : System.Attribute
 {
-    public TestAttribute(params int[] data) { }
-}";
+    public TestAttribute(string a, params object[] data) { }
+}
+""";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
