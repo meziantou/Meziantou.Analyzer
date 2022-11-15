@@ -2,7 +2,8 @@
   <PropertyGroup>
     <TargetFrameworks>net7.0;netstandard2.0</TargetFrameworks>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-
+    <Version>1.0.1</Version>
+    
     <!-- Cannot use Meziantou.Analyzer, so the analyzer can be added to this project -->
     <PackageId>Dummy</PackageId>
     <GenerateDependencyFile>false</GenerateDependencyFile>
@@ -29,7 +30,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
 
-    <PackageReference Include="Meziantou.Analyzer" Version="1.0.745" Condition="'$(PackageId)' != 'Meziantou.Analyzer'">
+    <PackageReference Include="Meziantou.Analyzer" Version="1.0.747" Condition="'$(PackageId)' != 'Meziantou.Analyzer'">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>analyzers</IncludeAssets>
     </PackageReference>

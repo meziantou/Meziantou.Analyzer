@@ -19,7 +19,7 @@
 
   <ItemGroup Condition="$(RoslynVersion) == 'latest'">
     <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.1" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'latest'">
     <DefineConstants>$(DefineConstants);ROSLYN4;CSHARP9_OR_GREATER</DefineConstants>
@@ -28,7 +28,7 @@
 
   <ItemGroup Condition="$(RoslynVersion) == 'preview'">
     <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22518.1" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0-4.final" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
   </ItemGroup>
   <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
     <DefineConstants>$(DefineConstants);ROSLYN4;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
