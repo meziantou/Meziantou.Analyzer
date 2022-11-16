@@ -220,7 +220,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
                     if (MustUseConfigureAwait(declarator.SemanticModel!, context.Options, declarator.Syntax, context.CancellationToken))
                     {
-                        context.ReportDiagnostic(s_rule, declarator.Initializer.Value);
+                        context.ReportDiagnostic(s_rule, declarator);
                     }
                 }
             }

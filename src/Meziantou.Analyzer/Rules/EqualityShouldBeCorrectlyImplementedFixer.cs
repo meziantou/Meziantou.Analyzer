@@ -46,7 +46,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
             return document;
 
         // Retrieve Nullable Annotation from the Equals method and use it to construct the concrete interface
-        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().Where(m => IsEqualsOfTMethod(m)).SingleOrDefault(m => m != null);
+        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => IsEqualsOfTMethod(m) && m != null);
         if (equalsMethod is null)
             return document;
 

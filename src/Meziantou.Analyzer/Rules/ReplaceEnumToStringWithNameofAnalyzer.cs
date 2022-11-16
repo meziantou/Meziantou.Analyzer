@@ -1,8 +1,11 @@
 ﻿using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+
+#if ROSLYN3
+using System.Linq;
+#endif
 
 namespace Meziantou.Analyzer.Rules;
 

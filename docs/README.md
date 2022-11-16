@@ -115,7 +115,14 @@
 |[MA0113](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0113.md)|Design|Use DateTime.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0114](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0114.md)|Design|Use DateTimeOffset.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0115](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0115.md)|Usage|Unknown component parameter|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0116](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0116.md)|Performance|Return Task instead of awaiting it|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0116](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0116.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes should also be marked as \[Parameter\]|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0117](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0117.md)|Design|Parameters with \[EditorRequired\] attributes should also be marked as \[Parameter\]|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0118](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0118.md)|Design|\[JSInvokable\] methods must be public|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0119](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0119.md)|Design|JSRuntime must not be used in OnInitialized or OnInitializedAsync|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0120](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0120.md)|Performance|Use InvokeVoidAsync when the returned value is not used|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0122](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0122.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes are only valid in routable components (@page)|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0123](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0123.md)|Design|Sequence number must be a constant|<span title='Warning'>⚠️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -462,8 +469,29 @@ dotnet_diagnostic.MA0114.severity = suggestion
  # MA0115: Unknown component parameter
 dotnet_diagnostic.MA0115.severity = warning
 
- # MA0116: Return Task instead of awaiting it
-dotnet_diagnostic.MA0116.severity = suggestion
+ # MA0116: Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter]
+dotnet_diagnostic.MA0116.severity = warning
+
+ # MA0117: Parameters with [EditorRequired] attributes should also be marked as [Parameter]
+dotnet_diagnostic.MA0117.severity = warning
+
+ # MA0118: [JSInvokable] methods must be public
+dotnet_diagnostic.MA0118.severity = warning
+
+ # MA0119: JSRuntime must not be used in OnInitialized or OnInitializedAsync
+dotnet_diagnostic.MA0119.severity = warning
+
+ # MA0120: Use InvokeVoidAsync when the returned value is not used
+dotnet_diagnostic.MA0120.severity = suggestion
+
+ # MA0121: Do not overwrite parameter value
+dotnet_diagnostic.MA0121.severity = none
+
+ # MA0122: Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)
+dotnet_diagnostic.MA0122.severity = suggestion
+
+ # MA0123: Sequence number must be a constant
+dotnet_diagnostic.MA0123.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -811,6 +839,27 @@ dotnet_diagnostic.MA0114.severity = none
  # MA0115: Unknown component parameter
 dotnet_diagnostic.MA0115.severity = none
 
- # MA0116: Return Task instead of awaiting it
+ # MA0116: Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter]
 dotnet_diagnostic.MA0116.severity = none
+
+ # MA0117: Parameters with [EditorRequired] attributes should also be marked as [Parameter]
+dotnet_diagnostic.MA0117.severity = none
+
+ # MA0118: [JSInvokable] methods must be public
+dotnet_diagnostic.MA0118.severity = none
+
+ # MA0119: JSRuntime must not be used in OnInitialized or OnInitializedAsync
+dotnet_diagnostic.MA0119.severity = none
+
+ # MA0120: Use InvokeVoidAsync when the returned value is not used
+dotnet_diagnostic.MA0120.severity = none
+
+ # MA0121: Do not overwrite parameter value
+dotnet_diagnostic.MA0121.severity = none
+
+ # MA0122: Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)
+dotnet_diagnostic.MA0122.severity = none
+
+ # MA0123: Sequence number must be a constant
+dotnet_diagnostic.MA0123.severity = none
 ```

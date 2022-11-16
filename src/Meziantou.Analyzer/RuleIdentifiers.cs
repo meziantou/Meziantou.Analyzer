@@ -118,7 +118,14 @@ internal static class RuleIdentifiers
     public const string UseDateTimeUnixEpoch = "MA0113";
     public const string UseDateTimeOffsetUnixEpoch = "MA0114";
     public const string DoNotUseUnknownParameterForRazorComponent = "MA0115";
-    public const string ReturnTaskDirectly = "MA0116";
+    public const string SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent = "MA0116";
+    public const string EditorRequiredRequiresParameterAttributeForRazorComponent = "MA0117";
+    public const string JSInvokableMethodsMustBePublic = "MA0118";
+    public const string JSRuntimeMustNotBeUsedInOnInitialized = "MA0119";
+    public const string UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsed = "MA0120";
+    public const string DoNotOverwriteRazorComponentParameterValue = "MA0121";
+    public const string SupplyParameterFromQueryRequiresRoutableComponent = "MA0122";
+    public const string SequenceNumberMustBeAConstant = "MA0123";
 
     public static string GetHelpUri(string idenfifier)
     {

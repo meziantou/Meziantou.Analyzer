@@ -10,5 +10,6 @@ public enum TargetFramework
     Net7_0,
     AspNetCore5_0,
     AspNetCore6_0,
+    AspNetCore7_0,
     WindowsDesktop5_0,
 }

@@ -153,7 +153,7 @@ class ClassTest
 {
     async Task Test()
     {
-        await using var a = [||]new AsyncDisposable();
+        await using var [||]a = new AsyncDisposable();
         Console.WriteLine();
     }
 }
@@ -196,7 +196,7 @@ class ClassTest
 {
     async Task Test()
     {
-        await using (var a = [||]new AsyncDisposable())
+        await using (var [||]a = new AsyncDisposable())
         {
         }
     }
@@ -546,6 +546,42 @@ class ClassTest
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.AspNetCore6_0)
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AwaitUsingAwait()
+    {
+        const string SourceCode = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        await using var [||]a = await CreateDisposableAsync().ConfigureAwait(false);
+    }
+
+    async Task<IAsyncDisposable> CreateDisposableAsync() => throw null;
+}";
+        const string CodeFix = @"
+using System;
+using System.Threading.Tasks;
+class ClassTest
+{
+    async Task Test()
+    {
+        var a = await CreateDisposableAsync().ConfigureAwait(false);
+        await using (a.ConfigureAwait(false))
+        {
+        }
+    }
+
+    async Task<IAsyncDisposable> CreateDisposableAsync() => throw null;
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
 }

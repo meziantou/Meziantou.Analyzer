@@ -106,4 +106,19 @@ class TestAttribute : System.Attribute
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ImplicitEmptyArrayInAttribute_ShouldNotReportError()
+    {
+        const string SourceCode = """
+[Test("test")]
+class TestAttribute : System.Attribute
+{
+    public TestAttribute(string a, params object[] data) { }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
