@@ -570,6 +570,21 @@ public async Task RunAsync() {
     }
 
     [Fact]
+    public Task CovariantValueTaskReturnTypeWithConfigureAwait2()
+    {
+        const string Source = @"
+ValueTask GetValueTaskAsync() => throw null;
+
+public async Task RunAsync() {
+	await GetValueTaskAsync().ConfigureAwait(false);
+}";
+
+        return CreateProjectBuilder()
+            .WithSourceCode(string.Format(CultureInfo.InvariantCulture, Scaffold, Source))
+            .ValidateAsync();
+    }
+
+    [Fact]
     public Task CovariantValueTaskExpressionReturnType()
     {
         const string Source = @"
