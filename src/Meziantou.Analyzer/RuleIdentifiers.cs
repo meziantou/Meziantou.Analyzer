@@ -126,6 +126,7 @@ internal static class RuleIdentifiers
     public const string DoNotOverwriteRazorComponentParameterValue = "MA0121";
     public const string SupplyParameterFromQueryRequiresRoutableComponent = "MA0122";
     public const string SequenceNumberMustBeAConstant = "MA0123";
+    public const string ReturnTaskDirectly = "MA0124";
 
     public static string GetHelpUri(string idenfifier)
     {
