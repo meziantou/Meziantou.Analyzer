@@ -58,9 +58,16 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
     private static void AnalyzePropertyReferenceOperation(OperationAnalysisContext context)
     {
         var operation = (IPropertyReferenceOperation)context.Operation;
-        var member = operation.Member;
+        var member = operation.Property;
         if (IsOverridable(member) && !operation.IsInNameofOperation() && !IsInDelegate(operation))
         {
+            // Check if the member is actually virtual
+            //
+            // public virtual string A { get; }
+            // ctor() => A = "value";
+            if (member.SetMethod is null && operation.Parent is IAssignmentOperation assignment && assignment.Target.DescendantsAndSelf().Contains(operation))
+                return;
+
             var children = operation.GetChildOperations().Take(2).ToList();
             if (children.Count == 1 && IsCurrentInstanceMethod(children[0]))
             {
