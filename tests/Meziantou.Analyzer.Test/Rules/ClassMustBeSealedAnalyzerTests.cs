@@ -149,6 +149,20 @@ internal class SampleException : System.Exception
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Exception_ConfigEnabled()
+    {
+        const string SourceCode = @"
+internal class [||]SampleException : System.Exception
+{
+}";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0053.exceptions_should_be_sealed", "true")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task VirtualMember()

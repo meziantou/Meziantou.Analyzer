@@ -108,7 +108,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
             if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType)
                 return false;
 
-            if (symbol.InheritsFrom(ExceptionSymbol))
+            if (symbol.InheritsFrom(ExceptionSymbol) && !ExceptionClassShouldBeSealed(options, symbol))
                 return false;
 
             if (symbol.HasAttribute(ComImportSymbol))
@@ -124,6 +124,11 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
                 return false;
 
             return true;
+        }
+
+        private static bool ExceptionClassShouldBeSealed(AnalyzerOptions options, ISymbol symbol)
+        {
+            return options.GetConfigurationValue(symbol, RuleIdentifiers.ClassMustBeSealed + ".exceptions_should_be_sealed", defaultValue: false);
         }
 
         private static bool PublicClassShouldBeSealed(AnalyzerOptions options, ISymbol symbol)
