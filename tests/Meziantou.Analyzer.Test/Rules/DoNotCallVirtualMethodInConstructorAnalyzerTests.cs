@@ -181,7 +181,7 @@ class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task AssignVirtualEvent()
     {
@@ -201,7 +201,7 @@ class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-     
+
     [Fact]
     public async Task AssignEvent()
     {
@@ -257,4 +257,23 @@ class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task CtorWithVirtualGetOnlyPropertyAssignment()
+    {
+        const string SourceCode = @"
+class Test
+{
+    Test()
+    {
+        A = 10;
+    }
+
+    public virtual int A { get; }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
 }
