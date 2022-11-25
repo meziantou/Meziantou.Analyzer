@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -60,62 +60,11 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
                 return;
 
             // Find the owning symbol and check if it returns a task and doesn't use the async keyword
-            var semanticModel = operation.SemanticModel!;
-            var syntax = operation.Syntax;
-            while (syntax != null)
-            {
-                if (syntax.IsKind(SyntaxKind.AnonymousMethodExpression))
-                {
-                    var node = (AnonymousMethodExpressionSyntax)syntax;
-                    if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
-                        return;
+            var methodSymbol = FindContainingMethod(operation, context.CancellationToken);
+            if (methodSymbol == null || !IsTaskType(methodSymbol.ReturnType))
+                return;
 
-                    if (semanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol || !IsTaskType(methodSymbol.ReturnType))
-                        return;
-
-                    break;
-                }
-                else if (syntax.IsKind(SyntaxKind.ParenthesizedLambdaExpression) || syntax.IsKind(SyntaxKind.SimpleLambdaExpression))
-                {
-                    var node = (LambdaExpressionSyntax)syntax;
-                    if (node.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
-                        return;
-
-                    if (semanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol || !IsTaskType(methodSymbol.ReturnType))
-                        return;
-
-                    break;
-                }
-                else if (syntax.IsKind(SyntaxKind.LocalFunctionStatement))
-                {
-                    var node = (LocalFunctionStatementSyntax)syntax;
-                    if (node.Modifiers.Any(SyntaxKind.AsyncKeyword))
-                        return;
-
-                    if (semanticModel.GetDeclaredSymbol(node, context.CancellationToken) is not IMethodSymbol methodSymbol || !IsTaskType(methodSymbol.ReturnType))
-                        return;
-
-                    break;
-                }
-                else if (syntax.IsKind(SyntaxKind.MethodDeclaration))
-                {
-                    var node = (MethodDeclarationSyntax)syntax;
-                    if (node.Modifiers.Any(SyntaxKind.AsyncKeyword))
-                        return;
-
-                    if (semanticModel.GetDeclaredSymbol(node, context.CancellationToken) is not IMethodSymbol methodSymbol || !IsTaskType(methodSymbol.ReturnType))
-                        return;
-
-                    break;
-                }
-
-                syntax = syntax.Parent;
-            }
-
-            if (syntax != null)
-            {
-                context.ReportDiagnostic(s_rule, operation);
-            }
+            context.ReportDiagnostic(s_rule, operation);
         }
 
         private bool MayBeNullValue([NotNullWhen(true)] IOperation? operation)
@@ -168,5 +117,56 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
 
             return symbol.IsEqualTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualTo(TaskOfTSymbol);
         }
+    }
+
+    internal static IMethodSymbol? FindContainingMethod(IOperation operation, CancellationToken cancellationToken)
+    {
+        return FindContainingMethod(operation.SemanticModel, operation.Syntax, cancellationToken);
+    }
+
+    internal static IMethodSymbol? FindContainingMethod(SemanticModel? semanticModel, SyntaxNode? syntaxNode, CancellationToken cancellationToken)
+    {
+        if (semanticModel == null)
+            return null;
+
+        while (syntaxNode != null)
+        {
+            if (syntaxNode.IsKind(SyntaxKind.AnonymousMethodExpression))
+            {
+                var node = (AnonymousMethodExpressionSyntax)syntaxNode;
+                if (semanticModel.GetSymbolInfo(node, cancellationToken).Symbol is IMethodSymbol methodSymbol)
+                    return methodSymbol;
+
+                return null;
+            }
+            else if (syntaxNode.IsKind(SyntaxKind.ParenthesizedLambdaExpression) || syntaxNode.IsKind(SyntaxKind.SimpleLambdaExpression))
+            {
+                var node = (LambdaExpressionSyntax)syntaxNode;
+                if (semanticModel.GetSymbolInfo(node, cancellationToken).Symbol is IMethodSymbol methodSymbol)
+                    return methodSymbol;
+
+                return null;
+            }
+            else if (syntaxNode.IsKind(SyntaxKind.LocalFunctionStatement))
+            {
+                var node = (LocalFunctionStatementSyntax)syntaxNode;
+                if (semanticModel.GetDeclaredSymbol(node, cancellationToken) is IMethodSymbol methodSymbol)
+                    return methodSymbol;
+
+                return null;
+            }
+            else if (syntaxNode.IsKind(SyntaxKind.MethodDeclaration))
+            {
+                var node = (MethodDeclarationSyntax)syntaxNode;
+                if (semanticModel.GetDeclaredSymbol(node, cancellationToken) is IMethodSymbol methodSymbol)
+                    return methodSymbol;
+
+                return null;
+            }
+
+            syntaxNode = syntaxNode.Parent;
+        }
+
+        return null;
     }
 }
