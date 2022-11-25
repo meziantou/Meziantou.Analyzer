@@ -278,6 +278,22 @@ public static partial class Test
     }
 
     [Fact]
+    public async Task GenericType()
+    {
+        const string SourceCode = """
+public class Query : IQuery<Result<QueryResult>> { }
+public sealed record QueryResult();
+public interface IQuery<T> { }
+public class Result<T> { }
+""";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task TopLevelStatement_9()
     {
         const string SourceCode = @"
@@ -290,7 +306,7 @@ System.Console.WriteLine();
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-
+    
 #if CSHARP10_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_10()

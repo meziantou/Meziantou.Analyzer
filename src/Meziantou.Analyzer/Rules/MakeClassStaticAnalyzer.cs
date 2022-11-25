@@ -87,6 +87,11 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
                         AddCannotBeStaticType(symbol.BaseType);
                     }
 
+                    foreach (var iface in symbol.AllInterfaces)
+                    {
+                        AddCannotBeStaticType(iface);
+                    }
+
                     break;
 
                 case TypeKind.Interface:
