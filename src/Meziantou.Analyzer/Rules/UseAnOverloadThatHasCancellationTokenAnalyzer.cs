@@ -2,6 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -106,23 +108,48 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return false;
         }
 
-        private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation)
+        private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation, out int parameterIndex, out string? parameterName)
         {
+            parameterName = null;
+            parameterIndex = -1;
             var method = operation.TargetMethod;
             if (method.Name == nameof(CancellationTokenSource.CreateLinkedTokenSource) && method.ContainingType.IsEqualTo(CancellationTokenSourceSymbol))
                 return false;
 
-            if (!IsImplicitlyDeclared(operation, CancellationTokenSymbol) && !operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, CancellationTokenSymbol))
-                return false;
+            if (IsArgumentImplicitlyDeclared(operation, CancellationTokenSymbol, out parameterIndex, out parameterName))
+                return true;
 
-            return true;
-
-            static bool IsImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol cancellationTokenSymbol)
+            var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, CancellationTokenSymbol);
+            if (overload != null)
             {
+                for (var i = 0; i < overload.Parameters.Length; i++)
+                {
+                    if (overload.Parameters[i].Type.IsEqualTo(CancellationTokenSymbol))
+                    {
+                        parameterName ??= overload.Parameters[i].Name;
+                        parameterIndex = i;
+                        break;
+                    }
+                }
+
+                return true;
+            }
+
+
+            return false;
+
+            static bool IsArgumentImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol cancellationTokenSymbol, out int parameterIndex, [NotNullWhen(true)] out string? parameterName)
+            {
+                parameterIndex = -1;
+                parameterName = null;
                 foreach (var arg in invocationOperation.Arguments)
                 {
                     if (arg.IsImplicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
+                    {
+                        parameterIndex = invocationOperation.TargetMethod.Parameters.IndexOf(arg.Parameter);
+                        parameterName = arg.Parameter.Name;
                         return true;
+                    }
                 }
 
                 return false;
@@ -135,13 +162,13 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (HasExplicitCancellationTokenArgument(operation))
                 return;
 
-            if (!HasAnOverloadWithCancellationToken(operation))
+            if (!HasAnOverloadWithCancellationToken(operation, out var newParameterIndex, out var newParameterName))
                 return;
 
             var availableCancellationTokens = FindCancellationTokens(operation, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
             {
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, CreateProperties(availableCancellationTokens, newParameterIndex, newParameterName), operation, string.Join(", ", availableCancellationTokens));
             }
             else
             {
@@ -149,7 +176,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, newParameterIndex, newParameterName), operation, string.Join(", ", availableCancellationTokens));
             }
         }
 
@@ -180,7 +207,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return;
 
                 // Already handled by AnalyzeInvocation
-                if (HasAnOverloadWithCancellationToken(invocation))
+                if (HasAnOverloadWithCancellationToken(invocation, out _, out _))
                     return;
 
                 collection = invocation.GetChildOperations().FirstOrDefault();
@@ -203,6 +230,14 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
                 context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRule, op.Collection, string.Join(", ", availableCancellationTokens));
             }
+        }
+
+        private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, int parameterIndex, string? parameterName)
+        {
+            return ImmutableDictionary.Create<string, string?>()
+                .Add("ParameterIndex", parameterIndex.ToString(CultureInfo.InvariantCulture))
+                .Add("ParameterName", parameterName)
+                .Add("CancellationTokens", string.Join(",", cancellationTokens));
         }
 
         private List<IReadOnlyList<ISymbol>>? GetMembers(ITypeSymbol symbol, int maxDepth)

@@ -10,7 +10,8 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<UseAnOverloadThatHasCancellationTokenAnalyzer>();
+            .WithAnalyzer<UseAnOverloadThatHasCancellationTokenAnalyzer>()
+            .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer>();
     }
 
     [Fact]
@@ -154,7 +155,7 @@ class HttpRequest
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CallingMethodWithStructThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
@@ -180,7 +181,7 @@ struct HttpRequest
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CallingMethodWithRecordPropsThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
@@ -207,7 +208,7 @@ record HttpRequest
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CallingMethodWithRecordCtorThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
@@ -232,7 +233,7 @@ record HttpRequest(System.Threading.CancellationToken RequestAborted);
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CallingMethodWithStructRecordCtorThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
@@ -257,7 +258,7 @@ record struct HttpRequest(System.Threading.CancellationToken RequestAborted);
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CallingMethodWithStructRecordPropsThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
@@ -312,9 +313,91 @@ class HttpContext
 {
     public System.Threading.CancellationToken RequestAborted { get; }
 }";
+
+        const string Fix = @"
+class Test : ControllerBase
+{
+    public void A()
+    {
+        MethodWithCancellationToken(MyCancellationToken);
+    }
+
+    public System.Threading.CancellationToken MyCancellationToken { get; }
+
+    public void MethodWithCancellationToken() => throw null;
+    public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+}
+
+class ControllerBase
+{
+    public HttpContext Context { get; }
+}
+
+class HttpContext
+{
+    public System.Threading.CancellationToken RequestAborted { get; }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted")
+              .ShouldFixCodeWith(0, Fix)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task CallingMethodWithProperty_ShouldReportDiagnostic2()
+    {
+        const string SourceCode = @"
+class Test : ControllerBase
+{
+    public void A()
+    {
+        [||]MethodWithCancellationToken();
+    }
+
+    public System.Threading.CancellationToken MyCancellationToken { get; }
+
+    public void MethodWithCancellationToken() => throw null;
+    public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+}
+
+class ControllerBase
+{
+    public HttpContext Context { get; }
+}
+
+class HttpContext
+{
+    public System.Threading.CancellationToken RequestAborted { get; }
+}";
+
+        const string Fix = @"
+class Test : ControllerBase
+{
+    public void A()
+    {
+        MethodWithCancellationToken(Context.RequestAborted);
+    }
+
+    public System.Threading.CancellationToken MyCancellationToken { get; }
+
+    public void MethodWithCancellationToken() => throw null;
+    public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+}
+
+class ControllerBase
+{
+    public HttpContext Context { get; }
+}
+
+class HttpContext
+{
+    public System.Threading.CancellationToken RequestAborted { get; }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted")
+              .ShouldFixCodeWith(1, Fix)
               .ValidateAsync();
     }
 
@@ -366,12 +449,64 @@ class Test
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
 }
 ";
+        const string Fix = @"
+class Test
+{
+    public static void A()
+    {
+        {
+            System.Threading.CancellationToken unaccessible1 = default;
+        }
+
+        System.Threading.CancellationToken a = default;
+        MethodWithCancellationToken(a);
+        System.Threading.CancellationToken unaccessible2 = default;
+    }
+
+    public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
+}
+";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
     
+    [Fact]
+    public async Task CallingMethod_ShouldReportDiagnosticWithVariables_OptionalParameter()
+    {
+        const string SourceCode = @"
+class Test
+{
+    public static void A()
+    {
+        System.Threading.CancellationToken a = default;
+        [||]MethodWithCancellationToken();
+    }
+
+    public static void MethodWithCancellationToken(int a = 0, System.Threading.CancellationToken cancellationToken = default) => throw null;
+}
+";
+        const string Fix = @"
+class Test
+{
+    public static void A()
+    {
+        System.Threading.CancellationToken a = default;
+        MethodWithCancellationToken(cancellationToken: a);
+    }
+
+    public static void MethodWithCancellationToken(int a = 0, System.Threading.CancellationToken cancellationToken = default) => throw null;
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
     [Fact]
     public async Task Record_ShouldReportDiagnosticWithProperty()
     {
@@ -393,12 +528,12 @@ record Test
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task RecordCtor_ShouldReportDiagnosticWithProperty()
     {
         const string SourceCode = @"
-record Test(System.Threading.CancellationToken a)
+record Test(System.Threading.CancellationToken CancellationToken)
 {
     public void A()
     {
@@ -408,13 +543,25 @@ record Test(System.Threading.CancellationToken a)
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
 }
 ";
+        const string Fix = @"
+record Test(System.Threading.CancellationToken CancellationToken)
+{
+    public void A()
+    {
+        MethodWithCancellationToken(CancellationToken);
+    }
+
+    public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
+}
+";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .WithTargetFramework(TargetFramework.Net6_0)
-              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: CancellationToken")
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task RecordStruct_ShouldReportDiagnosticWithProperty()
     {
@@ -436,7 +583,7 @@ record struct Test
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task RecordStructCtor_ShouldReportDiagnosticWithProperty()
     {
@@ -456,7 +603,7 @@ record struct Test(System.Threading.CancellationToken a)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task InterfaceImplicit_ShouldReportDiagnosticWithProperty()
     {
