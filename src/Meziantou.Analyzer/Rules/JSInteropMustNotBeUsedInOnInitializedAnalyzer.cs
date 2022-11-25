@@ -42,6 +42,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
             JSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSRuntime");
             ProtectedBrowserStorageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedBrowserStorage");
             WebAssemblyJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.WebAssembly.WebAssemblyJSRuntime");
+            WebViewJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.WebView.Services.WebViewJSRuntime");
             var componentBase = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
             if (componentBase != null)
             {
@@ -54,6 +55,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
         public INamedTypeSymbol? JSRuntimeSymbol { get; }
         public INamedTypeSymbol? ProtectedBrowserStorageSymbol { get; }
         public INamedTypeSymbol? WebAssemblyJSRuntimeSymbol { get; }
+        public INamedTypeSymbol? WebViewJSRuntimeSymbol { get; }
         public ISymbol? OnInitializedMethodSymbol { get; }
         public ISymbol? OnInitializedAsyncMethodSymbol { get; }
 
@@ -63,6 +65,9 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
             {
                 if (WebAssemblyJSRuntimeSymbol != null)
                     return false; // There is no issue in WebAssembly
+                
+                if (WebViewJSRuntimeSymbol != null)
+                    return false; // There is no issue in WebView
 
                 return (IJSRuntimeSymbol != null || JSRuntimeSymbol != null || ProtectedBrowserStorageSymbol != null) && (OnInitializedMethodSymbol != null || OnInitializedAsyncMethodSymbol != null);
             }
