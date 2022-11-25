@@ -10,7 +10,8 @@ public sealed class UseEventArgsEmptyAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<UseEventArgsEmptyAnalyzer>();
+            .WithAnalyzer<UseEventArgsEmptyAnalyzer>()
+            .WithCodeFixProvider<UseEventArgsEmptyFixer>();
     }
 
     [Fact]
@@ -21,11 +22,20 @@ class TypeName
 {
     public void Test()
     {
-        [||]new System.EventArgs();
+        _ = [||]new System.EventArgs();
+    }
+}";
+        const string Fixed = @"
+class TypeName
+{
+    public void Test()
+    {
+        _ = System.EventArgs.Empty;
     }
 }";
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(Fixed)
             .ValidateAsync();
     }
 }
