@@ -105,7 +105,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0088](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0088.md)|Design|Use \[DefaultParameterValue\] instead of \[DefaultValue\]|⚠️|✔️|❌|
 |[MA0089](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0089.md)|Performance|Optimize string method usage|ℹ️|✔️|❌|
 |[MA0090](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0090.md)|Design|Remove empty else/finally block|ℹ️|✔️|❌|
-|[MA0091](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|⚠️|✔️|❌|
+|[MA0091](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|⚠️|✔️|✔️|
 |[MA0092](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0092.md)|Usage|Sender should be 'null' for static events|⚠️|✔️|❌|
 |[MA0093](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0093.md)|Usage|EventArgs should not be null|⚠️|✔️|✔️|
 |[MA0094](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0094.md)|Design|A class that provides CompareTo(T) should implement IComparable\<T\>|⚠️|✔️|❌|

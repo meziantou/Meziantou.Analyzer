@@ -27,8 +27,21 @@ class Test
         MyEvent?.Invoke([|null|], EventArgs.Empty);
     }
 }";
+        const string Fix = @"
+using System;
+class Test
+{
+    public event EventHandler MyEvent;
+
+    void OnEvent()
+    {
+        MyEvent?.Invoke(this, EventArgs.Empty);
+    }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<EventsShouldHaveProperArgumentsFixer>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 

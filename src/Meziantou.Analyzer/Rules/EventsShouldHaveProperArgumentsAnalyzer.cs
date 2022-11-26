@@ -93,7 +93,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         {
             if (!IsThis(senderArgument))
             {
-                context.ReportDiagnostic(s_senderInstanceRule, senderArgument);
+                context.ReportDiagnostic(s_senderInstanceRule, senderArgument.Value);
             }
         }
 
