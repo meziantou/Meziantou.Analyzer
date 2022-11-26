@@ -36,7 +36,7 @@
 |[MA0033](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0033.md)|Design|Do not tag instance fields with ThreadStaticAttribute|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0035](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0035.md)|Usage|Do not use dangerous threading methods|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0036](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0036.md)|Design|Make class static|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0037](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0037.md)|Usage|Remove empty statement|<span title='Error'>❌</span>|✔️|❌|
+|[MA0037](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0037.md)|Usage|Remove empty statement|<span title='Error'>❌</span>|✔️|✔️|
 |[MA0038](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0038.md)|Design|Make method static|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md)|Security|Do not write your own certificate validation method|<span title='Error'>❌</span>|✔️|❌|
 |[MA0040](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0040.md)|Usage|Forward the CancellationToken parameter to methods that take one|<span title='Info'>ℹ️</span>|✔️|✔️|
