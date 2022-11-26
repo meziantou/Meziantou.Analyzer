@@ -60,7 +60,7 @@
 |[MA0058](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0058.md)|Naming|Class name should end with 'Exception'|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0059](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0059.md)|Naming|Class name should end with 'EventArgs'|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0060](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0060.md)|Design|The value returned by Stream.Read/Stream.ReadAsync is not used|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0061](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0061.md)|Design|Method overrides should not change default values|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0061](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0061.md)|Design|Method overrides should not change default values|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0062](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0062.md)|Design|Non-flags enums should not be marked with "FlagsAttribute"|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0063](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0063.md)|Performance|Use Where before OrderBy|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0064](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0064.md)|Design|Avoid locking on publicly accessible instance|<span title='Warning'>⚠️</span>|✔️|❌|

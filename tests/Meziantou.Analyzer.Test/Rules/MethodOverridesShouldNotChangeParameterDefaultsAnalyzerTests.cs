@@ -10,7 +10,8 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<MethodOverridesShouldNotChangeParameterDefaultsAnalyzer>();
+            .WithAnalyzer<MethodOverridesShouldNotChangeParameterDefaultsAnalyzer>()
+            .WithCodeFixProvider<MethodOverridesShouldNotChangeParameterDefaultsFixer>();
     }
 
     [Fact]
@@ -80,10 +81,22 @@ class TestDerived : Test
 {
     public override void A(int [||]a = 1, int [||]b = 2) { }
 }";
+
+        const string Fix = @"
+class Test
+{
+    public virtual void A(int a = 0, int b = 1) { }
+}
+
+class TestDerived : Test
+{
+    public override void A(int a = 0, int b = 1) { }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '0'; current: '1')")
               .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '1'; current: '2')")
+              .ShouldBatchFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -118,9 +131,20 @@ class TestDerived : Test
 {
     public override void A(int [||]a = 1) { }
 }";
+        const string Fix = @"
+class Test
+{
+    public virtual void A(int a) { }
+}
+
+class TestDerived : Test
+{
+    public override void A(int a) { }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: <no default value>; current: '1')")
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -137,9 +161,20 @@ class TestDerived : Test
 {
     public override void A(int [||]a) { }
 }";
+        const string Fix = @"
+class Test
+{
+    public virtual void A(int a = 0) { }
+}
+
+class TestDerived : Test
+{
+    public override void A(int a = 0) { }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '0'; current: <no default value>)")
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }

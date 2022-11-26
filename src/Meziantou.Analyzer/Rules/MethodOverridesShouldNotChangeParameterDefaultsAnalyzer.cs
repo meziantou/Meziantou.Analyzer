@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules;
@@ -58,12 +61,31 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
             var originalParameter = baseSymbol.Parameters[parameter.Ordinal];
             if (originalParameter.HasExplicitDefaultValue != parameter.HasExplicitDefaultValue)
             {
-                context.ReportDiagnostic(s_rule, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
+                var properties = CreateProperties(originalParameter, context.CancellationToken);
+                context.ReportDiagnostic(s_rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
             }
             else if (originalParameter.HasExplicitDefaultValue && !Equals(originalParameter.ExplicitDefaultValue, parameter.ExplicitDefaultValue))
             {
-                context.ReportDiagnostic(s_rule, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
+                var properties = CreateProperties(originalParameter, context.CancellationToken);
+                context.ReportDiagnostic(s_rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
             }
+        }
+
+        static ImmutableDictionary<string, string?> CreateProperties(IParameterSymbol parameter, CancellationToken cancellationToken)
+        {
+            ExpressionSyntax? defaultExpressionSyntax = null;
+            foreach (var s in parameter.DeclaringSyntaxReferences)
+            {
+                var syntax = s.GetSyntax(cancellationToken);
+                if (syntax is ParameterSyntax param)
+                {
+                    defaultExpressionSyntax ??= param.Default?.Value;
+                }
+            }
+
+            return ImmutableDictionary<string, string?>.Empty
+                .Add("HasDefaultValue", parameter.HasExplicitDefaultValue ? "true" : "false")
+                .Add("DefaultValue", value: parameter.HasExplicitDefaultValue ? (defaultExpressionSyntax?.ToString() ?? parameter.ExplicitDefaultValue?.ToString() ?? null) : null);
         }
     }
 
