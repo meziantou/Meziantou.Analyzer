@@ -10,7 +10,8 @@ public sealed class RemoveUselessToStringAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<RemoveUselessToStringAnalyzer>();
+            .WithAnalyzer<RemoveUselessToStringAnalyzer>()
+            .WithCodeFixProvider<RemoveUselessToStringFixer>();
     }
 
     [Fact]
@@ -34,6 +35,11 @@ class Test
 class Test
 {
     public void A() => [||]"""".ToString();
+}")
+              .ShouldFixCodeWith(@"
+class Test
+{
+    public void A() => """";
 }")
               .ValidateAsync();
     }

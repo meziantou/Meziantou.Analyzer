@@ -43,7 +43,7 @@
 |[MA0041](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0041.md)|Design|Make property static|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md)|Design|Do not use blocking calls in an async method|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0043](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0043.md)|Usage|Use nameof operator in ArgumentException|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0044](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0044.md)|Performance|Remove useless ToString call|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0044](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0044.md)|Performance|Remove useless ToString call|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md)|Design|Do not use blocking calls in a sync method (need to make calling method async)|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0046](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0046.md)|Design|Use EventHandler\<T\> to declare events|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0047](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0047.md)|Design|Declare types in namespaces|<span title='Warning'>⚠️</span>|✔️|❌|
