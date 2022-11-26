@@ -100,7 +100,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         var eventArgsArgument = operation.Arguments[1];
         if (IsNull(eventArgsArgument))
         {
-            context.ReportDiagnostic(s_eventArgsRule, eventArgsArgument);
+            context.ReportDiagnostic(s_eventArgsRule, eventArgsArgument.Value);
         }
     }
 

@@ -103,8 +103,53 @@ class Test
         MyEvent.Invoke(this, [|null|]);
     }
 }";
+        const string Fix = @"
+using System;
+class Test
+{
+    public event EventHandler MyEvent;
+
+    void OnEvent()
+    {
+        MyEvent.Invoke(this, EventArgs.Empty);
+    }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task InvalidEventArgs_NamedArgument()
+    {
+        const string SourceCode = @"
+using System;
+class Test
+{
+    public event EventHandler MyEvent;
+
+    void OnEvent()
+    {
+        MyEvent.Invoke(this, e: [|null|]);
+    }
+}";
+        const string Fix = @"
+using System;
+class Test
+{
+    public event EventHandler MyEvent;
+
+    void OnEvent()
+    {
+        MyEvent.Invoke(this, e: EventArgs.Empty);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -126,8 +171,25 @@ class Test
         }
     }
 }";
+        const string Fix = @"
+using System;
+class Test
+{
+    public event EventHandler MyEvent;
+
+    void OnEvent()
+    {
+        var ev = MyEvent;
+        if (ev != null)
+        {
+            ev.Invoke(this, EventArgs.Empty);
+        }
+    }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -150,8 +212,26 @@ class Test
         }
     }
 }";
+        const string Fix = @"
+using System;
+class Test
+{
+    public event EventHandler MyEvent;
+
+    void OnEvent()
+    {
+        var a = MyEvent;
+        var ev = a;
+        if (ev != null)
+        {
+            ev.Invoke(this, EventArgs.Empty);
+        }
+    }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -170,8 +250,22 @@ class Test
         ev?.Invoke(this, [|null|]);
     }
 }";
+        const string Fix = @"
+using System;
+class Test
+{
+    public event EventHandler MyEvent;
+
+    void OnEvent()
+    {
+        var ev = MyEvent;
+        ev?.Invoke(this, EventArgs.Empty);
+    }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }
