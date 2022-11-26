@@ -9,7 +9,8 @@ public class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsed>()
+            .WithAnalyzer<UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedAnalyzer>()
+            .WithCodeFixProvider<UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedFixer>()
             .WithTargetFramework(TargetFramework.AspNetCore6_0);
     }
 
@@ -27,6 +28,19 @@ class Sample
     {
         IJSRuntime js = null;
         await [||]js.InvokeAsync<string>(""dummy"");
+    }
+}
+")
+              .ShouldFixCodeWith(@"
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+class Sample
+{
+    async Task A()
+    {
+        IJSRuntime js = null;
+        await js.InvokeVoidAsync(""dummy"");
     }
 }
 ")
@@ -50,6 +64,19 @@ class Sample
     }
 }
 ")
+              .ShouldFixCodeWith(@"
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+class Sample
+{
+    async Task A()
+    {
+        IJSRuntime js = null;
+        await JSRuntimeExtensions.InvokeVoidAsync(js, """", System.Array.Empty<object>());
+    }
+}
+")
               .ValidateAsync();
     }
     
@@ -68,6 +95,20 @@ class Sample
     {
         IJSRuntime js = null;
         await [||]js.InvokeAsync<string>(""dummy"", CancellationToken.None, new object?[1] { null });
+    }
+}
+")
+              .ShouldFixCodeWith(@"
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+class Sample
+{
+    async Task A()
+    {
+        IJSRuntime js = null;
+        await js.InvokeVoidAsync(""dummy"", CancellationToken.None, new object?[1] { null });
     }
 }
 ")
@@ -191,6 +232,19 @@ class Sample
     }
 }
 ")
+              .ShouldFixCodeWith(@"
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+class Sample
+{
+    async Task A()
+    {
+        IJSInProcessRuntime js = null;
+        await js.InvokeVoidAsync(""dummy"");
+    }
+}
+")
               .ValidateAsync();
     }    
     
@@ -208,6 +262,19 @@ class Sample
     {
         IJSInProcessRuntime js = null;
         [||]js.Invoke<string>(""dummy"");
+    }
+}
+")
+              .ShouldFixCodeWith(@"
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+
+class Sample
+{
+    void A()
+    {
+        IJSInProcessRuntime js = null;
+        js.InvokeVoid(""dummy"");
     }
 }
 ")
