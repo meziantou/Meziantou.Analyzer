@@ -10,6 +10,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<ParameterAttributeForRazorComponentAnalyzer>()
+            .WithCodeFixProvider<ParameterAttributeForRazorComponentFixer>()
             .WithTargetFramework(TargetFramework.AspNetCore6_0);
     }
 
@@ -26,8 +27,20 @@ class Test
     public int [||]A { get; set; }
 }
 """;
+        const string Fix = """
+using Microsoft.AspNetCore.Components;
+
+[Route("/test")]
+class Test
+{
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public int A { get; set; }
+}
+""";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -97,8 +110,18 @@ class Test
     [EditorRequired]
     public int [||]A { get; set; }
 }";
+        const string Fix = @"
+using Microsoft.AspNetCore.Components;
+
+class Test
+{
+    [EditorRequired]
+    [Parameter]
+    public int A { get; set; }
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
