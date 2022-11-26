@@ -10,7 +10,8 @@ public class UseDateTimeUnixEpochAnalyzerTests
     {
         return new ProjectBuilder()
             .WithTargetFramework(TargetFramework.Net7_0)
-            .WithAnalyzer<UseDateTimeUnixEpochAnalyzer>();
+            .WithAnalyzer<UseDateTimeUnixEpochAnalyzer>()
+            .WithCodeFixProvider<UseDateTimeUnixEpochFixer>();
     }
 
     [Theory]
@@ -31,8 +32,19 @@ class ClassTest
    }
 }
 """;
+        var fix = """
+using System;
+class ClassTest
+{
+   void Test()
+   {
+       _ = DateTime.UnixEpoch;
+   }
+}
+""";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
     
@@ -56,14 +68,25 @@ class ClassTest
    }
 }
 """;
+        var fix = """
+using System;
+class ClassTest
+{
+   void Test()
+   {
+       _ = DateTimeOffset.UnixEpoch;
+   }
+}
+""";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
 
     [Theory]
     [InlineData("new DateTime(1971, 1, 1)")]
-    [InlineData("new DateTime(1970, 1, 1, 0,0,1)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 1)")]
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Local)")]
     [InlineData("new DateTime(621355968000000001)")]
     [InlineData("new DateTime(621355968000000000, DateTimeKind.Local)")]
