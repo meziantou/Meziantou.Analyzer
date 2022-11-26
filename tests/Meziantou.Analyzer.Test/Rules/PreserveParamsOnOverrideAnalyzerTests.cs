@@ -10,7 +10,8 @@ public sealed class PreserveParamsOnOverrideAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<PreserveParamsOnOverrideAnalyzer>();
+            .WithAnalyzer<PreserveParamsOnOverrideAnalyzer>()
+            .WithCodeFixProvider<PreserveParamsOnOverrideFixer>();
     }
 
     [Fact]
@@ -26,8 +27,19 @@ class Test2 : Test
 {
     protected override void A(string[] [|a|]) => throw null;
 }";
+        const string Fix = @"
+class Test
+{
+    protected virtual void A(params string[] a) => throw null;
+}
+
+class Test2 : Test
+{
+    protected override void A(params string[] a) => throw null;
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -44,8 +56,19 @@ class Test2 : ITest
 {
     public void A(string[] [|a|]) => throw null;
 }";
+        const string Fix = @"
+interface ITest
+{
+    void A(params string[] a);
+}
+
+class Test2 : ITest
+{
+    public void A(params string[] a) => throw null;
+}";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
