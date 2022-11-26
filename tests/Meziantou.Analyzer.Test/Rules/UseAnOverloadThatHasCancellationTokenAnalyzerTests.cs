@@ -10,8 +10,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<UseAnOverloadThatHasCancellationTokenAnalyzer>()
-            .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer>();
+            .WithAnalyzer<UseAnOverloadThatHasCancellationTokenAnalyzer>();
     }
 
     [Fact]
@@ -340,10 +339,11 @@ class HttpContext
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted")
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
               .ShouldFixCodeWith(0, Fix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CallingMethodWithProperty_ShouldReportDiagnostic2()
     {
@@ -397,6 +397,7 @@ class HttpContext
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted")
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
               .ShouldFixCodeWith(1, Fix)
               .ValidateAsync();
     }
@@ -469,10 +470,11 @@ class Test
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CallingMethod_ShouldReportDiagnosticWithVariables_OptionalParameter()
     {
@@ -503,6 +505,7 @@ class Test
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
@@ -558,6 +561,7 @@ record Test(System.Threading.CancellationToken CancellationToken)
               .WithSourceCode(SourceCode)
               .WithTargetFramework(TargetFramework.Net6_0)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: CancellationToken")
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
@@ -691,9 +695,33 @@ class Test
 }
 ";
 
+        const string Fix = @"
+using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+class Test
+{
+    public static async Task A()
+    {
+        var ct = new CancellationToken();
+        await foreach (var item in AsyncEnumerable(ct))
+        {
+        }
+    }
+
+    static async IAsyncEnumerable<int> AsyncEnumerable([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        yield return 0;
+    }
+}
+";
+
         await CreateProjectBuilder()
               .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -717,9 +745,28 @@ class Test
 }
 ";
 
+        const string Fix = @"
+using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+class Test
+{
+    public static async Task A(IAsyncEnumerable<int> enumerable)
+    {
+        var ct = new CancellationToken();
+        await foreach (var item in enumerable.WithCancellation(ct))
+        {
+        }
+    }
+}
+";
+
         await CreateProjectBuilder()
               .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_AwaitForEach>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 

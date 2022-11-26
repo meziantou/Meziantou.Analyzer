@@ -220,7 +220,8 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var availableCancellationTokens = FindCancellationTokens(op, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
             {
-                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, op.Collection, string.Join(", ", availableCancellationTokens));
+                var properties = CreateProperties(availableCancellationTokens, -1, null);
+                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, properties, op.Collection, string.Join(", ", availableCancellationTokens));
             }
             else
             {

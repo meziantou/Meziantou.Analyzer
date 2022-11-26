@@ -13,7 +13,7 @@ using Microsoft.CodeAnalysis.Editing;
 namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
-public sealed class UseAnOverloadThatHasCancellationTokenFixer : CodeFixProvider
+public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable);
 
@@ -25,6 +25,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer : CodeFixProvider
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
         if (nodeToFix == null)
             return;
+
         if (nodeToFix.IsKind(SyntaxKind.InvocationExpression))
         {
             if (!int.TryParse(context.Diagnostics[0].Properties["ParameterIndex"], NumberStyles.None, CultureInfo.InvariantCulture, out var parameterIndex))

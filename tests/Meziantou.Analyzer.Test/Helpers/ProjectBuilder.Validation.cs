@@ -199,7 +199,7 @@ public sealed partial class ProjectBuilder
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "6.0.10", "ref/net6.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "6.0.10", "ref/net6.0/");
                 break;
-                
+
             case TargetFramework.AspNetCore7_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0", "ref/net7.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "7.0.0", "ref/net7.0/");
@@ -458,7 +458,7 @@ public sealed partial class ProjectBuilder
         {
             if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
             {
-                Assert.True(false, "The CodeFixProvider is not valid for the DiagnosticAnalyzer");
+                Assert.True(false, $"The CodeFixProvider is not valid for the DiagnosticAnalyzer. DiagnosticId: {diagnostic.Id}, Supported diagnostics: {string.Join(",", codeFixProvider.FixableDiagnosticIds)}");
             }
         }
 

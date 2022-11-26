@@ -78,7 +78,7 @@
 |[MA0076](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0076.md)|Design|Do not use implicit culture-sensitive ToString in interpolated strings|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0077](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0077.md)|Design|A class that provides Equals(T) should implement IEquatable\<T\>|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0078](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0078.md)|Performance|Use 'Cast' instead of 'Select' to cast|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0079](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0079.md)|Usage|Forward the CancellationToken using .WithCancellation()|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0079](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0079.md)|Usage|Forward the CancellationToken using .WithCancellation()|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0080](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0080.md)|Usage|Use a cancellation token using .WithCancellation()|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0081](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0081.md)|Design|Method overrides should not omit params keyword|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0082](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0082.md)|Design|NaN should not be used in comparisons|<span title='Warning'>⚠️</span>|✔️|❌|
