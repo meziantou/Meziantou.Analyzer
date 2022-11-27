@@ -11,7 +11,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         return new ProjectBuilder()
             .WithTargetFramework(TargetFramework.NetStandard2_1)
-            .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042");
+            .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042")
+            .WithCodeFixProvider<DoNotUseBlockingCallInAsyncContextFixer>();
     }
 
     [Fact]
@@ -24,6 +25,83 @@ class Test
     public async Task A()
     {
         [||]Task.Delay(1).Wait();
+    }
+}")
+              .ShouldFixCodeWith(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        await Task.Delay(1);
+    }
+}")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Async_Wait_Int32_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        [||]Task.Delay(1).Wait(10);
+    }
+}")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Async_Wait_CancellationToken_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        [||]Task.Delay(1).Wait(CancellationToken.None);
+    }
+}")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Async_Wait_TimeSpan_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        [||]Task.Delay(1).Wait(TimeSpan.FromSeconds(1));
+    }
+}")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Async_Wait_Int32_CancellationToken_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        [||]Task.Delay(1).Wait(10, CancellationToken.None);
     }
 }")
               .ValidateAsync();
@@ -39,6 +117,14 @@ class Test
     public async Task A()
     {
         _ = [||]Task.FromResult(1).Result;
+    }
+}")
+              .ShouldFixCodeWith(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        _ = await Task.FromResult(1);
     }
 }")
               .ValidateAsync();
@@ -84,6 +170,41 @@ class Test
     public async Task A()
     {
         [||]System.Threading.Thread.Sleep(1);
+    }
+}")
+              .ShouldFixCodeWith(@"using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        await Task.Delay(1);
+    }
+}")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Async_ThreadSleep_TimeSpan_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        [||]System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1));
+    }
+}")
+              .ShouldFixCodeWith(@"
+using System;
+using System.Threading.Tasks;
+class Test
+{
+    public async Task A()
+    {
+        await Task.Delay(TimeSpan.FromMinutes(1));
     }
 }")
               .ValidateAsync();
@@ -322,6 +443,18 @@ class Test
         [||]process.WaitForExit();
     }
 }")
+              .ShouldFixCodeWith(@"
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        var process = new Process();
+        await process.WaitForExitAsync();
+    }
+}")
               .ValidateAsync();
     }
 
@@ -340,8 +473,7 @@ class Test
     public async Task A()
     {
         using var a = new Sample();
-        using (var b = new Sample()) { }
-        
+        using (var b = new Sample()) { }        
     }
 
     private class Sample : IDisposable
@@ -353,7 +485,7 @@ class Test
     }
 
     [Fact]
-    public async Task Using_Diagnostic()
+    public async Task Using_Diagnostic1()
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"
@@ -366,12 +498,138 @@ class Test
     public async Task A()
     {
         [||]using var a = new Sample();
-        [||]using (var b = new Sample()) { }
+    }
 
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+        public ValueTask DisposeAsync() => throw null;
+    }
+}")
+              .ShouldBatchFixCodeWith(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        await using var a = new Sample();
+    }
+
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+        public ValueTask DisposeAsync() => throw null;
+    }
+}")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Using_Diagnostic2()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        [||]using (var b = new Sample()) { }
+    }
+
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+        public ValueTask DisposeAsync() => throw null;
+    }
+}")
+              .ShouldBatchFixCodeWith(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        await using (var b = new Sample()) { }
+    }
+
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+        public ValueTask DisposeAsync() => throw null;
+    }
+}")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Using_Diagnostic3()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
         var sample = new Sample();
         [||]using (sample) { }
+    }
 
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+        public ValueTask DisposeAsync() => throw null;
+    }
+}")
+              .ShouldBatchFixCodeWith(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
+        var sample = new Sample();
+        await using (sample) { }
+    }
+
+    private class Sample : IDisposable
+    {
+        public void Dispose() => throw null;
+        public ValueTask DisposeAsync() => throw null;
+    }
+}")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Using_Diagnostic4()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public async Task A()
+    {
         await using var c = new Sample();
+
         await using (var d = new Sample()) { }
     }
 
@@ -403,7 +661,7 @@ class Test
 
 static class TestExtensions
 {
-    public static async Task AAsync(this Test test, CancellationToken token)
+    public static async Task AAsync(this Test test, CancellationToken token = default)
     {
     }
 }
@@ -413,6 +671,34 @@ class demo
     public async Task a()
     {
         [||]new Test().A();
+    }
+}
+")
+              .ShouldFixCodeWith(@"
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Test
+{
+    public void A()
+    {
+    }
+}
+
+static class TestExtensions
+{
+    public static async Task AAsync(this Test test, CancellationToken token = default)
+    {
+    }
+}
+
+class demo
+{
+    public async Task a()
+    {
+        await new Test().AAsync();
     }
 }
 ")

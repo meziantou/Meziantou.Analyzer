@@ -152,7 +152,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             if (HasAsyncEquivalent(context.Compilation, operation, out var diagnosticMessage))
             {
-                ReportDiagnosticIfNeeded(context, operation, diagnosticMessage);
+                ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage);
             }
             else
             {
@@ -160,9 +160,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
         }
 
-        private bool HasAsyncEquivalent(Compilation compilation, IInvocationOperation operation, [NotNullWhen(true)] out string? message)
+        private bool HasAsyncEquivalent(Compilation compilation, IInvocationOperation operation, [NotNullWhen(true)] out DiagnosticData? data)
         {
-            message = null;
+            data = null;
             var targetMethod = operation.TargetMethod;
 
             if (IsTaskSymbol(targetMethod.ReturnType))
@@ -181,8 +181,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
                 {
-                    message = "Use await instead of 'Wait()'";
-                    return true;
+                    if (operation.Arguments.Length == 0)
+                    {
+                        data = new("Use await instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait);
+                        return true;
+                    }
+                    else
+                    {
+                        data = new("Use 'WaitAsync' instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait_Delay);
+                        return true;
+                    }
                 }
             }
 
@@ -191,7 +199,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(_taskAwaiterLikeSymbols))
                 {
-                    message = "Use await instead of 'GetResult()'";
+                    data = new("Use await instead of 'GetResult()'", DoNotUseBlockingCallInAsyncContextData.TaskAwaiter_GetResult);
                     return true;
                 }
             }
@@ -201,7 +209,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (targetMethod.ContainingType.IsEqualTo(ThreadSymbol))
                 {
-                    message = "Use await and 'Task.Delay()' instead of 'Thread.Sleep()'";
+                    data = new("Use await and 'Task.Delay()' instead of 'Thread.Sleep()'", DoNotUseBlockingCallInAsyncContextData.Thread_Sleep);
                     return true;
                 }
             }
@@ -219,7 +227,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             else if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol != null && ServiceProviderServiceExtensions_CreateScopeSymbol != null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
             {
-                message = $"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'";
+                data = new($"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.CreateAsyncScope);
                 return true;
             }
 
@@ -245,7 +253,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 {
                     if (IsPotentialMember(compilation, targetMethod, potentialMethod))
                     {
-                        message = $"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'";
+                        data = new($"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, potentialMethod.Name);
                         return true;
                     }
                 }
@@ -306,23 +314,24 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (operation.Member.ContainingType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol))
                 {
-                    ReportDiagnosticIfNeeded(context, operation, "Use await instead of 'Result'");
+                    var data = new DiagnosticData("Use await instead of 'Result'", DoNotUseBlockingCallInAsyncContextData.Task_Result);
+                    ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage);
                 }
             }
         }
 
-        private void ReportDiagnosticIfNeeded(OperationAnalysisContext context, IOperation operation, string message)
+        private void ReportDiagnosticIfNeeded(OperationAnalysisContext context, ImmutableDictionary<string, string?>? properties, IOperation operation, string message)
         {
             if (!CanBeAsync(operation))
                 return;
 
             if (IsAsyncContext(operation, context.CancellationToken))
             {
-                context.ReportDiagnostic(s_rule, operation, message);
+                context.ReportDiagnostic(s_rule, properties, operation, message);
             }
             else if (CanChangeParentMethodSignature(operation, context.CancellationToken))
             {
-                context.ReportDiagnostic(s_rule2, operation, message + " and make method async");
+                context.ReportDiagnostic(s_rule2, properties, operation, message + " and make method async");
             }
         }
 
@@ -397,7 +406,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 {
                     if (CanBeAwaitUsing(declaration.Initializer.Value))
                     {
-                        ReportDiagnosticIfNeeded(context, usingOperation, "Prefer using 'await using'");
+                        var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
+                        ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
                         return true;
                     }
                 }
@@ -406,7 +416,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 {
                     if (declarator.Initializer != null && CanBeAwaitUsing(declarator.Initializer.Value))
                     {
-                        ReportDiagnosticIfNeeded(context, usingOperation, "Prefer using 'await using'");
+                        var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.UsingDeclarator);
+                        ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
                         return true;
                     }
                 }
@@ -429,7 +440,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             if (CanBeAwaitUsing(operation.Resources))
             {
-                ReportDiagnosticIfNeeded(context, operation, "Prefer using 'await using'");
+                var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
+                ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage);
             }
         }
 
@@ -440,6 +452,32 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return;
 
             ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup);
+        }
+    }
+
+    private sealed class DiagnosticData
+    {
+        public string DiagnosticMessage { get; }
+        public DoNotUseBlockingCallInAsyncContextData Data { get; }
+        public string? AsyncMethodName { get; }
+
+        public DiagnosticData(string diagnosticMessage, DoNotUseBlockingCallInAsyncContextData data)
+            : this(diagnosticMessage, data, asyncMethodName: null)
+        {
+        }
+
+        public DiagnosticData(string diagnosticMessage, DoNotUseBlockingCallInAsyncContextData data, string? asyncMethodName)
+        {
+            DiagnosticMessage = diagnosticMessage ?? throw new ArgumentNullException(nameof(diagnosticMessage));
+            Data = data;
+            AsyncMethodName = asyncMethodName;
+        }
+
+        public ImmutableDictionary<string, string?> CreateProperties()
+        {
+            return ImmutableDictionary<string, string?>.Empty
+                .Add("Data", Data.ToString())
+                .Add("MethodName", AsyncMethodName);
         }
     }
 }
