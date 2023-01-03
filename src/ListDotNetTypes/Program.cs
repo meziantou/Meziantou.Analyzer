@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CA1812
+#pragma warning disable CA1852
 using System.IO.Compression;
 using System.Reflection;
 using System.Reflection.Metadata;
