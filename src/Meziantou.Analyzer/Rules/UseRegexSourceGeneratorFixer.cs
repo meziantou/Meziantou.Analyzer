@@ -12,7 +12,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
-using Microsoft.CodeAnalysis.Simplification;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
@@ -85,7 +84,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             if (!r.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
             {
                 count++;
-                return r.AddModifiers(Token(SyntaxKind.PartialKeyword)).WithAdditionalAnnotations(Simplifier.Annotation);
+                return r.AddModifiers(Token(SyntaxKind.PartialKeyword));
             }
 
             return r;
