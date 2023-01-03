@@ -62,7 +62,7 @@ public sealed class RemoveEmptyStatementFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private bool ShouldReplaceWithEmptyBlock(StatementSyntax statementSyntax)
+    private static bool ShouldReplaceWithEmptyBlock(StatementSyntax statementSyntax)
     {
         var parent = statementSyntax.Parent;
         if (parent.IsKind(SyntaxKind.WhileStatement))
