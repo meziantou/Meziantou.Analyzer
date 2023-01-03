@@ -70,7 +70,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration, cancellationToken);
         if (typeSymbol is not null)
         {
-            var members = typeSymbol.GetAllMembers();
+            var members = typeSymbol.GetAllMembers().ToArray();
             while (members.Any(m => m.Name == methodName))
             {
                 methodName += "_";
