@@ -3,6 +3,14 @@ on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - "docs/**"
+      - "renovate.json"
+      - "GenerateDocumentation.cmd"
+      - "codecov.yml"
+      - ".markdownlint.json"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/FUNDING.yml"
   pull_request:
     branches:
       - '*'
@@ -18,7 +26,7 @@ defaults:
 
 jobs:
   create_nuget:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET Core
@@ -78,7 +86,7 @@ jobs:
       TestResultsDirectory: ${{ github.workspace}}/TestResults
     strategy:
       matrix:
-        runs-on: [ ubuntu-20.04, windows-2019 ]
+        runs-on: [ ubuntu-latest, windows-latest ]
         configuration: [ Debug, Release ]
         roslyn-version: [ 'minimal', 'latest', 'preview' ]
       fail-fast: false
@@ -102,7 +110,7 @@ jobs:
     - uses: codecov/codecov-action@v3
 
   deploy:
-    runs-on: 'ubuntu-20.04'
+    runs-on: 'ubuntu-latest'
     needs: [ validate_nuget, build_and_test ]
     steps:
     - uses: actions/checkout@v3
