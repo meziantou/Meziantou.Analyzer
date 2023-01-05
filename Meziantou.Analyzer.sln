@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentationGenerator", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListDotNetTypes", "src\ListDotNetTypes\ListDotNetTypes.csproj", "{B496BD9C-27CA-44BE-95A9-57CBC99314D4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meziantou.Analyzer.pack", "src\Meziantou.Analyzer.pack.csproj", "{6AB20B80-DE7F-4EB3-8A8B-E5C902F06438}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{B496BD9C-27CA-44BE-95A9-57CBC99314D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B496BD9C-27CA-44BE-95A9-57CBC99314D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B496BD9C-27CA-44BE-95A9-57CBC99314D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AB20B80-DE7F-4EB3-8A8B-E5C902F06438}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AB20B80-DE7F-4EB3-8A8B-E5C902F06438}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AB20B80-DE7F-4EB3-8A8B-E5C902F06438}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AB20B80-DE7F-4EB3-8A8B-E5C902F06438}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

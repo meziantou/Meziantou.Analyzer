@@ -10,15 +10,15 @@ namespace Meziantou.Analyzer;
 
 internal static class OperationExtensions
 {
-#if ROSLYN3
-    public static IEnumerable<IOperation> GetChildOperations(this IOperation operation)
-    {
-        return operation.Children;
-    }
-#elif ROSLYN4
+#if ROSLYN_4_2_OR_GREATER
     public static IOperation.OperationList GetChildOperations(this IOperation operation)
     {
         return operation.ChildOperations;
+    }
+#elif ROSLYN_3_8
+    public static IEnumerable<IOperation> GetChildOperations(this IOperation operation)
+    {
+        return operation.Children;
     }
 #endif
 

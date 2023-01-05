@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Version>2.0.0</Version>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <developmentDependency>true</developmentDependency>
+
+    <PackageId>Meziantou.Analyzer</PackageId>
+    <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
+    <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\Meziantou.Analyzer\bin\roslyn3.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\Meziantou.Analyzer\bin\roslyn4.2\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\Meziantou.Analyzer\bin\roslyn4.4\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.4/cs/" />
+  </ItemGroup>
+</Project>

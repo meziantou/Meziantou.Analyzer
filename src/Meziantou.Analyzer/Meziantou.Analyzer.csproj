@@ -16,6 +16,7 @@
     <DebugSymbols>True</DebugSymbols>
     <DebugType>Embedded</DebugType>
     <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+    <BaseOutputPath>bin\$(RoslynVersion)\</BaseOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\*.txt" />

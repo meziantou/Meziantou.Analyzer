@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-#if ROSLYN3
+#if ROSLYN_3_8
 using System.Linq;
 #endif
 
