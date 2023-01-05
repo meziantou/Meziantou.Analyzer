@@ -6,6 +6,10 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
+#if ROSLYN_4_2_OR_GREATER
+using Meziantou.Analyzer.Configurations;
+#endif
+
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -45,6 +49,11 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             // Nested type
             if (symbol.ContainingType != null)
                 continue;
+
+#if ROSLYN_4_4_OR_GREATER
+            if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".exclude_file_local_types", defaultValue: true))
+                continue;
+#endif
 
             var filePath = location.SourceTree?.FilePath;
             var fileName = filePath == null ? null : GetFileName(filePath);

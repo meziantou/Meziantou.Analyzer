@@ -136,4 +136,39 @@ class [||]Test0<TKey, TValue>
 }")
               .ValidateAsync();
     }
+
+#if ROSLYN_4_4_OR_GREATER
+    [Fact]
+    public async Task FileLocalTypes()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Dummy.cs", @"
+class Dummy
+{
+}
+
+file class Sample
+{
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FileLocalTypes_Configuration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Dummy.cs", @"
+class Dummy
+{
+}
+
+file class [||]Sample
+{
+}
+")
+              .AddAnalyzerConfiguration("MA0048.exclude_file_local_types", "false")
+              .ValidateAsync();
+    }
+#endif
 }

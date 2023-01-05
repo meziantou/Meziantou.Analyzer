@@ -167,8 +167,8 @@ public sealed partial class ProjectBuilder
                         Message = DefaultAnalyzerMessage,
                         Locations = new[]
                         {
-                                new DiagnosticResultLocation("Test0.cs", lineStart, columnStart, lineIndex, columnIndex),
-                            },
+                            new DiagnosticResultLocation(FileName ?? "Test0.cs", lineStart, columnStart, lineIndex, columnIndex),
+                        },
                     });
 
                     lineStart = -1;
