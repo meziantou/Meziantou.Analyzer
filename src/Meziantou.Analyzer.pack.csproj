@@ -2,15 +2,16 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <Version>2.0.0</Version>
     <EnableDefaultItems>false</EnableDefaultItems>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <developmentDependency>true</developmentDependency>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+    <Version>2.0.0</Version>
 
     <PackageId>Meziantou.Analyzer</PackageId>
     <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
     <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
 
   </PropertyGroup>
 
