@@ -34,7 +34,7 @@ jobs:
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
     - run: |
         $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.2\.0\.([0-9]+).nupkg$"
-        $NewVersion = "2.0.$([int]$Matches.1 + 1)-beta.1"
+        $NewVersion = "2.0.$([int]$Matches.1 + 1)"
         Write-Host "New version: $NewVersion"
         "package_version=$NewVersion" >> $env:GITHUB_OUTPUT
       name: Compute version
