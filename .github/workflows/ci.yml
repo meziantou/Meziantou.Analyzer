@@ -33,29 +33,29 @@ jobs:
       uses: actions/setup-dotnet@v3
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
     - run: |
-        $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.1\.0\.([0-9]+).nupkg$"
-        $NewVersion = "1.0.$([int]$Matches.1 + 1)"
+        $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.2\.0\.([0-9]+).nupkg$"
+        $NewVersion = "2.0.$([int]$Matches.1 + 1)"
         Write-Host "New version: $NewVersion"
         "package_version=$NewVersion" >> $env:GITHUB_OUTPUT
       name: Compute version
       id: compute-version
-    - run: dotnet pack src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:PackageId=Meziantou.Analyzer /p:PackageVersion=${{ steps.compute-version.outputs.package_version }} /p:RoslynVersion=minimal /p:RepositoryBranch="${{github.ref}}" /bl
+
+    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn3.8 /p:RepositoryBranch="${{github.ref}}" /p:Version=${{ steps.compute-version.outputs.package_version }}
+    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.2 /p:RepositoryBranch="${{github.ref}}" /p:Version=${{ steps.compute-version.outputs.package_version }}
+    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.4 /p:RepositoryBranch="${{github.ref}}" /p:Version=${{ steps.compute-version.outputs.package_version }}
+
+    - run: dotnet restore src/Meziantou.Analyzer.pack.csproj
+    - run: dotnet pack src/Meziantou.Analyzer.pack.csproj --configuration Release --no-build /p:PackageVersion=${{ steps.compute-version.outputs.package_version }}
+
     - uses: actions/upload-artifact@v3
       with:
         name: nuget
         if-no-files-found: error
         retention-days: 3
         path: '**/*.nupkg'
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: binlog
-        if-no-files-found: error
-        retention-days: 3
-        path: '**/*.binlog'
 
   validate_nuget:
-    runs-on: windows-2022
+    runs-on: ubuntu-latest
     needs: [ create_nuget ]
     steps:
       - uses: actions/checkout@v3
@@ -88,16 +88,12 @@ jobs:
       matrix:
         runs-on: [ ubuntu-latest, windows-latest ]
         configuration: [ Debug, Release ]
-        roslyn-version: [ 'minimal', 'latest', 'preview' ]
+        roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'default' ]
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET Core (global.json)
       uses: actions/setup-dotnet@v3
-    - name: Setup .NET Core (3.1)
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '3.1.x'
     - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --logger "GitHubActions;report-warnings=false" --collect:"XPlat Code Coverage" --blame-hang --blame-hang-timeout 2min --results-directory "${{ env.TestResultsDirectory }}" /p:WarningsAsErrors=true /p:RoslynVersion=${{ matrix.roslyn-version}}
       name: Run tests
     - uses: actions/upload-artifact@v3

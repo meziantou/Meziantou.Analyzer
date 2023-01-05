@@ -1,42 +1,58 @@
 <Project>
-
-  <PropertyGroup>
-    <!-- minimal, latest, preview -->
-    <RoslynVersion Condition="$(RoslynVersion) == ''">preview</RoslynVersion>
-  </PropertyGroup>
-
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
-  <ItemGroup Condition="$(RoslynVersion) == 'minimal'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
-    <!-- Consider removing CS0618 when updating this version -->
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
-  </ItemGroup>
-  <PropertyGroup Condition="$(RoslynVersion) == 'minimal'">
-    <DefineConstants>$(DefineConstants);ROSLYN3;CSHARP9_OR_GREATER</DefineConstants>
-    <NoWarn>$(NoWarn);nullable</NoWarn>
+  <PropertyGroup>
+    <RoslynVersion>roslyn4.4</RoslynVersion>
   </PropertyGroup>
+  
+  <Choose>
+    <When Condition="$(RoslynVersion) == 'roslyn3.8'">
+      <ItemGroup >
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
+        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
+      </ItemGroup>
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);ROSLYN_3_8;CSHARP9_OR_GREATER</DefineConstants>
+        <NoWarn>$(NoWarn);nullable</NoWarn>
+      </PropertyGroup>
+    </When>
 
-  <ItemGroup Condition="$(RoslynVersion) == 'latest'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
-  </ItemGroup>
-  <PropertyGroup Condition="$(RoslynVersion) == 'latest'">
-    <DefineConstants>$(DefineConstants);ROSLYN4;CSHARP9_OR_GREATER</DefineConstants>
-    <NoWarn>$(NoWarn);nullable</NoWarn>
-  </PropertyGroup>
+    <When Condition="$(RoslynVersion) == 'roslyn4.2'">
+      <ItemGroup>
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
+        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.2.0" />
+      </ItemGroup>
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);ROSLYN_4_2;ROSLYN_4_2_OR_GREATER;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
+        <NoWarn>$(NoWarn);nullable</NoWarn>
+      </PropertyGroup>
+    </When>
 
-  <ItemGroup Condition="$(RoslynVersion) == 'preview'">
-    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22518.1" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
-  </ItemGroup>
-  <PropertyGroup Condition="$(RoslynVersion) == 'preview'">
-    <DefineConstants>$(DefineConstants);ROSLYN4;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
-    <NoWarn>$(NoWarn);CS0618</NoWarn>
-  </PropertyGroup>
+    <When Condition="$(RoslynVersion) == 'roslyn4.4'">
+      <ItemGroup>
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
+        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
+      </ItemGroup>
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);ROSLYN_4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
+        <NoWarn>$(NoWarn);nullable</NoWarn>
+      </PropertyGroup>
+    </When>
+
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22518.1" />
+        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
+      </ItemGroup>
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);ROSLYN4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
+        <NoWarn>$(NoWarn);CS0618</NoWarn>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net462'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net462'">
     <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 </Project>
