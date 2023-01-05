@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -29,6 +31,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         { "GroupBy", 1 },
         { "GroupJoin", 2 },
         { "Join", 2 },
+        { "OrderBy", 1 },
+        { "OrderByDescending", 1 },
         { "ToDictionary", 1 },
         { "ToLookup", 1 },
     };
@@ -107,6 +111,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (operation.Instance != null && operation.Instance.GetActualType()?.IsOrImplements(ISetType) == true)
                 return;
 
+            if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, s_rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
+                return;
+
             if (method.HasOverloadWithAdditionalParameterOfType(operation, EqualityComparerStringType) ||
                 method.HasOverloadWithAdditionalParameterOfType(operation, ComparerStringType))
             {
@@ -147,6 +154,18 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                     ctx.ReportDiagnostic(s_rule, operation);
                 }
             }
+        }
+
+        private static bool IsQueryOperator(IOperation operation)
+        {
+            var syntax = operation.Syntax;
+            return syntax.IsKind(SyntaxKind.SelectClause)
+                || syntax.IsKind(SyntaxKind.GroupClause)
+                || syntax.IsKind(SyntaxKind.OrderByClause)
+                || syntax.IsKind(SyntaxKind.AscendingOrdering)
+                || syntax.IsKind(SyntaxKind.DescendingOrdering)
+                || syntax.IsKind(SyntaxKind.JoinClause)
+                || syntax.IsKind(SyntaxKind.JoinIntoClause);
         }
 
         private bool HasEqualityComparerArgument(ImmutableArray<IArgumentOperation> arguments)

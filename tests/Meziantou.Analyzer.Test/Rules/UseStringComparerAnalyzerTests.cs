@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -228,6 +229,33 @@ class TypeName
     }
 
     [Fact]
+    public async Task OrderBy_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        [||]obj.OrderBy(p => p);
+    }
+}";
+        const string CodeFix = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.OrderBy(p => p, System.StringComparer.Ordinal);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task FindExtensionMethods()
     {
         const string SourceCode = @"
@@ -317,6 +345,219 @@ class TypeName
 
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_GroupBy_NoConfiguration()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item in collection
+            [||]group item by item into g
+            select g;
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_GroupBy()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item in collection
+            group item by item into g
+            select g;
+    }
+}";
+
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_OrderBy_NoConfiguration()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item in collection
+            orderby [||]item
+            select item;
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_OrderBy()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item in collection
+            orderby item
+            select item;
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_OrderByDescending_NoConfiguration()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item in collection
+            orderby [||]item descending
+            select item;
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_OrderByDescending()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item in collection
+            orderby item descending
+            select item;
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_Join_NoConfiguration()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item1 in collection
+            [||]join item2 in collection on item1 equals item2
+            select (item1, item2);
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_Join()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item1 in collection
+            join item2 in collection on item1 equals item2
+            select (item1, item2);
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_JoinInto_NoConfiguration()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item1 in collection
+            [||]join item2 in collection on item1 equals item2 into joinGroup
+            select (item1, joinGroup);
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringArray_QuerySyntax_JoinInto()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        var collection = new string[0];
+        _ = from item1 in collection
+            join item2 in collection on item1 equals item2 into joinGroup
+            select (item1, joinGroup);
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
