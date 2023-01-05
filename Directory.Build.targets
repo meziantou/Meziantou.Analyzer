@@ -2,7 +2,7 @@
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
   <PropertyGroup>
-    <RoslynVersion>roslyn4.4</RoslynVersion>
+    <RoslynVersion></RoslynVersion>
   </PropertyGroup>
   
   <Choose>
