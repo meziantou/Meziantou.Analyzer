@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -229,6 +228,34 @@ class TypeName
     }
 
     [Fact]
+    public async Task Order_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        [||]obj.Order();
+    }
+}";
+        const string CodeFix = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.Order(System.StringComparer.Ordinal);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+    
+    [Fact]
     public async Task OrderBy_String_ShouldReportDiagnostic()
     {
         const string SourceCode = @"using System.Linq;
@@ -247,6 +274,87 @@ class TypeName
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
         obj.OrderBy(p => p, System.StringComparer.Ordinal);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task OrderByDescending_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        [||]obj.OrderByDescending(p => p);
+    }
+}";
+        const string CodeFix = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.OrderByDescending(p => p, System.StringComparer.Ordinal);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task ThenBy_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        [||]obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenBy(p => p);
+    }
+}";
+        const string CodeFix = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenBy(p => p, System.StringComparer.Ordinal);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task ThenByDescending_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        [||]obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenByDescending(p => p);
+    }
+}";
+        const string CodeFix = @"using System.Linq;
+class TypeName
+{
+    public void Test()
+    {
+        System.Collections.Generic.IEnumerable<string> obj = null;
+        obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenByDescending(p => p, System.StringComparer.Ordinal);
     }
 }";
         await CreateProjectBuilder()

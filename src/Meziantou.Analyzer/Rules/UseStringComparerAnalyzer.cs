@@ -19,9 +19,12 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         "Distinct",
         "Except",
         "Intersect",
+        "Order",
         "OrderBy",
         "OrderByDescending",
         "SequenceEqual",
+        "ThenBy",
+        "ThenByDescending",
         "ToHashSet",
         "Union",
     };
@@ -33,6 +36,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         { "Join", 2 },
         { "OrderBy", 1 },
         { "OrderByDescending", 1 },
+        { "ThenBy", 1 },
+        { "ThenByDescending", 1 },
         { "ToDictionary", 1 },
         { "ToLookup", 1 },
     };
