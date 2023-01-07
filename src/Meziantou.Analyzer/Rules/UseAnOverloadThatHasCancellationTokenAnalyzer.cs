@@ -337,7 +337,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (paths.Count == 0)
                 return Array.Empty<string>();
 
-            return paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value).ToArray();
+            return paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value, StringComparer.Ordinal).ToArray();
 
             static bool AreAllSymbolsAccessibleFromOperation(IEnumerable<ISymbol> symbols, IOperation operation)
             {
