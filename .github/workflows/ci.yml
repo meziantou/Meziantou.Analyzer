@@ -156,6 +156,6 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v3
-    - run: gh release create "${{ needs.compute_package_version.outputs.package_version }}" --generate-notes 
+    - run: 'gh release create "${{ needs.compute_package_version.outputs.package_version }}" --generate-notes --notes "NuGet package: <https://www.nuget.org/packages/Meziantou.Analyzer/${{ needs.compute_package_version.outputs.package_version }}>"'
       env:
         GH_TOKEN: ${{ github.token }}
