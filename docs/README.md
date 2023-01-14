@@ -123,6 +123,9 @@
 |[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0122](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0122.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes are only valid in routable components (@page)|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0123](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0123.md)|Design|Sequence number must be a constant|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md)|Design|Log Parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0125](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0125.md)|Design|The list of log parameter types contains an invalid type|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|<span title='Warning'>⚠️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -492,6 +495,15 @@ dotnet_diagnostic.MA0122.severity = suggestion
 
  # MA0123: Sequence number must be a constant
 dotnet_diagnostic.MA0123.severity = warning
+
+ # MA0124: Log Parameter type is not valid
+dotnet_diagnostic.MA0124.severity = warning
+
+ # MA0125: The list of log parameter types contains an invalid type
+dotnet_diagnostic.MA0125.severity = warning
+
+ # MA0126: The list of log parameter types contains a duplicate
+dotnet_diagnostic.MA0126.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -862,4 +874,13 @@ dotnet_diagnostic.MA0122.severity = none
 
  # MA0123: Sequence number must be a constant
 dotnet_diagnostic.MA0123.severity = none
+
+ # MA0124: Log Parameter type is not valid
+dotnet_diagnostic.MA0124.severity = none
+
+ # MA0125: The list of log parameter types contains an invalid type
+dotnet_diagnostic.MA0125.severity = none
+
+ # MA0126: The list of log parameter types contains a duplicate
+dotnet_diagnostic.MA0126.severity = none
 ```
