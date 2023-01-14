@@ -17,6 +17,11 @@ public static class AnalyzerOptionsExtensions
         return defaultValue;
     }
 
+    public static string GetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, string defaultValue)
+    {
+        return GetConfigurationValue(options, operation.Syntax.SyntaxTree, key, defaultValue);
+    }
+
     public static bool GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, bool defaultValue)
     {
         var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);

@@ -293,6 +293,11 @@ public sealed partial class ProjectBuilder
             }
 
             var additionalFiles = ImmutableArray<AdditionalText>.Empty;
+            if (AdditionalFiles != null)
+            {
+                additionalFiles = additionalFiles.AddRange(AdditionalFiles.Select(kvp => new InMemoryAdditionalText(kvp.Key, kvp.Value)));
+             }
+
             var analyzerOptionsProvider = new TestAnalyzerConfigOptionsProvider(AnalyzerConfiguration);
 
             var compilationWithAnalyzers = compilation.WithAnalyzers(
@@ -301,7 +306,7 @@ public sealed partial class ProjectBuilder
             var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(compilationWithAnalyzers.CancellationToken).ConfigureAwait(false);
             foreach (var diag in diags)
             {
-                if (diag.Location == Location.None || diag.Location.IsInMetadata)
+                if (diag.Location == Location.None || diag.Location.IsInMetadata || !diag.Location.IsInSource)
                 {
                     diagnostics.Add(diag);
                 }
@@ -343,6 +348,15 @@ public sealed partial class ProjectBuilder
                     if (location == Location.None)
                     {
                         builder.AppendFormat(CultureInfo.InvariantCulture, "GetGlobalResult({0}.{1})", analyzerType.Name, rule.Id);
+                    }
+                    else if (location.SourceTree is null)
+                    {
+                        builder.AppendFormat(CultureInfo.InvariantCulture,
+                           "AdditionalFile({0}, {1}, {2}.{3})",
+                           location.GetLineSpan().StartLinePosition.Line + 1,
+                           location.GetLineSpan().StartLinePosition.Character + 1,
+                           analyzerType.Name,
+                           rule.Id);
                     }
                     else
                     {
@@ -546,6 +560,23 @@ public sealed partial class ProjectBuilder
         {
             var diagnostics = project.Documents.SelectMany(doc => GetDocumentDiagnosticsAsync(doc, cancellationToken).Result);
             return Task.FromResult(diagnostics);
+        }
+    }
+
+    private sealed class InMemoryAdditionalText : AdditionalText
+    {
+        public InMemoryAdditionalText(string path, string content)
+        {
+            Path = path;
+            Content = content;
+        }
+
+        public override string Path { get; }
+        public string Content { get; }
+
+        public override SourceText GetText(CancellationToken cancellationToken = default)
+        {
+            return SourceText.From(Content, Encoding.UTF8);
         }
     }
 }

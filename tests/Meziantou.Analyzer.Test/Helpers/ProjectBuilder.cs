@@ -27,6 +27,7 @@ public sealed partial class ProjectBuilder
     public string FileName { get; private set; }
     public string SourceCode { get; private set; } = "";
     public Dictionary<string, string> AnalyzerConfiguration { get; private set; }
+    public Dictionary<string, string> AdditionalFiles { get; private set; }
     public bool IsValidCode { get; private set; } = true;
     public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
     public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetStandard2_0;
@@ -207,6 +208,13 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
+    public ProjectBuilder AddAdditionalFile(string path, string content)
+    {
+        AdditionalFiles ??= new Dictionary<string, string>();
+        AdditionalFiles[path] = content;
+        return this;
+    }
+
     public ProjectBuilder WithLanguageVersion(LanguageVersion languageVersion)
     {
         LanguageVersion = languageVersion;
@@ -249,7 +257,7 @@ public sealed partial class ProjectBuilder
         return WithCodeFixProvider(new T());
     }
 
-    private ProjectBuilder ShouldReportDiagnostic(params DiagnosticResult[] expectedDiagnosticResults)
+    public ProjectBuilder ShouldReportDiagnostic(params DiagnosticResult[] expectedDiagnosticResults)
     {
         foreach (var diagnostic in expectedDiagnosticResults)
         {

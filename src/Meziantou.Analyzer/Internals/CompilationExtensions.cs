@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 
@@ -6,11 +7,14 @@ namespace Meziantou.Analyzer;
 
 internal static class CompilationExtensions
 {
-    public static IEnumerable<INamedTypeSymbol> GetTypesByMetadataName(this Compilation compilation, string typeMetadataName)
+    public static ImmutableArray<INamedTypeSymbol> GetTypesByMetadataName(this Compilation compilation, string typeMetadataName)
     {
+        var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
         var symbol = compilation.Assembly.GetTypeByMetadataName(typeMetadataName);
         if (symbol != null)
-            yield return symbol;
+        {
+            result.Add(symbol);
+        }
 
         foreach (var reference in compilation.References)
         {
@@ -20,8 +24,12 @@ internal static class CompilationExtensions
 
             symbol = assemblySymbol.GetTypeByMetadataName(typeMetadataName);
             if (symbol != null)
-                yield return symbol;
+            {
+                result.Add(symbol);
+            }
         }
+
+        return result.ToImmutable();
     }
 
     // Copy from https://github.com/dotnet/roslyn/blob/d2ff1d83e8fde6165531ad83f0e5b1ae95908289/src/Workspaces/SharedUtilitiesAndExtensions/Compiler/Core/Extensions/CompilationExtensions.cs#L11-L68
