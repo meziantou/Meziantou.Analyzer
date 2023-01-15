@@ -15,6 +15,9 @@ public sealed class FixToDoAnalyzerTests
     }
 
     [Theory]
+    [InlineData("//")]
+    [InlineData("//test")]
+    [InlineData("//TOD")]
     [InlineData("//TODOA")]
     [InlineData("// (TODO)")]
     public async Task SingleLineCommentWithoutTodo(string comment)
@@ -25,11 +28,14 @@ public sealed class FixToDoAnalyzerTests
     }
 
     [Theory]
-    [InlineData("//[||]TODO", "")]
-    [InlineData("// [||]TODO", "")]
-    [InlineData("//[||]TODO test", "test")]
-    [InlineData("// [||]TODO test", "test")]
-    [InlineData("  // [||]TODO test", "test")]
+    [InlineData("//[|TODO|]", "")]
+    [InlineData("// [|todo|]", "")]
+    [InlineData("// [|ToDo|]", "")]
+    [InlineData("// [|TODo|]", "")]
+    [InlineData("//[|TODO test|]", "test")]
+    [InlineData("// [|TODO test|]", "test")]
+    [InlineData("  // [|TODO test|]", "test")]
+    [InlineData("  // [|TODO: test|]", "test")]
     public async Task SingleLineComment(string comment, string todo)
     {
         await CreateProjectBuilder()
@@ -39,12 +45,12 @@ public sealed class FixToDoAnalyzerTests
     }
 
     [Theory]
-    [InlineData("/*[||]TODO*/", "")]
-    [InlineData("/* [||]TODO*/", "")]
-    [InlineData("/*[||]TODO test*/", "test")]
-    [InlineData("/* [||]TODO test*/", "test")]
-    [InlineData("  /* [||]TODO test*/", "test")]
-    [InlineData("/*\n* [||]TODO test\r\n*/", "test")]
+    [InlineData("/*[|TODO|]*/", "")]
+    [InlineData("/* [|TODO|]*/", "")]
+    [InlineData("/*[|TODO test|]*/", "test")]
+    [InlineData("/* [|TODO test|]*/", "test")]
+    [InlineData("  /* [|TODO test|]*/", "test")]
+    [InlineData("/*\n* [|TODO test|]\r\n*/", "test")]
     public async Task MultiLinesComment(string comment, string todo)
     {
         await CreateProjectBuilder()
@@ -59,8 +65,8 @@ public sealed class FixToDoAnalyzerTests
         await CreateProjectBuilder()
               .WithSourceCode(@"
 /*
- * [||]TODO a
- * [||]TODO b
+ * [|TODO a|]
+ * [|TODO: b|]
  */")
               .ShouldReportDiagnosticWithMessage("TODO a")
               .ShouldReportDiagnosticWithMessage("TODO b")
