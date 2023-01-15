@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -24,6 +23,8 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
+    private static readonly char[] TrimStartChars = new[] { ' ', '\t', '*', '-', '/' };
+
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
@@ -35,102 +36,54 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
     {
         var root = context.Tree.GetCompilationUnitRoot(context.CancellationToken);
-        var commentNodes = root.DescendantTrivia().Where(node => node.IsKind(SyntaxKind.MultiLineCommentTrivia) || node.IsKind(SyntaxKind.SingleLineCommentTrivia));
-
-        foreach (var node in commentNodes)
+        foreach (var node in root.DescendantTrivia())
         {
-            switch (node.Kind())
+            if (node.IsKind(SyntaxKind.SingleLineCommentTrivia))
             {
-                case SyntaxKind.SingleLineCommentTrivia:
-                    ProcessLine(new TextSpan(0, node.ToString()).Substring(2));
-                    break;
-                case SyntaxKind.MultiLineCommentTrivia:
-                    var nodeText = new TextSpan(0, node.ToString());
-                    nodeText = nodeText.Substring(2, nodeText.Length - 4);
+                // Remove leading "//"
+                ProcessLine(context, node.ToString().AsSpan(2), startIndex: node.SpanStart + 2);
+            }
+            else if (node.IsKind(SyntaxKind.MultiLineCommentTrivia))
+            {
+                var nodeText = node.ToString().AsSpan();
+                nodeText = nodeText.Slice(2, nodeText.Length - 4); // Remove leading "/*" and trailing "*/"
 
-                    foreach (var line in nodeText.GetLines())
-                    {
-                        ProcessLine(line);
-                    }
-
-                    break;
+                var startIndex = node.SpanStart + 2;
+                foreach (var line in nodeText.SplitLines())
+                {
+                    ProcessLine(context, line, startIndex);
+                    startIndex += line.Line.Length + line.Separator.Length;
+                }
             }
 
-            void ProcessLine(TextSpan line)
+            static void ProcessLine(SyntaxTreeAnalysisContext context, ReadOnlySpan< char> text, int startIndex)
             {
-                line = line.TrimStart(' ', '\t', '*', '-', '/');
-                if (string.Equals(line.Text, "TODO", StringComparison.OrdinalIgnoreCase) ||
-                    line.Text.StartsWith("TODO ", StringComparison.OrdinalIgnoreCase) ||
-                    line.Text.StartsWith("TODO:", StringComparison.OrdinalIgnoreCase))
+                // Trim start
+                while (text.Length > 0 && text.Length >= 4 && TrimStartChars.Contains(text[0]))
                 {
-                    var location = context.Tree.GetLocation(new Microsoft.CodeAnalysis.Text.TextSpan(node.SpanStart + line.SpanStart, line.Text.Length));
+                    text = text.Slice(1);
+                    startIndex++;
+                }
 
-                    var diagnostic = Diagnostic.Create(s_rule, location, line.Text.Substring(4).Trim());
+                if (text.Length < 4)
+                    return;
+
+                if (text.Equals("TODO".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                {
+                    var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
+                    var diagnostic = Diagnostic.Create(s_rule, location, "");
+                    context.ReportDiagnostic(diagnostic);
+                }
+                else if (text.StartsWith("TODO ".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                         text.StartsWith("TODO:".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                {
+                    var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
+
+                    var diagnostic = Diagnostic.Create(s_rule, location, text.Slice(5).Trim().ToString());
                     context.ReportDiagnostic(diagnostic);
                 }
             }
         }
     }
-
-    [StructLayout(LayoutKind.Auto)]
-    private readonly struct TextSpan
-    {
-        public TextSpan(int spanStart, string text)
-        {
-            SpanStart = spanStart;
-            Text = text;
-        }
-
-        public int SpanStart { get; }
-        public string Text { get; }
-        public int Length => Text.Length;
-
-        public TextSpan TrimStart(params char[] characters)
-        {
-            for (var i = 0; i < Text.Length; i++)
-            {
-                if (!characters.Contains(Text[i]))
-                {
-                    return new TextSpan(SpanStart + i, Text.Substring(i));
-                }
-            }
-
-            return this;
-        }
-
-        public TextSpan Substring(int startIndex)
-        {
-            return new TextSpan(SpanStart + startIndex, Text.Substring(startIndex));
-        }
-
-        public TextSpan Substring(int startIndex, int length)
-        {
-            return new TextSpan(SpanStart + startIndex, Text.Substring(startIndex, length));
-        }
-
-        public IEnumerable<TextSpan> GetLines()
-        {
-            var lineBegin = 0;
-            for (var i = 0; i < Text.Length; i++)
-            {
-                var c = Text[i];
-                if (c == '\n')
-                {
-                    var length = i - lineBegin;
-                    if (i > 0 && Text[i - 1] == '\r')
-                    {
-                        length -= 1;
-                    }
-
-                    yield return new TextSpan(SpanStart + lineBegin, Text.Substring(lineBegin, length));
-                    lineBegin = i + 1;
-                }
-            }
-
-            if (lineBegin < Text.Length)
-            {
-                yield return new TextSpan(SpanStart + lineBegin, Text.Substring(lineBegin));
-            }
-        }
-    }
 }
+

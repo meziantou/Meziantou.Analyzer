@@ -39,6 +39,7 @@ internal static partial class StringExtensions
 #endif
     }
     public static LineSplitEnumerator SplitLines(this string str) => new(str.AsSpan());
+    public static LineSplitEnumerator SplitLines(this ReadOnlySpan<char> str) => new(str);
 
     [StructLayout(LayoutKind.Auto)]
     public ref struct LineSplitEnumerator
