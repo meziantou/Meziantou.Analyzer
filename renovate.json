@@ -7,7 +7,7 @@
   "packageRules": [
     {
       "matchPackagePatterns": [ ".*" ],
-      "groupName": "all",
+      "groupName": "all dependencies",
       "separateMajorMinor": false
     },
     {
