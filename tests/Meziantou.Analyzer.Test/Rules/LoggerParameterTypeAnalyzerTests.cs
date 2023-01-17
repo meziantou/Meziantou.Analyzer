@@ -149,6 +149,62 @@ Name;System.String
               .ValidateAsync();
     }
 
+#if ROSLYN_4_2_OR_GREATER
+    [Fact]
+    public async Task Logger_LogTrace_InvalidParameterType_FormattableString()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation($"{{Prop}} {2}", [|2|]);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.String
+""")
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task Logger_LogTrace_InvalidParameterType_StringConcat()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+var a = "test";
+logger.LogInformation("{Prop} " + a, [|2|]);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.String
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogTrace_InvalidParameterType_StringConcat_NonConstantDisabled()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+var a = "test";
+logger.LogInformation("{Prop} " + a, 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.String
+""")
+              .AddAnalyzerConfiguration("MA0124.allow_non_constant_formats", "false")
+              .ValidateAsync();
+    }
+
     [Fact]
     public async Task Configuration_UnknownParameterType()
     {
@@ -159,7 +215,7 @@ Name;System.String
               .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0125", Locations = new[] { new DiagnosticResultLocation("LoggerParameterTypes.txt", 1, 1, 1, 1) } })
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Configuration_CommentIdToMember()
     {
