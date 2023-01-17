@@ -11,6 +11,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.IO;
 using Microsoft.CodeAnalysis.Text;
+using Meziantou.Analyzer.Configurations;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -244,7 +245,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
             if (formatExpression is not null && argumentTypes is not null)
             {
-                var format = TryGetFormatText(formatExpression);
+                var allowNonConstantFormat = context.Options.GetConfigurationValue(formatExpression, s_rule.Id + ".allow_non_constant_formats", defaultValue: true);
+                var format = TryGetFormatText(formatExpression, allowNonConstantFormat);
                 if (format == null)
                     return;
 
@@ -264,7 +266,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private string? TryGetFormatText(IOperation? argumentExpression)
+        private string? TryGetFormatText(IOperation? argumentExpression, bool allowNonConstantFormat)
         {
             if (argumentExpression is null)
                 return null;
@@ -275,18 +277,34 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return constantValue;
 
                 case IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binary:
-                    var leftText = TryGetFormatText(binary.LeftOperand);
-                    var rightText = TryGetFormatText(binary.RightOperand);
+                    var leftText = TryGetFormatText(binary.LeftOperand, allowNonConstantFormat);
+                    var rightText = TryGetFormatText(binary.RightOperand, allowNonConstantFormat);
+                    return Concat(leftText, rightText, allowNonConstantFormat);
 
-                    if (leftText != null && rightText != null)
+                case IInterpolatedStringOperation interpolatedString:
+                    string? result = "";
+                    foreach (var part in interpolatedString.Parts)
                     {
-                        return leftText + rightText;
+                        result = Concat(result, TryGetFormatText(part, allowNonConstantFormat), allowNonConstantFormat);
+                        if (result == null)
+                            return null;
                     }
 
-                    return null;
+                    return result;
+
+                case IInterpolatedStringTextOperation text:
+                    return TryGetFormatText(text.Text, allowNonConstantFormat);
 
                 default:
                     return null;
+            }
+
+            static string? Concat(string? first, string? second, bool allowNonConstantFormat)
+            {
+                if (!allowNonConstantFormat && (first == null || second == null))
+                    return null;
+
+                return first + second;
             }
         }
 
