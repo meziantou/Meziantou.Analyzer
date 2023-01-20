@@ -9,7 +9,7 @@ internal static class RuleIdentifiers
     public const string UseNamedParameter = "MA0003";
     public const string UseConfigureAwaitFalse = "MA0004";
     public const string UseArrayEmpty = "MA0005";
-    public const string UseStringEquals = "MA0006";
+    public const string UseStringEqualsInsteadOfEqualityOperator = "MA0006";
     public const string MissingCommaInObjectInitializer = "MA0007";
     public const string MissingStructLayoutAttribute = "MA0008";
     public const string MissingTimeoutParameterForRegex = "MA0009";
@@ -129,9 +129,10 @@ internal static class RuleIdentifiers
     public const string LoggerParameterType = "MA0124";
     public const string LoggerParameterType_InvalidType = "MA0125";
     public const string LoggerParameterType_DuplicateRule = "MA0126";
+    public const string UseStringEqualsInsteadOfIsPattern = "MA0127";
 
-    public static string GetHelpUri(string idenfifier)
+    public static string GetHelpUri(string identifier)
     {
-        return string.Format(CultureInfo.InvariantCulture, "https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/{0}.md", idenfifier);
+        return string.Format(CultureInfo.InvariantCulture, "https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/{0}.md", identifier);
     }
 }

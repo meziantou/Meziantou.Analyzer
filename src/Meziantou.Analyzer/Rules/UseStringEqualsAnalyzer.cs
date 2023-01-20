@@ -9,14 +9,14 @@ namespace Meziantou.Analyzer.Rules;
 public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
-        RuleIdentifiers.UseStringEquals,
+        RuleIdentifiers.UseStringEqualsInsteadOfEqualityOperator,
         title: "Use String.Equals instead of equality operator",
         messageFormat: "Use string.Equals instead of {0}",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringEquals));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringEqualsInsteadOfEqualityOperator));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
