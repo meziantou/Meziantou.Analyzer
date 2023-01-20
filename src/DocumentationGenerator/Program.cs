@@ -159,7 +159,7 @@ internal static class Program
                 }
             }
 
-            sb.Append(" # ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title).Append('\n')
+            sb.Append("# ").Append(diagnostic.Id).Append(": ").Append(diagnostic.Title).Append('\n')
               .Append("dotnet_diagnostic.").Append(diagnostic.Id).Append(".severity = ").Append(severity).Append('\n');
 
             first = false;
