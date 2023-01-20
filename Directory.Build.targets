@@ -41,7 +41,7 @@
 
     <Otherwise>
       <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4-beta1.22559.1" />
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
       </ItemGroup>
       <PropertyGroup>

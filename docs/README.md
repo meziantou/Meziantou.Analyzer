@@ -126,6 +126,7 @@
 |[MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md)|Design|Log Parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0125](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0125.md)|Design|The list of log parameter types contains an invalid type|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|<span title='Warning'>⚠️</span>|❌|❌|
 
 # .editorconfig - default values
 
@@ -504,6 +505,9 @@ dotnet_diagnostic.MA0125.severity = warning
 
  # MA0126: The list of log parameter types contains a duplicate
 dotnet_diagnostic.MA0126.severity = warning
+
+ # MA0127: Use String.Equals instead of is pattern
+dotnet_diagnostic.MA0127.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -883,4 +887,7 @@ dotnet_diagnostic.MA0125.severity = none
 
  # MA0126: The list of log parameter types contains a duplicate
 dotnet_diagnostic.MA0126.severity = none
+
+ # MA0127: Use String.Equals instead of is pattern
+dotnet_diagnostic.MA0127.severity = none
 ```
