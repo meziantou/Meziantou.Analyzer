@@ -193,7 +193,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
         }
     }
 
-    [return: NotNullIfNotNull("node")]
+    [return: NotNullIfNotNull(nameof(node))]
     private static SyntaxNode? GetDataFlowArgument(SyntaxNode? node)
     {
         if (node == null)
