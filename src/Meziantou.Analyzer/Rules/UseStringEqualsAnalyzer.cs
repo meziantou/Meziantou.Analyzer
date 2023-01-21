@@ -59,7 +59,7 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
 
     private static bool IsStringEmpty(IOperation operation)
     {
-        if (operation.ConstantValue.HasValue && (operation.ConstantValue.Value is string str) && string.IsNullOrEmpty(str))
+        if (operation is { ConstantValue: { HasValue: true, Value: null or string { Length: 0 } } })
             return true;
 
         if (operation is IMemberReferenceOperation memberReferenceOperation && memberReferenceOperation.Member.ContainingType.IsString() && memberReferenceOperation.Member.Name == nameof(string.Empty))

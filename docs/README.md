@@ -127,6 +127,7 @@
 |[MA0125](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0125.md)|Design|The list of log parameter types contains an invalid type|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 # .editorconfig - default values
 
@@ -508,6 +509,9 @@ dotnet_diagnostic.MA0126.severity = warning
 
 # MA0127: Use String.Equals instead of is pattern
 dotnet_diagnostic.MA0127.severity = none
+
+# MA0128: Use 'is' operator instead of SequenceEqual
+dotnet_diagnostic.MA0128.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -890,4 +894,7 @@ dotnet_diagnostic.MA0126.severity = none
 
 # MA0127: Use String.Equals instead of is pattern
 dotnet_diagnostic.MA0127.severity = none
+
+# MA0128: Use 'is' operator instead of SequenceEqual
+dotnet_diagnostic.MA0128.severity = none
 ```

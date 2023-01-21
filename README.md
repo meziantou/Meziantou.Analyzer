@@ -143,5 +143,6 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0125](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0125.md)|Design|The list of log parameter types contains an invalid type|⚠️|✔️|❌|
 |[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|⚠️|✔️|❌|
 |[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|⚠️|❌|❌|
+|[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|ℹ️|✔️|✔️|
 
 <!-- rules -->
