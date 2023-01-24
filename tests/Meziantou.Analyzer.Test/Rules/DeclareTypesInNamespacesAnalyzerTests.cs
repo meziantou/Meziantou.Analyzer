@@ -62,5 +62,19 @@ System.Console.WriteLine();")
 System.Console.WriteLine();")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task TopLevelProgram_10_partial()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithOutputKind(OutputKind.ConsoleApplication)
+              .WithSourceCode(@"
+System.Console.WriteLine();
+
+public partial class Program { }
+")
+              .ValidateAsync();
+    }
 #endif
 }

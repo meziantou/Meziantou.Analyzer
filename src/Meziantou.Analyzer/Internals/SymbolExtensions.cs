@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 
@@ -103,5 +104,33 @@ internal static class SymbolExtensions
         }
 
         return true;
+    }
+
+    public static bool IsTopLevelStatementsEntryPointMethod([NotNullWhen(true)] this IMethodSymbol? methodSymbol)
+    {
+        return methodSymbol?.IsStatic == true && methodSymbol.Name switch
+        {
+            "$Main" => true,
+            "<Main>$" => true,
+            _ => false
+        };
+    }
+
+    public static bool IsTopLevelStatementsEntryPointType([NotNullWhen(true)] this INamedTypeSymbol? typeSymbol)
+    {
+        if (typeSymbol is null)
+            return false;
+
+        foreach (var member in typeSymbol.GetMembers())
+        {
+            if (member.Kind == SymbolKind.Method)
+            {
+                var method = (IMethodSymbol)member;
+                if (method.IsTopLevelStatementsEntryPointMethod())
+                    return true;
+            }
+        }
+
+        return false;
     }
 }
