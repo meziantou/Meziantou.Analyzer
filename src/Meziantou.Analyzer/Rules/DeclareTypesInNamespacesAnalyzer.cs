@@ -33,7 +33,7 @@ public sealed class DeclareTypesInNamespacesAnalyzer : DiagnosticAnalyzer
         if (symbol.IsImplicitlyDeclared || symbol.IsImplicitClass || symbol.Name.Contains('$', System.StringComparison.Ordinal))
             return;
 
-        if (symbol.IsTopLevelStatement(context.CancellationToken))
+        if (symbol.IsTopLevelStatementsEntryPointType())
             return;
 
         if (symbol.ContainingType == null && (symbol.ContainingNamespace?.IsGlobalNamespace ?? true))
