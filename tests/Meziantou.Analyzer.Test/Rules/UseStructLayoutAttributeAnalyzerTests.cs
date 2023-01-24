@@ -125,4 +125,20 @@ struct TypeName
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task RecordStruct()
+    {
+        const string SourceCode = @"record struct [||]TypeName(int A, int B);";
+
+        const string CodeFix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
+record struct TypeName(int A, int B);";
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(CodeFix)
+            .ValidateAsync();
+    }
+#endif
 }

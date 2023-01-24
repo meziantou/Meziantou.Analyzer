@@ -25,7 +25,7 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix == null || nodeToFix is not TypeDeclarationSyntax)
             return;
 
         context.RegisterCodeFix(
@@ -58,15 +58,13 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
             generator.TypeExpression(structLayoutAttribute, addImport: true),
             new[]
             {
-                    generator.AttributeArgument(
-                        generator.MemberAccessExpression(
-                            generator.TypeExpression(layoutKindEnum, addImport: true),
-                            layoutKind.ToString())),
+                generator.AttributeArgument(
+                    generator.MemberAccessExpression(
+                        generator.TypeExpression(layoutKindEnum, addImport: true),
+                        layoutKind.ToString())),
             });
 
-        var structNode = (StructDeclarationSyntax)nodeToFix;
-
-        editor.AddAttribute(structNode, attribute);
+        editor.AddAttribute(nodeToFix, attribute);
         return editor.GetChangedDocument();
     }
 }
