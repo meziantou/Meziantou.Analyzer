@@ -3,7 +3,6 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class FixToDoAnalyzerTests
@@ -19,6 +18,7 @@ public sealed class FixToDoAnalyzerTests
     [InlineData("//test")]
     [InlineData("//TOD")]
     [InlineData("//TODOA")]
+    [InlineData("//TODO-A")]
     [InlineData("// (TODO)")]
     public async Task SingleLineCommentWithoutTodo(string comment)
     {
@@ -32,6 +32,8 @@ public sealed class FixToDoAnalyzerTests
     [InlineData("// [|todo|]", "")]
     [InlineData("// [|ToDo|]", "")]
     [InlineData("// [|TODo|]", "")]
+    [InlineData("// [|TODo?|]", "")]
+    [InlineData("// [|TODo!|]", "")]
     [InlineData("//[|TODO test|]", "test")]
     [InlineData("// [|TODO test|]", "test")]
     [InlineData("  // [|TODO test|]", "test")]
