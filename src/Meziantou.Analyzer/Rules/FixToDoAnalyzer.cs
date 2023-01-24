@@ -56,7 +56,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            static void ProcessLine(SyntaxTreeAnalysisContext context, ReadOnlySpan< char> text, int startIndex)
+            static void ProcessLine(SyntaxTreeAnalysisContext context, ReadOnlySpan<char> text, int startIndex)
             {
                 // Trim start
                 while (text.Length > 0 && text.Length >= 4 && TrimStartChars.Contains(text[0]))
@@ -65,22 +65,24 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                     startIndex++;
                 }
 
-                if (text.Length < 4)
+                if (!text.StartsWith("TODO".AsSpan(), StringComparison.OrdinalIgnoreCase))
                     return;
 
-                if (text.Equals("TODO".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                if (text.Length == 4)
                 {
                     var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
                     var diagnostic = Diagnostic.Create(s_rule, location, "");
                     context.ReportDiagnostic(diagnostic);
                 }
-                else if (text.StartsWith("TODO ".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                         text.StartsWith("TODO:".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                else
                 {
-                    var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
-
-                    var diagnostic = Diagnostic.Create(s_rule, location, text.Slice(5).Trim().ToString());
-                    context.ReportDiagnostic(diagnostic);
+                    var nextChar = text[4];
+                    if (nextChar is ' ' or '\t' or ':' or '!' or '?')
+                    {
+                        var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
+                        var diagnostic = Diagnostic.Create(s_rule, location, text.Slice(5).Trim().ToString());
+                        context.ReportDiagnostic(diagnostic);
+                    }
                 }
             }
         }
