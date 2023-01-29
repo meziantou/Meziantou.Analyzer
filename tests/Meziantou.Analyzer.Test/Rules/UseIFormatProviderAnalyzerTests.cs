@@ -239,6 +239,111 @@ class TypeName
     }
 
     [Fact]
+    public async Task StringBuilder_AppendLine_AllStringParams()
+    {
+        const string SourceCode = """
+class TypeName
+{
+    public void Test(System.Text.StringBuilder sb)
+    {
+        var str = "";
+        sb.AppendLine($"foo{str}var{str}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringBuilder_AppendLine_AllStringParams_Net7()
+    {
+        const string SourceCode = """
+using System;
+class TypeName
+{
+    public void Test(System.Text.StringBuilder sb)
+    {
+        var str = "";
+        sb.AppendLine($"foo{str}var{str}{'a'}{Guid.NewGuid()}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task StringBuilder_AppendLine_Int32Params_Net7()
+    {
+        const string SourceCode = """
+class TypeName
+{
+    public void Test(System.Text.StringBuilder sb)
+    {
+        int value = 0;
+        [||]sb.AppendLine($"foo{value}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
+
+    [Theory]
+    [InlineData("o")]
+    [InlineData("O")]
+    [InlineData("r")]
+    [InlineData("R")]
+    [InlineData("s")]
+    [InlineData("u")]
+    public async Task StringBuilder_AppendLine_DateTime_InvariantFormat_Net7(string format)
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test(System.Text.StringBuilder sb)
+    {
+        System.DateTime value = default;
+        sb.AppendLine($"foo{value:{{format}}}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task StringBuilder_AppendLine_DateTime_Net7()
+    {
+        var sourceCode = """
+class TypeName
+{
+    public void Test(System.Text.StringBuilder sb)
+    {
+        System.DateTime value = default;
+        [||]sb.AppendLine($"foo{value:yyyy}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
     public async Task InvariantDateTimeFormat()
     {
         const string SourceCode = @"
