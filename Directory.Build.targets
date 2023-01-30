@@ -12,7 +12,8 @@
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
       </ItemGroup>
       <PropertyGroup>
-        <DefineConstants>$(DefineConstants);ROSLYN_3_8;CSHARP9_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);ROSLYN_3_8</DefineConstants>
+        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);nullable</NoWarn>
       </PropertyGroup>
     </When>
@@ -23,7 +24,8 @@
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.2.0" />
       </ItemGroup>
       <PropertyGroup>
-        <DefineConstants>$(DefineConstants);ROSLYN_4_2;ROSLYN_4_2_OR_GREATER;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);ROSLYN_4_2;ROSLYN_4_2_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);nullable</NoWarn>
       </PropertyGroup>
     </When>
@@ -34,7 +36,8 @@
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
       </ItemGroup>
       <PropertyGroup>
-        <DefineConstants>$(DefineConstants);ROSLYN_4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);ROSLYN_4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);nullable</NoWarn>
       </PropertyGroup>
     </When>
@@ -45,7 +48,8 @@
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
       </ItemGroup>
       <PropertyGroup>
-        <DefineConstants>$(DefineConstants);ROSLYN4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);ROSLYN4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);CS0618</NoWarn>
       </PropertyGroup>
     </Otherwise>

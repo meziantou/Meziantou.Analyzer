@@ -26,114 +26,255 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
     {
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var analyzerContext = new AnalyzerContext(context.Compilation);
+            context.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+        });
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    private sealed class AnalyzerContext
     {
-        var formatProviderType = context.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
-        var cultureInfoType = context.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
-        var numberStyleType = context.Compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
-        var dateTimeStyleType = context.Compilation.GetBestTypeByMetadataName("System.Globalization.DateTimeStyles");
-
-        var operation = (IInvocationOperation)context.Operation;
-        if (operation == null)
-            return;
-
-        if (IsExcludedMethod(context, operation))
-            return;
-
-        var methodName = operation.TargetMethod.Name;
-        if (string.Equals(methodName, "ToString", StringComparison.Ordinal))
+        public AnalyzerContext(Compilation compilation)
         {
-            // Boolean.ToString(IFormatProvider) should not be used
-            if (operation.TargetMethod.ContainingType.IsBoolean())
-                return;
-
-            // Char.ToString(IFormatProvider) should not be used
-            if (operation.TargetMethod.ContainingType.IsChar())
-                return;
-
-            // Guid.ToString(IFormatProvider) should not be used
-            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Guid")))
-                return;
-
-            // Enum.ToString(IFormatProvider) should not be used
-            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Enum")))
-                return;
-
-            // DateTime.ToString() or DateTimeOffset.ToString() with invariant formats (o, O, r, R, s, u)
-            if (operation.Arguments.Length == 1 && operation.TargetMethod.ContainingType.IsEqualToAny(context.Compilation.GetBestTypeByMetadataName("System.DateTime"), context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset")))
-            {
-                if (IsInvariantDateTimeFormat(operation.Arguments[0].Value))
-                    return;
-            }
-        }
-        else if (string.Equals(methodName, "Parse", StringComparison.Ordinal) || string.Equals(methodName, "TryParse", StringComparison.Ordinal))
-        {
-            // Guid.Parse / Guid.TryParse are culture insensitive
-            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Guid")))
-                return;
-
-            // Char.Parse / Char.TryParse are culture insensitive
-            if (operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetSpecialType(SpecialType.System_Char)))
-                return;
+            FormatProviderSymbol = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+            CultureInfoSymbol = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+            NumberStyleSymbol = compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
+            DateTimeStyleSymbol = compilation.GetBestTypeByMetadataName("System.Globalization.DateTimeStyles");
+            StringBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+            StringBuilder_AppendInterpolatedStringHandlerSymbol = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler");
+            GuidSymbol = compilation.GetBestTypeByMetadataName("System.Guid");
+            EnumSymbol = compilation.GetBestTypeByMetadataName("System.Enum");
+            DateTimeOffsetSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
         }
 
-        if (formatProviderType != null && !operation.HasArgumentOfType(formatProviderType))
+        public INamedTypeSymbol? FormatProviderSymbol { get; }
+        public INamedTypeSymbol? CultureInfoSymbol { get; }
+        public INamedTypeSymbol? NumberStyleSymbol { get; }
+        public INamedTypeSymbol? DateTimeStyleSymbol { get; }
+        public INamedTypeSymbol? StringBuilderSymbol { get; }
+        public INamedTypeSymbol? StringBuilder_AppendInterpolatedStringHandlerSymbol { get; }
+        public INamedTypeSymbol? GuidSymbol { get; }
+        public INamedTypeSymbol? EnumSymbol { get; }
+        public INamedTypeSymbol? DateTimeOffsetSymbol { get; }
+
+        public void AnalyzeInvocation(OperationAnalysisContext context)
         {
-            var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, formatProviderType);
-            if (overload != null)
-            {
-                context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
+            var operation = (IInvocationOperation)context.Operation;
+            if (operation == null)
                 return;
-            }
 
-            if (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, numberStyleType))
-            {
-                context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
+            if (IsExcludedMethod(context, operation))
                 return;
-            }
 
-            var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset"));
-            if (isDateTime)
+            if (!IsCultureSensitiveOperation(operation))
+                return;
+
+            if (FormatProviderSymbol != null && !operation.HasArgumentOfType(FormatProviderSymbol))
             {
-                if (operation.Arguments.Length >= 1 && IsInvariantDateTimeFormat(operation.Arguments[0].Value))
-                    return;
-
-                if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, formatProviderType, dateTimeStyleType))
+                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, FormatProviderSymbol);
+                if (overload != null)
                 {
-                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, formatProviderType.ToDisplayString());
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, FormatProviderSymbol.ToDisplayString());
+                    return;
+                }
+
+                if (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, FormatProviderSymbol, NumberStyleSymbol))
+                {
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, FormatProviderSymbol.ToDisplayString());
+                    return;
+                }
+
+                var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset"));
+                if (isDateTime)
+                {
+                    if (operation.Arguments.Length >= 1 && IsInvariantDateTimeFormat(operation.Arguments[0].Value))
+                        return;
+
+                    if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, FormatProviderSymbol, DateTimeStyleSymbol))
+                    {
+                        context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, FormatProviderSymbol.ToDisplayString());
+                        return;
+                    }
+                }
+            }
+
+            if (CultureInfoSymbol != null && !operation.HasArgumentOfType(CultureInfoSymbol))
+            {
+                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, CultureInfoSymbol);
+                if (overload != null)
+                {
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, CultureInfoSymbol.ToDisplayString());
                     return;
                 }
             }
         }
 
-        if (cultureInfoType != null && !operation.HasArgumentOfType(cultureInfoType))
+        private static bool IsInvariantDateTimeFormat(IOperation? valueOperation)
         {
-            var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, cultureInfoType);
-            if (overload != null)
+            return valueOperation is { ConstantValue: { HasValue: true, Value: "o" or "O" or "r" or "R" or "s" or "u" } };
+        }
+
+        private static bool IsExcludedMethod(OperationAnalysisContext context, IOperation operation)
+        {
+            // ToString show culture-sensitive data by default
+            if (operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
             {
-                context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, cultureInfoType.ToDisplayString());
-                return;
+                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.exclude_tostring_methods", defaultValue: true);
             }
+
+            return false;
         }
-    }
 
-    private static bool IsInvariantDateTimeFormat(IOperation valueOperation)
-    {
-        return valueOperation.ConstantValue.HasValue && valueOperation.ConstantValue.Value is "o" or "O" or "r" or "R" or "s" or "u";
-    }
-
-    private static bool IsExcludedMethod(OperationAnalysisContext context, IOperation operation)
-    {
-        // ToString show culture-sensitive data by default
-        if (operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
+        private bool IsCultureSensitiveOperation(IOperation operation)
         {
-            return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.exclude_tostring_methods", defaultValue: true);
+            if (operation is IInvocationOperation invocation)
+            {
+                var methodName = invocation.TargetMethod.Name;
+                if (methodName is "ToString")
+                {
+                    // Boolean.ToString(IFormatProvider) should not be used
+                    if (invocation.TargetMethod.ContainingType.IsBoolean())
+                        return false;
+
+                    // Char.ToString(IFormatProvider) should not be used
+                    if (invocation.TargetMethod.ContainingType.IsChar())
+                        return false;
+
+                    // Guid.ToString(IFormatProvider) should not be used
+                    if (invocation.TargetMethod.ContainingType.IsEqualTo(GuidSymbol))
+                        return false;
+
+                    // Enum.ToString(IFormatProvider) should not be used
+                    if (invocation.TargetMethod.ContainingType.IsEqualTo(EnumSymbol))
+                        return false;
+
+                    // DateTime.ToString() or DateTimeOffset.ToString() with invariant formats (o, O, r, R, s, u)
+                    if (invocation.Arguments.Length == 1 && (invocation.TargetMethod.ContainingType.IsDateTime() || invocation.TargetMethod.ContainingType.IsEqualTo(DateTimeOffsetSymbol)))
+                    {
+                        if (IsInvariantDateTimeFormat(invocation.Arguments[0].Value))
+                            return false;
+                    }
+                }
+                else if (methodName is "Parse" or "TryParse")
+                {
+                    // Guid.Parse / Guid.TryParse are culture insensitive
+                    if (invocation.TargetMethod.ContainingType.IsEqualTo(GuidSymbol))
+                        return false;
+
+                    // Char.Parse / Char.TryParse are culture insensitive
+                    if (invocation.TargetMethod.ContainingType.IsChar())
+                        return false;
+                }
+                else if (methodName is "Append" or "AppendLine" && invocation.TargetMethod.ContainingType.IsEqualTo(StringBuilderSymbol))
+                {
+                    // stringBuilder.AppendLine($"foo{bar}") when bar is a string
+                    if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && !IsCultureSensitiveOperation(invocation.Arguments[0].Value))
+                        return false;
+                }
+            }
+
+#if CSHARP10_OR_GREATER
+            if (operation is IInterpolatedStringHandlerCreationOperation handler)
+                return IsCultureSensitiveOperation(handler.Content);
+
+            if (operation is IInterpolatedStringAdditionOperation interpolatedStringAddition)
+                return IsCultureSensitiveOperation(interpolatedStringAddition.Left) || IsCultureSensitiveOperation(interpolatedStringAddition.Right);
+#endif
+
+            if (operation is IInterpolatedStringOperation interpolatedString)
+            {
+                if (interpolatedString.Parts.Length == 0)
+                    return false;
+
+                foreach (var part in interpolatedString.Parts)
+                {
+                    if (part is IInterpolatedStringTextOperation)
+                        continue;
+
+                    if (part is IInterpolationOperation content)
+                    {
+                        if (content.Expression.Type.IsDateTime() || content.Expression.Type.IsEqualTo(DateTimeOffsetSymbol))
+                        {
+                            if (!IsInvariantDateTimeFormat(content.FormatString))
+                                return true;
+                        }
+                        else if (IsCultureSensitiveType(content.Expression.GetActualType()))
+                        {
+                            return true;
+                        }
+                    }
+#if CSHARP10_OR_GREATER
+                    else if (part is IInterpolatedStringAppendOperation append)
+                    {
+                        if (append.AppendCall is IInvocationOperation appendInvocation)
+                        {
+                            if (appendInvocation.Arguments.Length == 1)
+                            {
+                                if (IsCultureSensitiveType(appendInvocation.Arguments[0].Value.Type))
+                                    return true;
+                            }
+                            else if (appendInvocation.Arguments.Length == 2)
+                            {
+                                var expression = appendInvocation.Arguments[0].Value;
+                                if (expression.Type.IsDateTime() || expression.Type.IsEqualTo(DateTimeOffsetSymbol))
+                                {
+                                    if (!IsInvariantDateTimeFormat(appendInvocation.Arguments[1].Value))
+                                        return true;
+                                }
+                                else
+                                {
+                                    return true;
+                                }
+                            }
+                            else
+                            {
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+#endif
+                    else
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            if (operation is ILocalReferenceOperation localReference)
+                return IsCultureSensitiveType(localReference.Type);
+
+            if (operation is IParameterReferenceOperation parameterReference)
+                return IsCultureSensitiveType(parameterReference.Type);
+
+            if (operation is IMemberReferenceOperation memberReference)
+                return IsCultureSensitiveType(memberReference.Type);
+
+            if (operation is ILiteralOperation literal)
+                return IsCultureSensitiveType(literal.Type);
+
+            // Unknown operation
+            return true;
         }
 
-        return false;
+        private bool IsCultureSensitiveType(ITypeSymbol? symbol)
+        {
+            if (symbol == null)
+                return true;
+
+            if (symbol.SpecialType is SpecialType.System_Boolean or SpecialType.System_String or SpecialType.System_Char)
+                return false;
+
+            if (symbol.IsEqualTo(GuidSymbol))
+                return false;
+
+            return true;
+        }
     }
 }
