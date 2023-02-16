@@ -110,6 +110,10 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         if (method.ContainingType.IsString() && method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
             return true;
 
+        // string.Contains(char)
+        if (method.ContainingType.IsString() && method.Name == nameof(string.Contains) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+            return true;
+
         // JObject.Property / TryGetValue / GetValue
         var jobjectType = operation.SemanticModel!.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
         if (method.ContainingType.IsEqualTo(jobjectType))
