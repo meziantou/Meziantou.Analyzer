@@ -37,7 +37,9 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     int a;
     int b;
 }";
-        const string CodeFix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
+        const string CodeFix = @"using System.Runtime.InteropServices;
+
+[StructLayout(LayoutKind.Auto)]
 struct TypeName
 {
     int a;
@@ -132,7 +134,9 @@ struct TypeName
     {
         const string SourceCode = @"record struct [||]TypeName(int A, int B);";
 
-        const string CodeFix = @"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Auto)]
+        const string CodeFix = @"using System.Runtime.InteropServices;
+
+[StructLayout(LayoutKind.Auto)]
 record struct TypeName(int A, int B);";
 
         await CreateProjectBuilder()
