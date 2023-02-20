@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -55,12 +56,12 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
             return document;
 
         var attribute = editor.Generator.Attribute(
-            generator.TypeExpression(structLayoutAttribute, addImport: true),
+            generator.TypeExpression(structLayoutAttribute).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),
             new[]
             {
                 generator.AttributeArgument(
                     generator.MemberAccessExpression(
-                        generator.TypeExpression(layoutKindEnum, addImport: true),
+                        generator.TypeExpression(layoutKindEnum).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),
                         layoutKind.ToString())),
             });
 
