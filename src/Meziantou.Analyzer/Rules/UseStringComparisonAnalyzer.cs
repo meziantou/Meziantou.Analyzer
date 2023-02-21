@@ -90,29 +90,34 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         if (method == null)
             return false;
 
-        // string.Equals(string)
-        if (method.ContainingType.IsString() && method.Name == nameof(string.Equals) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
-            return true;
+        if (method.ContainingType.IsString())
+        {
+            // string.Equals(string)
+            if (method.Name == nameof(string.Equals) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
+                return true;
 
-        // string.Equals(string, string)
-        if (method.ContainingType.IsString() && method.Name == nameof(string.Equals) && method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsString())
-            return true;
+            // string.Equals(string, string)
+            if (method.Name == nameof(string.Equals) && method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsString())
+                return true;
 
-        // string.IndexOf(char)
-        if (method.ContainingType.IsString() && method.Name == nameof(string.IndexOf) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-            return true;
+            // string.IndexOf(char)
+            if (method.Name == nameof(string.IndexOf) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                return true;
 
-        // string.EndsWith(char)
-        if (method.ContainingType.IsString() && method.Name == nameof(string.EndsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-            return true;
+            // string.EndsWith(char)
+            if (method.Name == nameof(string.EndsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                return true;
 
-        // string.StartsWith(char)
-        if (method.ContainingType.IsString() && method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-            return true;
+            // string.StartsWith(char)
+            if (method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                return true;
 
-        // string.Contains(char)
-        if (method.ContainingType.IsString() && method.Name == nameof(string.Contains) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-            return true;
+            // string.Contains(char) | string.Contains(string)
+            if (method.Name == nameof(string.Contains) && method.Parameters.Length == 1 && method.Parameters[0].Type.SpecialType is SpecialType.System_Char or SpecialType.System_String)
+                return true;
+
+            return false;
+        }
 
         // JObject.Property / TryGetValue / GetValue
         var jobjectType = operation.SemanticModel!.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
