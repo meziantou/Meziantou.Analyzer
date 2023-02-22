@@ -916,4 +916,107 @@ static class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task CancellationTokenAvailableAsLambdaParameter()
+    {
+        const string SourceCode = @"
+using System.Threading;
+class Test
+{
+    public static void A(CancellationToken cancellationToken = default)
+    {
+        _ = new System.Action<CancellationToken>(static ct => [||]A());
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task CancellationTokenAvailableAsParentLambdaParameter()
+    {
+        const string SourceCode = @"
+using System.Threading;
+class Test
+{
+    public static void A(CancellationToken cancellationToken = default)
+    {
+        _ = new System.Action<CancellationToken>(static ct1 =>
+        {
+            _ = new System.Action<CancellationToken>(ct2 => [||]A());
+        });
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct1, ct2")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task CancellationTokenAvailableAsDelegateParameter()
+    {
+        const string SourceCode = @"
+using System.Threading;
+class Test
+{
+    public static void A(CancellationToken cancellationToken = default)
+    {
+        _ = new System.Action<CancellationToken>(static delegate(CancellationToken ct) { [||]A(); });
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task CancellationTokenAvailableAsLocalFunctionParameter()
+    {
+        const string SourceCode = @"
+using System.Threading;
+class Test
+{
+    public static void A(CancellationToken cancellationToken = default)
+    {
+        B(cancellationToken);
+        static void B(CancellationToken ct) => [||]A();
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task CancellationTokenAvailableAsLocalFunctionParameter_DoNotUseFromOutsideStatic()
+    {
+        const string SourceCode = @"
+using System.Threading;
+class Test
+{
+    public static void A(CancellationToken cancellationToken = default)
+    {
+        B(cancellationToken);
+        static void B(CancellationToken ct1)
+        {
+            CancellationToken ct2 = default;
+            void C()
+            {
+                [||]A();
+            }
+        }            
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct1, ct2")
+              .ValidateAsync();
+    }
+
 }

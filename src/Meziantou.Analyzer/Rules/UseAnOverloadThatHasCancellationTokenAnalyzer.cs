@@ -78,7 +78,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
     private sealed class AnalyzerContext
     {
-        private readonly ConcurrentDictionary<(ITypeSymbol Symbol, int MaxDepth), List<IReadOnlyList<ISymbol>>?> _membersByType = new();
+        private readonly ConcurrentDictionary<(ITypeSymbol Symbol, int MaxDepth), List<ISymbol[]>?> _membersByType = new();
 
         public AnalyzerContext(Compilation compilation)
         {
@@ -241,7 +241,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 .Add("CancellationTokens", string.Join(",", cancellationTokens));
         }
 
-        private List<IReadOnlyList<ISymbol>>? GetMembers(ITypeSymbol symbol, int maxDepth)
+        private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)
         {
             return _membersByType.GetOrAdd((symbol, maxDepth), item =>
             {
@@ -258,9 +258,9 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return null;
 
                 if (symbol.IsEqualTo(CancellationTokenSymbol))
-                    return new List<IReadOnlyList<ISymbol>>(capacity: 1) { Array.Empty<ISymbol>() };
+                    return new List<ISymbol[]>(capacity: 1) { Array.Empty<ISymbol>() };
 
-                var result = new List<IReadOnlyList<ISymbol>>();
+                var result = new List<ISymbol[]>();
                 var members = symbol.GetAllMembers();
                 foreach (var member in members)
                 {
@@ -293,7 +293,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                         {
                             foreach (var objectMember in typeMembers)
                             {
-                                result.Add(Prepend(member, objectMember).ToList());
+                                result.Add(Prepend(member, objectMember).ToArray());
                             }
                         }
                     }
@@ -304,13 +304,58 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private string[] FindCancellationTokens(IOperation operation, CancellationToken cancellationToken)
         {
-            var isStatic = IsStaticMember(operation, cancellationToken);
-
+            // Find available symbols
+            var operationLocation = operation.Syntax.GetLocation().SourceSpan.Start;
+            var isInStaticContext = IsInStaticContext(operation, cancellationToken, out var parentStaticMemberStartPosition);
             var availableSymbols = new List<NameAndType>();
-            GetParameters(availableSymbols, operation, cancellationToken);
-            GetVariables(availableSymbols, operation);
-            availableSymbols.Add(new NameAndType(name: null, GetContainingType(operation, cancellationToken)));
+            foreach (var symbol in operation.SemanticModel!.LookupSymbols(operationLocation))
+            {
+                // LookupSymbols check the accessibility of the symbol, but it can
+                // suggest instance members when the current context is static.
+                var symbolType = symbol switch
+                {
+                    IParameterSymbol parameter => parameter.Type,
+                    IFieldSymbol field when !isInStaticContext || field.IsStatic => field.Type,
+                    IPropertySymbol { GetMethod: not null } property when !isInStaticContext || property.IsStatic => property.Type,
+                    ILocalSymbol local => local.Type,
+                    _ => null,
+                };
 
+                if (symbolType == null)
+                    continue;
+
+                // Locals can be returned even if there are not valid in the current context. For instance,
+                // it can return locals declared after the current location. Or it can return locals that
+                // should not be accessible in a static local function.
+                //
+                // void Sample()
+                // {
+                //    int local = 0;
+                //    static void LocalFunction() => local; <-- local is invalid here but LookupSymbols suggests it
+                // }
+                //
+                // Parameters from the ancestor methods are also returned even if the operation is in a static local function.
+                if (symbol.Kind is SymbolKind.Local or SymbolKind.Parameter)
+                {
+                    var localPosition = symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken).GetLocation().SourceSpan.Start;
+
+                    // The local is not part of the source tree
+                    if (localPosition == null)
+                        continue;
+
+                    // The local is declared after the current expression
+                    if (localPosition > operationLocation)
+                        continue;
+
+                    // The local is declared outside the static local function
+                    if (isInStaticContext && localPosition < parentStaticMemberStartPosition)
+                        continue;
+                }
+
+                availableSymbols.Add(new(symbol.Name, symbolType));
+            }
+
+            // For each symbol, get their members
             var paths = new List<string>();
             foreach (var availableSymbol in availableSymbols)
             {
@@ -325,7 +370,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                         if (!AreAllSymbolsAccessibleFromOperation(member, operation))
                             continue;
 
-                        if (availableSymbol.Name == null && isStatic && member.Count > 0 && !member[0].IsStatic)
+                        if (availableSymbol.Name == null && isInStaticContext && member.Length > 0 && !member[0].IsStatic)
                             continue;
 
                         var fullPath = ComputeFullPath(availableSymbol.Name, member);
@@ -377,144 +422,51 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return operation.SemanticModel!.GetDeclaredSymbol(ancestor, cancellationToken) as ITypeSymbol;
         }
 
-        private static bool IsStaticMember(IOperation operation, CancellationToken cancellationToken)
+        private static bool IsInStaticContext(IOperation operation, CancellationToken cancellationToken, out int parentStaticMemberStartPosition)
         {
-            var memberDeclarationSyntax = operation.Syntax.Ancestors().FirstOrDefault(syntax => syntax is MemberDeclarationSyntax);
-            if (memberDeclarationSyntax == null)
-                return false;
-
-            var symbol = operation.SemanticModel!.GetDeclaredSymbol(memberDeclarationSyntax, cancellationToken);
-            if (symbol == null)
-                return false;
-
-            return symbol.IsStatic;
-        }
-
-        private static void GetParameters(List<NameAndType> result, IOperation operation, CancellationToken cancellationToken)
-        {
-            var semanticModel = operation.SemanticModel!;
-            var node = operation.Syntax;
-            while (node != null)
+            // Local functions can be nested, and an instance local function can be declared
+            // in a static local function. So, you need to continue to check ancestors when a
+            // local function is not static.
+            foreach (var member in operation.Syntax.Ancestors())
             {
-                switch (node)
+                if (member is LocalFunctionStatementSyntax localFunction)
                 {
-                    case AccessorDeclarationSyntax accessor:
-                        {
-                            if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
-                            {
-                                var property = node.Ancestors().OfType<PropertyDeclarationSyntax>().FirstOrDefault();
-                                if (property != null)
-                                {
-                                    var symbol = operation.SemanticModel.GetDeclaredSymbol(property, cancellationToken);
-                                    if (symbol != null)
-                                    {
-                                        result.Add(new NameAndType("value", symbol.Type));
-                                    }
-                                }
-                            }
-
-                            break;
-                        }
-
-                    case PropertyDeclarationSyntax _:
-                        return;
-
-                    case IndexerDeclarationSyntax indexerDeclarationSyntax:
-                        {
-                            var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax, cancellationToken);
-                            if (symbol != null)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
-                            }
-
-                            return;
-                        }
-
-                    case MethodDeclarationSyntax methodDeclaration:
-                        {
-                            var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration, cancellationToken);
-                            if (symbol != null)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                {
-                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
-                                }
-                            }
-
-                            return;
-                        }
-
-                    case LocalFunctionStatementSyntax localFunctionStatement:
-                        {
-                            if (semanticModel.GetDeclaredSymbol(localFunctionStatement, cancellationToken) is IMethodSymbol symbol)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
-                            }
-
-                            break;
-                        }
-
-                    case ConstructorDeclarationSyntax constructorDeclaration:
-                        {
-                            var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration, cancellationToken);
-                            if (symbol != null)
-                            {
-                                foreach (var parameter in symbol.Parameters)
-                                {
-                                    result.Add(new NameAndType(parameter.Name, parameter.Type));
-                                }
-                            }
-
-                            return;
-                        }
-                }
-
-                node = node.Parent;
-            }
-        }
-
-        private static void GetVariables(List<NameAndType> result, IOperation operation)
-        {
-            var previousOperation = operation;
-            var currentOperation = operation.Parent;
-
-            while (currentOperation != null)
-            {
-                if (currentOperation.Kind == OperationKind.Block)
-                {
-                    var blockOperation = (IBlockOperation)currentOperation;
-                    foreach (var childOperation in blockOperation.Operations)
+                    var symbol = operation.SemanticModel!.GetDeclaredSymbol(localFunction, cancellationToken);
+                    if (symbol != null && symbol.IsStatic)
                     {
-                        if (childOperation == previousOperation)
-                            break;
-
-                        switch (childOperation)
-                        {
-                            case IVariableDeclarationGroupOperation variableDeclarationGroupOperation:
-                                foreach (var declaration in variableDeclarationGroupOperation.Declarations)
-                                {
-                                    foreach (var variable in declaration.GetDeclaredVariables())
-                                    {
-                                        result.Add(new NameAndType(variable.Name, variable.Type));
-                                    }
-                                }
-                                break;
-
-                            case IVariableDeclarationOperation variableDeclarationOperation:
-                                foreach (var variable in variableDeclarationOperation.GetDeclaredVariables())
-                                {
-                                    result.Add(new NameAndType(variable.Name, variable.Type));
-                                }
-                                break;
-                        }
+                        parentStaticMemberStartPosition = localFunction.GetLocation().SourceSpan.Start;
+                        return true;
                     }
                 }
+                else if (member is LambdaExpressionSyntax lambdaExpression)
+                {
+                    var symbol = operation.SemanticModel!.GetSymbolInfo(lambdaExpression, cancellationToken).Symbol;
+                    if (symbol != null && symbol.IsStatic)
+                    {
+                        parentStaticMemberStartPosition = lambdaExpression.GetLocation().SourceSpan.Start;
+                        return true;
+                    }
+                }
+                else if (member is AnonymousMethodExpressionSyntax anonymousMethod)
+                {
+                    var symbol = operation.SemanticModel!.GetSymbolInfo(anonymousMethod, cancellationToken).Symbol;
+                    if (symbol != null && symbol.IsStatic)
+                    {
+                        parentStaticMemberStartPosition = anonymousMethod.GetLocation().SourceSpan.Start;
+                        return true;
+                    }
+                }
+                else if (member is MethodDeclarationSyntax methodDeclaration)
+                {
+                    parentStaticMemberStartPosition = methodDeclaration.GetLocation().SourceSpan.Start;
 
-                previousOperation = currentOperation;
-                currentOperation = currentOperation.Parent;
+                    var symbol = operation.SemanticModel!.GetDeclaredSymbol(methodDeclaration, cancellationToken);
+                    return symbol != null && symbol.IsStatic;
+                }
             }
+
+            parentStaticMemberStartPosition = -1;
+            return false;
         }
 
         private static IEnumerable<T> Prepend<T>(T value, IEnumerable<T> items)
