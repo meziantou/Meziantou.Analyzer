@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Globalization;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -67,6 +69,29 @@ enum Test
 ";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PowerOfTwo_NegativeValue()
+    {
+        var options = "";
+        for (var i = 0; i < 32; i++)
+        {
+            options += $"    Option{(i + 1).ToString("00", CultureInfo.InvariantCulture)} = unchecked((int)0b_{Convert.ToString(1 << i, toBase: 2).PadLeft(32, '0')}),\n";
+        }
+
+        var sourceCode = $$"""
+[System.Flags]
+enum Test
+{
+    None     = 0b_00000000000000000000000000000000,
+{{options}}
+    All      = ~None,
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 }
