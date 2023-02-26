@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -45,56 +46,62 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
         var members = symbol.GetMembers()
             .OfType<IFieldSymbol>()
             .Where(member => member.ConstantValue != null)
-            .Select(member => (member, IsPowerOfTwo: IsPowerOfTwo(member.ConstantValue!)))
-            .ToList();
-        foreach (var member in members.Where(member => !member.IsPowerOfTwo))
+            .Select(member => (member, IsSingleBitSet: IsSingleBitSet(member.ConstantValue), IsZero: IsZero(member.ConstantValue)))
+            .ToArray();
+        foreach (var member in members)
         {
-            var value = member.member.ConstantValue;
-            if (value != null)
-            {
-                foreach (var powerOfTwo in members.Where(member => member.IsPowerOfTwo))
-                {
-                    if (powerOfTwo.member.ConstantValue != null)
-                    {
-                        value = RemoveValue(value, powerOfTwo.member.ConstantValue);
-                    }
-                }
+            if (member.IsSingleBitSet || member.IsZero)
+                continue;
 
-                if (!IsZero(value))
+            if (IsAllBitsSet(member.member.ConstantValue) && context.Options.GetConfigurationValue(member.member, RuleIdentifiers.NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute + ".allow_all_bits_set_value", defaultValue: false))
+                continue;
+
+            var value = member.member.ConstantValue!;
+            foreach (var otherMember in members)
+            {
+                if (!otherMember.IsSingleBitSet)
+                    continue;
+
+                if (otherMember.member.ConstantValue != null)
                 {
-                    context.ReportDiagnostic(s_rule, symbol, member.member.Name);
-                    return;
+                    value = RemoveValue(value, otherMember.member.ConstantValue);
                 }
+            }
+
+            if (!IsZero(value))
+            {
+                context.ReportDiagnostic(s_rule, symbol, member.member.Name);
+                return;
             }
         }
     }
 
-    private static bool IsPowerOfTwo(object o)
+    private static bool IsSingleBitSet(object? o)
     {
         // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
         // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
         return o switch
         {
-            null => throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value"),
-            byte x => (x == 0) || ((x & (x - 1)) == 0),
-            sbyte x => (x == 0) || ((x & (x - 1)) == 0),
-            short x => (x == 0) || ((x & (x - 1)) == 0),
-            ushort x => (x == 0) || ((x & (x - 1)) == 0),
-            int x => (x == 0) || ((x & (x - 1)) == 0),
-            uint x => (x == 0) || ((x & (x - 1)) == 0),
-            long x => (x == 0) || ((x & (x - 1)) == 0),
-            ulong x => (x == 0) || ((x & (x - 1)) == 0),
+            null => false,
+            sbyte x => IsSingleBitSet((byte)x),
+            byte x => x > 0 && (x & (x - 1)) == 0,
+            short x => IsSingleBitSet((ushort)x),
+            ushort x => x > 0 && (x & (x - 1)) == 0,
+            int x => IsSingleBitSet((uint)x),
+            uint x => x > 0 && (x & (x - 1)) == 0,
+            long x => IsSingleBitSet((ulong)x),
+            ulong x => x > 0 && (x & (x - 1)) == 0,
             _ => throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported"),
         };
     }
 
-    private static bool IsZero(object o)
+    private static bool IsZero(object? o)
     {
         // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
         // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
         return o switch
         {
-            null => throw new ArgumentOutOfRangeException(nameof(o), "null is not a valid value"),
+            null => false,
             byte x => x == 0,
             sbyte x => x == 0,
             short x => x == 0,
@@ -103,6 +110,25 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
             uint x => x == 0,
             long x => x == 0,
             ulong x => x == 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported"),
+        };
+    }
+
+    private static bool IsAllBitsSet(object? o)
+    {
+        // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
+        // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
+        return o switch
+        {
+            null => false,
+            sbyte x => x == -1,
+            byte x => x == 0xFF,
+            short x => x == -1,
+            ushort x => x == 0xFFFF,
+            int x => x == -1,
+            uint x => x == 0xFFFF_FFFF,
+            long x => x == -1,
+            ulong x => x == 0xFFFF_FFFF_FFFF_FFFF,
             _ => throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported"),
         };
     }
