@@ -94,4 +94,63 @@ enum Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task PowerOfTwo_NegativeValue_Sbyte()
+    {
+        var sourceCode = $$"""
+[System.Flags]
+enum Test : sbyte
+{
+    None     = 0,
+    Option01 = 1,
+    Option02 = 2,
+    Option03 = 4,
+    Option04 = 8,
+    Option05 = 16,
+    Option06 = 32,
+    Option07 = 64,
+    Option08 = -128,
+    All      = ~None,
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AllBitSet_WithoutConfiguration()
+    {
+        var sourceCode = $$"""
+[System.Flags]
+enum [||]Test
+{
+    None     = 0,
+    Option1  = 1,
+    All      = ~None,
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AllBitSet_WithConfiguration()
+    {
+        var sourceCode = """
+[System.Flags]
+enum Test
+{
+    None     = 0,
+    Option1  = 1,
+    All      = ~None,
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0062.allow_all_bits_set_value", "true")
+              .ValidateAsync();
+    }
 }
