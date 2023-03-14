@@ -131,6 +131,7 @@ internal static class RuleIdentifiers
     public const string LoggerParameterType_DuplicateRule = "MA0126";
     public const string UseStringEqualsInsteadOfIsPattern = "MA0127";
     public const string UseIsPatternInsteadOfSequenceEqual = "MA0128";
+    public const string TaskInUsing = "MA0129";
 
     public static string GetHelpUri(string identifier)
     {

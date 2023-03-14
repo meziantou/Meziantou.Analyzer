@@ -128,6 +128,7 @@
 |[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|<span title='Warning'>⚠️</span>|✔️|❌|
 
 # .editorconfig - default values
 
@@ -512,6 +513,9 @@ dotnet_diagnostic.MA0127.severity = none
 
 # MA0128: Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0128.severity = suggestion
+
+# MA0129: Await task in using statement
+dotnet_diagnostic.MA0129.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -897,4 +901,7 @@ dotnet_diagnostic.MA0127.severity = none
 
 # MA0128: Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0128.severity = none
+
+# MA0129: Await task in using statement
+dotnet_diagnostic.MA0129.severity = none
 ```
