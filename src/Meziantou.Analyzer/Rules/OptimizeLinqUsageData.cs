@@ -21,4 +21,8 @@ internal enum OptimizeLinqUsageData
     UseSkipAndNotAny,
     UseSkipAndAny,
     UseCastInsteadOfSelect,
+    UseTrueForAllMethod,
+    UseTrueForAllMethodWithConversion,
+    UseExistsMethod,
+    UseExistsMethodWithConversion,
 }

@@ -161,6 +161,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             UseFindInsteadOfFirstOrDefault(context, operation);
+            UseTrueForAllInsteadOfAll(context, operation);
+            UseExistsInsteadOfAny(context, operation);
             UseCountPropertyInsteadOfMethod(context, operation);
             UseIndexerInsteadOfElementAt(context, operation);
             CombineWhereWithNextMethod(context, operation);
@@ -285,6 +287,70 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 }
 
                 context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
+            }
+        }
+        
+        private void UseTrueForAllInsteadOfAll(OperationAnalysisContext context, IInvocationOperation operation)
+        {
+            if (operation.TargetMethod.Name != nameof(Enumerable.All))
+                return;
+
+            if (operation.Arguments.Length != 2)
+                return;
+
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType();
+            if (firstArgumentType == null)
+                return;
+
+            if (firstArgumentType.OriginalDefinition.IsEqualTo(ListOfTSymbol))
+            {
+                ImmutableDictionary<string, string?> properties;
+                var predicateArgument = operation.Arguments[1].Value;
+                if (predicateArgument is IDelegateCreationOperation)
+                {
+                    properties = CreateProperties(OptimizeLinqUsageData.UseTrueForAllMethod);
+                }
+                else
+                {
+                    if (!context.Options.GetConfigurationValue(operation, s_listMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                        return;
+
+                    properties = CreateProperties(OptimizeLinqUsageData.UseTrueForAllMethodWithConversion);
+                }
+
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "TrueForAll()", operation.TargetMethod.Name);
+            }
+        }
+        
+        private void UseExistsInsteadOfAny(OperationAnalysisContext context, IInvocationOperation operation)
+        {
+            if (operation.TargetMethod.Name != nameof(Enumerable.Any))
+                return;
+
+            if (operation.Arguments.Length != 2)
+                return;
+
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType();
+            if (firstArgumentType == null)
+                return;
+
+            if (firstArgumentType.OriginalDefinition.IsEqualTo(ListOfTSymbol))
+            {
+                ImmutableDictionary<string, string?> properties;
+                var predicateArgument = operation.Arguments[1].Value;
+                if (predicateArgument is IDelegateCreationOperation)
+                {
+                    properties = CreateProperties(OptimizeLinqUsageData.UseExistsMethod);
+                }
+                else
+                {
+                    if (!context.Options.GetConfigurationValue(operation, s_listMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                        return;
+
+                    properties = CreateProperties(OptimizeLinqUsageData.UseExistsMethodWithConversion);
+                }
+
+                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Exists()", operation.TargetMethod.Name);
             }
         }
 

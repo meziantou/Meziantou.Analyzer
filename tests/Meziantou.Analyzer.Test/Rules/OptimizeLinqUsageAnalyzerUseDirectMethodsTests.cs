@@ -105,6 +105,182 @@ class Test
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task TrueForAll()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        var list = new System.Collections.Generic.List<int>();
+        list.[|All|](x => x == 0);
+        enumerable.All(x => x == 0);
+    }
+}
+";
+        const string CodeFix = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        var list = new System.Collections.Generic.List<int>();
+        list.TrueForAll(x => x == 0);
+        enumerable.All(x => x == 0);
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use 'TrueForAll()' instead of 'All()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TrueForAll_Cast()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.All(predicate);
+    }
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TrueForAll_Cast_ConfigureEnabled()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.[|All|](predicate);
+    }
+}
+";
+        const string CodeFix = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.TrueForAll(new System.Predicate<int>(predicate));
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0020.report_when_conversion_needed", "true")
+              .ShouldReportDiagnosticWithMessage("Use 'TrueForAll()' instead of 'All()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Exists()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        var list = new System.Collections.Generic.List<int>();
+        list.[|Any|](x => x == 0);
+        enumerable.Any(x => x == 0);
+    }
+}
+";
+        const string CodeFix = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var enumerable = System.Linq.Enumerable.Empty<int>();
+        var list = new System.Collections.Generic.List<int>();
+        list.Exists(x => x == 0);
+        enumerable.Any(x => x == 0);
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use 'Exists()' instead of 'Any()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Exists_Cast()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.Any(predicate);
+    }
+}
+";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Exists_Cast_ConfigureEnabled()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.[|Any|](predicate);
+    }
+}
+";
+        const string CodeFix = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new System.Collections.Generic.List<int>();
+        System.Func<int, bool> predicate = _ => true;
+        list.Exists(new System.Predicate<int>(predicate));
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0020.report_when_conversion_needed", "true")
+              .ShouldReportDiagnosticWithMessage("Use 'Exists()' instead of 'Any()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Count_IEnumerableAsync()

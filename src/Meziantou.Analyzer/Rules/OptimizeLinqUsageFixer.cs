@@ -69,11 +69,27 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.UseFindMethod:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseFindMethod(context.Document, nodeToFix, convertPredicate: false, ct), equivalenceKey: title), context.Diagnostics);
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "Find", convertPredicate: false, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseFindMethodWithConversion:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseFindMethod(context.Document, nodeToFix, convertPredicate: true, ct), equivalenceKey: title), context.Diagnostics);
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "Find", convertPredicate: true, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+                
+            case OptimizeLinqUsageData.UseTrueForAllMethod:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "TrueForAll", convertPredicate: false, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+
+            case OptimizeLinqUsageData.UseTrueForAllMethodWithConversion:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "TrueForAll", convertPredicate: true, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+                
+            case OptimizeLinqUsageData.UseExistsMethod:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "Exists", convertPredicate: false, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+
+            case OptimizeLinqUsageData.UseExistsMethodWithConversion:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "Exists", convertPredicate: true, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseIndexer:
@@ -389,7 +405,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseFindMethod(Document document, SyntaxNode nodeToFix, bool convertPredicate, CancellationToken cancellationToken)
+    private async static Task<Document> UseListMethod(Document document, SyntaxNode nodeToFix, string methodName, bool convertPredicate, CancellationToken cancellationToken)
     {
         var expression = GetMemberAccessExpression(nodeToFix);
         if (expression == null)
@@ -397,12 +413,16 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var newExpression = expression.WithName(IdentifierName("Find"));
+        var newExpression = expression.WithName(IdentifierName(methodName));
         editor.ReplaceNode(expression, newExpression);
         if (convertPredicate)
         {
             var compilation = editor.SemanticModel.Compilation;
-            var type = editor.SemanticModel.GetTypeInfo(nodeToFix, cancellationToken).Type;
+            var symbol = editor.SemanticModel.GetSymbolInfo(nodeToFix, cancellationToken: cancellationToken).Symbol as IMethodSymbol;
+            if(symbol == null || symbol.TypeArguments.Length != 1)
+                return document;
+
+            var type = symbol.TypeArguments[0];
             if (type != null)
             {
                 var predicateType = compilation.GetBestTypeByMetadataName("System.Predicate`1")?.Construct(type);
