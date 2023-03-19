@@ -287,4 +287,44 @@ class TestAttribute
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task NoCtorWithParameterName()
+    {
+        const string SourceCode = """"
+            using System;
+
+            void Sample1(string str)
+            {
+                throw new CustomArgumentException("Message");
+            }
+
+            void Sample2(string str)
+            {
+                throw new CustomArgumentException("Message", new InvalidOperationException());
+            }
+
+            public class CustomArgumentException : ArgumentException
+            {
+                public CustomArgumentException(string message)
+                    : base(message)
+                {
+                }
+
+                public CustomArgumentException(string message, Exception cause)
+                    : base(message, cause)
+                {
+                }
+
+                public CustomArgumentException(string message, string description, Exception cause)
+                    : base(message, cause)
+                {
+                }
+             }
+            """";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .ValidateAsync();
+    }
 }
