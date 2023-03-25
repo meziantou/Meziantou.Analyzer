@@ -296,7 +296,7 @@ public sealed partial class ProjectBuilder
             if (AdditionalFiles != null)
             {
                 additionalFiles = additionalFiles.AddRange(AdditionalFiles.Select(kvp => new InMemoryAdditionalText(kvp.Key, kvp.Value)));
-             }
+            }
 
             var analyzerOptionsProvider = new TestAnalyzerConfigOptionsProvider(AnalyzerConfiguration);
 
@@ -306,6 +306,11 @@ public sealed partial class ProjectBuilder
             var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(compilationWithAnalyzers.CancellationToken).ConfigureAwait(false);
             foreach (var diag in diags)
             {
+#if ROSLYN_3_8
+                if (diag.IsSuppressed)
+                    continue;
+#endif
+
                 if (diag.Location == Location.None || diag.Location.IsInMetadata || !diag.Location.IsInSource)
                 {
                     diagnostics.Add(diag);
