@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
@@ -33,7 +34,7 @@ public sealed partial class ProjectBuilder
     public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetStandard2_0;
     public IList<MetadataReference> References { get; } = new List<MetadataReference>();
     public IList<string> ApiReferences { get; } = new List<string>();
-    public DiagnosticAnalyzer DiagnosticAnalyzer { get; private set; }
+    public IList<DiagnosticAnalyzer> DiagnosticAnalyzer { get; } = new List<DiagnosticAnalyzer>();
     public CodeFixProvider CodeFixProvider { get; private set; }
     public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = new List<DiagnosticResult>();
     public string ExpectedFixedCode { get; private set; }
@@ -42,9 +43,9 @@ public sealed partial class ProjectBuilder
     public string DefaultAnalyzerId { get; set; }
     public string DefaultAnalyzerMessage { get; set; }
 
-    private static Task<string[]> GetNuGetReferences(string packageName, string version, string path)
+    private static Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
     {
-        var task = s_cache.GetOrAdd(packageName + '@' + version + ':' + path, key =>
+        var task = s_cache.GetOrAdd(packageName + '@' + version + ':' + string.Join(",", paths), key =>
         {
             return new Lazy<Task<string[]>>(Download);
         });
@@ -61,7 +62,7 @@ public sealed partial class ProjectBuilder
                 using var stream = await httpClient.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
-                foreach (var entry in zip.Entries.Where(file => file.FullName.StartsWith(path, StringComparison.Ordinal)))
+                foreach (var entry in zip.Entries.Where(file => paths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                 {
                     entry.ExtractToFile(Path.Combine(tempFolder, entry.Name), overwrite: true);
                 }
@@ -100,6 +101,27 @@ public sealed partial class ProjectBuilder
             References.Add(MetadataReference.CreateFromFile(reference));
         }
 
+        return this;
+    }
+
+    public ProjectBuilder WithAnalyzerFromNuGet(string packageName, string version, string[] paths, string[] ruleIds)
+    {
+        var references = GetNuGetReferences(packageName, version, paths).Result;
+        foreach (var reference in references)
+        {
+            var assembly = Assembly.LoadFrom(reference);
+            foreach (var type in assembly.GetExportedTypes())
+            {
+                if (type.IsAbstract || !typeof(DiagnosticAnalyzer).IsAssignableFrom(type))
+                    continue;
+
+                var instance = (DiagnosticAnalyzer)Activator.CreateInstance(type);
+                if (instance.SupportedDiagnostics.Any(d => ruleIds.Contains(d.Id)))
+                {
+                    DiagnosticAnalyzer.Add(instance);
+                }
+            }
+        }
         return this;
     }
 
@@ -235,7 +257,7 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder WithAnalyzer(DiagnosticAnalyzer diagnosticAnalyzer, string id = null, string message = null)
     {
-        DiagnosticAnalyzer = diagnosticAnalyzer;
+        DiagnosticAnalyzer.Add(diagnosticAnalyzer);
         DefaultAnalyzerId = id;
         DefaultAnalyzerMessage = message;
         return this;

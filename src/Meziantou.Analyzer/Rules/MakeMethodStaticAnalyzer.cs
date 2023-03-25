@@ -16,8 +16,8 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_methodRule = new(
         RuleIdentifiers.MakeMethodStatic,
-        title: "Make method static",
-        messageFormat: "Make method static",
+        title: "Make method static (deprecated, use CA1822 instead)",
+        messageFormat: "Make method static (deprecated, use CA1822 instead)",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
@@ -26,8 +26,8 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor s_propertyRule = new(
      RuleIdentifiers.MakePropertyStatic,
-     title: "Make property static",
-     messageFormat: "Make property static",
+     title: "Make property static (deprecated, use CA1822 instead)",
+     messageFormat: "Make property static (deprecated, use CA1822 instead)",
      RuleCategories.Design,
      DiagnosticSeverity.Info,
      isEnabledByDefault: true,
