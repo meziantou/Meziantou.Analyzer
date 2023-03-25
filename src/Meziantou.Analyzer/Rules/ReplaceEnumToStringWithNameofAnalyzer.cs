@@ -47,6 +47,31 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         if (expression.Member.ContainingType.EnumUnderlyingType == null)
             return;
 
+        if (operation.Arguments.Length > 0)
+        {
+            var format = operation.Arguments[0].Value;
+            if (format is { ConstantValue: { HasValue: true, Value: var formatValue } })
+            {
+                if (!IsNameFormat(formatValue))
+                    return;
+            }
+            else
+            {
+                return;
+            }
+        }
+
         context.ReportDiagnostic(s_rule, operation);
+
+        static bool IsNameFormat(object? format)
+        {
+            if (format is null)
+                return true;
+
+            if (format is string str && str is "g" or "G" or "f" or "F" or "")
+                return true;
+
+            return false;
+        }
     }
 }
