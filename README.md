@@ -147,3 +147,12 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|⚠️|✔️|❌|
 
 <!-- rules -->
+
+# Suppressions
+
+<!-- suppressions -->
+
+|Id|Suppressed rule|Justification|
+|--|--------|-----------|
+|[MA_CA1822](CA1822)|Suppress CA1822 on methods decorated with BenchmarkDotNet attributes.|
+<!-- suppressions -->

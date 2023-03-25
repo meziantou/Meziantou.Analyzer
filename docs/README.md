@@ -130,6 +130,11 @@
 |[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|<span title='Warning'>⚠️</span>|✔️|❌|
 
+
+|Id|Suppressed rule|Justification|
+|--|--------|-----------|
+|[MA_CA1822](CA1822)|Suppress CA1822 on methods decorated with BenchmarkDotNet attributes.|
+
 # .editorconfig - default values
 
 ```editorconfig
@@ -517,6 +522,7 @@ dotnet_diagnostic.MA0128.severity = suggestion
 # MA0129: Await task in using statement
 dotnet_diagnostic.MA0129.severity = warning
 ```
+
 
 # .editorconfig - all rules disabled
 

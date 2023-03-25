@@ -12,6 +12,7 @@ public sealed class CA1822BenchmarkDotNetSuppressor : DiagnosticSuppressor
         suppressedDiagnosticId: "CA1822",
         justification: "Suppress CA1822 on methods decorated with BenchmarkDotNet attributes."
     );
+
     public override ImmutableArray<SuppressionDescriptor> SupportedSuppressions => ImmutableArray.Create(s_rule);
 
     public override void ReportSuppressions(SuppressionAnalysisContext context)
