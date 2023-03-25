@@ -31,12 +31,21 @@ internal static class Program
             .Select(type => (CodeFixProvider)Activator.CreateInstance(type)!)
             .ToList();
 
+        var diagnosticSuppressors = assembly.GetExportedTypes()
+          .Where(type => !type.IsAbstract && typeof(DiagnosticSuppressor).IsAssignableFrom(type))
+          .Select(type => (DiagnosticSuppressor)Activator.CreateInstance(type)!)
+          .ToList();
+
         var sb = new StringBuilder();
         sb.Append("# ").Append(assembly.GetName().Name).Append("'s rules\n");
         var rulesTable = GenerateRulesTable(diagnosticAnalyzers, codeFixProviders);
         sb.Append(rulesTable);
 
-        sb.Append("\n# .editorconfig - default values\n\n");
+        var suppressorsTable = GenerateSuppressorsTable(diagnosticSuppressors);
+        sb.Append('\n');
+        sb.Append(suppressorsTable);
+
+        sb.Append("\n\n# .editorconfig - default values\n\n");
         GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: null);
 
         sb.Append("\n# .editorconfig - all rules disabled\n\n");
@@ -51,6 +60,7 @@ internal static class Program
             var readmePath = Path.GetFullPath(Path.Combine(outputFolder, "README.md"));
             var readmeContent = File.ReadAllText(readmePath);
             var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + GenerateRulesTable(diagnosticAnalyzers, codeFixProviders, false) + "\n", RegexOptions.Singleline);
+            newContent = Regex.Replace(newContent, "(?<=<!-- suppressions -->\\r?\\n).*(?=<!-- suppressions -->)", "\n" + GenerateSuppressorsTable(diagnosticSuppressors) + "\n", RegexOptions.Singleline);
             File.WriteAllText(readmePath, newContent);
         }
 
@@ -123,6 +133,26 @@ internal static class Program
               .Append(GetBoolean(hasCodeFix))
               .Append('|')
               .Append('\n');
+        }
+
+        return sb.ToString();
+    }
+
+    private static string GenerateSuppressorsTable(List<DiagnosticSuppressor> diagnosticSuppressors)
+    {
+        var sb = new StringBuilder();
+        sb.Append("|Id|Suppressed rule|Justification|\n");
+        sb.Append("|--|---------------|-------------|\n");
+
+        foreach (var suppression in diagnosticSuppressors.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedSuppressions).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+        {
+            sb.Append("|[")
+              .Append(suppression.Id)
+              .Append("](")
+              .Append(suppression.SuppressedDiagnosticId)
+              .Append(")|")
+              .Append(EscapeMarkdown(suppression.Justification.ToString(CultureInfo.InvariantCulture)))
+              .Append('|');
         }
 
         return sb.ToString();

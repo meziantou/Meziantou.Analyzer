@@ -55,14 +55,14 @@ public sealed partial class ProjectBuilder
     }
 
     [DebuggerStepThrough]
-    private async Task VerifyDiagnostics(DiagnosticAnalyzer analyzer, IList<DiagnosticResult> expected)
+    private async Task VerifyDiagnostics(IList<DiagnosticAnalyzer> analyzers, IList<DiagnosticResult> expected)
     {
-        var diagnostics = await GetSortedDiagnostics(analyzer).ConfigureAwait(false);
-        VerifyDiagnosticResults(diagnostics, analyzer, expected);
+        var diagnostics = await GetSortedDiagnostics(analyzers).ConfigureAwait(false);
+        VerifyDiagnosticResults(diagnostics, analyzers, expected);
     }
 
     [DebuggerStepThrough]
-    private void VerifyDiagnosticResults(IEnumerable<Diagnostic> actualResults, DiagnosticAnalyzer analyzer, IList<DiagnosticResult> expectedResults)
+    private void VerifyDiagnosticResults(IEnumerable<Diagnostic> actualResults, IList<DiagnosticAnalyzer> analyzers, IList<DiagnosticResult> expectedResults)
     {
         var expectedCount = expectedResults.Count;
         if (DefaultAnalyzerId != null)
@@ -74,7 +74,7 @@ public sealed partial class ProjectBuilder
 
         if (expectedCount != actualCount)
         {
-            var diagnosticsOutput = actualResults.Any() ? FormatDiagnostics(analyzer, actualResults.ToArray()) : "    NONE.";
+            var diagnosticsOutput = actualResults.Any() ? FormatDiagnostics(analyzers, actualResults.ToArray()) : "    NONE.";
 
             Assert.True(false, $"Mismatch between number of diagnostics returned, expected \"{expectedCount}\" actual \"{actualCount}\"\r\n\r\nDiagnostics:\r\n{diagnosticsOutput}\r\n");
         }
@@ -90,12 +90,12 @@ public sealed partial class ProjectBuilder
                 {
                     Assert.True(false,
                         string.Format(CultureInfo.InvariantCulture, "Expected:\nA project diagnostic with No location\nActual:\n{0}",
-                        FormatDiagnostics(analyzer, actual)));
+                        FormatDiagnostics(analyzers, actual)));
                 }
             }
             else
             {
-                VerifyDiagnosticLocation(analyzer, actual, actual.Location, expected.Locations[0]);
+                VerifyDiagnosticLocation(analyzers, actual, actual.Location, expected.Locations[0]);
                 var additionalLocations = actual.AdditionalLocations.ToArray();
 
                 if (additionalLocations.Length != expected.Locations.Count - 1)
@@ -104,12 +104,12 @@ public sealed partial class ProjectBuilder
                         string.Format(CultureInfo.InvariantCulture,
                             "Expected {0} additional locations but got {1} for Diagnostic:\r\n    {2}\r\n",
                             expected.Locations.Count - 1, additionalLocations.Length,
-                            FormatDiagnostics(analyzer, actual)));
+                            FormatDiagnostics(analyzers, actual)));
                 }
 
                 for (var j = 0; j < additionalLocations.Length; ++j)
                 {
-                    VerifyDiagnosticLocation(analyzer, actual, additionalLocations[j], expected.Locations[j + 1]);
+                    VerifyDiagnosticLocation(analyzers, actual, additionalLocations[j], expected.Locations[j + 1]);
                 }
             }
 
@@ -117,29 +117,29 @@ public sealed partial class ProjectBuilder
             {
                 Assert.True(false,
                     string.Format(CultureInfo.InvariantCulture, "Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.Id, actual.Id, FormatDiagnostics(analyzer, actual)));
+                        expected.Id, actual.Id, FormatDiagnostics(analyzers, actual)));
             }
 
             if (expected.Severity != null && actual.Severity != expected.Severity)
             {
                 Assert.True(false,
                     string.Format(CultureInfo.InvariantCulture, "Expected diagnostic severity to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.Severity, actual.Severity, FormatDiagnostics(analyzer, actual)));
+                        expected.Severity, actual.Severity, FormatDiagnostics(analyzers, actual)));
             }
 
             if (expected.Message != null && !string.Equals(actual.GetMessage(CultureInfo.InvariantCulture), expected.Message, StringComparison.Ordinal))
             {
                 Assert.True(false,
                     string.Format(CultureInfo.InvariantCulture, "Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzer, actual)));
+                        expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzers, actual)));
             }
         }
     }
 
-    private async Task<Diagnostic[]> GetSortedDiagnostics(DiagnosticAnalyzer analyzer)
+    private async Task<Diagnostic[]> GetSortedDiagnostics(IList<DiagnosticAnalyzer> analyzers)
     {
         var documents = await GetDocuments().ConfigureAwait(false);
-        return await GetSortedDiagnosticsFromDocuments(analyzer, documents, compileSolution: true).ConfigureAwait(false);
+        return await GetSortedDiagnosticsFromDocuments(analyzers, documents, compileSolution: true).ConfigureAwait(false);
     }
 
     private async Task<Document[]> GetDocuments()
@@ -258,7 +258,7 @@ public sealed partial class ProjectBuilder
     }
 
     [DebuggerStepThrough]
-    private async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(DiagnosticAnalyzer analyzer, Document[] documents, bool compileSolution)
+    private async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(IList<DiagnosticAnalyzer> analyzers, Document[] documents, bool compileSolution)
     {
         var projects = new HashSet<Project>();
         foreach (var document in documents)
@@ -272,7 +272,7 @@ public sealed partial class ProjectBuilder
             var options = new CSharpCompilationOptions(OutputKind);
 
             // Enable diagnostic
-            options = options.WithSpecificDiagnosticOptions(analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag))));
+            options = options.WithSpecificDiagnosticOptions(analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag)))));
 
             var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
             if (compileSolution)
@@ -296,16 +296,21 @@ public sealed partial class ProjectBuilder
             if (AdditionalFiles != null)
             {
                 additionalFiles = additionalFiles.AddRange(AdditionalFiles.Select(kvp => new InMemoryAdditionalText(kvp.Key, kvp.Value)));
-             }
+            }
 
             var analyzerOptionsProvider = new TestAnalyzerConfigOptionsProvider(AnalyzerConfiguration);
 
             var compilationWithAnalyzers = compilation.WithAnalyzers(
-                ImmutableArray.Create(analyzer),
+                ImmutableArray.CreateRange(analyzers),
                 new AnalyzerOptions(additionalFiles, analyzerOptionsProvider));
             var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(compilationWithAnalyzers.CancellationToken).ConfigureAwait(false);
             foreach (var diag in diags)
             {
+#if ROSLYN_3_8
+                if (diag.IsSuppressed)
+                    continue;
+#endif
+
                 if (diag.Location == Location.None || diag.Location.IsInMetadata || !diag.Location.IsInSource)
                 {
                     diagnostics.Add(diag);
@@ -330,15 +335,15 @@ public sealed partial class ProjectBuilder
         return results;
     }
 
-    private static string FormatDiagnostics(DiagnosticAnalyzer analyzer, params Diagnostic[] diagnostics)
+    private static string FormatDiagnostics(IList<DiagnosticAnalyzer> analyzers, params Diagnostic[] diagnostics)
     {
         var builder = new StringBuilder();
         for (var i = 0; i < diagnostics.Length; ++i)
         {
             builder.Append("// ").Append(diagnostics[i]).AppendLine();
 
-            var analyzerType = analyzer.GetType();
-            var rules = analyzer.SupportedDiagnostics;
+            var analyzerType = analyzers.GetType();
+            var rules = analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics);
 
             foreach (var rule in rules)
             {
@@ -394,13 +399,13 @@ public sealed partial class ProjectBuilder
     }
 
     [DebuggerStepThrough]
-    private static void VerifyDiagnosticLocation(DiagnosticAnalyzer analyzer, Diagnostic diagnostic, Location actual, in DiagnosticResultLocation expected)
+    private static void VerifyDiagnosticLocation(IList<DiagnosticAnalyzer> analyzers, Diagnostic diagnostic, Location actual, in DiagnosticResultLocation expected)
     {
         var actualSpan = actual.GetLineSpan();
 
         Assert.True(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.StartsWith("Test", StringComparison.Ordinal) && expected.Path.EndsWith(".cs", StringComparison.Ordinal)),
             string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to be in file \"{0}\" was actually in file \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                expected.Path, actualSpan.Path, FormatDiagnostics(analyzer, diagnostic)));
+                expected.Path, actualSpan.Path, FormatDiagnostics(analyzers, diagnostic)));
 
         var actualLinePosition = actualSpan.StartLinePosition;
 
@@ -411,7 +416,7 @@ public sealed partial class ProjectBuilder
             {
                 Assert.True(false,
                     string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to be on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzer, diagnostic)));
+                        expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzers, diagnostic)));
             }
         }
 
@@ -422,7 +427,7 @@ public sealed partial class ProjectBuilder
             {
                 Assert.True(false,
                     string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to start at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzer, diagnostic)));
+                        expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzers, diagnostic)));
             }
         }
 
@@ -437,7 +442,7 @@ public sealed partial class ProjectBuilder
                 {
                     Assert.True(false,
                         string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to end on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzer, diagnostic)));
+                            expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzers, diagnostic)));
                 }
             }
 
@@ -448,7 +453,7 @@ public sealed partial class ProjectBuilder
                 {
                     Assert.True(false,
                         string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to end at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzer, diagnostic)));
+                            expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzers, diagnostic)));
                 }
             }
         }
@@ -460,11 +465,11 @@ public sealed partial class ProjectBuilder
         return semanticModel.GetDiagnostics();
     }
 
-    private async Task VerifyFix(DiagnosticAnalyzer analyzer, CodeFixProvider codeFixProvider, string newSource, int? codeFixIndex)
+    private async Task VerifyFix(IList<DiagnosticAnalyzer> analyzers, CodeFixProvider codeFixProvider, string newSource, int? codeFixIndex)
     {
         var project = await CreateProject().ConfigureAwait(false);
         var document = project.Documents.First();
-        var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
+        var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, new[] { document }, compileSolution: false).ConfigureAwait(false);
         var compilerDiagnostics = await GetCompilerDiagnostics(document).ConfigureAwait(false);
 
         // Assert fixer is value
@@ -512,7 +517,7 @@ public sealed partial class ProjectBuilder
                 }
 
                 document = await ApplyFix(document, actions[0]).ConfigureAwait(false);
-                analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzer, new[] { document }, compileSolution: false).ConfigureAwait(false);
+                analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, new[] { document }, compileSolution: false).ConfigureAwait(false);
             }
         }
 

@@ -37,10 +37,10 @@
 |[MA0035](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0035.md)|Usage|Do not use dangerous threading methods|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0036](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0036.md)|Design|Make class static|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0037](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0037.md)|Usage|Remove empty statement|<span title='Error'>❌</span>|✔️|✔️|
-|[MA0038](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0038.md)|Design|Make method static|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0038](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0038.md)|Design|Make method static (deprecated, use CA1822 instead)|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md)|Security|Do not write your own certificate validation method|<span title='Error'>❌</span>|✔️|❌|
 |[MA0040](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0040.md)|Usage|Forward the CancellationToken parameter to methods that take one|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0041](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0041.md)|Design|Make property static|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0041](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0041.md)|Design|Make property static (deprecated, use CA1822 instead)|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md)|Design|Do not use blocking calls in an async method|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0043](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0043.md)|Usage|Use nameof operator in ArgumentException|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0044](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0044.md)|Performance|Remove useless ToString call|<span title='Info'>ℹ️</span>|✔️|✔️|
@@ -129,6 +129,11 @@
 |[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|<span title='Warning'>⚠️</span>|✔️|❌|
+
+
+|Id|Suppressed rule|Justification|
+|--|--------|-----------|
+|[MA_CA1822](CA1822)|Suppress CA1822 on methods decorated with BenchmarkDotNet attributes.|
 
 # .editorconfig - default values
 
@@ -241,7 +246,7 @@ dotnet_diagnostic.MA0036.severity = suggestion
 # MA0037: Remove empty statement
 dotnet_diagnostic.MA0037.severity = error
 
-# MA0038: Make method static
+# MA0038: Make method static (deprecated, use CA1822 instead)
 dotnet_diagnostic.MA0038.severity = suggestion
 
 # MA0039: Do not write your own certificate validation method
@@ -250,7 +255,7 @@ dotnet_diagnostic.MA0039.severity = error
 # MA0040: Forward the CancellationToken parameter to methods that take one
 dotnet_diagnostic.MA0040.severity = suggestion
 
-# MA0041: Make property static
+# MA0041: Make property static (deprecated, use CA1822 instead)
 dotnet_diagnostic.MA0041.severity = suggestion
 
 # MA0042: Do not use blocking calls in an async method
@@ -518,6 +523,7 @@ dotnet_diagnostic.MA0128.severity = suggestion
 dotnet_diagnostic.MA0129.severity = warning
 ```
 
+
 # .editorconfig - all rules disabled
 
 ```editorconfig
@@ -629,7 +635,7 @@ dotnet_diagnostic.MA0036.severity = none
 # MA0037: Remove empty statement
 dotnet_diagnostic.MA0037.severity = none
 
-# MA0038: Make method static
+# MA0038: Make method static (deprecated, use CA1822 instead)
 dotnet_diagnostic.MA0038.severity = none
 
 # MA0039: Do not write your own certificate validation method
@@ -638,7 +644,7 @@ dotnet_diagnostic.MA0039.severity = none
 # MA0040: Forward the CancellationToken parameter to methods that take one
 dotnet_diagnostic.MA0040.severity = none
 
-# MA0041: Make property static
+# MA0041: Make property static (deprecated, use CA1822 instead)
 dotnet_diagnostic.MA0041.severity = none
 
 # MA0042: Do not use blocking calls in an async method

@@ -1,8 +1,6 @@
 # Comparison with other analyzers
 
-## Microsoft.CodeAnalysis.NetAnalyzers
-
-### Equivalent rules
+## Equivalent rules
 
 |                                                                                                                           |                                                                                            |
 |---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
@@ -22,9 +20,6 @@
 | [CA1710](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1710?WT.mc_id=DT-MVP-5003978) | [MA0058](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0058.md) |
 | [CA1710](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1710?WT.mc_id=DT-MVP-5003978) | [MA0059](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0059.md) |
 | [CA1724](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1724?WT.mc_id=DT-MVP-5003978) | [MA0049](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0049.md) |
-| [CA1822](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1822?WT.mc_id=DT-MVP-5003978) | [MA0036](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0036.md) |
-| [CA1822](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1822?WT.mc_id=DT-MVP-5003978) | [MA0038](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0038.md) |
-| [CA1822](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1822?WT.mc_id=DT-MVP-5003978) | [MA0041](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0041.md) |
 | [CA1825](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1825?WT.mc_id=DT-MVP-5003978) | [MA0005](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0005.md) |
 | [CA1826](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1829?WT.mc_id=DT-MVP-5003978) | [MA0020](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0020.md) |
 | [CA1830](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1830?WT.mc_id=DT-MVP-5003978) | [MA0028](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0028.md) |
@@ -40,7 +35,7 @@
 | [CA2242](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2242?WT.mc_id=DT-MVP-5003978) | [MA0082](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0082.md) |
 | [CA5359](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5359?WT.mc_id=DT-MVP-5003978) | [MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md) |
 
-### Similar rules
+## Similar rules
 
 |                                                                                                                           |                                                                                            |                                                                                   |
 |---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|

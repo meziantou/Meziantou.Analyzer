@@ -27,4 +27,10 @@
     <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <PackageReference Include="Meziantou.Framework.FullPath">
+      <Version>1.0.11</Version>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>
