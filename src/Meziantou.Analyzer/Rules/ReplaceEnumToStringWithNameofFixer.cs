@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -39,13 +41,21 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-        var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+        var operation = editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+        if (operation is IInvocationOperation invocation && invocation.Instance != null)
+        {
+            var newExpression = generator.NameOfExpression(invocation.Instance.Syntax);
+            editor.ReplaceNode(nodeToFix, newExpression);
+        }
+        else if (operation is IInterpolationOperation interpolation)
+        {
+            var newExpression = SyntaxFactory.Interpolation((ExpressionSyntax)generator.NameOfExpression(interpolation.Expression.Syntax));
+            editor.ReplaceNode(nodeToFix, newExpression);
+        }
+
         if (operation == null)
             return document;
 
-        var newExpression = generator.NameOfExpression(operation.GetChildOperations().First().Syntax);
-
-        editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
     }
 }

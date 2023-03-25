@@ -40,7 +40,7 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext
     {
-        private INamedTypeSymbol _taskSymbol;
+        private readonly INamedTypeSymbol _taskSymbol;
 
         public AnalyzerContext(INamedTypeSymbol taskSymbol)
         {

@@ -167,4 +167,54 @@ enum MyEnum
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InterpolatedString()
+    {
+        const string SourceCode = """"
+class Test
+{
+    void A()
+    {
+        _ = $"[|{MyEnum.A}|]";
+        _ = $"[|{MyEnum.A:g}|]";
+        _ = $"[|{MyEnum.A:G}|]";
+        _ = $"[|{MyEnum.A:f}|]";
+        _ = $"{MyEnum.A:D}";
+        _ = $"{MyEnum.A:x}";
+    }
+}
+
+enum MyEnum
+{
+    A,
+}
+"""";
+
+        const string CodeFix = """"
+class Test
+{
+    void A()
+    {
+        _ = $"{nameof(MyEnum.A)}";
+        _ = $"{nameof(MyEnum.A)}";
+        _ = $"{nameof(MyEnum.A)}";
+        _ = $"{nameof(MyEnum.A)}";
+        _ = $"{MyEnum.A:D}";
+        _ = $"{MyEnum.A:x}";
+    }
+}
+
+enum MyEnum
+{
+    A,
+}
+"""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldBatchFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
 }
