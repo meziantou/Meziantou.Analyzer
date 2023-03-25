@@ -29,10 +29,11 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(Analyze, OperationKind.Invocation);
+        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterOperationAction(AnalyzeInterpolation, OperationKind.Interpolation);
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
         var operation = (IInvocationOperation)context.Operation;
         if (operation.TargetMethod.Name != nameof(object.ToString))
@@ -41,7 +42,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         if (!operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetSpecialType(SpecialType.System_Enum)))
             return;
 
-        if (operation.GetChildOperations().First() is not IMemberReferenceOperation expression)
+        if (operation.Instance is not IMemberReferenceOperation expression)
             return;
 
         if (expression.Member.ContainingType.EnumUnderlyingType == null)
@@ -62,16 +63,35 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(s_rule, operation);
+    }
 
-        static bool IsNameFormat(object? format)
+    private static void AnalyzeInterpolation(OperationAnalysisContext context)
+    {
+        var operation = (IInterpolationOperation)context.Operation;
+        if (operation.Expression is not IMemberReferenceOperation expression)
+            return;
+
+        if (expression.Member.ContainingType.EnumUnderlyingType == null)
+            return;
+
+        if (operation.FormatString is ILiteralOperation { ConstantValue: { HasValue: true, Value: var format } })
         {
-            if (format is null)
-                return true;
-
-            if (format is string str && str is "g" or "G" or "f" or "F" or "")
-                return true;
-
-            return false;
+            if (!IsNameFormat(format))
+                return;
         }
+
+        context.ReportDiagnostic(s_rule, operation);
+    }
+
+
+    private static bool IsNameFormat(object? format)
+    {
+        if (format is null)
+            return true;
+
+        if (format is string str && str is "g" or "G" or "f" or "F" or "")
+            return true;
+
+        return false;
     }
 }
