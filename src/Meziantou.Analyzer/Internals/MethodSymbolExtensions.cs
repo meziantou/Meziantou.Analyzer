@@ -6,6 +6,10 @@ namespace Meziantou.Analyzer;
 
 internal static class MethodSymbolExtensions
 {
+    private static readonly string[] s_msTestNamespaceParts = new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" };
+    private static readonly string[] s_nunitNamespaceParts = new[] { "NUnit", "Framework" };
+    private static readonly string[] s_xunitNamespaceParts = new[] { "Xunit" };
+
     public static bool IsInterfaceImplementation(this IMethodSymbol method)
     {
         if (method.ExplicitInterfaceImplementations.Length > 0)
@@ -62,9 +66,9 @@ internal static class MethodSymbolExtensions
             while (type != null)
             {
                 var ns = type.ContainingNamespace;
-                if (ns.IsNamespace(new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" }) ||
-                    ns.IsNamespace(new[] { "NUnit", "Framework" }) ||
-                    ns.IsNamespace(new[] { "Xunit" }))
+                if (ns.IsNamespace(s_msTestNamespaceParts) ||
+                    ns.IsNamespace(s_nunitNamespaceParts) ||
+                    ns.IsNamespace(s_xunitNamespaceParts))
                 {
                     return true;
                 }
