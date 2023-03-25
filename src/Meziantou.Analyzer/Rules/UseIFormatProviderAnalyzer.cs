@@ -46,6 +46,8 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             GuidSymbol = compilation.GetBestTypeByMetadataName("System.Guid");
             EnumSymbol = compilation.GetBestTypeByMetadataName("System.Enum");
             DateTimeOffsetSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
+            DateOnlySymbol = compilation.GetBestTypeByMetadataName("System.DateOnly");
+            TimeOnlySymbol = compilation.GetBestTypeByMetadataName("System.TimeOnly");
         }
 
         public INamedTypeSymbol? FormatProviderSymbol { get; }
@@ -57,6 +59,8 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? GuidSymbol { get; }
         public INamedTypeSymbol? EnumSymbol { get; }
         public INamedTypeSymbol? DateTimeOffsetSymbol { get; }
+        public INamedTypeSymbol? DateOnlySymbol { get; }
+        public INamedTypeSymbol? TimeOnlySymbol { get; }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -85,7 +89,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset"));
+                var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualToAny(DateTimeOffsetSymbol, DateOnlySymbol, TimeOnlySymbol);
                 if (isDateTime)
                 {
                     if (operation.Arguments.Length >= 1 && IsInvariantDateTimeFormat(operation.Arguments[0].Value))
