@@ -138,6 +138,7 @@ internal static class Program
         return sb.ToString();
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "The url must be lowercase")]
     private static string GenerateSuppressorsTable(List<DiagnosticSuppressor> diagnosticSuppressors)
     {
         var sb = new StringBuilder();
@@ -146,13 +147,27 @@ internal static class Program
 
         foreach (var suppression in diagnosticSuppressors.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedSuppressions).OrderBy(diag => diag.Id, StringComparer.Ordinal))
         {
-            sb.Append("|[")
+            sb.Append("|`")
               .Append(suppression.Id)
-              .Append("](")
-              .Append(suppression.SuppressedDiagnosticId)
-              .Append(")|")
+              .Append("`|");
+
+            if (suppression.SuppressedDiagnosticId.StartsWith("CA", StringComparison.OrdinalIgnoreCase))
+            {
+                sb.Append('[')
+                  .Append(suppression.SuppressedDiagnosticId)
+                  .Append("](")
+                  .Append($"https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/").Append(suppression.SuppressedDiagnosticId.ToLowerInvariant()).Append("?WT.mc_id=DT-MVP-5003978")
+                  .Append(')');
+            }
+            else
+            {
+                sb.Append('`').Append(suppression.SuppressedDiagnosticId).Append('`');
+            }
+
+            sb.Append('|')
               .Append(EscapeMarkdown(suppression.Justification.ToString(CultureInfo.InvariantCulture)))
-              .Append('|');
+              .Append('|')
+              .Append('\n');
         }
 
         return sb.ToString();

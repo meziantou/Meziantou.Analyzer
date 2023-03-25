@@ -122,7 +122,13 @@ public sealed partial class ProjectBuilder
                 }
             }
         }
+
         return this;
+    }
+
+    public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds)
+    {
+        return WithAnalyzerFromNuGet("Microsoft.CodeAnalysis.NetAnalyzers", "7.0.1", paths: new[] { "analyzers/dotnet/cs/Microsoft.CodeAnalysis" }, ruleIds);
     }
 
     public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
