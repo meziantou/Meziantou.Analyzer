@@ -73,6 +73,14 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
                     _canBeReadOnly = false;
                 }
             }
+
+            foreach (var symbol in dataFlow.UnsafeAddressTaken)
+            {
+                if (symbol is IParameterSymbol parameter && parameter.IsThis)
+                {
+                    _canBeReadOnly = false;
+                }
+            }
         }
 
         public void AnalyzeEnd(OperationBlockAnalysisContext context)
