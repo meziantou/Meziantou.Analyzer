@@ -269,7 +269,7 @@ public sealed partial class ProjectBuilder
         var diagnostics = new List<Diagnostic>();
         foreach (var project in projects)
         {
-            var options = new CSharpCompilationOptions(OutputKind);
+            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true);
 
             // Enable diagnostic
             options = options.WithSpecificDiagnosticOptions(analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag)))));

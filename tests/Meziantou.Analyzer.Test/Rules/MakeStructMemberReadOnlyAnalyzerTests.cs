@@ -601,4 +601,27 @@ internal ref struct PathReader
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task RefFixedMember()
+    {
+        const string SourceCode = @"
+using System;
+using System.Runtime.InteropServices;
+struct Repro
+{
+    private unsafe fixed byte bytes[16];
+
+    public unsafe Span<byte> AsSpan()
+    {
+        return MemoryMarshal.CreateSpan(ref bytes[0], 16);
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net5_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
