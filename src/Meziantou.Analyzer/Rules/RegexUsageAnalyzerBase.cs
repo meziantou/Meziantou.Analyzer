@@ -8,8 +8,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules;
 
-[DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
+public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 {
     private static readonly string[] s_methodNames = { "IsMatch", "Match", "Matches", "Replace", "Split" };
 
@@ -35,17 +34,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_timeoutRule, s_explicitCaptureRule);
 
-    public override void Initialize(AnalysisContext context)
-    {
-        context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-        context.RegisterOperationAction(AnalyzeObjectCreation, OperationKind.ObjectCreation);
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
-        context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
-    }
-
-    private static void AnalyzeMethod(SymbolAnalysisContext context)
+    protected static void AnalyzeMethod(SymbolAnalysisContext context)
     {
         var method = (IMethodSymbol)context.Symbol;
         if (method.MethodKind is not MethodKind.Ordinary)
@@ -98,7 +87,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
 
     private static bool HasNonBacktracking(RegexOptions options) => ((int)options & 1024) == 1024;
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    protected static void AnalyzeInvocation(OperationAnalysisContext context)
     {
         var op = (IInvocationOperation)context.Operation;
         if (op == null || op.TargetMethod == null)
@@ -123,7 +112,7 @@ public sealed class RegexUsageAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static void AnalyzeObjectCreation(OperationAnalysisContext context)
+    protected static void AnalyzeObjectCreation(OperationAnalysisContext context)
     {
         var op = (IObjectCreationOperation)context.Operation;
         if (op == null)

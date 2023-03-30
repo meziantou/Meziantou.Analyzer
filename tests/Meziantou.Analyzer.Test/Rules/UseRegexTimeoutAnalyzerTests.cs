@@ -10,7 +10,8 @@ public sealed class UseRegexTimeoutAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<RegexUsageAnalyzer>();
+            .WithAnalyzer<RegexMethodUsageAnalyzer>()
+            .WithAnalyzer<GeneratedRegexAttributeUsageAnalyzer>();
     }
 
     [Fact]
@@ -125,6 +126,49 @@ class TestClass
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GeneratedRegex_WithoutTimeout()
+    {
+        var project = CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode("""
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [[||][||]GeneratedRegex("pattern", RegexOptions.None)]
+                private static partial Regex Test();
+            }
+            partial class TestClass
+            {
+                [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "7.0.8.6910")]
+                private static partial Regex Test() => throw null;
+            }
+            """);
+
+        await project.ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task GeneratedRegex_WithTimeout()
+    {
+        var project = CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(@"using System.Text.RegularExpressions;
+partial class TestClass
+{
+    [GeneratedRegex(""pattern"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Test();
+}
+partial class TestClass
+{
+    private static partial Regex Test() => throw null;
+}");
+
+        await project.ValidateAsync();
     }
 
     [Fact]
