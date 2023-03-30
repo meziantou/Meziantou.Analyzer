@@ -4,7 +4,6 @@
 
 |                                                                                                                           |                                                                                            |
 |---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
-| [CA1000](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1000?WT.mc_id=DT-MVP-5003978) | [MA0018](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0018.md) |
 | [CA1036](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1036?WT.mc_id=DT-MVP-5003978) | [MA0097](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0097.md) |
 | [CA1050](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1050?WT.mc_id=DT-MVP-5003978) | [MA0047](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0047.md) |
 | [CA1058](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1058?WT.mc_id=DT-MVP-5003978) | [MA0013](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0013.md) |
@@ -39,6 +38,7 @@
 
 |                                                                                                                           |                                                                                            |                                                                                   |
 |---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [CA1000](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1000?WT.mc_id=DT-MVP-5003978) | [MA0018](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0018.md) | CA can also be configured to run against non-public API surface                   |
 | [CA1002](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1002?WT.mc_id=DT-MVP-5003978) | [MA0016](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0016.md) | CA only applies to `List<T>`                                                      |
 | [CA1815](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1815?WT.mc_id=DT-MVP-5003978) | [MA0065](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0065.md) | MA reports only when Equals or GetHashCode is used                                |
 | [CA1815](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1815?WT.mc_id=DT-MVP-5003978) | [MA0066](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0066.md) | MA reports only when the struct is used with HashSet types                        |
