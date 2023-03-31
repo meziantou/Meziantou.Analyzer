@@ -125,7 +125,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                             }
                             else
                             {
-                                var symbols = DocumentationCommentId.GetSymbolsForDeclarationId(typeName, compilation);
+                                var symbols = DocumentationCommentId.GetSymbolsForReferenceId(typeName, compilation);
                                 if (symbols.Length > 0)
                                 {
                                     foreach (var symbol in symbols)
@@ -186,7 +186,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 return;
 
             IOperation? formatExpression = null;
-            (ITypeSymbol Symbol, SyntaxNode Location)[]? argumentTypes = null;
+            (ITypeSymbol? Symbol, SyntaxNode Location)[]? argumentTypes = null;
 
             if (containingType.IsEqualTo(LoggerMessageSymbol))
             {
@@ -204,7 +204,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return;
 
                 formatExpression = arg.Value;
-                argumentTypes = operation.TargetMethod.TypeArguments.Select((arg, index) => (arg, GetSyntaxNode(operation, index))).ToArray();
+                argumentTypes = operation.TargetMethod.TypeArguments.Select((arg, index) => ((ITypeSymbol?)arg, GetSyntaxNode(operation, index))).ToArray();
 
                 static SyntaxNode GetSyntaxNode(IOperation operation, int index)
                 {
@@ -237,7 +237,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
                         if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer != null)
                         {
-                            argumentTypes = arrayCreation.Initializer.ElementValues.Select(v => (v.GetActualType()!, v.Syntax)).ToArray();
+                            argumentTypes = arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax)).ToArray();
                         }
                     }
                 }
@@ -260,7 +260,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     {
                         var expectedSymbols = Configuration.GetSymbols(name);
                         var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{s.ToDisplayString()}'"));
-                        context.ReportDiagnostic(s_rule, argumentType.Location, name, expectedSymbolsStr, argumentType.Symbol.ToDisplayString());
+                        context.ReportDiagnostic(s_rule, argumentType.Location, name, expectedSymbolsStr, argumentType.Symbol?.ToDisplayString());
                     }
                 }
             }
@@ -350,7 +350,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
         public int Count => _configuration.Count;
 
-        public bool IsValid(string name, ISymbol type)
+        public bool IsValid(string name, ISymbol? type)
         {
             if (_configuration.TryGetValue(name, out var validSymbols))
             {
