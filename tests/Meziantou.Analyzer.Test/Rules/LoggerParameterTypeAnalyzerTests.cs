@@ -204,6 +204,46 @@ Prop;System.String
               .AddAnalyzerConfiguration("MA0124.allow_non_constant_formats", "false")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Logger_LogTrace_InvalidParameterType_NullableGuid()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", [|2|]);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.Guid;T:System.Nullable{System.Guid}
+""")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Logger_LogTrace_ValidParameterType_NullableGuid()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", System.Guid.Empty);
+logger.LogInformation("{Prop}", (System.Guid?)null);
+
+System.Guid? value1 = null;
+System.Guid? value2 = System.Guid.Empty;
+logger.LogInformation("{Prop}", value1);
+logger.LogInformation("{Prop}", value2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.Guid;System.Nullable{System.Guid}
+""")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Configuration_UnknownParameterType()
