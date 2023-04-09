@@ -431,4 +431,54 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task NullableInt32ToStringWithCultureInfo()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        ((int?)1)?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task NullableInt32ToStringWithoutCultureInfo()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        [||]((int?)1).ToString();
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task NullableInt32ToStringWithoutCultureInfo_DisabledConfig()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        ((int?)1).ToString();
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0011.consider_nullable_types", "false")
+              .ValidateAsync();
+    }
+
 }

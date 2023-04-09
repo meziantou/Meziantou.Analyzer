@@ -84,6 +84,7 @@ class Test
     [InlineData("\"abc\"", "(int)1")]
     [InlineData("\"abc\"", "1L")]
     [InlineData("\"abc\"", "(long)1")]
+    [InlineData("\"abc\"", "(long?)1")]
     [InlineData("\"abc\"", "(System.UInt128)1")]
     [InlineData("\"abc\"", "new System.Guid()")]
     [InlineData("\"abc\"", "new System.Uri(\"\")")]
@@ -116,6 +117,7 @@ class Test
     [InlineData("abc[|{(short)-1}|]")]
     [InlineData("abc[|{(int)-1}|]")]
     [InlineData("abc[|{(long)-1}|]")]
+    [InlineData("abc[|{(long?)-1}|]")]
     [InlineData("abc[|{(float)-1}|]")]
     [InlineData("abc[|{(double)-1}|]")]
     [InlineData("abc[|{(decimal)-1}|]")]
@@ -164,6 +166,23 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+#if CSHARP11_OR_GREATER
+    [Theory]
+    [InlineData("abc{(nint)1}")]
+    public async Task InterpolatedStringNoDiagnostic_CSharp11(string content)
+    {
+        var sourceCode = @"using System.Linq;
+class Test
+{
+    void A() { string str = $""" + content + @"""; }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .ValidateAsync();
+    }
+#endif
 
     [Fact]
     public async Task FormattableString()

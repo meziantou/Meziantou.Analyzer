@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.ComponentModel.Design.Serialization;
+﻿using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -58,6 +56,19 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             if (_cultureSensitiveContext.FormatProviderSymbol != null && !operation.HasArgumentOfType(_cultureSensitiveContext.FormatProviderSymbol))
             {
+                if (operation.TargetMethod.Name == "ToString" && operation.Arguments.Length == 0)
+                {
+                    var mustUnwrapNullable = MustUnwrapNullableTypes(context, operation);
+                    if (mustUnwrapNullable && operation.TargetMethod.ContainingType.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T)
+                    {
+                        var underlyingType = operation.TargetMethod.ContainingType.GetUnderlyingNullableType();
+                        if (_cultureSensitiveContext.IsCultureSensitiveType(underlyingType))
+                        {
+                            context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
+                        }
+                    }
+                }
+
                 var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, _cultureSensitiveContext.FormatProviderSymbol);
                 if (overload != null)
                 {
@@ -65,16 +76,17 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                if (operation.TargetMethod.ContainingType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.NumberStyleSymbol))
+                var targetMethodType = operation.TargetMethod.ContainingType;
+                if (targetMethodType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.NumberStyleSymbol))
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
                     return;
                 }
 
-                var isDateTime = operation.TargetMethod.ContainingType.IsDateTime() || operation.TargetMethod.ContainingType.IsEqualToAny(_cultureSensitiveContext.DateTimeOffsetSymbol, _cultureSensitiveContext.DateOnlySymbol, _cultureSensitiveContext.TimeOnlySymbol);
+                var isDateTime = targetMethodType.IsDateTime() || targetMethodType.IsEqualToAny(_cultureSensitiveContext.DateTimeOffsetSymbol, _cultureSensitiveContext.DateOnlySymbol, _cultureSensitiveContext.TimeOnlySymbol);
                 if (isDateTime)
                 {
-                    if (operation.Arguments.Length >= 1 && !_cultureSensitiveContext.IsCultureSensitiveType(operation.TargetMethod.ContainingType, format: operation.Arguments[0].Value))
+                    if (operation.Arguments.Length >= 1 && !_cultureSensitiveContext.IsCultureSensitiveType(targetMethodType, format: operation.Arguments[0].Value))
                         return;
 
                     if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.DateTimeStyleSymbol))
@@ -96,7 +108,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             }
         }
 
-
         private static bool IsExcludedMethod(OperationAnalysisContext context, IOperation operation)
         {
             // ToString show culture-sensitive data by default
@@ -106,6 +117,11 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             }
 
             return false;
+        }
+
+        private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, IOperation operation)
+        {
+            return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.consider_nullable_types", defaultValue: true);
         }
     }
 }
