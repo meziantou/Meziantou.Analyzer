@@ -73,7 +73,7 @@ internal static class Program
 
         // Update title in rule pages
         {
-            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+            foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id))
             {
                 var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
                 var detailPath = Path.GetFullPath(Path.Combine(outputFolder, "docs", "Rules", diagnostic.Id + ".md"));
@@ -97,7 +97,7 @@ internal static class Program
         sb.Append("|Id|Category|Description|Severity|Is enabled|Code fix|\n");
         sb.Append("|--|--------|-----------|:------:|:--------:|:------:|\n");
 
-        foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+        foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id, StringComparer.Ordinal))
         {
             if (!diagnostic.HelpLinkUri.Contains(diagnostic.Id, StringComparison.Ordinal))
             {
@@ -145,7 +145,7 @@ internal static class Program
         sb.Append("|Id|Suppressed rule|Justification|\n");
         sb.Append("|--|---------------|-------------|\n");
 
-        foreach (var suppression in diagnosticSuppressors.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedSuppressions).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+        foreach (var suppression in diagnosticSuppressors.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedSuppressions).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id, StringComparer.Ordinal))
         {
             sb.Append("|`")
               .Append(suppression.Id)
@@ -177,7 +177,7 @@ internal static class Program
     {
         sb.Append("```editorconfig\n");
         var first = true;
-        foreach (var diagnostic in analyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).OrderBy(diag => diag.Id))
+        foreach (var diagnostic in analyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id))
         {
             if (!first)
             {
