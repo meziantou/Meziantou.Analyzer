@@ -127,6 +127,7 @@ class Test
     [InlineData("abc[|{(decimal)1}|]")]
     [InlineData(@"test[|{new int[0].Min()}|]")]
     [InlineData(@"test[|{System.Int128.One}|]")]
+    [InlineData(@"test[|{new System.DateOnly(2023,1,1)}|]")]
     public async Task InterpolatedStringDiagnostic(string content)
     {
         var sourceCode = @"using System.Linq;
@@ -151,6 +152,7 @@ class Test
     [InlineData(@"test{new int[0].Length}")]
     [InlineData(@"test{new int[0].Count()}")]
     [InlineData(@"test{new System.Collections.Generic.List<int>().Count}")]
+    [InlineData(@"test{new System.DateOnly(2023,1,1):o}")]
     public async Task InterpolatedStringNoDiagnostic(string content)
     {
         var sourceCode = @"using System.Linq;
