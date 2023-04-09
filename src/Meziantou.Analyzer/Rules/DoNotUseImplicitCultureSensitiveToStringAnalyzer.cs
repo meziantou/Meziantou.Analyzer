@@ -1,4 +1,6 @@
 ﻿using System.Collections.Immutable;
+using System.Data;
+using System.Diagnostics;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -96,12 +98,12 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (IsExcludedMethod(context, s_stringConcatRule, operation))
                 return;
 
-            if (!IsNonCultureSensitiveOperand(operation.LeftOperand))
+            if (!IsNonCultureSensitiveOperand(context, s_stringConcatRule, operation.LeftOperand))
             {
                 context.ReportDiagnostic(s_stringConcatRule, operation.LeftOperand);
             }
 
-            if (!IsNonCultureSensitiveOperand(operation.RightOperand))
+            if (!IsNonCultureSensitiveOperand(context, s_stringConcatRule, operation.RightOperand))
             {
                 context.ReportDiagnostic(s_stringConcatRule, operation.RightOperand);
             }
@@ -133,6 +135,11 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 if (expression == null || type == null)
                     continue;
 
+                if (MustUnwrapNullableTypes(context, s_stringInterpolationRule, operation))
+                {
+                    type = type.GetUnderlyingNullableType();
+                }
+
                 if (_cultureSensitiveContext.IsCultureSensitiveType(type, format: part.FormatString, instance: expression))
                 {
                     context.ReportDiagnostic(s_stringInterpolationRule, part);
@@ -151,7 +158,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             return false;
         }
 
-        private bool IsNonCultureSensitiveOperand(IOperation operand)
+        private bool IsNonCultureSensitiveOperand(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operand)
         {
             // Implicit conversion from a type number
             if (operand is null)
@@ -159,11 +166,39 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
             if (operand is IConversionOperation conversion && conversion.IsImplicit && conversion.Type.IsObject() && conversion.Operand.Type != null)
             {
-                if (_cultureSensitiveContext.IsCultureSensitiveType(conversion.Operand.Type, format: null, instance: conversion.Operand))
+                var value = conversion.Operand;
+                var type = value.Type;
+                if (MustUnwrapNullableTypes(context, rule, operand))
+                {
+                    type = type.GetUnderlyingNullableType();
+                    if (conversion.Operand is IConversionOperation { Conversion.IsNullable: true } operandConversion)
+                    {
+                        value = operandConversion.Operand;
+                    }
+                }
+
+                if (_cultureSensitiveContext.IsCultureSensitiveType(type, format: null, instance: value))
                     return false;
             }
 
             return true;
+        }
+
+        private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
+        {
+            // Avoid an allocation when creating the key
+            if (rule == s_stringConcatRule)
+            {
+                Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString);
+                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".consider_nullable_types", defaultValue: true);
+            }
+            else if (rule == s_stringInterpolationRule)
+            {
+                Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation);
+                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".consider_nullable_types", defaultValue: true);
+            }
+
+            return false;
         }
     }
 }

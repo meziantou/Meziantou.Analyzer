@@ -186,6 +186,7 @@ internal sealed class CultureSensitiveFormattingContext
     {
         if (typeSymbol == null)
             return true;
+
         if (typeSymbol.IsEnumeration())
             return false;
 
@@ -274,9 +275,12 @@ internal sealed class CultureSensitiveFormattingContext
                 SpecialType.System_Int16 => (short)constantValue! >= 0,
                 SpecialType.System_Int32 => (int)constantValue! >= 0,
                 SpecialType.System_Int64 => (long)constantValue! >= 0,
+                SpecialType.System_IntPtr when constantValue is int => (int)constantValue >= 0,
+                SpecialType.System_IntPtr when constantValue is long => (long)constantValue >= 0L,
                 SpecialType.System_UInt16 => true,
                 SpecialType.System_UInt32 => true,
                 SpecialType.System_UInt64 => true,
+                SpecialType.System_UIntPtr => true,
                 _ => null,
             };
             if (result.HasValue)
