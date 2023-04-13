@@ -51,22 +51,16 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             if (IsExcludedMethod(context, operation))
                 return;
 
-            if (!_cultureSensitiveContext.IsCultureSensitiveOperation(operation))
+            var options = MustUnwrapNullableTypes(context, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
+            if (!_cultureSensitiveContext.IsCultureSensitiveOperation(operation, options))
                 return;
 
             if (_cultureSensitiveContext.FormatProviderSymbol != null && !operation.HasArgumentOfType(_cultureSensitiveContext.FormatProviderSymbol))
             {
-                if (operation.TargetMethod.Name == "ToString" && operation.Arguments.Length == 0)
+                if (operation.TargetMethod.Name == "ToString" && operation.Arguments.Length == 0 && operation.TargetMethod.ContainingType.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T)
                 {
-                    var mustUnwrapNullable = MustUnwrapNullableTypes(context, operation);
-                    if (mustUnwrapNullable && operation.TargetMethod.ContainingType.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T)
-                    {
-                        var underlyingType = operation.TargetMethod.ContainingType.GetUnderlyingNullableType();
-                        if (_cultureSensitiveContext.IsCultureSensitiveType(underlyingType))
-                        {
-                            context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
-                        }
-                    }
+                    context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
+                    return;
                 }
 
                 var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, _cultureSensitiveContext.FormatProviderSymbol);
@@ -86,9 +80,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var isDateTime = targetMethodType.IsDateTime() || targetMethodType.IsEqualToAny(_cultureSensitiveContext.DateTimeOffsetSymbol, _cultureSensitiveContext.DateOnlySymbol, _cultureSensitiveContext.TimeOnlySymbol);
                 if (isDateTime)
                 {
-                    if (operation.Arguments.Length >= 1 && !_cultureSensitiveContext.IsCultureSensitiveType(targetMethodType, format: operation.Arguments[0].Value))
-                        return;
-
                     if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.DateTimeStyleSymbol))
                     {
                         context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());

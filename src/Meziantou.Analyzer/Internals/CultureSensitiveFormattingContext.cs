@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
@@ -45,60 +44,99 @@ internal sealed class CultureSensitiveFormattingContext
     public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; }
     public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; }
 
-    public bool IsCultureSensitiveOperation(IOperation operation)
+    public bool IsCultureSensitiveOperation(IOperation operation, CultureSensitiveOptions options)
     {
+        // Unwrap implicit conversion to Nullable<T>
+        if (options.HasFlag(CultureSensitiveOptions.UnwrapNullableOfT) && operation is IConversionOperation { Conversion.IsNullable: true, Operand: var conversionOperand })
+        {
+            operation = conversionOperand;
+        }
+
         if (operation is IInvocationOperation invocation)
         {
             var methodName = invocation.TargetMethod.Name;
             if (methodName is "ToString")
             {
-                // Boolean.ToString(IFormatProvider) should not be used
-                if (invocation.TargetMethod.ContainingType.IsBoolean())
-                    return false;
-
-                // Char.ToString(IFormatProvider) should not be used
-                if (invocation.TargetMethod.ContainingType.IsChar())
-                    return false;
-
-                // Guid.ToString(IFormatProvider) should not be used
-                if (invocation.TargetMethod.ContainingType.IsEqualTo(GuidSymbol))
-                    return false;
-
-                // Enum.ToString(IFormatProvider) should not be used
-                if (invocation.TargetMethod.ContainingType.IsEqualTo(EnumSymbol))
-                    return false;
-
-                // DateTime.ToString() or DateTimeOffset.ToString() with invariant formats (o, O, r, R, s, u)
-                if (invocation.Arguments.Length == 1 && (invocation.TargetMethod.ContainingType.IsDateTime() || invocation.TargetMethod.ContainingType.IsEqualTo(DateTimeOffsetSymbol)))
+                // Try get the format. Most of ToString have only 1 string parameter to define the format
+                IOperation? format = null;
+                if (invocation.Arguments.Length > 0)
                 {
-                    if (IsInvariantDateTimeFormat(invocation.Arguments[0].Value))
-                        return false;
+                    foreach (var arg in invocation.Arguments)
+                    {
+                        if (arg.Value is { ConstantValue: { HasValue: true, Value: string } })
+                        {
+                            if (format != null)
+                            {
+                                format = null;
+                                break;
+                            }
+
+                            format = arg.Value;
+                        }
+                    }
                 }
+
+                return IsCultureSensitiveType(invocation.TargetMethod.ContainingType, format, instance: invocation.Instance, options);
             }
-            else if (methodName is "Parse" or "TryParse")
+
+            if (methodName is "Parse" or "TryParse")
             {
+                var type = invocation.TargetMethod.ContainingType;
+
                 // Guid.Parse / Guid.TryParse are culture insensitive
-                if (invocation.TargetMethod.ContainingType.IsEqualTo(GuidSymbol))
+                if (type.IsEqualTo(GuidSymbol))
                     return false;
 
                 // Char.Parse / Char.TryParse are culture insensitive
-                if (invocation.TargetMethod.ContainingType.IsChar())
+                if (type.IsChar())
                     return false;
+
+                return IsCultureSensitiveType(type, format: null, instance: null, options);
             }
             else if (methodName is "Append" or "AppendLine" && invocation.TargetMethod.ContainingType.IsEqualTo(StringBuilderSymbol))
             {
-                // stringBuilder.AppendLine($"foo{bar}") when bar is a string
-                if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && !IsCultureSensitiveOperation(invocation.Arguments[0].Value))
+                // StringBuilder.AppendLine($"foo{bar}") when bar is a string
+                if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && !IsCultureSensitiveOperation(invocation.Arguments[0].Value, options))
                     return false;
             }
+
+            return true;
         }
 
 #if CSHARP10_OR_GREATER
         if (operation is IInterpolatedStringHandlerCreationOperation handler)
-            return IsCultureSensitiveOperation(handler.Content);
+            return IsCultureSensitiveOperation(handler.Content, options);
 
         if (operation is IInterpolatedStringAdditionOperation interpolatedStringAddition)
-            return IsCultureSensitiveOperation(interpolatedStringAddition.Left) || IsCultureSensitiveOperation(interpolatedStringAddition.Right);
+            return IsCultureSensitiveOperation(interpolatedStringAddition.Left, options) || IsCultureSensitiveOperation(interpolatedStringAddition.Right, options);
+#endif
+
+        if (operation is IInterpolationOperation content)
+            return IsCultureSensitiveType(content.Expression.Type, content.FormatString, content.Expression, options);
+
+        if (operation is IInterpolatedStringTextOperation)
+            return false;
+
+#if CSHARP10_OR_GREATER
+        if (operation is IInterpolatedStringAppendOperation append)
+        {
+            if (append.AppendCall is IInvocationOperation appendInvocation)
+            {
+                if (appendInvocation.Arguments.Length == 1)
+                    return IsCultureSensitiveType(appendInvocation.Arguments[0].Value.Type, format: null, instance: null, options);
+
+                if (appendInvocation.Arguments.Length == 2)
+                    return IsCultureSensitiveType(appendInvocation.Arguments[0].Value.Type, format: appendInvocation.Arguments[1].Value, instance: null, options);
+
+                // Unknown case
+                return true;
+            }
+            else
+            {
+                // Unknown case
+                return true;
+            }
+        }
 #endif
 
         if (operation is IInterpolatedStringOperation interpolatedString)
@@ -108,84 +146,44 @@ internal sealed class CultureSensitiveFormattingContext
 
             foreach (var part in interpolatedString.Parts)
             {
-                if (part is IInterpolatedStringTextOperation)
-                    continue;
-
-                if (part is IInterpolationOperation content)
-                {
-                    if (content.Expression.Type.IsDateTime() || content.Expression.Type.IsEqualTo(DateTimeOffsetSymbol))
-                    {
-                        if (!IsInvariantDateTimeFormat(content.FormatString))
-                            return true;
-                    }
-                    else if (IsCultureSensitiveType(content.Expression.GetActualType()))
-                    {
-                        return true;
-                    }
-                }
-#if CSHARP10_OR_GREATER
-                else if (part is IInterpolatedStringAppendOperation append)
-                {
-                    if (append.AppendCall is IInvocationOperation appendInvocation)
-                    {
-                        if (appendInvocation.Arguments.Length == 1)
-                        {
-                            if (IsCultureSensitiveType(appendInvocation.Arguments[0].Value.Type))
-                                return true;
-                        }
-                        else if (appendInvocation.Arguments.Length == 2)
-                        {
-                            var expression = appendInvocation.Arguments[0].Value;
-                            if (expression.Type.IsDateTime() || expression.Type.IsEqualTo(DateTimeOffsetSymbol))
-                            {
-                                if (!IsInvariantDateTimeFormat(appendInvocation.Arguments[1].Value))
-                                    return true;
-                            }
-                            else
-                            {
-                                return true;
-                            }
-                        }
-                        else
-                        {
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-#endif
-                else
-                {
+                if (IsCultureSensitiveOperation(part, options))
                     return true;
-                }
             }
 
             return false;
         }
 
         if (operation is ILocalReferenceOperation localReference)
-            return IsCultureSensitiveType(localReference.Type);
+            return IsCultureSensitiveType(localReference.Type, options);
 
         if (operation is IParameterReferenceOperation parameterReference)
-            return IsCultureSensitiveType(parameterReference.Type);
+            return IsCultureSensitiveType(parameterReference.Type, options);
 
         if (operation is IMemberReferenceOperation memberReference)
-            return IsCultureSensitiveType(memberReference.Type);
+            return IsCultureSensitiveType(memberReference.Type, options);
 
         if (operation is ILiteralOperation literal)
-            return IsCultureSensitiveType(literal.Type);
+            return IsCultureSensitiveType(literal.Type, format: null, literal, options);
+
+        if (operation is IConversionOperation conversion)
+            return IsCultureSensitiveType(conversion.Type, format: null, instance: operation, options);
+
+        if (operation is IObjectCreationOperation objectCreation)
+            return IsCultureSensitiveType(objectCreation.Type, format: null, instance: null, options);
 
         // Unknown operation
         return true;
     }
 
-    public bool IsCultureSensitiveType(ITypeSymbol? typeSymbol)
+    private bool IsCultureSensitiveType(ITypeSymbol? typeSymbol, CultureSensitiveOptions options)
     {
         if (typeSymbol == null)
             return true;
+
+        if (options.HasFlag(CultureSensitiveOptions.UnwrapNullableOfT))
+        {
+            typeSymbol = typeSymbol.GetUnderlyingNullableType();
+        }
 
         if (typeSymbol.IsEnumeration())
             return false;
@@ -217,9 +215,6 @@ internal sealed class CultureSensitiveFormattingContext
         if (typeSymbol.IsEqualTo(UInt128Symbol))
             return false;
 
-        if (typeSymbol.IsEqualTo(TimeSpanSymbol))
-            return false;
-
         if (typeSymbol.IsEqualTo(GuidSymbol))
             return false;
 
@@ -235,9 +230,9 @@ internal sealed class CultureSensitiveFormattingContext
         return typeSymbol.Implements(SystemIFormattableSymbol);
     }
 
-    public bool IsCultureSensitiveType(ITypeSymbol? symbol, IOperation? format, IOperation? instance = null)
+    private bool IsCultureSensitiveType(ITypeSymbol? symbol, IOperation? format, IOperation? instance, CultureSensitiveOptions options)
     {
-        if (!IsCultureSensitiveType(symbol))
+        if (!IsCultureSensitiveType(symbol, options))
             return false;
 
         if (instance != null)
@@ -246,10 +241,14 @@ internal sealed class CultureSensitiveFormattingContext
                 return false;
         }
 
-        var isDateTime = symbol.IsDateTime() || symbol.IsEqualToAny(DateTimeOffsetSymbol, DateOnlySymbol, TimeOnlySymbol);
-        if (isDateTime)
+        if (symbol.IsDateTime() || symbol.IsEqualToAny(DateTimeOffsetSymbol, DateOnlySymbol, TimeOnlySymbol))
         {
             if (IsInvariantDateTimeFormat(format))
+                return false;
+        }
+        else if (symbol.IsEqualTo(TimeSpanSymbol))
+        {
+            if (IsInvariantTimeSpanFormat(format))
                 return false;
         }
 
@@ -261,12 +260,18 @@ internal sealed class CultureSensitiveFormattingContext
         return valueOperation is { ConstantValue: { HasValue: true, Value: "o" or "O" or "r" or "R" or "s" or "u" } };
     }
 
+    private static bool IsInvariantTimeSpanFormat(IOperation? valueOperation)
+    {
+        return valueOperation is { ConstantValue: { HasValue: true, Value: "c" or "C" } };
+    }
+
     // Only negative numbers are culture-sensitive (negative sign)
     // For instance, https://source.dot.net/#System.Private.CoreLib/Int32.cs,8d6f2d8bc0589463
     private static bool IsConstantPositiveNumber(IOperation operation)
     {
         if (operation.Type != null && operation.ConstantValue.HasValue)
         {
+            // Only consider types where ToString() is culture-insensitive for positive values
             var constantValue = operation.ConstantValue.Value;
             bool? result = operation.Type.SpecialType switch
             {
