@@ -145,6 +145,16 @@ internal static class OperationExtensions
 
         return operation;
     }
+    
+    public static IOperation UnwrapConversionOperations(this IOperation operation)
+    {
+        if (operation is IConversionOperation conversionOperation)
+        {
+            return UnwrapImplicitConversionOperations(conversionOperation.Operand);
+        }
+
+        return operation;
+    }
 
     public static bool HasArgumentOfType(this IInvocationOperation operation, ITypeSymbol argumentTypeSymbol)
     {
