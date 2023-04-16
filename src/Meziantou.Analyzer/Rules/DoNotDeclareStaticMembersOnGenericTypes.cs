@@ -37,6 +37,9 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
         {
             if (member.IsStatic && !member.IsConst())
             {
+                if (member.IsAbstract || member.IsVirtual)
+                    continue;
+
                 // skip properties
                 if (member is IMethodSymbol method && (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet))
                     continue;

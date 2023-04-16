@@ -130,4 +130,21 @@ public class Test<T>
               .ValidateAsync();
     }
 
+#if CSHARP11_OR_GREATER
+    [Fact]
+    public async Task StaticAbstract()
+    {
+        const string SourceCode = """"
+public interface IFactory<TSelf> where TSelf : IFactory<TSelf>
+{
+    static abstract TSelf Create();
+}
+"""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
 }
