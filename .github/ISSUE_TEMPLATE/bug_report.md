@@ -1,26 +1,69 @@
----
 name: Bug report
 about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+body:
+ - type: markdown
+    attributes:
+      value: |
+        We welcome bug reports! This template will help us gather the information we need to start the triage process.
 
----
+- type: input
+  id: version
+  attributes:
+    label: Version of the Meziantou.Analyzer NuGet package
+    placeholder: "2.0.0"
+  validations:
+    required: true
 
-**Context**
-Rule identifier: _MA0000_
-Target Framework: _.NET 5.0_
-Language version: _9.0_
+- type: input
+  id: rule
+  attributes:
+    label: Rule Identifier
+    description: "Id of the rule"
+    placeholder: "MA0000"
+  validations:
+    required: true
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+- type: input
+  id: tfm
+  attributes:
+    label: Target Framework
+    placeholder: "net6.0"
+  validations:
+    required: true
 
-**To Reproduce**
-Code or steps to reproduce the behavior:
+- type: input
+  id: language
+  attributes:
+    label: "C# Language version"
+    placeholder: "C# 11"
+  validations:
+    required: true
 
-````c#
-Code to reproduce the issue
-````
-
-**Additional context**
-Add any other context about the problem here.
+- type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please share a clear and concise description of the problem.
+      placeholder: Description
+    validations:
+      required: true
+      
+- type: textarea
+    id: repro-steps
+    attributes:
+      label: Reproduction Steps
+      description: |
+        Please include minimal steps to reproduce the problem if possible. E.g.: the smallest possible code snippet; or a small project, with steps to run it. If possible include text as text rather than screenshots (so it shows up in searches).
+      placeholder: Minimal Reproduction
+    validations:
+      required: true
+      
+- type: textarea
+    id: other-info
+    attributes:
+      label: Other information
+      description: |
+        If you have an idea where the problem might lie, let us know that here. Please include any pointers to code, relevant changes, or related issues you know of.
+      placeholder: Other information
+    validations:
+      required: false
