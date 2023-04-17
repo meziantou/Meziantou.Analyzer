@@ -1,10 +1,10 @@
 name: Bug report
 about: Create a report to help us improve
 body:
- - type: markdown
-    attributes:
-      value: |
-        We welcome bug reports! This template will help us gather the information we need to start the triage process.
+- type: markdown
+  attributes:
+    value: |
+      We welcome bug reports! This template will help us gather the information we need to start the triage process.
 
 - type: input
   id: version
