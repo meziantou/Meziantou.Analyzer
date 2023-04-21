@@ -129,6 +129,7 @@
 |[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0130](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0130.md)|Usage|GetType() should not be used on System.Type instances|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -522,6 +523,9 @@ dotnet_diagnostic.MA0128.severity = suggestion
 
 # MA0129: Await task in using statement
 dotnet_diagnostic.MA0129.severity = warning
+
+# MA0130: GetType() should not be used on System.Type instances
+dotnet_diagnostic.MA0130.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -910,4 +914,7 @@ dotnet_diagnostic.MA0128.severity = none
 
 # MA0129: Await task in using statement
 dotnet_diagnostic.MA0129.severity = none
+
+# MA0130: GetType() should not be used on System.Type instances
+dotnet_diagnostic.MA0130.severity = none
 ```
