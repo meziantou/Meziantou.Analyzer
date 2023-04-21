@@ -133,6 +133,7 @@ internal static class RuleIdentifiers
     public const string UseIsPatternInsteadOfSequenceEqual = "MA0128";
     public const string TaskInUsing = "MA0129";
     public const string ObjectGetTypeOnTypeInstance = "MA0130";
+    public const string ThrowIfNullWithNonNullableInstance = "MA0131";
 
     public static string GetHelpUri(string identifier)
     {

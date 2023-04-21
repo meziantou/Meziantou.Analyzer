@@ -146,6 +146,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|ℹ️|✔️|✔️|
 |[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|⚠️|✔️|❌|
 |[MA0130](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0130.md)|Usage|GetType() should not be used on System.Type instances|⚠️|✔️|❌|
+|[MA0131](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0131.md)|Usage|ArgumentNullException.ThrowIfNull should not be used with non-nullable types|⚠️|✔️|❌|
 
 <!-- rules -->
 
