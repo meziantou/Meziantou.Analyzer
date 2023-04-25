@@ -131,6 +131,7 @@
 |[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0130](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0130.md)|Usage|GetType() should not be used on System.Type instances|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0131](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0131.md)|Usage|ArgumentNullException.ThrowIfNull should not be used with non-nullable types|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0132](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0132.md)|Design|Do not convert implicitly to DateTimeOffset|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -530,6 +531,9 @@ dotnet_diagnostic.MA0130.severity = warning
 
 # MA0131: ArgumentNullException.ThrowIfNull should not be used with non-nullable types
 dotnet_diagnostic.MA0131.severity = warning
+
+# MA0132: Do not convert implicitly to DateTimeOffset
+dotnet_diagnostic.MA0132.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -924,4 +928,7 @@ dotnet_diagnostic.MA0130.severity = none
 
 # MA0131: ArgumentNullException.ThrowIfNull should not be used with non-nullable types
 dotnet_diagnostic.MA0131.severity = none
+
+# MA0132: Do not convert implicitly to DateTimeOffset
+dotnet_diagnostic.MA0132.severity = none
 ```
