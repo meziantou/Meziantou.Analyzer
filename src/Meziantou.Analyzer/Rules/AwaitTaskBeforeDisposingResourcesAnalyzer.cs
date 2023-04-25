@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -36,21 +36,16 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext
     {
-        private readonly INamedTypeSymbol[] _taskLikeSymbols;
+        private readonly AwaitableTypes _awaitableTypes;
 
         public AnalyzerContext(Compilation compilation)
         {
+            _awaitableTypes = new AwaitableTypes(compilation);
+
             TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
             TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
             ValueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
             ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-
-            var taskLikeSymbols = new List<INamedTypeSymbol>(4);
-            taskLikeSymbols.AddIfNotNull(TaskSymbol);
-            taskLikeSymbols.AddIfNotNull(TaskOfTSymbol);
-            taskLikeSymbols.AddIfNotNull(ValueTaskSymbol);
-            taskLikeSymbols.AddIfNotNull(ValueTaskOfTSymbol);
-            _taskLikeSymbols = taskLikeSymbols.ToArray();
         }
 
         public INamedTypeSymbol? TaskSymbol { get; set; }
@@ -65,17 +60,18 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             if (returnedValue is null)
                 return;
 
-            if (IsTaskLike(returnedValue.Type))
-            {
-                // Must be in a using block
-                if (!IsInUsingOperation(op))
-                    return;
+            var returnType = returnedValue.UnwrapImplicitConversionOperations().Type;
+            if (!_awaitableTypes.IsAwaitable(returnType, returnedValue.SemanticModel!, returnedValue.Syntax.GetLocation().SourceSpan.End))
+                return;
 
-                if (!NeedAwait(returnedValue))
-                    return;
+            // Must be in a using block
+            if (!IsInUsingOperation(op))
+                return;
 
-                context.ReportDiagnostic(s_rule, op);
-            }
+            if (!NeedAwait(returnedValue))
+                return;
+
+            context.ReportDiagnostic(s_rule, op);
         }
 
         private static bool IsInUsingOperation(IOperation operation)
@@ -86,21 +82,6 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                     return false;
 
                 if (parent is IUsingOperation)
-                    return true;
-            }
-
-            return false;
-        }
-
-        private bool IsTaskLike(ITypeSymbol? symbol)
-        {
-            if (symbol is null)
-                return false;
-
-            var originalDefinition = symbol.OriginalDefinition;
-            foreach (var taskLikeSymbol in _taskLikeSymbols)
-            {
-                if (originalDefinition.IsEqualTo(taskLikeSymbol))
                     return true;
             }
 
