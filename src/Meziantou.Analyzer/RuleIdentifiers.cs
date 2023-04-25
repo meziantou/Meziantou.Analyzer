@@ -135,6 +135,7 @@ internal static class RuleIdentifiers
     public const string ObjectGetTypeOnTypeInstance = "MA0130";
     public const string ThrowIfNullWithNonNullableInstance = "MA0131";
     public const string DoNotImplicitlyConvertDateTimeToDateTimeOffset = "MA0132";
+    public const string UseDateTimeOffsetInsteadOfDateTime = "MA0133";
 
     public static string GetHelpUri(string identifier)
     {
