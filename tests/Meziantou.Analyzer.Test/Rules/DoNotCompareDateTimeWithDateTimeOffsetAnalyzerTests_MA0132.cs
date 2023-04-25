@@ -5,13 +5,15 @@ using TestHelper;
 using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
-public class DoNotCompareDateTimeWithDateTimeOffsetAnalyzerTests
+
+public class DoNotCompareDateTimeWithDateTimeOffsetAnalyzerTests_MA0132
+
 {
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
             .WithOutputKind(OutputKind.ConsoleApplication)
-            .WithAnalyzer<DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer>();
+            .WithAnalyzer<DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer>(id: "MA0132");
     }
 
     [Fact]
