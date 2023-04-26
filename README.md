@@ -149,6 +149,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0131](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0131.md)|Usage|ArgumentNullException.ThrowIfNull should not be used with non-nullable types|⚠️|✔️|❌|
 |[MA0132](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0132.md)|Design|Do not convert implicitly to DateTimeOffset|⚠️|✔️|❌|
 |[MA0133](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0133.md)|Design|Use DateTimeOffset instead of relying on the implicit conversion|ℹ️|✔️|❌|
+|[MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md)|Usage|Observe result of async calls|⚠️|✔️|❌|
 
 <!-- rules -->
 

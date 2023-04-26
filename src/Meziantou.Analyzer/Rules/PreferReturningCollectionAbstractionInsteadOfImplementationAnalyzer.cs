@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -197,12 +196,12 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                 return true;
 
             var originalDefinition = symbol.OriginalDefinition;
-            if (ConcreteCollectionSymbols.Any(t => t.IsEqualTo(originalDefinition)))
+            if (ConcreteCollectionSymbols.Exists(t => t.IsEqualTo(originalDefinition)))
                 return false;
 
             if (symbol is INamedTypeSymbol namedTypeSymbol)
             {
-                if (TaskSymbols.Any(t => t.IsEqualTo(symbol.OriginalDefinition)))
+                if (TaskSymbols.Exists(t => t.IsEqualTo(symbol.OriginalDefinition)))
                 {
                     return IsValidType(namedTypeSymbol.TypeArguments[0]);
                 }

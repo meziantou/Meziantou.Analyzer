@@ -125,7 +125,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                     if (argumentList is null)
                         return;
 
-                    var invokedMethodSymbol = syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression).Symbol;
+                    var invokedMethodSymbol = syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression, syntaxContext.CancellationToken).Symbol;
                     if (invokedMethodSymbol == null && invocationExpression.IsKind(SyntaxKind.ElementAccessExpression))
                         return; // Skip Array[index]
 
@@ -160,7 +160,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                                 if (expression.IsKind(SyntaxKind.NullLiteralExpression))
                                     return false;
 
-                                var type = syntaxContext.SemanticModel.GetTypeInfo(node).ConvertedType;
+                                var type = syntaxContext.SemanticModel.GetTypeInfo(node, syntaxContext.CancellationToken).ConvertedType;
                                 return !type.IsEqualTo(lastParameter.Type);
                             }
 

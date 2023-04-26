@@ -133,6 +133,7 @@
 |[MA0131](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0131.md)|Usage|ArgumentNullException.ThrowIfNull should not be used with non-nullable types|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0132](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0132.md)|Design|Do not convert implicitly to DateTimeOffset|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0133](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0133.md)|Design|Use DateTimeOffset instead of relying on the implicit conversion|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md)|Usage|Observe result of async calls|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -538,6 +539,9 @@ dotnet_diagnostic.MA0132.severity = warning
 
 # MA0133: Use DateTimeOffset instead of relying on the implicit conversion
 dotnet_diagnostic.MA0133.severity = suggestion
+
+# MA0134: Observe result of async calls
+dotnet_diagnostic.MA0134.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -938,4 +942,7 @@ dotnet_diagnostic.MA0132.severity = none
 
 # MA0133: Use DateTimeOffset instead of relying on the implicit conversion
 dotnet_diagnostic.MA0133.severity = none
+
+# MA0134: Observe result of async calls
+dotnet_diagnostic.MA0134.severity = none
 ```
