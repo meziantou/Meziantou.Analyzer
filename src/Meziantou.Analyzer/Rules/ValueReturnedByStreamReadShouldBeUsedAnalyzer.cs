@@ -26,17 +26,23 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAn
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeOperation, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var streamSymbol = context.Compilation.GetBestTypeByMetadataName("System.IO.Stream");
+            if (streamSymbol == null)
+                return;
+
+            context.RegisterOperationAction(context => AnalyzeOperation(context, streamSymbol), OperationKind.Invocation);
+        });
     }
 
-    private static void AnalyzeOperation(OperationAnalysisContext context)
+    private static void AnalyzeOperation(OperationAnalysisContext context, INamedTypeSymbol streamSymbol)
     {
         var invocation = (IInvocationOperation)context.Operation;
         var targetMethod = invocation.TargetMethod;
         if (targetMethod.Name != nameof(Stream.Read) && targetMethod.Name != nameof(Stream.ReadAsync))
             return;
 
-        var streamSymbol = context.Compilation.GetBestTypeByMetadataName("System.IO.Stream");
         if (!targetMethod.ContainingType.IsOrInheritFrom(streamSymbol))
             return;
 
