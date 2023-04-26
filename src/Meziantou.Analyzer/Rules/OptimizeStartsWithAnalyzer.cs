@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Metadata;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -13,7 +14,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.OptimizeStartsWith,
         title: "Optimize string method usage",
-        messageFormat: "Replace string.{0}(\"{1}\") with string.{0}('{1}')",
+        messageFormat: "Use an overload with char instead of string",
         RuleCategories.Performance,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
@@ -30,10 +31,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(ctx =>
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
-            if (analyzerContext.IsValid)
-            {
-                ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
-            }
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
         });
     }
 
@@ -41,101 +39,192 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            var stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
-            if (stringComparisonSymbol != null)
+            StringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
+            if (StringComparisonSymbol != null)
             {
-                StringComparison_Ordinal = stringComparisonSymbol.GetMembers(nameof(StringComparison.Ordinal)).FirstOrDefault();
-                StringComparison_CurrentCulture = stringComparisonSymbol.GetMembers(nameof(StringComparison.CurrentCulture)).FirstOrDefault();
-                StringComparison_InvariantCulture = stringComparisonSymbol.GetMembers(nameof(StringComparison.InvariantCulture)).FirstOrDefault();
+                StringComparison_Ordinal = StringComparisonSymbol.GetMembers(nameof(StringComparison.Ordinal)).FirstOrDefault();
+                StringComparison_CurrentCulture = StringComparisonSymbol.GetMembers(nameof(StringComparison.CurrentCulture)).FirstOrDefault();
+                StringComparison_InvariantCulture = StringComparisonSymbol.GetMembers(nameof(StringComparison.InvariantCulture)).FirstOrDefault();
             }
 
             // StartsWith methods
             var stringSymbol = compilation.GetSpecialType(SpecialType.System_String);
             if (stringSymbol != null)
             {
-                var startsWithMethods = stringSymbol.GetMembers(nameof(string.StartsWith));
-                foreach (var method in startsWithMethods.OfType<IMethodSymbol>())
+                foreach (var method in stringSymbol.GetMembers(nameof(string.StartsWith)).OfType<IMethodSymbol>())
                 {
                     if (!method.IsStatic && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
                     {
                         StartsWith_Char = method;
-                    }
-                    else if (!method.IsStatic && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
-                    {
-                        StartsWith_String = method;
-                    }
-                    else if (!method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsEqualTo(stringComparisonSymbol))
-                    {
-                        StartsWith_String_StringComparison = method;
+                        break;
                     }
                 }
 
-                var endsWithMethods = stringSymbol.GetMembers(nameof(string.EndsWith));
-                foreach (var method in endsWithMethods.OfType<IMethodSymbol>())
+                foreach (var method in stringSymbol.GetMembers(nameof(string.EndsWith)).OfType<IMethodSymbol>())
                 {
                     if (!method.IsStatic && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
                     {
                         EndsWith_Char = method;
+                        break;
                     }
-                    else if (!method.IsStatic && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
+                }
+
+                foreach (var method in stringSymbol.GetMembers(nameof(string.Replace)).OfType<IMethodSymbol>())
+                {
+                    if (!method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type.IsChar())
                     {
-                        EndsWith_String = method;
+                        Replace_Char_Char = method;
+                        break;
                     }
-                    else if (!method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsEqualTo(stringComparisonSymbol))
+                }
+
+                foreach (var method in stringSymbol.GetMembers(nameof(string.IndexOf)).OfType<IMethodSymbol>())
+                {
+                    if (method.IsStatic)
+                        continue;
+
+                    if (method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
                     {
-                        EndsWith_String_StringComparison = method;
+                        IndexOf_Char = method;
+                    }
+                    else if (method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type.IsInt32())
+                    {
+                        IndexOf_Char_Int32 = method;
+                    }
+                    else if (method.Parameters.Length == 3 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type.IsInt32() && method.Parameters[2].Type.IsInt32())
+                    {
+                        IndexOf_Char_Int32_Int32 = method;
+                    }
+                    else if (method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type.IsEqualTo(StringComparisonSymbol))
+                    {
+                        IndexOf_Char_StringComparison = method;
                     }
                 }
             }
         }
 
         public IMethodSymbol? StartsWith_Char { get; set; }
-        public IMethodSymbol? StartsWith_String { get; set; }
-        public IMethodSymbol? StartsWith_String_StringComparison { get; set; }
-
         public IMethodSymbol? EndsWith_Char { get; set; }
-        public IMethodSymbol? EndsWith_String { get; set; }
-        public IMethodSymbol? EndsWith_String_StringComparison { get; set; }
+        public IMethodSymbol? Replace_Char_Char { get; set; }
+        public IMethodSymbol? IndexOf_Char { get; set; }
+        public IMethodSymbol? IndexOf_Char_Int32 { get; set; }
+        public IMethodSymbol? IndexOf_Char_Int32_Int32 { get; set; }
+        public IMethodSymbol? IndexOf_Char_StringComparison { get; set; }
 
+        public INamedTypeSymbol? StringComparisonSymbol { get; set; }
         public ISymbol? StringComparison_Ordinal { get; set; }
         public ISymbol? StringComparison_CurrentCulture { get; set; }
         public ISymbol? StringComparison_InvariantCulture { get; set; }
 
-        public bool IsValid => StartsWith_Char != null || EndsWith_Char != null;
-
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
-            // StartsWith("a");
-            // StartsWith("a", StringComparison.Ordinal);
-            // StartsWith("a", StringComparison.CurrentCulture);
             var operation = (IInvocationOperation)context.Operation;
             if (operation.TargetMethod.IsEqualTo(StartsWith_Char) || operation.TargetMethod.IsEqualTo(EndsWith_Char))
                 return;
 
-            if (operation.TargetMethod.IsEqualTo(StartsWith_String) || operation.TargetMethod.IsEqualTo(StartsWith_String_StringComparison) ||
-                operation.TargetMethod.IsEqualTo(EndsWith_String) || operation.TargetMethod.IsEqualTo(EndsWith_String_StringComparison))
+            if (operation.TargetMethod.ContainingType.IsString())
             {
-                if (operation.Arguments.Length == 0)
-                    return;
-
-                if (operation.Arguments[0].Value.ConstantValue.Value is not string prefix || prefix.Length != 1)
-                    return;
-
-                // Ensure the StringComparison is compatible
-                if (operation.Arguments.Length == 2)
+                if (operation.TargetMethod.Name is "StartsWith")
                 {
-                    if (operation.Arguments[1].Value is not IMemberReferenceOperation argumentValue)
+                    if (StartsWith_Char == null)
                         return;
 
-                    if (!argumentValue.Member.IsEqualTo(StringComparison_Ordinal) &&
-                        !argumentValue.Member.IsEqualTo(StringComparison_CurrentCulture) &&
-                        !argumentValue.Member.IsEqualTo(StringComparison_InvariantCulture))
+                    if (operation.Arguments.Length == 2)
                     {
-                        return;
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                            operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation.Arguments[0]);
+                        }
                     }
                 }
+                else if (operation.TargetMethod.Name is "EndsWith")
+                {
+                    if (EndsWith_Char == null)
+                        return;
 
-                context.ReportDiagnostic(s_rule, operation.Arguments[0], operation.TargetMethod.Name, prefix);
+                    if (operation.Arguments.Length == 2)
+                    {
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                            operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation.Arguments[0]);
+                        }
+                    }
+                }
+                else if (operation.TargetMethod.Name is "Replace")
+                {
+                    if (Replace_Char_Char == null)
+                        return;
+
+                    if (operation.Arguments.Length == 2)
+                    {
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant1 } } &&
+                            operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant2 } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation);
+                        }
+                    }
+                    else if (operation.Arguments.Length == 3)
+                    {
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant1 } } &&
+                            operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant2 } } &&
+                            operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation);
+                        }
+                    }
+                }
+                else if (operation.TargetMethod.Name is "IndexOf")
+                {
+                    if (operation.Arguments.Length == 2)
+                    {
+                        if (IndexOf_Char != null)
+                        {
+                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                                operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                            {
+                                context.ReportDiagnostic(s_rule, operation);
+                                return;
+                            }
+                        }
+
+                        if(IndexOf_Char_StringComparison != null)
+                        {
+                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                                operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
+                            {
+                                context.ReportDiagnostic(s_rule, operation);
+                                return;
+                            }
+                        }
+                    }
+                    else if (operation.Arguments.Length == 3)
+                    {
+                        if (IndexOf_Char_Int32 == null)
+                            return;
+
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                            operation.Arguments[1].Value.Type.IsInt32() &&
+                            operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation);
+                        }
+                    }
+                    else if (operation.Arguments.Length == 4)
+                    {
+                        if (IndexOf_Char_Int32_Int32 == null)
+                            return;
+
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                            operation.Arguments[1].Value.Type.IsInt32() &&
+                            operation.Arguments[2].Value.Type.IsInt32() &&
+                            operation.Arguments[3].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation);
+                        }
+                    }
+                }
             }
         }
     }
