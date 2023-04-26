@@ -59,6 +59,79 @@ class TestClass
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task NotAwaitedTaskYieldMethod_InUsing()
+    {
+        var originalCode = @"
+using System;
+using System.Threading.Tasks;
+class TestClass
+{
+    object Test()
+    {
+        using ((IDisposable)null)
+        {
+            // Custom awaitable type (not Task/ValueTask)
+            [||]return Task.Yield();
+        }
+    }
+}";
+
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task NotAwaitedExtensionMethodOnInt32_InUsing()
+    {
+        var originalCode = @"
+using System;
+using System.Threading.Tasks;
+static class TestClass
+{
+    static object Test()
+    {
+        using ((IDisposable)null)
+        {
+            // It should detect the extension method
+            [||]return 1;
+        }
+    }
+
+    static System.Runtime.CompilerServices.TaskAwaiter GetAwaiter(this int value) => throw null;
+}";
+
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task NotAwaitedExtensionMethodOnValueTuple_InUsing()
+    {
+        var originalCode = @"
+using System;
+using System.Threading.Tasks;
+static class TestClass
+{
+    static object Test()
+    {
+        using ((IDisposable)null)
+        {
+            // It should detect the extension method
+            [||]return (default(Task<int>), default(Task<string>));
+        }
+    }
+
+    static System.Runtime.CompilerServices.TaskAwaiter<(T1, T2)> GetAwaiter<T1, T2>(this (Task<T1>, Task<T2>) tasks) => throw null;
+}";
+
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .ValidateAsync();
+    }
 
     [Fact]
     public async Task NotAwaitedValueTask_InUsing()
