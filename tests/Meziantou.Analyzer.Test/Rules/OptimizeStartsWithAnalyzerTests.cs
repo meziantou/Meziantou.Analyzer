@@ -137,6 +137,72 @@ class Test
               .WithTargetFramework(TargetFramework.NetStandard2_0)
               .ValidateAsync();
     }
+    
+    [Theory]
+    [InlineData(@"""a"", StringComparison.Ordinal")]
+    [InlineData(@"""a"", 1, 2, StringComparison.Ordinal")]
+    [InlineData(@"""a"", 1, StringComparison.Ordinal")]
+    public async Task LastIndexOf_Report(string method)
+    {
+        var sourceCode = @"
+using System;
+class Test
+{
+    void A(string str)
+    {
+        _ = [||]str.LastIndexOf(" + method + @");
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Theory]
+    [InlineData("null")]
+    [InlineData(@"""""")]
+    [InlineData(@"str")]
+    [InlineData(@"""abc""")]
+    [InlineData(@"""a""")]
+    [InlineData(@"""a"", 1")]
+    [InlineData(@"""a"", 1, 2")]
+    [InlineData(@"""a"", StringComparison.CurrentCulture")]
+    [InlineData(@"""a"", 1, 2, StringComparison.OrdinalIgnoreCase")]
+    [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
+    public async Task LastIndexOf_NoReport(string method)
+    {
+        var sourceCode = @"
+using System;
+class Test
+{
+    void A(string str)
+    {
+        _ = str.LastIndexOf(" + method + @");
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Theory]
+    [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
+    public async Task LastIndexOf_NoReport_Netstandard2_0(string method)
+    {
+        var sourceCode = @"
+using System;
+class Test
+{
+    void A(string str)
+    {
+        _ = str.LastIndexOf(" + method + @");
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
+              .ValidateAsync();
+    }
 
     [Theory]
     [InlineData(@"""ab"", """"")]

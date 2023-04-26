@@ -100,6 +100,29 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         IndexOf_Char_StringComparison = method;
                     }
                 }
+
+                foreach (var method in stringSymbol.GetMembers(nameof(string.LastIndexOf)).OfType<IMethodSymbol>())
+                {
+                    if (method.IsStatic)
+                        continue;
+
+                    if (method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                    {
+                        LastIndexOf_Char = method;
+                    }
+                    else if (method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type.IsInt32())
+                    {
+                        LastIndexOf_Char_Int32 = method;
+                    }
+                    else if (method.Parameters.Length == 3 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type.IsInt32() && method.Parameters[2].Type.IsInt32())
+                    {
+                        LastIndexOf_Char_Int32_Int32 = method;
+                    }
+                    else if (method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type.IsEqualTo(StringComparisonSymbol))
+                    {
+                        LastIndexOf_Char_StringComparison = method;
+                    }
+                }
             }
         }
 
@@ -110,6 +133,11 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
         public IMethodSymbol? IndexOf_Char_Int32 { get; set; }
         public IMethodSymbol? IndexOf_Char_Int32_Int32 { get; set; }
         public IMethodSymbol? IndexOf_Char_StringComparison { get; set; }
+        
+        public IMethodSymbol? LastIndexOf_Char { get; set; }
+        public IMethodSymbol? LastIndexOf_Char_Int32 { get; set; }
+        public IMethodSymbol? LastIndexOf_Char_Int32_Int32 { get; set; }
+        public IMethodSymbol? LastIndexOf_Char_StringComparison { get; set; }
 
         public INamedTypeSymbol? StringComparisonSymbol { get; set; }
         public ISymbol? StringComparison_Ordinal { get; set; }
@@ -214,6 +242,56 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     else if (operation.Arguments.Length == 4)
                     {
                         if (IndexOf_Char_Int32_Int32 == null)
+                            return;
+
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                            operation.Arguments[1].Value.Type.IsInt32() &&
+                            operation.Arguments[2].Value.Type.IsInt32() &&
+                            operation.Arguments[3].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation);
+                        }
+                    }
+                }
+                else if (operation.TargetMethod.Name is "LastIndexOf")
+                {
+                    if (operation.Arguments.Length == 2)
+                    {
+                        if (LastIndexOf_Char != null)
+                        {
+                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                                operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                            {
+                                context.ReportDiagnostic(s_rule, operation);
+                                return;
+                            }
+                        }
+
+                        if(LastIndexOf_Char_StringComparison != null)
+                        {
+                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                                operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
+                            {
+                                context.ReportDiagnostic(s_rule, operation);
+                                return;
+                            }
+                        }
+                    }
+                    else if (operation.Arguments.Length == 3)
+                    {
+                        if (LastIndexOf_Char_Int32 == null)
+                            return;
+
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
+                            operation.Arguments[1].Value.Type.IsInt32() &&
+                            operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        {
+                            context.ReportDiagnostic(s_rule, operation);
+                        }
+                    }
+                    else if (operation.Arguments.Length == 4)
+                    {
+                        if (LastIndexOf_Char_Int32_Int32 == null)
                             return;
 
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } constant } } &&
