@@ -328,7 +328,6 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             .ValidateAsync();
     }
 
-
     [Fact]
     public async Task Report_ConditionalInvoke()
     {
@@ -342,6 +341,25 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     void A(Test instance)
                     {
                         instance?[|.ReturnTask()|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DoNotReport_Discard_ConditionalInvoke()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task ReturnTask() => throw null;
+
+                    void A(Test instance)
+                    {
+                        _ = instance?.ReturnTask();
                     }
                 }
                 """)
