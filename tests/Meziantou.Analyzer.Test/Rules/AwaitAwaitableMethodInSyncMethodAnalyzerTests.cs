@@ -106,6 +106,29 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
     }
 
     [Fact]
+    public async Task NoReport_DiscardConditionalAccess()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+
+                public interface IFoo
+                {
+                    Task BarAsync();
+                }
+                
+                class Test
+                {
+                    public static void Baz(IFoo? foo)
+                    {
+                        _ = foo?.BarAsync();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NoReport_TopLevelStatement()
     {
         await CreateProjectBuilder()
@@ -169,6 +192,30 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     void A()
                     {
                         [||]Task.Delay(0);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+
+    [Fact]
+    public async Task Report_TaskInSyncVoidMethod_ConditionalAccess()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                
+                public interface IFoo
+                {
+                    Task BarAsync();
+                }
+                
+                class Test
+                {
+                    public static void Baz(IFoo? foo)
+                    {
+                        [||]foo?.BarAsync();
                     }
                 }
                 """)
