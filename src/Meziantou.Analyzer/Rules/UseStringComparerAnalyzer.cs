@@ -109,7 +109,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
             // Most ISet implementation already configured the IEqualityComparer in this constructor,
             // so it should be ok to skip method calls on those types.
-            // A concret use-case is HashSet<string>.Contains which has an extension method IEnumerable.Contains(value, comparer)
+            // A concrete use-case is HashSet<string>.Contains which has an extension method IEnumerable.Contains(value, comparer)
             if (ISetType != null && method.ContainingType.IsOrImplements(ISetType))
                 return;
 
