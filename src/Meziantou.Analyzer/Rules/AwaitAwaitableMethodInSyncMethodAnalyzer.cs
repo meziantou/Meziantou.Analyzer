@@ -43,7 +43,14 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
         var operation = (IInvocationOperation)context.Operation;
 
         var parent = operation.Parent;
-        if (parent is null or IBlockOperation or IExpressionStatementOperation or IConditionalAccessOperation)
+
+        // unwrap all IConditionalAccessOperation
+        while (parent is IConditionalAccessOperation conditionalAccess)
+        {
+            parent = conditionalAccess.Parent;
+        }
+
+        if (parent is null or IBlockOperation or IExpressionStatementOperation)
         {
             var semanticModel = operation.SemanticModel!;
             var position = operation.Syntax.GetLocation().SourceSpan.End;
