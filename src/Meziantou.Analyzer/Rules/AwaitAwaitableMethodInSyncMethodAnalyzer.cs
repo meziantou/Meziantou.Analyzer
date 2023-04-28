@@ -26,23 +26,24 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterCompilationStartAction(context =>
-        {
-            var awaitableTypes = new AwaitableTypes(context.Compilation);
-            context.RegisterSymbolStartAction(context =>
             {
+                var awaitableTypes = new AwaitableTypes(context.Compilation);
+            context.RegisterSymbolStartAction(context =>
+                    {
                 if (context.Symbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod()))
-                    return; // Already handled by CS4014
+                            return; // Already handled by CS4014
 
                 context.RegisterOperationAction(context => AnalyzeOperation(context, awaitableTypes), OperationKind.Invocation);
             }, SymbolKind.Method);
-        });
+            });
     }
 
     private static void AnalyzeOperation(OperationAnalysisContext context, AwaitableTypes awaitableTypes)
     {
         var operation = (IInvocationOperation)context.Operation;
 
-        var parent = operation.Parent;
+        var parent = FindStatementParent(operation);
+
         if (parent is null or IBlockOperation or IExpressionStatementOperation or IConditionalAccessOperation)
         {
             var semanticModel = operation.SemanticModel!;
@@ -56,7 +57,25 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             if (!awaitableTypes.IsAwaitable(operation.Type, semanticModel, position))
                 return;
 
-            context.ReportDiagnostic(s_rule, operation);
+            if (parent is IExpressionStatementOperation)
+            {
+                context.ReportDiagnostic(s_rule, parent);
+            }
+            else
+            {
+                context.ReportDiagnostic(s_rule, operation);
+            }
         }
+    }
+
+    private static IOperation? FindStatementParent(IOperation? operation)
+    {
+        var parent = operation.Parent;
+        while (parent is IConditionalAccessOperation { Parent: { } } grantParent)
+        {
+            parent = grantParent.Parent;
+        }
+
+        return parent;
     }
 }
