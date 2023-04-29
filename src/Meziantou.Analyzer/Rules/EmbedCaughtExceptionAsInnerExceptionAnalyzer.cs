@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -26,18 +27,21 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeThrow, OperationKind.Throw);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var overloadFinder = new OverloadFinder(context.Compilation);
+            var exceptionSymbol = context.Compilation.GetBestTypeByMetadataName("System.Exception");
+            if (exceptionSymbol == null)
+                return;
+
+            context.RegisterOperationAction(context => AnalyzeThrow(context, overloadFinder, exceptionSymbol), OperationKind.Throw);
+        });
     }
 
-    private static void AnalyzeThrow(OperationAnalysisContext context)
+    private static void AnalyzeThrow(OperationAnalysisContext context, OverloadFinder overloadFinder, INamedTypeSymbol exceptionSymbol)
     {
         var operation = (IThrowOperation)context.Operation;
         if (operation.Exception == null)
-            return;
-
-        var compilation = context.Compilation;
-        var exceptionSymbol = compilation.GetBestTypeByMetadataName("System.Exception");
-        if (exceptionSymbol == null)
             return;
 
         var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();
@@ -52,7 +56,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
             var argument = objectCreationOperation.Arguments.FirstOrDefault(arg => IsPotentialParameter(arg?.Parameter, exceptionSymbol));
             if (argument == null)
             {
-                if (objectCreationOperation.Constructor.HasOverloadWithAdditionalParameterOfType(context.Compilation, exceptionSymbol))
+                if (overloadFinder.HasOverloadWithAdditionalParameterOfType(objectCreationOperation.Constructor, exceptionSymbol))
                 {
                     context.ReportDiagnostic(s_rule, objectCreationOperation);
                 }

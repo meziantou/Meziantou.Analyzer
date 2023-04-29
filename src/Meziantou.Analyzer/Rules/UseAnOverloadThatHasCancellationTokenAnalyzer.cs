@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -80,9 +81,12 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
     {
         private readonly ConcurrentDictionary<(ITypeSymbol Symbol, int MaxDepth), List<ISymbol[]>?> _membersByType = new();
 
+        private readonly OverloadFinder _overloadFinder;
+
         public AnalyzerContext(Compilation compilation)
         {
             Compilation = compilation;
+            _overloadFinder = new OverloadFinder(compilation);
             CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
             CancellationTokenSourceSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
             TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
@@ -119,7 +123,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (IsArgumentImplicitlyDeclared(operation, CancellationTokenSymbol, out parameterIndex, out parameterName))
                 return true;
 
-            var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, CancellationTokenSymbol);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, CancellationTokenSymbol);
             if (overload != null)
             {
                 for (var i = 0; i < overload.Parameters.Length; i++)
@@ -220,7 +224,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var availableCancellationTokens = FindCancellationTokens(op, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
             {
-                var properties = CreateProperties(availableCancellationTokens, -1, null);
+                var properties = CreateProperties(availableCancellationTokens, parameterIndex: -1, parameterName: null);
                 context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, properties, op.Collection, string.Join(", ", availableCancellationTokens));
             }
             else

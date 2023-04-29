@@ -36,10 +36,12 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private readonly CultureSensitiveFormattingContext _cultureSensitiveContext;
+        private readonly OverloadFinder _overloadFinder;
 
         public AnalyzerContext(Compilation compilation)
         {
             _cultureSensitiveContext = new CultureSensitiveFormattingContext(compilation);
+            _overloadFinder = new OverloadFinder(compilation);
         }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
@@ -63,7 +65,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(operation, includeObsoleteMethods: false, _cultureSensitiveContext.FormatProviderSymbol);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, _cultureSensitiveContext.FormatProviderSymbol);
                 if (overload != null)
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
@@ -71,7 +73,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 }
 
                 var targetMethodType = operation.TargetMethod.ContainingType;
-                if (targetMethodType.IsNumberType() && operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.NumberStyleSymbol))
+                if (targetMethodType.IsNumberType() && _cultureSensitiveContext.NumberStyleSymbol != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.NumberStyleSymbol))
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
                     return;
@@ -80,7 +82,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var isDateTime = targetMethodType.IsDateTime() || targetMethodType.IsEqualToAny(_cultureSensitiveContext.DateTimeOffsetSymbol, _cultureSensitiveContext.DateOnlySymbol, _cultureSensitiveContext.TimeOnlySymbol);
                 if (isDateTime)
                 {
-                    if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.DateTimeStyleSymbol))
+                    if (_cultureSensitiveContext.DateTimeStyleSymbol != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.DateTimeStyleSymbol))
                     {
                         context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
                         return;
@@ -90,7 +92,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             if (_cultureSensitiveContext.CultureInfoSymbol != null && !operation.HasArgumentOfType(_cultureSensitiveContext.CultureInfoSymbol))
             {
-                var overload = operation.TargetMethod.FindOverloadWithAdditionalParameterOfType(context.Compilation, includeObsoleteMethods: false, _cultureSensitiveContext.CultureInfoSymbol);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, includeObsoleteMethods: false, _cultureSensitiveContext.CultureInfoSymbol);
                 if (overload != null)
                 {
                     context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.CultureInfoSymbol.ToDisplayString());

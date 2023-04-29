@@ -60,6 +60,11 @@ internal static class TypeSymbolExtensions
         if (attributeType == null)
             return null;
 
+        if (attributeType.IsSealed)
+        {
+            inherits = false;
+        }
+
         foreach (var attribute in symbol.GetAttributes())
         {
             if (inherits)

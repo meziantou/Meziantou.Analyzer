@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -36,10 +37,14 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var overloadFinder = new OverloadFinder(context.Compilation);
+            context.RegisterOperationAction(context => AnalyzeInvocation(context, overloadFinder), OperationKind.Invocation);
+        });
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, OverloadFinder overloadFinder)
     {
         var stringComparisonType = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
         var operation = (IInvocationOperation)context.Operation;
@@ -55,7 +60,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                 return;
 
             // Check if there is an overload with a StringComparison
-            if (operation.TargetMethod.HasOverloadWithAdditionalParameterOfType(operation, stringComparisonType))
+            if (overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, stringComparisonType))
             {
                 if (IsNonCultureSensitiveMethod(operation))
                 {
