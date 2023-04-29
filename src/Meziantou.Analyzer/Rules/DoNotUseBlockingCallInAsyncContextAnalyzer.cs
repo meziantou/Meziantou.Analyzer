@@ -60,12 +60,15 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
     {
         private static readonly Version Version6 = new(6, 0, 0, 0);
 
-        private readonly INamedTypeSymbol[] _taskLikeSymbols;
+        private readonly AwaitableTypes _awaitableTypes;
+
         private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
         private readonly ConcurrentHashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
 
         public Context(Compilation compilation)
         {
+            _awaitableTypes = new AwaitableTypes(compilation);
+
             var consoleSymbol = compilation.GetBestTypeByMetadataName("System.Console");
             if (consoleSymbol != null)
             {
@@ -78,6 +81,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
             CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
+            ObsoleteAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
 
             TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
             TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
@@ -101,13 +105,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 ServiceProviderServiceExtensions_CreateAsyncScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateAsyncScope").FirstOrDefault();
             }
 
-            var taskLikeSymbols = new List<INamedTypeSymbol>(4);
-            taskLikeSymbols.AddIfNotNull(TaskSymbol);
-            taskLikeSymbols.AddIfNotNull(TaskOfTSymbol);
-            taskLikeSymbols.AddIfNotNull(ValueTaskSymbol);
-            taskLikeSymbols.AddIfNotNull(ValueTaskOfTSymbol);
-            _taskLikeSymbols = taskLikeSymbols.ToArray();
-
             var taskAwaiterLikeSymbols = new List<INamedTypeSymbol>(4);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterOfTSymbol);
@@ -119,6 +116,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private ISymbol? ProcessSymbol { get; }
         private ISymbol[] ConsoleErrorAndOutSymbols { get; }
         private INamedTypeSymbol? CancellationTokenSymbol { get; }
+        private INamedTypeSymbol? ObsoleteAttributeSymbol { get; }
         private INamedTypeSymbol? ServiceProviderServiceExtensionsSymbol { get; }
         private ISymbol? ServiceProviderServiceExtensions_CreateScopeSymbol { get; }
         private ISymbol? ServiceProviderServiceExtensions_CreateAsyncScopeSymbol { get; }
@@ -165,7 +163,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             data = null;
             var targetMethod = operation.TargetMethod;
 
-            if (IsTaskSymbol(targetMethod.ReturnType))
+            if (_awaitableTypes.IsAwaitable(targetMethod.ReturnType, operation.SemanticModel!, operation.Syntax.SpanStart))
                 return false;
 
             // Process.WaitForExit => Skip because the async method is not equivalent https://github.com/dotnet/runtime/issues/42556
@@ -242,27 +240,41 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 var position = operation.Syntax.GetLocation().SourceSpan.End;
 
-                var potentionalMethods = new List<ISymbol>();
-                potentionalMethods.AddRange(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
-                if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
+                var result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
+                if (result != null)
                 {
-                    potentionalMethods.AddRange(operation.SemanticModel.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
+                    data = result;
+                    return true;
                 }
 
-                foreach (var potentialMethod in potentionalMethods)
+                if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
                 {
-                    if (IsPotentialMember(compilation, targetMethod, potentialMethod))
+                    result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
+                    if (result != null)
                     {
-                        data = new($"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, potentialMethod.Name);
+                        data = result;
                         return true;
                     }
+                }
+
+                DiagnosticData? ProcessSymbols(ImmutableArray<ISymbol> potentialMethods)
+                {
+                    foreach (var potentialMethod in potentialMethods)
+                    {
+                        if (IsPotentialMember(operation, targetMethod, potentialMethod))
+                        {
+                            return new($"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, potentialMethod.Name);
+                        }
+                    }
+
+                    return null;
                 }
             }
 
             return false;
         }
 
-        private bool IsPotentialMember(Compilation compilation, IMethodSymbol method, ISymbol potentialAsyncSymbol)
+        private bool IsPotentialMember(IInvocationOperation operation, IMethodSymbol method, ISymbol potentialAsyncSymbol)
         {
             if (potentialAsyncSymbol.IsEqualTo(method))
                 return false;
@@ -272,30 +284,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (method.IsStatic && !methodSymbol.IsStatic)
                     return false;
 
-                if (!IsTaskSymbol(methodSymbol.ReturnType))
+                if (!_awaitableTypes.IsAwaitable(methodSymbol.ReturnType, operation.SemanticModel!, operation.Syntax.SpanStart))
                     return false;
 
-                if (methodSymbol.IsObsolete(compilation))
+                if (methodSymbol.HasAttribute(ObsoleteAttributeSymbol))
                     return false;
 
-                if (!method.HasSimilarParameters(methodSymbol) && !method.HasSimilarParameters(methodSymbol, CancellationTokenSymbol))
-                    return false;
+                if (OverloadFinder.HasSimilarParameters(method, methodSymbol))
+                    return true;
 
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool IsTaskSymbol(ITypeSymbol? symbol)
-        {
-            if (symbol is null)
-                return false;
-
-            var originalDefinition = symbol.OriginalDefinition;
-            foreach (var taskLikeSymbol in _taskLikeSymbols)
-            {
-                if (originalDefinition.IsEqualTo(taskLikeSymbol))
+                if (CancellationTokenSymbol != null && OverloadFinder.HasSimilarParameters(method, methodSymbol, CancellationTokenSymbol))
                     return true;
             }
 
@@ -337,11 +335,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private bool IsAsyncContext(IOperation operation, CancellationToken cancellationToken)
         {
-            // lamdba, delegate, method, local function
+            // lambda, delegate, method, local function
             // Check if returns Task or async void
             if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken) is IMethodSymbol methodSymbol)
             {
-                return methodSymbol.IsAsync || methodSymbol.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol, ValueTaskSymbol, ValueTaskOfTSymbol);
+                return methodSymbol.IsAsync || _awaitableTypes.IsAwaitable(methodSymbol.ReturnType, operation.SemanticModel, operation.Syntax.SpanStart);
             }
 
             return false;

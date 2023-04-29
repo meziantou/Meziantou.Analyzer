@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Data;
 using System.Diagnostics;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;

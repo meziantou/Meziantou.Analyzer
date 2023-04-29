@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Meziantou.Analyzer.Configurations;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -69,8 +70,11 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext
     {
+        private readonly OverloadFinder _overloadFinder;
+
         public AnalyzerContext(Compilation compilation)
         {
+            _overloadFinder = new OverloadFinder(compilation);
             EqualityComparerStringType = GetIEqualityComparerString(compilation);
             ComparerStringType = GetIComparerString(compilation);
             EnumerableType = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
@@ -92,8 +96,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (method == null)
                 return;
 
-            if (method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, EqualityComparerStringType) ||
-                method.HasOverloadWithAdditionalParameterOfType(ctx.Compilation, ComparerStringType))
+            if ((EqualityComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, EqualityComparerStringType)) ||
+                (ComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, ComparerStringType)))
             {
                 ctx.ReportDiagnostic(s_rule, operation);
             }
@@ -119,8 +123,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, s_rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
                 return;
 
-            if (method.HasOverloadWithAdditionalParameterOfType(operation, EqualityComparerStringType) ||
-                method.HasOverloadWithAdditionalParameterOfType(operation, ComparerStringType))
+            if ((EqualityComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, EqualityComparerStringType)) ||
+                (ComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, ComparerStringType)))
             {
                 ctx.ReportDiagnostic(s_rule, operation);
                 return;

@@ -6,6 +6,7 @@ namespace Meziantou.Analyzer;
 
 internal static class CompilationExtensions
 {
+#if ROSLYN_3_8
     public static ImmutableArray<INamedTypeSymbol> GetTypesByMetadataName(this Compilation compilation, string typeMetadataName)
     {
         var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
@@ -30,6 +31,7 @@ internal static class CompilationExtensions
 
         return result.ToImmutable();
     }
+#endif
 
     // Copy from https://github.com/dotnet/roslyn/blob/d2ff1d83e8fde6165531ad83f0e5b1ae95908289/src/Workspaces/SharedUtilitiesAndExtensions/Compiler/Core/Extensions/CompilationExtensions.cs#L11-L68
     /// <summary>
