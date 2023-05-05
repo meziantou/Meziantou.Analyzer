@@ -48,22 +48,5 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
 
             }, OperationKind.Invocation);
         });
-
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
-    }
-
-    private static void AnalyzeSymbol(SymbolAnalysisContext context)
-    {
-        var symbol = (INamedTypeSymbol)context.Symbol;
-        if (!symbol.IsAbstract)
-            return;
-
-        foreach (var ctor in symbol.InstanceConstructors)
-        {
-            if (ctor.DeclaredAccessibility == Accessibility.Public || ctor.DeclaredAccessibility == Accessibility.Internal)
-            {
-                context.ReportDiagnostic(s_rule, ctor);
-            }
-        }
     }
 }
