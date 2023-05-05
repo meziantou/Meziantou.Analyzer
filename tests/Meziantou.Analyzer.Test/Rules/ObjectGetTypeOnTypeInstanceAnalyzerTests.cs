@@ -22,10 +22,25 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzerTests
     public async Task Valid(string code)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(code)
-              .ValidateAsync();
+            .WithSourceCode(code)
+            .ValidateAsync();
     }
-    
+
+    [Fact]
+    public async Task AbstractClass_Valid()
+    {
+        const string SourceCode = """
+                abstract class Test
+                {
+                    public Test(int a) { }
+                };
+            """;
+
+        await CreateProjectBuilder().WithOutputKind(OutputKind.DynamicallyLinkedLibrary)
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
     [Theory]
     [InlineData("new object().GetType().GetType();")]
     [InlineData("((System.Type)null).GetType();")]
