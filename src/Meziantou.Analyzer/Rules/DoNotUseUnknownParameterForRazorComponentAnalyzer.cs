@@ -126,7 +126,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                     {
                         if (member is IPropertySymbol property)
                         {
-                            // https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.components.parameterattribute?view=aspnetcore-6.0&WT.mc_id=DT-MVP-5003978
+                            // https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.components.parameterattribute?view=aspnetcore-6.0&WT.mc_id=DT-MVP-5003978
                             var parameterAttribute = property.GetAttribute(ParameterSymbol, inherits: false); // the attribute is sealed
                             if (parameterAttribute == null)
                                 continue;

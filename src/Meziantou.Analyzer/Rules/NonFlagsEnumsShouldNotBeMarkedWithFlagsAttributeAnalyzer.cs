@@ -78,7 +78,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
 
     private static bool IsSingleBitSet(object? o)
     {
-        // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
+        // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum?WT.mc_id=DT-MVP-5003978
         // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
         return o switch
         {
@@ -97,7 +97,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
 
     private static bool IsZero(object? o)
     {
-        // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
+        // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum?WT.mc_id=DT-MVP-5003978
         // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
         return o switch
         {
@@ -116,7 +116,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
 
     private static bool IsAllBitsSet(object? o)
     {
-        // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
+        // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum?WT.mc_id=DT-MVP-5003978
         // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
         return o switch
         {
@@ -136,7 +136,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
     [SuppressMessage("Style", "IDE0004:Remove Unnecessary Cast", Justification = "Clearer")]
     private static object RemoveValue(object o, object valueToRemove)
     {
-        // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
+        // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum?WT.mc_id=DT-MVP-5003978
         // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
         return o switch
         {

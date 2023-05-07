@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules;
 
-// https://docs.microsoft.com/en-us/dotnet/api/system.windows.markup.constructorargumentattribute?view=netcore-3.1
+// https://learn.microsoft.com/en-us/dotnet/api/system.windows.markup.constructorargumentattribute?view=netcore-3.1
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyzer : DiagnosticAnalyzer
 {
