@@ -119,7 +119,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (IsExcludedMethod(context, s_stringInterpolationRule, operation))
                 return;
 
-            var unwrapNullable = MustUnwrapNullableTypes(context, s_stringInterpolationRule, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
+            var options = MustUnwrapNullableTypes(context, s_stringInterpolationRule, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
 
             var parent = operation.Parent;
             if (parent is IConversionOperation conversionOperation)
@@ -136,7 +136,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 if (expression == null || type == null)
                     continue;
 
-                if (_cultureSensitiveContext.IsCultureSensitiveOperation(part, unwrapNullable))
+                if (_cultureSensitiveContext.IsCultureSensitiveOperation(part, options | CultureSensitiveOptions.UseInvocationReturnType))
                 {
                     context.ReportDiagnostic(s_stringInterpolationRule, part);
                 }
@@ -164,7 +164,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             {
                 var value = conversion.Operand;
                 var options = MustUnwrapNullableTypes(context, rule, operand) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
-                if (_cultureSensitiveContext.IsCultureSensitiveOperation(value, options))
+                if (_cultureSensitiveContext.IsCultureSensitiveOperation(value, options | CultureSensitiveOptions.UseInvocationReturnType))
                     return false;
             }
 
