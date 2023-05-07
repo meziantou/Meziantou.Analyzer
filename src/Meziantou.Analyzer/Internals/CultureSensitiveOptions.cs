@@ -6,5 +6,6 @@ namespace Meziantou.Analyzer.Internals;
 internal enum CultureSensitiveOptions
 {
     None,
-    UnwrapNullableOfT,
+    UnwrapNullableOfT = 1,
+    UseInvocationReturnType = 2,
 }

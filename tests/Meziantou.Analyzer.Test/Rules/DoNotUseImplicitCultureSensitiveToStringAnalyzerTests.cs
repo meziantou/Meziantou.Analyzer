@@ -289,4 +289,23 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/516")]
+    public async Task ConcatNoDiagnostic_Char()
+    {
+        var sourceCode = """
+class Test
+{
+    void A()
+    {
+        var c = '!';
+        _ = "abc" + char.ToLower(c, System.Globalization.CultureInfo.InvariantCulture);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }

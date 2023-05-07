@@ -253,7 +253,7 @@ internal static class TypeSymbolExtensions
     }
 
     [return: NotNullIfNotNull(nameof(typeSymbol))]
-    public static ITypeSymbol? GetUnderlyingNullableType(this ITypeSymbol? typeSymbol)
+    public static ITypeSymbol? GetUnderlyingNullableTypeOrSelf(this ITypeSymbol? typeSymbol)
     {
         if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
         {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -84,22 +85,22 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                 var expression = argument.Expression;
                 if (expression.IsKind(SyntaxKind.NullLiteralExpression))
                 {
-                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Null))
+                    if (!MustCheckExpressionKind(syntaxContext, expression, ArgumentExpressionKinds.Null))
                         return;
                 }
                 else if (expression.IsKind(SyntaxKind.NumericLiteralExpression))
                 {
-                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Numeric))
+                    if (!MustCheckExpressionKind(syntaxContext, expression, ArgumentExpressionKinds.Numeric))
                         return;
                 }
                 else if (IsBooleanExpression(expression))
                 {
-                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.Boolean))
+                    if (!MustCheckExpressionKind(syntaxContext, expression, ArgumentExpressionKinds.Boolean))
                         return;
                 }
                 else if (IsStringExpression(expression))
                 {
-                    if (!GetExpressionKindsConfiguration(syntaxContext.Options, expression).HasFlag(ArgumentExpressionKinds.String))
+                    if (!MustCheckExpressionKind(syntaxContext, expression, ArgumentExpressionKinds.String))
                         return;
                 }
                 else
@@ -312,6 +313,12 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
         }
 
         return ArgumentExpressionKinds.Default;
+    }
+
+    private static bool MustCheckExpressionKind(SyntaxNodeAnalysisContext context, SyntaxNode expression, ArgumentExpressionKinds kind)
+    {
+        var options = GetExpressionKindsConfiguration(context.Options, expression);
+        return (options & kind) == kind;
     }
 
     [Flags]

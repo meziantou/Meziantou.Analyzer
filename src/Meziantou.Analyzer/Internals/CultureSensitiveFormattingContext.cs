@@ -44,10 +44,15 @@ internal sealed class CultureSensitiveFormattingContext
     public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; }
     public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; }
 
+    private static bool MustUnwrapNullableOfT(CultureSensitiveOptions options)
+    {
+        return (options & CultureSensitiveOptions.UnwrapNullableOfT) == CultureSensitiveOptions.UnwrapNullableOfT;
+    }
+
     public bool IsCultureSensitiveOperation(IOperation operation, CultureSensitiveOptions options)
     {
         // Unwrap implicit conversion to Nullable<T>
-        if (options.HasFlag(CultureSensitiveOptions.UnwrapNullableOfT) && operation is IConversionOperation { Conversion.IsNullable: true, Operand: var conversionOperand })
+        if (MustUnwrapNullableOfT(options) && operation is IConversionOperation { Conversion.IsNullable: true, Operand: var conversionOperand })
         {
             operation = conversionOperand;
         }
@@ -99,6 +104,9 @@ internal sealed class CultureSensitiveFormattingContext
                 if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && !IsCultureSensitiveOperation(invocation.Arguments[0].Value, options))
                     return false;
             }
+
+            if ((options & CultureSensitiveOptions.UseInvocationReturnType) == CultureSensitiveOptions.UseInvocationReturnType)
+                return IsCultureSensitiveType(invocation.Type, options);
 
             return true;
         }
@@ -180,9 +188,9 @@ internal sealed class CultureSensitiveFormattingContext
         if (typeSymbol == null)
             return true;
 
-        if (options.HasFlag(CultureSensitiveOptions.UnwrapNullableOfT))
+        if (MustUnwrapNullableOfT(options))
         {
-            typeSymbol = typeSymbol.GetUnderlyingNullableType();
+            typeSymbol = typeSymbol.GetUnderlyingNullableTypeOrSelf();
         }
 
         if (typeSymbol.IsEnumeration())
@@ -210,6 +218,9 @@ internal sealed class CultureSensitiveFormattingContext
             return false;
 
         if (typeSymbol.SpecialType == SpecialType.System_UIntPtr)
+            return false;
+
+        if (typeSymbol.IsOrInheritFrom(StringBuilderSymbol))
             return false;
 
         if (typeSymbol.IsEqualTo(UInt128Symbol))
