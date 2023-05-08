@@ -25,53 +25,43 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterOperationAction(AnalyzeSimpleAssignment, OperationKind.SimpleAssignment);
-        context.RegisterOperationAction(AnalyzeVariableInitializer, OperationKind.VariableInitializer);
-        context.RegisterOperationAction(AnalyzeArgument, OperationKind.Argument);
+        context.RegisterOperationAction(AnalyzeConversion, OperationKind.Conversion);
     }
 
-    private static void AnalyzeArgument(OperationAnalysisContext context)
+    private static void AnalyzeConversion(OperationAnalysisContext context)
     {
-        var operation = (IArgumentOperation)context.Operation;
-        if (operation.IsImplicit)
-            return;
-
-        if (operation.Value is IConversionOperation conversionOperation)
-        {
-            ValidateConversionOperation(context, conversionOperation);
-        }
-    }
-
-    private static void AnalyzeSimpleAssignment(OperationAnalysisContext context)
-    {
-        var operation = (ISimpleAssignmentOperation)context.Operation;
-        if (operation.Value is IConversionOperation conversionOperation)
-        {
-            ValidateConversionOperation(context, conversionOperation);
-        }
-    }
-
-    private static void AnalyzeVariableInitializer(OperationAnalysisContext context)
-    {
-        var operation = (IVariableInitializerOperation)context.Operation;
-        if (operation.Value is IConversionOperation conversionOperation)
-        {
-            ValidateConversionOperation(context, conversionOperation);
-        }
-    }
-
-    private static void ValidateConversionOperation(OperationAnalysisContext context, IConversionOperation operation)
-    {
+        var operation = (IConversionOperation)context.Operation;
         if (!operation.IsImplicit)
             return;
 
-        if (!operation.Type.IsEnumeration())
+        if (operation.Type is not INamedTypeSymbol { EnumUnderlyingType: not null and var enumType })
             return;
 
-        // Skip "default" keyword
-        if (operation.Operand is ILiteralOperation && operation.Operand.ConstantValue.HasValue && operation.Operand.ConstantValue.Value is int i && i == 0)
+        if (operation.Operand is IDefaultValueOperation)
+            return;
+
+        if (operation.Parent is IArgumentOperation { IsImplicit: true })
+            return;
+
+        if (operation.ConstantValue is { HasValue: true, Value: not null and var value } && IsZero(enumType, value))
         {
             context.ReportDiagnostic(s_rule, operation, operation.Type.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat));
+        }
+
+        static bool IsZero(ITypeSymbol enumType, object value)
+        {
+            return enumType.SpecialType switch
+            {
+                SpecialType.System_SByte => value is sbyte converted && converted == 0,
+                SpecialType.System_Byte => value is byte converted && converted == 0,
+                SpecialType.System_Int16 => value is short converted && converted == 0,
+                SpecialType.System_UInt16 => value is ushort converted && converted == 0,
+                SpecialType.System_Int32 => value is int converted && converted == 0,
+                SpecialType.System_UInt32 => value is uint converted && converted == 0u,
+                SpecialType.System_Int64 => value is long converted && converted == 0L,
+                SpecialType.System_UInt64 => value is ulong converted && converted == 0uL,
+                _ => false,
+            };
         }
     }
 }
