@@ -43,6 +43,11 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         if (operation.Parent is IArgumentOperation { IsImplicit: true })
             return;
 
+#if !ROSLYN4_5_OR_GREATER
+        if (operation.Syntax.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.Attribute))
+            return;
+#endif
+
         if (operation.ConstantValue is { HasValue: true, Value: not null and var value } && IsZero(enumType, value))
         {
             context.ReportDiagnostic(s_rule, operation, operation.Type.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat));

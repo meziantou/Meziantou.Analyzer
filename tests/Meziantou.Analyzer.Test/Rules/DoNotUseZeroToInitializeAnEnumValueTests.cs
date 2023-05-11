@@ -367,4 +367,36 @@ class Test
 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/525")]
+    public async Task ImplicitParameterInAttribute()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+using System;
+
+public enum MyEnum
+{
+    None = 0,
+    Some = 1,
+}
+
+[AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+public class MyAttribute : Attribute
+{
+    public MyAttribute(MyEnum bar = MyEnum.None) { }
+}
+
+[MyAttribute]
+[MyAttribute(MyEnum.None)]
+[MyAttribute(MyEnum.Some)]
+[MyAttribute([|0|])]
+public class MyClass
+{
+    public MyClass(MyEnum foo = MyEnum.None) { }
+}
+""")
+              .ValidateAsync();
+    }
 }
