@@ -48,7 +48,7 @@
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.5.0" />
       </ItemGroup>
       <PropertyGroup>
-        <DefineConstants>$(DefineConstants);ROSLYN4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);ROSLYN4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER</DefineConstants>
         <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);CS0618</NoWarn>
       </PropertyGroup>
