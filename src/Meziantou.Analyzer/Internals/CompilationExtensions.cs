@@ -1,4 +1,6 @@
-﻿using System.Collections.Immutable;
+﻿#if ROSLYN_3_8
+using System.Collections.Immutable;
+#endif
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 
