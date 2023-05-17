@@ -92,7 +92,7 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData("null")]
     [InlineData(@"""""")]
@@ -118,7 +118,7 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
     public async Task IndexOf_NoReport_Netstandard2_0(string method)
@@ -137,7 +137,7 @@ class Test
               .WithTargetFramework(TargetFramework.NetStandard2_0)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData(@"""a"", StringComparison.Ordinal")]
     [InlineData(@"""a"", 1, 2, StringComparison.Ordinal")]
@@ -157,7 +157,7 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData("null")]
     [InlineData(@"""""")]
@@ -184,7 +184,7 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
     public async Task LastIndexOf_NoReport_Netstandard2_0(string method)
@@ -243,6 +243,90 @@ class Test
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData(@""","", new object[0]")]
+    [InlineData(@""","", new string[0]")]
+    [InlineData(@""","", new string[0], 0, 1")]
+    [InlineData(@""","", Enumerable.Empty<object>()")]
+    [InlineData(@""","", Enumerable.Empty<string>()")]
+    public async Task Join_Report(string method)
+    {
+        var sourceCode = @"
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Test
+{
+    void A()
+    {
+        _ = [||]string.Join(" + method + @");
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData(@""","", new object[0]")]
+    [InlineData(@""","", new string[0]")]
+    [InlineData(@""","", new string[0], 0, 1")]
+    [InlineData(@""","", Enumerable.Empty<object>()")]
+    [InlineData(@""","", Enumerable.Empty<string>()")]
+    public async Task Join_NoReport_netstandard2_0(string method)
+    {
+        var sourceCode = @"
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Test
+{
+    void A()
+    {
+        _ = string.Join(" + method + @");
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData(@"null, new object[0]")]
+    [InlineData(@"""ab"", new object[0]")]
+    [InlineData(@"""ab"", new string[0]")]
+    [InlineData(@"""ab"", new string[0], 0, 1")]
+    [InlineData(@"""ab"", Enumerable.Empty<object>()")]
+    [InlineData(@"""ab"", Enumerable.Empty<string>()")]
+    [InlineData(@"',', new object[0]")]
+    [InlineData(@"',', new string[0]")]
+    [InlineData(@"',', new string[0], 0, 1")]
+    [InlineData(@"',', Enumerable.Empty<object>()")]
+    [InlineData(@"',', Enumerable.Empty<string>()")]
+    public async Task Join_NoReport(string method)
+    {
+        var sourceCode = @"
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Test
+{
+    void A()
+    {
+        _ = string.Join(" + method + @");
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithTargetFramework(TargetFramework.Net6_0)
               .ValidateAsync();
     }
 }
