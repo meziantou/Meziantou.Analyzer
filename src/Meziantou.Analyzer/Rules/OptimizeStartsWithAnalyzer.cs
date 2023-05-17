@@ -46,7 +46,8 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                 StringComparison_InvariantCulture = StringComparisonSymbol.GetMembers(nameof(StringComparison.InvariantCulture)).FirstOrDefault();
             }
 
-            // StartsWith methods
+            EnumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
+
             var stringSymbol = compilation.GetSpecialType(SpecialType.System_String);
             if (stringSymbol != null)
             {
@@ -122,38 +123,67 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         LastIndexOf_Char_StringComparison = method;
                     }
                 }
+
+                foreach (var method in stringSymbol.GetMembers(nameof(string.Join)).OfType<IMethodSymbol>())
+                {
+                    if (!method.IsStatic)
+                        continue;
+
+                    if (method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Object })
+                    {
+                        Join_Char_ObjectArray = method;
+                    }
+                    else if (method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_String })
+                    {
+                        Join_Char_StringArray = method;
+                    }
+                    else if (method.Parameters.Length == 2 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type is INamedTypeSymbol symbol && symbol.ConstructedFrom.IsEqualTo(EnumerableOfTSymbol))
+                    {
+                        Join_Char_IEnumerableT = method;
+                    }
+                    else if (method.Parameters.Length == 4 && method.Parameters[0].Type.IsChar() && method.Parameters[1].Type is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_String } && method.Parameters[2].Type.IsInt32() && method.Parameters[3].Type.IsInt32())
+                    {
+                        Join_Char_StringArray_Int32_Int32 = method;
+                    }
+                }
             }
         }
 
         public IMethodSymbol? StartsWith_Char { get; set; }
         public IMethodSymbol? EndsWith_Char { get; set; }
+
         public IMethodSymbol? Replace_Char_Char { get; set; }
+
         public IMethodSymbol? IndexOf_Char { get; set; }
         public IMethodSymbol? IndexOf_Char_Int32 { get; set; }
         public IMethodSymbol? IndexOf_Char_Int32_Int32 { get; set; }
         public IMethodSymbol? IndexOf_Char_StringComparison { get; set; }
-        
+
         public IMethodSymbol? LastIndexOf_Char { get; set; }
         public IMethodSymbol? LastIndexOf_Char_Int32 { get; set; }
         public IMethodSymbol? LastIndexOf_Char_Int32_Int32 { get; set; }
         public IMethodSymbol? LastIndexOf_Char_StringComparison { get; set; }
+
+        public IMethodSymbol? Join_Char_ObjectArray { get; set; }
+        public IMethodSymbol? Join_Char_IEnumerableT { get; set; }
+        public IMethodSymbol? Join_Char_StringArray { get; set; }
+        public IMethodSymbol? Join_Char_StringArray_Int32_Int32 { get; set; }
 
         public INamedTypeSymbol? StringComparisonSymbol { get; set; }
         public ISymbol? StringComparison_Ordinal { get; set; }
         public ISymbol? StringComparison_CurrentCulture { get; set; }
         public ISymbol? StringComparison_InvariantCulture { get; set; }
 
+        public INamedTypeSymbol? EnumerableOfTSymbol { get; set; }
+
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
-            if (operation.TargetMethod.IsEqualTo(StartsWith_Char) || operation.TargetMethod.IsEqualTo(EndsWith_Char))
-                return;
-
             if (operation.TargetMethod.ContainingType.IsString())
             {
                 if (operation.TargetMethod.Name is "StartsWith")
                 {
-                    if (StartsWith_Char == null)
+                    if (StartsWith_Char == null || operation.TargetMethod.IsEqualTo(StartsWith_Char))
                         return;
 
                     if (operation.Arguments.Length == 2)
@@ -167,7 +197,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                 }
                 else if (operation.TargetMethod.Name is "EndsWith")
                 {
-                    if (EndsWith_Char == null)
+                    if (EndsWith_Char == null || operation.TargetMethod.IsEqualTo(EndsWith_Char))
                         return;
 
                     if (operation.Arguments.Length == 2)
@@ -181,7 +211,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                 }
                 else if (operation.TargetMethod.Name is "Replace")
                 {
-                    if (Replace_Char_Char == null)
+                    if (Replace_Char_Char == null || operation.TargetMethod.IsEqualTo(Replace_Char_Char))
                         return;
 
                     if (operation.Arguments.Length == 2)
@@ -216,7 +246,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             }
                         }
 
-                        if(IndexOf_Char_StringComparison != null)
+                        if (IndexOf_Char_StringComparison != null)
                         {
                             if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                                 operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
@@ -267,7 +297,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             }
                         }
 
-                        if(LastIndexOf_Char_StringComparison != null)
+                        if (LastIndexOf_Char_StringComparison != null)
                         {
                             if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                                 operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
@@ -302,6 +332,59 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             operation.Arguments[3].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
                             context.ReportDiagnostic(s_rule, operation);
+                        }
+                    }
+                }
+                else if (operation.TargetMethod.Name is "Join" && operation.TargetMethod.IsStatic)
+                {
+                    if (operation.Arguments.Length > 1)
+                    {
+                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } })
+                        {
+                            var secondParameterType = operation.TargetMethod.Parameters[1].Type;
+                            switch (operation.Arguments.Length)
+                            {
+                                case 2:
+                                    if (Join_Char_ObjectArray != null && secondParameterType is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Object })
+                                    {
+                                        context.ReportDiagnostic(s_rule, operation);
+                                        return;
+                                    }
+
+                                    if (Join_Char_StringArray != null && secondParameterType is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_String })
+                                    {
+                                        context.ReportDiagnostic(s_rule, operation);
+                                        return;
+                                    }
+
+                                    if (Join_Char_IEnumerableT != null && secondParameterType is INamedTypeSymbol symbol && symbol.ConstructedFrom.IsEqualTo(EnumerableOfTSymbol))
+                                    {
+                                        context.ReportDiagnostic(s_rule, operation);
+                                        return;
+                                    }
+
+                                    break;
+
+                                case 4:
+                                    if (Join_Char_StringArray_Int32_Int32 != null)
+                                    {
+                                        context.ReportDiagnostic(s_rule, operation);
+                                        return;
+                                    }
+
+                                    break;
+                            }
+                        }
+                    }
+                    else if (operation.Arguments.Length == 4)
+                    {
+                        if (Join_Char_StringArray_Int32_Int32 != null)
+                        {
+                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } })
+                            {
+                                context.ReportDiagnostic(s_rule, operation);
+                                return;
+                            }
                         }
                     }
                 }
