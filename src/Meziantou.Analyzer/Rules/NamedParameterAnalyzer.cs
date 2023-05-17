@@ -53,6 +53,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
             var keyValuePairTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
             var propertyBuilderType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
             var syntaxNodeType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
+            var operationUtilities = new OperationUtilities(compilationContext.Compilation);
 
             compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
             {
@@ -230,7 +231,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                             return;
 
                         var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
-                        if (operation != null && operation.IsInExpressionContext())
+                        if (operation != null && operationUtilities.IsInExpressionContext(operation))
                             return;
 
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))

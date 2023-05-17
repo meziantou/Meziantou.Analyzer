@@ -39,101 +39,117 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(context =>
         {
-            var overloadFinder = new OverloadFinder(context.Compilation);
-            context.RegisterOperationAction(context => AnalyzeInvocation(context, overloadFinder), OperationKind.Invocation);
+            var analyzerContext = new AnalyzerContext(context.Compilation);
+            if (!analyzerContext.IsValid)
+                return;
+
+            context.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
         });
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context, OverloadFinder overloadFinder)
+    private sealed class AnalyzerContext
     {
-        var stringComparisonType = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
-        var operation = (IInvocationOperation)context.Operation;
+        private readonly OverloadFinder _overloadFinder;
+        private readonly OperationUtilities _operationUtilities;
+        private readonly INamedTypeSymbol _stringComparisonSymbol;
+        private readonly INamedTypeSymbol? _jobjectSymbol;
+        private readonly INamedTypeSymbol? _xunitAssertSymbol;
 
-        if (stringComparisonType == null)
-            return;
-
-        if (!operation.HasArgumentOfType(stringComparisonType))
+        public AnalyzerContext(Compilation compilation)
         {
-            // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
-            // https://github.com/aspnet/EntityFrameworkCore/issues/1222
-            if (operation.IsInExpressionContext())
-                return;
+            _overloadFinder = new OverloadFinder(compilation);
+            _operationUtilities = new OperationUtilities(compilation);
+            _stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison")!;
+            _jobjectSymbol = compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
+            _xunitAssertSymbol = compilation.GetBestTypeByMetadataName("XUnit.Assert");
+        }
 
-            // Check if there is an overload with a StringComparison
-            if (overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, stringComparisonType))
+        public bool IsValid => _stringComparisonSymbol != null;
+
+        public void AnalyzeInvocation(OperationAnalysisContext context)
+        {
+            var operation = (IInvocationOperation)context.Operation;
+            if (!operation.HasArgumentOfType(_stringComparisonSymbol))
             {
-                if (IsNonCultureSensitiveMethod(operation))
+                // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
+                // https://github.com/aspnet/EntityFrameworkCore/issues/1222
+                if (_operationUtilities.IsInExpressionContext(operation))
+                    return;
+
+                // Check if there is an overload with a StringComparison
+                if (_overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, _stringComparisonSymbol))
                 {
-                    context.ReportDiagnostic(s_useStringComparisonRule, operation, operation.TargetMethod.Name);
-                }
-                else
-                {
-                    context.ReportDiagnostic(s_avoidCultureSensitiveMethodRule, operation, operation.TargetMethod.Name);
+                    if (IsNonCultureSensitiveMethod(operation))
+                    {
+                        context.ReportDiagnostic(s_useStringComparisonRule, operation, operation.TargetMethod.Name);
+                    }
+                    else
+                    {
+                        context.ReportDiagnostic(s_avoidCultureSensitiveMethodRule, operation, operation.TargetMethod.Name);
+                    }
                 }
             }
         }
-    }
 
-    private static bool IsMethod(IInvocationOperation operation, ITypeSymbol type, string name)
-    {
-        var methodSymbol = operation.TargetMethod;
-        if (methodSymbol == null)
-            return false;
-
-        if (!string.Equals(methodSymbol.Name, name, StringComparison.Ordinal))
-            return false;
-
-        if (!type.IsEqualTo(methodSymbol.ContainingType))
-            return false;
-
-        return true;
-    }
-
-    private static bool IsNonCultureSensitiveMethod(IInvocationOperation operation)
-    {
-        var method = operation.TargetMethod;
-        if (method == null)
-            return false;
-
-        if (method.ContainingType.IsString())
+        private static bool IsMethod(IInvocationOperation operation, ITypeSymbol type, string name)
         {
-            // string.Equals(string)
-            if (method.Name == nameof(string.Equals) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
+            var methodSymbol = operation.TargetMethod;
+            if (methodSymbol == null)
+                return false;
+
+            if (!string.Equals(methodSymbol.Name, name, StringComparison.Ordinal))
+                return false;
+
+            if (!type.IsEqualTo(methodSymbol.ContainingType))
+                return false;
+
+            return true;
+        }
+
+        private bool IsNonCultureSensitiveMethod(IInvocationOperation operation)
+        {
+            var method = operation.TargetMethod;
+            if (method == null)
+                return false;
+
+            if (method.ContainingType.IsString())
+            {
+                // string.Equals(string)
+                if (method.Name == nameof(string.Equals) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
+                    return true;
+
+                // string.Equals(string, string)
+                if (method.Name == nameof(string.Equals) && method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsString())
+                    return true;
+
+                // string.IndexOf(char)
+                if (method.Name == nameof(string.IndexOf) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                    return true;
+
+                // string.EndsWith(char)
+                if (method.Name == nameof(string.EndsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                    return true;
+
+                // string.StartsWith(char)
+                if (method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
+                    return true;
+
+                // string.Contains(char) | string.Contains(string)
+                if (method.Name == nameof(string.Contains) && method.Parameters.Length == 1 && method.Parameters[0].Type.SpecialType is SpecialType.System_Char or SpecialType.System_String)
+                    return true;
+
+                return false;
+            }
+
+            // JObject.Property / TryGetValue / GetValue
+            if (method.ContainingType.IsEqualTo(_jobjectSymbol))
                 return true;
 
-            // string.Equals(string, string)
-            if (method.Name == nameof(string.Equals) && method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsString())
-                return true;
-
-            // string.IndexOf(char)
-            if (method.Name == nameof(string.IndexOf) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-                return true;
-
-            // string.EndsWith(char)
-            if (method.Name == nameof(string.EndsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-                return true;
-
-            // string.StartsWith(char)
-            if (method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-                return true;
-
-            // string.Contains(char) | string.Contains(string)
-            if (method.Name == nameof(string.Contains) && method.Parameters.Length == 1 && method.Parameters[0].Type.SpecialType is SpecialType.System_Char or SpecialType.System_String)
+            // Xunit.Assert.Contains/NotContains
+            if (method.ContainingType.IsEqualTo(_xunitAssertSymbol))
                 return true;
 
             return false;
         }
-
-        // JObject.Property / TryGetValue / GetValue
-        var jobjectType = operation.SemanticModel!.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
-        if (method.ContainingType.IsEqualTo(jobjectType))
-            return true;
-
-        // Xunit.Assert.Contains/NotContains
-        var xunitAssertType = operation.SemanticModel.Compilation.GetBestTypeByMetadataName("XUnit.Assert");
-        if (method.ContainingType.IsEqualTo(xunitAssertType))
-            return true;
-
-        return false;
     }
 }
