@@ -32,17 +32,19 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
             if (spanOfString is null && readOnlySpanOfString is null)
                 return;
 
-            var analyzerContext = new AnalyzerContext(spanOfString, readOnlySpanOfString);
+            var analyzerContext = new AnalyzerContext(ctx.Compilation, spanOfString, readOnlySpanOfString);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeBinaryOperator, OperationKind.BinaryOperator);
         });
     }
 
     private sealed class AnalyzerContext
     {
+        private readonly OperationUtilities _operationUtilities;
         private readonly INamedTypeSymbol?[] _spanTypes;
 
-        public AnalyzerContext(params INamedTypeSymbol?[] spanTypes)
+        public AnalyzerContext(Compilation compilation, params INamedTypeSymbol?[] spanTypes)
         {
+            _operationUtilities = new OperationUtilities(compilation);
             _spanTypes = spanTypes;
         }
 
@@ -57,7 +59,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
 
                 // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                 // https://github.com/aspnet/EntityFrameworkCore/issues/1222
-                if (operation.IsInExpressionContext())
+                if (_operationUtilities.IsInExpressionContext(operation))
                     return;
 
                 context.ReportDiagnostic(s_rule, operation, $"{operation.OperatorKind} operator");

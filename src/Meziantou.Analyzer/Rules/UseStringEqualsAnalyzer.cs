@@ -25,10 +25,14 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.BinaryOperator);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var operationUtilities = new OperationUtilities(context.Compilation);
+            context.RegisterOperationAction(context => AnalyzeInvocation(context, operationUtilities), OperationKind.BinaryOperator);
+        });
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, OperationUtilities operationUtilities)
     {
         var operation = (IBinaryOperation)context.Operation;
         if (operation.OperatorKind == BinaryOperatorKind.Equals ||
@@ -44,7 +48,7 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
 
                 // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                 // https://github.com/aspnet/EntityFrameworkCore/issues/1222
-                if (operation.IsInExpressionContext())
+                if (operationUtilities.IsInExpressionContext(operation))
                     return;
 
                 context.ReportDiagnostic(s_rule, operation, $"{operation.OperatorKind} operator");
