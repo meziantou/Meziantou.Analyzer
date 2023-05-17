@@ -26,17 +26,22 @@ public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var stringComparisonSymbol = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
+            if (stringComparisonSymbol == null)
+                return;
+
+            context.RegisterOperationAction(context => AnalyzeInvocation(context, stringComparisonSymbol), OperationKind.Invocation);
+        });
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol stringComparisonSymbol)
     {
         var operation = (IInvocationOperation)context.Operation;
-        if (string.Equals(operation.TargetMethod.Name, nameof(string.GetHashCode), StringComparison.Ordinal) &&
-            operation.TargetMethod.ContainingType.IsString())
+        if (operation.TargetMethod.Name is "GetHashCode" && operation.TargetMethod.ContainingType.IsString())
         {
-            var argumentTypeSymbol = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
-            if (argumentTypeSymbol == null || operation.HasArgumentOfType(argumentTypeSymbol))
+            if (operation.HasArgumentOfType(stringComparisonSymbol))
                 return;
 
             context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name);

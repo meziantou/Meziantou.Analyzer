@@ -65,53 +65,6 @@ internal static class OperationExtensions
         }
     }
 
-    public static bool IsInQueryableExpressionArgument(this IOperation operation)
-    {
-        var semanticModel = operation.SemanticModel;
-        if (semanticModel == null)
-            return false;
-
-        foreach (var invocationOperation in operation.Ancestors().OfType<IInvocationOperation>())
-        {
-            var type = invocationOperation.TargetMethod.ContainingType;
-            if (type.IsEqualTo(semanticModel.Compilation.GetBestTypeByMetadataName("System.Linq.Queryable")))
-                return true;
-        }
-
-        return false;
-    }
-
-    public static bool IsInExpressionContext(this IOperation operation)
-    {
-        var semanticModel = operation.SemanticModel;
-        if (semanticModel == null)
-            return false;
-
-        foreach (var op in operation.Ancestors())
-        {
-            if (op is IArgumentOperation argumentOperation)
-            {
-                if (argumentOperation.Parameter == null)
-                    continue;
-
-                var type = argumentOperation.Parameter.Type;
-                if (type.InheritsFrom(semanticModel.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression")))
-                    return true;
-            }
-            else if (op is IConversionOperation conversionOperation)
-            {
-                var type = conversionOperation.Type;
-                if (type is null)
-                    continue;
-
-                if (type.InheritsFrom(semanticModel.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression")))
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
     public static bool IsInNameofOperation(this IOperation operation)
     {
         var parent = operation.Parent;
