@@ -82,6 +82,33 @@ class TypeName
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task String_GetHashCode_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        [||]""a"".GetHashCode();
+    }
+}";
+        const string CodeFix = @"
+class TypeName
+{
+    public void Test()
+    {
+        ""a"".GetHashCode(System.StringComparison.Ordinal);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'GetHashCode' that has a StringComparison parameter")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()

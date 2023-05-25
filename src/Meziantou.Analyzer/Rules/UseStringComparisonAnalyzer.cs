@@ -114,6 +114,10 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 
             if (method.ContainingType.IsString())
             {
+                // string.GetHashCode()
+                if (method.Name == nameof(string.GetHashCode) && !method.IsStatic && method.Parameters.Length == 0)
+                    return true;
+
                 // string.Equals(string)
                 if (method.Name == nameof(string.Equals) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
                     return true;
