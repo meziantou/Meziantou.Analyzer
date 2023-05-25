@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Linq;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
@@ -103,6 +104,27 @@ internal sealed class CultureSensitiveFormattingContext
                 // StringBuilder.AppendLine($"foo{bar}") when bar is a string
                 if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && !IsCultureSensitiveOperation(invocation.Arguments[0].Value, options))
                     return false;
+            }
+            else if (methodName is "Format" && invocation.TargetMethod.IsStatic && invocation.TargetMethod.ContainingType.IsString() && invocation.Arguments.Length > 0)
+            {
+                if (invocation.TargetMethod.Parameters[0].Type.IsEqualTo(FormatProviderSymbol))
+                    return false;
+
+                if (invocation.Arguments.Length == 1)
+                    return false;
+
+                if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Parameter?.Type is IArrayTypeSymbol && invocation.Arguments[1].Value is IArrayCreationOperation arrayCreation)
+                {
+                    var initializer = arrayCreation.Initializer;
+                    if (initializer == null)
+                        return true;
+
+                    return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                }
+                else
+                {
+                    return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
+                }
             }
 
             if ((options & CultureSensitiveOptions.UseInvocationReturnType) == CultureSensitiveOptions.UseInvocationReturnType)

@@ -502,5 +502,89 @@ class TypeName
               .AddAnalyzerConfiguration("MA0011.consider_nullable_types", "false")
               .ValidateAsync();
     }
-
+    
+    [Fact]
+    public async Task StringFormat_ArgsAreNonCultureSensitive()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = string.Format("", "test", 1, 'c');
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task StringFormat_AlreadyHasFormatProvider()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = string.Format(default(System.IFormatProvider), "", -1);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task StringFormat_NoArgument()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = string.Format("");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task StringFormat_Report()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = [||]string.Format("", -1);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task StringFormat_ManyArgs_Report()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = [||]string.Format("", 0, 0, 0, 0, 0, 0, -1, 0 ,0 ,0, 0);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
