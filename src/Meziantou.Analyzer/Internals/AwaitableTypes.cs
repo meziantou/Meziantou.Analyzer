@@ -5,11 +5,14 @@ using Microsoft.CodeAnalysis;
 namespace Meziantou.Analyzer.Internals;
 internal sealed class AwaitableTypes
 {
-    private readonly INamedTypeSymbol[] _taskLikeSymbols;
+    private readonly INamedTypeSymbol[] _taskOrValueTaskSymbols;
 
     public AwaitableTypes(Compilation compilation)
     {
         INotifyCompletionSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.INotifyCompletion");
+        AsyncMethodBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.AsyncMethodBuilderAttribute");
+        IAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
+        IAsyncEnumeratorSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1");
 
         if (INotifyCompletionSymbol != null)
         {
@@ -18,15 +21,18 @@ internal sealed class AwaitableTypes
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1"));
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask"));
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
-            _taskLikeSymbols = taskLikeSymbols.ToArray();
+            _taskOrValueTaskSymbols = taskLikeSymbols.ToArray();
         }
         else
         {
-            _taskLikeSymbols = Array.Empty<INamedTypeSymbol>();
+            _taskOrValueTaskSymbols = Array.Empty<INamedTypeSymbol>();
         }
     }
 
     private INamedTypeSymbol? INotifyCompletionSymbol { get; }
+    private INamedTypeSymbol? AsyncMethodBuilderSymbol { get; }
+    public INamedTypeSymbol? IAsyncEnumerableSymbol { get; }
+    public INamedTypeSymbol? IAsyncEnumeratorSymbol { get; }
 
     // https://github.com/dotnet/roslyn/blob/248e85149427c534c4a156a436ecff69bab83b59/src/Compilers/CSharp/Portable/Binder/Binder_Await.cs#L347
     public bool IsAwaitable(ITypeSymbol? symbol, SemanticModel semanticModel, int position)
@@ -40,7 +46,7 @@ internal sealed class AwaitableTypes
         if (symbol.SpecialType is SpecialType.System_Void || symbol.TypeKind is TypeKind.Dynamic)
             return false;
 
-        if (IsTaskLike(symbol))
+        if (IsTaskOrValueTask(symbol))
             return true;
 
         foreach (var potentialSymbol in semanticModel.LookupSymbols(position, container: symbol, name: "GetAwaiter", includeReducedExtensionMethods: true))
@@ -63,13 +69,33 @@ internal sealed class AwaitableTypes
         return false;
     }
 
-    private bool IsTaskLike(ITypeSymbol? symbol)
+    public bool DoesNotReturnVoidAndCanUseAsyncKeyword(IMethodSymbol method)
+    {
+        if (method.ReturnsVoid)
+            return false;
+
+        if (method.IsAsync)
+            return true;
+
+        if (IsTaskOrValueTask(method.ReturnType))
+            return true;
+
+        if (method.ReturnType is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.ConstructedFrom.IsEqualToAny(IAsyncEnumerableSymbol, IAsyncEnumeratorSymbol))
+            return true;
+
+        if (AsyncMethodBuilderSymbol != null && method.ReturnType.HasAttribute(AsyncMethodBuilderSymbol))
+            return true;
+
+        return false;
+    }
+
+    private bool IsTaskOrValueTask(ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
 
         var originalDefinition = symbol.OriginalDefinition;
-        foreach (var taskLikeSymbol in _taskLikeSymbols)
+        foreach (var taskLikeSymbol in _taskOrValueTaskSymbols)
         {
             if (originalDefinition.IsEqualTo(taskLikeSymbol))
                 return true;

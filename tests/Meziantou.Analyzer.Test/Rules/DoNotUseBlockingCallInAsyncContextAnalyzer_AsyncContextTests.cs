@@ -779,4 +779,96 @@ class Sample
 ")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task IAsyncEnumerable()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+class demo
+{
+    public IAsyncEnumerable<int> A()
+    {
+        [||]Thread.Sleep(1);
+        throw null;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task IAsyncEnumerator()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+class demo
+{
+    public IAsyncEnumerator<int> A()
+    {
+        [||]Thread.Sleep(1);
+        throw null;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+        
+    [Fact]
+    public async Task AsyncMethodBuilder()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+[System.Runtime.CompilerServices.AsyncMethodBuilderAttribute(typeof(int))]
+class Sample
+{
+    public Sample A()
+    {
+        [||]Thread.Sleep(1);
+        throw null;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task TaskYieldResult()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+using System;
+using System.Threading;
+
+class Sample
+{
+    public System.Runtime.CompilerServices.YieldAwaitable A()
+    {
+        Thread.Sleep(1);
+        throw null;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
 }
