@@ -339,7 +339,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Check if returns Task or async void
             if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken) is IMethodSymbol methodSymbol)
             {
-                return _awaitableTypes.DoesNotReturnVoidAndCanUseAsyncKeyword(methodSymbol);
+                if (_awaitableTypes.DoesNotReturnVoidAndCanUseAsyncKeyword(methodSymbol, operation.SemanticModel, cancellationToken))
+                    return true;
+
             }
 
             return false;
