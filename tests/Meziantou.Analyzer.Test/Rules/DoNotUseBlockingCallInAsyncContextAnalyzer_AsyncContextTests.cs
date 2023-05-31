@@ -526,7 +526,7 @@ class Test
 }")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Using_Diagnostic2()
     {
@@ -569,7 +569,7 @@ class Test
 }")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Using_Diagnostic3()
     {
@@ -614,7 +614,7 @@ class Test
 }")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Using_Diagnostic4()
     {
@@ -802,7 +802,7 @@ class demo
 """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IAsyncEnumerator()
     {
@@ -825,7 +825,7 @@ class demo
 """)
               .ValidateAsync();
     }
-        
+
     [Fact]
     public async Task AsyncMethodBuilder()
     {
@@ -849,7 +849,7 @@ class Sample
 """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task TaskYieldResult()
     {
@@ -865,6 +865,40 @@ class Sample
     {
         Thread.Sleep(1);
         throw null;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TopLevelStatement()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.WindowsApplication)
+              .WithSourceCode("""
+[||]System.Threading.Thread.Sleep(1);
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TaskRunDelegate()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+class Sample
+{
+    public void A()
+    {
+        _ = Task.Run(() => [||]Thread.Sleep(1));
     }
 }
 """)

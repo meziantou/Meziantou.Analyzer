@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
 internal sealed class AwaitableTypes
@@ -13,11 +15,12 @@ internal sealed class AwaitableTypes
         AsyncMethodBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.AsyncMethodBuilderAttribute");
         IAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
         IAsyncEnumeratorSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1");
+        TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
 
         if (INotifyCompletionSymbol != null)
         {
             var taskLikeSymbols = new List<INamedTypeSymbol>(4);
-            taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task"));
+            taskLikeSymbols.AddIfNotNull(TaskSymbol);
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1"));
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask"));
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
@@ -29,6 +32,7 @@ internal sealed class AwaitableTypes
         }
     }
 
+    private INamedTypeSymbol? TaskSymbol { get; }
     private INamedTypeSymbol? INotifyCompletionSymbol { get; }
     private INamedTypeSymbol? AsyncMethodBuilderSymbol { get; }
     public INamedTypeSymbol? IAsyncEnumerableSymbol { get; }
@@ -69,10 +73,27 @@ internal sealed class AwaitableTypes
         return false;
     }
 
-    public bool DoesNotReturnVoidAndCanUseAsyncKeyword(IMethodSymbol method)
+    public bool DoesNotReturnVoidAndCanUseAsyncKeyword(IMethodSymbol method, SemanticModel semanticModel, CancellationToken cancellationToken)
     {
+        if (method.IsTopLevelStatementsEntryPointMethod())
+            return true;
+
         if (method.ReturnsVoid)
+        {
+            // Task.Run(()=>{}) => Task.Run(async ()=>{})
+            if (method.DeclaringSyntaxReferences.Length == 1)
+            {
+                var syntax = method.DeclaringSyntaxReferences[0].GetSyntax(cancellationToken);
+                var methodOperation = semanticModel.GetOperation(syntax, cancellationToken);
+                if (methodOperation is { Parent: IDelegateCreationOperation { Parent: IArgumentOperation { Parent: IInvocationOperation invocation } } })
+                {
+                    if (invocation.TargetMethod.Name is "Run" && invocation.TargetMethod.ContainingType.IsEqualTo(TaskSymbol))
+                        return true;
+                }
+            }
+
             return false;
+        }
 
         if (method.IsAsync)
             return true;
