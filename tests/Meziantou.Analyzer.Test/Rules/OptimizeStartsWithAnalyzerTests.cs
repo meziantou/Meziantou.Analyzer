@@ -11,6 +11,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<OptimizeStartsWithAnalyzer>()
+            .WithCodeFixProvider<OptimizeStartsWithFixer>()
             .WithTargetFramework(TargetFramework.Net7_0);
     }
 
@@ -24,22 +25,49 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"""a"", StringComparison.CurrentCultureIgnoreCase")]
     [InlineData(@"""a"", StringComparison.InvariantCultureIgnoreCase")]
     [InlineData(@"""a""")]
-    [InlineData(@"[|""a""|], StringComparison.Ordinal")]
     [InlineData(@"""a"", StringComparison.CurrentCulture")]
     [InlineData(@"""a"", StringComparison.InvariantCulture")]
-    public async Task StartsWith(string method)
+    public async Task StartsWith_NoReport(string method)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = str.StartsWith(" + method + @");
-    }
-}";
         await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
+              .WithSourceCode($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = str.StartsWith({{method}});
+                        }
+                    }
+                    """)
+              .ValidateAsync();
+    }
+    
+    [Theory]
+    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a', StringComparison.Ordinal""")]
+    public async Task StartsWith_Report(string method, string fix)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = str.StartsWith({{method}});
+                        }
+                    }
+                    """)
+              .ShouldFixCodeWith($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = str.StartsWith({{fix}});
+                        }
+                    }
+                    """)
               .ValidateAsync();
     }
 
@@ -53,43 +81,80 @@ class Test
     [InlineData(@"""a"", StringComparison.CurrentCultureIgnoreCase")]
     [InlineData(@"""a"", StringComparison.InvariantCultureIgnoreCase")]
     [InlineData(@"""a""")]
-    [InlineData(@"[|""a""|], StringComparison.Ordinal")]
     [InlineData(@"""a"", StringComparison.CurrentCulture")]
     [InlineData(@"""a"", StringComparison.InvariantCulture")]
-    public async Task EndsWith(string method)
+    public async Task EndsWith_NoReport(string method)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = str.EndsWith(" + method + @");
-    }
-}";
         await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
+              .WithSourceCode($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = str.EndsWith({{method}});
+                        }
+                    }
+                    """)
               .ValidateAsync();
     }
 
     [Theory]
-    [InlineData(@"""a"", StringComparison.Ordinal")]
-    [InlineData(@"""a"", StringComparison.CurrentCulture")]
-    [InlineData(@"""a"", 1, 2, StringComparison.Ordinal")]
-    [InlineData(@"""a"", 1, StringComparison.Ordinal")]
-    public async Task IndexOf_Report(string method)
+    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a', StringComparison.Ordinal""")]
+    public async Task EndsWith_Report(string method, string fix)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = [||]str.IndexOf(" + method + @");
-    }
-}";
         await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
+              .WithSourceCode($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = str.EndsWith({{method}});
+                        }
+                    }
+                    """)
+              .ShouldFixCodeWith($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = str.EndsWith({{fix}});
+                        }
+                    }
+                    """)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a', StringComparison.Ordinal")]
+    [InlineData(@"[|""a""|], StringComparison.CurrentCulture", @"'a', StringComparison.CurrentCulture")]
+    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2, StringComparison.Ordinal")]
+    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1, StringComparison.Ordinal")]
+    public async Task IndexOf_Report(string method, string fix)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                  using System;
+                  class Test
+                  {
+                      void A(string str)
+                      {
+                          _ = str.IndexOf({{method}});
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith($$"""
+                  using System;
+                  class Test
+                  {
+                      void A(string str)
+                      {
+                          _ = str.IndexOf({{fix}});
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -139,22 +204,32 @@ class Test
     }
 
     [Theory]
-    [InlineData(@"""a"", StringComparison.Ordinal")]
-    [InlineData(@"""a"", 1, 2, StringComparison.Ordinal")]
-    [InlineData(@"""a"", 1, StringComparison.Ordinal")]
-    public async Task LastIndexOf_Report(string method)
+    [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a', StringComparison.Ordinal")]
+    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2, StringComparison.Ordinal")]
+    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1, StringComparison.Ordinal")]
+    public async Task LastIndexOf_Report(string method, string fix)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = [||]str.LastIndexOf(" + method + @");
-    }
-}";
         await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
+              .WithSourceCode($$"""
+                  using System;
+                  class Test
+                  {
+                      void A(string str)
+                      {
+                          _ = str.LastIndexOf({{method}});
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith($$"""
+                  using System;
+                  class Test
+                  {
+                      void A(string str)
+                      {
+                          _ = str.LastIndexOf({{fix}});
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -228,30 +303,41 @@ class Test
     }
 
     [Theory]
-    [InlineData(@"""a"", ""b""")]
-    [InlineData(@"""a"", ""b"", StringComparison.Ordinal")]
-    public async Task Replace_Report(string method)
+    [InlineData(@"""a"", ""b""", @"'a', 'b'")]
+    [InlineData(@"""a"", ""b"", StringComparison.Ordinal", @"'a', 'b', StringComparison.Ordinal")]
+    public async Task Replace_Report(string method, string fix)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = [||]str.Replace(" + method + @");
-    }
-}";
         await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
+              .WithSourceCode($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = [||]str.Replace({{method}});
+                        }
+                    }
+                    """)
+              .ShouldFixCodeWith($$"""
+                    using System;
+                    class Test
+                    {
+                        void A(string str)
+                        {
+                            _ = str.Replace({{fix}});
+                        }
+                    }
+                    """)
               .ValidateAsync();
     }
 
     [Theory]
-    [InlineData(@""","", new object[0]")]
-    [InlineData(@""","", new string[0]")]
-    [InlineData(@""","", new string[0], 0, 1")]
-    [InlineData(@""","", Enumerable.Empty<object>()")]
-    [InlineData(@""","", Enumerable.Empty<string>()")]
+    [InlineData(@"separator: [|"",""|], new object[0]")]
+    [InlineData(@"[|"",""|], new object[0]")]
+    [InlineData(@"[|"",""|], new string[0]")]
+    [InlineData(@"[|"",""|], new string[0], 0, 1")]
+    [InlineData(@"[|"",""|], Enumerable.Empty<object>()")]
+    [InlineData(@"[|"",""|], Enumerable.Empty<string>()")]
     public async Task Join_Report(string method)
     {
         var sourceCode = @"
@@ -263,7 +349,7 @@ class Test
 {
     void A()
     {
-        _ = [||]string.Join(" + method + @");
+        _ = string.Join(" + method + @");
     }
 }";
         await CreateProjectBuilder()
