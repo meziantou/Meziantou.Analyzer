@@ -226,7 +226,7 @@ class Test
     public Test()
     {
         var source = System.Linq.Enumerable.Empty<int>();
-        source.[|Select|](item => (object)item);
+        source.[|Select|](item => (System.Object)item);
     }
 }";
         var fixedCode = @"
@@ -280,7 +280,7 @@ class Test
 using System.Linq;
 using System.Collections.Generic;
 
-enum TestEnum : byte
+enum TestEnum : System.Byte
 {
     A,
     B,
@@ -291,14 +291,14 @@ class Test
     public Test()
     {
         var source = System.Linq.Enumerable.Empty<TestEnum>();
-        source.[|Select|](item => (byte)item);
+        source.[|Select|](item => (System.Byte)item);
     }
 }";
         var fixedCode = @"
 using System.Linq;
 using System.Collections.Generic;
 
-enum TestEnum : byte
+enum TestEnum : System.Byte
 {
     A,
     B,

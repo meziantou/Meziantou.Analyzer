@@ -13,7 +13,8 @@ namespace Meziantou.Analyzer.Test.Rules
                 .WithTargetFramework(TargetFramework.Net7_0)
                 .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
                 .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-                .WithCodeFixProvider<UseRegexSourceGeneratorFixer>();
+                .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+                .WithNoFixCompilation(); // requires the regex source generator
         }
 
         [Fact]

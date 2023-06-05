@@ -219,7 +219,8 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } })
                         {
-                            context.ReportDiagnostic(s_rule, operation);
+                            // Improve the error message as the rule is reported on the method
+                            context.ReportDiagnostic(s_rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticReportOptions.ReportOnMethodName);
                         }
                     }
                     else if (operation.Arguments.Length == 3)
@@ -228,7 +229,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, operation);
+                            context.ReportDiagnostic(s_rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticReportOptions.ReportOnMethodName);
                         }
                     }
                 }

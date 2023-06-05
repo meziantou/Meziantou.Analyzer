@@ -29,22 +29,16 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         if (nodeToFix == null)
             return;
 
-        RegisterCodeFix(nameof(StringComparison.Ordinal));
-        RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
+        var title = "Use SequenceEquals";
+        var codeAction = CodeAction.Create(
+            title,
+            ct => Refactor(context.Document, nodeToFix, ct),
+            equivalenceKey: title);
 
-        void RegisterCodeFix(string comparisonMode)
-        {
-            var title = "Use SequenceEquals " + comparisonMode;
-            var codeAction = CodeAction.Create(
-                title,
-                ct => Refactor(context.Document, nodeToFix, comparisonMode, ct),
-                equivalenceKey: title);
-
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
-        }
+        context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, string comparisonMode, CancellationToken cancellationToken)
+    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
@@ -54,14 +48,8 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         if (operation == null)
             return document;
 
-        var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
-        if (stringComparison is null)
-            return document;
-
         var newExpression = generator.InvocationExpression(
-            generator.MemberAccessExpression(operation.LeftOperand.Syntax, "SequenceEqual"),
-            operation.RightOperand.Syntax,
-            generator.MemberAccessExpression(generator.TypeExpression(stringComparison, addImport: true), comparisonMode));
+            generator.MemberAccessExpression(operation.LeftOperand.Syntax, "SequenceEqual"), operation.RightOperand.Syntax);
 
         if (operation.OperatorKind == BinaryOperatorKind.NotEquals)
         {

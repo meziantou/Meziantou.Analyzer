@@ -10,6 +10,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
@@ -30,6 +31,7 @@ public sealed partial class ProjectBuilder
     public Dictionary<string, string> AnalyzerConfiguration { get; private set; }
     public Dictionary<string, string> AdditionalFiles { get; private set; }
     public bool IsValidCode { get; private set; } = true;
+    public bool IsValidFixCode { get; private set; } = true;
     public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
     public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetStandard2_0;
     public IList<MetadataReference> References { get; } = new List<MetadataReference>();
@@ -58,8 +60,7 @@ public sealed partial class ProjectBuilder
             if (!Directory.Exists(tempFolder) || !Directory.EnumerateFileSystemEntries(tempFolder).Any())
             {
                 Directory.CreateDirectory(tempFolder);
-                using var httpClient = new HttpClient();
-                using var stream = await httpClient.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
+                using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
                 foreach (var entry in zip.Entries.Where(file => paths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
@@ -258,6 +259,13 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithNoCompilation()
     {
         IsValidCode = false;
+        IsValidFixCode = false;
+        return this;
+    }
+
+    public ProjectBuilder WithNoFixCompilation()
+    {
+        IsValidFixCode = false;
         return this;
     }
 

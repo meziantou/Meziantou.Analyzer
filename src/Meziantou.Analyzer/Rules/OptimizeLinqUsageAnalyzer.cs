@@ -6,6 +6,7 @@ using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using static System.FormattableString;
@@ -775,11 +776,16 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 NullableFlowState.MaybeNull :
                 NullableFlowState.None;
 
-            // Get the cast type's minimally qualified name, in the current context
-            var castType = castOp.Type.ToMinimalDisplayString(semanticModel, nullableFlowState, operation.Syntax.SpanStart);
-            var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect)
-               .Add("CastType", castType);
+            var typeSyntax = castOp.Syntax;
+            if (typeSyntax is CastExpressionSyntax castSyntax)
+            {
+                typeSyntax = castSyntax.Type;
+            }
 
+            // Get the cast type's minimally qualified name, in the current context
+            var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect);
+
+            var castType = castOp.Type.ToMinimalDisplayString(semanticModel, nullableFlowState, operation.Syntax.SpanStart);
             context.ReportDiagnostic(s_useCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
 
             static bool CanReplaceByCast(IConversionOperation op)

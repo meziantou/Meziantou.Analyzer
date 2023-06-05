@@ -44,7 +44,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
     }
     
     [Theory]
-    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a', StringComparison.Ordinal""")]
+    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
     public async Task StartsWith_Report(string method, string fix)
     {
         await CreateProjectBuilder()
@@ -100,7 +100,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
     }
 
     [Theory]
-    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a', StringComparison.Ordinal""")]
+    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
     public async Task EndsWith_Report(string method, string fix)
     {
         await CreateProjectBuilder()
@@ -130,8 +130,8 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [Theory]
     [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a', StringComparison.Ordinal")]
     [InlineData(@"[|""a""|], StringComparison.CurrentCulture", @"'a', StringComparison.CurrentCulture")]
-    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2, StringComparison.Ordinal")]
-    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1, StringComparison.Ordinal")]
+    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
+    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1")]
     public async Task IndexOf_Report(string method, string fix)
     {
         await CreateProjectBuilder()
@@ -204,9 +204,9 @@ class Test
     }
 
     [Theory]
-    [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a', StringComparison.Ordinal")]
-    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2, StringComparison.Ordinal")]
-    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1, StringComparison.Ordinal")]
+    [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a'")]
+    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
+    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1")]
     public async Task LastIndexOf_Report(string method, string fix)
     {
         await CreateProjectBuilder()
@@ -304,7 +304,7 @@ class Test
 
     [Theory]
     [InlineData(@"""a"", ""b""", @"'a', 'b'")]
-    [InlineData(@"""a"", ""b"", StringComparison.Ordinal", @"'a', 'b', StringComparison.Ordinal")]
+    [InlineData(@"""a"", ""b"", StringComparison.Ordinal", @"'a', 'b'")]
     public async Task Replace_Report(string method, string fix)
     {
         await CreateProjectBuilder()
@@ -314,7 +314,7 @@ class Test
                     {
                         void A(string str)
                         {
-                            _ = [||]str.Replace({{method}});
+                            _ = str.[|Replace|]({{method}});
                         }
                     }
                     """)
