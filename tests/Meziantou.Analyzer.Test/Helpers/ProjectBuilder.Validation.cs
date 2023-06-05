@@ -495,7 +495,7 @@ public sealed partial class ProjectBuilder
                 var fixAllContext = new FixAllContext(document, codeFixProvider, FixAllScope.Document, action.EquivalenceKey, analyzerDiagnostics.Select(d => d.Id).Distinct(StringComparer.Ordinal), new CustomDiagnosticProvider(analyzerDiagnostics), CancellationToken.None);
                 var fixes = await codeFixProvider.GetFixAllProvider().GetFixAsync(fixAllContext).ConfigureAwait(false);
 
-                document = await ApplyFix(document, fixes).ConfigureAwait(false);
+                document = await ApplyFix(document, fixes, mustCompile: IsValidFixCode).ConfigureAwait(false);
             }
         }
         else
@@ -512,24 +512,46 @@ public sealed partial class ProjectBuilder
 
                 if (codeFixIndex != null)
                 {
-                    document = await ApplyFix(document, actions[(int)codeFixIndex]).ConfigureAwait(false);
+                    document = await ApplyFix(document, actions[(int)codeFixIndex], mustCompile: IsValidFixCode).ConfigureAwait(false);
                     break;
                 }
 
-                document = await ApplyFix(document, actions[0]).ConfigureAwait(false);
+                document = await ApplyFix(document, actions[0], mustCompile: IsValidFixCode).ConfigureAwait(false);
                 analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, new[] { document }, compileSolution: false).ConfigureAwait(false);
             }
         }
 
-        //after applying all of the code fixes, compare the resulting string to the inputted one
+        // after applying all of the code fixes, compare the resulting string to the inputted one
         var actual = await GetStringFromDocument(document).ConfigureAwait(false);
         Assert.Equal(newSource, actual, ignoreLineEndingDifferences: true);
     }
 
-    private static async Task<Document> ApplyFix(Document document, CodeAction codeAction)
+    private async Task<Document> ApplyFix(Document document, CodeAction codeAction, bool mustCompile)
     {
         var operations = await codeAction.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
         var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+
+        if (mustCompile)
+        {
+            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true);
+            var project = solution.Projects.Single();
+            var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
+
+            using var ms = new MemoryStream();
+            var result = compilation.Emit(ms);
+            if (!result.Success)
+            {
+                string sourceCode = null;
+                document = project.Documents.FirstOrDefault();
+                if (document != null)
+                {
+                    sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
+                }
+
+                Assert.True(false, "The fixed code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
+            }
+        }
+
         return solution.GetDocument(document.Id);
     }
 

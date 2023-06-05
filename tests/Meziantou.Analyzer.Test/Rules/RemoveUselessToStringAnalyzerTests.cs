@@ -34,12 +34,12 @@ class Test
               .WithSourceCode(@"
 class Test
 {
-    public void A() => [||]"""".ToString();
+    public string A() => [||]"""".ToString();
 }")
               .ShouldFixCodeWith(@"
 class Test
 {
-    public void A() => """";
+    public string A() => """";
 }")
               .ValidateAsync();
     }

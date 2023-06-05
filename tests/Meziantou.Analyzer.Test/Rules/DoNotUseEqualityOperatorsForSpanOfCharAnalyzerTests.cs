@@ -33,7 +33,7 @@ class Test
 {
     void A()
     {
-        _ = ""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1), StringComparison.Ordinal);
+        _ = ""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1));
     }
 }";
         await CreateProjectBuilder()
@@ -60,7 +60,7 @@ class Test
 {
     void A()
     {
-        _ = !""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1), StringComparison.Ordinal);
+        _ = !""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1));
     }
 }";
         await CreateProjectBuilder()

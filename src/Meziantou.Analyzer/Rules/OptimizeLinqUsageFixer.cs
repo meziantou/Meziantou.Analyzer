@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.ComponentModel.Design.Serialization;
 using System.Composition;
 using System.Globalization;
 using System.Linq;
@@ -75,7 +76,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
             case OptimizeLinqUsageData.UseFindMethodWithConversion:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "Find", convertPredicate: true, ct), equivalenceKey: title), context.Diagnostics);
                 break;
-                
+
             case OptimizeLinqUsageData.UseTrueForAllMethod:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "TrueForAll", convertPredicate: false, ct), equivalenceKey: title), context.Diagnostics);
                 break;
@@ -83,7 +84,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
             case OptimizeLinqUsageData.UseTrueForAllMethodWithConversion:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "TrueForAll", convertPredicate: true, ct), equivalenceKey: title), context.Diagnostics);
                 break;
-                
+
             case OptimizeLinqUsageData.UseExistsMethod:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseListMethod(context.Document, nodeToFix, "Exists", convertPredicate: false, ct), equivalenceKey: title), context.Diagnostics);
                 break;
@@ -144,7 +145,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.UseCastInsteadOfSelect:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseCastInsteadOfSelect(context.Document, diagnostic, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseCastInsteadOfSelect(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
         }
     }
@@ -311,7 +312,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseCastInsteadOfSelect(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseCastInsteadOfSelect(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         if (nodeToFix is not InvocationExpressionSyntax selectInvocationExpression)
             return document;
@@ -319,16 +320,17 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (selectInvocationExpression.Expression is not MemberAccessExpressionSyntax memberAccessExpression)
             return document;
 
-        // Build the 'Cast<CastType>' name
-        var castType = diagnostic.Properties.GetValueOrDefault("CastType");
-        var castNameSyntax = GenericName(Identifier("Cast"))
-            .WithTypeArgumentList(
-                TypeArgumentList(
-                    SingletonSeparatedList<TypeSyntax>(
-                        IdentifierName(castType!))));
-
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
+        var operation = editor.SemanticModel.GetOperation(selectInvocationExpression, cancellationToken) as IInvocationOperation;
+        if (operation == null)
+            return document;
+
+        var type = operation.TargetMethod.TypeArguments[1];
+        var typeSyntax = (TypeSyntax)generator.TypeExpression(type);
+
+        var castNameSyntax = GenericName(Identifier("Cast"))
+            .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(typeSyntax)));
 
         // Is the 'source' (i.e. the sequence of values 'Select' is invoked on) passed in as argument?
         //  If there is 1 argument      -> No 'source' argument, only 'selector'
@@ -419,7 +421,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         {
             var compilation = editor.SemanticModel.Compilation;
             var symbol = editor.SemanticModel.GetSymbolInfo(nodeToFix, cancellationToken: cancellationToken).Symbol as IMethodSymbol;
-            if(symbol == null || symbol.TypeArguments.Length != 1)
+            if (symbol == null || symbol.TypeArguments.Length != 1)
                 return document;
 
             var type = symbol.TypeArguments[0];
