@@ -96,6 +96,40 @@ class TypeName
     }
     
     [Fact]
+    public async Task SystemTimeSpanToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        System.TimeSpan.Zero.ToString();
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task SystemTimeSpanImplicitToStringWithoutCultureInfo_InterpolatedString_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var timeSpan = System.TimeSpan.FromSeconds(1);
+                    var myString = $"This is a test: {timeSpan}";            
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
     public async Task SystemTimeSpanToStringWithoutCultureInfo_FormatC_ShouldNotReportDiagnostic()
     {
         const string SourceCode = @"
