@@ -49,7 +49,6 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     [InlineData("\"abc\"", "default(System.Numerics.Vector3)")]
     [InlineData("\"abc\"", "default(System.Numerics.Vector4)")]
     [InlineData("\"abc\"", "default(System.Numerics.Vector<int>)")]
-    [InlineData("\"abc\"", "new System.TimeSpan()")]
     public async Task ConcatDiagnostic(string left, string right)
     {
         var sourceCode = @"
@@ -88,6 +87,7 @@ class Test
     [InlineData("\"abc\"", "(long?)1")]
     [InlineData("\"abc\"", "(System.UInt128)1")]
     [InlineData("\"abc\"", "new System.Guid()")]
+    [InlineData("\"abc\"", "new System.TimeSpan()")]
     [InlineData("\"abc\"", "System.TimeSpan.Zero.ToString(\"c\")")]
     [InlineData("\"abc\"", "new System.Uri(\"\")")]
     [InlineData("\"abc\"", @"$""test{new System.Uri("""")}""")]
