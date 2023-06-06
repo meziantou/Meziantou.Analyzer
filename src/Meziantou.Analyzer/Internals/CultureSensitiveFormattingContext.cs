@@ -295,7 +295,8 @@ internal sealed class CultureSensitiveFormattingContext
 
     private static bool IsInvariantTimeSpanFormat(IOperation? valueOperation)
     {
-        return valueOperation == null || valueOperation is { ConstantValue: { HasValue: true, Value: null or "" or "c" or "C" } };
+        // note: "c" format is case-sensitive
+        return valueOperation == null || valueOperation is { ConstantValue: { HasValue: true, Value: null or "" or "c" or "t" or "T" } };
     }
 
     // Only negative numbers are culture-sensitive (negative sign)

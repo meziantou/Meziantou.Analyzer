@@ -137,7 +137,23 @@ class TypeName
 {
     public void Test()
     {
-        System.TimeSpan.Zero.ToString(""C"");
+        System.TimeSpan.Zero.ToString(""c"");
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task SystemTimeSpanToStringWithoutCultureInfo_FormatT_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        System.TimeSpan.Zero.ToString(""T"");
     }
 }";
         await CreateProjectBuilder()

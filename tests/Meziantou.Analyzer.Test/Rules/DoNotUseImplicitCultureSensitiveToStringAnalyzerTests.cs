@@ -89,6 +89,8 @@ class Test
     [InlineData("\"abc\"", "new System.Guid()")]
     [InlineData("\"abc\"", "new System.TimeSpan()")]
     [InlineData("\"abc\"", "System.TimeSpan.Zero.ToString(\"c\")")]
+    [InlineData("\"abc\"", "System.TimeSpan.Zero.ToString(\"t\")")]
+    [InlineData("\"abc\"", "System.TimeSpan.Zero.ToString(\"T\")")]
     [InlineData("\"abc\"", "new System.Uri(\"\")")]
     [InlineData("\"abc\"", @"$""test{new System.Uri("""")}""")]
     [InlineData("\"abc\"", @"' '")]
