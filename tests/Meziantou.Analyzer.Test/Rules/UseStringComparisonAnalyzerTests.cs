@@ -195,4 +195,29 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ExcludeWhenInAnExpressionContext2()
+    {
+        const string SourceCode = @"
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+class TypeName
+{
+    void WithSomething()
+    {
+        var op = new string[0];
+        _ = (Expression<Func<Something, bool>>)(s => op.ToList().Contains(s.SomeField));
+    }
+
+    public class Something
+    {
+        public string SomeField { get; set; }
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

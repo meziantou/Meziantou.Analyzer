@@ -71,10 +71,12 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private readonly OverloadFinder _overloadFinder;
+        private readonly OperationUtilities _operationUtilities;
 
         public AnalyzerContext(Compilation compilation)
         {
             _overloadFinder = new OverloadFinder(compilation);
+            _operationUtilities = new OperationUtilities(compilation);
             EqualityComparerStringType = GetIEqualityComparerString(compilation);
             ComparerStringType = GetIComparerString(compilation);
             EnumerableType = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
@@ -107,6 +109,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         {
             var operation = (IInvocationOperation)ctx.Operation;
             if (HasEqualityComparerArgument(operation.Arguments))
+                return;
+
+            if (_operationUtilities.IsInExpressionContext(operation))
                 return;
 
             var method = operation.TargetMethod;
