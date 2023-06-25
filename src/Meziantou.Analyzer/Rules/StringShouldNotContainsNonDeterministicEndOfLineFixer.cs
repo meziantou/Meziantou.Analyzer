@@ -33,7 +33,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
             var title = "Use explicit " + (newLine switch
             {
                 null => "new lines",
-                _ => $"new lines ({newLine.ReplaceOrdinal("\r", "\\r").ReplaceOrdinal("\n", "\\n")})",
+                _ => $"new lines ({newLine.Replace("\r", "\\r", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal)})",
             });
             var codeAction = CodeAction.Create(
                 title,
@@ -58,8 +58,8 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         if (nodeToFix is LiteralExpressionSyntax literal)
         {
             var text = literal.GetText().ToString();
-            var isVerbatim = text.StartsWith("@", StringComparison.Ordinal);
-            text = isVerbatim ? text.Substring(2, text.Length - 3) : text.Substring(1, text.Length - 2);
+            var isVerbatim = text.StartsWith('@');
+            text = isVerbatim ? text[2..^1] : text[1..^1];
 
             var newNode = ReplaceString(generator, text, newLine, newLineTrivia);
             editor.ReplaceNode(nodeToFix, newNode);
@@ -73,7 +73,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         SyntaxNode? node = null;
         foreach (var (line, eol) in text.SplitLines())
         {
-            var newText = eol.Length > 0 ? string.Concat(line.ToString().ReplaceOrdinal("\"\"", "\""), newLine ?? eol.ToString()) : line.ToString();
+            var newText = eol.Length > 0 ? string.Concat(line.ToString().Replace("\"\"", "\"", StringComparison.Ordinal), newLine ?? eol.ToString()) : line.ToString();
             var literal = generator.LiteralExpression(newText);
             if (node == null)
             {

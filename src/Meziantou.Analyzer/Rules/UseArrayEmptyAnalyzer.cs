@@ -117,7 +117,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
             return false;
 
         var parameters = GetParameters(targetSymbol);
-        if (parameters.Length == 0 || !parameters[parameters.Length - 1].IsParams)
+        if (parameters.Length == 0 || !parameters[^1].IsParams)
             return false;
 
         // At this point the array creation is known to be compiler synthesized as part of a call

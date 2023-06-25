@@ -451,7 +451,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     if (parent.TargetMethod.Name == nameof(Enumerable.OrderBy) ||
                         parent.TargetMethod.Name == nameof(Enumerable.OrderByDescending))
                     {
-                        var expectedMethodName = parent.TargetMethod.Name.ReplaceOrdinal("OrderBy", "ThenBy");
+                        var expectedMethodName = parent.TargetMethod.Name.Replace("OrderBy", "ThenBy", StringComparison.Ordinal);
                         var properties = CreateProperties(OptimizeLinqUsageData.DuplicatedOrderBy)
                             .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
                             .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
