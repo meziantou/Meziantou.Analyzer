@@ -107,7 +107,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                             continue;
 
                         var lineText = line.ToString();
-                        if (lineText.StartsWith("#", StringComparison.Ordinal))
+                        if (lineText.StartsWith('#'))
                             continue;
 
                         var parts = lineText.Split(';');
