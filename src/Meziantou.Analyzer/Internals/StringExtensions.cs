@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-#if NETSTANDARD2_0
-using System.Diagnostics.CodeAnalysis;
-#endif
-
 namespace Meziantou.Analyzer.Rules;
 
 internal static partial class StringExtensions
