@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -36,22 +37,15 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
             if (members.Length == 0)
                 return;
 
+            var memberHashSet = new HashSet<ISymbol>(members, SymbolEqualityComparer.Default);
+
             context.RegisterOperationAction(context =>
             {
                 var operation = (IInvocationOperation)context.Operation;
-                if (!operation.TargetMethod.IsStatic)
-                    return;
-
                 if (operation.Arguments.Length == 0)
                     return;
 
-                if (!operation.TargetMethod.Parameters[0].Type.IsObject())
-                    return;
-
-                if (operation.TargetMethod.Name != "ThrowIfNull")
-                    return;
-
-                if (!operation.TargetMethod.ContainingType.IsEqualTo(symbol))
+                if (!memberHashSet.Contains(operation.TargetMethod))
                     return;
 
                 var instance = operation.Arguments[0].Value;
@@ -59,7 +53,15 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
                 if (type == null)
                     return;
 
+                // Generic type (T)
+                if (type.TypeKind is TypeKind.TypeParameter)
+                    return;
+
                 if (type.IsReferenceType)
+                    return;
+
+                // void*
+                if (type.TypeKind is TypeKind.Pointer)
                     return;
 
                 if (type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr)

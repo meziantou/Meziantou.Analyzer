@@ -52,4 +52,28 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ThrowIfNull_GenericType()
+    {
+        var sourceCode = $$"""
+            void A<T>(T obj) => System.ArgumentNullException.ThrowIfNull(obj);
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_GenericTypeWithConstraint()
+    {
+        var sourceCode = $$"""
+            void A<T>(T obj) where T : struct => System.ArgumentNullException.ThrowIfNull(obj);
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
