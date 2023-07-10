@@ -17,15 +17,16 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public async Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        var a = ""test"";
-        string.Equals(a, ""v"", System.StringComparison.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = "test";
+                    string.Equals(a, "v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -34,14 +35,15 @@ class TypeName
     [Fact]
     public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        ""a"".IndexOf(""v"", System.StringComparison.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".IndexOf("v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -50,22 +52,24 @@ class TypeName
     [Fact]
     public async Task IndexOf_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        [||]""a"".IndexOf(""v"");
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        ""a"".IndexOf(""v"", System.StringComparison.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [||]"a".IndexOf("v");
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".IndexOf("v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter")
@@ -76,14 +80,15 @@ class TypeName
     [Fact]
     public async Task StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        ""a"".StartsWith(""v"", System.StringComparison.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".StartsWith("v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -92,22 +97,24 @@ class TypeName
     [Fact]
     public async Task StartsWith_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        [||]""a"".StartsWith(""v"");
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        ""a"".StartsWith(""v"", System.StringComparison.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [||]"a".StartsWith("v");
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".StartsWith("v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload of 'StartsWith' that has a StringComparison parameter")
@@ -118,22 +125,24 @@ class TypeName
     [Fact]
     public async Task Compare_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        [||]string.Compare(""a"", ""v"");
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        string.Compare(""a"", ""v"", System.StringComparison.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [||]string.Compare("a", "v");
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    string.Compare("a", "v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload of 'Compare' that has a StringComparison parameter")
@@ -144,14 +153,15 @@ class TypeName
     [Fact]
     public async Task Compare_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        string.Compare(""a"", ""v"", ignoreCase: true);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    string.Compare("a", "v", ignoreCase: true);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -160,14 +170,32 @@ class TypeName
     [Fact]
     public async Task IndexOf_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        """".IndexOf("""", 0, System.StringComparison.Ordinal);
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "".IndexOf("", 0, System.StringComparison.Ordinal);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
-}";
+
+    [Fact]
+    public async Task Replace_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "".Replace("", "");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -176,21 +204,22 @@ class TypeName
     [Fact]
     public async Task ExcludeWhenInAnExpressionContext()
     {
-        const string SourceCode = @"
-using System;
-using System.Linq.Expressions;
-class TypeName
-{
-    void WithSomething()
-    {
-        _ = (Expression<Func<Something, bool>>)(s => s.SomeField.Contains(""""));
-    }
+        const string SourceCode = """
+            using System;
+            using System.Linq.Expressions;
+            class TypeName
+            {
+                void WithSomething()
+                {
+                    _ = (Expression<Func<Something, bool>>)(s => s.SomeField.Contains(""));
+                }
 
-    public class Something
-    {
-        public string SomeField { get; set; }
-    }
-}";
+                public class Something
+                {
+                    public string SomeField { get; set; }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -199,23 +228,24 @@ class TypeName
     [Fact]
     public async Task ExcludeWhenInAnExpressionContext2()
     {
-        const string SourceCode = @"
-using System;
-using System.Linq;
-using System.Linq.Expressions;
-class TypeName
-{
-    void WithSomething()
-    {
-        var op = new string[0];
-        _ = (Expression<Func<Something, bool>>)(s => op.ToList().Contains(s.SomeField));
-    }
+        const string SourceCode = """
+            using System;
+            using System.Linq;
+            using System.Linq.Expressions;
+            class TypeName
+            {
+                void WithSomething()
+                {
+                    var op = new string[0];
+                    _ = (Expression<Func<Something, bool>>)(s => op.ToList().Contains(s.SomeField));
+                }
 
-    public class Something
-    {
-        public string SomeField { get; set; }
-    }
-}";
+                public class Something
+                {
+                    public string SomeField { get; set; }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
