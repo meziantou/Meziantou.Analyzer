@@ -114,35 +114,15 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 
             if (method.ContainingType.IsString())
             {
-                // string.GetHashCode()
-                if (method.Name == nameof(string.GetHashCode) && !method.IsStatic && method.Parameters.Length == 0)
-                    return true;
-
-                // string.Equals(string)
-                if (method.Name == nameof(string.Equals) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsString())
-                    return true;
-
-                // string.Equals(string, string)
-                if (method.Name == nameof(string.Equals) && method.IsStatic && method.Parameters.Length == 2 && method.Parameters[0].Type.IsString() && method.Parameters[1].Type.IsString())
-                    return true;
-
-                // string.IndexOf(char)
-                if (method.Name == nameof(string.IndexOf) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-                    return true;
-
-                // string.EndsWith(char)
-                if (method.Name == nameof(string.EndsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-                    return true;
-
-                // string.StartsWith(char)
-                if (method.Name == nameof(string.StartsWith) && method.Parameters.Length == 1 && method.Parameters[0].Type.IsChar())
-                    return true;
-
-                // string.Contains(char) | string.Contains(string)
-                if (method.Name == nameof(string.Contains) && method.Parameters.Length == 1 && method.Parameters[0].Type.SpecialType is SpecialType.System_Char or SpecialType.System_String)
-                    return true;
-
-                return false;
+                return method is
+                { Name: nameof(string.GetHashCode), IsStatic: false, Parameters: [] } or
+                { Name: nameof(string.Equals), Parameters: [{ Type.SpecialType: SpecialType.System_String }] } or
+                { Name: nameof(string.Equals), IsStatic: true, Parameters: [{ Type.SpecialType: SpecialType.System_String }, { Type.SpecialType: SpecialType.System_String }] } or
+                { Name: nameof(string.IndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
+                { Name: nameof(string.EndsWith), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
+                { Name: nameof(string.StartsWith), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
+                { Name: nameof(string.Contains), Parameters: [{ Type.SpecialType: SpecialType.System_Char or SpecialType.System_String }] } or
+                { Name: nameof(string.Replace), Parameters: [{ Type.SpecialType: SpecialType.System_String }, { Type.SpecialType: SpecialType.System_String }] };
             }
 
             // JObject.Property / TryGetValue / GetValue
