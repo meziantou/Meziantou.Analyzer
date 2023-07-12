@@ -132,4 +132,16 @@ internal static class SymbolExtensions
 
         return false;
     }
+
+    public static ITypeSymbol? GetSymbolType(this ISymbol symbol)
+    {
+        return symbol switch
+        {
+            IParameterSymbol parameter => parameter.Type,
+            IFieldSymbol field => field.Type,
+            IPropertySymbol { GetMethod: not null } property => property.Type,
+            ILocalSymbol local => local.Type,
+            _ => null,
+        };
+    }
 }

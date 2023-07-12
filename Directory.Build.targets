@@ -42,6 +42,18 @@
       </PropertyGroup>
     </When>
 
+    <When Condition="$(RoslynVersion) == 'roslyn4.6'">
+      <ItemGroup>
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
+        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.6.0" />
+      </ItemGroup>
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);ROSLYN_4_6;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER</DefineConstants>
+        <NoWarn>$(NoWarn);nullable</NoWarn>
+      </PropertyGroup>
+    </When>
+
     <Otherwise>
       <ItemGroup>
         <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
@@ -49,7 +61,7 @@
       </ItemGroup>
       <PropertyGroup>
         <DefineConstants>$(DefineConstants);ROSLYN4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER</DefineConstants>
-        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
+        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);CS0618</NoWarn>
       </PropertyGroup>
     </Otherwise>

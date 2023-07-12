@@ -120,128 +120,15 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
 
     private static IEnumerable<string> GetParameterNames(IOperation operation, CancellationToken cancellationToken)
     {
-        var semanticModel = operation.SemanticModel!;
-        var node = operation.Syntax;
-        while (node != null)
+        var symbols = operation.LookupAvailableSymbols(cancellationToken);
+        foreach (var symbol in symbols)
         {
-            switch (node)
+            switch (symbol)
             {
-                case AccessorDeclarationSyntax accessor:
-                    if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
-                    {
-                        yield return "value";
-                    }
-
+                case IParameterSymbol parameterSymbol:
+                    yield return parameterSymbol.Name;
                     break;
-
-                case PropertyDeclarationSyntax _:
-                    yield break;
-
-                case IndexerDeclarationSyntax indexerDeclarationSyntax:
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(indexerDeclarationSyntax, cancellationToken);
-                        if (symbol != null)
-                        {
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
-                        }
-
-                        yield break;
-                    }
-
-                case MethodDeclarationSyntax methodDeclaration:
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(methodDeclaration, cancellationToken);
-                        if (symbol != null)
-                        {
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
-                        }
-
-                        yield break;
-                    }
-
-                case LocalFunctionStatementSyntax localFunctionStatement:
-                    {
-                        if (semanticModel.GetDeclaredSymbol(localFunctionStatement, cancellationToken) is IMethodSymbol symbol)
-                        {
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
-                        }
-
-                        break;
-                    }
-
-                case ConstructorDeclarationSyntax constructorDeclaration:
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(constructorDeclaration, cancellationToken);
-                        if (symbol != null)
-                        {
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
-                        }
-
-                        yield break;
-                    }
-
-                case OperatorDeclarationSyntax operatorDeclaration:
-                    {
-                        var symbol = semanticModel.GetDeclaredSymbol(operatorDeclaration, cancellationToken);
-                        if (symbol != null)
-                        {
-                            foreach (var parameter in symbol.Parameters)
-                                yield return parameter.Name;
-                        }
-
-                        yield break;
-                    }
-
-                case ParenthesizedLambdaExpressionSyntax parenthesizedLambdaExpressionSyntax:
-                    {
-                        foreach (var parameter in parenthesizedLambdaExpressionSyntax.ParameterList.Parameters)
-                        {
-                            if (!string.IsNullOrEmpty(parameter.Identifier.ValueText))
-                                yield return parameter.Identifier.ValueText;
-                        }
-
-                        if (parenthesizedLambdaExpressionSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)))
-                            yield break;
-
-                        break;
-                    }
-
-                case SimpleLambdaExpressionSyntax lambdaExpressionSyntax:
-                    {
-                        if (!string.IsNullOrEmpty(lambdaExpressionSyntax.Parameter?.Identifier.ValueText))
-                        {
-                            yield return lambdaExpressionSyntax.Parameter.Identifier.ValueText;
-                        }
-
-                        if (lambdaExpressionSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)))
-                            yield break;
-
-                        break;
-                    }
-
-                case AnonymousMethodExpressionSyntax anonymousMethodExpressionSyntax:
-                    {
-                        if (anonymousMethodExpressionSyntax.ParameterList != null)
-                        {
-                            foreach (var parameter in anonymousMethodExpressionSyntax.ParameterList.Parameters)
-                            {
-                                if (!string.IsNullOrEmpty(parameter.Identifier.ValueText))
-                                    yield return parameter.Identifier.ValueText;
-                            }
-                        }
-
-                        if (anonymousMethodExpressionSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)))
-                            yield break;
-
-                        break;
-                    }
             }
-
-            node = node.Parent;
         }
     }
 }
