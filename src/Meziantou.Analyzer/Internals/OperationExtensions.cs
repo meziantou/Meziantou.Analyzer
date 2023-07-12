@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -98,7 +99,7 @@ internal static class OperationExtensions
 
         return operation;
     }
-    
+
     public static IOperation UnwrapConversionOperations(this IOperation operation)
     {
         if (operation is IConversionOperation conversionOperation)
@@ -132,5 +133,112 @@ internal static class OperationExtensions
         }
 
         return null;
+    }
+
+    public static bool IsInStaticContext(this IOperation operation, CancellationToken cancellationToken) => IsInStaticContext(operation, cancellationToken, out _);
+    public static bool IsInStaticContext(this IOperation operation, CancellationToken cancellationToken, out int parentStaticMemberStartPosition)
+    {
+        // Local functions can be nested, and an instance local function can be declared
+        // in a static local function. So, you need to continue to check ancestors when a
+        // local function is not static.
+        foreach (var member in operation.Syntax.Ancestors())
+        {
+            if (member is LocalFunctionStatementSyntax localFunction)
+            {
+                var symbol = operation.SemanticModel!.GetDeclaredSymbol(localFunction, cancellationToken);
+                if (symbol != null && symbol.IsStatic)
+                {
+                    parentStaticMemberStartPosition = localFunction.GetLocation().SourceSpan.Start;
+                    return true;
+                }
+            }
+            else if (member is LambdaExpressionSyntax lambdaExpression)
+            {
+                var symbol = operation.SemanticModel!.GetSymbolInfo(lambdaExpression, cancellationToken).Symbol;
+                if (symbol != null && symbol.IsStatic)
+                {
+                    parentStaticMemberStartPosition = lambdaExpression.GetLocation().SourceSpan.Start;
+                    return true;
+                }
+            }
+            else if (member is AnonymousMethodExpressionSyntax anonymousMethod)
+            {
+                var symbol = operation.SemanticModel!.GetSymbolInfo(anonymousMethod, cancellationToken).Symbol;
+                if (symbol != null && symbol.IsStatic)
+                {
+                    parentStaticMemberStartPosition = anonymousMethod.GetLocation().SourceSpan.Start;
+                    return true;
+                }
+            }
+            else if (member is MethodDeclarationSyntax methodDeclaration)
+            {
+                parentStaticMemberStartPosition = methodDeclaration.GetLocation().SourceSpan.Start;
+
+                var symbol = operation.SemanticModel!.GetDeclaredSymbol(methodDeclaration, cancellationToken);
+                return symbol != null && symbol.IsStatic;
+            }
+        }
+
+        parentStaticMemberStartPosition = -1;
+        return false;
+    }
+
+    public static IEnumerable<ISymbol> LookupAvailableSymbols(this IOperation operation, CancellationToken cancellationToken)
+    {
+        // Find available symbols
+        var operationLocation = operation.Syntax.GetLocation().SourceSpan.Start;
+        var isInStaticContext = operation.IsInStaticContext(cancellationToken, out var parentStaticMemberStartPosition);
+        foreach (var symbol in operation.SemanticModel!.LookupSymbols(operationLocation))
+        {
+            // LookupSymbols check the accessibility of the symbol, but it can
+            // suggest instance members when the current context is static.
+            if (symbol is IFieldSymbol field && isInStaticContext && !field.IsStatic)
+                continue;
+
+            if (symbol is IPropertySymbol { GetMethod: not null } property && isInStaticContext && !property.IsStatic)
+                continue;
+
+            // Locals can be returned even if there are not valid in the current context. For instance,
+            // it can return locals declared after the current location. Or it can return locals that
+            // should not be accessible in a static local function.
+            //
+            // void Sample()
+            // {
+            //    int local = 0;
+            //    static void LocalFunction() => local; <-- local is invalid here but LookupSymbols suggests it
+            // }
+            //
+            // Parameters from the ancestor methods are also returned even if the operation is in a static local function.
+            if (symbol.Kind is SymbolKind.Local or SymbolKind.Parameter)
+            {
+                var isValid = true;
+                foreach (var location in symbol.Locations)
+                {
+                    isValid &= IsValid(location, operationLocation, isInStaticContext ? parentStaticMemberStartPosition : null);
+                    if (!isValid)
+                        break;
+                }
+
+                if (!isValid)
+                    continue;
+
+                static bool IsValid(Location location, int operationLocation, int? staticContextStart)
+                {
+                    var localPosition = location.SourceSpan.Start;
+
+                    // The local is declared after the current expression
+                    if (localPosition > operationLocation)
+                        return false;
+
+                    // The local is declared outside the static local function
+                    if (staticContextStart.HasValue && localPosition < staticContextStart.GetValueOrDefault())
+                        return false;
+
+                    return true;
+                }
+            }
+
+            yield return symbol;
+        }
     }
 }

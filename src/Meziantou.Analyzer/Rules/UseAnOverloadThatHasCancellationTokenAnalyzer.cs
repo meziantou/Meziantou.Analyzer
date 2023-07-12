@@ -308,56 +308,20 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private string[] FindCancellationTokens(IOperation operation, CancellationToken cancellationToken)
         {
-            // Find available symbols
-            var operationLocation = operation.Syntax.GetLocation().SourceSpan.Start;
-            var isInStaticContext = IsInStaticContext(operation, cancellationToken, out var parentStaticMemberStartPosition);
             var availableSymbols = new List<NameAndType>();
-            foreach (var symbol in operation.SemanticModel!.LookupSymbols(operationLocation))
+            foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
             {
-                // LookupSymbols check the accessibility of the symbol, but it can
-                // suggest instance members when the current context is static.
-                var symbolType = symbol switch
-                {
-                    IParameterSymbol parameter => parameter.Type,
-                    IFieldSymbol field when !isInStaticContext || field.IsStatic => field.Type,
-                    IPropertySymbol { GetMethod: not null } property when !isInStaticContext || property.IsStatic => property.Type,
-                    ILocalSymbol local => local.Type,
-                    _ => null,
-                };
-
+                var symbolType = symbol.GetSymbolType();
                 if (symbolType == null)
                     continue;
 
-                // Locals can be returned even if there are not valid in the current context. For instance,
-                // it can return locals declared after the current location. Or it can return locals that
-                // should not be accessible in a static local function.
-                //
-                // void Sample()
-                // {
-                //    int local = 0;
-                //    static void LocalFunction() => local; <-- local is invalid here but LookupSymbols suggests it
-                // }
-                //
-                // Parameters from the ancestor methods are also returned even if the operation is in a static local function.
-                if (symbol.Kind is SymbolKind.Local or SymbolKind.Parameter)
-                {
-                    var localPosition = symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken).GetLocation().SourceSpan.Start;
-
-                    // The local is not part of the source tree
-                    if (localPosition == null)
-                        continue;
-
-                    // The local is declared after the current expression
-                    if (localPosition > operationLocation)
-                        continue;
-
-                    // The local is declared outside the static local function
-                    if (isInStaticContext && localPosition < parentStaticMemberStartPosition)
-                        continue;
-                }
-
                 availableSymbols.Add(new(symbol.Name, symbolType));
             }
+
+            if (availableSymbols.Count == 0)
+                return Array.Empty<string>();
+
+            var isInStaticContext = operation.IsInStaticContext(cancellationToken);
 
             // For each symbol, get their members
             var paths = new List<string>();
@@ -424,53 +388,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return null;
 
             return operation.SemanticModel!.GetDeclaredSymbol(ancestor, cancellationToken) as ITypeSymbol;
-        }
-
-        private static bool IsInStaticContext(IOperation operation, CancellationToken cancellationToken, out int parentStaticMemberStartPosition)
-        {
-            // Local functions can be nested, and an instance local function can be declared
-            // in a static local function. So, you need to continue to check ancestors when a
-            // local function is not static.
-            foreach (var member in operation.Syntax.Ancestors())
-            {
-                if (member is LocalFunctionStatementSyntax localFunction)
-                {
-                    var symbol = operation.SemanticModel!.GetDeclaredSymbol(localFunction, cancellationToken);
-                    if (symbol != null && symbol.IsStatic)
-                    {
-                        parentStaticMemberStartPosition = localFunction.GetLocation().SourceSpan.Start;
-                        return true;
-                    }
-                }
-                else if (member is LambdaExpressionSyntax lambdaExpression)
-                {
-                    var symbol = operation.SemanticModel!.GetSymbolInfo(lambdaExpression, cancellationToken).Symbol;
-                    if (symbol != null && symbol.IsStatic)
-                    {
-                        parentStaticMemberStartPosition = lambdaExpression.GetLocation().SourceSpan.Start;
-                        return true;
-                    }
-                }
-                else if (member is AnonymousMethodExpressionSyntax anonymousMethod)
-                {
-                    var symbol = operation.SemanticModel!.GetSymbolInfo(anonymousMethod, cancellationToken).Symbol;
-                    if (symbol != null && symbol.IsStatic)
-                    {
-                        parentStaticMemberStartPosition = anonymousMethod.GetLocation().SourceSpan.Start;
-                        return true;
-                    }
-                }
-                else if (member is MethodDeclarationSyntax methodDeclaration)
-                {
-                    parentStaticMemberStartPosition = methodDeclaration.GetLocation().SourceSpan.Start;
-
-                    var symbol = operation.SemanticModel!.GetDeclaredSymbol(methodDeclaration, cancellationToken);
-                    return symbol != null && symbol.IsStatic;
-                }
-            }
-
-            parentStaticMemberStartPosition = -1;
-            return false;
         }
 
         private static IEnumerable<T> Prepend<T>(T value, IEnumerable<T> items)

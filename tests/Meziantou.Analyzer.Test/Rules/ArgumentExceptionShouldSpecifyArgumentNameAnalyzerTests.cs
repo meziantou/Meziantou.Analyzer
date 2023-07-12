@@ -14,49 +14,155 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_ShouldNotReportError()
+    public async Task ArgumentNameIsSpecified_Record_ShouldNotReportError()
     {
-        var sourceCode = @"
-class Sample
-{
-    string Prop
-    {
-        get { throw null; }
-        set { throw new System.ArgumentNullException(nameof(value)); }
+        var sourceCode = """
+            using System;
+            internal sealed record ManuscriptId(int Id)
+            {
+                public int Id { get; } = Id > 0 ? Id : throw new ArgumentOutOfRangeException(paramName: nameof(Id), Id, message: "Must be greater than 0");
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
     }
 
-    string this[int index]
+    [Fact]
+    public async Task ArgumentNameIsSpecified_LocalFunction_ShouldNotReportError()
     {
-        get { throw new System.ArgumentNullException(nameof(index)); }
-        set { throw new System.ArgumentNullException(nameof(index)); }
+        var sourceCode = """
+            class Sample
+            {
+                void Test(string test)
+                {
+                    void LocalFunction(string a)
+                    {
+                        throw new System.ArgumentNullException(nameof(a));
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task ArgumentNameIsSpecified_LocalFunction_Static_ShouldNotReportError()
+    {
+        var sourceCode = """
+            class Sample
+            {
+                void Test(string test)
+                {
+                    static void LocalFunction(string a)
+                    {
+                        throw new System.ArgumentNullException([|"test"|]);
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
     }
 
-    Sample(string test)
+    [Fact]
+    public async Task ArgumentNameIsSpecified_LocalFunction_ArgumentFromParentMethod_ShouldNotReportError()
     {
-        throw new System.Exception();
-        throw new System.ArgumentException(""message"", nameof(test));
-        throw new System.ArgumentNullException(nameof(test));
+        var sourceCode = """
+            class Sample
+            {
+                void Test(string test)
+                {
+                    void LocalFunction()
+                    {
+                        throw new System.ArgumentNullException(nameof(test));
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
     }
 
-    void Test(string test)
+    [Fact]
+    public async Task ArgumentNameIsSpecified_Operator_ShouldNotReportError()
     {
-        throw new System.Exception();
-        throw new System.ArgumentException(""message"", nameof(test));
-        throw new System.ArgumentNullException(nameof(test));
-        throw new System.ComponentModel.InvalidEnumArgumentException(nameof(test), 0, typeof(System.Enum));
+        var sourceCode = """
+            class Sample
+            {
+                public static Sample operator +(Sample first, Sample second)
+                {
+                    throw new System.ArgumentNullException(nameof(first));
+                    throw new System.ArgumentNullException(nameof(second));
+                }
+            }
+            """;
 
-        void LocalFunction(string a)
-        {
-            throw new System.ArgumentNullException(nameof(a));
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
     }
 
-    public static Sample operator +(Sample first, Sample second)
+    [Fact]
+    public async Task ArgumentNameIsSpecified_Method_ShouldNotReportError()
     {
-        throw new System.ArgumentNullException(nameof(first));
-        throw new System.ArgumentNullException(nameof(second));
+        var sourceCode = """
+            class Sample
+            {
+                Sample(string test)
+                {
+                    throw new System.Exception();
+                    throw new System.ArgumentException("message", nameof(test));
+                    throw new System.ArgumentNullException(nameof(test));
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
     }
-}";
+
+    [Fact]
+    public async Task ArgumentNameIsSpecified_Indexer_ShouldNotReportError()
+    {
+        var sourceCode = """
+            class Sample
+            {
+                string this[int index]
+                {
+                    get { throw new System.ArgumentNullException(nameof(index)); }
+                    set { throw new System.ArgumentNullException(nameof(index)); }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentNameIsSpecified_Setter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            class Sample
+            {
+                string Prop
+                {
+                    get { throw null; }
+                    set { throw new System.ArgumentNullException(nameof(value)); }
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -327,4 +433,23 @@ class TestAttribute
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .ValidateAsync();
     }
+
+#if CSHARP12_OR_GREATER
+    [Fact]
+    public async Task PrimaryConstructor()
+    {
+        const string SourceCode = """"
+            using System;
+
+            public class Sample(string id)
+            {
+                void A() => throw new ArgumentException("", nameof(id));
+            }
+            """";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .ValidateAsync();
+    }
+#endif
 }

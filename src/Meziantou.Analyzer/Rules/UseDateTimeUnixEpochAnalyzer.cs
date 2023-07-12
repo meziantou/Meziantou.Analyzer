@@ -85,7 +85,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
             }
             else if (operation.Arguments.Length == 2)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan().Slice(0, 1), new object[] { 621355968000000000L }) && IsTimeSpanZero(operation.Arguments[1]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), new object[] { 621355968000000000L }) && IsTimeSpanZero(operation.Arguments[1]))
                     return true;
 
                 if (IsUnixEpochProperty(operation.Arguments[0]) && IsTimeSpanZero(operation.Arguments[1]))
@@ -93,17 +93,17 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
             }
             else if (operation.Arguments.Length == 7)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan().Slice(0, 6), new object[] { 1970, 1, 1, 0, 0, 0 }) && IsTimeSpanZero(operation.Arguments[6]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), new object[] { 1970, 1, 1, 0, 0, 0 }) && IsTimeSpanZero(operation.Arguments[6]))
                     return true;
             }
             else if (operation.Arguments.Length == 8)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan().Slice(0, 7), new object[] { 1970, 1, 1, 0, 0, 0, 0 }) && IsTimeSpanZero(operation.Arguments[7]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 7), new object[] { 1970, 1, 1, 0, 0, 0, 0 }) && IsTimeSpanZero(operation.Arguments[7]))
                     return true;
             }
             else if (operation.Arguments.Length == 9)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan().Slice(0, 8), new object[] { 1970, 1, 1, 0, 0, 0, 0, 0 }) && IsTimeSpanZero(operation.Arguments[8]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 8), new object[] { 1970, 1, 1, 0, 0, 0, 0, 0 }) && IsTimeSpanZero(operation.Arguments[8]))
                     return true;
             }
 
@@ -134,7 +134,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         }
         else if (operation.Arguments.Length == 2)
         {
-            if (ArgumentsEquals(operation.Arguments.AsSpan().Slice(0, 1), new object[] { 621355968000000000L }) && IsDateTimeKindUtc(compilation, operation.Arguments[1]))
+            if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), new object[] { 621355968000000000L }) && IsDateTimeKindUtc(compilation, operation.Arguments[1]))
                 return true;
         }
         else if (operation.Arguments.Length == 3)
@@ -149,7 +149,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         }
         else if (operation.Arguments.Length == 7)
         {
-            if (ArgumentsEquals(operation.Arguments.AsSpan().Slice(0, 6), new object[] { 1970, 1, 1, 0, 0, 0 }) && IsDateTimeKindUtc(compilation, operation.Arguments[6]))
+            if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), new object[] { 1970, 1, 1, 0, 0, 0 }) && IsDateTimeKindUtc(compilation, operation.Arguments[6]))
                 return true;
         }
 
