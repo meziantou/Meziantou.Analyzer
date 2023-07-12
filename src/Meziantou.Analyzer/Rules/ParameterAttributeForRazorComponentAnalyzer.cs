@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -56,13 +57,19 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
 
     private sealed class AnalyzerContext
     {
+        private static readonly Version Version8 = new(8, 0);
+
         public AnalyzerContext(Compilation compilation)
         {
             ParameterSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
             SupplyParameterFromQuerySymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.SupplyParameterFromQueryAttribute");
             EditorRequiredSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.EditorRequiredAttribute");
             RouteAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.RouteAttribute");
+
+            AspNetCoreVersion = SupplyParameterFromQuerySymbol?.ContainingAssembly.Identity.Version;
         }
+
+        public Version? AspNetCoreVersion { get; }
 
         public INamedTypeSymbol? ParameterSymbol { get; }
         public INamedTypeSymbol? SupplyParameterFromQuerySymbol { get; }
@@ -73,19 +80,23 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
 
         internal void AnalyzeProperty(SymbolAnalysisContext context)
         {
+            // note: All attributes are sealed, no need for checking inherited types
             var property = (IPropertySymbol)context.Symbol;
 
-            // All attributes are sealed
-            if (property.HasAttribute(SupplyParameterFromQuerySymbol, inherits: false))
+            // https://devblogs.microsoft.com/dotnet/asp-net-core-updates-in-dotnet-8-preview-6/?WT.mc_id=DT-MVP-5003978#cascade-query-string-values-to-blazor-components
+            if (AspNetCoreVersion < Version8)
             {
-                if (!property.HasAttribute(ParameterSymbol, inherits: false))
+                if (property.HasAttribute(SupplyParameterFromQuerySymbol, inherits: false))
                 {
-                    context.ReportDiagnostic(s_supplyParameterFromQueryRule, property);
-                }
+                    if (!property.HasAttribute(ParameterSymbol, inherits: false))
+                    {
+                        context.ReportDiagnostic(s_supplyParameterFromQueryRule, property);
+                    }
 
-                if (!property.ContainingType.HasAttribute(RouteAttributeSymbol))
-                {
-                    context.ReportDiagnostic(s_supplyParameterFromQueryRoutableRule, property);
+                    if (!property.ContainingType.HasAttribute(RouteAttributeSymbol))
+                    {
+                        context.ReportDiagnostic(s_supplyParameterFromQueryRoutableRule, property);
+                    }
                 }
             }
 

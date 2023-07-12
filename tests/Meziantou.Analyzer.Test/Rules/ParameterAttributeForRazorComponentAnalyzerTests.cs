@@ -45,6 +45,26 @@ class Test
     }
 
     [Fact]
+    public async Task SupplyParameterFromQuery_MissingParameter_AspNetCore8()
+    {
+        const string SourceCode = """
+using Microsoft.AspNetCore.Components;
+
+[Route("/test")]
+class Test
+{
+    [SupplyParameterFromQuery]
+    public int A { get; set; }
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.AspNetCore8_0)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task SupplyParameterFromQuery_WithParameter()
     {
         const string SourceCode = """
@@ -83,7 +103,7 @@ class Test
     }
 
     [Fact]
-    public async Task SupplyParameterFromQuery_NonRoutable ()
+    public async Task SupplyParameterFromQuery_NonRoutable()
     {
         const string SourceCode = """
 using Microsoft.AspNetCore.Components;
