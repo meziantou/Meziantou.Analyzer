@@ -89,6 +89,54 @@ public class Test
     }
 
     [Fact]
+    public async Task TooLong_SkipLocalFunction()
+    {
+        const string SourceCode = @"
+public class Test
+{
+    void [||]Method()
+    {
+        var a = 0;
+        var b = 0;
+        var c = 0;
+        void A()
+        {
+            void B() { }
+        }
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "5")
+              .AddAnalyzerConfiguration("MA0051.skip_local_functions", "false")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ValidMethod_SkipLocalFunction()
+    {
+        const string SourceCode = @"
+public class Test
+{
+    void Method()
+    {
+        var a = 0;
+        var b = 0;
+        var c = 0;
+        void A()
+        {
+            void B() { }
+        }
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "5")
+              .AddAnalyzerConfiguration("MA0051.skip_local_functions", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public void CountStatement_ForLoop()
     {
         const string SourceCode = @"
