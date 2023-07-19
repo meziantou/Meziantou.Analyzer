@@ -84,6 +84,18 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
             var location = node.GetLocation();
             var lineSpan = location.GetLineSpan();
             var lines = lineSpan.EndLinePosition.Line - lineSpan.StartLinePosition.Line;
+
+            if (GetSkipLocalFunctions(context))
+            {
+                var localFunctions = node.DescendantNodes(node => !node.IsKind(SyntaxKind.LocalFunctionStatement)).Where(node => node.IsKind(SyntaxKind.LocalFunctionStatement));
+                foreach (var localFunction in localFunctions)
+                {
+                    var functionLocation = localFunction.GetLocation().GetLineSpan();
+                    lines -= functionLocation.EndLinePosition.Line - functionLocation.StartLinePosition.Line;
+                }
+            }
+
+
             if (lines > maximumLines)
             {
                 context.ReportDiagnostic(s_rule, reportNode, $"{lines} lines; maximum allowed: {maximumLines}");
