@@ -16,7 +16,7 @@
 |[MA0013](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0013.md)|Design|Types should not extend System.ApplicationException|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0014](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0014.md)|Design|Do not raise System.ApplicationException type|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0015](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0015.md)|Usage|Specify the parameter name in ArgumentException|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0016](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0016.md)|Design|Prefer returning collection abstraction instead of implementation|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0016](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0016.md)|Design|Prefer using collection abstraction instead of implementation|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0017](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0017.md)|Design|Abstract types should not have public or internal constructors|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0018](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0018.md)|Design|Do not declare static members on generic types|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0019](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0019.md)|Usage|Use EventArgs.Empty|<span title='Warning'>⚠️</span>|✔️|✔️|
@@ -88,7 +88,7 @@
 |[MA0086](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0086.md)|Design|Do not throw from a finalizer|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0087](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0087.md)|Design|Parameters with \[DefaultParameterValue\] attributes should also be marked \[Optional\]|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0088](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0088.md)|Design|Use \[DefaultParameterValue\] instead of \[DefaultValue\]|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0089](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0089.md)|Performance|Optimize string method usage|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0089](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0089.md)|Performance|Optimize string method usage|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0090](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0090.md)|Design|Remove empty else/finally block|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0091](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0092](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0092.md)|Usage|Sender should be 'null' for static events|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -189,7 +189,7 @@ dotnet_diagnostic.MA0014.severity = warning
 # MA0015: Specify the parameter name in ArgumentException
 dotnet_diagnostic.MA0015.severity = warning
 
-# MA0016: Prefer returning collection abstraction instead of implementation
+# MA0016: Prefer using collection abstraction instead of implementation
 dotnet_diagnostic.MA0016.severity = warning
 
 # MA0017: Abstract types should not have public or internal constructors
@@ -592,7 +592,7 @@ dotnet_diagnostic.MA0014.severity = none
 # MA0015: Specify the parameter name in ArgumentException
 dotnet_diagnostic.MA0015.severity = none
 
-# MA0016: Prefer returning collection abstraction instead of implementation
+# MA0016: Prefer using collection abstraction instead of implementation
 dotnet_diagnostic.MA0016.severity = none
 
 # MA0017: Abstract types should not have public or internal constructors

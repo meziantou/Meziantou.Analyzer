@@ -12,8 +12,8 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.PreferReturningCollectionAbstractionInsteadOfImplementation,
-        title: "Prefer returning collection abstraction instead of implementation",
-        messageFormat: "Prefer returning collection abstraction instead of implementation",
+        title: "Prefer using collection abstraction instead of implementation",
+        messageFormat: "Prefer using collection abstraction instead of implementation",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
