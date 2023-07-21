@@ -42,78 +42,93 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var symbol = ctx.Compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
-            if (symbol == null)
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
+            if (analyzerContext.ConcurrentDictionarySymbol == null)
                 return;
 
-            var members = symbol.GetMembers("GetOrAdd");
-            var hasOverloadWithArg = members.OfType<IMethodSymbol>().Any(m => m.Parameters.Any(p => p.Name == "factoryArgument"));
-
-            ctx.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, hasOverloadWithArg), OperationKind.Invocation);
+            ctx.RegisterOperationAction(ctx => analyzerContext.AnalyzeInvocation(ctx), OperationKind.Invocation);
         });
 
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context, bool hasOverloadWithArg)
+    private sealed class AnalyzerContext
     {
-        var op = (IInvocationOperation)context.Operation;
-        var concurrentDictionarySymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
-        if (!op.TargetMethod.ContainingSymbol.OriginalDefinition.IsEqualTo(concurrentDictionarySymbol))
-            return;
-
-        var func2Symbol = context.Compilation.GetBestTypeByMetadataName("System.Func`2");
-        var func3Symbol = context.Compilation.GetBestTypeByMetadataName("System.Func`3");
-        var func4Symbol = context.Compilation.GetBestTypeByMetadataName("System.Func`4");
-
-        // Check if the key/value parameter should be used
-        var handled = false;
-        if (op.TargetMethod.Name is "GetOrAdd")
+        public AnalyzerContext(Compilation compilation)
         {
-            // a.GetOrAdd(key, (k) => key);
-            if (op.Arguments.Length == 2 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func2Symbol))
-            {
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
-            }
-            // a.GetOrAdd(key, (k, arg) => key, arg);
-            else if (op.Arguments.Length == 3 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol))
-            {
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[2]);
-            }
+            ConcurrentDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
+            if (ConcurrentDictionarySymbol == null)
+                return;
 
-        }
-        else if (op.TargetMethod.Name is "AddOrUpdate")
-        {
-            // a.AddOrUpdate(key, (k) => k, (k, v) => k + v + 1);
-            if (op.Arguments.Length == 3 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func2Symbol) && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol))
-            {
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[0]);
-            }
-            // a.AddOrUpdate(key, value, (k, v) => k + v);
-            else if (op.Arguments.Length == 3 && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol))
-            {
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[1]);
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[2]);
-            }
-            // a.AddOrUpdate(key, (k, arg) => k + arg, (k, v, arg) => k + v + arg, factoryArg);
-            else if (op.Arguments.Length == 4 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(func3Symbol) && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(func4Symbol))
-            {
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[3]);
+            Func2Symbol = compilation.GetBestTypeByMetadataName("System.Func`2");
+            Func3Symbol = compilation.GetBestTypeByMetadataName("System.Func`3");
+            Func4Symbol = compilation.GetBestTypeByMetadataName("System.Func`4");
 
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[0]);
-                handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[3]);
-            }
+            GetOrAddHasOverloadWithArg = ConcurrentDictionarySymbol.GetMembers("GetOrAdd").OfType<IMethodSymbol>().Any(m => m.Parameters.Any(p => p.Name == "factoryArgument"));
+            AddOrUpdateHasOverloadWithArg = ConcurrentDictionarySymbol.GetMembers("AddOrUpdate").OfType<IMethodSymbol>().Any(m => m.Parameters.Any(p => p.Name == "factoryArgument"));
         }
 
-        if (!handled && hasOverloadWithArg && op.TargetMethod.Name is "AddOrUpdate" or "GetOrAdd")
+        public INamedTypeSymbol? ConcurrentDictionarySymbol { get; }
+        public INamedTypeSymbol? Func2Symbol { get; }
+        public INamedTypeSymbol? Func3Symbol { get; }
+        public INamedTypeSymbol? Func4Symbol { get; }
+        public bool GetOrAddHasOverloadWithArg { get; }
+        public bool AddOrUpdateHasOverloadWithArg { get; }
+
+        public void AnalyzeInvocation(OperationAnalysisContext context)
         {
-            foreach (var arg in op.Arguments)
+            var op = (IInvocationOperation)context.Operation;
+            if (!op.TargetMethod.ContainingSymbol.OriginalDefinition.IsEqualTo(ConcurrentDictionarySymbol))
+                return;
+
+            // Check if the key/value parameter should be used
+            var handled = false;
+            if (op.TargetMethod.Name is "GetOrAdd")
             {
-                if (arg.Parameter!.OriginalDefinition.Type.OriginalDefinition.IsEqualToAny(func2Symbol, func3Symbol, func4Symbol))
+                // a.GetOrAdd(key, (k) => key);
+                if (op.Arguments.Length == 2 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(Func2Symbol))
                 {
-                    DetectClosure(context, arg.Value);
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
+                }
+                // a.GetOrAdd(key, (k, arg) => key, arg);
+                else if (op.Arguments.Length == 3 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(Func3Symbol))
+                {
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[2]);
+                }
+
+            }
+            else if (op.TargetMethod.Name is "AddOrUpdate")
+            {
+                // a.AddOrUpdate(key, (k) => k, (k, oldValue) => k + oldValue + 1);
+                if (op.Arguments.Length == 3 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(Func2Symbol) && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(Func3Symbol))
+                {
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[0]);
+                }
+                // a.AddOrUpdate(key, newValue, (k, oldValue) => k + oldValue);
+                else if (op.Arguments.Length == 3 && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(Func3Symbol))
+                {
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[0]);
+                }
+                // a.AddOrUpdate(key, (k, arg) => k + arg, (k, oldValue, arg) => k + oldValue + arg, factoryArg);
+                else if (op.Arguments.Length == 4 && op.Arguments[1].Parameter!.Type.OriginalDefinition.IsEqualTo(Func3Symbol) && op.Arguments[2].Parameter!.Type.OriginalDefinition.IsEqualTo(Func4Symbol))
+                {
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[3]);
+
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[0]);
+                    handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[2].Value, op.Arguments[3]);
+                }
+            }
+
+            if (!handled && (GetOrAddHasOverloadWithArg && op.TargetMethod.Name is "GetOrAdd") || (AddOrUpdateHasOverloadWithArg && op.TargetMethod.Name is "AddOrUpdate"))
+            {
+                foreach (var arg in op.Arguments)
+                {
+                    if (arg.Parameter!.OriginalDefinition.Type.OriginalDefinition.IsEqualToAny(Func2Symbol, Func3Symbol, Func4Symbol))
+                    {
+                        DetectClosure(context, arg.Value);
+                    }
                 }
             }
         }
