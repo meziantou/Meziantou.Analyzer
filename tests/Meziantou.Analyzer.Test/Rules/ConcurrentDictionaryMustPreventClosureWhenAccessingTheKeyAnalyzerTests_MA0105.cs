@@ -103,7 +103,7 @@ class Test
     {
         var key = 1;
         var a = new ConcurrentDictionary<int, int>();
-        a.AddOrUpdate(key, value, [|(k, v) => value|]);
+        a.AddOrUpdate(key, value, (k, oldValue) => value);
     }
 }
 ";
@@ -152,6 +152,30 @@ class Test
 }
 ";
         await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/569")]
+    public async Task AddOrUpdate_Variable_netstandard2()
+    {
+        const string SourceCode = @"
+using System.Collections.Concurrent;
+
+class Test
+{
+    void A()
+    {
+        var name = 1;
+        var newValue = 1;
+        var concurrentDictionary = new ConcurrentDictionary<int, int>();
+        concurrentDictionary.AddOrUpdate(name, newValue, (key, oldValue) => newValue);
+    }
+}
+";
+        await CreateProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetStandard2_0)
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
