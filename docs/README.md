@@ -18,7 +18,7 @@
 |[MA0015](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0015.md)|Usage|Specify the parameter name in ArgumentException|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0016](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0016.md)|Design|Prefer using collection abstraction instead of implementation|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0017](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0017.md)|Design|Abstract types should not have public or internal constructors|<span title='Warning'>⚠️</span>|✔️|✔️|
-|[MA0018](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0018.md)|Design|Do not declare static members on generic types|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0018](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0018.md)|Design|Do not declare static members on generic types (deprecated; use CA1000 instead)|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0019](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0019.md)|Usage|Use EventArgs.Empty|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0020](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0020.md)|Performance|Use direct methods instead of LINQ methods|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0021](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0021.md)|Usage|Use StringComparer.GetHashCode instead of string.GetHashCode|<span title='Warning'>⚠️</span>|✔️|✔️|
@@ -195,8 +195,8 @@ dotnet_diagnostic.MA0016.severity = warning
 # MA0017: Abstract types should not have public or internal constructors
 dotnet_diagnostic.MA0017.severity = warning
 
-# MA0018: Do not declare static members on generic types
-dotnet_diagnostic.MA0018.severity = warning
+# MA0018: Do not declare static members on generic types (deprecated; use CA1000 instead)
+dotnet_diagnostic.MA0018.severity = suggestion
 
 # MA0019: Use EventArgs.Empty
 dotnet_diagnostic.MA0019.severity = warning
@@ -598,7 +598,7 @@ dotnet_diagnostic.MA0016.severity = none
 # MA0017: Abstract types should not have public or internal constructors
 dotnet_diagnostic.MA0017.severity = none
 
-# MA0018: Do not declare static members on generic types
+# MA0018: Do not declare static members on generic types (deprecated; use CA1000 instead)
 dotnet_diagnostic.MA0018.severity = none
 
 # MA0019: Use EventArgs.Empty
