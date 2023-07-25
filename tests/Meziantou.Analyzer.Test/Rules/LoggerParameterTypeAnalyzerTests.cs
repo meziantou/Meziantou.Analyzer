@@ -38,7 +38,7 @@ Name;System.Int32
 using Microsoft.Extensions.Logging;
 
 ILogger logger = null;
-logger.BeginScope("{Prop} {Name} {Name}", [||]1, 2, (int?)null);
+logger.BeginScope([||][||]"{Prop} {Name} {Name}", [||]1, 2, (int?)null);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -204,7 +204,7 @@ Prop;System.String
               .AddAnalyzerConfiguration("MA0124.allow_non_constant_formats", "false")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Logger_LogTrace_InvalidParameterType_NullableGuid()
     {
@@ -221,7 +221,7 @@ Prop;System.Guid;T:System.Nullable{System.Guid}
 """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Logger_LogTrace_ValidParameterType_NullableGuid()
     {
@@ -276,6 +276,25 @@ Prop;System.Guid;System.Nullable{System.Guid}
               .AddAdditionalFile("LoggerParameterTypes.1.txt", "Prop;System.String")
               .AddAdditionalFile("LoggerParameterTypes.2.txt", "New;System.String\nProp;System.String")
               .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0126", Locations = new[] { new DiagnosticResultLocation("LoggerParameterTypes.2.txt", 2, 1, 2, 1) } })
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MissingConfiguration()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation([|"{Prop}"|], 2);
+logger.LogInformation("{Dummy}", 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Dummy;System.Int32
+""")
+              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' has no configured type")
               .ValidateAsync();
     }
 }

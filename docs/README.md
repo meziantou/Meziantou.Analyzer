@@ -134,6 +134,7 @@
 |[MA0132](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0132.md)|Design|Do not convert implicitly to DateTimeOffset|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0133](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0133.md)|Design|Use DateTimeOffset instead of relying on the implicit conversion|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md)|Usage|Observe result of async calls|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0135](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0135.md)|Design|The log parameter has no configured type|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -542,6 +543,9 @@ dotnet_diagnostic.MA0133.severity = suggestion
 
 # MA0134: Observe result of async calls
 dotnet_diagnostic.MA0134.severity = warning
+
+# MA0135: The log parameter has no configured type
+dotnet_diagnostic.MA0135.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -945,4 +949,7 @@ dotnet_diagnostic.MA0133.severity = none
 
 # MA0134: Observe result of async calls
 dotnet_diagnostic.MA0134.severity = none
+
+# MA0135: The log parameter has no configured type
+dotnet_diagnostic.MA0135.severity = none
 ```
