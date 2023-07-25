@@ -48,7 +48,17 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_DuplicateRule));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleInvalid, s_ruleDuplicate);
+    private static readonly DiagnosticDescriptor s_ruleMissingConfiguration = new(
+        RuleIdentifiers.LoggerParameterType_MissingConfiguration,
+        title: "The log parameter has no configured type",
+        messageFormat: "Log parameter '{0}' has no configured type",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: false,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_MissingConfiguration));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleInvalid, s_ruleDuplicate, s_ruleMissingConfiguration);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -153,7 +163,6 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                             if (configuration.ContainsKey(keyName))
                             {
                                 errors.Add(Diagnostic.Create(s_ruleDuplicate, CreateLocation(file, sourceText, line), keyName));
-
                             }
 
                             configuration[keyName] = types.ToArray();
@@ -256,11 +265,16 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     var name = logFormat.ValueNames[i];
                     var argumentType = argumentTypes[i];
 
-                    if (!Configuration.IsValid(name, argumentType.Symbol))
+                    if (!Configuration.IsValid(name, argumentType.Symbol, out var ruleFound))
                     {
                         var expectedSymbols = Configuration.GetSymbols(name);
                         var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{s.ToDisplayString()}'"));
                         context.ReportDiagnostic(s_rule, argumentType.Location, name, expectedSymbolsStr, argumentType.Symbol?.ToDisplayString());
+                    }
+
+                    if (!ruleFound)
+                    {
+                        context.ReportDiagnostic(s_ruleMissingConfiguration, formatExpression, name);
                     }
                 }
             }
@@ -350,10 +364,11 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
         public int Count => _configuration.Count;
 
-        public bool IsValid(string name, ISymbol? type)
+        public bool IsValid(string name, ISymbol? type, out bool hasRule)
         {
             if (_configuration.TryGetValue(name, out var validSymbols))
             {
+                hasRule = true;
                 foreach (var validSymbol in validSymbols)
                 {
                     if (validSymbol.IsEqualTo(type))
@@ -363,6 +378,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
+            hasRule = false;
             return true;
         }
 
