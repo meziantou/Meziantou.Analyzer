@@ -83,6 +83,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             LoggerSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
             LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
+            StructuredLogFieldAttributeSymbol = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.StructuredLogFieldAttribute");
 
             var errors = new List<Diagnostic>();
             Configuration = LoadConfiguration();
@@ -170,6 +171,21 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     }
                 }
 
+                if (StructuredLogFieldAttributeSymbol != null)
+                {
+                    var attributes = context.Compilation.Assembly.GetAttributes();
+                    foreach (var attribute in attributes)
+                    {
+                        if (!attribute.AttributeClass.IsEqualTo(StructuredLogFieldAttributeSymbol))
+                            continue;
+
+                        if (attribute.ConstructorArguments is [{ Type.SpecialType: SpecialType.System_String, IsNull: false, Value: string name }, TypedConstant { Kind: TypedConstantKind.Array } types])
+                        {
+                            configuration[name] = types.Values.Select(v => v.Value as ISymbol).WhereNotNull().ToArray();
+                        }
+                    }
+                }
+
                 return new LoggerConfigurationFile(configuration);
 
                 static Location CreateLocation(AdditionalText file, SourceText sourceText, TextLine line)
@@ -182,6 +198,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? LoggerSymbol { get; }
         public INamedTypeSymbol? LoggerExtensionsSymbol { get; }
         public INamedTypeSymbol? LoggerMessageSymbol { get; }
+        public INamedTypeSymbol? StructuredLogFieldAttributeSymbol { get; private set; }
         public LoggerConfigurationFile Configuration { get; }
 
         public bool IsValid => LoggerSymbol != null && LoggerExtensionsSymbol != null && LoggerMessageSymbol != null && Configuration.Count > 0;

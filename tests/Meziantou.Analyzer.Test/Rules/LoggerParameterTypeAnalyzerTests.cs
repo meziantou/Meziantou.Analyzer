@@ -9,7 +9,7 @@ public sealed class LoggerParameterTypeAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder() => new ProjectBuilder()
             .WithAnalyzer<LoggerParameterTypeAnalyzer>()
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest)
             .WithTargetFramework(TargetFramework.Net7_0)
             .AddNuGetReference("Microsoft.Extensions.Logging.Abstractions", "7.0.0", "lib/net7.0");
 
@@ -295,6 +295,37 @@ logger.LogInformation("{Dummy}", 2);
 Dummy;System.Int32
 """)
               .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' has no configured type")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConfigurationFromAttribute()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+[assembly: Meziantou.Analyzer.StructuredLogFieldAttribute("Prop", typeof(string), typeof(long))]
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", [|2|]);
+logger.LogInformation("{Prop}", 2L);
+logger.LogInformation("{Prop}", "");
+
+namespace Meziantou.Analyzer
+{
+    [System.Diagnostics.ConditionalAttribute("MEZIANTOU_ANALYZER_ATTRIBUTES")]
+    [System.AttributeUsageAttribute(System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
+    internal sealed class StructuredLogFieldAttribute : System.Attribute
+    {
+        public StructuredLogFieldAttribute(string parameterName, params System.Type[] allowedTypes) { }
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.Int32
+""")
               .ValidateAsync();
     }
 }
