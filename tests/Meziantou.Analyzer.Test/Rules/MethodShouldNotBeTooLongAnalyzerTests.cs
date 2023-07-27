@@ -24,7 +24,8 @@ public class Test
 {
     void [||]Method()
     {
-        var a = 0;var b = 0;var c = 0;
+        var a = 0;var b = 0;
+        void A(){var c = 0;}
     }
 }";
         await CreateProjectBuilder()
@@ -135,6 +136,34 @@ public class Test
               .AddAnalyzerConfiguration("MA0051.skip_local_functions", "true")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task ValidMethod_Statements_SkipLocalFunction()
+    {
+        const string SourceCode = """
+            public class Test
+            {
+                void Method()
+                {
+                    var a = 0;
+                    var b = 0;
+
+                    void A()
+                    {
+                        _ = "";
+
+                        void B() { }
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "-1")
+              .AddAnalyzerConfiguration("MA0051.maximum_statements_per_method", "2")
+              .AddAnalyzerConfiguration("MA0051.skip_local_functions", "true")
+              .ValidateAsync();
+    }
 
     [Fact]
     public void CountStatement_ForLoop()
@@ -162,7 +191,7 @@ void B()
 ";
 
         var count = CountStatements(SourceCode);
-        Assert.Equal(1, count);
+        Assert.Equal(2, count);
     }
 
     [Fact]

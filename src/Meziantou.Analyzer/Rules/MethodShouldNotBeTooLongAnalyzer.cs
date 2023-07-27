@@ -126,7 +126,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
 
         bool ShouldDescendIntoChildren(SyntaxNode node)
         {
-            if (!skipLocalFunctions && node is LocalFunctionStatementSyntax)
+            if (skipLocalFunctions && node.IsKind(SyntaxKind.LocalFunctionStatement))
                 return false;
 
             return true;
