@@ -90,7 +90,7 @@ public class Test
     }
 
     [Fact]
-    public async Task TooLong_SkipLocalFunction()
+    public async Task TooLong_SkipLocalFunction_False()
     {
         const string SourceCode = @"
 public class Test
@@ -100,6 +100,7 @@ public class Test
         var a = 0;
         var b = 0;
         var c = 0;
+
         void A()
         {
             void B() { }
@@ -114,7 +115,7 @@ public class Test
     }
 
     [Fact]
-    public async Task ValidMethod_SkipLocalFunction()
+    public async Task ValidMethod_SkipLocalFunction_True()
     {
         const string SourceCode = @"
 public class Test
@@ -124,6 +125,7 @@ public class Test
         var a = 0;
         var b = 0;
         var c = 0;
+
         void A()
         {
             void B() { }
@@ -136,7 +138,7 @@ public class Test
               .AddAnalyzerConfiguration("MA0051.skip_local_functions", "true")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task ValidMethod_Statements_SkipLocalFunction()
     {

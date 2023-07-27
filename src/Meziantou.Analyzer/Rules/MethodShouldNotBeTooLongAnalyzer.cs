@@ -90,11 +90,36 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
                 var localFunctions = node.DescendantNodes(node => !node.IsKind(SyntaxKind.LocalFunctionStatement)).Where(node => node.IsKind(SyntaxKind.LocalFunctionStatement));
                 foreach (var localFunction in localFunctions)
                 {
-                    var functionLocation = localFunction.GetLocation().GetLineSpan();
-                    lines -= functionLocation.EndLinePosition.Line - functionLocation.StartLinePosition.Line;
+                    var firstLine = -1;
+                    var lastLine = -1;
+
+                    if (localFunction.HasLeadingTrivia)
+                    {
+                        firstLine = localFunction.GetLeadingTrivia()[0].GetLocation().GetLineSpan().StartLinePosition.Line;
+                    }
+
+                    if (localFunction.HasTrailingTrivia)
+                    {
+                        lastLine = localFunction.GetTrailingTrivia()[^1].GetLocation().GetLineSpan().EndLinePosition.Line;
+                    }
+
+                    if (firstLine < 0 || lastLine < 0)
+                    {
+                        var functionLocation = localFunction.GetLocation().GetLineSpan();
+                        if (firstLine < 0)
+                        {
+                            firstLine = functionLocation.StartLinePosition.Line;
+                        }
+
+                        if (lastLine < 0)
+                        {
+                            lastLine = functionLocation.EndLinePosition.Line;
+                        }
+                    }
+
+                    lines -= lastLine - firstLine;
                 }
             }
-
 
             if (lines > maximumLines)
             {
