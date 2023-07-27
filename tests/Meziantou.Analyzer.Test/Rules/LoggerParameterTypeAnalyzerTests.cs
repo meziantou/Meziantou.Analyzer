@@ -304,14 +304,14 @@ Dummy;System.Int32
         const string SourceCode = """
 using Microsoft.Extensions.Logging;
 
-[assembly: Meziantou.Analyzer.StructuredLogFieldAttribute("Prop", typeof(string), typeof(long))]
+[assembly: Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute("Prop", typeof(string), typeof(long))]
 
 ILogger logger = null;
 logger.LogInformation("{Prop}", [|2|]);
 logger.LogInformation("{Prop}", 2L);
 logger.LogInformation("{Prop}", "");
 
-namespace Meziantou.Analyzer
+namespace Meziantou.Analyzer.Annotations
 {
     [System.Diagnostics.ConditionalAttribute("MEZIANTOU_ANALYZER_ATTRIBUTES")]
     [System.AttributeUsageAttribute(System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
