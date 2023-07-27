@@ -24,14 +24,13 @@
     <RepositoryUrl>https://github.com/meziantou/Meziantou.Analyzer.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\icon.png" Pack="true" PackagePath="" />
     <None Include="$(MSBuildThisFileDirectory)\LICENSE.txt" Pack="true" PackagePath="" />
-    <None Include="$(MSBuildThisFileDirectory)\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>

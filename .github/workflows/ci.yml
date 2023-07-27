@@ -60,6 +60,7 @@ jobs:
 
     - run: dotnet restore src/Meziantou.Analyzer.pack.csproj
     - run: dotnet pack src/Meziantou.Analyzer.pack.csproj --configuration Release --no-build /p:Version=${{ needs.compute_package_version.outputs.package_version }}
+    - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release
 
     - uses: actions/upload-artifact@v3
       with:
