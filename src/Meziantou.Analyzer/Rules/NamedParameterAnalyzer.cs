@@ -189,6 +189,9 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (IsMethod(invokedMethodSymbol, taskTokenType, nameof(Task.FromResult)))
                             return;
 
+                        if (IsMethod(invokedMethodSymbol, valueTaskTokenType, nameof(Task.FromResult)))
+                            return;
+
                         if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.SetResult)))
                             return;
 
