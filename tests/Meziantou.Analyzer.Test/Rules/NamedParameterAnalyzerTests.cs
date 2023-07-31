@@ -483,6 +483,24 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task ValueTask_FromResult_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        _ = System.Threading.Tasks.ValueTask.FromResult<System.ReadOnlyMemory<byte>?>(null);
+    }
+}
+";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Expression_ShouldNotReportDiagnostic()
