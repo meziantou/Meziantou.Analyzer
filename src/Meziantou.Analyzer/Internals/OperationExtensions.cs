@@ -238,6 +238,28 @@ internal static class OperationExtensions
                 }
             }
 
+            if (symbol.Kind is SymbolKind.Local)
+            {
+                // var a = Sample(a); // cannot use "a"
+                var ancestors = operation.Ancestors();
+                var isInInitializer = false;
+                foreach (var ancestor in ancestors)
+                {
+                    if (ancestor is IVariableDeclaratorOperation declaratorOperation)
+                    {
+                        if (declaratorOperation.Symbol.IsEqualTo(symbol))
+                        {
+                            isInInitializer = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isInInitializer)
+                    continue;
+            }
+
+
             yield return symbol;
         }
     }

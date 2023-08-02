@@ -268,6 +268,12 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
+    public ProjectBuilder WithDefaultAnalyzerId(string id)
+    {
+        DefaultAnalyzerId = id;
+        return this;
+    }
+
     public ProjectBuilder WithAnalyzer(DiagnosticAnalyzer diagnosticAnalyzer, string id = null, string message = null)
     {
         DiagnosticAnalyzer.Add(diagnosticAnalyzer);
