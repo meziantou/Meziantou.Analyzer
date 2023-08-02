@@ -1019,4 +1019,23 @@ class Test
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task CancellationTokenNotAvailableAsVariableDeclarator()
+    {
+        const string SourceCode = @"
+using System.Threading;
+class Test
+{
+    public static void A()
+    {
+        CancellationToken Foo(CancellationToken cancellationToken = default) => cancellationToken;
+
+        var token = [||]Foo();
+    }
+}";
+        await CreateProjectBuilder()
+              .WithDefaultAnalyzerId("MA0032")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
