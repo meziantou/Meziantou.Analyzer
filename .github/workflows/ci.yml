@@ -7,7 +7,6 @@ on:
       - "docs/**"
       - "renovate.json"
       - "GenerateDocumentation.cmd"
-      - "codecov.yml"
       - ".markdownlint.json"
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/FUNDING.yml"
@@ -118,7 +117,6 @@ jobs:
         if-no-files-found: error
         retention-days: 3
         path: ${{ env.TestResultsDirectory }}/**/*
-    - uses: codecov/codecov-action@v3
 
   deploy:
     runs-on: 'ubuntu-latest'
