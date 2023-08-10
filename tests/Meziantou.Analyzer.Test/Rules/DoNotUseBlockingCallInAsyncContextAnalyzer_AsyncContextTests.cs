@@ -905,4 +905,25 @@ class Sample
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task Moq_Raise()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .AddNuGetReference("Moq", "4.20.0", "lib/net6.0/")
+              .WithSourceCode("""
+using System;
+using Moq;
+
+class Sample
+{
+    public void A()
+    {
+        new Mock<ICloneable>().Raise(null);
+        _ = new Mock<ICloneable>().RaiseAsync(null);
+    }
+}
+""")
+              .ValidateAsync();
+    }
 }

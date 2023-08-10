@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.ComponentModel.Design.Serialization;
 using System.Composition;
 using System.Globalization;
 using System.Linq;
