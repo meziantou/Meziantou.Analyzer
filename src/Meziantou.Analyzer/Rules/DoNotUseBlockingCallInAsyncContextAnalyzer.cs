@@ -105,6 +105,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 ServiceProviderServiceExtensions_CreateAsyncScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateAsyncScope").FirstOrDefault();
             }
 
+            Moq_MockSymbol = compilation.GetBestTypeByMetadataName("Moq.Mock`1");
+
             var taskAwaiterLikeSymbols = new List<INamedTypeSymbol>(4);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterOfTSymbol);
@@ -135,6 +137,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private INamedTypeSymbol? DbContextSymbol { get; }
         private INamedTypeSymbol? DbSetSymbol { get; }
+
+        public INamedTypeSymbol? Moq_MockSymbol { get; }
 
         public bool IsValid => TaskSymbol != null && TaskOfTSymbol != null && TaskAwaiterSymbol != null;
 
@@ -231,6 +235,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             // https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-6.0&WT.mc_id=DT-MVP-5003978#overloads
             else if ((DbContextSymbol != null || DbSetSymbol != null) && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(DbContextSymbol, DbSetSymbol))
+            {
+                return false;
+            }
+
+            else if (Moq_MockSymbol != null && targetMethod.Name is "Raise" && targetMethod.ContainingType.OriginalDefinition.IsEqualTo(Moq_MockSymbol))
             {
                 return false;
             }
