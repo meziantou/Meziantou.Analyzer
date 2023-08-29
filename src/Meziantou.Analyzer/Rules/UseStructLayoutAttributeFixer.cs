@@ -39,7 +39,7 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Add Sequential StructLayout attribute",
-                ct => Refactor(context.Document, nodeToFix, LayoutKind.Explicit, ct),
+                ct => Refactor(context.Document, nodeToFix, LayoutKind.Sequential, ct),
                 equivalenceKey: "Add Sequential StructLayout attribute"),
             context.Diagnostics);
     }
