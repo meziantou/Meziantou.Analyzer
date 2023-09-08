@@ -312,6 +312,29 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
     }
 
     [Fact]
+    public async Task Report_TaskInLocalTaskReturningFunction()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    async Task A()
+                    {
+                        await B();
+
+                        Task B()
+                        {
+                            [||]Task.Delay(0);
+                            return Task.CompletedTask;
+                        }
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Report_TaskConfigureAwait()
     {
         await CreateProjectBuilder()

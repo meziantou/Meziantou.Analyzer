@@ -30,9 +30,6 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             var awaitableTypes = new AwaitableTypes(context.Compilation);
             context.RegisterSymbolStartAction(context =>
             {
-                if (context.Symbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod()))
-                    return; // Already handled by CS4014
-
                 context.RegisterOperationAction(context => AnalyzeOperation(context, awaitableTypes), OperationKind.Invocation);
             }, SymbolKind.Method);
         });
