@@ -8,6 +8,8 @@ public enum TargetFramework
     Net5_0,
     Net6_0,
     Net7_0,
+    Net8_0,
+    NetLatest = Net8_0,
     AspNetCore5_0,
     AspNetCore6_0,
     AspNetCore7_0,

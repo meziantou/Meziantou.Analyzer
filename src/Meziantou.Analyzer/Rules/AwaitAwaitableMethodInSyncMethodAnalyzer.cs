@@ -30,9 +30,6 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             var awaitableTypes = new AwaitableTypes(context.Compilation);
             context.RegisterSymbolStartAction(context =>
             {
-                if (context.Symbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod()))
-                    return; // Already handled by CS4014
-
                 context.RegisterOperationAction(context => AnalyzeOperation(context, awaitableTypes), OperationKind.Invocation);
             }, SymbolKind.Method);
         });
@@ -58,7 +55,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             // While there is a check in RegisterSymbolStartAction, this is needed to handle lambda and delegates
             var enclosingSymbol = semanticModel.GetEnclosingSymbol(position, context.CancellationToken);
             if (enclosingSymbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod()))
-                return;
+                return; // Already handled by CS4014
 
             if (!awaitableTypes.IsAwaitable(operation.Type, semanticModel, position))
                 return;

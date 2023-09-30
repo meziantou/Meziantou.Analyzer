@@ -11,7 +11,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<DoNotUseImplicitCultureSensitiveToStringAnalyzer>()
-            .WithTargetFramework(TargetFramework.Net7_0);
+            .WithTargetFramework(TargetFramework.NetLatest);
     }
 
     [Theory]
@@ -68,6 +68,15 @@ class Test
         await CreateProjectBuilder()
               .WithSourceCode(invertedSourceCode)
               .ValidateAsync();
+
+        var multiConcat = @"
+class Test
+{
+    void A() { string value = """"; value += " + left + " + [|" + right + @"|]; }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(multiConcat)
+              .ValidateAsync();
     }
 
     [Theory]
@@ -94,6 +103,7 @@ class Test
     [InlineData("\"abc\"", "new System.Uri(\"\")")]
     [InlineData("\"abc\"", @"$""test{new System.Uri("""")}""")]
     [InlineData("\"abc\"", @"' '")]
+    [InlineData("\"abc\"", "default(System.Uri)")]
     public async Task ConcatNoDiagnostic(string left, string right)
     {
         var sourceCode = @"
