@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Security.Cryptography;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -20,6 +21,7 @@ internal sealed class CultureSensitiveFormattingContext
         DateOnlySymbol = compilation.GetBestTypeByMetadataName("System.DateOnly");
         TimeOnlySymbol = compilation.GetBestTypeByMetadataName("System.TimeOnly");
         UInt128Symbol = compilation.GetBestTypeByMetadataName("System.UInt128");
+        UriSymbol = compilation.GetBestTypeByMetadataName("System.Uri");
         TimeSpanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
         VersionSymbol = compilation.GetBestTypeByMetadataName("System.Version");
         SystemIFormattableSymbol = compilation.GetBestTypeByMetadataName("System.IFormattable");
@@ -39,6 +41,7 @@ internal sealed class CultureSensitiveFormattingContext
     public INamedTypeSymbol? DateOnlySymbol { get; }
     public INamedTypeSymbol? TimeOnlySymbol { get; }
     public INamedTypeSymbol? UInt128Symbol { get; }
+    public INamedTypeSymbol? UriSymbol { get; }
     public INamedTypeSymbol? TimeSpanSymbol { get; }
     public INamedTypeSymbol? VersionSymbol { get; }
     public INamedTypeSymbol? SystemIFormattableSymbol { get; }
@@ -201,6 +204,9 @@ internal sealed class CultureSensitiveFormattingContext
         if (operation is IObjectCreationOperation objectCreation)
             return IsCultureSensitiveType(objectCreation.Type, format: null, instance: null, options);
 
+        if (operation is IDefaultValueOperation defaultValue)
+            return IsCultureSensitiveType(defaultValue.Type, format: null, instance: null, options);
+
         // Unknown operation
         return true;
     }
@@ -251,7 +257,10 @@ internal sealed class CultureSensitiveFormattingContext
         if (typeSymbol.IsEqualTo(GuidSymbol))
             return false;
 
-        if (typeSymbol.IsOrInheritFrom(VersionSymbol))
+        if (typeSymbol.IsEqualTo(VersionSymbol))
+            return false;
+
+        if (typeSymbol.IsEqualTo(UriSymbol))
             return false;
 
         if (typeSymbol.IsEqualTo(SystemWindowsFontStretchSymbol))
