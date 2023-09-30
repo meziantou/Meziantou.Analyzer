@@ -1,5 +1,6 @@
 ﻿namespace TestHelper;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1027:Mark enums with FlagsAttribute")]
 public enum TargetFramework
 {
     NetStandard2_0,
