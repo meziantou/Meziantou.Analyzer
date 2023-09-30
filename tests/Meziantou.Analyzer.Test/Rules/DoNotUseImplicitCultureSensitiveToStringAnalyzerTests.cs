@@ -125,6 +125,24 @@ class Test
               .ValidateAsync();
     }
 
+    [Fact]
+        public async Task Concat_Char_String_NoDiagnostic()
+    {
+        var sourceCode = """
+            class Test
+            {
+                void A(char[] c)
+                {
+                    string str = "";
+                    str = c[0] + str;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
     [Theory]
     [InlineData("abc[|{(sbyte)-1}|]")]
     [InlineData("abc[|{(short)-1}|]")]
