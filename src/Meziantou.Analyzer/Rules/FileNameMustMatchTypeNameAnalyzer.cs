@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-
-#if ROSLYN_4_2_OR_GREATER
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Meziantou.Analyzer.Configurations;
-#endif
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -55,27 +52,48 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 continue;
 #endif
 
-            var filePath = location.SourceTree?.FilePath;
-            var fileName = filePath == null ? null : GetFileName(filePath);
+            if (context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".only_validate_first_type", defaultValue: false))
+            {
+                var root = location.SourceTree.GetRoot(context.CancellationToken);
+                var symbolNode = root.FindNode(location.SourceSpan);
+
+                static bool IsTypeDeclaration(SyntaxNode syntaxNode) => syntaxNode is BaseTypeDeclarationSyntax;
+
+                var isFirstType = true;
+                foreach (var node in root.DescendantNodesAndSelf(descendIntoChildren: node => !IsTypeDeclaration(node)))
+                {
+                    if (node.SpanStart < symbolNode.SpanStart)
+                    {
+                        isFirstType = false;
+                        break;
+                    }
+                }
+
+                if (!isFirstType)
+                    continue;
+            }
+
+            var filePath = location.SourceTree.FilePath;
+            var fileName = filePath == null ? null : GetFileName(filePath.AsSpan());
             var symbolName = symbol.Name;
-            if (string.Equals(fileName, symbolName, StringComparison.OrdinalIgnoreCase))
+            if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 continue;
 
             if (symbol.Arity > 0)
             {
                 // Type`1
-                if (string.Equals(fileName, symbolName + "`" + symbol.Arity.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
+                if (fileName.Equals((symbolName + "`" + symbol.Arity.ToString(CultureInfo.InvariantCulture)).AsSpan(), StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 // Type{T}
-                if (string.Equals(fileName, symbolName + '{' + string.Join(",", symbol.TypeParameters.Select(t => t.Name)) + '}', StringComparison.OrdinalIgnoreCase))
+                if (fileName.Equals((symbolName + '{' + string.Join(",", symbol.TypeParameters.Select(t => t.Name)) + '}').AsSpan(), StringComparison.OrdinalIgnoreCase))
                     continue;
             }
 
             if (symbol.Arity == 1)
             {
                 // TypeOfT
-                if (string.Equals(fileName, symbolName + "OfT", StringComparison.OrdinalIgnoreCase))
+                if (fileName.Equals((symbolName + "OfT").AsSpan(), StringComparison.OrdinalIgnoreCase))
                     continue;
             }
 
@@ -83,13 +101,18 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static string GetFileName(string filePath)
+    private static ReadOnlySpan<char> GetFileName(ReadOnlySpan<char> filePath)
     {
-        var fileName = Path.GetFileName(filePath);
-        var index = fileName.IndexOf('.', StringComparison.Ordinal);
-        if (index < 0)
-            return fileName;
+        var fileNameIndex = filePath.IndexOfAny('/', '\\');
+        if (fileNameIndex > 0)
+        {
+            filePath = filePath[(fileNameIndex + 1)..];
+        }
 
-        return fileName.Substring(0, index);
+        var index = filePath.IndexOf('.');
+        if (index < 0)
+            return filePath;
+
+        return filePath[..index];
     }
 }
