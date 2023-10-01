@@ -137,6 +137,105 @@ class [||]Test0<TKey, TValue>
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task MatchOnlyFirstType_class1()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  class [||]Foo {}
+                  class Bar {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchOnlyFirstType_class2()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  class Test0 {}
+                  class Sample {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task MatchOnlyFirstType_class3()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  class [||]Sample {}
+                  class Test0 {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task MatchOnlyFirstType_Enum()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  enum [||]Foo {}
+                  enum Bar {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task MatchOnlyFirstType_Interface()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  interface [||]Foo {}
+                  interface Bar {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }    
+    
+    [Fact]
+    public async Task MatchOnlyFirstType_Record()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  record [||]Foo {}
+                  record Bar {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+
+#if CSHARP11_OR_GREATER
+    [Fact]
+    public async Task MatchOnlyFirstType_RecordStruct()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  record struct [||]Foo {}
+                  record struct Bar {}
+                  """)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task MatchOnlyFirstType_Struct()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  struct [||]Foo {}
+                  struct Bar {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+
 #if ROSLYN_4_4_OR_GREATER
     [Fact]
     public async Task FileLocalTypes()
