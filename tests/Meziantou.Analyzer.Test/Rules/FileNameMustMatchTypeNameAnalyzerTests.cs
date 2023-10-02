@@ -34,6 +34,17 @@ class Sample
 }")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task MatchFileName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("Root\\Foo/Bar.cs", @"
+class Bar
+{
+}")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task DoesMatchFileName()
