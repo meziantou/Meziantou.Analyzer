@@ -11,7 +11,8 @@ public sealed class NamedParameterAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<NamedParameterAnalyzer>()
-            .WithCodeFixProvider<NamedParameterFixer>();
+            .WithCodeFixProvider<NamedParameterFixer>()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
     }
 
     [Fact]
@@ -147,6 +148,100 @@ class TypeName
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
               .ValidateAsync();
     }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task SingleLineRawString_WithOptions_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """"""
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare(
+                                    [||]"""test""",
+                                    [||]"""test""",
+                                    [||]true);
+                }
+            }
+            """""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringLineRawString_WithOptions_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """"""
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare(
+                                    [||]$"""test{0}""",
+                                    [||]"""test""",
+                                    [||]true);
+                }
+            }
+            """""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MultiLinesRawString_WithOptions_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """"""
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare(
+                                    [||]"""
+                                        test
+                                        """,
+                                    [||]"""
+                                        test
+                                        """,
+                                    [||]true);
+                }
+            }
+            """""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedMultiLineLineRawString_WithOptions_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """"""
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare(
+                                    [||]$"""
+                                        test{0}
+                                        """,
+                                    [||]"""
+                                    test
+                                    """,
+                                    [||]true);
+                }
+            }
+            """""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
+              .ValidateAsync();
+    }
+#endif
 
     [Fact]
     public async Task Int32_WithOptions_ShouldReportDiagnostic()
@@ -483,7 +578,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task ValueTask_FromResult_ShouldNotReportDiagnostic()
     {
@@ -753,7 +848,7 @@ class Test
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Indexer()
     {
