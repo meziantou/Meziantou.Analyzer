@@ -103,7 +103,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
     private static ReadOnlySpan<char> GetFileName(ReadOnlySpan<char> filePath)
     {
-        var fileNameIndex = filePath.IndexOfAny('/', '\\');
+        var fileNameIndex = filePath.LastIndexOfAny('/', '\\');
         if (fileNameIndex > 0)
         {
             filePath = filePath[(fileNameIndex + 1)..];
