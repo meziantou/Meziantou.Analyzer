@@ -727,6 +727,22 @@ class Test
 ")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Expression_Constant()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        _ = System.Linq.Expressions.Expression.Constant(null);
+    }
+}
+")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task TaskCompletionSouce_TrySetResult()

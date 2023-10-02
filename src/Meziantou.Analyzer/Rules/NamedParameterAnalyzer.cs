@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -53,6 +54,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
             var keyValuePairTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
             var propertyBuilderType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
             var syntaxNodeType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
+            var expressionType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
             var operationUtilities = new OperationUtilities(compilationContext.Compilation);
 
             compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
@@ -220,6 +222,9 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                             return;
 
                         if (IsMethod(invokedMethodSymbol, xunitAssertTokenType, "*"))
+                            return;
+
+                        if (IsMethod(invokedMethodSymbol, expressionType, nameof(Expression.Constant)))
                             return;
 
                         if ((string.Equals(invokedMethodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(invokedMethodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
