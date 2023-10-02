@@ -710,6 +710,23 @@ class Test
 ")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task List_Add()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"
+class Test
+{
+    void A()
+    {
+        var list = new System.Collections.Generic.List<string>();
+        list.Add(null);
+    }
+}
+")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task TaskCompletionSource_SetResult()
@@ -745,7 +762,7 @@ class Test
     }
 
     [Fact]
-    public async Task TaskCompletionSouce_TrySetResult()
+    public async Task TaskCompletionSource_TrySetResult()
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"
