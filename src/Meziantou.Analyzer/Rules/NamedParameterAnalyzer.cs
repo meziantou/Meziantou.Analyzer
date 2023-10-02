@@ -173,14 +173,21 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (IsParams(argument))
                             return;
 
-                        if (invokedMethodParameters.Length == 1 && invokedMethodSymbol.Name.StartsWith("Is", StringComparison.Ordinal))
-                            return;
-
-                        if (invokedMethodParameters.Length == 1 && invokedMethodSymbol.Name.StartsWith("Enable", StringComparison.Ordinal))
-                            return;
-
-                        if (invokedMethodParameters.Length == 1 && invokedMethodSymbol.Name == nameof(Task.ConfigureAwait))
-                            return;
+                        if (invokedMethodParameters.Length == 1)
+                        {
+                            if (invokedMethodSymbol.Name.StartsWith("Is", StringComparison.Ordinal) ||
+                                invokedMethodSymbol.Name.StartsWith("Enable", StringComparison.Ordinal) ||
+                                invokedMethodSymbol.Name.StartsWith("Add", StringComparison.Ordinal) ||
+                                invokedMethodSymbol.Name.StartsWith("Remove", StringComparison.Ordinal) ||
+                                invokedMethodSymbol.Name.StartsWith("Contains", StringComparison.Ordinal) ||
+                                invokedMethodSymbol.Name == "IndexOf" ||
+                                invokedMethodSymbol.Name == "IndexOfAny" ||
+                                invokedMethodSymbol.Name == "LastIndexOf" ||
+                                invokedMethodSymbol.Name == nameof(Task.ConfigureAwait))
+                            {
+                                return;
+                            }
+                        }
 
                         if (IsMethod(invokedMethodSymbol, objectType, nameof(object.Equals)))
                             return;
