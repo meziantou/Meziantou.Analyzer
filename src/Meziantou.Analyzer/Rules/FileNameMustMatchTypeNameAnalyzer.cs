@@ -44,7 +44,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 continue;
 
             // Nested type
-            if (symbol.ContainingType != null)
+            if (symbol.ContainingType is not null)
                 continue;
 
 #if ROSLYN_4_4_OR_GREATER
@@ -53,9 +53,26 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 #endif
 
             var filePath = location.SourceTree.FilePath;
-            var fileName = filePath == null ? null : GetFileName(filePath.AsSpan());
+            var fileName = filePath is not null ? GetFileName(filePath.AsSpan()) : null;
             var symbolName = symbol.Name;
 
+            // dotnet_diagnostic.MA0048.excluded_symbol_names
+            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + s_rule.Id + ".excluded_symbol_names", defaultValue: string.Empty))
+            if (!string.IsNullOrEmpty(excludedSymbolNames)
+            {
+                var excludedSymbolNamesSplit = excludedSymbolNames.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var excludedSymbolName in excludedSymbolNamesSplit)
+                {
+                    // supports wildcard, e.g. would match FooManager with expression *Manager
+                    var matches = System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(excludedSymbolName, symbolName, ignoreCase: true);
+                    if (matches)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            // dotnet_diagnostic.MA0048.excluded_symbol_names
             if (context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".only_validate_first_type", defaultValue: false))
             {
                 var root = location.SourceTree.GetRoot(context.CancellationToken);
