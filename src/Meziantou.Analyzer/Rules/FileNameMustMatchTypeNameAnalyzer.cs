@@ -53,8 +53,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 continue;
 #endif
 
-            var filePath = location.SourceTree.FilePath;
-            var fileName = filePath is not null ? GetFileName(filePath.AsSpan()) : null;
             var symbolName = symbol.Name;
 
             // dotnet_diagnostic.MA0048.excluded_symbol_names
@@ -92,6 +90,9 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 if (!isFirstType)
                     continue;
             }
+
+            var filePath = location.SourceTree.FilePath;
+            var fileName = filePath is not null ? GetFileName(filePath.AsSpan()) : null;
 
             if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 continue;
