@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -57,15 +58,13 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             var symbolName = symbol.Name;
 
             // dotnet_diagnostic.MA0048.excluded_symbol_names
-            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + s_rule.Id + ".excluded_symbol_names", defaultValue: string.Empty))
-            if (!string.IsNullOrEmpty(excludedSymbolNames)
+            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + s_rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
+            if (!string.IsNullOrEmpty(excludedSymbolNames))
             {
                 var excludedSymbolNamesSplit = excludedSymbolNames.Split('|', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var excludedSymbolName in excludedSymbolNamesSplit)
                 {
-                    // supports wildcard, e.g. would match FooManager with expression *Manager
-                    var matches = System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(excludedSymbolName, symbolName, ignoreCase: true);
-                    if (matches)
+                    if (IsWildcardMatch(symbolName, excludedSymbolName))
                     {
                         continue;
                     }
@@ -132,5 +131,17 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             return filePath;
 
         return filePath[..index];
+    }
+
+    /// <summary>
+    /// Implemented wildcard pattern match
+    /// </summary>
+    /// <example>
+    /// Would match FooManager for expression *Manager
+    /// </example>
+    private static bool IsWildcardMatch(string input, string pattern)
+    {
+        var wildcardPattern = $"^{Regex.Escape(pattern).Replace("\\*", ".*", StringComparison.Ordinal)}$";
+        return Regex.IsMatch(input, wildcardPattern);
     }
 }
