@@ -63,13 +63,11 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 foreach (var excludedSymbolName in excludedSymbolNamesSplit)
                 {
                     if (IsWildcardMatch(symbolName, excludedSymbolName))
-                    {
                         continue;
-                    }
                 }
             }
 
-            // dotnet_diagnostic.MA0048.excluded_symbol_names
+            // MA0048.only_validate_first_type
             if (context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".only_validate_first_type", defaultValue: false))
             {
                 var root = location.SourceTree.GetRoot(context.CancellationToken);
