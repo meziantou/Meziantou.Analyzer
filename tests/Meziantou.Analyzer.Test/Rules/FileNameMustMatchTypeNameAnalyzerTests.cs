@@ -247,6 +247,68 @@ class [||]Test0<TKey, TValue>
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task MatchExcludedSymbolNames_ExactMatch()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  class Test0 {}
+                  class Sample {}
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "Sample")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_ExactMatch_Pipe()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                  class Test0 {}
+                  class Sample1 {}
+                  class Sample2 {}
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "Sample1|Sample2")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_WildcardMatch1()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                  class Test0 {}
+                  class Sample {}
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "*ample")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_WildcardMatch2()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                  class Test0 {}
+                  class Sample {}
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "*ampl*")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_WildcardMatch_Pipe()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                  class Test0 {}
+                  class Sample1 {}
+                  class Sample2 {}
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "*ample1|Sample2")
+             .ValidateAsync();
+    }
+
 #if ROSLYN_4_4_OR_GREATER
     [Fact]
     public async Task FileLocalTypes()
