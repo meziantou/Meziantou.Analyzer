@@ -68,6 +68,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                         matched = true;
                 }
 
+                // to continue the outer foreach loop
                 if (matched)
                     continue;
             }
