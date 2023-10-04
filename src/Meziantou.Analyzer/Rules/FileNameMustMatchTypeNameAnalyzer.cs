@@ -52,6 +52,10 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 continue;
 #endif
 
+            var filePath = location.SourceTree.FilePath;
+            var fileName = filePath == null ? null : GetFileName(filePath.AsSpan());
+            var symbolName = symbol.Name;
+
             if (context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".only_validate_first_type", defaultValue: false))
             {
                 var root = location.SourceTree.GetRoot(context.CancellationToken);
@@ -73,9 +77,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
             }
 
-            var filePath = location.SourceTree.FilePath;
-            var fileName = filePath == null ? null : GetFileName(filePath.AsSpan());
-            var symbolName = symbol.Name;
             if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 continue;
 
