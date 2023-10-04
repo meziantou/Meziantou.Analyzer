@@ -7,7 +7,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Meziantou.Analyzer.Configurations;
-using Microsoft.CodeAnalysis.Differencing;
 
 namespace Meziantou.Analyzer.Rules;
 
