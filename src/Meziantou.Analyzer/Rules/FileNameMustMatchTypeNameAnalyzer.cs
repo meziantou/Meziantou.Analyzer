@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Meziantou.Analyzer.Configurations;
+using Microsoft.CodeAnalysis.Differencing;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -59,12 +60,17 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + s_rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
             if (!string.IsNullOrEmpty(excludedSymbolNames))
             {
+                var matched = false;
+
                 var excludedSymbolNamesSplit = excludedSymbolNames.Split('|', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var excludedSymbolName in excludedSymbolNamesSplit)
                 {
                     if (IsWildcardMatch(symbolName, excludedSymbolName))
-                        continue;
+                        matched = true;
                 }
+
+                if (matched)
+                    continue;
             }
 
             // MA0048.only_validate_first_type
