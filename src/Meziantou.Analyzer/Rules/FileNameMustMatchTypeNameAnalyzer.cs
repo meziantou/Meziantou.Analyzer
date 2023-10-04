@@ -147,6 +147,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     private static bool IsWildcardMatch(string input, string pattern)
     {
         var wildcardPattern = $"^{Regex.Escape(pattern).Replace("\\*", ".*", StringComparison.Ordinal)}$";
-        return Regex.IsMatch(input, wildcardPattern);
+        return Regex.IsMatch(input, wildcardPattern, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     }
 }
