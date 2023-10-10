@@ -247,124 +247,75 @@ class [||]Test0<TKey, TValue>
               .ValidateAsync();
     }
 
-    [Fact]
-    public async Task MatchExcludedSymbolNames_SymbolName_ExactMatch()
+    [Theory]
+    [InlineData("Sample")]
+    [InlineData("T:MyNamespace.Sample")]
+    public async Task MatchExcludedSymbolNames_ExactMatch(string value)
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  class Test0 {}
-                  class Sample {}
+                  namespace MyNamespace {
+                    class Test0 {}
+                    class Sample {}
+                  }
                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "Sample")
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
              .ValidateAsync();
     }
 
-    [Fact]
-    public async Task MatchExcludedSymbolNames_SymbolName_ExactMatch_Pipe()
+    [Theory]
+    [InlineData("Sample1|Sample2")]
+    [InlineData("T:MyNamespace.Sample1|T:MyNamespace.Sample2")]
+    [InlineData("Sample1|T:MyNamespace.Sample2")]
+    public async Task MatchExcludedSymbolNames_ExactMatch_Pipe(string value)
     {
         await CreateProjectBuilder()
              .WithSourceCode(fileName: "Test0.cs", """
-                  class Test0 {}
-                  class Sample1 {}
-                  class Sample2 {}
+                  namespace MyNamespace {
+                    class Test0 {}
+                    class Sample1 {}
+                    class Sample2 {}
+                   }
                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "Sample1|Sample2")
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
              .ValidateAsync();
     }
 
-    [Fact]
-    public async Task MatchExcludedSymbolNames_DeclarationId_ExactMatch()
+    [Theory]
+    [InlineData("Sample*")]
+    [InlineData("*ample*")]
+    public async Task MatchExcludedSymbolNames_WildcardMatch(string value)
     {
         await CreateProjectBuilder()
              .WithSourceCode(fileName: "Test0.cs", """
-                                                   namespace MyNamespace {
-                                                     class Test0 {}
-                                                     class Sample {}
-                                                   }
-                                                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample")
-             .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MatchExcludedSymbolNames_DeclarationId_ExactMatch_Pipe()
-    {
-        await CreateProjectBuilder()
-             .WithSourceCode(fileName: "Test0.cs", """
-                                                   namespace MyNamespace {
-                                                     class Test0 {}
-                                                     class Sample1 {}
-                                                     class Sample2 {}
-                                                   }
-                                                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample1|T:MyNamespace.Sample2")
-             .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MatchExcludedSymbolNames_MixSymbolNameDeclarationId_ExactMatch_Pipe()
-    {
-        await CreateProjectBuilder()
-             .WithSourceCode(fileName: "Test0.cs", """
-                                                   namespace MyNamespace {
-                                                     class Test0 {}
-                                                     class Sample1 {}
-                                                     class Sample2 {}
-                                                   }
-                                                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample1|Sample2")
-             .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MatchExcludedSymbolNames_ExactMatch_DeclarationId_Pipe()
-    {
-        await CreateProjectBuilder()
-             .WithSourceCode(fileName: "Test0.cs", """
-                                                   namespace MyNamespace {
-                                                     class Test0 {}
-                                                     class Sample1 {}
-                                                     class Sample2 {}
-                                                   }
-                                                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample1|T:MyNamespace.Sample2")
-             .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MatchExcludedSymbolNames_SymbolName_WildcardMatch1()
-    {
-        await CreateProjectBuilder()
-             .WithSourceCode(fileName: "Test0.cs", """
-                  class Test0 {}
-                  class Sample {}
+                  namespace MyNamespace {
+                   class Test0 {}
+                   class Sample1 {}
+                   class Sample2 {}
+                  }
                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "*ample")
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
              .ValidateAsync();
     }
 
-    [Fact]
-    public async Task MatchExcludedSymbolNames_SymbolName_WildcardMatch2()
+    [Theory]
+    [InlineData("Sample*|*1|*2")]
+    [InlineData("*ample*|*oo*")]
+    [InlineData("T:MyNamespace.Sample*|T:MyNamespace.Foo*")]
+    [InlineData("T:MyNamespace.Sample*|Foo*")]
+    public async Task MatchExcludedSymbolNames_WildcardMatch_Pipe(string value)
     {
         await CreateProjectBuilder()
              .WithSourceCode(fileName: "Test0.cs", """
-                  class Test0 {}
-                  class Sample {}
+                  namespace MyNamespace {
+                   class Test0 {}
+                   class Sample1 {}
+                   class Sample2 {}
+                   class Foo1 {}
+                   class Foo2 {}
+                  }
                   """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "*ampl*")
-             .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MatchExcludedSymbolNames_SymbolName_WildcardMatch_Pipe()
-    {
-        await CreateProjectBuilder()
-             .WithSourceCode(fileName: "Test0.cs", """
-                  class Test0 {}
-                  class Sample1 {}
-                  class Sample2 {}
-                  """)
-             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "*ample1|Sample2")
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
              .ValidateAsync();
     }
 
