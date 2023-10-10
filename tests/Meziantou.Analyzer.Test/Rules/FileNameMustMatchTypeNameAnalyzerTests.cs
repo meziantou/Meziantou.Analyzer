@@ -248,7 +248,7 @@ class [||]Test0<TKey, TValue>
     }
 
     [Fact]
-    public async Task MatchExcludedSymbolNames_ExactMatch()
+    public async Task MatchExcludedSymbolNames_SymbolName_ExactMatch()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
@@ -260,7 +260,7 @@ class [||]Test0<TKey, TValue>
     }
 
     [Fact]
-    public async Task MatchExcludedSymbolNames_ExactMatch_Pipe()
+    public async Task MatchExcludedSymbolNames_SymbolName_ExactMatch_Pipe()
     {
         await CreateProjectBuilder()
              .WithSourceCode(fileName: "Test0.cs", """
@@ -273,7 +273,66 @@ class [||]Test0<TKey, TValue>
     }
 
     [Fact]
-    public async Task MatchExcludedSymbolNames_WildcardMatch1()
+    public async Task MatchExcludedSymbolNames_DeclarationId_ExactMatch()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                                                   namespace MyNamespace {
+                                                     class Test0 {}
+                                                     class Sample {}
+                                                   }
+                                                   """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_DeclarationId_ExactMatch_Pipe()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                                                   namespace MyNamespace {
+                                                     class Test0 {}
+                                                     class Sample1 {}
+                                                     class Sample2 {}
+                                                   }
+                                                   """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample1|T:MyNamespace.Sample2")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_MixSymbolNameDeclarationId_ExactMatch_Pipe()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                                                   namespace MyNamespace {
+                                                     class Test0 {}
+                                                     class Sample1 {}
+                                                     class Sample2 {}
+                                                   }
+                                                   """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample1|Sample2")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_ExactMatch_DeclarationId_Pipe()
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                                                   namespace MyNamespace {
+                                                     class Test0 {}
+                                                     class Sample1 {}
+                                                     class Sample2 {}
+                                                   }
+                                                   """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", "T:MyNamespace.Sample1|T:MyNamespace.Sample2")
+             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchExcludedSymbolNames_SymbolName_WildcardMatch1()
     {
         await CreateProjectBuilder()
              .WithSourceCode(fileName: "Test0.cs", """
@@ -285,7 +344,7 @@ class [||]Test0<TKey, TValue>
     }
 
     [Fact]
-    public async Task MatchExcludedSymbolNames_WildcardMatch2()
+    public async Task MatchExcludedSymbolNames_SymbolName_WildcardMatch2()
     {
         await CreateProjectBuilder()
              .WithSourceCode(fileName: "Test0.cs", """
@@ -297,7 +356,7 @@ class [||]Test0<TKey, TValue>
     }
 
     [Fact]
-    public async Task MatchExcludedSymbolNames_WildcardMatch_Pipe()
+    public async Task MatchExcludedSymbolNames_SymbolName_WildcardMatch_Pipe()
     {
         await CreateProjectBuilder()
              .WithSourceCode(fileName: "Test0.cs", """
