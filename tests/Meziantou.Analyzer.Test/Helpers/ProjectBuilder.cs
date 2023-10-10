@@ -46,10 +46,9 @@ public sealed partial class ProjectBuilder
 
     private static Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
     {
-        var task = s_cache.GetOrAdd(packageName + '@' + version + ':' + string.Join(",", paths), key =>
-        {
-            return new Lazy<Task<string[]>>(Download);
-        });
+        var task = s_cache.GetOrAdd(
+            packageName + '@' + version + ':' + string.Join(",", paths),
+            _ => new Lazy<Task<string[]>>(Download));
 
         return task.Value;
 
@@ -126,10 +125,12 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds)
-    {
-        return WithAnalyzerFromNuGet("Microsoft.CodeAnalysis.NetAnalyzers", "7.0.1", paths: new[] { "analyzers/dotnet/cs/Microsoft.CodeAnalysis" }, ruleIds);
-    }
+    public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds) =>
+        WithAnalyzerFromNuGet(
+            "Microsoft.CodeAnalysis.NetAnalyzers",
+            "7.0.1",
+            paths: new[] { "analyzers/dotnet/cs/Microsoft.CodeAnalysis" },
+            ruleIds);
 
     public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
 
@@ -152,10 +153,8 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithSourceCode(string sourceCode)
-    {
-        return WithSourceCode(fileName: null, sourceCode);
-    }
+    public ProjectBuilder WithSourceCode(string sourceCode) =>
+        WithSourceCode(fileName: null, sourceCode);
 
     public ProjectBuilder WithSourceCode(string fileName, string sourceCode)
     {
@@ -213,10 +212,7 @@ public sealed partial class ProjectBuilder
 
             char Next()
             {
-                if (i + 1 < sourceCode.Length)
-                    return sourceCode[i + 1];
-
-                return default;
+                return i + 1 < sourceCode.Length ? sourceCode[i + 1] : default;
             }
         }
 
@@ -282,10 +278,8 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithAnalyzer<T>(string id = null, string message = null) where T : DiagnosticAnalyzer, new()
-    {
-        return WithAnalyzer(new T(), id, message);
-    }
+    public ProjectBuilder WithAnalyzer<T>(string id = null, string message = null) where T : DiagnosticAnalyzer, new() =>
+        WithAnalyzer(new T(), id, message);
 
     public ProjectBuilder WithCodeFixProvider(CodeFixProvider codeFixProvider)
     {
@@ -293,10 +287,8 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithCodeFixProvider<T>() where T : CodeFixProvider, new()
-    {
-        return WithCodeFixProvider(new T());
-    }
+    public ProjectBuilder WithCodeFixProvider<T>() where T : CodeFixProvider, new() =>
+        WithCodeFixProvider(new T());
 
     public ProjectBuilder ShouldReportDiagnostic(params DiagnosticResult[] expectedDiagnosticResults)
     {
@@ -315,10 +307,8 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder ShouldFixCodeWith(string codeFix)
-    {
-        return ShouldFixCodeWith(index: null, codeFix);
-    }
+    public ProjectBuilder ShouldFixCodeWith(string codeFix) =>
+        ShouldFixCodeWith(index: null, codeFix);
 
     public ProjectBuilder ShouldFixCodeWith(int? index, string codeFix)
     {
@@ -327,10 +317,8 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder ShouldBatchFixCodeWith(string codeFix)
-    {
-        return ShouldBatchFixCodeWith(index: null, codeFix);
-    }
+    public ProjectBuilder ShouldBatchFixCodeWith(string codeFix) =>
+        ShouldBatchFixCodeWith(index: null, codeFix);
 
     public ProjectBuilder ShouldBatchFixCodeWith(int? index, string codeFix)
     {
