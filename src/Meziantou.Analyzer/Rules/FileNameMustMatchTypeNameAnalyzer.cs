@@ -54,6 +54,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 #endif
 
             var symbolName = symbol.Name;
+            var symbolDeclarationId = DocumentationCommentId.CreateDeclarationId(symbol);
 
             // dotnet_diagnostic.MA0048.excluded_symbol_names
             var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + s_rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
@@ -64,7 +65,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 var excludedSymbolNamesSplit = excludedSymbolNames.Split('|', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var excludedSymbolName in excludedSymbolNamesSplit)
                 {
-                    if (IsWildcardMatch(symbolName, excludedSymbolName))
+                    if (IsWildcardMatch(symbolName, excludedSymbolName) || IsWildcardMatch(symbolDeclarationId, excludedSymbolName))
                         matched = true;
                 }
 
