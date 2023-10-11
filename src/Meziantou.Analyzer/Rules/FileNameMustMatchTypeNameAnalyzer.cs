@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -44,7 +45,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 continue;
 
             // Nested type
-            if (symbol.ContainingType != null)
+            if (symbol.ContainingType is not null)
                 continue;
 
 #if ROSLYN_4_4_OR_GREATER
@@ -52,6 +53,28 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 continue;
 #endif
 
+            var symbolName = symbol.Name;
+
+            // dotnet_diagnostic.MA0048.excluded_symbol_names
+            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + s_rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
+            if (!string.IsNullOrEmpty(excludedSymbolNames))
+            {
+                var symbolDeclarationId = DocumentationCommentId.CreateDeclarationId(symbol);
+                var excludedSymbolNamesSplit = excludedSymbolNames.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                var matched = false;
+
+                foreach (var excludedSymbolName in excludedSymbolNamesSplit)
+                {
+                    if (IsWildcardMatch(symbolName, excludedSymbolName) || IsWildcardMatch(symbolDeclarationId, excludedSymbolName))
+                        matched = true;
+                }
+
+                // to continue the outer foreach loop
+                if (matched)
+                    continue;
+            }
+
+            // MA0048.only_validate_first_type
             if (context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".only_validate_first_type", defaultValue: false))
             {
                 var root = location.SourceTree.GetRoot(context.CancellationToken);
@@ -74,8 +97,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             }
 
             var filePath = location.SourceTree.FilePath;
-            var fileName = filePath == null ? null : GetFileName(filePath.AsSpan());
-            var symbolName = symbol.Name;
+            var fileName = filePath is not null ? GetFileName(filePath.AsSpan()) : null;
+
             if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 continue;
 
@@ -114,5 +137,17 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             return filePath;
 
         return filePath[..index];
+    }
+
+    /// <summary>
+    /// Implemented wildcard pattern match
+    /// </summary>
+    /// <example>
+    /// Would match FooManager for expression *Manager
+    /// </example>
+    private static bool IsWildcardMatch(string input, string pattern)
+    {
+        var wildcardPattern = $"^{Regex.Escape(pattern).Replace("\\*", ".*", StringComparison.Ordinal)}$";
+        return Regex.IsMatch(input, wildcardPattern, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     }
 }

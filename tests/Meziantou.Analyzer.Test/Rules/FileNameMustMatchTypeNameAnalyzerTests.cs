@@ -247,6 +247,78 @@ class [||]Test0<TKey, TValue>
               .ValidateAsync();
     }
 
+    [Theory]
+    [InlineData("Sample")]
+    [InlineData("T:MyNamespace.Sample")]
+    public async Task MatchExcludedSymbolNames_ExactMatch(string value)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  namespace MyNamespace {
+                    class Test0 {}
+                    class Sample {}
+                  }
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
+             .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("Sample1|Sample2")]
+    [InlineData("T:MyNamespace.Sample1|T:MyNamespace.Sample2")]
+    [InlineData("Sample1|T:MyNamespace.Sample2")]
+    public async Task MatchExcludedSymbolNames_ExactMatch_Pipe(string value)
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                  namespace MyNamespace {
+                    class Test0 {}
+                    class Sample1 {}
+                    class Sample2 {}
+                   }
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
+             .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("Sample*")]
+    [InlineData("*ample*")]
+    public async Task MatchExcludedSymbolNames_WildcardMatch(string value)
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                  namespace MyNamespace {
+                   class Test0 {}
+                   class Sample1 {}
+                   class Sample2 {}
+                  }
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
+             .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("Sample*|*1|*2")]
+    [InlineData("*ample*|*oo*")]
+    [InlineData("T:MyNamespace.Sample*|T:MyNamespace.Foo*")]
+    [InlineData("T:MyNamespace.Sample*|Foo*")]
+    public async Task MatchExcludedSymbolNames_WildcardMatch_Pipe(string value)
+    {
+        await CreateProjectBuilder()
+             .WithSourceCode(fileName: "Test0.cs", """
+                  namespace MyNamespace {
+                   class Test0 {}
+                   class Sample1 {}
+                   class Sample2 {}
+                   class Foo1 {}
+                   class Foo2 {}
+                  }
+                  """)
+             .AddAnalyzerConfiguration("dotnet_diagnostic.MA0048.excluded_symbol_names", value)
+             .ValidateAsync();
+    }
+
 #if ROSLYN_4_4_OR_GREATER
     [Fact]
     public async Task FileLocalTypes()
