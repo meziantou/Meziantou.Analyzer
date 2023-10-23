@@ -84,7 +84,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                 return;
 
             var lastThrowIndex = descendants
-                    .Where(node => (node.IsKind(SyntaxKind.ThrowStatement) || node.IsKind(SyntaxKind.ThrowExpression)) && IsArgumentException(context, node))
+                    .Where(node => IsArgumentValidation(context, node))
                     .DefaultIfEmpty()
                     .Max(node => GetEndOfBlockIndex(context, node));
 
@@ -95,6 +95,25 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
 
                 context.ReportDiagnostic(s_rule, properties, methodSymbol);
             }
+        }
+
+        private bool IsArgumentValidation(SyntaxNodeAnalysisContext context, SyntaxNode node)
+        {
+            if ((node.IsKind(SyntaxKind.ThrowStatement) || node.IsKind(SyntaxKind.ThrowExpression)) && IsArgumentException(context, node))
+                return true;
+            
+            if (node is InvocationExpressionSyntax invocationExpression)
+            {
+                if (context.SemanticModel.GetOperation(invocationExpression, context.CancellationToken) is IInvocationOperation operation)
+                {
+                    var targetMethod = operation.TargetMethod;
+                    return targetMethod.IsStatic &&
+                        targetMethod.ContainingType.IsOrInheritFrom(_argumentExceptionSymbol) &&
+                        targetMethod.Name.Contains("Throw", System.StringComparison.Ordinal);
+                }
+            }
+
+            return false;
         }
 
         public bool IsArgumentException(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode)

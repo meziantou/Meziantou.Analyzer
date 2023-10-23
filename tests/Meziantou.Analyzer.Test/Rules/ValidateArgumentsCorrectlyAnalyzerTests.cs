@@ -194,6 +194,35 @@ class TypeName
     }
 
     [Fact]
+    public async Task ValidValidation_ThrowIfNull()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
+class TypeName
+{
+    IEnumerable<int> A(string a)
+    {
+        System.ArgumentNullException.ThrowIfNull(a);
+
+        return A();
+
+        IEnumerable<int> A()
+        {
+            yield return 0;
+            if (a == null)
+            {
+                yield return 1;
+            }
+        }
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ReportDiagnostic_IAsyncEnumerable()
     {
         const string SourceCode = @"using System.Collections.Generic;
@@ -235,4 +264,43 @@ class TypeName
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task ReportDiagnostic_IAsyncEnumerable_ThrowIfNull()
+    {
+        const string SourceCode = @"using System.Collections.Generic;
+class TypeName
+{
+    async IAsyncEnumerable<int> [||]A(string a)
+    {
+        System.ArgumentNullException.ThrowIfNull(a);
+
+        await System.Threading.Tasks.Task.Delay(1);
+        yield return 0;
+        
+    }
+}";
+
+        const string CodeFix = @"using System.Collections.Generic;
+class TypeName
+{
+    IAsyncEnumerable<int> A(string a)
+    {
+        System.ArgumentNullException.ThrowIfNull(a);
+
+        return A();
+
+        async IAsyncEnumerable<int> A()
+        {
+            await System.Threading.Tasks.Task.Delay(1);
+            yield return 0;
+        }
+    }
+}";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 }
