@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Microsoft.CodeAnalysis;
 using TestHelper;
 using Xunit;
 
@@ -226,6 +227,83 @@ class AsyncDisposable : IAsyncDisposable
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitDispose_TopLevelStatement_ShouldReportError()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            await using var [||]a = new AsyncDisposable();
+            Console.WriteLine();
+
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        const string CodeFix = """
+            using System;
+            using System.Threading.Tasks;
+
+            var a = new AsyncDisposable();
+
+            await using (a.ConfigureAwait(false))
+            {
+                Console.WriteLine();
+            }
+
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .WithOutputKind(OutputKind.ConsoleApplication)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitDispose_Block_TopLevelStatement_ShouldReportError()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+            await using (var [||]a = new AsyncDisposable())
+            {
+            }
+
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        const string CodeFix = """
+            using System;
+            using System.Threading.Tasks;
+            var a = new AsyncDisposable();
+
+            await using (a.ConfigureAwait(false))
+            {
+            }
+
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .WithOutputKind(@OutputKind.ConsoleApplication)
               .ValidateAsync();
     }
 

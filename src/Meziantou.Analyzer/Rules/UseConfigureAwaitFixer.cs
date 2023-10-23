@@ -81,8 +81,8 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                         .WithExpression(AppendConfigureAwait(SyntaxFactory.IdentifierName(usingBlock.Declaration.Variables[0].Identifier)))
                         .WithoutLeadingTrivia();
 
+                    editor.InsertBefore(usingBlock, variablesStatement);
                     editor.ReplaceNode(usingBlock, newUsingBlock);
-                    editor.InsertBefore(newUsingBlock, variablesStatement);
                     return editor.GetChangedDocument();
                 }
             }
@@ -96,31 +96,56 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                     var variablesStatement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(usingStatement.Declaration.Type, usingStatement.Declaration.Variables))
                             .WithLeadingTrivia(usingStatement.GetLeadingTrivia());
 
-
-                    var usingStatements = SyntaxFactory.Block();
-                    var statements = usingStatement.Parent as BlockSyntax;
-                    if (statements != null)
+                    if (usingStatement.Parent is GlobalStatementSyntax { Statement: LocalDeclarationStatementSyntax, Parent: CompilationUnitSyntax compilationUnit } globalStatement)
                     {
-                        var index = statements.Statements.IndexOf(usingStatement);
-                        usingStatements = SyntaxFactory.Block(SyntaxFactory.List(statements.Statements.Skip(index + 1)));
+                        var index = compilationUnit.Members.IndexOf(globalStatement);
+                        var usingStatements = SyntaxFactory.Block(SyntaxFactory.List(compilationUnit.Members
+                            .Skip(index + 1)
+                            .TakeWhile(m => m.IsKind(SyntaxKind.GlobalStatement))
+                            .Select(m => ((GlobalStatementSyntax)m).Statement)));
 
-                        foreach (var node in statements.Statements.Skip(index + 1))
+                        foreach (var node in compilationUnit.Members.Skip(index + 1).TakeWhile(m => m.IsKind(SyntaxKind.GlobalStatement)))
                         {
                             editor.RemoveNode(node);
                         }
+
+                        var newUsingStatement = SyntaxFactory.UsingStatement(
+                            declaration: null,
+                            expression: AppendConfigureAwait(SyntaxFactory.IdentifierName(usingStatement.Declaration.Variables[0].Identifier)),
+                            statement: usingStatements)
+                                .WithUsingKeyword(usingStatement.UsingKeyword)
+                                .WithAwaitKeyword(usingStatement.AwaitKeyword)
+                                .WithLeadingTrivia(usingStatement.GetLeadingTrivia());
+
+                        editor.InsertBefore(usingStatement, variablesStatement);
+                        editor.ReplaceNode(usingStatement, newUsingStatement);
+                    }
+                    else
+                    {
+                        var usingStatements = SyntaxFactory.Block();
+                        if (usingStatement.Parent is BlockSyntax statements)
+                        {
+                            var index = statements.Statements.IndexOf(usingStatement);
+                            usingStatements = SyntaxFactory.Block(SyntaxFactory.List(statements.Statements.Skip(index + 1)));
+
+                            foreach (var node in statements.Statements.Skip(index + 1))
+                            {
+                                editor.RemoveNode(node);
+                            }
+                        }
+
+                        var newUsingStatement = SyntaxFactory.UsingStatement(
+                            declaration: null,
+                            expression: AppendConfigureAwait(SyntaxFactory.IdentifierName(usingStatement.Declaration.Variables[0].Identifier)),
+                            statement: usingStatements.WithLeadingTrivia(usingStatement.GetTrailingTrivia()))
+                                .WithUsingKeyword(usingStatement.UsingKeyword)
+                                .WithAwaitKeyword(usingStatement.AwaitKeyword)
+                                .WithLeadingTrivia(usingStatement.GetLeadingTrivia());
+
+                        editor.InsertBefore(usingStatement, variablesStatement);
+                        editor.ReplaceNode(usingStatement, newUsingStatement);
                     }
 
-                    var newUsingStatement = SyntaxFactory.UsingStatement(
-                        declaration: null,
-                        expression: AppendConfigureAwait(SyntaxFactory.IdentifierName(usingStatement.Declaration.Variables[0].Identifier)),
-                        statement: usingStatements.WithLeadingTrivia(usingStatement.GetTrailingTrivia()))
-                            .WithUsingKeyword(usingStatement.UsingKeyword)
-                            .WithAwaitKeyword(usingStatement.AwaitKeyword)
-                            .WithLeadingTrivia(usingStatement.GetLeadingTrivia());
-
-
-                    editor.ReplaceNode(usingStatement, newUsingStatement);
-                    editor.InsertBefore(newUsingStatement, variablesStatement);
                     return editor.GetChangedDocument();
                 }
             }
