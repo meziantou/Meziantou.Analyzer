@@ -56,8 +56,8 @@
 
     <Otherwise>
       <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.6.0" />
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0-beta1.23472.1" />
+        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0-2.final" />
       </ItemGroup>
       <PropertyGroup>
         <DefineConstants>$(DefineConstants);ROSLYN4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER</DefineConstants>
