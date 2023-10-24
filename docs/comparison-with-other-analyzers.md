@@ -33,7 +33,6 @@
 | [CA2219](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2219?WT.mc_id=DT-MVP-5003978) | [MA0072](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0072.md) |
 | [CA2242](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2242?WT.mc_id=DT-MVP-5003978) | [MA0082](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0082.md) |
 | [CA5359](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5359?WT.mc_id=DT-MVP-5003978) | [MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md) |
-
 ## Similar rules
 
 |                                                                                                                           |                                                                                            |                                                                                   |
@@ -56,4 +55,5 @@
 | [CA2016](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2016?WT.mc_id=DT-MVP-5003978) | [MA0079](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0079.md) | MA reports missing CancellationToken in `await foreach` expressions               |
 | [CA2016](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2016?WT.mc_id=DT-MVP-5003978) | [MA0080](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0080.md) | MA reports missing CancellationToken in `await foreach` expressions               |
 | [CA2208](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2208?WT.mc_id=DT-MVP-5003978) | [MA0015](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0015.md) | MA reports more cases                                                             |
-| [SA1649](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1649.md)                        | [MA0048](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0048.md) | SA supports configuration of file naming convention and skips partial classes     |
+| [SA1649](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1649.md)                         | [MA0048](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0048.md) | SA supports configuration of file naming convention and skips partial classes     |
+| [S6580](https://rules.sonarsource.com/csharp/RSPEC-6580/)                                                                  | [MA0011](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0011.md) | S6580 only applies to parse methods, and also reports diagnostic when `null` is passed as value for format provider argument.|
