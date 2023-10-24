@@ -112,9 +112,9 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             var arguments = invocationOperation.Arguments;
             var indices = new[]
             {
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzer.PatternIndexName),
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzer.RegexOptionsIndexName),
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzer.RegexTimeoutIndexName),
+                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName),
+                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
+                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
             };
             foreach (var index in indices.Where(value => value != null).OrderByDescending(value => value))
             {
@@ -132,7 +132,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         SyntaxNode? regexOptionsValue = null;
         SyntaxNode? timeoutValue = null;
 
-        var timeout = TryParseInt32(properties, UseRegexSourceGeneratorAnalyzer.RegexTimeoutName);
+        var timeout = TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName);
         if (timeout != null)
         {
             timeoutValue = generator.LiteralExpression(timeout.Value);
@@ -140,13 +140,13 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (operation is IObjectCreationOperation objectCreationOperation)
         {
-            patternValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzer.PatternIndexName);
-            regexOptionsValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzer.RegexOptionsIndexName);
+            patternValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
         }
         else if (operation is IInvocationOperation invocationOperation)
         {
-            patternValue = GetNode(invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzer.PatternIndexName);
-            regexOptionsValue = GetNode(invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzer.RegexOptionsIndexName);
+            patternValue = GetNode(invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetNode(invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
         }
 
         if (timeoutValue != null && regexOptionsValue is null)

@@ -53,7 +53,7 @@ public sealed class NamedParameterFixer : CodeFixProvider
         if (parameters == null)
             return document;
 
-        var index = NamedParameterAnalyzer.ArgumentIndex(argument);
+        var index = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
         if (index < 0 || index >= parameters.Count)
             return document;
 

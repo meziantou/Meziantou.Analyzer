@@ -81,6 +81,7 @@ class TypeName
     {
         const string SourceCode = """
 using System;
+
 class TypeName
 {
     public void Test()
@@ -115,6 +116,7 @@ class TypeName
     {
         const string SourceCode = """
 using System;
+
 class TypeName
 {
     public void Test()

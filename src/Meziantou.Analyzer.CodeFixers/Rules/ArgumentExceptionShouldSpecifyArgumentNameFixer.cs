@@ -25,7 +25,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameFixer : CodeFixPro
             return;
 
         var diagnostic = context.Diagnostics.First();
-        if (!diagnostic.Properties.TryGetValue(ArgumentExceptionShouldSpecifyArgumentNameAnalyzer.ArgumentNameKey, out var argumentName) || argumentName is null)
+        if (!diagnostic.Properties.TryGetValue(ArgumentExceptionShouldSpecifyArgumentNameAnalyzerCommon.ArgumentNameKey, out var argumentName) || argumentName is null)
             return;
 
         var title = "Use nameof";

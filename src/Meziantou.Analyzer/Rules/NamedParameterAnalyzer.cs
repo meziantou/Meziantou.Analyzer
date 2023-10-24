@@ -16,7 +16,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
+public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.UseNamedParameter,
@@ -144,7 +144,7 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(syntaxContext.Options, expression))
                             return;
 
-                        var argumentIndex = ArgumentIndex(argument);
+                        var argumentIndex = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
 
                         bool IsParams(SyntaxNode node)
                         {
@@ -289,21 +289,6 @@ public sealed class NamedParameterAnalyzer : DiagnosticAnalyzer
             return false;
 
         return true;
-    }
-
-    internal static int ArgumentIndex(ArgumentSyntax argument)
-    {
-        var argumentListExpression = argument.FirstAncestorOrSelf<ArgumentListSyntax>();
-        if (argumentListExpression == null)
-            return -1;
-
-        for (var i = 0; i < argumentListExpression.Arguments.Count; i++)
-        {
-            if (argumentListExpression.Arguments[i] == argument)
-                return i;
-        }
-
-        return -1;
     }
 
     private static int GetMinimumMethodArgumentsConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)

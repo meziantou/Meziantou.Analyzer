@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
+public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.AvoidUsingRedundantElse,
@@ -49,7 +49,7 @@ public sealed class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         // NOTE:
         //  using var charEnumerator = "".GetEnumerator();          => LocalDeclarationStatementSyntax  (will return)
         //  using (var charEnumerator = "".GetEnumerator()) { }     => UsingStatementSyntax             (will carry on)
-        var elseHasUsingStatementLocalDeclaration = GetElseClauseChildren(elseClause)
+        var elseHasUsingStatementLocalDeclaration = AvoidUsingRedundantElseAnalyzerCommon.GetElseClauseChildren(elseClause)
             .OfType<LocalDeclarationStatementSyntax>()
             .Any(localDeclaration => localDeclaration.UsingKeyword.IsKind(SyntaxKind.UsingKeyword));
         if (elseHasUsingStatementLocalDeclaration)
@@ -69,13 +69,6 @@ public sealed class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(s_rule, elseClause.ElseKeyword);
         }
-    }
-
-    internal static IEnumerable<SyntaxNode> GetElseClauseChildren(ElseClauseSyntax elseClauseSyntax)
-    {
-        return elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax ?
-            elseBlockSyntax.ChildNodes() :
-            new[] { elseClauseSyntax.Statement };
     }
 
     private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)

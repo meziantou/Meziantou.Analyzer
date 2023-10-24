@@ -11,10 +11,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
+public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
 {
-    internal const string ArgumentNameKey = "ArgumentName";
-
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName,
         title: "Specify the parameter name in ArgumentException",
@@ -82,7 +80,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : Diagnos
                     {
                         if (argument.Value is not INameOfOperation)
                         {
-                            var properties = ImmutableDictionary<string, string?>.Empty.Add(ArgumentNameKey, value);
+                            var properties = ImmutableDictionary<string, string?>.Empty.Add(ArgumentExceptionShouldSpecifyArgumentNameAnalyzerCommon.ArgumentNameKey, value);
                             context.ReportDiagnostic(s_nameofRule, properties, argument.Value);
                         }
 

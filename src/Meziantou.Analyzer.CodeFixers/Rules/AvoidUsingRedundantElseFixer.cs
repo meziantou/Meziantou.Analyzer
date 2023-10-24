@@ -10,7 +10,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
-using static Meziantou.Analyzer.Rules.AvoidUsingRedundantElseAnalyzer;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
@@ -68,7 +67,7 @@ public sealed class AvoidUsingRedundantElseFixer : CodeFixProvider
             return document;
 
         // Get all syntax nodes currently under the 'else' clause
-        var nodesAfterNewIfStatement = GetElseClauseChildren(elseClause)
+        var nodesAfterNewIfStatement = AvoidUsingRedundantElseAnalyzerCommon.GetElseClauseChildren(elseClause)
             .Select(n => n.WithAdditionalAnnotations(Formatter.Annotation))
             .ToArray();
 
