@@ -934,7 +934,7 @@ class Test
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CancellationTokenAvailableAsParentLambdaParameter()
     {
@@ -955,7 +955,7 @@ class Test
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct1, ct2")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CancellationTokenAvailableAsDelegateParameter()
     {
@@ -973,7 +973,7 @@ class Test
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CancellationTokenAvailableAsLocalFunctionParameter()
     {
@@ -992,7 +992,7 @@ class Test
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: ct")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CancellationTokenAvailableAsLocalFunctionParameter_DoNotUseFromOutsideStatic()
     {
@@ -1036,6 +1036,155 @@ class Test
         await CreateProjectBuilder()
               .WithDefaultAnalyzerId("MA0032")
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AwaitForeach_FixerRemovesWithCancellationToken()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Runtime.CompilerServices;
+            class Foo
+            {
+                public static void Test()
+                {
+                    CancellationToken ct = default;
+                    [||]A().WithCancellation(ct);
+
+                    async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
+                    {
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+        const string Fix = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Runtime.CompilerServices;
+            class Foo
+            {
+                public static void Test()
+                {
+                    CancellationToken ct = default;
+                    A(ct);
+
+                    async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
+                    {
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AwaitForeach_FixerDoesNotRemoveWithCancellationToken()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Runtime.CompilerServices;
+            class Foo
+            {
+                public static void Test()
+                {
+                    CancellationToken ct1 = default;
+                    CancellationToken ct2 = default;
+                    [||]A().WithCancellation(ct2);
+
+                    async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
+                    {
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+        const string Fix = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Runtime.CompilerServices;
+            class Foo
+            {
+                public static void Test()
+                {
+                    CancellationToken ct1 = default;
+                    CancellationToken ct2 = default;
+                    A(ct1).WithCancellation(ct2);
+
+                    async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
+                    {
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AwaitForeach_FixerDoesNotRemoveWithCancellationTokenWhenAttributeIsNotPresent()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Runtime.CompilerServices;
+            class Foo
+            {
+                public static void Test()
+                {
+                    CancellationToken ct = default;
+                    [||]A().WithCancellation(ct);
+
+                    async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
+                    {
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+        const string Fix = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Runtime.CompilerServices;
+            class Foo
+            {
+                public static void Test()
+                {
+                    CancellationToken ct = default;
+                    A(ct);
+
+                    async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
+                    {
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode)
+              .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }

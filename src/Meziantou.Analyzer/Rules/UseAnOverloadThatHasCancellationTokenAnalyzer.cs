@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
@@ -92,6 +93,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
             TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
             ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
+            EnumeratorCancellationAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
         }
 
         public Compilation Compilation { get; }
@@ -100,6 +102,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         private INamedTypeSymbol? TaskSymbol { get; }
         private INamedTypeSymbol? TaskOfTSymbol { get; }
         private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; }
+        private INamedTypeSymbol? EnumeratorCancellationAttributeSymbol { get; }
 
         private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
         {
@@ -112,15 +115,16 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return false;
         }
 
-        private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation, out int parameterIndex, out string? parameterName)
+        private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name, bool HasEnumeratorCancellationAttribute);
+
+        private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
         {
-            parameterName = null;
-            parameterIndex = -1;
+            parameterInfo = default;
             var method = operation.TargetMethod;
             if (method.Name == nameof(CancellationTokenSource.CreateLinkedTokenSource) && method.ContainingType.IsEqualTo(CancellationTokenSourceSymbol))
                 return false;
 
-            if (IsArgumentImplicitlyDeclared(operation, CancellationTokenSymbol, out parameterIndex, out parameterName))
+            if (IsArgumentImplicitlyDeclared(operation, CancellationTokenSymbol, out parameterInfo))
                 return true;
 
             var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, CancellationTokenSymbol);
@@ -130,34 +134,40 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 {
                     if (overload.Parameters[i].Type.IsEqualTo(CancellationTokenSymbol))
                     {
-                        parameterName ??= overload.Parameters[i].Name;
-                        parameterIndex = i;
+                        parameterInfo = new AdditionalParameterInfo(i, overload.Parameters[i].Name, HasEnumerableCancellationAttribute(overload.Parameters[i]));
                         break;
                     }
                 }
 
+                Debug.Assert(parameterInfo != null);
                 return true;
             }
 
 
             return false;
 
-            static bool IsArgumentImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol cancellationTokenSymbol, out int parameterIndex, [NotNullWhen(true)] out string? parameterName)
+            bool IsArgumentImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol cancellationTokenSymbol, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
             {
-                parameterIndex = -1;
-                parameterName = null;
                 foreach (var arg in invocationOperation.Arguments)
                 {
                     if (arg.IsImplicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
                     {
-                        parameterIndex = invocationOperation.TargetMethod.Parameters.IndexOf(arg.Parameter);
-                        parameterName = arg.Parameter.Name;
+                        parameterInfo = new AdditionalParameterInfo(invocationOperation.TargetMethod.Parameters.IndexOf(arg.Parameter), arg.Parameter.Name, HasEnumerableCancellationAttribute(arg.Parameter));
                         return true;
                     }
                 }
 
+                parameterInfo = null;
                 return false;
             }
+        }
+
+        private bool HasEnumerableCancellationAttribute(IParameterSymbol? parameterSymbol)
+        {
+            if (parameterSymbol == null)
+                return false;
+
+            return parameterSymbol.HasAttribute(EnumeratorCancellationAttributeSymbol, inherits: false);
         }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
@@ -166,13 +176,13 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (HasExplicitCancellationTokenArgument(operation))
                 return;
 
-            if (!HasAnOverloadWithCancellationToken(operation, out var newParameterIndex, out var newParameterName))
+            if (!HasAnOverloadWithCancellationToken(operation, out var parameterInfo))
                 return;
 
             var availableCancellationTokens = FindCancellationTokens(operation, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
             {
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, CreateProperties(availableCancellationTokens, newParameterIndex, newParameterName), operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
             }
             else
             {
@@ -180,7 +190,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, newParameterIndex, newParameterName), operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
             }
         }
 
@@ -211,7 +221,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return;
 
                 // Already handled by AnalyzeInvocation
-                if (HasAnOverloadWithCancellationToken(invocation, out _, out _))
+                if (HasAnOverloadWithCancellationToken(invocation, out _))
                     return;
 
                 collection = invocation.GetChildOperations().FirstOrDefault();
@@ -224,7 +234,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var availableCancellationTokens = FindCancellationTokens(op, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
             {
-                var properties = CreateProperties(availableCancellationTokens, parameterIndex: -1, parameterName: null);
+                var properties = CreateProperties(availableCancellationTokens, new AdditionalParameterInfo(-1, Name: null, HasEnumeratorCancellationAttribute: false));
                 context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, properties, op.Collection, string.Join(", ", availableCancellationTokens));
             }
             else
@@ -237,11 +247,12 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             }
         }
 
-        private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, int parameterIndex, string? parameterName)
+        private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, AdditionalParameterInfo parameterInfo)
         {
             return ImmutableDictionary.Create<string, string?>()
-                .Add("ParameterIndex", parameterIndex.ToString(CultureInfo.InvariantCulture))
-                .Add("ParameterName", parameterName)
+                .Add("ParameterIndex", parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
+                .Add("ParameterName", parameterInfo.Name)
+                .Add("ParameterIsEnumeratorCancellation", parameterInfo.HasEnumeratorCancellationAttribute.ToString())
                 .Add("CancellationTokens", string.Join(",", cancellationTokens));
         }
 
