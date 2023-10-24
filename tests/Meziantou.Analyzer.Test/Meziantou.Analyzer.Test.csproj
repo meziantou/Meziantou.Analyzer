@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.csproj" />
     <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
   </ItemGroup>
 

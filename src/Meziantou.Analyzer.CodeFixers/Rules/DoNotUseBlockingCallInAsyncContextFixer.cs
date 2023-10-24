@@ -100,7 +100,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         {
             editor.ReplaceNode(usingStatement, usingStatement.WithAwaitKeyword(SyntaxFactory.Token(SyntaxKind.AwaitKeyword)));
         }
-        else if(nodeToFix is LocalDeclarationStatementSyntax localDeclarationStatement)
+        else if (nodeToFix is LocalDeclarationStatementSyntax localDeclarationStatement)
         {
             editor.ReplaceNode(localDeclarationStatement, localDeclarationStatement.WithAwaitKeyword(SyntaxFactory.Token(SyntaxKind.AwaitKeyword)));
         }

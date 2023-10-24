@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net7.0;netstandard2.0</TargetFrameworks>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Version>1.0.1</Version>
+    <Nullable>enable</Nullable>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Embedded</DebugType>
+    <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+    <BaseOutputPath>bin\$(RoslynVersion)\</BaseOutputPath>
+    <RootNamespace>Meziantou.Analyzer</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\BannedSymbols.txt" />
+    
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\RuleIdentifiers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\CompilationExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\EnumerableExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LocationExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\MethodSymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\NamespaceSymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OperationExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SyntaxTokenListExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\StringExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SyntaxNodeExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\TypeSymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\DoNotUseBlockingCallInAsyncContextData.cs" LinkBase="Rules" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\OptimizeLinqUsageData.cs" LinkBase="Rules" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\OptimizeStringBuilderUsageData.cs" LinkBase="Rules" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\*Common.cs" LinkBase="Rules" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Meziantou.Analyzer" Version="2.0.83" Condition="'$(PackageId)' != 'Meziantou.Analyzer'">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

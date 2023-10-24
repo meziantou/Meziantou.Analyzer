@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAnalyzer
+public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_implementIEquatableRule = new(
         RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT,
@@ -136,7 +136,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAna
             }
 
             // Equals(T) without IEquatable<T>
-            if (!implementIEquatableOfT && HasMethod(symbol, IsEqualsOfTMethod))
+            if (!implementIEquatableOfT && HasMethod(symbol, EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod))
             {
                 context.ReportDiagnostic(s_implementIEquatableRule, symbol);
             }
@@ -195,16 +195,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAna
         symbol.ReturnType.IsBoolean() &&
         symbol.Parameters.Length == 1 &&
         symbol.Parameters[0].Type.IsObject() &&
-        symbol.DeclaredAccessibility == Accessibility.Public &&
-        !symbol.IsStatic;
-    }
-
-    internal static bool IsEqualsOfTMethod(IMethodSymbol symbol)
-    {
-        return symbol.Name == nameof(object.Equals) &&
-        symbol.ReturnType.IsBoolean() &&
-        symbol.Parameters.Length == 1 &&
-        symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) &&
         symbol.DeclaredAccessibility == Accessibility.Public &&
         !symbol.IsStatic;
     }

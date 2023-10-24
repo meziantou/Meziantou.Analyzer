@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.csproj" />
     <ProjectReference Include="..\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
   </ItemGroup>
 

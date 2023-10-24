@@ -102,7 +102,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         {
             if (part is IInterpolatedStringTextOperation str)
             {
-                var text = OptimizeStringBuilderUsageAnalyzer.GetConstStringValue(str);
+                var text = OptimizeStringBuilderUsageAnalyzerCommon.GetConstStringValue(str);
                 if (text == null)
                     return document; // This should not happen
 
@@ -144,7 +144,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
 
                     if (interpolation.FormatString != null)
                     {
-                        format += ":" + OptimizeStringBuilderUsageAnalyzer.GetConstStringValue(interpolation.FormatString);
+                        format += ":" + OptimizeStringBuilderUsageAnalyzerCommon.GetConstStringValue(interpolation.FormatString);
                     }
 
                     format += "}";

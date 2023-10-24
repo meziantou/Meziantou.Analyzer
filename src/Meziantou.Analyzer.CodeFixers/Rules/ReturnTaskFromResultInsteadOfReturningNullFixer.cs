@@ -31,7 +31,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         if (semanticModel == null)
             return;
 
-        if (ReturnTaskFromResultInsteadOfReturningNullAnalyzer.FindContainingMethod(semanticModel, nodeToFix, context.CancellationToken)?.ReturnType is not INamedTypeSymbol type)
+        if (ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon.FindContainingMethod(semanticModel, nodeToFix, context.CancellationToken)?.ReturnType is not INamedTypeSymbol type)
             return;
 
         if (!type.IsGenericType)

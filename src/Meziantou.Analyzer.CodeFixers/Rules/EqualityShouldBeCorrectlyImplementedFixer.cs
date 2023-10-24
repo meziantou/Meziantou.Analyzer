@@ -7,7 +7,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Editing;
-using static Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedAnalyzer;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -46,7 +45,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
             return document;
 
         // Retrieve Nullable Annotation from the Equals method and use it to construct the concrete interface
-        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => IsEqualsOfTMethod(m) && m != null);
+        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod(m) && m != null);
         if (equalsMethod is null)
             return document;
 

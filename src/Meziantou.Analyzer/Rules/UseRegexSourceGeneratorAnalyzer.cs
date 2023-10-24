@@ -9,13 +9,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
+public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 {
-    internal const string PatternIndexName = "PatternIndex";
-    internal const string RegexOptionsIndexName = "RegexOptionsIndex";
-    internal const string RegexTimeoutIndexName = "RegexTimeoutIndex";
-    internal const string RegexTimeoutName = "RegexTimeout";
-
     private static readonly DiagnosticDescriptor s_regexSourceGeneratorRule = new(
         RuleIdentifiers.UseRegexSourceGenerator,
         title: "Use the Regex source generator",
@@ -72,10 +67,10 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 
         var properties = ImmutableDictionary.CreateRange(new[]
         {
-            new KeyValuePair<string, string?>(PatternIndexName, "0"),
-            new KeyValuePair<string, string?>(RegexOptionsIndexName, op.Arguments.Length > 1 ? "1" : null),
-            new KeyValuePair<string, string?>(RegexTimeoutIndexName, op.Arguments.Length > 2 ? "2" : null),
-            new KeyValuePair<string, string?>(RegexTimeoutName, op.Arguments.Length > 2 ? TimeSpanOperation.GetMilliseconds(op.Arguments[2].Value)?.ToString(CultureInfo.InvariantCulture) : null),
+            new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "0"),
+            new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 1 ? "1" : null),
+            new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 2 ? "2" : null),
+            new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 2 ? TimeSpanOperation.GetMilliseconds(op.Arguments[2].Value)?.ToString(CultureInfo.InvariantCulture) : null),
         });
 
         context.ReportDiagnostic(s_regexSourceGeneratorRule, properties, op);
@@ -117,10 +112,10 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 
             var properties = ImmutableDictionary.CreateRange(new[]
             {
-                new KeyValuePair<string, string?>(PatternIndexName, "1"),
-                new KeyValuePair<string, string?>(RegexOptionsIndexName, op.Arguments.Length > 2 ? "2" : null),
-                new KeyValuePair<string, string?>(RegexTimeoutIndexName, op.Arguments.Length > 3 ? "3" : null),
-                new KeyValuePair<string, string?>(RegexTimeoutName, op.Arguments.Length > 3 ? TimeSpanOperation.GetMilliseconds(op.Arguments[3].Value)?.ToString(CultureInfo.InvariantCulture) : null),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "1"),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 2 ? "2" : null),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 3 ? "3" : null),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 3 ? TimeSpanOperation.GetMilliseconds(op.Arguments[3].Value)?.ToString(CultureInfo.InvariantCulture) : null),
             });
 
             context.ReportDiagnostic(s_regexSourceGeneratorRule, properties, op);
@@ -145,10 +140,10 @@ public sealed class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 
             var properties = ImmutableDictionary.CreateRange(new[]
             {
-                new KeyValuePair<string, string?>(PatternIndexName, "1"),
-                new KeyValuePair<string, string?>(RegexOptionsIndexName, op.Arguments.Length > 3 ? "3" : null),
-                new KeyValuePair<string, string?>(RegexTimeoutIndexName, op.Arguments.Length > 4 ? "4" : null),
-                new KeyValuePair<string, string?>(RegexTimeoutName, op.Arguments.Length > 4 ? TimeSpanOperation.GetMilliseconds(op.Arguments[4].Value)?.ToString(CultureInfo.InvariantCulture) : null),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "1"),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 3 ? "3" : null),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 4 ? "4" : null),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 4 ? TimeSpanOperation.GetMilliseconds(op.Arguments[4].Value)?.ToString(CultureInfo.InvariantCulture) : null),
             });
 
             context.ReportDiagnostic(s_regexSourceGeneratorRule, properties, op);
