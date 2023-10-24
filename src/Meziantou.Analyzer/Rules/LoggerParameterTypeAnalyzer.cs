@@ -141,7 +141,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                                 {
                                     foreach (var symbol in symbols)
                                     {
-                                        if (symbol.Kind == SymbolKind.NamedType)
+                                        if (symbol.Kind is SymbolKind.NamedType or SymbolKind.ArrayType)
                                         {
                                             types.Add(symbol);
                                         }
