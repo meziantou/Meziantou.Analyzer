@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Differencing;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -61,6 +62,7 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
         // Create local function
         var returnTypeSyntax = generator.TypeExpression(symbol.ReturnType);
         var localFunctionSyntaxNode = LocalFunctionStatement((TypeSyntax)returnTypeSyntax, symbol.Name);
+        localFunctionSyntaxNode = localFunctionSyntaxNode.WithParameterList(CopyParametersWithoutDefaultValues(methodSyntaxNode.ParameterList));
         if (methodSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)))
         {
             localFunctionSyntaxNode = localFunctionSyntaxNode.AddModifiers(Token(SyntaxKind.AsyncKeyword));
@@ -78,20 +80,46 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
 
         localFunctionSyntaxNode = localFunctionSyntaxNode.WithBody(Block(localFunctionStatements));
 
-        // Add location function to the method
+        // Add local function to the method
         statements = statements.Add(
             (StatementSyntax)generator.ReturnStatement(
                 generator.InvocationExpression(
-                    generator.IdentifierName(symbol.Name)))
+                    generator.IdentifierName(symbol.Name),
+                    methodSyntaxNode.ParameterList.Parameters.Select(p => IdentifierName(p.Identifier))))
             .WithLeadingTrivia(LineFeed));
 
         statements = statements.Add(localFunctionSyntaxNode);
 
         methodSyntaxNode = methodSyntaxNode
             .WithModifiers(methodSyntaxNode.Modifiers.Remove(SyntaxKind.AsyncKeyword))
+            .WithParameterList(RemoveEnumeratorCancellationAttribute(methodSyntaxNode.ParameterList, editor.SemanticModel, cancellationToken))
             .WithBody(Block(statements))
             .WithAdditionalAnnotations(Formatter.Annotation);
         editor.ReplaceNode(nodeToFix, methodSyntaxNode);
         return editor.GetChangedDocument();
+    }
+
+    private static ParameterListSyntax CopyParametersWithoutDefaultValues(ParameterListSyntax parameterListSyntax)
+    {
+        return ParameterList(SeparatedList(parameterListSyntax.Parameters.Select(p => p.WithDefault(null))));
+    }
+
+    private static ParameterListSyntax RemoveEnumeratorCancellationAttribute(ParameterListSyntax parameterListSyntax, SemanticModel semanticModel, CancellationToken cancellationToken)
+    {
+        var enumeratorCancellationSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
+        if (enumeratorCancellationSymbol == null)
+            return parameterListSyntax;
+
+        return ParameterList(SeparatedList(parameterListSyntax.Parameters.Select(UpdateParameter)));
+
+        ParameterSyntax UpdateParameter(ParameterSyntax parameter)
+        {
+            return parameter.WithAttributeLists(new SyntaxList<AttributeListSyntax>(parameter.AttributeLists.Select(UpdateAttributeList).Where(list=>list.Attributes.Count > 0)));
+        }
+
+        AttributeListSyntax UpdateAttributeList(AttributeListSyntax attributes)
+        {
+            return AttributeList(SeparatedList(attributes.Attributes.Where(attr => !enumeratorCancellationSymbol.IsEqualTo(semanticModel.GetTypeInfo(attr, cancellationToken).Type))));
+        }
     }
 }
