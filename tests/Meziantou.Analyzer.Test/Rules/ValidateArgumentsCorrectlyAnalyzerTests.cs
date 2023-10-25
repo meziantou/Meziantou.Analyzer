@@ -146,8 +146,8 @@ class TypeName
         if (a == null)
             throw new System.ArgumentNullException(nameof(a));
 
-        return A();
-        IEnumerable<int> A()
+        return A(a);
+        IEnumerable<int> A(string a)
         {
             yield return 0;
             if (a == null)
@@ -247,9 +247,9 @@ class TypeName
         if (a == null)
             throw new System.ArgumentNullException(nameof(a));
 
-        return A();
+        return A(a);
 
-        async IAsyncEnumerable<int> A()
+        async IAsyncEnumerable<int> A(string a)
         {
             await System.Threading.Tasks.Task.Delay(1);
             yield return 0;
@@ -287,15 +287,65 @@ class TypeName
     {
         System.ArgumentNullException.ThrowIfNull(a);
 
-        return A();
+        return A(a);
 
-        async IAsyncEnumerable<int> A()
+        async IAsyncEnumerable<int> A(string a)
         {
             await System.Threading.Tasks.Task.Delay(1);
             yield return 0;
         }
     }
 }";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_FixerPreserveEnumerableCancellationAttribute()
+    {
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class TypeName
+            {
+                async IAsyncEnumerable<int> [||]A(string a, [EnumeratorCancellation] CancellationToken ct = default)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+
+                    await System.Threading.Tasks.Task.Delay(1);
+                    yield return 0;
+                    
+                }
+            }
+            """;
+
+        const string CodeFix = """
+            using System.Runtime.CompilerServices;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class TypeName
+            {
+                IAsyncEnumerable<int> A(string a, CancellationToken ct = default)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+
+                    return A(a, ct);
+
+                    async IAsyncEnumerable<int> A(string a, [EnumeratorCancellation] CancellationToken ct)
+                    {
+                        await System.Threading.Tasks.Task.Delay(1);
+                        yield return 0;
+                    }
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
