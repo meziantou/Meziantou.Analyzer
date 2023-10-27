@@ -261,6 +261,24 @@ Prop;System.String[]
 """)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Logger_LogTrace_ValidParameterType_ValueTuple()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", ("", 1));
+logger.LogInformation("{Prop}", (A: "", B: 1));
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.ValueTuple{System.String,System.Int32}
+""")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Configuration_UnknownParameterType()

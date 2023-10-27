@@ -372,6 +372,29 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
     private sealed class LoggerConfigurationFile
     {
+        private static readonly SymbolEqualityComparer Comparer = GetComparer();
+
+        private static SymbolEqualityComparer GetComparer()
+        {
+            var kindType = Type.GetType("Microsoft.CodeAnalysis.TypeCompareKind, Microsoft.CodeAnalysis", throwOnError: false);
+            if (kindType != null)
+            {
+                // TypeCompareKind.
+                var ctorParam1 = kindType.GetField("AllNullableIgnoreOptions")?.GetValue(null);
+                var ctorParam2 = kindType.GetField("IgnoreTupleNames")?.GetValue(null);
+                if (ctorParam1 != null && ctorParam2 != null)
+                {
+                    var ctor = typeof(SymbolEqualityComparer).GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, binder: null, new[] { kindType }, modifiers: null);
+                    if (ctor != null)
+                    {
+                        return (SymbolEqualityComparer)ctor.Invoke(new object[] { (int)ctorParam1 | (int)ctorParam2 });
+                    }
+                }
+            }
+
+            return SymbolEqualityComparer.Default;
+        }
+
         private readonly Dictionary<string, ISymbol[]> _configuration;
 
         public LoggerConfigurationFile(Dictionary<string, ISymbol[]> configuration)
@@ -388,7 +411,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 hasRule = true;
                 foreach (var validSymbol in validSymbols)
                 {
-                    if (validSymbol.IsEqualTo(type))
+                    if (Comparer.Equals(validSymbol, type))
                         return true;
                 }
 
