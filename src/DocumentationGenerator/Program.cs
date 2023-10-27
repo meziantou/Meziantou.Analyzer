@@ -20,24 +20,24 @@ internal static class Program
 
         var outputFolder = Path.GetFullPath(args[0]);
 
-        var assembly = typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly;
-        var diagnosticAnalyzers = assembly.GetExportedTypes()
+        var assemblies = new[] { typeof(Meziantou.Analyzer.Rules.CommaAnalyzer).Assembly, typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly };
+        var diagnosticAnalyzers = assemblies.SelectMany(assembly => assembly.GetExportedTypes())
             .Where(type => !type.IsAbstract && typeof(DiagnosticAnalyzer).IsAssignableFrom(type))
             .Select(type => (DiagnosticAnalyzer)Activator.CreateInstance(type)!)
             .ToList();
 
-        var codeFixProviders = assembly.GetExportedTypes()
+        var codeFixProviders = assemblies.SelectMany(assembly => assembly.GetExportedTypes())
             .Where(type => !type.IsAbstract && typeof(CodeFixProvider).IsAssignableFrom(type))
             .Select(type => (CodeFixProvider)Activator.CreateInstance(type)!)
             .ToList();
 
-        var diagnosticSuppressors = assembly.GetExportedTypes()
+        var diagnosticSuppressors = assemblies.SelectMany(assembly => assembly.GetExportedTypes())
           .Where(type => !type.IsAbstract && typeof(DiagnosticSuppressor).IsAssignableFrom(type))
           .Select(type => (DiagnosticSuppressor)Activator.CreateInstance(type)!)
           .ToList();
 
         var sb = new StringBuilder();
-        sb.Append("# ").Append(assembly.GetName().Name).Append("'s rules\n");
+        sb.Append("# ").Append(assemblies.First().GetName().Name).Append("'s rules\n");
         var rulesTable = GenerateRulesTable(diagnosticAnalyzers, codeFixProviders);
         sb.Append(rulesTable);
 
