@@ -118,4 +118,157 @@ line2""|];
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+#if CSHARP11_OR_GREATER
+    [Fact]
+    public async Task U8String()
+    {
+        const string SourceCode = """""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = "line1"u8;
+                }
+            }
+            """"";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task VerbatimU8String()
+    {
+        const string SourceCode = """""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = [|@"line1
+                    line2"u8|];
+                }
+            }
+            """"";
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task U8RawString()
+    {
+        const string SourceCode = """""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = [|"""
+                        line1
+                        line2
+                        """u8|];
+                }
+            }
+            """"";
+
+        await CreateProjectBuilder()
+              .WithDefaultAnalyzerId("MA0136")
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SingleLineRawString1()
+    {
+        const string SourceCode = """""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = """
+                    line1
+                    """;
+                }
+            }
+            """"";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task SingleLineRawString2()
+    {
+        const string SourceCode = """""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = """line1""";
+                }
+            }
+            """"";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task RawString()
+    {
+        const string SourceCode = """""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = [|"""
+                    line1
+                    line2
+                    """|];
+                }
+            }
+            """"";
+
+        await CreateProjectBuilder()
+              .WithDefaultAnalyzerId("MA0136")
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedRawString()
+    {
+        const string SourceCode = """""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = [|$"""
+                    line1{0}
+                    line2
+                    """|];
+                }
+            }
+            """"";
+
+        await CreateProjectBuilder()
+              .WithDefaultAnalyzerId("MA0136")
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
 }

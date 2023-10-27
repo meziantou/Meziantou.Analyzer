@@ -135,6 +135,7 @@
 |[MA0133](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0133.md)|Design|Use DateTimeOffset instead of relying on the implicit conversion|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md)|Usage|Observe result of async calls|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0135](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0135.md)|Design|The log parameter has no configured type|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0136](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0136.md)|Usage|Raw String contains an implicit end of line character|<span title='Hidden'>👻</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -546,6 +547,9 @@ dotnet_diagnostic.MA0134.severity = warning
 
 # MA0135: The log parameter has no configured type
 dotnet_diagnostic.MA0135.severity = none
+
+# MA0136: Raw String contains an implicit end of line character
+dotnet_diagnostic.MA0136.severity = silent
 ```
 
 # .editorconfig - all rules disabled
@@ -952,4 +956,7 @@ dotnet_diagnostic.MA0134.severity = none
 
 # MA0135: The log parameter has no configured type
 dotnet_diagnostic.MA0135.severity = none
+
+# MA0136: Raw String contains an implicit end of line character
+dotnet_diagnostic.MA0136.severity = none
 ```

@@ -138,6 +138,7 @@ internal static class RuleIdentifiers
     public const string UseDateTimeOffsetInsteadOfDateTime = "MA0133";
     public const string AwaitAwaitableMethodInSyncMethod = "MA0134";
     public const string LoggerParameterType_MissingConfiguration = "MA0135";
+    public const string RawStringShouldNotContainsNonDeterministicEndOfLine = "MA0136";
 
     public static string GetHelpUri(string identifier)
     {
