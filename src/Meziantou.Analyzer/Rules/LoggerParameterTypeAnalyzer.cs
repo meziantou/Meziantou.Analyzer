@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.IO;
 using Microsoft.CodeAnalysis.Text;
 using Meziantou.Analyzer.Configurations;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -105,7 +106,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     .Where(file => Path.GetFileName(file.Path) is { } fileName && fileName.StartsWith("LoggerParameterTypes.", StringComparison.Ordinal) && fileName.EndsWith(".txt", StringComparison.Ordinal))
                     .OrderBy(file => file.Path, StringComparer.Ordinal);
 
-                Dictionary<string, ISymbol[]> configuration = new(StringComparer.Ordinal);
+                Dictionary<string, ITypeSymbol[]> configuration = new(StringComparer.Ordinal);
                 foreach (var file in files)
                 {
                     var sourceText = file.GetText(context.CancellationToken);
@@ -125,7 +126,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                         if (parts.Length == 1)
                             continue;
 
-                        var types = new List<ISymbol>(capacity: parts.Length - 1);
+                        var types = new List<ITypeSymbol>(capacity: parts.Length - 1);
                         for (var i = 1; i < parts.Length; i++)
                         {
                             var typeName = parts[i].Trim();
@@ -141,9 +142,9 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                                 {
                                     foreach (var symbol in symbols)
                                     {
-                                        if (symbol.Kind is SymbolKind.NamedType or SymbolKind.ArrayType)
+                                        if (symbol.Kind is SymbolKind.NamedType or SymbolKind.ArrayType && symbol is ITypeSymbol typeSymbol)
                                         {
-                                            types.Add(symbol);
+                                            types.Add(typeSymbol);
                                         }
                                         else
                                         {
@@ -181,7 +182,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
                         if (attribute.ConstructorArguments is [{ Type.SpecialType: SpecialType.System_String, IsNull: false, Value: string name }, TypedConstant { Kind: TypedConstantKind.Array } types])
                         {
-                            configuration[name] = types.Values.Select(v => v.Value as ISymbol).WhereNotNull().ToArray();
+                            configuration[name] = types.Values.Select(v => v.Value as ITypeSymbol).WhereNotNull().ToArray();
                         }
                     }
                 }
@@ -282,7 +283,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     var name = logFormat.ValueNames[i];
                     var argumentType = argumentTypes[i];
 
-                    if (!Configuration.IsValid(name, argumentType.Symbol, out var ruleFound))
+                    if (!Configuration.IsValid(context.Compilation, name, argumentType.Symbol, out var ruleFound))
                     {
                         var expectedSymbols = Configuration.GetSymbols(name);
                         var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{s.ToDisplayString()}'"));
@@ -395,23 +396,31 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             return SymbolEqualityComparer.Default;
         }
 
-        private readonly Dictionary<string, ISymbol[]> _configuration;
+        private readonly Dictionary<string, ITypeSymbol[]> _configuration;
 
-        public LoggerConfigurationFile(Dictionary<string, ISymbol[]> configuration)
+        public LoggerConfigurationFile(Dictionary<string, ITypeSymbol[]> configuration)
         {
             _configuration = configuration;
         }
 
         public int Count => _configuration.Count;
 
-        public bool IsValid(string name, ISymbol? type, out bool hasRule)
+        public bool IsValid(Compilation compilation, string name, ITypeSymbol? type, out bool hasRule)
         {
             if (_configuration.TryGetValue(name, out var validSymbols))
             {
                 hasRule = true;
+
+                if (type == null)
+                    return false;
+
                 foreach (var validSymbol in validSymbols)
                 {
                     if (Comparer.Equals(validSymbol, type))
+                        return true;
+
+                    var conversion = compilation.ClassifyConversion(type, validSymbol);
+                    if (conversion.Exists && conversion.IsImplicit && conversion.IsNullable)
                         return true;
                 }
 
