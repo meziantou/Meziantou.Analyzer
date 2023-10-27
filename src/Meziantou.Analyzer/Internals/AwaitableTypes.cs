@@ -73,6 +73,42 @@ internal sealed class AwaitableTypes
         return false;
     }
 
+    public bool IsAwaitable(ITypeSymbol? symbol, Compilation compilation)
+    {
+        if (symbol == null)
+            return false;
+
+        if (INotifyCompletionSymbol == null)
+            return false;
+
+        if (symbol.SpecialType is SpecialType.System_Void || symbol.TypeKind is TypeKind.Dynamic)
+            return false;
+
+        if (IsTaskOrValueTask(symbol))
+            return true;
+
+        var awaiter = symbol.GetMembers("GetAwaiter");
+
+        foreach (var potentialSymbol in awaiter)
+        {
+            if (potentialSymbol is not IMethodSymbol getAwaiterMethod)
+                continue;
+
+            if (!compilation.IsSymbolAccessibleWithin(potentialSymbol, compilation.Assembly))
+                continue;
+
+            if (!getAwaiterMethod.Parameters.IsEmpty)
+                continue;
+
+            if (!ConformsToAwaiterPattern(getAwaiterMethod.ReturnType))
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
     public bool DoesNotReturnVoidAndCanUseAsyncKeyword(IMethodSymbol method, SemanticModel semanticModel, CancellationToken cancellationToken)
     {
         if (method.IsTopLevelStatementsEntryPointMethod())

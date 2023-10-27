@@ -139,6 +139,8 @@ internal static class RuleIdentifiers
     public const string AwaitAwaitableMethodInSyncMethod = "MA0134";
     public const string LoggerParameterType_MissingConfiguration = "MA0135";
     public const string RawStringShouldNotContainsNonDeterministicEndOfLine = "MA0136";
+    public const string MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffix = "MA0137";
+    public const string MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix = "MA0138";
 
     public static string GetHelpUri(string identifier)
     {
