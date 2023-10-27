@@ -117,6 +117,18 @@ internal static class ContextExtensions
 
         context.ReportDiagnostic(descriptor, properties, operation, messageArgs);
     }
+    
+    public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, ILocalFunctionOperation operation, DiagnosticReportOptions options, params string?[] messageArgs)
+    {
+        if (options.HasFlag(DiagnosticReportOptions.ReportOnMethodName) &&
+            operation.Syntax is LocalFunctionStatementSyntax memberAccessExpression)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(descriptor, memberAccessExpression.Identifier.GetLocation(), properties, messageArgs));
+            return;
+        }
+
+        context.ReportDiagnostic(descriptor, properties, operation, messageArgs);
+    }
 
     public static void ReportDiagnostic(this CompilationAnalysisContext context, DiagnosticDescriptor descriptor, ISymbol symbol, params string?[] messageArgs)
     {
