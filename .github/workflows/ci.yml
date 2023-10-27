@@ -107,7 +107,7 @@ jobs:
       matrix:
         runs-on: [ ubuntu-latest, windows-latest ]
         configuration: [ Debug, Release ]
-        roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'roslyn4.4', 'default' ]
+        roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'roslyn4.4', 'roslyn4.6', 'default' ]
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
