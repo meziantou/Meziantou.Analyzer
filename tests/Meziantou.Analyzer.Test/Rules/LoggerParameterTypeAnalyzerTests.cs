@@ -279,6 +279,60 @@ Prop;System.ValueTuple{System.String,System.Int32}
 """)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Logger_LogTrace_ValidParameterType_NullableReferenceType()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", "");
+logger.LogInformation("{Prop}", (string?)null);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.String
+""")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Logger_LogTrace_ValidParameterType_NullableInt32AllowsInt32()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", 1);
+logger.LogInformation("{Prop}", (int?)1);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.Nullable{System.Int32}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_Int32DoesNotAllowNullableInt32()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", 1);
+logger.LogInformation("{Prop}", [||](int?)1);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.Int32
+""")
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Configuration_UnknownParameterType()
