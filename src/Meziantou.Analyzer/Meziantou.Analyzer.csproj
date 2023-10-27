@@ -19,6 +19,7 @@
     <BaseOutputPath>bin\$(RoslynVersion)\</BaseOutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\docs\**\*" LinkBase="docs" />
     <EmbeddedResource Include="Resources\*.txt" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)\BannedSymbols.txt" />
   </ItemGroup>

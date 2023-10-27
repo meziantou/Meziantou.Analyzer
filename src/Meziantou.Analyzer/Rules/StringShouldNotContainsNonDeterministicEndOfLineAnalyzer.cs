@@ -19,7 +19,17 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    private static readonly DiagnosticDescriptor s_ruleRawString = new(
+        RuleIdentifiers.RawStringShouldNotContainsNonDeterministicEndOfLine,
+        title: "Raw String contains an implicit end of line character",
+        messageFormat: "Raw String contains an implicit end of line character",
+        RuleCategories.Usage,
+        DiagnosticSeverity.Hidden,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RawStringShouldNotContainsNonDeterministicEndOfLine));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleRawString);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -27,12 +37,21 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSyntaxNodeAction(AnalyzeStringLiteralExpression, SyntaxKind.StringLiteralExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeInterpolatedVerbatimStringStartToken, SyntaxKind.InterpolatedStringExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeInterpolatedString, SyntaxKind.InterpolatedStringExpression);
+#if CSHARP11_OR_GREATER
+        context.RegisterSyntaxNodeAction(AnalyzeStringLiteralExpression, SyntaxKind.Utf8StringLiteralExpression);
+#endif
     }
 
-    private static void AnalyzeInterpolatedVerbatimStringStartToken(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInterpolatedString(SyntaxNodeAnalysisContext context)
     {
         var node = (InterpolatedStringExpressionSyntax)context.Node;
+        var isRawString =
+#if CSHARP10_OR_GREATER
+            node.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken);
+#else
+            false;
+#endif
         foreach (var item in node.Contents)
         {
             if (item is InterpolatedStringTextSyntax text)
@@ -40,7 +59,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
                 var position = text.GetLocation().GetLineSpan();
                 if (position.StartLinePosition.Line != position.EndLinePosition.Line)
                 {
-                    context.ReportDiagnostic(s_rule, node);
+                    context.ReportDiagnostic(isRawString ? s_ruleRawString : s_rule, node);
                     return;
                 }
             }
@@ -50,10 +69,33 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
     private static void AnalyzeStringLiteralExpression(SyntaxNodeAnalysisContext context)
     {
         var node = (LiteralExpressionSyntax)context.Node;
+#if CSHARP10_OR_GREATER
+        if (node.Token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken))
+            return;
+#endif
+
         var position = node.GetLocation().GetLineSpan();
-        if (position.StartLinePosition.Line != position.EndLinePosition.Line)
+        var startLine = position.StartLinePosition.Line;
+        var endLine = position.EndLinePosition.Line;
+
+        var isRawString = false;
+#if CSHARP11_OR_GREATER
+        isRawString = isRawString || node.Token.IsKind(SyntaxKind.Utf8MultiLineRawStringLiteralToken);
+#endif
+
+#if CSHARP10_OR_GREATER
+        isRawString = isRawString || node.Token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken);
+#endif
+
+        if (isRawString)
         {
-            context.ReportDiagnostic(s_rule, node);
+            startLine++;
+            endLine--;
+        }
+
+        if (startLine != endLine)
+        {
+            context.ReportDiagnostic(isRawString ? s_ruleRawString : s_rule, node);
         }
     }
 }
