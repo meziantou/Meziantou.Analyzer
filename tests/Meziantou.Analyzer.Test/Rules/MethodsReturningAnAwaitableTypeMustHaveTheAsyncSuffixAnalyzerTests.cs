@@ -136,4 +136,33 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task TopLevelStatement()
+    {
+        const string SourceCode = """
+            await System.Threading.Tasks.Task.Yield();
+            """;
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EntryPoint()
+    {
+        const string SourceCode = """
+            static class Program
+            {
+                static async System.Threading.Tasks.Task Main()
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
