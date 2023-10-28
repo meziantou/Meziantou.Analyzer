@@ -59,6 +59,12 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             if (method.IsOverrideOrInterfaceImplementation())
                 return;
 
+            if (method.IsTopLevelStatementsEntryPointMethod())
+                return;
+
+            if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
+                return;
+
             var hasAsyncSuffix = method.Name.EndsWith("Async", StringComparison.Ordinal);
             if (_awaitableTypes.IsAwaitable(method.ReturnType, context.Compilation))
             {
