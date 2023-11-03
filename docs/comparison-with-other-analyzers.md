@@ -33,6 +33,7 @@
 | [CA2219](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2219?WT.mc_id=DT-MVP-5003978) | [MA0072](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0072.md) |
 | [CA2242](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2242?WT.mc_id=DT-MVP-5003978) | [MA0082](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0082.md) |
 | [CA5359](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5359?WT.mc_id=DT-MVP-5003978) | [MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md) |
+|  [S3442](https://rules.sonarsource.com/csharp/RSPEC-3442/)                                                                 | [MA0017](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0017.md) |
 
 ## Similar rules
 
