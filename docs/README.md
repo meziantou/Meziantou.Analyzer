@@ -138,6 +138,7 @@
 |[MA0136](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0136.md)|Usage|Raw String contains an implicit end of line character|<span title='Hidden'>👻</span>|✔️|❌|
 |[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Use 'Async' suffix when a method returns an awaitable type|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Log Parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -558,6 +559,9 @@ dotnet_diagnostic.MA0137.severity = none
 
 # MA0138: Do not use 'Async' suffix when a method does not return an awaitable type
 dotnet_diagnostic.MA0138.severity = none
+
+# MA0139: Log Parameter type is not valid
+dotnet_diagnostic.MA0139.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -973,4 +977,7 @@ dotnet_diagnostic.MA0137.severity = none
 
 # MA0138: Do not use 'Async' suffix when a method does not return an awaitable type
 dotnet_diagnostic.MA0138.severity = none
+
+# MA0139: Log Parameter type is not valid
+dotnet_diagnostic.MA0139.severity = none
 ```
