@@ -29,6 +29,16 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType));
 
+    private static readonly DiagnosticDescriptor s_ruleSerilog = new(
+        RuleIdentifiers.LoggerParameterType_Serilog,
+        title: "Log Parameter type is not valid",
+        messageFormat: "Parameter '{0}' must be of type {1} but is of type '{2}'",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_Serilog));
+
     private static readonly DiagnosticDescriptor s_ruleInvalid = new(
         RuleIdentifiers.LoggerParameterType_InvalidType,
         title: "The list of log parameter types contains an invalid type",
@@ -59,7 +69,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_MissingConfiguration));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleInvalid, s_ruleDuplicate, s_ruleMissingConfiguration);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleSerilog, s_ruleInvalid, s_ruleDuplicate, s_ruleMissingConfiguration);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -77,14 +87,29 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext
     {
+        private static readonly HashSet<string> SerilogLogMethodNames = new(StringComparer.Ordinal) { "Debug", "Information", "Error", "Fatal", "Verbose", "Warning", "Write" };
+        private static readonly char[] SerilogPrefixes = { '@', '$' };
+
         [SuppressMessage("MicrosoftCodeAnalysisPerformance", "RS1013:Start action has no registered non-end actions", Justification = "")]
         public AnalyzerContext(CompilationStartAnalysisContext context)
         {
             var compilation = context.Compilation;
+            Configuration = LoggerConfigurationFile.Empty;
+
             LoggerSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
+            SerilogILoggerSymbol = compilation.GetBestTypeByMetadataName("Serilog.ILogger");
+            SerilogLogSymbol = compilation.GetBestTypeByMetadataName("Serilog.Log");
+            if (LoggerSymbol == null && SerilogILoggerSymbol == null && SerilogLogSymbol == null)
+                return;
+
             LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
             StructuredLogFieldAttributeSymbol = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute");
+
+            SerilogLoggerEnrichmentConfigurationWithPropertySymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.Configuration.LoggerEnrichmentConfiguration.WithProperty(System.String,System.Object,System.Boolean)", compilation);
+            SerilogLogForContextSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.Log.ForContext(System.String,System.Object,System.Boolean)", compilation);
+            SerilogILoggerForContextSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.ILogger.ForContext(System.String,System.Object,System.Boolean)", compilation);
+            SerilogILoggerForContextLogEventLevelSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.LoggerExtensions.ForContext``1(Serilog.ILogger,Serilog.Events.LogEventLevel,System.String,``0,System.Boolean)", compilation);
 
             var errors = new List<Diagnostic>();
             Configuration = LoadConfiguration();
@@ -196,78 +221,159 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        public INamedTypeSymbol? StructuredLogFieldAttributeSymbol { get; private set; }
+
         public INamedTypeSymbol? LoggerSymbol { get; }
         public INamedTypeSymbol? LoggerExtensionsSymbol { get; }
         public INamedTypeSymbol? LoggerMessageSymbol { get; }
-        public INamedTypeSymbol? StructuredLogFieldAttributeSymbol { get; private set; }
+
+        public INamedTypeSymbol? SerilogLogSymbol { get; }
+        public INamedTypeSymbol? SerilogILoggerSymbol { get; }
+        public ISymbol? SerilogLoggerEnrichmentConfigurationWithPropertySymbol { get; }
+        public ISymbol? SerilogLogForContextSymbol { get; }
+        public ISymbol? SerilogILoggerForContextSymbol { get; }
+        public ISymbol? SerilogILoggerForContextLogEventLevelSymbol { get; }
+
         public LoggerConfigurationFile Configuration { get; }
 
-        public bool IsValid => LoggerSymbol != null && LoggerExtensionsSymbol != null && LoggerMessageSymbol != null && Configuration.Count > 0;
+        public bool IsValid => Configuration.Count > 0;
 
         public void AnalyzeInvocationDeclaration(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
             var containingType = operation.TargetMethod.ContainingType;
 
-            if (!FindLogParameters(operation.TargetMethod, out var messageParameter, out var argumentsParameter))
-                return;
-
             IOperation? formatExpression = null;
             (ITypeSymbol? Symbol, SyntaxNode Location)[]? argumentTypes = null;
+            char[]? potentialNamePrefixes = null;
 
-            if (containingType.IsEqualTo(LoggerMessageSymbol))
+            if (FindLogParameters(operation.TargetMethod, out var messageParameter, out var argumentsParameter))
             {
-                // For LoggerMessage.Define, count type parameters on the invocation instead of arguments
-                var arg = operation.Arguments.FirstOrDefault(argument =>
+                if (containingType.IsEqualTo(LoggerMessageSymbol))
                 {
-                    var parameter = argument.Parameter;
-                    if (parameter is null)
-                        return false;
-
-                    return parameter.Equals(messageParameter, SymbolEqualityComparer.Default);
-                });
-
-                if (arg is null)
-                    return;
-
-                formatExpression = arg.Value;
-                argumentTypes = operation.TargetMethod.TypeArguments.Select((arg, index) => ((ITypeSymbol?)arg, GetSyntaxNode(operation, index))).ToArray();
-
-                static SyntaxNode GetSyntaxNode(IOperation operation, int index)
-                {
-                    if (operation.Syntax is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax { TypeArgumentList: not null and var args } } })
+                    // For LoggerMessage.Define, count type parameters on the invocation instead of arguments
+                    var arg = operation.Arguments.FirstOrDefault(argument =>
                     {
-                        if (index < args.Arguments.Count)
-                            return args.Arguments[index];
-                    }
+                        var parameter = argument.Parameter;
+                        if (parameter is null)
+                            return false;
 
-                    return operation.Syntax;
+                        return parameter.Equals(messageParameter, SymbolEqualityComparer.Default);
+                    });
+
+                    if (arg is null)
+                        return;
+
+                    formatExpression = arg.Value;
+                    argumentTypes = operation.TargetMethod.TypeArguments.Select((arg, index) => ((ITypeSymbol?)arg, GetSyntaxNode(operation, index))).ToArray();
+
+                    static SyntaxNode GetSyntaxNode(IOperation operation, int index)
+                    {
+                        if (operation.Syntax is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax { TypeArgumentList: not null and var args } } })
+                        {
+                            if (index < args.Arguments.Count)
+                                return args.Arguments[index];
+                        }
+
+                        return operation.Syntax;
+                    }
+                }
+                else if (operation.TargetMethod.ContainingType.IsEqualTo(LoggerExtensionsSymbol))
+                {
+                    foreach (var argument in operation.Arguments)
+                    {
+                        var parameter = argument.Parameter;
+                        if (parameter == null)
+                            continue;
+
+                        if (parameter.Equals(messageParameter, SymbolEqualityComparer.Default))
+                        {
+                            formatExpression = argument.Value;
+                        }
+                        else if (parameter.Equals(argumentsParameter, SymbolEqualityComparer.Default))
+                        {
+                            if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer != null)
+                            {
+                                argumentTypes = arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax)).ToArray();
+                            }
+                        }
+                    }
                 }
             }
-            else if (operation.TargetMethod.ContainingType.IsEqualTo(LoggerExtensionsSymbol))
+            else if (SerilogLogMethodNames.Contains(operation.TargetMethod.Name) && operation.TargetMethod.ContainingType.IsEqualToAny(SerilogLogSymbol, SerilogILoggerSymbol))
             {
-                foreach (var argument in operation.Arguments)
+                var templateIndex = FindIndexOfTemplate(operation.Arguments);
+                if (templateIndex != -1)
                 {
-                    var parameter = argument.Parameter;
-                    if (parameter == null)
-                        continue;
-
-                    if (parameter.Equals(messageParameter, SymbolEqualityComparer.Default))
+                    formatExpression = operation.Arguments[templateIndex].Value;
+                    if (operation.Arguments.Length == templateIndex + 2)
                     {
-                        formatExpression = argument.Value;
-                    }
-                    else if (parameter.Equals(argumentsParameter, SymbolEqualityComparer.Default))
-                    {
-                        var parameterType = parameter.Type;
-                        if (parameterType == null)
-                            return;
+                        var argument = operation.Arguments[templateIndex + 1];
+                        potentialNamePrefixes = SerilogPrefixes;
 
                         if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer != null)
                         {
                             argumentTypes = arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax)).ToArray();
                         }
                     }
+
+                    if (operation.Arguments.Length >= templateIndex && argumentTypes == null)
+                    {
+                        argumentTypes = operation.Arguments.Skip(templateIndex + 1).Select(v => (v.Value.UnwrapImplicitConversionOperations().Type, v.Syntax)).ToArray();
+                    }
                 }
+
+                static int FindIndexOfTemplate(ImmutableArray<IArgumentOperation> arguments)
+                {
+                    for (var i = 0; i < arguments.Length; i++)
+                    {
+                        if (arguments[i].Parameter?.Name is "messageTemplate")
+                            return i;
+                    }
+
+                    return -1;
+                }
+            }
+            else if (operation.TargetMethod.IsEqualTo(SerilogLoggerEnrichmentConfigurationWithPropertySymbol) && operation.Arguments.Length >= 2)
+            {
+                if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
+                {
+                    var value = operation.Arguments[1].Value;
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax));
+                }
+
+                return;
+            }
+            else if (operation.TargetMethod.IsEqualTo(SerilogLogForContextSymbol) && operation.Arguments.Length >= 2)
+            {
+                if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
+                {
+                    var value = operation.Arguments[1].Value;
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax));
+                }
+
+                return;
+            }
+            else if (operation.TargetMethod.IsEqualTo(SerilogILoggerForContextSymbol) && operation.Arguments.Length >= 2)
+            {
+                if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
+                {
+                    var value = operation.Arguments[1].Value;
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax));
+                }
+
+                return;
+            }
+            else if (operation.TargetMethod.OriginalDefinition.IsEqualTo(SerilogILoggerForContextLogEventLevelSymbol) && operation.Arguments.Length >= 3)
+            {
+                if (operation.Arguments[2].Value.ConstantValue is { HasValue: true, Value: string valueName })
+                {
+                    var value = operation.Arguments[3].Value;
+                    var valueType = operation.TargetMethod.TypeArguments[0];
+                    ValidateLogParameter(context, operation.Arguments[2].Value, SerilogPrefixes, valueName, (valueType, value.Syntax));
+                }
+
+                return;
             }
 
             if (formatExpression is not null && argumentTypes is not null)
@@ -282,20 +388,47 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 {
                     var name = logFormat.ValueNames[i];
                     var argumentType = argumentTypes[i];
+                    ValidateLogParameter(context, formatExpression, potentialNamePrefixes, name, argumentType);
+                }
+            }
+        }
 
-                    if (!Configuration.IsValid(context.Compilation, name, argumentType.Symbol, out var ruleFound))
-                    {
-                        var expectedSymbols = Configuration.GetSymbols(name);
-                        var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{s.ToDisplayString()}'"));
-                        context.ReportDiagnostic(s_rule, argumentType.Location, name, expectedSymbolsStr, argumentType.Symbol?.ToDisplayString());
-                    }
+        private void ValidateLogParameter(OperationAnalysisContext context, IOperation nameOperation, char[]? potentialNamePrefixes, string name, (ITypeSymbol? Symbol, SyntaxNode Location) argumentType)
+        {
+            name = RemovePrefix(name, potentialNamePrefixes);
+            ValidateLogParameter(context, nameOperation, name, argumentType);
+        }
 
-                    if (!ruleFound)
+        private void ValidateLogParameter(OperationAnalysisContext context, IOperation nameOperation, string name, (ITypeSymbol? Symbol, SyntaxNode Location) argumentType)
+        {
+            if (!Configuration.IsValid(context.Compilation, name, argumentType.Symbol, out var ruleFound))
+            {
+                var expectedSymbols = Configuration.GetSymbols(name);
+                var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{s.ToDisplayString()}'"));
+                context.ReportDiagnostic(s_rule, argumentType.Location, name, expectedSymbolsStr, argumentType.Symbol?.ToDisplayString());
+            }
+
+            if (!ruleFound)
+            {
+                context.ReportDiagnostic(s_ruleMissingConfiguration, nameOperation, name);
+            }
+        }
+
+        private static string RemovePrefix(string name, char[]? potentialNamePrefixes)
+        {
+            if (potentialNamePrefixes != null)
+            {
+                foreach (var prefix in potentialNamePrefixes)
+                {
+                    if (name.StartsWith(prefix))
                     {
-                        context.ReportDiagnostic(s_ruleMissingConfiguration, formatExpression, name);
+                        name = name[1..];
+                        break;
                     }
                 }
             }
+
+            return name;
         }
 
         private string? TryGetFormatText(IOperation? argumentExpression, bool allowNonConstantFormat)
@@ -402,6 +535,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         {
             _configuration = configuration;
         }
+
+        public static LoggerConfigurationFile Empty { get; } = new LoggerConfigurationFile(new(StringComparer.Ordinal));
 
         public int Count => _configuration.Count;
 
