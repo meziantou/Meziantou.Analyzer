@@ -338,4 +338,22 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ConcatNoDiagnostic_Boolean()
+    {
+        var sourceCode = """
+class Test
+{
+    void A()
+    {
+        bool? value = null;
+        _ = "=" + (value == true);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }

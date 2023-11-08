@@ -209,6 +209,9 @@ internal sealed class CultureSensitiveFormattingContext
         
         if (operation is IArrayElementReferenceOperation arrayElementReference)
             return IsCultureSensitiveType(arrayElementReference.Type, format: null, instance: null, options);
+        
+        if (operation is IBinaryOperation binaryOperation)
+            return IsCultureSensitiveType(binaryOperation.Type, format: null, instance: null, options);
 
         // Unknown operation
         return true;
