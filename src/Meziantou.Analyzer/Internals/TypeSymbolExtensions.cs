@@ -8,6 +8,10 @@ namespace Meziantou.Analyzer;
 // http://source.roslyn.io/#Microsoft.CodeAnalysis.Workspaces/Shared/Extensions/ITypeSymbolExtensions.cs,190b4ed0932458fd,references
 internal static class TypeSymbolExtensions
 {
+    private static readonly string[] Microsoft_VisualStudio_TestTools_UnitTesting = { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" };
+    private static readonly string[] NUnit_Framework = { "NUnit", "Framework" };
+    private static readonly string[] Xunit = { "Xunit" };
+
     public static IList<INamedTypeSymbol> GetAllInterfacesIncludingThis(this ITypeSymbol type)
     {
         var allInterfaces = type.AllInterfaces;
@@ -238,9 +242,9 @@ internal static class TypeSymbolExtensions
             while (type != null)
             {
                 var ns = type.ContainingNamespace;
-                if (ns.IsNamespace(new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" }) ||
-                    ns.IsNamespace(new[] { "NUnit", "Framework" }) ||
-                    ns.IsNamespace(new[] { "Xunit" }))
+                if (ns.IsNamespace(Microsoft_VisualStudio_TestTools_UnitTesting) ||
+                    ns.IsNamespace(NUnit_Framework) ||
+                    ns.IsNamespace(Xunit))
                 {
                     return true;
                 }
