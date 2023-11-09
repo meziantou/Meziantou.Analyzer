@@ -139,6 +139,7 @@
 |[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Use 'Async' suffix when a method returns an awaitable type|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Log Parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -562,6 +563,9 @@ dotnet_diagnostic.MA0138.severity = none
 
 # MA0139: Log Parameter type is not valid
 dotnet_diagnostic.MA0139.severity = warning
+
+# MA0140: Both if and else branch have identical code
+dotnet_diagnostic.MA0140.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -980,4 +984,7 @@ dotnet_diagnostic.MA0138.severity = none
 
 # MA0139: Log Parameter type is not valid
 dotnet_diagnostic.MA0139.severity = none
+
+# MA0140: Both if and else branch have identical code
+dotnet_diagnostic.MA0140.severity = none
 ```

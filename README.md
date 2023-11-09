@@ -155,6 +155,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Use 'Async' suffix when a method returns an awaitable type|⚠️|❌|❌|
 |[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|⚠️|❌|❌|
 |[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Log Parameter type is not valid|⚠️|✔️|❌|
+|[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|⚠️|✔️|❌|
 
 <!-- rules -->
 
