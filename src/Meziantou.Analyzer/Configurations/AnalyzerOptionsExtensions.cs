@@ -31,6 +31,7 @@ public static class AnalyzerOptionsExtensions
         return defaultValue;
     }
 
+    [return: NotNullIfNotNull(nameof(defaultValue))]
     public static bool? GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, bool? defaultValue)
     {
         var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
@@ -49,6 +50,7 @@ public static class AnalyzerOptionsExtensions
         return defaultValue;
     }
 
+    [return: NotNullIfNotNull(nameof(defaultValue))]
     public static ReportDiagnostic? GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, ReportDiagnostic? defaultValue)
     {
         var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
@@ -61,7 +63,8 @@ public static class AnalyzerOptionsExtensions
         return defaultValue;
     }
 
-    public static string GetConfigurationValue(this AnalyzerOptions options, ISymbol symbol, string key, string defaultValue)
+    [return: NotNullIfNotNull(nameof(defaultValue))]
+    public static string? GetConfigurationValue(this AnalyzerOptions options, ISymbol symbol, string key, string? defaultValue)
     {
         foreach (var location in symbol.Locations)
         {

@@ -43,7 +43,7 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : Diagno
                 symbols.AddIfNotNull(httpClientHandlerSymbol.GetMembers("ServerCertificateCustomValidationCallback").FirstOrDefault());
             }
 
-            if (symbols.Any())
+            if (symbols.Count != 0)
             {
                 ctx.RegisterOperationAction(c => Analyze(c, symbols), OperationKind.PropertyReference);
             }

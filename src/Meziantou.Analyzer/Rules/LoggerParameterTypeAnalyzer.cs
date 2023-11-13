@@ -379,7 +379,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             if (formatExpression is not null && argumentTypes is not null)
             {
                 var allowNonConstantFormat = context.Options.GetConfigurationValue(formatExpression, s_rule.Id + ".allow_non_constant_formats", defaultValue: true);
-                var format = TryGetFormatText(formatExpression, allowNonConstantFormat);
+                var format = AnalyzerContext.TryGetFormatText(formatExpression, allowNonConstantFormat);
                 if (format == null)
                     return;
 
@@ -431,7 +431,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             return name;
         }
 
-        private string? TryGetFormatText(IOperation? argumentExpression, bool allowNonConstantFormat)
+        private static string? TryGetFormatText(IOperation? argumentExpression, bool allowNonConstantFormat)
         {
             if (argumentExpression is null)
                 return null;
@@ -442,15 +442,15 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return constantValue;
 
                 case IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binary:
-                    var leftText = TryGetFormatText(binary.LeftOperand, allowNonConstantFormat);
-                    var rightText = TryGetFormatText(binary.RightOperand, allowNonConstantFormat);
+                    var leftText = AnalyzerContext.TryGetFormatText(binary.LeftOperand, allowNonConstantFormat);
+                    var rightText = AnalyzerContext.TryGetFormatText(binary.RightOperand, allowNonConstantFormat);
                     return Concat(leftText, rightText, allowNonConstantFormat);
 
                 case IInterpolatedStringOperation interpolatedString:
                     string? result = "";
                     foreach (var part in interpolatedString.Parts)
                     {
-                        result = Concat(result, TryGetFormatText(part, allowNonConstantFormat), allowNonConstantFormat);
+                        result = Concat(result, AnalyzerContext.TryGetFormatText(part, allowNonConstantFormat), allowNonConstantFormat);
                         if (result == null)
                             return null;
                     }
@@ -458,7 +458,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return result;
 
                 case IInterpolatedStringTextOperation text:
-                    return TryGetFormatText(text.Text, allowNonConstantFormat);
+                    return AnalyzerContext.TryGetFormatText(text.Text, allowNonConstantFormat);
 
                 default:
                     return null;

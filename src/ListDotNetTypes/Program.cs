@@ -58,7 +58,7 @@ foreach (var includePreview in new[] { false, true })
         }
     }
 
-    File.WriteAllLines(Path.Combine(args.Length > 0 ? args[0] : "../../../../Meziantou.Analyzer/Resources/", includePreview ? "bcl-preview.txt" : "bcl.txt"), types.OrderBy(t => t));
+    await File.WriteAllLinesAsync(Path.Combine(args.Length > 0 ? args[0] : "../../../../Meziantou.Analyzer/Resources/", includePreview ? "bcl-preview.txt" : "bcl.txt"), types.OrderBy(t => t));
 }
 
 static MemoryStream CopyToMemoryStream(ZipArchiveEntry entry)

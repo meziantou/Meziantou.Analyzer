@@ -49,7 +49,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         var types = usePreviewTypes ? s_typesPreview : s_types;
         if (types!.TryGetValue(symbol.MetadataName, out var namespaces))
         {
-            var regex = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", "^System($|\\.)");
+            var regex = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", "^System($|\\.)"));
             foreach (var ns in namespaces)
             {
                 if (Regex.IsMatch(ns, regex, RegexOptions.None, Timeout.InfiniteTimeSpan))

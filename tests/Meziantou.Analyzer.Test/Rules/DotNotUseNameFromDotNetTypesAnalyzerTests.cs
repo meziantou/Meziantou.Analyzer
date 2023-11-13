@@ -59,6 +59,15 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"public class Action { }")
+              .AddAnalyzerConfiguration("MA0104.namespaces_regex", "dummy")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Regex_DoNotReportDiagnostic_OldConfigurationName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"public class Action { }")
               .AddAnalyzerConfiguration("MA0104.namepaces_regex", "dummy")
               .ValidateAsync();
     }

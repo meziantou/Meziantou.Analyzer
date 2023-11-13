@@ -42,7 +42,7 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
             reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.OutOfMemoryException"));
             reservedExceptionTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.StackOverflowException"));
 
-            if (reservedExceptionTypes.Any())
+            if (reservedExceptionTypes.Count != 0)
             {
                 ctx.RegisterOperationAction(_ => Analyze(_, reservedExceptionTypes), OperationKind.Throw);
             }
