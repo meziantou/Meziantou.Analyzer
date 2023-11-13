@@ -59,6 +59,21 @@ public sealed class UsePatternMatchingForNullCheckAnalyzerTests
               .ShouldFixCodeWith("_ = new object() is not null;")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task NullCheckForObject_FixerKeepParentheses()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  string line;
+                  while ([|(line = null) != null|]) { }
+                  """)
+              .ShouldFixCodeWith("""
+                  string line;
+                  while ((line = null) is not null) { }
+                  """)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task NullEqualsNull()

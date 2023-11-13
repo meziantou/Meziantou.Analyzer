@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Simplification;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
@@ -51,7 +52,7 @@ public sealed class UsePatternMatchingForNullCheckFixer : CodeFixProvider
             constantExpression = UnaryPattern(constantExpression);
         }
 
-        var newSyntax = IsPatternExpression(expression, constantExpression);
+        var newSyntax = IsPatternExpression(ParenthesizedExpression(expression).WithAdditionalAnnotations(Simplifier.Annotation), constantExpression);
         editor.ReplaceNode(node, newSyntax);
         return editor.GetChangedDocument();
     }
