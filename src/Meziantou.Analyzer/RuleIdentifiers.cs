@@ -143,6 +143,8 @@ internal static class RuleIdentifiers
     public const string MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix = "MA0138";
     public const string LoggerParameterType_Serilog = "MA0139";
     public const string IfElseBranchesAreIdentical = "MA0140";
+    public const string UsePatternMatchingForNullCheck = "MA0141";
+    public const string UsePatternMatchingForNullEquality = "MA0142";
 
     public static string GetHelpUri(string identifier)
     {

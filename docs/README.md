@@ -140,6 +140,8 @@
 |[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Log Parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use pattern matching instead of inequality operators|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use pattern matching instead of equality operators|<span title='Info'>ℹ️</span>|❌|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -566,6 +568,12 @@ dotnet_diagnostic.MA0139.severity = warning
 
 # MA0140: Both if and else branch have identical code
 dotnet_diagnostic.MA0140.severity = warning
+
+# MA0141: Use pattern matching instead of inequality operators
+dotnet_diagnostic.MA0141.severity = none
+
+# MA0142: Use pattern matching instead of equality operators
+dotnet_diagnostic.MA0142.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -987,4 +995,10 @@ dotnet_diagnostic.MA0139.severity = none
 
 # MA0140: Both if and else branch have identical code
 dotnet_diagnostic.MA0140.severity = none
+
+# MA0141: Use pattern matching instead of inequality operators
+dotnet_diagnostic.MA0141.severity = none
+
+# MA0142: Use pattern matching instead of equality operators
+dotnet_diagnostic.MA0142.severity = none
 ```
