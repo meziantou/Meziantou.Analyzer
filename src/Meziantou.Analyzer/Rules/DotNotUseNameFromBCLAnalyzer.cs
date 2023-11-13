@@ -45,6 +45,12 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         if (symbol.ContainingType != null)
             return; // Do not consider nested types
 
+        if (!symbol.IsVisibleOutsideOfAssembly())
+        {
+            if (context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true))
+                return;
+        }
+
         var usePreviewTypes = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
         var types = usePreviewTypes ? s_typesPreview : s_types;
         if (types!.TryGetValue(symbol.MetadataName, out var namespaces))
