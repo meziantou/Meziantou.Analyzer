@@ -56,17 +56,12 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly List<ITypeSymbol> _potentialClasses = new();
+        private readonly List<ITypeSymbol> _potentialClasses = [];
         private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new(SymbolEqualityComparer.Default);
 
-        public AnalyzerContext(Compilation compilation)
-        {
-            CoClassAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
-        }
-
-        public INamedTypeSymbol? CoClassAttributeSymbol { get; }
+        public INamedTypeSymbol? CoClassAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {

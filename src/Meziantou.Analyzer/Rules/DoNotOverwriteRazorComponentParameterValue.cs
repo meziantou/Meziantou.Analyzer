@@ -91,8 +91,7 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
         private void AnalyzeAssignment(OperationAnalysisContext context)
         {
             var operation = (IAssignmentOperation)context.Operation;
-            var property = operation.Target as IPropertyReferenceOperation;
-            if (property == null)
+            if (operation.Target is not IPropertyReferenceOperation property)
                 return;
 
             // this.Property

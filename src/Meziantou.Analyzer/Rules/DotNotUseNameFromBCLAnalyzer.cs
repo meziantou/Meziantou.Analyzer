@@ -82,7 +82,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
             if (!types.TryGetValue(name, out var list))
             {
-                list = new List<string>();
+                list = [];
                 types.Add(name, list);
             }
 

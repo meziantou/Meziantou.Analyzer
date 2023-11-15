@@ -1,52 +1,29 @@
 ﻿using System.Linq;
-using System.Security.Cryptography;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
 
-internal sealed class CultureSensitiveFormattingContext
+internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 {
-    public CultureSensitiveFormattingContext(Compilation compilation)
-    {
-        FormatProviderSymbol = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
-        CultureInfoSymbol = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
-        NumberStyleSymbol = compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
-        DateTimeStyleSymbol = compilation.GetBestTypeByMetadataName("System.Globalization.DateTimeStyles");
-        StringBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
-        StringBuilder_AppendInterpolatedStringHandlerSymbol = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler");
-        GuidSymbol = compilation.GetBestTypeByMetadataName("System.Guid");
-        EnumSymbol = compilation.GetBestTypeByMetadataName("System.Enum");
-        DateTimeOffsetSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
-        DateOnlySymbol = compilation.GetBestTypeByMetadataName("System.DateOnly");
-        TimeOnlySymbol = compilation.GetBestTypeByMetadataName("System.TimeOnly");
-        UInt128Symbol = compilation.GetBestTypeByMetadataName("System.UInt128");
-        UriSymbol = compilation.GetBestTypeByMetadataName("System.Uri");
-        TimeSpanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
-        VersionSymbol = compilation.GetBestTypeByMetadataName("System.Version");
-        SystemIFormattableSymbol = compilation.GetBestTypeByMetadataName("System.IFormattable");
-        SystemWindowsFontStretchSymbol = compilation.GetBestTypeByMetadataName("System.Windows.FontStretch");
-        SystemWindowsMediaBrushSymbol = compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush");
-    }
-
-    public INamedTypeSymbol? FormatProviderSymbol { get; }
-    public INamedTypeSymbol? CultureInfoSymbol { get; }
-    public INamedTypeSymbol? NumberStyleSymbol { get; }
-    public INamedTypeSymbol? DateTimeStyleSymbol { get; }
-    public INamedTypeSymbol? StringBuilderSymbol { get; }
-    public INamedTypeSymbol? StringBuilder_AppendInterpolatedStringHandlerSymbol { get; }
-    public INamedTypeSymbol? GuidSymbol { get; }
-    public INamedTypeSymbol? EnumSymbol { get; }
-    public INamedTypeSymbol? DateTimeOffsetSymbol { get; }
-    public INamedTypeSymbol? DateOnlySymbol { get; }
-    public INamedTypeSymbol? TimeOnlySymbol { get; }
-    public INamedTypeSymbol? UInt128Symbol { get; }
-    public INamedTypeSymbol? UriSymbol { get; }
-    public INamedTypeSymbol? TimeSpanSymbol { get; }
-    public INamedTypeSymbol? VersionSymbol { get; }
-    public INamedTypeSymbol? SystemIFormattableSymbol { get; }
-    public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; }
-    public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; }
+    public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+    public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+    public INamedTypeSymbol? NumberStyleSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
+    public INamedTypeSymbol? DateTimeStyleSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.DateTimeStyles");
+    public INamedTypeSymbol? StringBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+    public INamedTypeSymbol? StringBuilder_AppendInterpolatedStringHandlerSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler");
+    public INamedTypeSymbol? GuidSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Guid");
+    public INamedTypeSymbol? EnumSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Enum");
+    public INamedTypeSymbol? DateTimeOffsetSymbol { get; } = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
+    public INamedTypeSymbol? DateOnlySymbol { get; } = compilation.GetBestTypeByMetadataName("System.DateOnly");
+    public INamedTypeSymbol? TimeOnlySymbol { get; } = compilation.GetBestTypeByMetadataName("System.TimeOnly");
+    public INamedTypeSymbol? UInt128Symbol { get; } = compilation.GetBestTypeByMetadataName("System.UInt128");
+    public INamedTypeSymbol? UriSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Uri");
+    public INamedTypeSymbol? TimeSpanSymbol { get; } = compilation.GetBestTypeByMetadataName("System.TimeSpan");
+    public INamedTypeSymbol? VersionSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Version");
+    public INamedTypeSymbol? SystemIFormattableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormattable");
+    public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.FontStretch");
+    public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush");
 
     private static bool MustUnwrapNullableOfT(CultureSensitiveOptions options)
     {

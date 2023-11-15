@@ -36,14 +36,9 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        public ISymbol? ConstructorArgumentSymbol { get; }
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            ConstructorArgumentSymbol = compilation.GetBestTypeByMetadataName("System.Windows.Markup.ConstructorArgumentAttribute");
-        }
+        public ISymbol? ConstructorArgumentSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Markup.ConstructorArgumentAttribute");
 
         public bool IsValid => ConstructorArgumentSymbol != null;
 

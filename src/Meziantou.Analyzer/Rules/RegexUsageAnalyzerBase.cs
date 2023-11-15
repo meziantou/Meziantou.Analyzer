@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 
 public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 {
-    private static readonly string[] s_methodNames = { "IsMatch", "Match", "Matches", "Replace", "Split" };
+    private static readonly string[] s_methodNames = ["IsMatch", "Match", "Matches", "Replace", "Split"];
 
     private static readonly DiagnosticDescriptor s_timeoutRule = new(
         RuleIdentifiers.MissingTimeoutParameterForRegex,

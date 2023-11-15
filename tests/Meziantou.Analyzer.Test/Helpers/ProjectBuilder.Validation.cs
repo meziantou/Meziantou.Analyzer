@@ -191,7 +191,7 @@ public sealed partial class ProjectBuilder
                 break;
 
             case TargetFramework.Net8_0:
-                AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0-rc.1.23419.4", "ref/net8.0/");
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0", "ref/net8.0/");
                 break;
 
             case TargetFramework.AspNetCore5_0:
@@ -210,8 +210,8 @@ public sealed partial class ProjectBuilder
                 break;
                 
             case TargetFramework.AspNetCore8_0:
-                AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0-rc.1.23419.4", "ref/net8.0/");
-                AddNuGetReference("Microsoft.AspNetCore.App.Ref", "8.0.0-rc.1.23421.29", "ref/net8.0/");
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0", "ref/net8.0/");
+                AddNuGetReference("Microsoft.AspNetCore.App.Ref", "8.0.0", "ref/net8.0/");
                 break;
 
             case TargetFramework.WindowsDesktop5_0:
@@ -572,15 +572,8 @@ public sealed partial class ProjectBuilder
         return root.GetText().ToString();
     }
 
-    private sealed class CustomDiagnosticProvider : FixAllContext.DiagnosticProvider
+    private sealed class CustomDiagnosticProvider(Diagnostic[] diagnostics) : FixAllContext.DiagnosticProvider
     {
-        private readonly Diagnostic[] _diagnostics;
-
-        public CustomDiagnosticProvider(Diagnostic[] diagnostics)
-        {
-            _diagnostics = diagnostics;
-        }
-
         public override Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(Project project, CancellationToken cancellationToken)
         {
             return GetProjectDiagnosticsAsync(project, cancellationToken);
@@ -589,7 +582,7 @@ public sealed partial class ProjectBuilder
         public override async Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
         {
             var documentRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            return _diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot());
+            return diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot());
         }
 
         public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(Project project, CancellationToken cancellationToken)

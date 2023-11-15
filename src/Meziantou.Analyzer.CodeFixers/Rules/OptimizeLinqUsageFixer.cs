@@ -321,8 +321,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-        var operation = editor.SemanticModel.GetOperation(selectInvocationExpression, cancellationToken) as IInvocationOperation;
-        if (operation == null)
+        if (editor.SemanticModel.GetOperation(selectInvocationExpression, cancellationToken) is not IInvocationOperation operation)
             return document;
 
         var type = operation.TargetMethod.TypeArguments[1];
@@ -647,7 +646,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return invocationExpression.Expression as MemberAccessExpressionSyntax;
     }
 
-    private static SyntaxNode? GetParentMemberExpression(SyntaxNode invocationExpressionSyntax)
+    private static ExpressionSyntax? GetParentMemberExpression(SyntaxNode invocationExpressionSyntax)
     {
         var memberAccessExpression = GetMemberAccessExpression(invocationExpressionSyntax);
         if (memberAccessExpression == null)
@@ -656,25 +655,14 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return memberAccessExpression.Expression;
     }
 
-    private sealed class ParameterRewriter : CSharpSyntaxRewriter
+    private sealed class ParameterRewriter(SemanticModel semanticModel, IParameterSymbol parameterSymbol, string newParameterName) : CSharpSyntaxRewriter
     {
-        private readonly SemanticModel _semanticModel;
-        private readonly IParameterSymbol _parameterSymbol;
-        private readonly string _newParameterName;
-
-        public ParameterRewriter(SemanticModel semanticModel, IParameterSymbol parameterSymbol, string newParameterName)
-        {
-            _semanticModel = semanticModel;
-            _parameterSymbol = parameterSymbol;
-            _newParameterName = newParameterName;
-        }
-
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
         {
-            var symbol = _semanticModel.GetSymbolInfo(node).Symbol;
-            if (symbol != null && symbol.IsEqualTo(_parameterSymbol))
+            var symbol = semanticModel.GetSymbolInfo(node).Symbol;
+            if (symbol != null && symbol.IsEqualTo(parameterSymbol))
             {
-                return IdentifierName(_newParameterName);
+                return IdentifierName(newParameterName);
             }
 
             return base.VisitIdentifierName(node);

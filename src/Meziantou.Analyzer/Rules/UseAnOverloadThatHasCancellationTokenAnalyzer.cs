@@ -78,31 +78,19 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly ConcurrentDictionary<(ITypeSymbol Symbol, int MaxDepth), List<ISymbol[]>?> _membersByType = new();
 
-        private readonly OverloadFinder _overloadFinder;
+        private readonly OverloadFinder _overloadFinder = new(compilation);
 
-        public AnalyzerContext(Compilation compilation)
-        {
-            Compilation = compilation;
-            _overloadFinder = new OverloadFinder(compilation);
-            CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
-            CancellationTokenSourceSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
-            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-            ConfiguredCancelableAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
-            EnumeratorCancellationAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
-        }
-
-        public Compilation Compilation { get; }
-        public INamedTypeSymbol CancellationTokenSymbol { get; }
-        public INamedTypeSymbol? CancellationTokenSourceSymbol { get; }
-        private INamedTypeSymbol? TaskSymbol { get; }
-        private INamedTypeSymbol? TaskOfTSymbol { get; }
-        private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; }
-        private INamedTypeSymbol? EnumeratorCancellationAttributeSymbol { get; }
+        public Compilation Compilation { get; } = compilation;
+        public INamedTypeSymbol CancellationTokenSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
+        public INamedTypeSymbol? CancellationTokenSourceSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
+        private INamedTypeSymbol? TaskSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+        private INamedTypeSymbol? TaskOfTSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+        private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
+        private INamedTypeSymbol? EnumeratorCancellationAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
 
         private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
         {
@@ -273,7 +261,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return null;
 
                 if (symbol.IsEqualTo(CancellationTokenSymbol))
-                    return new List<ISymbol[]>(capacity: 1) { Array.Empty<ISymbol>() };
+                    return [[]];
 
                 var result = new List<ISymbol[]>();
                 var members = symbol.GetAllMembers();
@@ -299,7 +287,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
                     if (memberTypeSymbol.IsEqualTo(CancellationTokenSymbol))
                     {
-                        result.Add(new ISymbol[] { member });
+                        result.Add([member]);
                     }
                     else
                     {
@@ -330,7 +318,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             }
 
             if (availableSymbols.Count == 0)
-                return Array.Empty<string>();
+                return [];
 
             var isInStaticContext = operation.IsInStaticContext(cancellationToken);
 
@@ -359,7 +347,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             }
 
             if (paths.Count == 0)
-                return Array.Empty<string>();
+                return [];
 
             return paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value, StringComparer.Ordinal).ToArray();
 

@@ -37,7 +37,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzer : DiagnosticAnalyzer
         context.RegisterOperationAction(AnalyzeBinary, OperationKind.Binary);
     }
 
-    private void AnalyzeBinary(OperationAnalysisContext context)
+    private static void AnalyzeBinary(OperationAnalysisContext context)
     {
         var operation = (IBinaryOperation)context.Operation;
         if (operation is { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals, OperatorMethod: null })

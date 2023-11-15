@@ -35,13 +35,8 @@ internal static class SharedHttpClient
 
         return new HttpClient(new HttpRetryMessageHandler(socketHandler), disposeHandler: true);
     }
-    private sealed class HttpRetryMessageHandler : DelegatingHandler
+    private sealed class HttpRetryMessageHandler(HttpMessageHandler handler) : DelegatingHandler(handler)
     {
-        public HttpRetryMessageHandler(HttpMessageHandler handler)
-            : base(handler)
-        {
-        }
-
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             const int MaxRetries = 5;

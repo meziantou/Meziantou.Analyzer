@@ -39,21 +39,14 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly List<ITypeSymbol> _potentialClasses = new();
+        private readonly List<ITypeSymbol> _potentialClasses = [];
         private readonly ConcurrentHashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
 
-        private INamedTypeSymbol? ExceptionSymbol { get; }
-        private INamedTypeSymbol? ComImportSymbol { get; }
-        private INamedTypeSymbol? BenchmarkSymbol { get; }
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            ExceptionSymbol = compilation.GetBestTypeByMetadataName("System.Exception");
-            ComImportSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
-            BenchmarkSymbol = compilation.GetBestTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
-        }
+        private INamedTypeSymbol? ExceptionSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Exception");
+        private INamedTypeSymbol? ComImportSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
+        private INamedTypeSymbol? BenchmarkSymbol { get; } = compilation.GetBestTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {

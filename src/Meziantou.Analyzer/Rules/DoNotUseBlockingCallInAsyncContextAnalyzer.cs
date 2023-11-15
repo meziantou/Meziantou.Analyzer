@@ -76,7 +76,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
             else
             {
-                ConsoleErrorAndOutSymbols = Array.Empty<ISymbol>();
+                ConsoleErrorAndOutSymbols = [];
             }
 
             ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");

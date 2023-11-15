@@ -37,7 +37,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
         private static readonly HashSet<string> s_renderTreeMethodNames = new(StringComparer.Ordinal)
         {
@@ -58,14 +58,8 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
             "AddEventStopPropagationAttribute",
         };
 
-        public AnalyzerContext(Compilation compilation)
-        {
-            RenderTreeBuilderSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
-            WebRenderTreeBuilderExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Web.WebRenderTreeBuilderExtensions");
-        }
-
-        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; }
-        public INamedTypeSymbol? WebRenderTreeBuilderExtensionsSymbol { get; }
+        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
+        public INamedTypeSymbol? WebRenderTreeBuilderExtensionsSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Web.WebRenderTreeBuilderExtensions");
 
         public bool IsValid => RenderTreeBuilderSymbol != null;
 

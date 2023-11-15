@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
@@ -28,7 +27,7 @@ internal sealed class AwaitableTypes
         }
         else
         {
-            _taskOrValueTaskSymbols = Array.Empty<INamedTypeSymbol>();
+            _taskOrValueTaskSymbols = [];
         }
     }
 

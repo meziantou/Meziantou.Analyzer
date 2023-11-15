@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <TargetFrameworks Condition=" '$(OS)' == 'Windows_NT' ">$(TargetFrameworks);net462</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
@@ -26,12 +26,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.csproj" />
     <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-    <PackageReference Include="Meziantou.Framework.FullPath">
-      <Version>1.0.11</Version>
-    </PackageReference>
   </ItemGroup>
 
 </Project>

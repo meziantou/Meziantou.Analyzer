@@ -36,8 +36,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualFixer : CodeFixProvider
     private static async Task<Document> UseIs(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var operation = editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) as IInvocationOperation;
-        if (operation == null)
+        if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
             return document;
 
         var newExpression = SyntaxFactory.IsPatternExpression((ExpressionSyntax)operation.Arguments[0].Value.Syntax, SyntaxFactory.ConstantPattern((ExpressionSyntax)operation.Arguments[1].Value.Syntax));

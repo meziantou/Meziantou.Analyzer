@@ -8,9 +8,9 @@ namespace Meziantou.Analyzer;
 // http://source.roslyn.io/#Microsoft.CodeAnalysis.Workspaces/Shared/Extensions/ITypeSymbolExtensions.cs,190b4ed0932458fd,references
 internal static class TypeSymbolExtensions
 {
-    private static readonly string[] Microsoft_VisualStudio_TestTools_UnitTesting = { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" };
-    private static readonly string[] NUnit_Framework = { "NUnit", "Framework" };
-    private static readonly string[] Xunit = { "Xunit" };
+    private static readonly string[] Microsoft_VisualStudio_TestTools_UnitTesting = ["Microsoft", "VisualStudio", "TestTools", "UnitTesting"];
+    private static readonly string[] NUnit_Framework = ["NUnit", "Framework"];
+    private static readonly string[] Xunit = ["Xunit"];
 
     public static IList<INamedTypeSymbol> GetAllInterfacesIncludingThis(this ITypeSymbol type)
     {

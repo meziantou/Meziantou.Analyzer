@@ -88,7 +88,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private static readonly HashSet<string> SerilogLogMethodNames = new(StringComparer.Ordinal) { "Debug", "Information", "Error", "Fatal", "Verbose", "Warning", "Write" };
-        private static readonly char[] SerilogPrefixes = { '@', '$' };
+        private static readonly char[] SerilogPrefixes = ['@', '$'];
 
         [SuppressMessage("MicrosoftCodeAnalysisPerformance", "RS1013:Start action has no registered non-end actions", Justification = "")]
         public AnalyzerContext(CompilationStartAnalysisContext context)
@@ -379,7 +379,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             if (formatExpression is not null && argumentTypes is not null)
             {
                 var allowNonConstantFormat = context.Options.GetConfigurationValue(formatExpression, s_rule.Id + ".allow_non_constant_formats", defaultValue: true);
-                var format = AnalyzerContext.TryGetFormatText(formatExpression, allowNonConstantFormat);
+                var format = TryGetFormatText(formatExpression, allowNonConstantFormat);
                 if (format == null)
                     return;
 
@@ -442,15 +442,15 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return constantValue;
 
                 case IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binary:
-                    var leftText = AnalyzerContext.TryGetFormatText(binary.LeftOperand, allowNonConstantFormat);
-                    var rightText = AnalyzerContext.TryGetFormatText(binary.RightOperand, allowNonConstantFormat);
+                    var leftText = TryGetFormatText(binary.LeftOperand, allowNonConstantFormat);
+                    var rightText = TryGetFormatText(binary.RightOperand, allowNonConstantFormat);
                     return Concat(leftText, rightText, allowNonConstantFormat);
 
                 case IInterpolatedStringOperation interpolatedString:
-                    string? result = "";
+                    var result = "";
                     foreach (var part in interpolatedString.Parts)
                     {
-                        result = Concat(result, AnalyzerContext.TryGetFormatText(part, allowNonConstantFormat), allowNonConstantFormat);
+                        result = Concat(result, TryGetFormatText(part, allowNonConstantFormat), allowNonConstantFormat);
                         if (result == null)
                             return null;
                     }
@@ -458,7 +458,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return result;
 
                 case IInterpolatedStringTextOperation text:
-                    return AnalyzerContext.TryGetFormatText(text.Text, allowNonConstantFormat);
+                    return TryGetFormatText(text.Text, allowNonConstantFormat);
 
                 default:
                     return null;
@@ -504,7 +504,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private sealed class LoggerConfigurationFile
+    private sealed class LoggerConfigurationFile(Dictionary<string, ITypeSymbol[]> configuration)
     {
         private static readonly SymbolEqualityComparer Comparer = GetComparer();
 
@@ -518,10 +518,10 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 var ctorParam2 = kindType.GetField("IgnoreTupleNames")?.GetValue(null);
                 if (ctorParam1 != null && ctorParam2 != null)
                 {
-                    var ctor = typeof(SymbolEqualityComparer).GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, binder: null, new[] { kindType }, modifiers: null);
+                    var ctor = typeof(SymbolEqualityComparer).GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, binder: null, [kindType], modifiers: null);
                     if (ctor != null)
                     {
-                        return (SymbolEqualityComparer)ctor.Invoke(new object[] { (int)ctorParam1 | (int)ctorParam2 });
+                        return (SymbolEqualityComparer)ctor.Invoke([(int)ctorParam1 | (int)ctorParam2]);
                     }
                 }
             }
@@ -529,20 +529,13 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             return SymbolEqualityComparer.Default;
         }
 
-        private readonly Dictionary<string, ITypeSymbol[]> _configuration;
-
-        public LoggerConfigurationFile(Dictionary<string, ITypeSymbol[]> configuration)
-        {
-            _configuration = configuration;
-        }
-
         public static LoggerConfigurationFile Empty { get; } = new LoggerConfigurationFile(new(StringComparer.Ordinal));
 
-        public int Count => _configuration.Count;
+        public int Count => configuration.Count;
 
         public bool IsValid(Compilation compilation, string name, ITypeSymbol? type, out bool hasRule)
         {
-            if (_configuration.TryGetValue(name, out var validSymbols))
+            if (configuration.TryGetValue(name, out var validSymbols))
             {
                 hasRule = true;
 
@@ -568,17 +561,17 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
         public ISymbol[] GetSymbols(string name)
         {
-            if (_configuration.TryGetValue(name, out var symbols))
+            if (configuration.TryGetValue(name, out var symbols))
                 return symbols;
 
-            return Array.Empty<ISymbol>();
+            return [];
         }
     }
 
     // source: https://github.com/dotnet/roslyn-analyzers/blob/afa566573b7b1a2129d78a26f238a2ac3f8e58ef/src/NetAnalyzers/Core/Microsoft.NetCore.Analyzers/Runtime/LogValuesFormatter.cs
     private sealed class LogValuesFormatter
     {
-        private static readonly char[] FormatDelimiters = { ',', ':' };
+        private static readonly char[] FormatDelimiters = [',', ':'];
 
         public LogValuesFormatter(string format)
         {
@@ -611,7 +604,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        public List<string> ValueNames { get; } = new List<string>();
+        public List<string> ValueNames { get; } = [];
 
         private static int FindBraceIndex(string format, char brace, int startIndex, int endIndex)
         {

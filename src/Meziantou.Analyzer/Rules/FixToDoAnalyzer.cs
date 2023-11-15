@@ -23,7 +23,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
-    private static readonly char[] TrimStartChars = new[] { ' ', '\t', '*', '-', '/' };
+    private static readonly char[] TrimStartChars = [' ', '\t', '*', '-', '/'];
 
     public override void Initialize(AnalysisContext context)
     {

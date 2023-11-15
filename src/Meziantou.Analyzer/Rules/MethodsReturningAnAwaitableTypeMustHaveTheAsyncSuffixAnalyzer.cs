@@ -44,14 +44,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly AwaitableTypes _awaitableTypes;
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            _awaitableTypes = new AwaitableTypes(compilation);
-        }
+        private readonly AwaitableTypes _awaitableTypes = new(compilation);
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {

@@ -34,24 +34,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly AwaitableTypes _awaitableTypes;
+        private readonly AwaitableTypes _awaitableTypes = new AwaitableTypes(compilation);
 
-        public AnalyzerContext(Compilation compilation)
-        {
-            _awaitableTypes = new AwaitableTypes(compilation);
-
-            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-            ValueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-            ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-        }
-
-        public INamedTypeSymbol? TaskSymbol { get; set; }
-        public INamedTypeSymbol? TaskOfTSymbol { get; set; }
-        public INamedTypeSymbol? ValueTaskSymbol { get; set; }
-        public INamedTypeSymbol? ValueTaskOfTSymbol { get; set; }
+        public INamedTypeSymbol? TaskSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+        public INamedTypeSymbol? TaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+        public INamedTypeSymbol? ValueTaskSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+        public INamedTypeSymbol? ValueTaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
 
         public void AnalyzeReturn(OperationAnalysisContext context)
         {

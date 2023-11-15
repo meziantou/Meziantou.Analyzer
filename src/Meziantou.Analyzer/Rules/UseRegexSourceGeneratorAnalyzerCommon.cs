@@ -1,12 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Globalization;
-using Meziantou.Analyzer.Internals;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
-
-namespace Meziantou.Analyzer.Rules;
+﻿namespace Meziantou.Analyzer.Rules;
 
 internal static class UseRegexSourceGeneratorAnalyzerCommon
 {

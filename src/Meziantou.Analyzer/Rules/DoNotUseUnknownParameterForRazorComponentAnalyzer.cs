@@ -37,24 +37,16 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly ConcurrentDictionary<ITypeSymbol, ComponentDescriptor> _componentDescriptors = new(SymbolEqualityComparer.Default);
 
-        public AnalyzerContext(Compilation compilation)
-        {
-            IComponentSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
-            ParameterSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
-            RenderTreeBuilderSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
-            ComponentBaseSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
-        }
-
         public bool IsValid => IComponentSymbol != null && ComponentBaseSymbol != null && ParameterSymbol != null;
 
-        public INamedTypeSymbol? IComponentSymbol { get; }
-        public INamedTypeSymbol? ComponentBaseSymbol { get; }
-        public INamedTypeSymbol? ParameterSymbol { get; }
-        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; }
+        public INamedTypeSymbol? IComponentSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
+        public INamedTypeSymbol? ComponentBaseSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
+        public INamedTypeSymbol? ParameterSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
+        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
 
         public void AnalyzeBlockOptions(OperationAnalysisContext context)
         {

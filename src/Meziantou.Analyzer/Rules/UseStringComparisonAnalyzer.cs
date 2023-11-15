@@ -47,22 +47,13 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly OverloadFinder _overloadFinder;
-        private readonly OperationUtilities _operationUtilities;
-        private readonly INamedTypeSymbol _stringComparisonSymbol;
-        private readonly INamedTypeSymbol? _jobjectSymbol;
-        private readonly INamedTypeSymbol? _xunitAssertSymbol;
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            _overloadFinder = new OverloadFinder(compilation);
-            _operationUtilities = new OperationUtilities(compilation);
-            _stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison")!;
-            _jobjectSymbol = compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
-            _xunitAssertSymbol = compilation.GetBestTypeByMetadataName("XUnit.Assert");
-        }
+        private readonly OverloadFinder _overloadFinder = new OverloadFinder(compilation);
+        private readonly OperationUtilities _operationUtilities = new OperationUtilities(compilation);
+        private readonly INamedTypeSymbol _stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison")!;
+        private readonly INamedTypeSymbol? _jobjectSymbol = compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
+        private readonly INamedTypeSymbol? _xunitAssertSymbol = compilation.GetBestTypeByMetadataName("XUnit.Assert");
 
         public bool IsValid => _stringComparisonSymbol != null;
 

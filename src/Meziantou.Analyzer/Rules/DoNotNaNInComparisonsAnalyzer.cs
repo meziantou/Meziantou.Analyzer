@@ -33,18 +33,11 @@ public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        public ISymbol? DoubleNaN { get; }
-        public ISymbol? SingleNaN { get; }
-        public ISymbol? HalfNaN { get; }
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            DoubleNaN = compilation.GetBestTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
-            SingleNaN = compilation.GetBestTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
-            HalfNaN = compilation.GetBestTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
-        }
+        public ISymbol? DoubleNaN { get; } = compilation.GetBestTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
+        public ISymbol? SingleNaN { get; } = compilation.GetBestTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
+        public ISymbol? HalfNaN { get; } = compilation.GetBestTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
 
         public void AnalyzeBinaryOperator(OperationAnalysisContext context)
         {

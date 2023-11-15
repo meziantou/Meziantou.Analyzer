@@ -15,7 +15,7 @@ namespace Meziantou.Analyzer.Rules;
 public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 {
     private static readonly string[] s_enumerableMethods =
-    {
+    [
         "Contains",
         "Distinct",
         "Except",
@@ -28,7 +28,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         "ThenByDescending",
         "ToHashSet",
         "Union",
-    };
+    ];
 
     private static readonly Dictionary<string, int> s_arityIndex = new(StringComparer.Ordinal)
     {
@@ -68,25 +68,15 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly OverloadFinder _overloadFinder;
-        private readonly OperationUtilities _operationUtilities;
+        private readonly OverloadFinder _overloadFinder = new(compilation);
+        private readonly OperationUtilities _operationUtilities = new(compilation);
 
-        public AnalyzerContext(Compilation compilation)
-        {
-            _overloadFinder = new OverloadFinder(compilation);
-            _operationUtilities = new OperationUtilities(compilation);
-            EqualityComparerStringType = GetIEqualityComparerString(compilation);
-            ComparerStringType = GetIComparerString(compilation);
-            EnumerableType = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
-            ISetType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
-        }
-
-        public INamedTypeSymbol? EqualityComparerStringType { get; }
-        public INamedTypeSymbol? ComparerStringType { get; }
-        public INamedTypeSymbol? EnumerableType { get; }
-        public INamedTypeSymbol? ISetType { get; }
+        public INamedTypeSymbol? EqualityComparerStringType { get; } = GetIEqualityComparerString(compilation);
+        public INamedTypeSymbol? ComparerStringType { get; } = GetIComparerString(compilation);
+        public INamedTypeSymbol? EnumerableType { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
+        public INamedTypeSymbol? ISetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
 
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {

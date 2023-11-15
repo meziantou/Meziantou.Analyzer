@@ -5,9 +5,9 @@ namespace Meziantou.Analyzer;
 
 internal static class MethodSymbolExtensions
 {
-    private static readonly string[] s_msTestNamespaceParts = new[] { "Microsoft", "VisualStudio", "TestTools", "UnitTesting" };
-    private static readonly string[] s_nunitNamespaceParts = new[] { "NUnit", "Framework" };
-    private static readonly string[] s_xunitNamespaceParts = new[] { "Xunit" };
+    private static readonly string[] s_msTestNamespaceParts = ["Microsoft", "VisualStudio", "TestTools", "UnitTesting"];
+    private static readonly string[] s_nunitNamespaceParts = ["NUnit", "Framework"];
+    private static readonly string[] s_xunitNamespaceParts = ["Xunit"];
 
     public static bool IsInterfaceImplementation(this IMethodSymbol method)
     {

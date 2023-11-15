@@ -129,7 +129,7 @@ public sealed partial class ProjectBuilder
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.NetAnalyzers",
             "7.0.1",
-            paths: new[] { "analyzers/dotnet/cs/Microsoft.CodeAnalysis" },
+            paths: ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"],
             ruleIds);
 
     public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
@@ -227,14 +227,14 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder AddAnalyzerConfiguration(string key, string value)
     {
-        AnalyzerConfiguration ??= new Dictionary<string, string>();
+        AnalyzerConfiguration ??= [];
         AnalyzerConfiguration[key] = value;
         return this;
     }
 
     public ProjectBuilder AddAdditionalFile(string path, string content)
     {
-        AdditionalFiles ??= new Dictionary<string, string>();
+        AdditionalFiles ??= [];
         AdditionalFiles[path] = content;
         return this;
     }

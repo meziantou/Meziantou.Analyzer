@@ -34,21 +34,13 @@ public sealed class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedAnalyzer 
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        public AnalyzerContext(Compilation compilation)
-        {
-            IJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
-            JSRuntimeExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSRuntimeExtensions");
-            IJSInProcessRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSInProcessRuntime");
-            JSInProcessRuntimeExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSInProcessRuntimeExtensions");
-        }
+        public INamedTypeSymbol? IJSRuntimeSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
+        public INamedTypeSymbol? JSRuntimeExtensionsSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSRuntimeExtensions");
 
-        public INamedTypeSymbol? IJSRuntimeSymbol { get; }
-        public INamedTypeSymbol? JSRuntimeExtensionsSymbol { get; }
-
-        public INamedTypeSymbol? IJSInProcessRuntimeSymbol { get; }
-        public INamedTypeSymbol? JSInProcessRuntimeExtensionsSymbol { get; }
+        public INamedTypeSymbol? IJSInProcessRuntimeSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSInProcessRuntime");
+        public INamedTypeSymbol? JSInProcessRuntimeExtensionsSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSInProcessRuntimeExtensions");
 
         public bool IsValid => IJSInProcessRuntimeSymbol != null || IJSRuntimeSymbol != null;
 

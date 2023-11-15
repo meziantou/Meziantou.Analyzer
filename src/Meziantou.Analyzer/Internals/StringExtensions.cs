@@ -30,8 +30,8 @@ internal static partial class StringExtensions
             var index = span.IndexOfAny('\r', '\n');
             if (index == -1)
             {
-                _str = ReadOnlySpan<char>.Empty;
-                Current = new LineSplitEntry(span, ReadOnlySpan<char>.Empty);
+                _str = [];
+                Current = new LineSplitEntry(span, []);
                 return true;
             }
 

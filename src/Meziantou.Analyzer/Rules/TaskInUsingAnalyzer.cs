@@ -37,15 +37,8 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(INamedTypeSymbol taskSymbol)
     {
-        private readonly INamedTypeSymbol _taskSymbol;
-
-        public AnalyzerContext(INamedTypeSymbol taskSymbol)
-        {
-            _taskSymbol = taskSymbol;
-        }
-
         public void AnalyzeUsing(OperationAnalysisContext context)
         {
             var operation = (IUsingOperation)context.Operation;
@@ -83,7 +76,7 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
             }
 
             operation = operation.UnwrapImplicitConversionOperations();
-            if (operation.Type != null && operation.Type.IsOrInheritFrom(_taskSymbol))
+            if (operation.Type != null && operation.Type.IsOrInheritFrom(taskSymbol))
             {
                 context.ReportDiagnostic(s_rule, operation);
             }

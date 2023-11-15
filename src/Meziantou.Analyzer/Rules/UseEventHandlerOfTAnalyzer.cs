@@ -32,14 +32,9 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        public AnalyzerContext(Compilation compilation)
-        {
-            EventArgsSymbol = compilation.GetBestTypeByMetadataName("System.EventArgs");
-        }
-
-        public INamedTypeSymbol? EventArgsSymbol { get; }
+        public INamedTypeSymbol? EventArgsSymbol { get; } = compilation.GetBestTypeByMetadataName("System.EventArgs");
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {

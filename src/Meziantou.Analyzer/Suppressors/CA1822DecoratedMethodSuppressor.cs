@@ -21,12 +21,12 @@ public sealed class CA1822DecoratedMethodSuppressor : DiagnosticSuppressor
     );
 
     private static readonly (SuppressionDescriptor Descriptor, string AttributeName)[] AttributeNames =
-    {
+    [
         (s_ruleBenchmarkDotNet, "BenchmarkDotNet.Attributes.BenchmarkAttribute"),
         (s_ruleJsonPropertyName, "System.Text.Json.Serialization.JsonPropertyNameAttribute"),
         (s_ruleJsonPropertyName, "System.Text.Json.Serialization.JsonPropertyOrderAttribute"),
         (s_ruleJsonPropertyName, "System.Text.Json.Serialization.JsonRequiredAttribute"),
-    };
+    ];
 
     public override ImmutableArray<SuppressionDescriptor> SupportedSuppressions => ImmutableArray.Create(s_ruleBenchmarkDotNet, s_ruleJsonPropertyName);
 

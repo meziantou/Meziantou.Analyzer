@@ -33,16 +33,10 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly CultureSensitiveFormattingContext _cultureSensitiveContext;
-        private readonly OverloadFinder _overloadFinder;
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            _cultureSensitiveContext = new CultureSensitiveFormattingContext(compilation);
-            _overloadFinder = new OverloadFinder(compilation);
-        }
+        private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new(compilation);
+        private readonly OverloadFinder _overloadFinder = new(compilation);
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {

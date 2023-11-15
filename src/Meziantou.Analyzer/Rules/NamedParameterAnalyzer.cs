@@ -154,7 +154,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                             if (invokedMethodParameters.Length == 0)
                                 return false;
 
-                            var lastParameter = invokedMethodParameters[invokedMethodParameters.Length - 1];
+                            var lastParameter = invokedMethodParameters[^1];
                             if (argumentIndex == invokedMethodParameters.Length - 1 && lastParameter.IsParams)
                             {
                                 if (argumentList.Arguments.Count > invokedMethodParameters.Length)

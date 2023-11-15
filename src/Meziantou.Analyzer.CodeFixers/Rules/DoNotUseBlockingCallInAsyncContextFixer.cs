@@ -114,8 +114,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var invocation = (InvocationExpressionSyntax)nodeToFix;
-        var memberAccess = invocation.Expression as MemberAccessExpressionSyntax;
-        if (memberAccess == null)
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
             return document;
 
         var newNode = nodeToFix.ReplaceNode(memberAccess.Name, generator.IdentifierName(methodName));

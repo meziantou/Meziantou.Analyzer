@@ -1,9 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -39,16 +36,10 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        public AnalyzerContext(Compilation compilation)
-        {
-            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-        }
-
-        public INamedTypeSymbol? TaskSymbol { get; }
-        public INamedTypeSymbol? TaskOfTSymbol { get; }
+        public INamedTypeSymbol? TaskSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+        public INamedTypeSymbol? TaskOfTSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
 
         public void AnalyzeReturnOperation(OperationAnalysisContext context)
         {

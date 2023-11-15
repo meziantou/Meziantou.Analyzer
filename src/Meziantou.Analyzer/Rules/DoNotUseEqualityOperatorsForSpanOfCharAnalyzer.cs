@@ -37,16 +37,9 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation, params INamedTypeSymbol?[] spanTypes)
     {
-        private readonly OperationUtilities _operationUtilities;
-        private readonly INamedTypeSymbol?[] _spanTypes;
-
-        public AnalyzerContext(Compilation compilation, params INamedTypeSymbol?[] spanTypes)
-        {
-            _operationUtilities = new OperationUtilities(compilation);
-            _spanTypes = spanTypes;
-        }
+        private readonly OperationUtilities _operationUtilities = new(compilation);
 
         public void AnalyzeBinaryOperator(OperationAnalysisContext context)
         {
@@ -68,7 +61,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
 
         private bool IsSpanOfString(ITypeSymbol? symbol)
         {
-            return symbol != null && symbol.IsEqualToAny(_spanTypes);
+            return symbol != null && symbol.IsEqualToAny(spanTypes);
         }
     }
 }

@@ -64,12 +64,12 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlTextAttribute"));
         }
 
-        public List<ITypeSymbol> ConcreteCollectionSymbols { get; } = new List<ITypeSymbol>();
-        public List<ITypeSymbol> TaskSymbols { get; } = new List<ITypeSymbol>();
+        public List<ITypeSymbol> ConcreteCollectionSymbols { get; } = [];
+        public List<ITypeSymbol> TaskSymbols { get; } = [];
 
         public ITypeSymbol? XmlIgnoreAttributeSymbol { get; set; }
-        public List<ITypeSymbol> XmlClassAttributeSymbols { get; } = new List<ITypeSymbol>();
-        public List<ITypeSymbol> XmlPropertyAttributeSymbols { get; } = new List<ITypeSymbol>();
+        public List<ITypeSymbol> XmlClassAttributeSymbols { get; } = [];
+        public List<ITypeSymbol> XmlPropertyAttributeSymbols { get; } = [];
 
         public void AnalyzeField(SyntaxNodeAnalysisContext context)
         {

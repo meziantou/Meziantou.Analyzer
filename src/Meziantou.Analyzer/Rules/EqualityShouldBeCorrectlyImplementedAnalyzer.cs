@@ -79,18 +79,11 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        public AnalyzerContext(Compilation compilation)
-        {
-            IComparableSymbol = compilation.GetBestTypeByMetadataName("System.IComparable");
-            IComparableOfTSymbol = compilation.GetBestTypeByMetadataName("System.IComparable`1");
-            IEquatableOfTSymbol = compilation.GetBestTypeByMetadataName("System.IEquatable`1");
-        }
-
-        public INamedTypeSymbol? IComparableSymbol { get; set; }
-        public INamedTypeSymbol? IComparableOfTSymbol { get; set; }
-        public INamedTypeSymbol? IEquatableOfTSymbol { get; set; }
+        public INamedTypeSymbol? IComparableSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable");
+        public INamedTypeSymbol? IComparableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable`1");
+        public INamedTypeSymbol? IEquatableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IEquatable`1");
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {

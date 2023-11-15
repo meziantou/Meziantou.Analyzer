@@ -140,7 +140,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         public bool IsValid => ExtensionMethodOwnerTypes.Count > 0;
 
-        private List<INamedTypeSymbol> ExtensionMethodOwnerTypes { get; } = new List<INamedTypeSymbol>();
+        private List<INamedTypeSymbol> ExtensionMethodOwnerTypes { get; } = [];
 
         private INamedTypeSymbol? EnumerableSymbol { get; set; }
         private INamedTypeSymbol? QueryableSymbol { get; set; }

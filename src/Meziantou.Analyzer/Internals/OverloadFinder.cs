@@ -3,16 +3,9 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
-internal sealed class OverloadFinder
+internal sealed class OverloadFinder(Compilation compilation)
 {
-    private readonly ITypeSymbol? _obsoleteSymbol;
-    private readonly Compilation _compilation;
-
-    public OverloadFinder(Compilation compilation)
-    {
-        _compilation = compilation;
-        _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
-    }
+    private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
 
     public bool HasOverloadWithAdditionalParameterOfType(
         IMethodSymbol methodSymbol,
@@ -75,7 +68,7 @@ internal sealed class OverloadFinder
         ImmutableArray<ISymbol> members;
         if (syntaxNode != null)
         {
-            var semanticModel = _compilation.GetSemanticModel(syntaxNode.SyntaxTree);
+            var semanticModel = compilation.GetSemanticModel(syntaxNode.SyntaxTree);
             members = semanticModel.LookupSymbols(syntaxNode.GetLocation().SourceSpan.End, methodSymbol.ContainingType, methodSymbol.Name, includeReducedExtensionMethods: true);
         }
         else

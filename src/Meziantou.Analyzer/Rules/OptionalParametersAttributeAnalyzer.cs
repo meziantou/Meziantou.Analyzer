@@ -44,18 +44,11 @@ public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        public AnalyzerContext(Compilation compilation)
-        {
-            OptionalAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.OptionalAttribute");
-            DefaultParameterValueAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.DefaultParameterValueAttribute");
-            DefaultValueAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ComponentModel.DefaultValueAttribute");
-        }
-
-        public INamedTypeSymbol? OptionalAttributeSymbol { get; set; }
-        public INamedTypeSymbol? DefaultParameterValueAttributeSymbol { get; set; }
-        public INamedTypeSymbol? DefaultValueAttributeSymbol { get; set; }
+        public INamedTypeSymbol? OptionalAttributeSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.OptionalAttribute");
+        public INamedTypeSymbol? DefaultParameterValueAttributeSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.DefaultParameterValueAttribute");
+        public INamedTypeSymbol? DefaultValueAttributeSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.ComponentModel.DefaultValueAttribute");
 
         public bool IsValid => (OptionalAttributeSymbol != null && DefaultParameterValueAttributeSymbol != null) || (DefaultParameterValueAttributeSymbol != null && DefaultValueAttributeSymbol != null);
 

@@ -165,9 +165,9 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         // Extract arguments (pattern,options,timeout)
         var attributes = generator.Attribute(generator.TypeExpression(regexGeneratorAttributeSymbol), attributeArguments: (patternValue, regexOptionsValue, timeoutValue) switch
         {
-            ({ }, null, null) => new[] { patternValue },
-            ({ }, { }, null) => new[] { patternValue, regexOptionsValue },
-            ({ }, { }, { }) => new[] { patternValue, regexOptionsValue, AttributeArgument((ExpressionSyntax)timeoutValue).WithNameColon(NameColon(IdentifierName("matchTimeoutMilliseconds"))) },
+            ({ }, null, null) => [patternValue],
+            ({ }, { }, null) => [patternValue, regexOptionsValue],
+            ({ }, { }, { }) => [patternValue, regexOptionsValue, AttributeArgument((ExpressionSyntax)timeoutValue).WithNameColon(NameColon(IdentifierName("matchTimeoutMilliseconds")))],
             _ => Array.Empty<SyntaxNode>(),
         });
 

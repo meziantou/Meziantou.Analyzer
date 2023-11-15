@@ -3,14 +3,9 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer;
 
-internal sealed class OperationUtilities
+internal sealed class OperationUtilities(Compilation compilation)
 {
-    private readonly INamedTypeSymbol? _expressionSymbol;
-
-    public OperationUtilities(Compilation compilation)
-    {
-        _expressionSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
-    }
+    private readonly INamedTypeSymbol? _expressionSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
 
     public bool IsInExpressionContext(IOperation operation)
     {

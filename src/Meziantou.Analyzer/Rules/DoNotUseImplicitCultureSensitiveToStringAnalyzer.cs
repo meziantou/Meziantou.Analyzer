@@ -58,14 +58,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly CultureSensitiveFormattingContext _cultureSensitiveContext;
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            _cultureSensitiveContext = new CultureSensitiveFormattingContext(compilation);
-        }
+        private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new CultureSensitiveFormattingContext(compilation);
 
         public static void AnalyzeInvocation(OperationAnalysisContext context)
         {
