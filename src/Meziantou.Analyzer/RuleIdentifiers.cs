@@ -145,6 +145,7 @@ internal static class RuleIdentifiers
     public const string IfElseBranchesAreIdentical = "MA0140";
     public const string UsePatternMatchingForNullCheck = "MA0141";
     public const string UsePatternMatchingForNullEquality = "MA0142";
+    public const string PrimaryConstructorParameterShouldBeReadOnly = "MA0143";
 
     public static string GetHelpUri(string identifier)
     {

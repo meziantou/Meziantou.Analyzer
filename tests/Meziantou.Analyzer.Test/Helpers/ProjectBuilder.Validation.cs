@@ -312,7 +312,7 @@ public sealed partial class ProjectBuilder
             var compilationWithAnalyzers = compilation.WithAnalyzers(
                 ImmutableArray.CreateRange(analyzers),
                 new AnalyzerOptions(additionalFiles, analyzerOptionsProvider));
-            var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(compilationWithAnalyzers.CancellationToken).ConfigureAwait(false);
+            var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(CancellationToken.None).ConfigureAwait(false);
             foreach (var diag in diags)
             {
 #if ROSLYN_3_8
@@ -329,7 +329,7 @@ public sealed partial class ProjectBuilder
                     for (var i = 0; i < documents.Length; i++)
                     {
                         var document = documents[i];
-                        var tree = await document.GetSyntaxTreeAsync(compilationWithAnalyzers.CancellationToken).ConfigureAwait(false);
+                        var tree = await document.GetSyntaxTreeAsync(CancellationToken.None).ConfigureAwait(false);
                         if (tree == diag.Location.SourceTree)
                         {
                             diagnostics.Add(diag);

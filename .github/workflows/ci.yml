@@ -56,11 +56,13 @@ jobs:
     - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.2 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
     - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.4 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
     - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.6 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
+    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
     
     - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn3.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
     - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.2 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
     - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.4 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
     - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.6 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
+    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }}
 
     - run: dotnet restore src/Meziantou.Analyzer.pack.csproj
     - run: dotnet pack src/Meziantou.Analyzer.pack.csproj --configuration Release --no-build /p:Version=${{ needs.compute_package_version.outputs.package_version }}
@@ -106,8 +108,8 @@ jobs:
     strategy:
       matrix:
         runs-on: [ ubuntu-latest, windows-latest ]
-        configuration: [ Debug, Release ]
-        roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'roslyn4.4', 'roslyn4.6', 'default' ]
+        configuration: [ Release ]
+        roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'roslyn4.4', 'roslyn4.6', 'roslyn4.8', 'default' ]
       fail-fast: false
     steps:
     - uses: actions/checkout@v4

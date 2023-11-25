@@ -142,6 +142,7 @@
 |[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use pattern matching instead of inequality operators|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use pattern matching instead of equality operators|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0143](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0143.md)|Design|Primary constructor parameters should be readonly|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -574,6 +575,9 @@ dotnet_diagnostic.MA0141.severity = none
 
 # MA0142: Use pattern matching instead of equality operators
 dotnet_diagnostic.MA0142.severity = none
+
+# MA0143: Primary constructor parameters should be readonly
+dotnet_diagnostic.MA0143.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1001,4 +1005,7 @@ dotnet_diagnostic.MA0141.severity = none
 
 # MA0142: Use pattern matching instead of equality operators
 dotnet_diagnostic.MA0142.severity = none
+
+# MA0143: Primary constructor parameters should be readonly
+dotnet_diagnostic.MA0143.severity = none
 ```
