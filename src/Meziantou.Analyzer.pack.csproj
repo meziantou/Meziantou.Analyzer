@@ -27,5 +27,8 @@
 
     <None Include="$(MSBuildThisFileDirectory)\Meziantou.Analyzer\bin\roslyn4.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
     <None Include="$(MSBuildThisFileDirectory)\Meziantou.Analyzer.CodeFixers\bin\roslyn4.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
+    
+    <None Include="$(MSBuildThisFileDirectory)\Meziantou.Analyzer\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\Meziantou.Analyzer.CodeFixers\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
   </ItemGroup>
 </Project>

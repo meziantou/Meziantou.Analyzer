@@ -448,7 +448,7 @@ class TestAttribute
             """";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
               .ValidateAsync();
     }
 #endif
