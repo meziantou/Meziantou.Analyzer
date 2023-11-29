@@ -25,6 +25,17 @@ public class UseOperatingSystemInsteadOfRuntimeInformationAnalyzerTests
     }
 
     [Fact]
+    public async Task ShouldNotReport_WhenOperatingSystemIsNotAvailable()
+    {
+        await CreateProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetStandard2_0)
+            .WithSourceCode("""
+                System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ShouldNotReport_WhenDynamic()
     {
         await CreateProjectBuilder()
