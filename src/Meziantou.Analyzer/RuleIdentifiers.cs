@@ -146,6 +146,7 @@ internal static class RuleIdentifiers
     public const string UsePatternMatchingForNullCheck = "MA0141";
     public const string UsePatternMatchingForNullEquality = "MA0142";
     public const string PrimaryConstructorParameterShouldBeReadOnly = "MA0143";
+    public const string UseOperatingSystemInsteadOfRuntimeInformation = "MA0144";
 
     public static string GetHelpUri(string identifier)
     {

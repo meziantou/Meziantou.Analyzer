@@ -143,6 +143,7 @@
 |[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use pattern matching instead of inequality operators|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use pattern matching instead of equality operators|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0143](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0143.md)|Design|Primary constructor parameters should be readonly|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0144](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0144.md)|Performance|Use System.OperatingSystem to check the current OS|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -578,6 +579,9 @@ dotnet_diagnostic.MA0142.severity = none
 
 # MA0143: Primary constructor parameters should be readonly
 dotnet_diagnostic.MA0143.severity = none
+
+# MA0144: Use System.OperatingSystem to check the current OS
+dotnet_diagnostic.MA0144.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1008,4 +1012,7 @@ dotnet_diagnostic.MA0142.severity = none
 
 # MA0143: Primary constructor parameters should be readonly
 dotnet_diagnostic.MA0143.severity = none
+
+# MA0144: Use System.OperatingSystem to check the current OS
+dotnet_diagnostic.MA0144.severity = none
 ```
