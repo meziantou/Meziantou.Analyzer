@@ -78,7 +78,7 @@
 
     <Otherwise>
       <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0-beta1.23472.1" />
+        <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0-beta1.23525.2" />
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
         <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.8.0" />
         <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />
