@@ -98,7 +98,8 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
                         var typeDeclaration = (TypeDeclarationSyntax)syntax;
                         foreach (var param in constructor.Parameters)
                         {
-                            yield return param;
+                            if (param.Name == name)
+                                yield return param;
                         }
                     }
                 }

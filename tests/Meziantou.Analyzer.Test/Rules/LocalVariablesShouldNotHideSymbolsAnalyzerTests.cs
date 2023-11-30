@@ -106,6 +106,24 @@ class Test : Base
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task LocalVariableDoesNotHidePrimaryConstructorParameter()
+    {
+        const string SourceCode = """
+            class Test(int a)
+            {
+                void A()
+                {
+                    var b = 10;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 #endif
 
     [Fact]
