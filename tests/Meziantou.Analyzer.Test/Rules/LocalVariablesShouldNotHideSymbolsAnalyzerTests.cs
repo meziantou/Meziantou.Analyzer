@@ -70,6 +70,44 @@ class Test : Base
               .ValidateAsync();
     }
 
+#if CSHARP12_OR_GREATER
+    [Fact]
+    public async Task LocalVariableHidePrimaryConstructorParameter()
+    {
+        const string SourceCode = """
+            class Test(int a)
+            {
+                void A()
+                {
+                    var [|a|] = 10;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalVariableDoesNotHidePrimaryConstructorParameterInStaticMethod()
+    {
+        const string SourceCode = """
+            class Test(int a)
+            {
+                static void A()
+                {
+                    var a = 10;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
+
     [Fact]
     public async Task LocalVariableHideNotVisibleFieldFromParentClass()
     {
