@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -41,7 +43,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         if (containingType == null)
             return;
 
-        foreach (var member in GetSymbols(containingType, localSymbol.Name))
+        foreach (var member in GetSymbols(containingType, localSymbol.Name, context.CancellationToken))
         {
             if (!semanticModel.IsAccessible(operation.Syntax.SpanStart, member))
                 continue;
@@ -55,6 +57,12 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
             if (member is IPropertySymbol)
             {
                 ReportDiagnostic("property");
+                return;
+            }
+
+            if (member is IParameterSymbol && !operation.IsInStaticContext(context.CancellationToken))
+            {
+                ReportDiagnostic("parameter");
                 return;
             }
         }
@@ -72,8 +80,32 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         }
     }
 
-    private static IEnumerable<ISymbol> GetSymbols(INamedTypeSymbol? type, string name)
+    private static IEnumerable<ISymbol> GetSymbols(INamedTypeSymbol? type, string name, CancellationToken cancellationToken)
     {
+#if CSHARP12_OR_GREATER
+        if (type?.InstanceConstructors is not null)
+        {
+            foreach (var constructor in type.InstanceConstructors)
+            {
+                if (constructor.Parameters.Length == 0)
+                    continue;
+
+                foreach (var syntaxRef in constructor.DeclaringSyntaxReferences)
+                {
+                    var syntax = syntaxRef.GetSyntax(cancellationToken);
+                    if (syntax.IsKind(SyntaxKind.ClassDeclaration) || syntax.IsKind(SyntaxKind.StructDeclaration))
+                    {
+                        var typeDeclaration = (TypeDeclarationSyntax)syntax;
+                        foreach (var param in constructor.Parameters)
+                        {
+                            yield return param;
+                        }
+                    }
+                }
+            }
+        }
+#endif
+
         while (type != null)
         {
             var members = type.GetMembers(name);
