@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -23,10 +22,6 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
 
-    private static readonly Action<SyntaxNodeAnalysisContext> s_handleObjectInitializerAction = HandleObjectInitializer;
-    private static readonly Action<SyntaxNodeAnalysisContext> s_handleAnonymousObjectInitializerAction = HandleAnonymousObjectInitializer;
-    private static readonly Action<SyntaxNodeAnalysisContext> s_handleEnumDeclarationAction = HandleEnumDeclaration;
-
     private static readonly ImmutableArray<SyntaxKind> s_objectInitializerKinds = ImmutableArray.Create(SyntaxKind.ObjectInitializerExpression, SyntaxKind.ArrayInitializerExpression, SyntaxKind.CollectionInitializerExpression);
 
     /// <inheritdoc/>
@@ -35,47 +30,49 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(s_handleObjectInitializerAction, s_objectInitializerKinds);
-        context.RegisterSyntaxNodeAction(s_handleAnonymousObjectInitializerAction, SyntaxKind.AnonymousObjectCreationExpression);
-        context.RegisterSyntaxNodeAction(s_handleEnumDeclarationAction, SyntaxKind.EnumDeclaration);
+        context.RegisterSyntaxNodeAction(HandleObjectInitializer, s_objectInitializerKinds);
+        context.RegisterSyntaxNodeAction(HandleAnonymousObjectInitializer, SyntaxKind.AnonymousObjectCreationExpression);
+        context.RegisterSyntaxNodeAction(HandleEnumDeclaration, SyntaxKind.EnumDeclaration);
+#if CSHARP12_OR_GREATER
+        context.RegisterSyntaxNodeAction(HandleCollectionExpression, SyntaxKind.CollectionExpression);
+#endif
     }
+
+    private static void HandleSeparatedList<T>(SyntaxNodeAnalysisContext context, SyntaxNode node, SeparatedSyntaxList<T> elements) where T : SyntaxNode
+    {
+        if (elements.Count == 0)
+            return;
+
+        if (elements.Count == elements.SeparatorCount || !node.SpansMultipleLines(context.CancellationToken))
+            return;
+
+        var lastMember = elements[^1];
+        context.ReportDiagnostic(s_rule, lastMember);
+    }
+
+#if CSHARP12_OR_GREATER
+    private void HandleCollectionExpression(SyntaxNodeAnalysisContext context)
+    {
+        var node = (CollectionExpressionSyntax)context.Node;
+        HandleSeparatedList(context, node, node.Elements);
+    }
+#endif
 
     private static void HandleEnumDeclaration(SyntaxNodeAnalysisContext context)
     {
-        var initializer = (EnumDeclarationSyntax)context.Node;
-        var lastMember = initializer.Members.LastOrDefault();
-        if (lastMember == null || !initializer.SpansMultipleLines(context.CancellationToken))
-        {
-            return;
-        }
-
-        if (initializer.Members.Count != initializer.Members.SeparatorCount)
-        {
-            context.ReportDiagnostic(s_rule, lastMember);
-        }
+        var node = (EnumDeclarationSyntax)context.Node;
+        HandleSeparatedList(context, node, node.Members);
     }
 
     private static void HandleObjectInitializer(SyntaxNodeAnalysisContext context)
     {
-        var initializer = (InitializerExpressionSyntax)context.Node;
-        if (initializer == null || !initializer.SpansMultipleLines(context.CancellationToken))
-            return;
-
-        if (initializer.Expressions.SeparatorCount < initializer.Expressions.Count)
-        {
-            context.ReportDiagnostic(s_rule, initializer.Expressions.Last());
-        }
+        var node = (InitializerExpressionSyntax)context.Node;
+        HandleSeparatedList(context, node, node.Expressions);
     }
 
     private static void HandleAnonymousObjectInitializer(SyntaxNodeAnalysisContext context)
     {
-        var initializer = (AnonymousObjectCreationExpressionSyntax)context.Node;
-        if (initializer == null || !initializer.SpansMultipleLines(context.CancellationToken))
-            return;
-
-        if (initializer.Initializers.SeparatorCount < initializer.Initializers.Count)
-        {
-            context.ReportDiagnostic(s_rule, initializer.Initializers.Last());
-        }
+        var node = (AnonymousObjectCreationExpressionSyntax)context.Node;
+        HandleSeparatedList(context, node, node.Initializers);
     }
 }

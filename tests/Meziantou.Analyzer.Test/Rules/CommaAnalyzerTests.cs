@@ -223,4 +223,40 @@ class TypeName
             .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
+
+#if CSHARP12_OR_GREATER
+    [Fact]
+    public async Task CollectionExpressionWithoutLeadingComma()
+    {
+        const string SourceCode = @"
+class TypeName
+{
+    public void Test()
+    {
+        int[] a =
+        [
+            1,
+            [||]2
+        ];
+    }
+}";
+        const string CodeFix = @"
+class TypeName
+{
+    public void Test()
+    {
+        int[] a =
+        [
+            1,
+            2,
+        ];
+    }
+}";
+        await CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(CodeFix)
+            .ValidateAsync();
+    }
+#endif
 }
