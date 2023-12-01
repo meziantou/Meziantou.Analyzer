@@ -273,7 +273,7 @@ public sealed partial class ProjectBuilder
         var diagnostics = new List<Diagnostic>();
         foreach (var project in projects)
         {
-            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true);
+            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true, metadataImportOptions: MetadataImportOptions.All); // TODO allow configuration
 
             // Enable diagnostic
             options = options.WithSpecificDiagnosticOptions(analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag)))));
@@ -533,7 +533,7 @@ public sealed partial class ProjectBuilder
 
         if (mustCompile)
         {
-            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true);
+            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true, metadataImportOptions: MetadataImportOptions.All);
             var project = solution.Projects.Single();
             var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
 

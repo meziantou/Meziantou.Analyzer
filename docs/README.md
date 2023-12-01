@@ -144,6 +144,8 @@
 |[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use pattern matching instead of equality operators|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0143](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0143.md)|Design|Primary constructor parameters should be readonly|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0144](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0144.md)|Performance|Use System.OperatingSystem to check the current OS|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0145](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0145.md)|Usage|Signature for \[UnsafeAccessorAttribute\] method is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0146](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0146.md)|Usage|Name must be set explicitly on local functions|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -582,6 +584,12 @@ dotnet_diagnostic.MA0143.severity = none
 
 # MA0144: Use System.OperatingSystem to check the current OS
 dotnet_diagnostic.MA0144.severity = warning
+
+# MA0145: Signature for [UnsafeAccessorAttribute] method is not valid
+dotnet_diagnostic.MA0145.severity = warning
+
+# MA0146: Name must be set explicitly on local functions
+dotnet_diagnostic.MA0146.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1015,4 +1023,10 @@ dotnet_diagnostic.MA0143.severity = none
 
 # MA0144: Use System.OperatingSystem to check the current OS
 dotnet_diagnostic.MA0144.severity = none
+
+# MA0145: Signature for [UnsafeAccessorAttribute] method is not valid
+dotnet_diagnostic.MA0145.severity = none
+
+# MA0146: Name must be set explicitly on local functions
+dotnet_diagnostic.MA0146.severity = none
 ```
