@@ -146,6 +146,7 @@
 |[MA0144](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0144.md)|Performance|Use System.OperatingSystem to check the current OS|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0145](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0145.md)|Usage|Signature for \[UnsafeAccessorAttribute\] method is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0146](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0146.md)|Usage|Name must be set explicitly on local functions|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0147](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0147.md)|Usage|Avoid async void method for delegate|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -590,6 +591,9 @@ dotnet_diagnostic.MA0145.severity = warning
 
 # MA0146: Name must be set explicitly on local functions
 dotnet_diagnostic.MA0146.severity = warning
+
+# MA0147: Avoid async void method for delegate
+dotnet_diagnostic.MA0147.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1029,4 +1033,7 @@ dotnet_diagnostic.MA0145.severity = none
 
 # MA0146: Name must be set explicitly on local functions
 dotnet_diagnostic.MA0146.severity = none
+
+# MA0147: Avoid async void method for delegate
+dotnet_diagnostic.MA0147.severity = none
 ```

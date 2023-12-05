@@ -11,16 +11,17 @@ internal sealed class AwaitableTypes
     public AwaitableTypes(Compilation compilation)
     {
         INotifyCompletionSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.INotifyCompletion");
-        AsyncMethodBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.AsyncMethodBuilderAttribute");
+        AsyncMethodBuilderAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.AsyncMethodBuilderAttribute");
         IAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
         IAsyncEnumeratorSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1");
         TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+        TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
 
         if (INotifyCompletionSymbol != null)
         {
             var taskLikeSymbols = new List<INamedTypeSymbol>(4);
             taskLikeSymbols.AddIfNotNull(TaskSymbol);
-            taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1"));
+            taskLikeSymbols.AddIfNotNull(TaskOfTSymbol);
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask"));
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
             _taskOrValueTaskSymbols = taskLikeSymbols.ToArray();
@@ -32,8 +33,9 @@ internal sealed class AwaitableTypes
     }
 
     private INamedTypeSymbol? TaskSymbol { get; }
+    private INamedTypeSymbol? TaskOfTSymbol { get; }
     private INamedTypeSymbol? INotifyCompletionSymbol { get; }
-    private INamedTypeSymbol? AsyncMethodBuilderSymbol { get; }
+    private INamedTypeSymbol? AsyncMethodBuilderAttributeSymbol { get; }
     public INamedTypeSymbol? IAsyncEnumerableSymbol { get; }
     public INamedTypeSymbol? IAsyncEnumeratorSymbol { get; }
 
@@ -139,7 +141,21 @@ internal sealed class AwaitableTypes
         if (method.ReturnType is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.ConstructedFrom.IsEqualToAny(IAsyncEnumerableSymbol, IAsyncEnumeratorSymbol))
             return true;
 
-        if (AsyncMethodBuilderSymbol != null && method.ReturnType.HasAttribute(AsyncMethodBuilderSymbol))
+        if (AsyncMethodBuilderAttributeSymbol != null && method.ReturnType.HasAttribute(AsyncMethodBuilderAttributeSymbol))
+            return true;
+
+        return false;
+    }
+
+    public bool IsAsyncBuildableAndNotVoid(ITypeSymbol? symbol)
+    {
+        if (symbol is null)
+            return false;
+
+        if (symbol.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
+            return true;
+
+        if (symbol.HasAttribute(AsyncMethodBuilderAttributeSymbol))
             return true;
 
         return false;
