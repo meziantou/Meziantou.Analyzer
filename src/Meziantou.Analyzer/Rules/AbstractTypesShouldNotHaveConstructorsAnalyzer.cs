@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AbstractTypesShouldNotHaveConstructors,
         title: "Abstract types should not have public or internal constructors",
         messageFormat: "Abstract types should not have public or internal constructors",
@@ -17,7 +17,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticA
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AbstractTypesShouldNotHaveConstructors));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -37,7 +37,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticA
         {
             if (ctor.DeclaredAccessibility == Accessibility.Public || ctor.DeclaredAccessibility == Accessibility.Internal)
             {
-                context.ReportDiagnostic(s_rule, ctor);
+                context.ReportDiagnostic(Rule, ctor);
             }
         }
     }

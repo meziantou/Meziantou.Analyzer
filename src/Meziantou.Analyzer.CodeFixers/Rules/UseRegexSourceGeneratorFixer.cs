@@ -30,7 +30,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: false);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         context.RegisterCodeFix(
@@ -56,13 +56,13 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
         var typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-        if (root == null || nodeToFix == null || typeDeclaration == null)
+        if (root is null || nodeToFix is null || typeDeclaration is null)
             return document;
 
         // Get type info before changing the root
         var properties = diagnostic.Properties;
         var operation = semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         // Generate unique method name
@@ -92,11 +92,11 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         // Get the new node to fix in the new syntax tree
         nodeToFix = root.FindNode(new Microsoft.CodeAnalysis.Text.TextSpan(nodeToFix.Span.Start + (count * "partial".Length), nodeToFix.Span.Length));
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return document;
 
         typeDeclaration = nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-        if (typeDeclaration == null)
+        if (typeDeclaration is null)
             return document;
 
         var newTypeDeclaration = typeDeclaration;
@@ -116,7 +116,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
                 TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
             };
-            foreach (var index in indices.Where(value => value != null).OrderByDescending(value => value))
+            foreach (var index in indices.Where(value => value is not null).OrderByDescending(value => value))
             {
                 arguments = arguments.RemoveAt(index.GetValueOrDefault());
             }
@@ -133,7 +133,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         SyntaxNode? timeoutValue = null;
 
         var timeout = TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName);
-        if (timeout != null)
+        if (timeout is not null)
         {
             timeoutValue = generator.LiteralExpression(timeout.Value);
         }
@@ -149,7 +149,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             regexOptionsValue = GetNode(invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
         }
 
-        if (timeoutValue != null && regexOptionsValue is null)
+        if (timeoutValue is not null && regexOptionsValue is null)
         {
             regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
         }
@@ -179,7 +179,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
     private static SyntaxNode? GetNode(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
     {
         var index = TryParseInt32(properties, name);
-        if (index == null)
+        if (index is null)
             return null;
 
         return args[index.Value].Value.Syntax;

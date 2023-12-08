@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue,
         title: "Use Explicit enum value instead of 0",
         messageFormat: "Use Explicit enum value for '{0}' instead of 0",
@@ -18,7 +18,7 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -50,7 +50,7 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
 
         if (operation.ConstantValue is { HasValue: true, Value: not null and var value } && IsZero(enumType, value))
         {
-            context.ReportDiagnostic(s_rule, operation, operation.Type.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat));
+            context.ReportDiagnostic(Rule, operation, operation.Type.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat));
         }
 
         static bool IsZero(ITypeSymbol enumType, object value)

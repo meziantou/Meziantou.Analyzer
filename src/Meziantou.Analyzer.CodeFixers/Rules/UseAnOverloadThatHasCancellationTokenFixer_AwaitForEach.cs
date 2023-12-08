@@ -25,7 +25,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_AwaitForEach : Co
         if (nodeToFix is not ExpressionSyntax expressionSyntax)
             return;
 
-        if (!context.Diagnostics[0].Properties.TryGetValue("CancellationTokens", out var cancellationTokens) || cancellationTokens == null)
+        if (!context.Diagnostics[0].Properties.TryGetValue("CancellationTokens", out var cancellationTokens) || cancellationTokens is null)
             return;
 
         foreach (var cancellationToken in cancellationTokens.Split(','))

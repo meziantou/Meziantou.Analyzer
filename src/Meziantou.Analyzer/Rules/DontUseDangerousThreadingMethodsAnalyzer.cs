@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DontUseDangerousThreadingMethodsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DontUseDangerousThreadingMethods,
         title: "Do not use dangerous threading methods",
         messageFormat: "Do not use dangerous threading methods",
@@ -19,7 +19,7 @@ public sealed class DontUseDangerousThreadingMethodsAnalyzer : DiagnosticAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DontUseDangerousThreadingMethods));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -41,7 +41,7 @@ public sealed class DontUseDangerousThreadingMethodsAnalyzer : DiagnosticAnalyze
             {
                 if (op.TargetMethod.ContainingType.IsEqualTo(type))
                 {
-                    context.ReportDiagnostic(s_rule, op);
+                    context.ReportDiagnostic(Rule, op);
                 }
             }
         }

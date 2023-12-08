@@ -34,7 +34,7 @@ public sealed class CommaFixer : CodeFixProvider
     private static async Task<Document> GetTransformedDocumentAsync(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
     {
         var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (syntaxRoot == null)
+        if (syntaxRoot is null)
             return document;
 
         var syntaxNode = syntaxRoot.FindNode(diagnostic.Location.SourceSpan);

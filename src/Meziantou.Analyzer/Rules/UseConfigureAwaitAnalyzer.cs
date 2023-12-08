@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseConfigureAwaitFalse,
         title: "Use Task.ConfigureAwait(false)",
         messageFormat: "Use Task.ConfigureAwait(false) as the current SynchronizationContext is not needed",
@@ -24,7 +24,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseConfigureAwaitFalse));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -72,7 +72,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             if (MustUseConfigureAwait(context.SemanticModel, context.Options, node, context.CancellationToken))
             {
-                context.ReportDiagnostic(s_rule, context.Node);
+                context.ReportDiagnostic(Rule, context.Node);
             }
         }
 
@@ -86,7 +86,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             // ConfiguredCancelableAsyncEnumerable
             var collectionType = operation.Collection.GetActualType();
-            if (collectionType == null)
+            if (collectionType is null)
                 return;
 
             if (collectionType.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
@@ -107,7 +107,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             if (MustUseConfigureAwait(operation.SemanticModel!, context.Options, operation.Syntax, context.CancellationToken))
             {
-                context.ReportDiagnostic(s_rule, operation.Collection);
+                context.ReportDiagnostic(Rule, operation.Collection);
             }
 
             static bool HasConfigureAwait(IOperation operation)
@@ -154,10 +154,10 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 // await using(var a = expr, b = expr)
                 AnalyzeVariableDeclarationGroupOperation(context, declarationGroup);
             }
-            else if (firstChild != null)
+            else if (firstChild is not null)
             {
                 // await using(expr)
-                if (firstChild.Type == null)
+                if (firstChild.Type is null)
                     return;
 
                 if (!CanAddConfigureAwait(firstChild.Type, firstChild))
@@ -165,7 +165,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
                 if (MustUseConfigureAwait(firstChild.SemanticModel!, context.Options, firstChild.Syntax, context.CancellationToken))
                 {
-                    context.ReportDiagnostic(s_rule, firstChild);
+                    context.ReportDiagnostic(Rule, firstChild);
                 }
             }
         }
@@ -185,12 +185,12 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             {
                 foreach (var declarator in declaration.Declarators)
                 {
-                    if (declarator.Initializer == null)
+                    if (declarator.Initializer is null)
                         continue;
 
                     // ConfiguredCancelableAsyncEnumerable
                     var variableType = declarator.Initializer.Value.GetActualType();
-                    if (variableType == null || variableType.IsEqualTo(ConfiguredAsyncDisposableSymbol))
+                    if (variableType is null || variableType.IsEqualTo(ConfiguredAsyncDisposableSymbol))
                         return;
 
                     if (!CanAddConfigureAwait(variableType, declarator.Initializer.Value))
@@ -198,7 +198,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
                     if (MustUseConfigureAwait(declarator.SemanticModel!, context.Options, declarator.Syntax, context.CancellationToken))
                     {
-                        context.ReportDiagnostic(s_rule, declarator);
+                        context.ReportDiagnostic(Rule, declarator);
                     }
                 }
             }
@@ -217,7 +217,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 return true;
 
             var containingClass = GetParentSymbol<INamedTypeSymbol>(semanticModel, node, cancellationToken);
-            if (containingClass != null)
+            if (containingClass is not null)
             {
                 if (containingClass.InheritsFrom(WPF_DispatcherObject) ||
                     containingClass.Implements(WPF_ICommand) ||
@@ -235,7 +235,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             }
 
             var containingMethod = GetParentSymbol<IMethodSymbol>(semanticModel, node, cancellationToken);
-            if (containingMethod != null && containingMethod.IsUnitTestMethod())
+            if (containingMethod is not null && containingMethod.IsUnitTestMethod())
                 return false;
 
             return true;
@@ -247,7 +247,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             // Use context.SemanticModel.AnalyzeControlFlow to check if the current await is accessible from one of the previous await
             // https://joshvarty.com/2015/03/24/learn-roslyn-now-control-flow-analysis/
             var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-            if (method != null)
+            if (method is not null)
             {
                 var otherAwaitExpressions = method.DescendantNodes(_ => true).OfType<AwaitExpressionSyntax>();
                 foreach (var expr in otherAwaitExpressions)
@@ -268,7 +268,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
                         var nodeStatement = node.FirstAncestorOrSelf<StatementSyntax>();
                         var parentStatement = otherAwaitExpression.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
-                        while (parentStatement != null && nodeStatement != parentStatement)
+                        while (parentStatement is not null && nodeStatement != parentStatement)
                         {
                             if (!IsEndPointReachable(semanticModel, parentStatement))
                                 return false;
@@ -287,7 +287,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         private static bool IsEndPointReachable(SemanticModel semanticModel, StatementSyntax statementSyntax)
         {
             var result = semanticModel.AnalyzeControlFlow(statementSyntax);
-            if (result == null || !result.Succeeded)
+            if (result is null || !result.Succeeded)
                 return false;
 
             if (!result.EndPointIsReachable)
@@ -299,7 +299,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         private static bool CanAddConfigureAwait(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
         {
             var awaitExpressionType = semanticModel.GetTypeInfo(awaitSyntax.Expression, cancellationToken).Type;
-            if (awaitExpressionType == null)
+            if (awaitExpressionType is null)
                 return false;
 
             return CanAddConfigureAwait(awaitExpressionType, semanticModel, awaitSyntax.Expression);
@@ -323,7 +323,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         private bool IsConfiguredTaskAwaitable(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
         {
             var awaitExpressionType = semanticModel.GetTypeInfo(awaitSyntax.Expression, cancellationToken).ConvertedType;
-            if (awaitExpressionType == null)
+            if (awaitExpressionType is null)
                 return false;
 
             return ConfiguredTaskAwaitableSymbol.IsEqualTo(awaitExpressionType) ||
@@ -333,7 +333,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         private static T? GetParentSymbol<T>(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken) where T : class, ISymbol
         {
             var symbol = semanticModel.GetEnclosingSymbol(node.SpanStart, cancellationToken);
-            while (symbol != null)
+            while (symbol is not null)
             {
                 if (symbol is T expectedSymbol)
                     return expectedSymbol;

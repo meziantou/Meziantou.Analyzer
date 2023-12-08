@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RemoveUselessToStringAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.RemoveUselessToString,
         title: "Remove useless ToString call",
         messageFormat: "Remove useless ToString call",
@@ -19,7 +19,7 @@ public sealed class RemoveUselessToStringAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RemoveUselessToString));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -38,7 +38,7 @@ public sealed class RemoveUselessToStringAnalyzer : DiagnosticAnalyzer
         if (string.Equals(operation.TargetMethod.Name, nameof(string.ToString), StringComparison.Ordinal) &&
            operation.TargetMethod.ContainingType.IsString())
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

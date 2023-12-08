@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.SequenceNumberMustBeAConstant,
         title: "Sequence number must be a constant",
         messageFormat: "Sequence number must be a constant",
@@ -20,7 +20,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SequenceNumberMustBeAConstant));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -39,7 +39,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private static readonly HashSet<string> s_renderTreeMethodNames = new(StringComparer.Ordinal)
+        private static readonly HashSet<string> RenderTreeMethodNames = new(StringComparer.Ordinal)
         {
             "AddAttribute",
             "AddComponentReferenceCapture",
@@ -52,7 +52,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
             "OpenRegion",
         };
 
-        private static readonly HashSet<string> s_webRenderTreeBuilderExtensionsSymbolMethodNames = new(StringComparer.Ordinal)
+        private static readonly HashSet<string> WebRenderTreeBuilderExtensionsSymbolMethodNames = new(StringComparer.Ordinal)
         {
             "AddEventPreventDefaultAttribute",
             "AddEventStopPropagationAttribute",
@@ -61,7 +61,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? RenderTreeBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
         public INamedTypeSymbol? WebRenderTreeBuilderExtensionsSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Web.WebRenderTreeBuilderExtensions");
 
-        public bool IsValid => RenderTreeBuilderSymbol != null;
+        public bool IsValid => RenderTreeBuilderSymbol is not null;
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -69,22 +69,22 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
             var targetMethod = operation.TargetMethod;
             if (targetMethod.ContainingType.IsEqualTo(RenderTreeBuilderSymbol))
             {
-                if (s_renderTreeMethodNames.Contains(targetMethod.Name) && targetMethod.Parameters.Length >= 1 && targetMethod.Parameters[0].Type.IsInt32() && targetMethod.Parameters[0].Name == "sequence")
+                if (RenderTreeMethodNames.Contains(targetMethod.Name) && targetMethod.Parameters.Length >= 1 && targetMethod.Parameters[0].Type.IsInt32() && targetMethod.Parameters[0].Name == "sequence")
                 {
                     if (IsValidExpression(operation.Arguments[0].Value))
                         return;
 
-                    context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                    context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                 }
             }
             else if (targetMethod.ContainingType.IsEqualTo(WebRenderTreeBuilderExtensionsSymbol))
             {
-                if (s_webRenderTreeBuilderExtensionsSymbolMethodNames.Contains(targetMethod.Name) && targetMethod.Parameters.Length >= 2 && targetMethod.Parameters[1].Type.IsInt32() && targetMethod.Parameters[1].Name == "sequence")
+                if (WebRenderTreeBuilderExtensionsSymbolMethodNames.Contains(targetMethod.Name) && targetMethod.Parameters.Length >= 2 && targetMethod.Parameters[1].Type.IsInt32() && targetMethod.Parameters[1].Name == "sequence")
                 {
                     if (IsValidExpression(operation.Arguments[1].Value))
                         return;
 
-                    context.ReportDiagnostic(s_rule, operation.Arguments[1].Value);
+                    context.ReportDiagnostic(Rule, operation.Arguments[1].Value);
                 }
             }
 

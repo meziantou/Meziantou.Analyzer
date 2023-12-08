@@ -23,7 +23,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsFixer : CodeFixProvide
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Make constructor protected";
@@ -40,7 +40,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsFixer : CodeFixProvide
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var ctorSyntax = (ConstructorDeclarationSyntax)nodeToFix;
-        if (ctorSyntax == null)
+        if (ctorSyntax is null)
             return document;
 
         var modifiers = ctorSyntax.Modifiers;

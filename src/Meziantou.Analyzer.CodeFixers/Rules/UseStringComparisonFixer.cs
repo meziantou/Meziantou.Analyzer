@@ -24,7 +24,7 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
         // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
         // get the innermost node for ties.
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         AddCodeFix(nameof(StringComparison.Ordinal));
@@ -49,7 +49,7 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
-        if (invocationExpression == null)
+        if (invocationExpression is null)
             return document;
 
         var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");

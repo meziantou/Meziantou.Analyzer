@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AwaitTaskBeforeDisposingResources,
         title: "Await task before disposing of resources",
         messageFormat: "Await task before disposing of resources",
@@ -20,7 +20,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         description: "Await the task before the end of the enclosing using block.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AwaitTaskBeforeDisposingResources));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -36,7 +36,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly AwaitableTypes _awaitableTypes = new AwaitableTypes(compilation);
+        private readonly AwaitableTypes _awaitableTypes = new(compilation);
 
         public INamedTypeSymbol? TaskSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
         public INamedTypeSymbol? TaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
@@ -61,7 +61,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             if (!NeedAwait(returnedValue))
                 return;
 
-            context.ReportDiagnostic(s_rule, op);
+            context.ReportDiagnostic(Rule, op);
         }
 
         private static bool IsInUsingOperation(IOperation operation)
@@ -85,7 +85,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                 operation = conversion.Operand;
             }
 
-            if (operation == null)
+            if (operation is null)
                 return false;
 
             if (operation.Kind == OperationKind.DefaultValue)
@@ -109,7 +109,9 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                 var invocation = (IInvocationOperation)operation;
                 if (invocation.TargetMethod.Name is nameof(Task.FromResult) or nameof(Task.FromCanceled) or nameof(Task.FromException) &&
                     invocation.TargetMethod.ContainingType.IsEqualToAny(TaskSymbol, ValueTaskSymbol))
+                {
                     return false;
+                }
             }
 
             if (operation.Kind == OperationKind.ObjectCreation)
@@ -118,8 +120,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                 if (create.Type is not null)
                 {
                     // new ValueTask()
-                    if (create.Type.OriginalDefinition.IsEqualTo(ValueTaskSymbol) &&
-                        create.Arguments.Length == 0)
+                    if (create.Type.OriginalDefinition.IsEqualTo(ValueTaskSymbol) && create.Arguments.Length == 0)
                         return false;
 
                     // new ValueTask<T>(T value)
@@ -127,7 +128,9 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                         create.Arguments.Length == 1 &&
                         create.Arguments[0].Parameter is { } firstParameter &&
                         firstParameter.Type.IsEqualTo(((INamedTypeSymbol?)create.Type)?.TypeArguments[0]))
+                    {
                         return false;
+                    }
                 }
             }
 

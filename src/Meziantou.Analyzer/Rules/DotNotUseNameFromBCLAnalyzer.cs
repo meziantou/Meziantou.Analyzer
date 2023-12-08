@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DotNotUseNameFromBCL,
         title: "Do not create a type with a name from the BCL",
         messageFormat: "Type '{0}' exists in namespace '{1}'",
@@ -26,7 +26,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
     private static Dictionary<string, List<string>>? s_types;
     private static Dictionary<string, List<string>>? s_typesPreview;
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -42,7 +42,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
-        if (symbol.ContainingType != null)
+        if (symbol.ContainingType is not null)
             return; // Do not consider nested types
 
         if (!symbol.IsVisibleOutsideOfAssembly())
@@ -60,7 +60,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
             {
                 if (Regex.IsMatch(ns, regex, RegexOptions.None, Timeout.InfiniteTimeSpan))
                 {
-                    context.ReportDiagnostic(s_rule, symbol, symbol.MetadataName, ns);
+                    context.ReportDiagnostic(Rule, symbol, symbol.MetadataName, ns);
                     return;
                 }
             }
@@ -77,8 +77,8 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         while (sr.ReadLine() is { } line)
         {
             var index = line.LastIndexOf('.');
-            var ns = line.Substring(0, index);
-            var name = line.Substring(index + 1);
+            var ns = line[..index];
+            var name = line[(index + 1)..];
 
             if (!types.TryGetValue(name, out var list))
             {

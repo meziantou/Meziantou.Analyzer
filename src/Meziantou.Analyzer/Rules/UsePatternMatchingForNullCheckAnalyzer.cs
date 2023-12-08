@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UsePatternMatchingForNullCheckAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_ruleEqual = new(
+    private static readonly DiagnosticDescriptor RuleEqual = new(
         RuleIdentifiers.UsePatternMatchingForNullEquality,
         title: "Use pattern matching instead of equality operators",
         messageFormat: "Use pattern matching instead of equality operators",
@@ -18,7 +18,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UsePatternMatchingForNullEquality));
 
-    private static readonly DiagnosticDescriptor s_ruleNotEqual = new(
+    private static readonly DiagnosticDescriptor RuleNotEqual = new(
         RuleIdentifiers.UsePatternMatchingForNullCheck,
         title: "Use pattern matching instead of inequality operators",
         messageFormat: "Use pattern matching instead of inequality operators",
@@ -28,7 +28,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UsePatternMatchingForNullCheck));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_ruleEqual, s_ruleNotEqual);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleEqual, RuleNotEqual);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -46,7 +46,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzer : DiagnosticAnalyzer
             var rightIfNull = IsNull(operation.RightOperand);
             if (leftIfNull ^ rightIfNull)
             {
-                context.ReportDiagnostic(operation.OperatorKind is BinaryOperatorKind.Equals ? s_ruleEqual : s_ruleNotEqual, operation);
+                context.ReportDiagnostic(operation.OperatorKind is BinaryOperatorKind.Equals ? RuleEqual : RuleNotEqual, operation);
             }
         }
     }

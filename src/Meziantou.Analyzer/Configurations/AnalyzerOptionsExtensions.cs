@@ -56,7 +56,7 @@ public static class AnalyzerOptionsExtensions
         var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
         if (configuration.TryGetValue(key, out var value))
         {
-            if (value != null && Enum.TryParse<ReportDiagnostic>(value, ignoreCase: true, out var result))
+            if (value is not null && Enum.TryParse<ReportDiagnostic>(value, ignoreCase: true, out var result))
                 return result;
         }
 
@@ -69,7 +69,7 @@ public static class AnalyzerOptionsExtensions
         foreach (var location in symbol.Locations)
         {
             var syntaxTree = location.SourceTree;
-            if (syntaxTree != null && options.TryGetConfigurationValue(syntaxTree, key, out var str))
+            if (syntaxTree is not null && options.TryGetConfigurationValue(syntaxTree, key, out var str))
                 return str;
         }
 
@@ -81,7 +81,7 @@ public static class AnalyzerOptionsExtensions
         foreach (var location in symbol.Locations)
         {
             var syntaxTree = location.SourceTree;
-            if (syntaxTree != null && options.TryGetConfigurationValue(syntaxTree, key, out var str))
+            if (syntaxTree is not null && options.TryGetConfigurationValue(syntaxTree, key, out var str))
                 return ChangeType(str, defaultValue);
         }
 
@@ -106,7 +106,7 @@ public static class AnalyzerOptionsExtensions
 
     private static bool ChangeType(string value, bool defaultValue)
     {
-        if (value != null && bool.TryParse(value, out var result))
+        if (value is not null && bool.TryParse(value, out var result))
             return result;
 
         return defaultValue;
@@ -114,7 +114,7 @@ public static class AnalyzerOptionsExtensions
 
     private static bool? ChangeType(string value, bool? defaultValue)
     {
-        if (value != null && bool.TryParse(value, out var result))
+        if (value is not null && bool.TryParse(value, out var result))
             return result;
 
         return defaultValue;
@@ -122,7 +122,7 @@ public static class AnalyzerOptionsExtensions
 
     private static int ChangeType(string value, int defaultValue)
     {
-        if (value != null && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+        if (value is not null && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
             return result;
 
         return defaultValue;

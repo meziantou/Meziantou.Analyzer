@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotOverwriteRazorComponentParameterValue,
         title: "Do not overwrite parameter value",
         messageFormat: "Do not overwrite parameter value",
@@ -18,7 +18,7 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotOverwriteRazorComponentParameterValue));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -45,7 +45,7 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
             IDisposable_DisposeMethodSymbol = compilation.GetBestTypeByMetadataName("System.IDisposable")?.GetMembers("Dispose").SingleOrDefaultIfMultiple() as IMethodSymbol;
             IAsyncDisposable_DisposeAsyncMethodSymbol = compilation.GetBestTypeByMetadataName("System.IAsyncDisposable")?.GetMembers("DisposeAsync").SingleOrDefaultIfMultiple() as IMethodSymbol;
 
-            if (ComponentBaseSymbol != null)
+            if (ComponentBaseSymbol is not null)
             {
                 OnInitializedMethodSymbol = ComponentBaseSymbol.GetMembers("OnInitialized").SingleOrDefaultIfMultiple() as IMethodSymbol;
                 OnInitializedAsyncMethodSymbol = ComponentBaseSymbol.GetMembers("OnInitializedAsync").SingleOrDefaultIfMultiple() as IMethodSymbol;
@@ -63,7 +63,7 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
         public IMethodSymbol? IDisposable_DisposeMethodSymbol { get; }
         public IMethodSymbol? IAsyncDisposable_DisposeAsyncMethodSymbol { get; }
 
-        public bool IsValid => ComponentBaseSymbol != null && ParameterAttributeSymbol != null;
+        public bool IsValid => ComponentBaseSymbol is not null && ParameterAttributeSymbol is not null;
 
         internal void OperationBlockStart(OperationBlockStartAnalysisContext context)
         {
@@ -78,8 +78,8 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
                 if (methodSymbol.Override(OnInitializedMethodSymbol) ||
                     methodSymbol.Override(OnInitializedAsyncMethodSymbol) ||
                     methodSymbol.Override(SetParametersAsyncMethodSymbol) ||
-                    (IDisposable_DisposeMethodSymbol != null && methodSymbol.GetImplementingInterfaceSymbol().IsEqualTo(IDisposable_DisposeMethodSymbol)) ||
-                    (IAsyncDisposable_DisposeAsyncMethodSymbol != null && methodSymbol.GetImplementingInterfaceSymbol().IsEqualTo(IAsyncDisposable_DisposeAsyncMethodSymbol)))
+                    (IDisposable_DisposeMethodSymbol is not null && methodSymbol.GetImplementingInterfaceSymbol().IsEqualTo(IDisposable_DisposeMethodSymbol)) ||
+                    (IAsyncDisposable_DisposeAsyncMethodSymbol is not null && methodSymbol.GetImplementingInterfaceSymbol().IsEqualTo(IAsyncDisposable_DisposeAsyncMethodSymbol)))
                 {
                     return;
                 }
@@ -102,7 +102,7 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
             if (!property.Property.HasAttribute(ParameterAttributeSymbol) && !property.Property.HasAttribute(CascadingParameterAttributeSymbol))
                 return;
 
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

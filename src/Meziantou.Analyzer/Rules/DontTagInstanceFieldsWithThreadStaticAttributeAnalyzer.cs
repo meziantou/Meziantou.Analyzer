@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DontTagInstanceFieldsWithThreadStaticAttribute,
         title: "Do not tag instance fields with ThreadStaticAttribute",
         messageFormat: "Do not tag instance fields with ThreadStaticAttribute",
@@ -17,7 +17,7 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : Dia
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DontTagInstanceFieldsWithThreadStaticAttribute));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -35,7 +35,7 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : Dia
 
         if (field.HasAttribute(context.Compilation.GetBestTypeByMetadataName("System.ThreadStaticAttribute")))
         {
-            context.ReportDiagnostic(s_rule, field);
+            context.ReportDiagnostic(Rule, field);
         }
     }
 }

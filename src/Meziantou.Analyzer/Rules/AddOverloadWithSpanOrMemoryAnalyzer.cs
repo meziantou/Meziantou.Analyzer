@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AddOverloadWithSpanOrMemory,
         title: "Consider adding an overload with a Span<T> or Memory<T>",
         messageFormat: "Consider adding an overload with a Span<T> or Memory<T>",
@@ -18,7 +18,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AddOverloadWithSpanOrMemory));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -50,7 +50,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
                 return;
         }
 
-        context.ReportDiagnostic(s_rule, method);
+        context.ReportDiagnostic(Rule, method);
     }
 
     private static bool IsCandidateForSpanOrMemory(IParameterSymbol param)

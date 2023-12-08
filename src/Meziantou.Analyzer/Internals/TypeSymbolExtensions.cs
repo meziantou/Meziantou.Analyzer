@@ -28,11 +28,11 @@ internal static class TypeSymbolExtensions
 
     public static bool InheritsFrom(this ITypeSymbol classSymbol, ITypeSymbol? baseClassType)
     {
-        if (baseClassType == null)
+        if (baseClassType is null)
             return false;
 
         var baseType = classSymbol.BaseType;
-        while (baseType != null)
+        while (baseType is not null)
         {
             if (baseClassType.IsEqualTo(baseType))
                 return true;
@@ -45,7 +45,7 @@ internal static class TypeSymbolExtensions
 
     public static bool Implements(this ITypeSymbol classSymbol, ITypeSymbol? interfaceType)
     {
-        if (interfaceType == null)
+        if (interfaceType is null)
             return false;
 
         return classSymbol.AllInterfaces.Any(i => interfaceType.IsEqualTo(i));
@@ -53,7 +53,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsOrImplements(this ITypeSymbol symbol, ITypeSymbol? interfaceType)
     {
-        if (interfaceType == null)
+        if (interfaceType is null)
             return false;
 
         return GetAllInterfacesIncludingThis(symbol).Any(i => interfaceType.IsEqualTo(i));
@@ -61,7 +61,7 @@ internal static class TypeSymbolExtensions
 
     public static AttributeData? GetAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
     {
-        if (attributeType == null)
+        if (attributeType is null)
             return null;
 
         if (attributeType.IsSealed)
@@ -89,12 +89,12 @@ internal static class TypeSymbolExtensions
 
     public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
     {
-        return GetAttribute(symbol, attributeType, inherits) != null;
+        return GetAttribute(symbol, attributeType, inherits) is not null;
     }
 
     public static bool IsOrInheritFrom(this ITypeSymbol symbol, ITypeSymbol? expectedType)
     {
-        if (expectedType == null)
+        if (expectedType is null)
             return false;
 
         return symbol.IsEqualTo(expectedType) || symbol.InheritsFrom(expectedType);
@@ -102,7 +102,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsEqualToAny(this ITypeSymbol? symbol, params ITypeSymbol?[]? expectedTypes)
     {
-        if (symbol == null || expectedTypes == null)
+        if (symbol is null || expectedTypes is null)
             return false;
 
         return expectedTypes.Any(t => t.IsEqualTo(symbol));
@@ -110,7 +110,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         if (expectedType1 is not null && symbol.IsEqualTo(expectedType1))
@@ -121,7 +121,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         if (expectedType1 is not null && symbol.IsEqualTo(expectedType1))
@@ -135,7 +135,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2, ITypeSymbol? expectedType3)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         if (expectedType1 is not null && symbol.IsEqualTo(expectedType1))
@@ -152,7 +152,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsObject(this ITypeSymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         return symbol.SpecialType == SpecialType.System_Object;
@@ -160,7 +160,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsString(this ITypeSymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         return symbol.SpecialType == SpecialType.System_String;
@@ -168,7 +168,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsChar(this ITypeSymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         return symbol.SpecialType == SpecialType.System_Char;
@@ -176,7 +176,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsInt32(this ITypeSymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         return symbol.SpecialType == SpecialType.System_Int32;
@@ -184,7 +184,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsBoolean(this ITypeSymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         return symbol.SpecialType == SpecialType.System_Boolean;
@@ -192,7 +192,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsDateTime(this ITypeSymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         return symbol.SpecialType == SpecialType.System_DateTime;
@@ -200,7 +200,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsEnumeration([NotNullWhen(returnValue: true)] this ITypeSymbol? symbol)
     {
-        return symbol != null && GetEnumerationType(symbol) != null;
+        return symbol is not null && GetEnumerationType(symbol) is not null;
     }
 
     public static INamedTypeSymbol? GetEnumerationType(this ITypeSymbol? symbol)
@@ -210,7 +210,7 @@ internal static class TypeSymbolExtensions
 
     public static bool IsNumberType(this ITypeSymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         switch (symbol.SpecialType)
@@ -239,7 +239,7 @@ internal static class TypeSymbolExtensions
         foreach (var attribute in attributes)
         {
             var type = attribute.AttributeClass;
-            while (type != null)
+            while (type is not null)
             {
                 var ns = type.ContainingNamespace;
                 if (ns.IsNamespace(Microsoft_VisualStudio_TestTools_UnitTesting) ||

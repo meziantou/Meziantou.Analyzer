@@ -25,7 +25,7 @@ public sealed class ParameterAttributeForRazorComponentFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         context.RegisterCodeFix(CodeAction.Create("Add [Parameter]", ct => AddAttribute(context.Document, nodeToFix, ct), equivalenceKey: "Add [Parameter]"), context.Diagnostics);

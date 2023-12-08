@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEvents,
         title: "Anonymous delegates should not be used to unsubscribe from Events",
         messageFormat: "Anonymous delegates should not be used to unsubscribe from Events",
@@ -18,7 +18,7 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEvents));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -40,11 +40,11 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
             handler = op.Operand;
         }
 
-        if (handler != null && handler is IDelegateCreationOperation delegateCreation)
+        if (handler is not null && handler is IDelegateCreationOperation delegateCreation)
         {
             if (delegateCreation.Target is IAnonymousFunctionOperation)
             {
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(Rule, operation);
             }
         }
     }

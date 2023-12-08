@@ -11,7 +11,7 @@ internal sealed class OverloadFinder(Compilation compilation)
         IMethodSymbol methodSymbol,
         params ITypeSymbol[] additionalParameterTypes)
     {
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, additionalParameterTypes) != null;
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, additionalParameterTypes) is not null;
     }
 
     public bool HasOverloadWithAdditionalParameterOfType(
@@ -19,10 +19,10 @@ internal sealed class OverloadFinder(Compilation compilation)
         IOperation currentOperation,
         params ITypeSymbol[] additionalParameterTypes)
     {
-        if (currentOperation.SemanticModel == null)
+        if (currentOperation.SemanticModel is null)
             return false;
 
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: currentOperation.Syntax, includeObsoleteMethods: false, additionalParameterTypes) != null;
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: currentOperation.Syntax, includeObsoleteMethods: false, additionalParameterTypes) is not null;
     }
 
     private IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
@@ -46,7 +46,7 @@ internal sealed class OverloadFinder(Compilation compilation)
         bool includeObsoleteMethods,
         params ITypeSymbol[] additionalParameterTypes)
     {
-        if (operation.SemanticModel == null)
+        if (operation.SemanticModel is null)
             return null;
 
         return FindOverloadWithAdditionalParameterOfType(methodSymbol, operation.Syntax, includeObsoleteMethods, additionalParameterTypes);
@@ -58,15 +58,15 @@ internal sealed class OverloadFinder(Compilation compilation)
         bool includeObsoleteMethods,
         params ITypeSymbol[] additionalParameterTypes)
     {
-        if (additionalParameterTypes == null)
+        if (additionalParameterTypes is null)
             return null;
 
-        additionalParameterTypes = additionalParameterTypes.Where(type => type != null).ToArray();
+        additionalParameterTypes = additionalParameterTypes.Where(type => type is not null).ToArray();
         if (additionalParameterTypes.Length == 0)
             return null;
 
         ImmutableArray<ISymbol> members;
-        if (syntaxNode != null)
+        if (syntaxNode is not null)
         {
             var semanticModel = compilation.GetSemanticModel(syntaxNode.SyntaxTree);
             members = semanticModel.LookupSymbols(syntaxNode.GetLocation().SourceSpan.End, methodSymbol.ContainingType, methodSymbol.Name, includeReducedExtensionMethods: true);
@@ -172,7 +172,7 @@ internal sealed class OverloadFinder(Compilation compilation)
 
     private bool IsObsolete(IMethodSymbol methodSymbol)
     {
-        if (_obsoleteSymbol == null)
+        if (_obsoleteSymbol is null)
             return false;
 
         return methodSymbol.HasAttribute(_obsoleteSymbol);

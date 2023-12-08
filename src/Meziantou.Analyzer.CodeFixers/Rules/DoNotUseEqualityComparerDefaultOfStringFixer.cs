@@ -22,7 +22,7 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringFixer : CodeFixProvid
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         RegisterCodeFix(nameof(StringComparer.Ordinal));

@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.JSRuntimeMustNotBeUsedInOnInitialized,
         title: "JSRuntime must not be used in OnInitialized or OnInitializedAsync",
         messageFormat: "{0} must not be used in OnInitialized or OnInitializedAsync",
@@ -18,7 +18,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.JSRuntimeMustNotBeUsedInOnInitialized));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -44,7 +44,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
             WebAssemblyJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.WebAssembly.WebAssemblyJSRuntime");
             WebViewJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.WebView.Services.WebViewJSRuntime");
             var componentBase = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
-            if (componentBase != null)
+            if (componentBase is not null)
             {
                 OnInitializedMethodSymbol = componentBase.GetMembers("OnInitialized").SingleOrDefaultIfMultiple();
                 OnInitializedAsyncMethodSymbol = componentBase.GetMembers("OnInitializedAsync").SingleOrDefaultIfMultiple();
@@ -63,13 +63,13 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
         {
             get
             {
-                if (WebAssemblyJSRuntimeSymbol != null)
+                if (WebAssemblyJSRuntimeSymbol is not null)
                     return false; // There is no issue in WebAssembly
                 
-                if (WebViewJSRuntimeSymbol != null)
+                if (WebViewJSRuntimeSymbol is not null)
                     return false; // There is no issue in WebView
 
-                return (IJSRuntimeSymbol != null || JSRuntimeSymbol != null || ProtectedBrowserStorageSymbol != null) && (OnInitializedMethodSymbol != null || OnInitializedAsyncMethodSymbol != null);
+                return (IJSRuntimeSymbol is not null || JSRuntimeSymbol is not null || ProtectedBrowserStorageSymbol is not null) && (OnInitializedMethodSymbol is not null || OnInitializedAsyncMethodSymbol is not null);
             }
         }
 
@@ -88,24 +88,24 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
         {
             var operation = (IInvocationOperation)context.Operation;
             var instance = operation.Instance;
-            if (instance == null)
+            if (instance is null)
             {
                 if (operation.TargetMethod.IsExtensionMethod && operation.Arguments.Length > 0)
                 {
                     instance = operation.Arguments[0].Value;
                 }
 
-                if (instance == null)
+                if (instance is null)
                     return;
             }
 
             var type = instance.GetActualType();
-            if (type == null)
+            if (type is null)
                 return;
 
             if (type.IsEqualTo(IJSRuntimeSymbol) || type.IsEqualTo(JSRuntimeSymbol) || type.IsOrInheritFrom(ProtectedBrowserStorageSymbol))
             {
-                context.ReportDiagnostic(s_rule, operation, type.Name);
+                context.ReportDiagnostic(Rule, operation, type.Name);
             }
         }
     }

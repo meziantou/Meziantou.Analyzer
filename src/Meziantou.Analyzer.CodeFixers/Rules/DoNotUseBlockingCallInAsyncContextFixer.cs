@@ -23,11 +23,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var properties = context.Diagnostics[0].Properties;
-        if (!properties.TryGetValue("Data", out var dataStr) || !Enum.TryParse<DoNotUseBlockingCallInAsyncContextData>(dataStr, out var data))
+        if (!properties.TryGetValue("Data", out var dataStr) || !Enum.TryParse<DoNotUseBlockingCallInAsyncContextData>(dataStr, ignoreCase: false, out var data))
             return;
 
         switch (data)
@@ -67,7 +67,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
 
             case DoNotUseBlockingCallInAsyncContextData.Overload:
                 {
-                    if (!properties.TryGetValue("MethodName", out var methodName) || methodName == null)
+                    if (!properties.TryGetValue("MethodName", out var methodName) || methodName is null)
                         return;
 
                     var codeAction = CodeAction.Create(
@@ -130,7 +130,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var expr = ((MemberAccessExpressionSyntax)nodeToFix).Expression;
-        if (expr == null)
+        if (expr is null)
             return document;
 
         var newExpression = generator.AwaitExpression(expr);
@@ -146,7 +146,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
 
         var invocation = (InvocationExpressionSyntax)nodeToFix;
         var expr = (invocation.Expression as MemberAccessExpressionSyntax)?.Expression;
-        if (expr == null)
+        if (expr is null)
             return document;
 
         var newExpression = generator.AwaitExpression(expr);
@@ -161,7 +161,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var taskSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (taskSymbol == null)
+        if (taskSymbol is null)
             return document;
 
         var invocation = (InvocationExpressionSyntax)nodeToFix;

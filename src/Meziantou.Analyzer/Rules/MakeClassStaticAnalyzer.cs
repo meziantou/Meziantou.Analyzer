@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MakeClassStatic,
         title: "Make class static",
         messageFormat: "Make class static",
@@ -21,7 +21,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeClassStatic));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -52,7 +52,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
 
         bool HasBaseClass()
         {
-            return symbol.BaseType != null && symbol.BaseType.SpecialType != SpecialType.System_Object;
+            return symbol.BaseType is not null && symbol.BaseType.SpecialType != SpecialType.System_Object;
         }
     }
 
@@ -77,7 +77,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
                         }
                     }
 
-                    if (symbol.BaseType != null)
+                    if (symbol.BaseType is not null)
                     {
                         AddCannotBeStaticType(symbol.BaseType);
                     }
@@ -106,7 +106,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         public void AnalyzeObjectCreation(OperationAnalysisContext context)
         {
             var operation = (IObjectCreationOperation)context.Operation;
-            if (operation.Constructor == null)
+            if (operation.Constructor is null)
                 return;
 
             AddCannotBeStaticType(operation.Constructor.ContainingType);
@@ -119,7 +119,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         public void AnalyzeArrayCreation(OperationAnalysisContext context)
         {
             var operation = (IArrayCreationOperation)context.Operation;
-            if (operation.Type != null)
+            if (operation.Type is not null)
             {
                 AddCannotBeStaticType(operation.Type);
             }
@@ -141,7 +141,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
                 if (_cannotBeStaticClasses.Contains(@class))
                     continue;
 
-                context.ReportDiagnostic(s_rule, @class);
+                context.ReportDiagnostic(Rule, @class);
             }
         }
 

@@ -1,6 +1,4 @@
-﻿#pragma warning disable CA1812
-#pragma warning disable CA1852
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -15,13 +13,13 @@ var packages = new[]
     "Microsoft.WindowsDesktop.App.Ref", // https://www.nuget.org/packages/Microsoft.WindowsDesktop.App.Ref
 };
 
-var cache = new SourceCacheContext();
+using var cache = new SourceCacheContext();
 var repository = Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json");
 var resource = await repository.GetResourceAsync<FindPackageByIdResource>();
 
 foreach (var includePreview in new[] { false, true })
 {
-    var types = new HashSet<string>();
+    var types = new HashSet<string>(StringComparer.Ordinal);
     foreach (var packageName in packages)
     {
         var versions = await resource.GetAllVersionsAsync(packageName, cache, NullLogger.Instance, CancellationToken.None);
@@ -58,7 +56,7 @@ foreach (var includePreview in new[] { false, true })
         }
     }
 
-    await File.WriteAllLinesAsync(Path.Combine(args.Length > 0 ? args[0] : "../../../../Meziantou.Analyzer/Resources/", includePreview ? "bcl-preview.txt" : "bcl.txt"), types.OrderBy(t => t));
+    await File.WriteAllLinesAsync(Path.Combine(args.Length > 0 ? args[0] : "../../../../Meziantou.Analyzer/Resources/", includePreview ? "bcl-preview.txt" : "bcl.txt"), types.OrderBy(t => t, StringComparer.Ordinal));
 }
 
 static MemoryStream CopyToMemoryStream(ZipArchiveEntry entry)

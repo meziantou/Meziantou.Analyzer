@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly string[] s_enumerableMethods =
+    private static readonly string[] EnumerableMethods =
     [
         "Contains",
         "Distinct",
@@ -30,7 +30,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         "Union",
     ];
 
-    private static readonly Dictionary<string, int> s_arityIndex = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, int> ArityIndex = new(StringComparer.Ordinal)
     {
         { "GroupBy", 1 },
         { "GroupJoin", 2 },
@@ -43,7 +43,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         { "ToLookup", 1 },
     };
 
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseStringComparer,
         title: "IEqualityComparer<string> or IComparer<string> is missing",
         messageFormat: "Use an overload that has a IEqualityComparer<string> or IComparer<string> parameter",
@@ -53,7 +53,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparer));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -85,13 +85,13 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 return;
 
             var method = operation.Constructor;
-            if (method == null)
+            if (method is null)
                 return;
 
-            if ((EqualityComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, EqualityComparerStringType)) ||
-                (ComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, ComparerStringType)))
+            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, EqualityComparerStringType)) ||
+                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, ComparerStringType)))
             {
-                ctx.ReportDiagnostic(s_rule, operation);
+                ctx.ReportDiagnostic(Rule, operation);
             }
         }
 
@@ -109,23 +109,23 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             // Most ISet implementation already configured the IEqualityComparer in this constructor,
             // so it should be ok to skip method calls on those types.
             // A concrete use-case is HashSet<string>.Contains which has an extension method IEnumerable.Contains(value, comparer)
-            if (ISetType != null && method.ContainingType.IsOrImplements(ISetType))
+            if (ISetType is not null && method.ContainingType.IsOrImplements(ISetType))
                 return;
 
-            if (operation.Instance != null && operation.Instance.GetActualType()?.IsOrImplements(ISetType) == true)
+            if (operation.Instance is not null && operation.Instance.GetActualType()?.IsOrImplements(ISetType) == true)
                 return;
 
-            if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, s_rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
+            if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
                 return;
 
-            if ((EqualityComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, EqualityComparerStringType)) ||
-                (ComparerStringType != null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, ComparerStringType)))
+            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, EqualityComparerStringType)) ||
+                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, ComparerStringType)))
             {
-                ctx.ReportDiagnostic(s_rule, operation);
+                ctx.ReportDiagnostic(Rule, operation);
                 return;
             }
 
-            if (EnumerableType != null)
+            if (EnumerableType is not null)
             {
                 if (!method.ContainingType.IsEqualTo(EnumerableType))
                     return;
@@ -135,7 +135,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
                 if (method.Arity == 1)
                 {
-                    if (!s_enumerableMethods.Contains(method.Name, StringComparer.Ordinal))
+                    if (!EnumerableMethods.Contains(method.Name, StringComparer.Ordinal))
                         return;
 
                     if (!method.TypeArguments[0].IsString())
@@ -143,7 +143,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (!s_arityIndex.TryGetValue(method.Name, out var arityIndex))
+                    if (!ArityIndex.TryGetValue(method.Name, out var arityIndex))
                         return;
 
                     if (arityIndex >= method.Arity)
@@ -155,7 +155,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
                 if (!HasEqualityComparerArgument(operation.Arguments))
                 {
-                    ctx.ReportDiagnostic(s_rule, operation);
+                    ctx.ReportDiagnostic(Rule, operation);
                 }
             }
         }
@@ -177,7 +177,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             foreach (var argument in arguments)
             {
                 var argumentType = argument.Value.Type;
-                if (argumentType == null)
+                if (argumentType is null)
                     continue;
 
                 if (argumentType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i)))
@@ -190,11 +190,11 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
         {
             var equalityComparerInterfaceType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
-            if (equalityComparerInterfaceType == null)
+            if (equalityComparerInterfaceType is null)
                 return null;
 
             var stringType = compilation.GetSpecialType(SpecialType.System_String);
-            if (stringType == null)
+            if (stringType is null)
                 return null;
 
             return equalityComparerInterfaceType.Construct(stringType);
@@ -203,11 +203,11 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         private static INamedTypeSymbol? GetIComparerString(Compilation compilation)
         {
             var equalityComparerInterfaceType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
-            if (equalityComparerInterfaceType == null)
+            if (equalityComparerInterfaceType is null)
                 return null;
 
             var stringType = compilation.GetSpecialType(SpecialType.System_String);
-            if (stringType == null)
+            if (stringType is null)
                 return null;
 
             return equalityComparerInterfaceType.Construct(stringType);

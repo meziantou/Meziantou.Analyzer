@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.PrimaryConstructorParameterShouldBeReadOnly,
         title: "Primary constructor parameters should be readonly",
         messageFormat: "Primary constructor parameters should be readonly",
@@ -22,7 +22,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.PrimaryConstructorParameterShouldBeReadOnly));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -50,7 +50,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
 
         if (IsPrimaryConstructorParameter(target, context.CancellationToken))
         {
-            context.ReportDiagnostic(s_rule, target);
+            context.ReportDiagnostic(Rule, target);
         }
     }
 
@@ -64,13 +64,13 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
             {
                 if (IsPrimaryConstructorParameter(innerTarget, context.CancellationToken))
                 {
-                    context.ReportDiagnostic(s_rule, innerTarget);
+                    context.ReportDiagnostic(Rule, innerTarget);
                 }
             }
         }
         else if (IsPrimaryConstructorParameter(target, context.CancellationToken))
         {
-            context.ReportDiagnostic(s_rule, target);
+            context.ReportDiagnostic(Rule, target);
         }
     }
 

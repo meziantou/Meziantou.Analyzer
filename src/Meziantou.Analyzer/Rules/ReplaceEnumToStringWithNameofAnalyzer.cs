@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ReplaceEnumToStringWithNameof,
         title: "Replace constant Enum.ToString with nameof",
         messageFormat: "Replace constant Enum.ToString with nameof",
@@ -22,7 +22,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ReplaceEnumToStringWithNameof));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -45,7 +45,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         if (operation.Instance is not IMemberReferenceOperation expression)
             return;
 
-        if (expression.Member.ContainingType.EnumUnderlyingType == null)
+        if (expression.Member.ContainingType.EnumUnderlyingType is null)
             return;
 
         if (operation.Arguments.Length > 0)
@@ -62,7 +62,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        context.ReportDiagnostic(s_rule, operation);
+        context.ReportDiagnostic(Rule, operation);
     }
 
     private static void AnalyzeInterpolation(OperationAnalysisContext context)
@@ -71,7 +71,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         if (operation.Expression is not IMemberReferenceOperation expression)
             return;
 
-        if (expression.Member.ContainingType.EnumUnderlyingType == null)
+        if (expression.Member.ContainingType.EnumUnderlyingType is null)
             return;
 
         if (operation.FormatString is ILiteralOperation { ConstantValue: { HasValue: true, Value: var format } })
@@ -80,7 +80,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
                 return;
         }
 
-        context.ReportDiagnostic(s_rule, operation);
+        context.ReportDiagnostic(Rule, operation);
     }
 
 

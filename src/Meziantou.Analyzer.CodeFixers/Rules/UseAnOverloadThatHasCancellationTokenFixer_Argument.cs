@@ -24,7 +24,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         if (nodeToFix.IsKind(SyntaxKind.InvocationExpression))
@@ -32,13 +32,13 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
             if (!int.TryParse(context.Diagnostics[0].Properties["ParameterIndex"], NumberStyles.None, CultureInfo.InvariantCulture, out var parameterIndex))
                 return;
 
-            if (!context.Diagnostics[0].Properties.TryGetValue("ParameterName", out var parameterName) || parameterName == null)
+            if (!context.Diagnostics[0].Properties.TryGetValue("ParameterName", out var parameterName) || parameterName is null)
                 return;
 
             if (!context.Diagnostics[0].Properties.TryGetValue("ParameterIsEnumeratorCancellation", out var parameterIsEnumeratorCancellation) || !bool.TryParse(parameterIsEnumeratorCancellation, out var isEnumeratorCancellation))
                 return;
 
-            if (!context.Diagnostics[0].Properties.TryGetValue("CancellationTokens", out var cancellationTokens) || cancellationTokens == null)
+            if (!context.Diagnostics[0].Properties.TryGetValue("CancellationTokens", out var cancellationTokens) || cancellationTokens is null)
                 return;
 
             foreach (var cancellationToken in cancellationTokens.Split(','))
@@ -67,7 +67,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
             if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is IInvocationOperation invocation)
             {
                 // Check direct invocation parent
-                if (invocation?.Parent?.Parent is IInvocationOperation { TargetMethod.Name: "WithCancellation", Arguments: [{ }, { Value: var withCancellationArgument }] } parent)
+                if (invocation.Parent?.Parent is IInvocationOperation { TargetMethod.Name: "WithCancellation", Arguments: [{ }, { Value: var withCancellationArgument }] } parent)
                 {
                     if (withCancellationArgument.Syntax.IsEquivalentTo(cancellationTokenExpression))
                     {
@@ -89,7 +89,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
             newInvocation = nodeToFix.WithArgumentList(SyntaxFactory.ArgumentList(newArguments));
         }
 
-        if (parentNode != null)
+        if (parentNode is not null)
         {
             editor.ReplaceNode(parentNode, newInvocation);
         }

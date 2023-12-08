@@ -27,17 +27,17 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         RegisterCodeFix(nameof(StringComparison.Ordinal));
         RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel != null)
+        if (semanticModel is not null)
         {
             var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
-            if (type != null)
+            if (type is not null)
             {
                 if (type.GetMembers("EqualsOrdinal").Length > 0)
                 {
@@ -82,7 +82,7 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var operation = (IBinaryOperation?)semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
@@ -111,11 +111,11 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var operation = (IBinaryOperation?)semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
-        if (type == null)
+        if (type is null)
             return document;
 
         var newExpression = generator.InvocationExpression(

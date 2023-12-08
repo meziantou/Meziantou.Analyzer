@@ -26,7 +26,7 @@ public class OptimizeStartsWithFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Optimize arguments";
@@ -41,14 +41,14 @@ public class OptimizeStartsWithFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var operation = editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null && !nodeToFix.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.InvocationExpression))
+        if (operation is null && !nodeToFix.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.InvocationExpression))
         {
             var invocationNode = nodeToFix.AncestorsAndSelf().OfType<InvocationExpressionSyntax>().FirstOrDefault();
-            if (invocationNode == null)
+            if (invocationNode is null)
                 return document;
 
             operation = editor.SemanticModel.GetOperation(invocationNode, cancellationToken);
-            if (operation == null)
+            if (operation is null)
                 return document;
         }
 
@@ -82,7 +82,7 @@ public class OptimizeStartsWithFixer : CodeFixProvider
         {
             editor.ReplaceNode(argumentOperation.Value.Syntax, editor.Generator.LiteralExpression(argumentValue[0]));
         }
-        else if (invocation != null && invocation.TargetMethod.Name == "Replace" && invocation.Arguments.Length >= 2)
+        else if (invocation is not null && invocation.TargetMethod.Name == "Replace" && invocation.Arguments.Length >= 2)
         {
             for (var i = 0; i < 2; i++)
             {

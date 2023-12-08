@@ -24,7 +24,7 @@ public sealed class UseEventArgsEmptyFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         context.RegisterCodeFix(
@@ -41,7 +41,7 @@ public sealed class UseEventArgsEmptyFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var typeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.EventArgs");
-        if (typeSymbol == null)
+        if (typeSymbol is null)
             return context.Document;
 
         var newExpression = generator.MemberAccessExpression(generator.TypeExpression(typeSymbol), nameof(EventArgs.Empty));

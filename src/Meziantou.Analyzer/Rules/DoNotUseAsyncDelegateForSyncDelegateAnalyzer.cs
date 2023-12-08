@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseAsyncDelegateForSyncDelegate,
         title: "Avoid async void method for delegate",
         messageFormat: "Avoid async void method for delegate",
@@ -18,7 +18,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzer : DiagnosticAna
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseAsyncDelegateForSyncDelegate));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -42,9 +42,9 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzer : DiagnosticAna
             return;
         }
 
-        if (operation.Target is IAnonymousFunctionOperation { Symbol: { IsAsync: true } })
+        if (operation.Target is IAnonymousFunctionOperation { Symbol.IsAsync: true })
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

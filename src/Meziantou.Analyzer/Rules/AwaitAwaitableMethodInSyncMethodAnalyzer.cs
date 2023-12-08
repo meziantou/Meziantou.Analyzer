@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AwaitAwaitableMethodInSyncMethod,
         title: "Observe result of async calls",
         messageFormat: "Observe result of async calls",
@@ -18,7 +18,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
         isEnabledByDefault: true,
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AwaitAwaitableMethodInSyncMethod));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -59,7 +59,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             if (!awaitableTypes.IsAwaitable(operation.Type, semanticModel, position))
                 return;
 
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotCallVirtualMethodInConstructor,
         title: "Do not call overridable members in constructor",
         messageFormat: "Do not call overridable members in constructor",
@@ -19,7 +19,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotCallVirtualMethodInConstructor));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -50,7 +50,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
         {
             if (IsOverridable(eventReference.Member) && IsCurrentInstanceMethod(eventReference.Instance) && !IsInDelegate(operation))
             {
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(Rule, operation);
             }
         }
     }
@@ -71,7 +71,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
             var children = operation.GetChildOperations().Take(2).ToList();
             if (children.Count == 1 && IsCurrentInstanceMethod(children[0]))
             {
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(Rule, operation);
             }
         }
     }
@@ -81,7 +81,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
         var operation = (IInvocationOperation)context.Operation;
         if (IsOverridable(operation.TargetMethod) && IsCurrentInstanceMethod(operation.Instance) && !IsInDelegate(operation))
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 
@@ -92,7 +92,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
 
     private static bool IsCurrentInstanceMethod(IOperation? operation)
     {
-        if (operation == null)
+        if (operation is null)
             return false;
 
         return operation is IInstanceReferenceOperation i && i.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance;
@@ -100,7 +100,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
 
     private static bool IsInDelegate(IOperation? operation)
     {
-        while (operation != null)
+        while (operation is not null)
         {
             if (operation.Kind is OperationKind.DelegateCreation)
                 return true;

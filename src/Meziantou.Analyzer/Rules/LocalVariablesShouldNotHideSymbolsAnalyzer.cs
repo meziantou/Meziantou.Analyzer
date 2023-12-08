@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.LocalVariablesShouldNotHideSymbols,
         title: "Local variables should not hide other symbols",
         messageFormat: "Local variable '{0}' should not hide {1}",
@@ -22,7 +22,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LocalVariablesShouldNotHideSymbols));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -40,7 +40,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
             return;
 
         var containingType = localSymbol.ContainingType;
-        if (containingType == null)
+        if (containingType is null)
             return;
 
         foreach (var member in GetSymbols(containingType, localSymbol.Name, context.CancellationToken))
@@ -71,11 +71,11 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         {
             if (operation.Syntax is VariableDeclaratorSyntax declarator)
             {
-                context.ReportDiagnostic(s_rule, declarator.Identifier, localSymbol.Name, type);
+                context.ReportDiagnostic(Rule, declarator.Identifier, localSymbol.Name, type);
             }
             else
             {
-                context.ReportDiagnostic(s_rule, operation, localSymbol.Name, type);
+                context.ReportDiagnostic(Rule, operation, localSymbol.Name, type);
             }
         }
     }
@@ -107,7 +107,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         }
 #endif
 
-        while (type != null)
+        while (type is not null)
         {
             var members = type.GetMembers(name);
             foreach (var member in members)

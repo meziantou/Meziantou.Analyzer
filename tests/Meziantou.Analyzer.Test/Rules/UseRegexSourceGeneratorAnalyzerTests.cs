@@ -3,24 +3,24 @@ using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
 
-namespace Meziantou.Analyzer.Test.Rules
-{
-    public class UseRegexSourceGeneratorAnalyzerTests
-    {
-        private static ProjectBuilder CreateProjectBuilder()
-        {
-            return new ProjectBuilder()
-                .WithTargetFramework(TargetFramework.Net7_0)
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-                .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-                .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-                .WithNoFixCompilation(); // requires the regex source generator
-        }
+namespace Meziantou.Analyzer.Test.Rules;
 
-        [Fact]
-        public async Task NewRegex_Options_Timeout()
-        {
-            const string SourceCode = @"
+public class UseRegexSourceGeneratorAnalyzerTests
+{
+    private static ProjectBuilder CreateProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation(); // requires the regex source generator
+    }
+
+    [Fact]
+    public async Task NewRegex_Options_Timeout()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -30,7 +30,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -43,16 +43,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NewRegex_Options()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task NewRegex_Options()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -62,7 +62,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -75,16 +75,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NewRegex()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task NewRegex()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -94,7 +94,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -107,16 +107,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task RegexIsMatch_Options_Timeout()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task RegexIsMatch_Options_Timeout()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -126,7 +126,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -139,16 +139,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task RegexIsMatch_Options()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task RegexIsMatch_Options()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -158,7 +158,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -171,16 +171,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task RegexIsMatch()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task RegexIsMatch()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -190,7 +190,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -203,16 +203,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task RegexReplace_Options_Timeout()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task RegexReplace_Options_Timeout()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -222,7 +222,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -235,16 +235,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task RegexReplace_Options()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task RegexReplace_Options()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -254,7 +254,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -267,16 +267,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task RegexReplace()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task RegexReplace()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -286,7 +286,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -299,16 +299,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task RegexReplace_MatchEvaluator()
-        {
-            const string SourceCode = @"
+    [Fact]
+    public async Task RegexReplace_MatchEvaluator()
+    {
+        const string SourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -318,7 +318,7 @@ class Test
 }
 ";
 
-            const string CodeFix = @"
+        const string CodeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -331,26 +331,26 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(SourceCode)
-                  .ShouldFixCodeWith(CodeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 
-        [Theory]
-        [InlineData("TimeSpan.FromMilliseconds(10)", "10")]
-        [InlineData("TimeSpan.FromSeconds(10.5)", "10500")]
-        [InlineData("TimeSpan.FromMinutes(1)", "60000")]
-        [InlineData("TimeSpan.FromHours(1)", "3600000")]
-        [InlineData("TimeSpan.FromDays(1)", "86400000")]
-        [InlineData("TimeSpan.Zero", "0")]
-        [InlineData("new TimeSpan(10000)", "1")]
-        [InlineData("new TimeSpan(1, 2, 3)", "3723000")]
-        [InlineData("new TimeSpan(1, 2, 3, 4)", "93784000")]
-        [InlineData("new TimeSpan(1, 2, 3, 4, 5)", "93784005")]
-        public async Task Timeout(string timeout, string milliseconds)
-        {
-            var sourceCode = @"
+    [Theory]
+    [InlineData("TimeSpan.FromMilliseconds(10)", "10")]
+    [InlineData("TimeSpan.FromSeconds(10.5)", "10500")]
+    [InlineData("TimeSpan.FromMinutes(1)", "60000")]
+    [InlineData("TimeSpan.FromHours(1)", "3600000")]
+    [InlineData("TimeSpan.FromDays(1)", "86400000")]
+    [InlineData("TimeSpan.Zero", "0")]
+    [InlineData("new TimeSpan(10000)", "1")]
+    [InlineData("new TimeSpan(1, 2, 3)", "3723000")]
+    [InlineData("new TimeSpan(1, 2, 3, 4)", "93784000")]
+    [InlineData("new TimeSpan(1, 2, 3, 4, 5)", "93784005")]
+    public async Task Timeout(string timeout, string milliseconds)
+    {
+        var sourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -360,7 +360,7 @@ class Test
 }
 ";
 
-            var codeFix = @"
+        var codeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -373,18 +373,18 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ShouldFixCodeWith(codeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(codeFix)
+              .ValidateAsync();
+    }
 
-        [Theory]
-        [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
-        [InlineData("Regex.InfiniteMatchTimeout")]
-        public async Task New_Timeout_Infinite(string timeout)
-        {
-            var sourceCode = @"
+    [Theory]
+    [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
+    [InlineData("Regex.InfiniteMatchTimeout")]
+    public async Task New_Timeout_Infinite(string timeout)
+    {
+        var sourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -394,7 +394,7 @@ class Test
 }
 ";
 
-            var codeFix = @"
+        var codeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -407,18 +407,18 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ShouldFixCodeWith(codeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(codeFix)
+              .ValidateAsync();
+    }
 
-        [Theory]
-        [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
-        [InlineData("Regex.InfiniteMatchTimeout")]
-        public async Task Static_Timeout_Infinite(string timeout)
-        {
-            var sourceCode = @"
+    [Theory]
+    [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
+    [InlineData("Regex.InfiniteMatchTimeout")]
+    public async Task Static_Timeout_Infinite(string timeout)
+    {
+        var sourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -428,7 +428,7 @@ class Test
 }
 ";
 
-            var codeFix = @"
+        var codeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -441,16 +441,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ShouldFixCodeWith(codeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(codeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task GenerateUniqueMethodName()
-        {
-            var sourceCode = @"
+    [Fact]
+    public async Task GenerateUniqueMethodName()
+    {
+        var sourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -462,7 +462,7 @@ class Test
 }
 ";
 
-            var codeFix = @"
+        var codeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -476,16 +476,16 @@ partial class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ShouldFixCodeWith(codeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(codeFix)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NonConstantPattern()
-        {
-            var sourceCode = @"
+    [Fact]
+    public async Task NonConstantPattern()
+    {
+        var sourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -495,15 +495,15 @@ class Test
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 
-        [Fact]
-        public async Task NestedTypeShouldAddPartialToAllAncestorTypes()
-        {
-            var sourceCode = @"
+    [Fact]
+    public async Task NestedTypeShouldAddPartialToAllAncestorTypes()
+    {
+        var sourceCode = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -519,7 +519,7 @@ class Sample
 }
 ";
 
-            var codeFix = @"
+        var codeFix = @"
 using System;
 using System.Text.RegularExpressions;
 
@@ -538,10 +538,9 @@ partial class Sample
 }
 ";
 
-            await CreateProjectBuilder()
-                  .WithSourceCode(sourceCode)
-                  .ShouldFixCodeWith(codeFix)
-                  .ValidateAsync();
-        }
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(codeFix)
+              .ValidateAsync();
     }
 }

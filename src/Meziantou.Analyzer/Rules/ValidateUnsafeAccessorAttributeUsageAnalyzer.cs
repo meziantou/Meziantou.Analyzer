@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_ruleInvalidSignature = new(
+    private static readonly DiagnosticDescriptor RuleInvalidSignature = new(
         RuleIdentifiers.UnsafeAccessorAttribute_InvalidSignature,
         title: "Signature for [UnsafeAccessorAttribute] method is not valid",
         messageFormat: "Signature for [UnsafeAccessorAttribute] method is not valid: {0}",
@@ -18,7 +18,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UnsafeAccessorAttribute_InvalidSignature));
 
-    private static readonly DiagnosticDescriptor s_ruleNameMustBeSet = new(
+    private static readonly DiagnosticDescriptor RuleNameMustBeSet = new(
         RuleIdentifiers.UnsafeAccessorAttribute_NameMustBeSet,
         title: "Name must be set explicitly on local functions",
         messageFormat: "Name must be set explicitly on local function",
@@ -28,7 +28,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UnsafeAccessorAttribute_NameMustBeSet));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_ruleInvalidSignature, s_ruleNameMustBeSet);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleInvalidSignature, RuleNameMustBeSet);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -74,21 +74,21 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
 
         if (!methodSymbol.IsExtern)
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleInvalidSignature, methodSymbol, messageArgs: ["method must be extern static"]);
+            diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["method must be extern static"]);
             return;
         }
 
         var explicitName = GetName(attribute);
         if (explicitName is null && methodSymbol.MethodKind is MethodKind.LocalFunction)
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleNameMustBeSet, methodSymbol);
+            diagnosticReporter.ReportDiagnostic(RuleNameMustBeSet, methodSymbol);
             return;
         }
 
         var accessorKind = (UnsafeAccessorKind)accessorKindInt;
         if (methodSymbol.Parameters.IsEmpty && accessorKind is UnsafeAccessorKind.Field or UnsafeAccessorKind.StaticField or UnsafeAccessorKind.Method or UnsafeAccessorKind.StaticMethod)
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleInvalidSignature, methodSymbol, messageArgs: ["method must have at least one parameter"]);
+            diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["method must have at least one parameter"]);
             return;
         }
 
@@ -96,32 +96,32 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
 
         if (accessorKind is UnsafeAccessorKind.Field or UnsafeAccessorKind.StaticField && methodSymbol.ReturnsVoid)
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleInvalidSignature, methodSymbol, messageArgs: ["return type does not match the field type"]);
+            diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["return type does not match the field type"]);
             return;
         }
 
         if (accessorKind is UnsafeAccessorKind.Field or UnsafeAccessorKind.StaticField && !IsRefOrRefReadOnly(methodSymbol.RefKind))
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleInvalidSignature, methodSymbol, messageArgs: ["must return by ref"]);
+            diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["must return by ref"]);
             return;
         }
 
         if (accessorKind is UnsafeAccessorKind.Field or UnsafeAccessorKind.StaticField && methodSymbol.Parameters.Length != 1)
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleInvalidSignature, methodSymbol, messageArgs: ["method must have a single parameter"]);
+            diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["method must have a single parameter"]);
             return;
         }
 
         if (accessorKind is UnsafeAccessorKind.Field && !methodSymbol.ReturnsVoid && !methodSymbol.ReturnsByRef && !methodSymbol.ReturnsByRefReadonly)
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleInvalidSignature, methodSymbol, messageArgs: ["method must be extern static"]);
+            diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["method must be extern static"]);
             return;
         }
 
         // When struct, first parameter must be by ref if field or method
         if (accessorKind is UnsafeAccessorKind.Method or UnsafeAccessorKind.Field && methodSymbol.Parameters[0].Type.IsValueType && !IsRefOrRefReadOnly(methodSymbol.Parameters[0].RefKind))
         {
-            diagnosticReporter.ReportDiagnostic(s_ruleInvalidSignature, methodSymbol, messageArgs: ["the first parameter must be ref"]);
+            diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["the first parameter must be ref"]);
             return;
         }
 

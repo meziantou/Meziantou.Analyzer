@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseEventArgsEmpty,
         title: "Use EventArgs.Empty",
         messageFormat: "Use EventArgs.Empty instead of new EventArgs()",
@@ -18,7 +18,7 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseEventArgsEmpty));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -31,7 +31,7 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
     private static void Analyze(OperationAnalysisContext context)
     {
         var operation = (IObjectCreationOperation)context.Operation;
-        if (operation == null || operation.Constructor == null)
+        if (operation is null || operation.Constructor is null)
             return;
 
         if (operation.Arguments.Length > 0)
@@ -40,7 +40,7 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
         var type = context.Compilation.GetBestTypeByMetadataName("System.EventArgs");
         if (operation.Constructor.ContainingType.IsEqualTo(type))
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

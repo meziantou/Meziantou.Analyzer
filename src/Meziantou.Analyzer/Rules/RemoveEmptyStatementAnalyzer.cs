@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RemoveEmptyStatementAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.RemoveEmptyStatement,
         title: "Remove empty statement",
         messageFormat: "Remove empty statement",
@@ -19,7 +19,7 @@ public sealed class RemoveEmptyStatementAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RemoveEmptyStatement));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -32,16 +32,16 @@ public sealed class RemoveEmptyStatementAnalyzer : DiagnosticAnalyzer
     private static void Analyze(SyntaxNodeAnalysisContext context)
     {
         var node = (EmptyStatementSyntax)context.Node;
-        if (node == null)
+        if (node is null)
             return;
 
         var parent = node.Parent;
-        if (parent == null)
+        if (parent is null)
             return;
 
         if (parent.IsKind(SyntaxKind.LabeledStatement))
             return;
 
-        context.ReportDiagnostic(s_rule, node);
+        context.ReportDiagnostic(Rule, node);
     }
 }

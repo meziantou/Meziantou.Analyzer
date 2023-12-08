@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.TaskInUsing,
         title: "Await task in using statement",
         messageFormat: "Await task in using statement",
@@ -18,7 +18,7 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TaskInUsing));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -28,7 +28,7 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(ctx =>
         {
             var taskSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            if (taskSymbol == null)
+            if (taskSymbol is null)
                 return;
 
             var analyzerContext = new AnalyzerContext(taskSymbol);
@@ -53,7 +53,7 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
 
         private void AnalyzeResource(OperationAnalysisContext context, IOperation? operation)
         {
-            if (operation == null)
+            if (operation is null)
                 return;
 
             if (operation is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
@@ -76,9 +76,9 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
             }
 
             operation = operation.UnwrapImplicitConversionOperations();
-            if (operation.Type != null && operation.Type.IsOrInheritFrom(taskSymbol))
+            if (operation.Type is not null && operation.Type.IsOrInheritFrom(taskSymbol))
             {
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(Rule, operation);
             }
         }
     }

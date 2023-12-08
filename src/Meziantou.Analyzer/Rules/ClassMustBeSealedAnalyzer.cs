@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ClassMustBeSealed,
         title: "Make class sealed",
         messageFormat: "Make class sealed",
@@ -22,7 +22,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassMustBeSealed));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -62,7 +62,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
                         }
                     }
 
-                    if (symbol.BaseType != null)
+                    if (symbol.BaseType is not null)
                     {
                         lock (_cannotBeSealedClasses)
                         {
@@ -78,7 +78,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
         public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
         {
             var symbol = (IMethodSymbol)context.Symbol;
-            if (symbol.ContainingType != null && symbol.HasAttribute(BenchmarkSymbol))
+            if (symbol.ContainingType is not null && symbol.HasAttribute(BenchmarkSymbol))
             {
                 _cannotBeSealedClasses.Add(symbol.ContainingType);
                 _cannotBeSealedClasses.Add(symbol.ContainingType.OriginalDefinition);
@@ -92,7 +92,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
                 if (_cannotBeSealedClasses.Contains(@class))
                     continue;
 
-                context.ReportDiagnostic(s_rule, @class);
+                context.ReportDiagnostic(Rule, @class);
             }
         }
 

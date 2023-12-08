@@ -30,7 +30,7 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var diagnostic = context.Diagnostics[0];
@@ -51,11 +51,11 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
 
         var index = int.Parse(diagnostic.Properties["Index"]!, CultureInfo.InvariantCulture);
         var symbol = (IMethodSymbol?)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
-        if (symbol == null)
+        if (symbol is null)
             return document;
 
         var methodSyntaxNode = (MethodDeclarationSyntax)nodeToFix;
-        if (methodSyntaxNode.Body == null)
+        if (methodSyntaxNode.Body is null)
             return document;
 
         // Create local function
@@ -106,7 +106,7 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
     private static ParameterListSyntax RemoveEnumeratorCancellationAttribute(ParameterListSyntax parameterListSyntax, SemanticModel semanticModel, CancellationToken cancellationToken)
     {
         var enumeratorCancellationSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
-        if (enumeratorCancellationSymbol == null)
+        if (enumeratorCancellationSymbol is null)
             return parameterListSyntax;
 
         return ParameterList(SeparatedList(parameterListSyntax.Parameters.Select(UpdateParameter)));

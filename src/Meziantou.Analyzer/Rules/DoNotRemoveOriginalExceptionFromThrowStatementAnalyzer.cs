@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotRemoveOriginalExceptionFromThrowStatement,
         title: "Prefer rethrowing an exception implicitly",
         messageFormat: "Prefer rethrowing an exception implicitly",
@@ -19,7 +19,7 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotRemoveOriginalExceptionFromThrowStatement));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -32,19 +32,19 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
     private static void Analyze(OperationAnalysisContext context)
     {
         var operation = (IThrowOperation)context.Operation;
-        if (operation.Exception == null)
+        if (operation.Exception is null)
             return;
 
         if (operation.Exception is not ILocalReferenceOperation localReferenceOperation)
             return;
 
         var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();
-        if (catchOperation == null)
+        if (catchOperation is null)
             return;
 
         if (catchOperation.Locals.Contains(localReferenceOperation.Local))
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

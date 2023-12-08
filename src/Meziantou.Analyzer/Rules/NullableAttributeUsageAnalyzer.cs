@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.NotNullIfNotNullArgumentShouldExist,
         title: "Invalid parameter name for nullable attribute",
         messageFormat: "Parameter '{0}' does not exist",
@@ -18,7 +18,7 @@ public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.NotNullIfNotNullArgumentShouldExist));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -28,7 +28,7 @@ public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(ctx =>
         {
             var type = ctx.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute");
-            if (type == null)
+            if (type is null)
                 return;
 
             ctx.RegisterSymbolAction(symbolContext => AnalyzeMethod(symbolContext, type), SymbolKind.Method);
@@ -50,11 +50,11 @@ public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
                     var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation();
                     if (location != null)
                     {
-                        context.ReportDiagnostic(s_rule, location, parameterName);
+                        context.ReportDiagnostic(Rule, location, parameterName);
                     }
                     else
                     {
-                        context.ReportDiagnostic(s_rule, method, parameterName);
+                        context.ReportDiagnostic(Rule, method, parameterName);
                     }
                 }
             }

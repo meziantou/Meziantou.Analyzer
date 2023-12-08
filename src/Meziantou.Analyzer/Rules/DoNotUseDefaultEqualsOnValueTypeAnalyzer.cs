@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseDefaultEqualsOnValueType,
         title: "Default ValueType.Equals or HashCode is used for struct equality",
         messageFormat: "Default ValueType.Equals or HashCode is used for struct equality",
@@ -21,7 +21,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseDefaultEqualsOnValueType));
 
-    private static readonly DiagnosticDescriptor s_rule2 = new(
+    private static readonly DiagnosticDescriptor Rule2 = new(
         RuleIdentifiers.StructWithDefaultEqualsImplementationUsedAsAKey,
         title: "Hash table unfriendly type is used in a hash table",
         messageFormat: "Hash table unfriendly type is used in a hash table",
@@ -31,7 +31,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.StructWithDefaultEqualsImplementationUsedAsAKey));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_rule2);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, Rule2);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -65,7 +65,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             IEqualityComparerSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
             IComparerSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
             ValueTypeSymbol = compilation.GetBestTypeByMetadataName("System.ValueType");
-            if (ValueTypeSymbol != null)
+            if (ValueTypeSymbol is not null)
             {
                 ValueTypeEqualsSymbol = ValueTypeSymbol.GetMembers(nameof(ValueType.Equals)).OfType<IMethodSymbol>().FirstOrDefault();
                 ValueTypeGetHashCodeSymbol = ValueTypeSymbol.GetMembers(nameof(ValueType.Equals)).OfType<IMethodSymbol>().FirstOrDefault();
@@ -82,7 +82,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableHashSet`1"));
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableDictionary`2"));
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableSortedDictionary`2"));
-            HashSetSymbols = types.ToArray();
+            HashSetSymbols = [.. types];
             Compilation = compilation;
         }
 
@@ -93,23 +93,23 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             if (operation.TargetMethod.Name == nameof(ValueType.GetHashCode))
             {
                 var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType();
-                if (actualType == null)
+                if (actualType is null)
                     return;
 
                 if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
                 {
-                    context.ReportDiagnostic(s_rule, operation);
+                    context.ReportDiagnostic(Rule, operation);
                 }
             }
             else if (operation.TargetMethod.Name == nameof(ValueType.Equals))
             {
                 var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType();
-                if (actualType == null)
+                if (actualType is null)
                     return;
 
                 if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
                 {
-                    context.ReportDiagnostic(s_rule, operation);
+                    context.ReportDiagnostic(Rule, operation);
                 }
             }
             else if (IsImmutableCreateMethod(operation.TargetMethod))
@@ -128,7 +128,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
                             return;
                     }
 
-                    context.ReportDiagnostic(s_rule2, operation);
+                    context.ReportDiagnostic(Rule2, operation);
                 }
             }
 
@@ -154,7 +154,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 
         private static bool IsStruct(ITypeSymbol typeSymbol)
         {
-            return typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsValueType && namedTypeSymbol.EnumUnderlyingType == null;
+            return typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsValueType && namedTypeSymbol.EnumUnderlyingType is null;
         }
 
         public void AnalyzeFieldReferenceOperation(OperationAnalysisContext context)
@@ -163,14 +163,14 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             if (operation.Field.Name == "Empty")
             {
                 var type = operation.Field.ContainingType;
-                if (type?.OriginalDefinition == null)
+                if ((type?.OriginalDefinition) is null)
                     return;
 
                 if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
                 {
                     if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
                     {
-                        context.ReportDiagnostic(s_rule2, operation);
+                        context.ReportDiagnostic(Rule2, operation);
                     }
                 }
             }
@@ -180,10 +180,10 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         {
             var operation = (IObjectCreationOperation)context.Operation;
             var type = operation.Type as INamedTypeSymbol;
-            if (type?.OriginalDefinition == null)
+            if ((type?.OriginalDefinition) is null)
                 return;
 
-            if (operation.Constructor == null)
+            if (operation.Constructor is null)
                 return;
 
             if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
@@ -193,17 +193,17 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 
                 if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
                 {
-                    context.ReportDiagnostic(s_rule2, operation);
+                    context.ReportDiagnostic(Rule2, operation);
                 }
             }
         }
 
         private bool HasDefaultEqualsOrHashCodeImplementations(ITypeSymbol typeSymbol)
         {
-            if (ValueTypeEqualsSymbol != null && typeSymbol.GetMembers(ValueTypeEqualsSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeEqualsSymbol.IsEqualTo(member.OverriddenMethod)) == null)
+            if (ValueTypeEqualsSymbol is not null && typeSymbol.GetMembers(ValueTypeEqualsSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeEqualsSymbol.IsEqualTo(member.OverriddenMethod)) is null)
                 return true;
 
-            if (ValueTypeGetHashCodeSymbol != null && typeSymbol.GetMembers(ValueTypeGetHashCodeSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeGetHashCodeSymbol.IsEqualTo(member.OverriddenMethod)) == null)
+            if (ValueTypeGetHashCodeSymbol is not null && typeSymbol.GetMembers(ValueTypeGetHashCodeSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeGetHashCodeSymbol.IsEqualTo(member.OverriddenMethod)) is null)
                 return true;
 
             return false;

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotDeclareStaticMembersOnGenericTypes,
         title: "Do not declare static members on generic types (deprecated; use CA1000 instead)",
         messageFormat: "Do not declare static members on generic types (deprecated; use CA1000 instead)",
@@ -17,7 +17,7 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotDeclareStaticMembersOnGenericTypes));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -56,7 +56,7 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
                 if (member.DeclaredAccessibility == Accessibility.Protected || member.DeclaredAccessibility == Accessibility.ProtectedOrInternal)
                     continue;
 
-                context.ReportDiagnostic(s_rule, member);
+                context.ReportDiagnostic(Rule, member);
             }
         }
     }

@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AvoidUsingRedundantElse,
         title: "Avoid using redundant else",
         messageFormat: "Avoid using redundant else",
@@ -21,7 +21,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         description: "The 'if' block contains a jump statement (break, continue, goto, return, throw, yield break). Using 'else' is redundant and needlessly maintains a higher nesting level.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidUsingRedundantElse));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -62,12 +62,12 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
             return;
 
         var controlFlowAnalysis = context.SemanticModel.AnalyzeControlFlow(thenStatement);
-        if (controlFlowAnalysis == null || !controlFlowAnalysis.Succeeded)
+        if (controlFlowAnalysis is null || !controlFlowAnalysis.Succeeded)
             return;
 
         if (!controlFlowAnalysis.EndPointIsReachable || controlFlowAnalysis.ExitPoints.Any(ep => IsDirectAccess(ifStatement, ep)))
         {
-            context.ReportDiagnostic(s_rule, elseClause.ElseKeyword);
+            context.ReportDiagnostic(Rule, elseClause.ElseKeyword);
         }
     }
 
@@ -102,7 +102,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
     private static bool IsDirectAccess(IfStatementSyntax ifStatementSyntax, SyntaxNode exitPoint)
     {
         var node = exitPoint.Parent;
-        while (node != null)
+        while (node is not null)
         {
             if (node == ifStatementSyntax)
                 return true;

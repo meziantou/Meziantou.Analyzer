@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseStringGetHashCode,
         title: "Use StringComparer.GetHashCode instead of string.GetHashCode",
         messageFormat: "Use an explicit StringComparer to compute hash codes",
@@ -18,7 +18,7 @@ public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseStringGetHashCode));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -28,7 +28,7 @@ public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(context =>
         {
             var stringComparisonSymbol = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
-            if (stringComparisonSymbol == null)
+            if (stringComparisonSymbol is null)
                 return;
 
             context.RegisterOperationAction(context => AnalyzeInvocation(context, stringComparisonSymbol), OperationKind.Invocation);
@@ -43,7 +43,7 @@ public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
             if (operation.HasArgumentOfType(stringComparisonSymbol))
                 return;
 
-            context.ReportDiagnostic(s_rule, operation, operation.TargetMethod.Name);
+            context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name);
         }
     }
 }

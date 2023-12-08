@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotRaiseNotImplementedExceptionAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotRaiseNotImplementedException,
         title: "Implement the functionality instead of throwing NotImplementedException",
         messageFormat: "Implement the functionality (or raise NotSupportedException or PlatformNotSupportedException)",
@@ -18,7 +18,7 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzer : DiagnosticAnalyz
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotRaiseNotImplementedException));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -30,7 +30,7 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzer : DiagnosticAnalyz
             var compilation = ctx.Compilation;
             var type = compilation.GetBestTypeByMetadataName("System.NotImplementedException");
 
-            if (type != null)
+            if (type is not null)
             {
                 ctx.RegisterOperationAction(_ => Analyze(_, type), OperationKind.Throw);
             }
@@ -40,13 +40,13 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzer : DiagnosticAnalyz
     private static void Analyze(OperationAnalysisContext context, INamedTypeSymbol reservedExceptionType)
     {
         var operation = (IThrowOperation)context.Operation;
-        if (operation == null || operation.Exception == null)
+        if (operation is null || operation.Exception is null)
             return;
 
         var exceptionType = operation.Exception.GetActualType();
         if (exceptionType.IsEqualTo(reservedExceptionType))
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

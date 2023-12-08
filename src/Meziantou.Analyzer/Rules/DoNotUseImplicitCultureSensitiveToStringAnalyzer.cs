@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_stringConcatRule = new(
+    private static readonly DiagnosticDescriptor StringConcatRule = new(
         RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString,
         title: "Do not use implicit culture-sensitive ToString",
         messageFormat: "Do not use implicit culture-sensitive ToString",
@@ -21,7 +21,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString));
 
-    private static readonly DiagnosticDescriptor s_stringInterpolationRule = new(
+    private static readonly DiagnosticDescriptor StringInterpolationRule = new(
         RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation,
         title: "Do not use implicit culture-sensitive ToString in interpolated strings",
         messageFormat: "Do not use implicit culture-sensitive ToString in interpolated strings",
@@ -31,7 +31,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation));
 
-    private static readonly DiagnosticDescriptor s_objectToStringRule = new(
+    private static readonly DiagnosticDescriptor ObjectToStringRule = new(
         RuleIdentifiers.DoNotUseCultureSensitiveObjectToString,
         title: "Do not use culture-sensitive object.ToString",
         messageFormat: "Do not use culture-sensitive object.ToString",
@@ -41,7 +41,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseCultureSensitiveObjectToString));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_stringConcatRule, s_stringInterpolationRule, s_objectToStringRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(StringConcatRule, StringInterpolationRule, ObjectToStringRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -60,19 +60,19 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new CultureSensitiveFormattingContext(compilation);
+        private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new(compilation);
 
         public static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
-            if (IsExcludedMethod(context, s_objectToStringRule, operation))
+            if (IsExcludedMethod(context, ObjectToStringRule, operation))
                 return;
 
             if (operation.TargetMethod.Name == "ToString" && operation.TargetMethod.ContainingType.IsObject() && operation.TargetMethod.Parameters.Length == 0)
             {
-                if (operation.Instance != null && operation.Instance.Type.IsObject())
+                if (operation.Instance is not null && operation.Instance.Type.IsObject())
                 {
-                    context.ReportDiagnostic(s_objectToStringRule, operation);
+                    context.ReportDiagnostic(ObjectToStringRule, operation);
                 }
             }
         }
@@ -89,17 +89,17 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (operation.ConstantValue.HasValue)
                 return;
 
-            if (IsExcludedMethod(context, s_stringConcatRule, operation))
+            if (IsExcludedMethod(context, StringConcatRule, operation))
                 return;
 
-            if (!IsNonCultureSensitiveOperand(context, s_stringConcatRule, operation.LeftOperand))
+            if (!IsNonCultureSensitiveOperand(context, StringConcatRule, operation.LeftOperand))
             {
-                context.ReportDiagnostic(s_stringConcatRule, operation.LeftOperand);
+                context.ReportDiagnostic(StringConcatRule, operation.LeftOperand);
             }
 
-            if (!IsNonCultureSensitiveOperand(context, s_stringConcatRule, operation.RightOperand))
+            if (!IsNonCultureSensitiveOperand(context, StringConcatRule, operation.RightOperand))
             {
-                context.ReportDiagnostic(s_stringConcatRule, operation.RightOperand);
+                context.ReportDiagnostic(StringConcatRule, operation.RightOperand);
             }
         }
 
@@ -111,10 +111,10 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (operation.ConstantValue.HasValue)
                 return;
 
-            if (IsExcludedMethod(context, s_stringInterpolationRule, operation))
+            if (IsExcludedMethod(context, StringInterpolationRule, operation))
                 return;
 
-            var options = MustUnwrapNullableTypes(context, s_stringInterpolationRule, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
+            var options = MustUnwrapNullableTypes(context, StringInterpolationRule, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
 
             var parent = operation.Parent;
             if (parent is IConversionOperation conversionOperation)
@@ -128,12 +128,12 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             {
                 var expression = part.Expression;
                 var type = expression.Type;
-                if (expression == null || type == null)
+                if (expression is null || type is null)
                     continue;
 
                 if (_cultureSensitiveContext.IsCultureSensitiveOperation(part, options | CultureSensitiveOptions.UseInvocationReturnType))
                 {
-                    context.ReportDiagnostic(s_stringInterpolationRule, part);
+                    context.ReportDiagnostic(StringInterpolationRule, part);
                 }
             }
         }
@@ -155,7 +155,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (operand is null)
                 return true;
 
-            if (operand is IConversionOperation conversion && conversion.IsImplicit && conversion.Type.IsObject() && conversion.Operand.Type != null)
+            if (operand is IConversionOperation conversion && conversion.IsImplicit && conversion.Type.IsObject() && conversion.Operand.Type is not null)
             {
                 var value = conversion.Operand;
                 var options = MustUnwrapNullableTypes(context, rule, operand) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
@@ -169,12 +169,12 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
         {
             // Avoid an allocation when creating the key
-            if (rule == s_stringConcatRule)
+            if (rule == StringConcatRule)
             {
                 Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString);
                 return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".consider_nullable_types", defaultValue: true);
             }
-            else if (rule == s_stringInterpolationRule)
+            else if (rule == StringInterpolationRule)
             {
                 Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation);
                 return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".consider_nullable_types", defaultValue: true);

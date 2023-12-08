@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseArrayEmpty,
         title: "Use Array.Empty<T>()",
         messageFormat: "Use Array.Empty<T>()",
@@ -20,7 +20,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseArrayEmpty));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -30,7 +30,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(compilationContext =>
         {
             var typeSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.Array");
-            if (typeSymbol == null || typeSymbol.DeclaredAccessibility != Accessibility.Public)
+            if (typeSymbol is null || typeSymbol.DeclaredAccessibility != Accessibility.Public)
                 return;
 
             if (typeSymbol.GetMembers("Empty").FirstOrDefault() is IMethodSymbol methodSymbol &&
@@ -54,7 +54,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
             if (IsCompilerGeneratedParamsArray(operation, context))
                 return;
 
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 
@@ -89,7 +89,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 
         // Compiler generated array creation seems to just use the syntax from the parent.
         var parent = semanticModel.GetOperation(arrayCreationExpression.Syntax, context.CancellationToken);
-        if (parent == null)
+        if (parent is null)
             return false;
 
         ISymbol? targetSymbol = null;
@@ -113,7 +113,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (targetSymbol == null)
+        if (targetSymbol is null)
             return false;
 
         var parameters = GetParameters(targetSymbol);
@@ -125,7 +125,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
         // As a sanity check, verify that the last argument to the call is equivalent to the array creation.
         // (Comparing for object identity does not work because the semantic model can return a fresh operation tree.)
         var lastArgument = arguments.LastOrDefault();
-        return lastArgument != null && lastArgument.Value.Syntax == arrayCreationExpression.Syntax;
+        return lastArgument is not null && lastArgument.Value.Syntax == arrayCreationExpression.Syntax;
     }
 
     private static ImmutableArray<IParameterSymbol> GetParameters(ISymbol symbol)

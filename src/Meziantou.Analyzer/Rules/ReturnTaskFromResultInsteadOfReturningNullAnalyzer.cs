@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ReturnTaskFromResultInsteadOfReturningNull,
         title: "Return Task.FromResult instead of returning null",
         messageFormat: "Return Task.FromResult instead of returning null",
@@ -19,7 +19,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ReturnTaskFromResultInsteadOfReturningNull));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -29,7 +29,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
         context.RegisterCompilationStartAction(context =>
         {
             var analyzerContext = new AnalyzerContext(context.Compilation);
-            if (analyzerContext.TaskOfTSymbol != null || analyzerContext.TaskSymbol != null)
+            if (analyzerContext.TaskOfTSymbol is not null || analyzerContext.TaskSymbol is not null)
             {
                 context.RegisterOperationAction(analyzerContext.AnalyzeReturnOperation, OperationKind.Return);
             }
@@ -52,25 +52,25 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
 
             // Find the owning symbol and check if it returns a task and doesn't use the async keyword
             var methodSymbol = ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon.FindContainingMethod(operation, context.CancellationToken);
-            if (methodSymbol == null || !IsTaskType(methodSymbol.ReturnType))
+            if (methodSymbol is null || !IsTaskType(methodSymbol.ReturnType))
                 return;
 
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
 
         private bool MayBeNullValue([NotNullWhen(true)] IOperation? operation)
         {
-            if (operation == null)
+            if (operation is null)
                 return false;
 
             if (operation is IReturnOperation returnOperation)
             {
                 operation = returnOperation.ReturnedValue;
-                if (operation == null)
+                if (operation is null)
                     return false;
             }
 
-            if (operation.ConstantValue.HasValue && operation.ConstantValue.Value == null)
+            if (operation.ConstantValue.HasValue && operation.ConstantValue.Value is null)
                 return true;
 
             if (operation is IConversionOperation conversion)
@@ -103,7 +103,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
 
         private bool IsTaskType(ITypeSymbol? symbol)
         {
-            if (symbol == null)
+            if (symbol is null)
                 return false;
 
             return symbol.IsEqualTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualTo(TaskOfTSymbol);

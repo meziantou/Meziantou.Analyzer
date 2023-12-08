@@ -28,7 +28,7 @@ public sealed class NamedParameterFixer : CodeFixProvider
         // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
         // get the innermost node for ties.
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Add parameter name";
@@ -46,11 +46,11 @@ public sealed class NamedParameterFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
 
         var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
-        if (argument == null || argument.NameColon != null)
+        if (argument is null || argument.NameColon is not null)
             return document;
 
         var parameters = FindParameters(semanticModel, argument, cancellationToken);
-        if (parameters == null)
+        if (parameters is null)
             return document;
 
         var index = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
@@ -66,7 +66,7 @@ public sealed class NamedParameterFixer : CodeFixProvider
 
     private static IReadOnlyList<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node, CancellationToken cancellationToken)
     {
-        while (node != null)
+        while (node is not null)
         {
             switch (node)
             {

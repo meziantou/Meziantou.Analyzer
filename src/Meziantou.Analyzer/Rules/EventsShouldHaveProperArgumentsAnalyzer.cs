@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_senderInstanceRule = new(
+    private static readonly DiagnosticDescriptor SenderInstanceRule = new(
         RuleIdentifiers.SenderShouldBeThisForInstanceEvents,
         title: "Sender should be 'this' for instance events",
         messageFormat: "Sender parameter should be 'this' for instance events",
@@ -20,7 +20,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SenderShouldBeThisForInstanceEvents));
 
-    private static readonly DiagnosticDescriptor s_senderStaticRule = new(
+    private static readonly DiagnosticDescriptor SenderStaticRule = new(
         RuleIdentifiers.SenderShouldBeNullForStaticEvents,
         title: "Sender should be 'null' for static events",
         messageFormat: "Sender parameter should be 'null' for static events",
@@ -30,7 +30,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SenderShouldBeNullForStaticEvents));
 
-    private static readonly DiagnosticDescriptor s_eventArgsRule = new(
+    private static readonly DiagnosticDescriptor EventArgsRule = new(
         RuleIdentifiers.EventArgsSenderShouldNotBeNullForEvents,
         title: "EventArgs should not be null",
         messageFormat: "EventArgs should not be null, use 'EventArgs.Empty' instead",
@@ -40,7 +40,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EventArgsSenderShouldNotBeNullForEvents));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_senderInstanceRule, s_senderStaticRule, s_eventArgsRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(SenderInstanceRule, SenderStaticRule, EventArgsRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -73,11 +73,11 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
             return;
 
         var instance = operation.Instance;
-        if (instance == null)
+        if (instance is null)
             return;
 
         var ev = FindEvent(instance);
-        if (ev == null)
+        if (ev is null)
             return;
 
         // Argument validation
@@ -86,27 +86,27 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         {
             if (!IsNull(senderArgument))
             {
-                context.ReportDiagnostic(s_senderStaticRule, senderArgument);
+                context.ReportDiagnostic(SenderStaticRule, senderArgument);
             }
         }
         else
         {
             if (!IsThis(senderArgument))
             {
-                context.ReportDiagnostic(s_senderInstanceRule, senderArgument.Value);
+                context.ReportDiagnostic(SenderInstanceRule, senderArgument.Value);
             }
         }
 
         var eventArgsArgument = operation.Arguments[1];
         if (IsNull(eventArgsArgument))
         {
-            context.ReportDiagnostic(s_eventArgsRule, eventArgsArgument.Value);
+            context.ReportDiagnostic(EventArgsRule, eventArgsArgument.Value);
         }
     }
 
     private static bool IsNull(IArgumentOperation operation)
     {
-        return operation.Value.ConstantValue.HasValue && operation.Value.ConstantValue.Value == null;
+        return operation.Value.ConstantValue.HasValue && operation.Value.ConstantValue.Value is null;
     }
 
     private static bool IsThis(IArgumentOperation operation)
@@ -142,7 +142,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
             var semanticModel = operation.SemanticModel!;
             var syntax = operation.Syntax;
             var symbol = semanticModel.GetSymbolInfo(syntax).Symbol;
-            if (symbol != null)
+            if (symbol is not null)
             {
                 if (symbol is IEventSymbol eventSymbol)
                 {
@@ -163,7 +163,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
             foreach (var symbolLocation in localSymbol.DeclaringSyntaxReferences)
             {
                 var variableDeclarator = symbolLocation.GetSyntax(cancellationToken) as Microsoft.CodeAnalysis.CSharp.Syntax.VariableDeclaratorSyntax;
-                if (variableDeclarator?.Initializer?.Value != null)
+                if ((variableDeclarator?.Initializer?.Value) is not null)
                 {
                     var initializerSymbol = semanticModel.GetSymbolInfo(variableDeclarator.Initializer.Value, cancellationToken).Symbol;
                     if (initializerSymbol is IEventSymbol initializerEventSymbol)
@@ -181,7 +181,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
 
         public override void VisitLocalReference(ILocalReferenceOperation operation)
         {
-            if (operation.SemanticModel != null)
+            if (operation.SemanticModel is not null)
             {
                 FindFromLocalSymbol(operation.SemanticModel, operation.Local, CancellationToken.None);
             }

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MarkAttributesWithAttributeUsageAttribute,
         title: "Mark attributes with AttributeUsageAttribute",
         messageFormat: "Mark attributes with AttributeUsageAttribute",
@@ -17,7 +17,7 @@ public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : Diagnost
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MarkAttributesWithAttributeUsageAttribute));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -31,7 +31,7 @@ public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : Diagnost
     {
         var attributeType = context.Compilation.GetBestTypeByMetadataName("System.Attribute");
         var attributeUsageAttributeType = context.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
-        if (attributeType == null || attributeUsageAttributeType == null)
+        if (attributeType is null || attributeUsageAttributeType is null)
             return;
 
         var symbol = (INamedTypeSymbol)context.Symbol;
@@ -44,12 +44,12 @@ public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : Diagnost
         if (HasAttributeUsageAttribute(symbol, attributeType, attributeUsageAttributeType))
             return;
 
-        context.ReportDiagnostic(s_rule, symbol);
+        context.ReportDiagnostic(Rule, symbol);
     }
 
     private static bool HasAttributeUsageAttribute(INamedTypeSymbol? symbol, ITypeSymbol attributeSymbol, ITypeSymbol attributeUsageSymbol)
     {
-        while (symbol != null && !symbol.IsEqualTo(attributeSymbol))
+        while (symbol is not null && !symbol.IsEqualTo(attributeSymbol))
         {
             if (symbol.HasAttribute(attributeUsageSymbol))
                 return true;

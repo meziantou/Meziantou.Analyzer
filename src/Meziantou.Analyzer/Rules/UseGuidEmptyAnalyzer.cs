@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseGuidEmpty,
         title: "Use Guid.Empty",
         messageFormat: "Use Guid.Empty",
@@ -18,7 +18,7 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseGuidEmpty));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -37,7 +37,7 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
         var guidType = context.Compilation.GetBestTypeByMetadataName("System.Guid");
         if (operation.Type.IsEqualTo(guidType) && operation.Arguments.Length == 0)
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

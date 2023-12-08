@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_ruleImplicitConversion = new(
+    private static readonly DiagnosticDescriptor RuleImplicitConversion = new(
         RuleIdentifiers.DoNotImplicitlyConvertDateTimeToDateTimeOffset,
         title: "Do not convert implicitly to DateTimeOffset",
         messageFormat: "Do not convert implicitly to DateTimeOffset",
@@ -18,7 +18,7 @@ public sealed class DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer : Dia
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotImplicitlyConvertDateTimeToDateTimeOffset));
 
-    private static readonly DiagnosticDescriptor s_ruleUseDateTimeOffset = new(
+    private static readonly DiagnosticDescriptor RuleUseDateTimeOffset = new(
         RuleIdentifiers.UseDateTimeOffsetInsteadOfDateTime,
         title: "Use DateTimeOffset instead of relying on the implicit conversion",
         messageFormat: "Use DateTimeOffset instead of relying on the implicit conversion",
@@ -28,7 +28,7 @@ public sealed class DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer : Dia
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseDateTimeOffsetInsteadOfDateTime));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_ruleImplicitConversion, s_ruleUseDateTimeOffset);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleImplicitConversion, RuleUseDateTimeOffset);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -38,7 +38,7 @@ public sealed class DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer : Dia
         context.RegisterCompilationStartAction(context =>
         {
             var datetimeOffsetSymbol = context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
-            if (datetimeOffsetSymbol == null)
+            if (datetimeOffsetSymbol is null)
                 return;
 
             context.RegisterOperationAction(context => AnalyzeConversion(context, datetimeOffsetSymbol), OperationKind.Conversion);
@@ -56,11 +56,11 @@ public sealed class DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer : Dia
             // DateTime.Now and DateTime.UtcNow set the DateTime.Kind, so the conversion result is well-known
             if (operation.Operand is IMemberReferenceOperation { Member.Name: "UtcNow" or "Now", Member.ContainingType.SpecialType: SpecialType.System_DateTime })
             {
-                context.ReportDiagnostic(s_ruleUseDateTimeOffset, operation);
+                context.ReportDiagnostic(RuleUseDateTimeOffset, operation);
             }
             else
             {
-                context.ReportDiagnostic(s_ruleImplicitConversion, operation);
+                context.ReportDiagnostic(RuleImplicitConversion, operation);
             }
         }
     }

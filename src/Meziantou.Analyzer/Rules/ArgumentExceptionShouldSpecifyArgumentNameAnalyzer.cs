@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName,
         title: "Specify the parameter name in ArgumentException",
         messageFormat: "{0}",
@@ -23,7 +23,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName));
 
-    private static readonly DiagnosticDescriptor s_nameofRule = new(
+    private static readonly DiagnosticDescriptor NameofRule = new(
         RuleIdentifiers.UseNameofOperator,
         title: "Use nameof operator in ArgumentException",
         messageFormat: "Use nameof operator",
@@ -33,7 +33,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNameofOperator));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_nameofRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, NameofRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -46,15 +46,15 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
     private static void Analyze(OperationAnalysisContext context)
     {
         var op = (IObjectCreationOperation)context.Operation;
-        if (op == null)
+        if (op is null)
             return;
 
         var type = op.Type;
-        if (type == null)
+        if (type is null)
             return;
 
         var exceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
-        if (exceptionType == null)
+        if (exceptionType is null)
             return;
 
         if (!type.IsOrInheritFrom(exceptionType))
@@ -68,7 +68,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
         foreach (var argument in op.Arguments)
         {
-            if (argument.Parameter == null || !string.Equals(argument.Parameter.Name, parameterName, StringComparison.Ordinal))
+            if (argument.Parameter is null || !string.Equals(argument.Parameter.Name, parameterName, StringComparison.Ordinal))
                 continue;
 
             if (argument.Value.ConstantValue.HasValue)
@@ -81,7 +81,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                         if (argument.Value is not INameOfOperation)
                         {
                             var properties = ImmutableDictionary<string, string?>.Empty.Add(ArgumentExceptionShouldSpecifyArgumentNameAnalyzerCommon.ArgumentNameKey, value);
-                            context.ReportDiagnostic(s_nameofRule, properties, argument.Value);
+                            context.ReportDiagnostic(NameofRule, properties, argument.Value);
                         }
 
                         return;
@@ -89,11 +89,11 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
                     if (argument.Syntax is ArgumentSyntax argumentSyntax)
                     {
-                        context.ReportDiagnostic(s_rule, argumentSyntax.Expression, $"'{value}' is not a valid parameter name");
+                        context.ReportDiagnostic(Rule, argumentSyntax.Expression, $"'{value}' is not a valid parameter name");
                     }
                     else
                     {
-                        context.ReportDiagnostic(s_rule, argument, $"'{value}' is not a valid parameter name");
+                        context.ReportDiagnostic(Rule, argument, $"'{value}' is not a valid parameter name");
                     }
 
                     return;
@@ -109,7 +109,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         {
             if (ctor.Parameters.Any(p => p.Name is "paramName" or "argumentName" && p.Type.IsString()))
             {
-                context.ReportDiagnostic(Diagnostic.Create(s_rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));
                 return;
             }
         }

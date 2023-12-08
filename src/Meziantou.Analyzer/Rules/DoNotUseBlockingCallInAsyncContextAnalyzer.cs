@@ -16,7 +16,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseBlockingCallInAsyncContext,
         title: "Do not use blocking calls in an async method",
         messageFormat: "{0}",
@@ -26,7 +26,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext));
 
-    private static readonly DiagnosticDescriptor s_rule2 = new(
+    private static readonly DiagnosticDescriptor Rule2 = new(
         RuleIdentifiers.DoNotUseBlockingCall,
         title: "Do not use blocking calls in a sync method (need to make calling method async)",
         messageFormat: "{0}",
@@ -36,7 +36,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBlockingCall));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_rule2);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, Rule2);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -70,9 +70,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             _awaitableTypes = new AwaitableTypes(compilation);
 
             var consoleSymbol = compilation.GetBestTypeByMetadataName("System.Console");
-            if (consoleSymbol != null)
+            if (consoleSymbol is not null)
             {
-                ConsoleErrorAndOutSymbols = consoleSymbol.GetMembers(nameof(Console.Out)).Concat(consoleSymbol.GetMembers(nameof(Console.Error))).ToArray();
+                ConsoleErrorAndOutSymbols = [.. consoleSymbol.GetMembers(nameof(Console.Out)), .. consoleSymbol.GetMembers(nameof(Console.Error))];
             }
             else
             {
@@ -99,7 +99,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             DbSetSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
 
             ServiceProviderServiceExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
-            if (ServiceProviderServiceExtensionsSymbol != null)
+            if (ServiceProviderServiceExtensionsSymbol is not null)
             {
                 ServiceProviderServiceExtensions_CreateScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateScope").FirstOrDefault();
                 ServiceProviderServiceExtensions_CreateAsyncScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateAsyncScope").FirstOrDefault();
@@ -112,7 +112,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterOfTSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterOfTSymbol);
-            _taskAwaiterLikeSymbols = taskAwaiterLikeSymbols.ToArray();
+            _taskAwaiterLikeSymbols = [.. taskAwaiterLikeSymbols];
         }
 
         private ISymbol? ProcessSymbol { get; }
@@ -140,7 +140,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         public INamedTypeSymbol? Moq_MockSymbol { get; }
 
-        public bool IsValid => TaskSymbol != null && TaskOfTSymbol != null && TaskAwaiterSymbol != null;
+        public bool IsValid => TaskSymbol is not null && TaskOfTSymbol is not null && TaskAwaiterSymbol is not null;
 
         internal void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -227,19 +227,19 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 }
             }
 
-            else if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol != null && ServiceProviderServiceExtensions_CreateScopeSymbol != null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
+            else if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol is not null && ServiceProviderServiceExtensions_CreateScopeSymbol is not null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
             {
                 data = new($"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.CreateAsyncScope);
                 return true;
             }
 
             // https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-6.0&WT.mc_id=DT-MVP-5003978#overloads
-            else if ((DbContextSymbol != null || DbSetSymbol != null) && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(DbContextSymbol, DbSetSymbol))
+            else if ((DbContextSymbol is not null || DbSetSymbol is not null) && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(DbContextSymbol, DbSetSymbol))
             {
                 return false;
             }
 
-            else if (Moq_MockSymbol != null && targetMethod.Name is "Raise" && targetMethod.ContainingType.OriginalDefinition.IsEqualTo(Moq_MockSymbol))
+            else if (Moq_MockSymbol is not null && targetMethod.Name is "Raise" && targetMethod.ContainingType.OriginalDefinition.IsEqualTo(Moq_MockSymbol))
             {
                 return false;
             }
@@ -250,7 +250,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 var position = operation.Syntax.GetLocation().SourceSpan.End;
 
                 var result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
-                if (result != null)
+                if (result is not null)
                 {
                     data = result;
                     return true;
@@ -259,7 +259,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
                 {
                     result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
-                    if (result != null)
+                    if (result is not null)
                     {
                         data = result;
                         return true;
@@ -302,7 +302,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (OverloadFinder.HasSimilarParameters(method, methodSymbol))
                     return true;
 
-                if (CancellationTokenSymbol != null && OverloadFinder.HasSimilarParameters(method, methodSymbol, CancellationTokenSymbol))
+                if (CancellationTokenSymbol is not null && OverloadFinder.HasSimilarParameters(method, methodSymbol, CancellationTokenSymbol))
                     return true;
             }
 
@@ -334,11 +334,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             if (IsAsyncContext(operation, context.CancellationToken))
             {
-                context.ReportDiagnostic(s_rule, properties, operation, message);
+                context.ReportDiagnostic(Rule, properties, operation, message);
             }
             else if (CanChangeParentMethodSignature(operation, context.CancellationToken))
             {
-                context.ReportDiagnostic(s_rule2, properties, operation, message + " and make method async");
+                context.ReportDiagnostic(Rule2, properties, operation, message + " and make method async");
             }
         }
 
@@ -410,7 +410,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         {
             foreach (var declaration in operation.Declarations)
             {
-                if (declaration.Initializer?.Value != null)
+                if ((declaration.Initializer?.Value) is not null)
                 {
                     if (CanBeAwaitUsing(declaration.Initializer.Value))
                     {
@@ -422,7 +422,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
                 foreach (var declarator in declaration.Declarators)
                 {
-                    if (declarator.Initializer != null && CanBeAwaitUsing(declarator.Initializer.Value))
+                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.UsingDeclarator);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);

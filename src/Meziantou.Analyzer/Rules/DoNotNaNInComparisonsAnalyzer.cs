@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotNaNInComparisons,
         title: "NaN should not be used in comparisons",
         messageFormat: "{0}.NaN should not be used in comparisons",
@@ -19,7 +19,7 @@ public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotNaNInComparisons));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -60,15 +60,15 @@ public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
             {
                 if (memberReference.Member.IsEqualTo(DoubleNaN))
                 {
-                    context.ReportDiagnostic(s_rule, operation, "System.Double");
+                    context.ReportDiagnostic(Rule, operation, "System.Double");
                 }
                 else if (memberReference.Member.IsEqualTo(SingleNaN))
                 {
-                    context.ReportDiagnostic(s_rule, operation, "System.Single");
+                    context.ReportDiagnostic(Rule, operation, "System.Single");
                 }
                 else if (memberReference.Member.IsEqualTo(HalfNaN))
                 {
-                    context.ReportDiagnostic(s_rule, operation, "System.Half");
+                    context.ReportDiagnostic(Rule, operation, "System.Half");
                 }
             }
         }

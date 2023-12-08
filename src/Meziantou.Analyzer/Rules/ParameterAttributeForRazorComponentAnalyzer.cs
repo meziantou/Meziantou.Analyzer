@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_supplyParameterFromQueryRule = new(
+    private static readonly DiagnosticDescriptor SupplyParameterFromQueryRule = new(
         RuleIdentifiers.SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent,
         title: "Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter]",
         messageFormat: "Parameters with [SupplyParameterFromQuery] attributes should also be marked as [Parameter]",
@@ -18,7 +18,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent));
 
-    private static readonly DiagnosticDescriptor s_supplyParameterFromQueryRoutableRule = new(
+    private static readonly DiagnosticDescriptor SupplyParameterFromQueryRoutableRule = new(
         RuleIdentifiers.SupplyParameterFromQueryRequiresRoutableComponent,
         title: "Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)",
         messageFormat: "Parameters with [SupplyParameterFromQuery] attributes are only valid in routable components (@page)",
@@ -28,7 +28,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresRoutableComponent));
 
-    private static readonly DiagnosticDescriptor s_editorRequiredRule = new(
+    private static readonly DiagnosticDescriptor EditorRequiredRule = new(
         RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent,
         title: "Parameters with [EditorRequired] attributes should also be marked as [Parameter]",
         messageFormat: "Parameters with [EditorRequired] attributes should also be marked as [Parameter]",
@@ -38,7 +38,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_supplyParameterFromQueryRule, s_editorRequiredRule, s_supplyParameterFromQueryRoutableRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(SupplyParameterFromQueryRule, EditorRequiredRule, SupplyParameterFromQueryRoutableRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -76,7 +76,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         public INamedTypeSymbol? EditorRequiredSymbol { get; }
         public INamedTypeSymbol? RouteAttributeSymbol { get; }
 
-        public bool IsValid => ParameterSymbol != null && (SupplyParameterFromQuerySymbol != null || EditorRequiredSymbol != null);
+        public bool IsValid => ParameterSymbol is not null && (SupplyParameterFromQuerySymbol is not null || EditorRequiredSymbol is not null);
 
         internal void AnalyzeProperty(SymbolAnalysisContext context)
         {
@@ -90,12 +90,12 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
                 {
                     if (!property.HasAttribute(ParameterSymbol, inherits: false))
                     {
-                        context.ReportDiagnostic(s_supplyParameterFromQueryRule, property);
+                        context.ReportDiagnostic(SupplyParameterFromQueryRule, property);
                     }
 
                     if (!property.ContainingType.HasAttribute(RouteAttributeSymbol))
                     {
-                        context.ReportDiagnostic(s_supplyParameterFromQueryRoutableRule, property);
+                        context.ReportDiagnostic(SupplyParameterFromQueryRoutableRule, property);
                     }
                 }
             }
@@ -104,7 +104,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
             {
                 if (!property.HasAttribute(ParameterSymbol, inherits: false))
                 {
-                    context.ReportDiagnostic(s_editorRequiredRule, property);
+                    context.ReportDiagnostic(EditorRequiredRule, property);
                 }
             }
         }

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ExceptionNameShouldEndWithExceptionAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ExceptionNameShouldEndWithException,
         title: "Class name should end with 'Exception'",
         messageFormat: "Class name should end with 'Exception'",
@@ -17,7 +17,7 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ExceptionNameShouldEndWithException));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -30,12 +30,12 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzer : DiagnosticAnal
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
-        if (symbol.Name == null)
+        if (symbol.Name is null)
             return;
 
         if (!symbol.Name.EndsWith("Exception", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.Exception")))
         {
-            context.ReportDiagnostic(s_rule, symbol);
+            context.ReportDiagnostic(Rule, symbol);
         }
     }
 }

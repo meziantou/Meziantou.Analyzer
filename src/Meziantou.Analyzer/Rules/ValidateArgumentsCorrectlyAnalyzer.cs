@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ValidateArgumentsCorrectly,
         title: "Validate arguments correctly in iterator methods",
         messageFormat: "Validate arguments correctly in iterator methods",
@@ -23,7 +23,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ValidateArgumentsCorrectly));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -70,7 +70,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
         {
             var node = (MethodDeclarationSyntax)context.Node;
             var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (methodSymbol == null || !CanContainsYield(methodSymbol))
+            if (methodSymbol is null || !CanContainsYield(methodSymbol))
                 return;
 
             var descendants = node.DescendantNodes(childNode => node == childNode || FilterDescendants(childNode)).ToList();
@@ -88,12 +88,12 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                     .DefaultIfEmpty()
                     .Max(node => GetEndOfBlockIndex(context, node));
 
-            if (lastThrowIndex != null && firstYieldIndex != null && lastThrowIndex < firstYieldIndex)
+            if (lastThrowIndex is not null && firstYieldIndex is not null && lastThrowIndex < firstYieldIndex)
             {
                 var properties = ImmutableDictionary.Create<string, string?>()
                     .Add("Index", lastThrowIndex.Value.ToString(CultureInfo.InvariantCulture));
 
-                context.ReportDiagnostic(s_rule, properties, methodSymbol);
+                context.ReportDiagnostic(Rule, properties, methodSymbol);
             }
         }
 
@@ -125,11 +125,11 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                 _ => null,
             };
 
-            if (exceptionExpression == null)
+            if (exceptionExpression is null)
                 return false;
 
             var type = context.SemanticModel.GetTypeInfo(exceptionExpression, context.CancellationToken).Type;
-            return type != null && type.IsOrInheritFrom(_argumentExceptionSymbol);
+            return type is not null && type.IsOrInheritFrom(_argumentExceptionSymbol);
         }
 
         private static bool FilterDescendants(SyntaxNode node)
@@ -140,19 +140,19 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
 
         private static int? GetEndOfBlockIndex(SyntaxNodeAnalysisContext context, SyntaxNode? syntaxNode)
         {
-            if (syntaxNode == null)
+            if (syntaxNode is null)
                 return null;
 
             var operation = context.SemanticModel.GetOperation(syntaxNode, context.CancellationToken);
-            if (operation == null)
+            if (operation is null)
                 return null;
 
-            while (operation != null)
+            while (operation is not null)
             {
                 if (operation is IMethodBodyOperation)
                     break;
 
-                if (operation.Parent != null && operation.Parent is IBlockOperation)
+                if (operation.Parent is not null && operation.Parent is IBlockOperation)
                 {
                     if (operation.Parent.Parent is IMethodBodyOperation)
                         break;

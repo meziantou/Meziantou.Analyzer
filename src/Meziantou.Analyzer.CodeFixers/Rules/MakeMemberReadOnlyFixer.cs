@@ -24,7 +24,7 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Add readonly";
@@ -57,7 +57,7 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
             {
                 var accessorList = (AccessorListSyntax)accessor.Parent;
                 var property = (BasePropertyDeclarationSyntax?)accessorList.Parent;
-                if (property == null)
+                if (property is null)
                 {
                     addToAccessor = true;
                 }
@@ -120,7 +120,7 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
             {
                 var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
                 var nodeToFix = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-                if (nodeToFix == null)
+                if (nodeToFix is null)
                     continue;
 
                 document = await MakeMemberReadOnlyFixer.MakeReadOnly(document, nodeToFix, cancellationToken).ConfigureAwait(false);

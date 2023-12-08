@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TypeNameMustNotMatchNamespaceAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.TypeNameMustNotMatchNamespace,
         title: "Type name should not match containing namespace",
         messageFormat: "Type name should not match containing namespace",
@@ -18,7 +18,7 @@ public sealed class TypeNameMustNotMatchNamespaceAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TypeNameMustNotMatchNamespace));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -33,7 +33,7 @@ public sealed class TypeNameMustNotMatchNamespaceAnalyzer : DiagnosticAnalyzer
         var symbol = context.Symbol;
         if (symbol.ContainingSymbol is INamespaceSymbol ns && string.Equals(ns.Name, symbol.Name, StringComparison.Ordinal))
         {
-            context.ReportDiagnostic(s_rule, symbol);
+            context.ReportDiagnostic(Rule, symbol);
         }
     }
 }

@@ -26,7 +26,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: false);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         context.RegisterCodeFix(
@@ -51,7 +51,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
 
         if (nodeToFix is AwaitExpressionSyntax awaitSyntax)
         {
-            if (awaitSyntax?.Expression != null)
+            if (awaitSyntax.Expression is not null)
             {
                 var newExpression = (ExpressionSyntax)generator.InvocationExpression(
                     generator.MemberAccessExpression(awaitSyntax.Expression, nameof(Task.ConfigureAwait)),
@@ -68,9 +68,9 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             // await using (var a = expr);
             // var a = expr; await using (a.ConfigureAwait(false));
             var usingBlock = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<UsingStatementSyntax>().FirstOrDefault();
-            if (usingBlock != null)
+            if (usingBlock is not null)
             {
-                if (usingBlock.Declaration != null && usingBlock.Declaration.Variables.Count == 1)
+                if (usingBlock.Declaration is not null && usingBlock.Declaration.Variables.Count == 1)
                 {
                     // Move statement before using
                     // foreach variable, add
@@ -91,7 +91,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                 // await using var a = expr;
                 // var a = expr; await var aConfigured = a.ConfigureAwait(false);
                 var usingStatement = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<LocalDeclarationStatementSyntax>().FirstOrDefault();
-                if (usingStatement != null && usingStatement.Declaration.Variables.Count == 1)
+                if (usingStatement is not null && usingStatement.Declaration.Variables.Count == 1)
                 {
                     var variablesStatement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(usingStatement.Declaration.Type, usingStatement.Declaration.Variables))
                             .WithLeadingTrivia(usingStatement.GetLeadingTrivia());

@@ -21,7 +21,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Implement System.IEquatable";
@@ -37,7 +37,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
     {
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
-        if (semanticModel == null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not ITypeSymbol declaredTypeSymbol)
+        if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not ITypeSymbol declaredTypeSymbol)
             return document;
 
         var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
@@ -45,7 +45,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
             return document;
 
         // Retrieve Nullable Annotation from the Equals method and use it to construct the concrete interface
-        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod(m) && m != null);
+        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod(m) && m is not null);
         if (equalsMethod is null)
             return document;
 
