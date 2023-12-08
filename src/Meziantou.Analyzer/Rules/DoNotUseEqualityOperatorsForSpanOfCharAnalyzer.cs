@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseEqualityOperatorsForSpanOfChar,
         title: "Use SequenceEqual instead of equality operator",
         messageFormat: "Use SequenceEqual instead of {0}",
@@ -18,7 +18,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseEqualityOperatorsForSpanOfChar));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -55,13 +55,13 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
                 if (_operationUtilities.IsInExpressionContext(operation))
                     return;
 
-                context.ReportDiagnostic(s_rule, operation, $"{operation.OperatorKind} operator");
+                context.ReportDiagnostic(Rule, operation, $"{operation.OperatorKind} operator");
             }
         }
 
         private bool IsSpanOfString(ITypeSymbol? symbol)
         {
-            return symbol != null && symbol.IsEqualToAny(spanTypes);
+            return symbol is not null && symbol.IsEqualToAny(spanTypes);
         }
     }
 }

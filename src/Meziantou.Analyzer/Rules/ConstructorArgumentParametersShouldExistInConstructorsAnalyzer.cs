@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ConstructorArgumentParametersShouldExistInConstructors,
         title: "ConstructorArgument parameters should exist in constructors",
         messageFormat: "No constructor found with a parameter named '{0}'",
@@ -19,7 +19,7 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ConstructorArgumentParametersShouldExistInConstructors));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -40,7 +40,7 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
     {
         public ISymbol? ConstructorArgumentSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Markup.ConstructorArgumentAttribute");
 
-        public bool IsValid => ConstructorArgumentSymbol != null;
+        public bool IsValid => ConstructorArgumentSymbol is not null;
 
         public void AnalyzeProperty(SymbolAnalysisContext context)
         {
@@ -59,13 +59,13 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
                 if (HasConstructorMatchingAttribute(property.ContainingType, name))
                     continue;
 
-                if (attribute.ApplicationSyntaxReference != null)
+                if (attribute.ApplicationSyntaxReference is not null)
                 {
-                    context.ReportDiagnostic(s_rule, attribute.ApplicationSyntaxReference, name);
+                    context.ReportDiagnostic(Rule, attribute.ApplicationSyntaxReference, name);
                 }
                 else
                 {
-                    context.ReportDiagnostic(s_rule, property, name);
+                    context.ReportDiagnostic(Rule, property, name);
                 }
             }
         }

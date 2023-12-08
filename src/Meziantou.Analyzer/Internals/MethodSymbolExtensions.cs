@@ -5,9 +5,9 @@ namespace Meziantou.Analyzer;
 
 internal static class MethodSymbolExtensions
 {
-    private static readonly string[] s_msTestNamespaceParts = ["Microsoft", "VisualStudio", "TestTools", "UnitTesting"];
-    private static readonly string[] s_nunitNamespaceParts = ["NUnit", "Framework"];
-    private static readonly string[] s_xunitNamespaceParts = ["Xunit"];
+    private static readonly string[] MsTestNamespaceParts = ["Microsoft", "VisualStudio", "TestTools", "UnitTesting"];
+    private static readonly string[] NunitNamespaceParts = ["NUnit", "Framework"];
+    private static readonly string[] XunitNamespaceParts = ["Xunit"];
 
     public static bool IsInterfaceImplementation(this IMethodSymbol method)
     {
@@ -35,7 +35,7 @@ internal static class MethodSymbolExtensions
 
     private static bool IsInterfaceImplementation(this ISymbol symbol)
     {
-        return GetImplementingInterfaceSymbol(symbol) != null;
+        return GetImplementingInterfaceSymbol(symbol) is not null;
     }
 
     public static IMethodSymbol? GetImplementingInterfaceSymbol(this IMethodSymbol symbol)
@@ -48,7 +48,7 @@ internal static class MethodSymbolExtensions
 
     private static ISymbol? GetImplementingInterfaceSymbol(this ISymbol symbol)
     {
-        if (symbol.ContainingType == null)
+        if (symbol.ContainingType is null)
             return null;
 
         return symbol.ContainingType.AllInterfaces
@@ -62,12 +62,12 @@ internal static class MethodSymbolExtensions
         foreach (var attribute in attributes)
         {
             var type = attribute.AttributeClass;
-            while (type != null)
+            while (type is not null)
             {
                 var ns = type.ContainingNamespace;
-                if (ns.IsNamespace(s_msTestNamespaceParts) ||
-                    ns.IsNamespace(s_nunitNamespaceParts) ||
-                    ns.IsNamespace(s_xunitNamespaceParts))
+                if (ns.IsNamespace(MsTestNamespaceParts) ||
+                    ns.IsNamespace(NunitNamespaceParts) ||
+                    ns.IsNamespace(XunitNamespaceParts))
                 {
                     return true;
                 }

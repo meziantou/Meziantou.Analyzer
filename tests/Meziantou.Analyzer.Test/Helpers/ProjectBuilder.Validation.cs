@@ -25,24 +25,24 @@ public sealed partial class ProjectBuilder
 {
     public async Task ValidateAsync()
     {
-        if (DiagnosticAnalyzer == null)
+        if (DiagnosticAnalyzer is null)
         {
             Assert.Fail("DiagnosticAnalyzer is not configured");
         }
 
-        if (ExpectedFixedCode != null && CodeFixProvider == null)
+        if (ExpectedFixedCode is not null && CodeFixProvider is null)
         {
             Assert.Fail("CodeFixProvider is not configured");
         }
 
-        if (ExpectedDiagnosticResults == null)
+        if (ExpectedDiagnosticResults is null)
         {
             Assert.Fail("ExpectedDiagnostic is not configured");
         }
 
         await VerifyDiagnostic(ExpectedDiagnosticResults).ConfigureAwait(false);
 
-        if (ExpectedFixedCode != null)
+        if (ExpectedFixedCode is not null)
         {
             await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, CodeFixIndex).ConfigureAwait(false);
         }
@@ -65,7 +65,7 @@ public sealed partial class ProjectBuilder
     private void VerifyDiagnosticResults(IEnumerable<Diagnostic> actualResults, IList<DiagnosticAnalyzer> analyzers, IList<DiagnosticResult> expectedResults)
     {
         var expectedCount = expectedResults.Count;
-        if (DefaultAnalyzerId != null)
+        if (DefaultAnalyzerId is not null)
         {
             actualResults = actualResults.Where(diagnostic => diagnostic.Id == DefaultAnalyzerId).ToArray();
         }
@@ -76,7 +76,7 @@ public sealed partial class ProjectBuilder
         {
             var diagnosticsOutput = actualResults.Any() ? FormatDiagnostics(analyzers, actualResults.ToArray()) : "    NONE.";
 
-            Assert.Fail($"Mismatch between number of diagnostics returned, expected \"{expectedCount}\" actual \"{actualCount}\"\r\n\r\nDiagnostics:\r\n{diagnosticsOutput}\r\n");
+            Assert.Fail($"Mismatch between number of diagnostics returned, expected \"{expectedCount.ToString(CultureInfo.InvariantCulture)}\" actual \"{actualCount.ToString(CultureInfo.InvariantCulture)}\"\r\n\r\nDiagnostics:\r\n{diagnosticsOutput}\r\n");
         }
 
         for (var i = 0; i < expectedResults.Count; i++)
@@ -111,19 +111,19 @@ public sealed partial class ProjectBuilder
                 }
             }
 
-            if (expected.Id != null && !string.Equals(actual.Id, expected.Id, StringComparison.Ordinal))
+            if (expected.Id is not null && !string.Equals(actual.Id, expected.Id, StringComparison.Ordinal))
             {
                 Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                         expected.Id, actual.Id, FormatDiagnostics(analyzers, actual)));
             }
 
-            if (expected.Severity != null && actual.Severity != expected.Severity)
+            if (expected.Severity is not null && actual.Severity != expected.Severity)
             {
                 Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic severity to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                         expected.Severity, actual.Severity, FormatDiagnostics(analyzers, actual)));
             }
 
-            if (expected.Message != null && !string.Equals(actual.GetMessage(CultureInfo.InvariantCulture), expected.Message, StringComparison.Ordinal))
+            if (expected.Message is not null && !string.Equals(actual.GetMessage(CultureInfo.InvariantCulture), expected.Message, StringComparison.Ordinal))
             {
                 Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                         expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzers, actual)));
@@ -151,6 +151,7 @@ public sealed partial class ProjectBuilder
         return documents;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope")]
     private Task<Project> CreateProject()
     {
         var fileNamePrefix = "Test";
@@ -234,7 +235,7 @@ public sealed partial class ProjectBuilder
 
         foreach (var source in ApiReferences)
         {
-            var newFileName = fileNamePrefix + count + fileExt;
+            var newFileName = fileNamePrefix + count.ToString(CultureInfo.InvariantCulture) + fileExt;
             AppendFile(newFileName, source);
         }
 
@@ -242,7 +243,7 @@ public sealed partial class ProjectBuilder
 
         void AppendFile(string filename, string content)
         {
-            filename ??= fileNamePrefix + count + fileExt;
+            filename ??= fileNamePrefix + count.ToString(CultureInfo.InvariantCulture) + fileExt;
             var documentId = DocumentId.CreateNewId(projectId, debugName: filename);
             solution = solution.AddDocument(documentId, filename, SourceText.From(content), filePath: filename);
             count++;
@@ -273,7 +274,7 @@ public sealed partial class ProjectBuilder
         var diagnostics = new List<Diagnostic>();
         foreach (var project in projects)
         {
-            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true, metadataImportOptions: MetadataImportOptions.All); // TODO allow configuration
+            var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true, metadataImportOptions: MetadataImportOptions.All);
 
             // Enable diagnostic
             options = options.WithSpecificDiagnosticOptions(analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag)))));
@@ -287,7 +288,7 @@ public sealed partial class ProjectBuilder
                 {
                     string sourceCode = null;
                     var document = project.Documents.FirstOrDefault();
-                    if (document != null)
+                    if (document is not null)
                     {
                         sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
                     }
@@ -297,7 +298,7 @@ public sealed partial class ProjectBuilder
             }
 
             var additionalFiles = ImmutableArray<AdditionalText>.Empty;
-            if (AdditionalFiles != null)
+            if (AdditionalFiles is not null)
             {
                 additionalFiles = additionalFiles.AddRange(AdditionalFiles.Select(kvp => new InMemoryAdditionalText(kvp.Key, kvp.Value)));
             }
@@ -351,7 +352,7 @@ public sealed partial class ProjectBuilder
 
             foreach (var rule in rules)
             {
-                if (rule != null && string.Equals(rule.Id, diagnostics[i].Id, StringComparison.Ordinal))
+                if (rule is not null && string.Equals(rule.Id, diagnostics[i].Id, StringComparison.Ordinal))
                 {
                     var location = diagnostics[i].Location;
                     if (location == Location.None)
@@ -399,7 +400,7 @@ public sealed partial class ProjectBuilder
 
     private static Diagnostic[] SortDiagnostics(IEnumerable<Diagnostic> diagnostics)
     {
-        return diagnostics.OrderBy(d => d.Location.SourceSpan.Start).ToArray();
+        return [.. diagnostics.OrderBy(d => d.Location.SourceSpan.Start)];
     }
 
     [DebuggerStepThrough]
@@ -407,7 +408,7 @@ public sealed partial class ProjectBuilder
     {
         var actualSpan = actual.GetLineSpan();
 
-        Assert.True(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path != null && actualSpan.Path.StartsWith("Test", StringComparison.Ordinal) && expected.Path.EndsWith(".cs", StringComparison.Ordinal)),
+        Assert.True(string.Equals(actualSpan.Path, expected.Path, StringComparison.Ordinal) || (actualSpan.Path is not null && actualSpan.Path.StartsWith("Test", StringComparison.Ordinal) && expected.Path.EndsWith(".cs", StringComparison.Ordinal)),
             string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to be in file \"{0}\" was actually in file \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
                 expected.Path, actualSpan.Path, FormatDiagnostics(analyzers, diagnostic)));
 
@@ -459,7 +460,7 @@ public sealed partial class ProjectBuilder
         }
     }
 
-    private async static Task<IEnumerable<Diagnostic>> GetCompilerDiagnostics(Document document)
+    private static async Task<IEnumerable<Diagnostic>> GetCompilerDiagnostics(Document document)
     {
         var semanticModel = await document.GetSemanticModelAsync().ConfigureAwait(false);
         return semanticModel.GetDiagnostics();
@@ -469,7 +470,7 @@ public sealed partial class ProjectBuilder
     {
         var project = await CreateProject().ConfigureAwait(false);
         var document = project.Documents.First();
-        var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, new[] { document }, compileSolution: false).ConfigureAwait(false);
+        var analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, [document], compileSolution: false).ConfigureAwait(false);
         var compilerDiagnostics = await GetCompilerDiagnostics(document).ConfigureAwait(false);
 
         // Assert fixer is value
@@ -510,14 +511,14 @@ public sealed partial class ProjectBuilder
                 if (actions.Count == 0)
                     break;
 
-                if (codeFixIndex != null)
+                if (codeFixIndex is not null)
                 {
                     document = await ApplyFix(document, actions[(int)codeFixIndex], mustCompile: IsValidFixCode).ConfigureAwait(false);
                     break;
                 }
 
                 document = await ApplyFix(document, actions[0], mustCompile: IsValidFixCode).ConfigureAwait(false);
-                analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, new[] { document }, compileSolution: false).ConfigureAwait(false);
+                analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, [document], compileSolution: false).ConfigureAwait(false);
             }
         }
 
@@ -543,7 +544,7 @@ public sealed partial class ProjectBuilder
             {
                 string sourceCode = null;
                 document = project.Documents.FirstOrDefault();
-                if (document != null)
+                if (document is not null)
                 {
                     sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
                 }
@@ -573,13 +574,12 @@ public sealed partial class ProjectBuilder
         public override async Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
         {
             var documentRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            return diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot());
+            return diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot(cancellationToken));
         }
 
         public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(Project project, CancellationToken cancellationToken)
         {
-            var diagnostics = project.Documents.SelectMany(doc => GetDocumentDiagnosticsAsync(doc, cancellationToken).Result);
-            return Task.FromResult(diagnostics);
+            return Task.FromResult(project.Documents.SelectMany(doc => GetDocumentDiagnosticsAsync(doc, cancellationToken).Result));
         }
     }
 

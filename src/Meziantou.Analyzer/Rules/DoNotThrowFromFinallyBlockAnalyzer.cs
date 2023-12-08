@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotThrowFromFinallyBlockAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotThrowFromFinallyBlock,
         title: "Do not throw from a finally block",
         messageFormat: "Do not throw from a finally block",
@@ -20,7 +20,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotThrowFromFinallyBlock));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -41,7 +41,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzer : DiagnosticAnalyzer
 
         foreach (var throwStatement in finallyBlock.DescendantNodes().Where(IsThrowStatement))
         {
-            context.ReportDiagnostic(s_rule, throwStatement);
+            context.ReportDiagnostic(Rule, throwStatement);
         }
     }
 

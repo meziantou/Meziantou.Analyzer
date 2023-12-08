@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_optionalRule = new(
+    private static readonly DiagnosticDescriptor OptionalRule = new(
         RuleIdentifiers.ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter,
         title: "Parameters with [DefaultParameterValue] attributes should also be marked [Optional]",
         messageFormat: "Parameters with [DefaultParameterValue] attributes should also be marked [Optional]",
@@ -17,7 +17,7 @@ public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter));
 
-    private static readonly DiagnosticDescriptor s_defaultValueRule = new(
+    private static readonly DiagnosticDescriptor DefaultValueRule = new(
         RuleIdentifiers.DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant,
         title: "Use [DefaultParameterValue] instead of [DefaultValue]",
         messageFormat: "[DefaultValue] should not be used when [DefaultParameterValue] is meant",
@@ -27,7 +27,7 @@ public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_optionalRule, s_defaultValueRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(OptionalRule, DefaultValueRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -50,19 +50,19 @@ public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? DefaultParameterValueAttributeSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.DefaultParameterValueAttribute");
         public INamedTypeSymbol? DefaultValueAttributeSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.ComponentModel.DefaultValueAttribute");
 
-        public bool IsValid => (OptionalAttributeSymbol != null && DefaultParameterValueAttributeSymbol != null) || (DefaultParameterValueAttributeSymbol != null && DefaultValueAttributeSymbol != null);
+        public bool IsValid => (OptionalAttributeSymbol is not null && DefaultParameterValueAttributeSymbol is not null) || (DefaultParameterValueAttributeSymbol is not null && DefaultValueAttributeSymbol is not null);
 
         public void AnalyzerParameter(SymbolAnalysisContext context)
         {
             var parameter = (IParameterSymbol)context.Symbol;
             if (parameter.HasAttribute(DefaultParameterValueAttributeSymbol) && !parameter.HasAttribute(OptionalAttributeSymbol))
             {
-                context.ReportDiagnostic(s_optionalRule, parameter);
+                context.ReportDiagnostic(OptionalRule, parameter);
             }
 
             if (parameter.HasAttribute(DefaultValueAttributeSymbol) && !parameter.HasAttribute(DefaultParameterValueAttributeSymbol))
             {
-                context.ReportDiagnostic(s_defaultValueRule, parameter);
+                context.ReportDiagnostic(DefaultValueRule, parameter);
             }
         }
     }

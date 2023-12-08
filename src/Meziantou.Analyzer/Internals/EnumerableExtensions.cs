@@ -17,9 +17,9 @@ internal static class EnumerableExtensions
     [return: NotNullIfNotNull(parameterName: nameof(source))]
     public static IEnumerable<T>? WhereNotNull<T>(this IEnumerable<T?>? source) where T : class
     {
-        if (source == null)
+        if (source is null)
             return null;
 
-        return source.Where(item => item != null)!;
+        return source.Where(item => item is not null)!;
     }
 }

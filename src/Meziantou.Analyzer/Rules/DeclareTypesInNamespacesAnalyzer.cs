@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DeclareTypesInNamespacesAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DeclareTypesInNamespaces,
         title: "Declare types in namespaces",
         messageFormat: "Declare type '{0}' in a namespace",
@@ -17,7 +17,7 @@ public sealed class DeclareTypesInNamespacesAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DeclareTypesInNamespaces));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -36,9 +36,9 @@ public sealed class DeclareTypesInNamespacesAnalyzer : DiagnosticAnalyzer
         if (symbol.IsTopLevelStatementsEntryPointType())
             return;
 
-        if (symbol.ContainingType == null && (symbol.ContainingNamespace?.IsGlobalNamespace ?? true))
+        if (symbol.ContainingType is null && (symbol.ContainingNamespace?.IsGlobalNamespace ?? true))
         {
-            context.ReportDiagnostic(s_rule, symbol, symbol.Name);
+            context.ReportDiagnostic(Rule, symbol, symbol.Name);
         }
     }
 }

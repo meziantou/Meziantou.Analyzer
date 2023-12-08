@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ObsoleteAttributesShouldIncludeExplanations,
         title: "Obsolete attributes should include explanations",
         messageFormat: "Obsolete attributes should include explanations",
@@ -17,7 +17,7 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ObsoleteAttributesShouldIncludeExplanations));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -27,7 +27,7 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
         context.RegisterCompilationStartAction(ctx =>
         {
             var type = ctx.Compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
-            if (type == null)
+            if (type is null)
                 return;
 
             ctx.RegisterSymbolAction(symbolContext => AnalyzeMethod(symbolContext, type), SymbolKind.Method);
@@ -47,11 +47,11 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
                 var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation();
                 if (location != null)
                 {
-                    context.ReportDiagnostic(s_rule, location);
+                    context.ReportDiagnostic(Rule, location);
                 }
                 else
                 {
-                    context.ReportDiagnostic(s_rule, method);
+                    context.ReportDiagnostic(Rule, method);
                 }
             }
         }

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public class MakeMemberReadOnlyAnalyzerTests
+public sealed class MakeMemberReadOnlyAnalyzerTests
 {
     private static ProjectBuilder CreateProjectBuilder()
     {

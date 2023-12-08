@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseStringEqualsInsteadOfEqualityOperator,
         title: "Use String.Equals instead of equality operator",
         messageFormat: "Use string.Equals instead of {0}",
@@ -18,7 +18,7 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringEqualsInsteadOfEqualityOperator));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -51,14 +51,14 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
                 if (operationUtilities.IsInExpressionContext(operation))
                     return;
 
-                context.ReportDiagnostic(s_rule, operation, $"{operation.OperatorKind} operator");
+                context.ReportDiagnostic(Rule, operation, $"{operation.OperatorKind} operator");
             }
         }
     }
 
     private static bool IsNull(IOperation operation)
     {
-        return operation.ConstantValue.HasValue && operation.ConstantValue.Value == null;
+        return operation.ConstantValue.HasValue && operation.ConstantValue.Value is null;
     }
 
     private static bool IsStringEmpty(IOperation operation)

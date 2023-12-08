@@ -9,7 +9,7 @@ internal static class SymbolExtensions
 {
     public static bool IsEqualTo(this ISymbol? symbol, ISymbol? expectedType)
     {
-        if (symbol == null || expectedType == null)
+        if (symbol is null || expectedType is null)
             return false;
 
         return SymbolEqualityComparer.Default.Equals(expectedType, symbol);
@@ -17,7 +17,7 @@ internal static class SymbolExtensions
 
     public static bool IsVisibleOutsideOfAssembly([NotNullWhen(true)] this ISymbol? symbol)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
         if (symbol.DeclaredAccessibility != Accessibility.Public &&
@@ -27,7 +27,7 @@ internal static class SymbolExtensions
             return false;
         }
 
-        if (symbol.ContainingType == null)
+        if (symbol.ContainingType is null)
             return true;
 
         return IsVisibleOutsideOfAssembly(symbol.ContainingType);
@@ -81,7 +81,7 @@ internal static class SymbolExtensions
 
     public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol? symbol)
     {
-        while (symbol != null)
+        while (symbol is not null)
         {
             foreach (var member in symbol.GetMembers())
                 yield return member;

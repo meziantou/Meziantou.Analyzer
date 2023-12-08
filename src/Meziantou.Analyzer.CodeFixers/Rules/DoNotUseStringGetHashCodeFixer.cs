@@ -43,7 +43,7 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
-        if (invocationExpression == null)
+        if (invocationExpression is null)
             return document;
 
         var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");

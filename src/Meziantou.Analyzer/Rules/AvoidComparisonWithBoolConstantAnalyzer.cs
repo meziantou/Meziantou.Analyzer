@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AvoidComparisonWithBoolConstant,
         title: "Avoid comparison with bool constant",
         messageFormat: "Avoid comparison with bool constant",
@@ -20,7 +20,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidComparisonWithBoolConstant));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -80,7 +80,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
             .Add("LogicalNotOperatorNeeded", logicalNotOperatorNeeded.ToString());
 
         var operatorTokenLocation = ((BinaryExpressionSyntax)binaryOperation.Syntax).OperatorToken.GetLocation();
-        var diagnostic = Diagnostic.Create(s_rule, operatorTokenLocation, properties);
+        var diagnostic = Diagnostic.Create(Rule, operatorTokenLocation, properties);
         context.ReportDiagnostic(diagnostic);
     }
 

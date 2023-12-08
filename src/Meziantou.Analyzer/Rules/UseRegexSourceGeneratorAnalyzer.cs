@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_regexSourceGeneratorRule = new(
+    private static readonly DiagnosticDescriptor RegexSourceGeneratorRule = new(
         RuleIdentifiers.UseRegexSourceGenerator,
         title: "Use the Regex source generator",
         messageFormat: "Use the Regex source generator",
@@ -21,7 +21,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseRegexSourceGenerator));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_regexSourceGeneratorRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RegexSourceGeneratorRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -36,11 +36,11 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
     {
         var compilation = operation.SemanticModel!.Compilation;
         var regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
-        if (regexSymbol == null)
+        if (regexSymbol is null)
             return false;
 
         var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
-        if (regexGeneratorAttributeSymbol == null)
+        if (regexGeneratorAttributeSymbol is null)
             return false;
 
         // https://github.com/dotnet/runtime/pull/66111
@@ -73,7 +73,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 2 ? TimeSpanOperation.GetMilliseconds(op.Arguments[2].Value)?.ToString(CultureInfo.InvariantCulture) : null),
         });
 
-        context.ReportDiagnostic(s_regexSourceGeneratorRule, properties, op);
+        context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
@@ -118,7 +118,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 3 ? TimeSpanOperation.GetMilliseconds(op.Arguments[3].Value)?.ToString(CultureInfo.InvariantCulture) : null),
             });
 
-            context.ReportDiagnostic(s_regexSourceGeneratorRule, properties, op);
+            context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
         }
         else if (method.Name is "Replace")
         {
@@ -146,7 +146,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 4 ? TimeSpanOperation.GetMilliseconds(op.Arguments[4].Value)?.ToString(CultureInfo.InvariantCulture) : null),
             });
 
-            context.ReportDiagnostic(s_regexSourceGeneratorRule, properties, op);
+            context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
         }
     }
 

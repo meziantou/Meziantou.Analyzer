@@ -9,14 +9,14 @@ internal sealed class OperationUtilities(Compilation compilation)
 
     public bool IsInExpressionContext(IOperation operation)
     {
-        if (_expressionSymbol == null)
+        if (_expressionSymbol is null)
             return false;
 
         foreach (var op in operation.Ancestors())
         {
             if (op is IArgumentOperation argumentOperation)
             {
-                if (argumentOperation.Parameter == null)
+                if (argumentOperation.Parameter is null)
                     continue;
 
                 var type = argumentOperation.Parameter.Type;

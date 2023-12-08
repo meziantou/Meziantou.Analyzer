@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MakeStructMemberReadOnly,
         title: "Make member readonly",
         messageFormat: "Make '{0}' readonly",
@@ -21,7 +21,7 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeStructMemberReadOnly));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -62,7 +62,7 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
             var semanticModel = operation.SemanticModel!;
 
             var arg = GetDataFlowArgument(operation.Syntax);
-            if (arg == null)
+            if (arg is null)
                 return;
 
             var dataFlow = semanticModel.AnalyzeDataFlow(arg);
@@ -92,18 +92,18 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
                     var parent = context.OperationBlocks.FirstOrDefault()?.Syntax.Parent;
                     if (parent?.IsKind(SyntaxKind.PropertyDeclaration) == true)
                     {
-                        context.ReportDiagnostic(s_rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
+                        context.ReportDiagnostic(Rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
                         return;
                     }
                 }
 
-                context.ReportDiagnostic(s_rule, context.OwningSymbol, context.OwningSymbol.Name);
+                context.ReportDiagnostic(Rule, context.OwningSymbol, context.OwningSymbol.Name);
             }
         }
 
         private static SyntaxNode? GetDataFlowArgument(SyntaxNode node)
         {
-            if (node == null)
+            if (node is null)
                 return null;
 
             if (node is ArrowExpressionClauseSyntax expression)

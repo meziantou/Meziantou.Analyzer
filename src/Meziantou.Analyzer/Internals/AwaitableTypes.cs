@@ -17,14 +17,14 @@ internal sealed class AwaitableTypes
         TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
         TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
 
-        if (INotifyCompletionSymbol != null)
+        if (INotifyCompletionSymbol is not null)
         {
             var taskLikeSymbols = new List<INamedTypeSymbol>(4);
             taskLikeSymbols.AddIfNotNull(TaskSymbol);
             taskLikeSymbols.AddIfNotNull(TaskOfTSymbol);
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask"));
             taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
-            _taskOrValueTaskSymbols = taskLikeSymbols.ToArray();
+            _taskOrValueTaskSymbols = [.. taskLikeSymbols];
         }
         else
         {
@@ -42,10 +42,10 @@ internal sealed class AwaitableTypes
     // https://github.com/dotnet/roslyn/blob/248e85149427c534c4a156a436ecff69bab83b59/src/Compilers/CSharp/Portable/Binder/Binder_Await.cs#L347
     public bool IsAwaitable(ITypeSymbol? symbol, SemanticModel semanticModel, int position)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
-        if (INotifyCompletionSymbol == null)
+        if (INotifyCompletionSymbol is null)
             return false;
 
         if (symbol.SpecialType is SpecialType.System_Void || symbol.TypeKind is TypeKind.Dynamic)
@@ -76,10 +76,10 @@ internal sealed class AwaitableTypes
 
     public bool IsAwaitable(ITypeSymbol? symbol, Compilation compilation)
     {
-        if (symbol == null)
+        if (symbol is null)
             return false;
 
-        if (INotifyCompletionSymbol == null)
+        if (INotifyCompletionSymbol is null)
             return false;
 
         if (symbol.SpecialType is SpecialType.System_Void || symbol.TypeKind is TypeKind.Dynamic)
@@ -141,7 +141,7 @@ internal sealed class AwaitableTypes
         if (method.ReturnType is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.ConstructedFrom.IsEqualToAny(IAsyncEnumerableSymbol, IAsyncEnumeratorSymbol))
             return true;
 
-        if (AsyncMethodBuilderAttributeSymbol != null && method.ReturnType.HasAttribute(AsyncMethodBuilderAttributeSymbol))
+        if (AsyncMethodBuilderAttributeSymbol is not null && method.ReturnType.HasAttribute(AsyncMethodBuilderAttributeSymbol))
             return true;
 
         return false;

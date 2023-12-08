@@ -58,7 +58,7 @@ internal static class OperationExtensions
     public static IEnumerable<IOperation> Ancestors(this IOperation operation)
     {
         var parent = operation.Parent;
-        while (parent != null)
+        while (parent is not null)
         {
             yield return parent;
             parent = parent.Parent;
@@ -68,7 +68,7 @@ internal static class OperationExtensions
     public static bool IsInNameofOperation(this IOperation operation)
     {
         var parent = operation.Parent;
-        while (parent != null)
+        while (parent is not null)
         {
             if (parent.Kind == OperationKind.NameOf)
                 return true;
@@ -122,7 +122,7 @@ internal static class OperationExtensions
 
     public static IMethodSymbol? GetContainingMethod(this IOperation operation, CancellationToken cancellationToken)
     {
-        if (operation.SemanticModel == null)
+        if (operation.SemanticModel is null)
             return null;
 
         foreach (var syntax in operation.Syntax.AncestorsAndSelf())
@@ -145,7 +145,7 @@ internal static class OperationExtensions
             if (member is LocalFunctionStatementSyntax localFunction)
             {
                 var symbol = operation.SemanticModel!.GetDeclaredSymbol(localFunction, cancellationToken);
-                if (symbol != null && symbol.IsStatic)
+                if (symbol is not null && symbol.IsStatic)
                 {
                     parentStaticMemberStartPosition = localFunction.GetLocation().SourceSpan.Start;
                     return true;
@@ -154,7 +154,7 @@ internal static class OperationExtensions
             else if (member is LambdaExpressionSyntax lambdaExpression)
             {
                 var symbol = operation.SemanticModel!.GetSymbolInfo(lambdaExpression, cancellationToken).Symbol;
-                if (symbol != null && symbol.IsStatic)
+                if (symbol is not null && symbol.IsStatic)
                 {
                     parentStaticMemberStartPosition = lambdaExpression.GetLocation().SourceSpan.Start;
                     return true;
@@ -163,7 +163,7 @@ internal static class OperationExtensions
             else if (member is AnonymousMethodExpressionSyntax anonymousMethod)
             {
                 var symbol = operation.SemanticModel!.GetSymbolInfo(anonymousMethod, cancellationToken).Symbol;
-                if (symbol != null && symbol.IsStatic)
+                if (symbol is not null && symbol.IsStatic)
                 {
                     parentStaticMemberStartPosition = anonymousMethod.GetLocation().SourceSpan.Start;
                     return true;
@@ -174,7 +174,7 @@ internal static class OperationExtensions
                 parentStaticMemberStartPosition = methodDeclaration.GetLocation().SourceSpan.Start;
 
                 var symbol = operation.SemanticModel!.GetDeclaredSymbol(methodDeclaration, cancellationToken);
-                return symbol != null && symbol.IsStatic;
+                return symbol is not null && symbol.IsStatic;
             }
         }
 

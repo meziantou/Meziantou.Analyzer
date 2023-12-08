@@ -10,9 +10,9 @@ namespace Meziantou.Analyzer.Rules;
 
 public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 {
-    private static readonly string[] s_methodNames = ["IsMatch", "Match", "Matches", "Replace", "Split"];
+    private static readonly string[] MethodNames = ["IsMatch", "Match", "Matches", "Replace", "Split"];
 
-    private static readonly DiagnosticDescriptor s_timeoutRule = new(
+    private static readonly DiagnosticDescriptor TimeoutRule = new(
         RuleIdentifiers.MissingTimeoutParameterForRegex,
         title: "Add regex evaluation timeout",
         messageFormat: "Regular expressions should not be vulnerable to Denial of Service attacks",
@@ -22,7 +22,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingTimeoutParameterForRegex));
 
-    private static readonly DiagnosticDescriptor s_explicitCaptureRule = new(
+    private static readonly DiagnosticDescriptor ExplicitCaptureRule = new(
         RuleIdentifiers.UseRegexExplicitCaptureOptions,
         title: "Add RegexOptions.ExplicitCapture",
         messageFormat: "Add RegexOptions.ExplicitCapture to prevent capturing unneeded groups",
@@ -32,7 +32,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseRegexExplicitCaptureOptions));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_timeoutRule, s_explicitCaptureRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(TimeoutRule, ExplicitCaptureRule);
 
     protected static void AnalyzeMethod(SymbolAnalysisContext context)
     {
@@ -41,7 +41,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
             return;
 
         var generatorAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
-        if (generatorAttributeSymbol == null)
+        if (generatorAttributeSymbol is null)
             return;
 
         foreach (var attribute in method.GetAttributes())
@@ -56,15 +56,15 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                 {
                     var pattern = attribute.ConstructorArguments[0].Value as string;
                     regexOptions = (RegexOptions)(int)attribute.ConstructorArguments[1].Value!;
-                    if (pattern != null && ShouldAddExplicitCapture(pattern, regexOptions))
+                    if (pattern is not null && ShouldAddExplicitCapture(pattern, regexOptions))
                     {
-                        if (attribute.ApplicationSyntaxReference != null)
+                        if (attribute.ApplicationSyntaxReference is not null)
                         {
-                            context.ReportDiagnostic(s_explicitCaptureRule, attribute.ApplicationSyntaxReference);
+                            context.ReportDiagnostic(ExplicitCaptureRule, attribute.ApplicationSyntaxReference);
                         }
                         else
                         {
-                            context.ReportDiagnostic(s_explicitCaptureRule, method);
+                            context.ReportDiagnostic(ExplicitCaptureRule, method);
                         }
                     }
                 }
@@ -72,13 +72,13 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                 // Timeout
                 if (!HasNonBacktracking(regexOptions) && attribute.ConstructorArguments.Length < 3)
                 {
-                    if (attribute.ApplicationSyntaxReference != null)
+                    if (attribute.ApplicationSyntaxReference is not null)
                     {
-                        context.ReportDiagnostic(s_timeoutRule, attribute.ApplicationSyntaxReference);
+                        context.ReportDiagnostic(TimeoutRule, attribute.ApplicationSyntaxReference);
                     }
                     else
                     {
-                        context.ReportDiagnostic(s_timeoutRule, method);
+                        context.ReportDiagnostic(TimeoutRule, method);
                     }
                 }
             }
@@ -90,13 +90,13 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
     protected static void AnalyzeInvocation(OperationAnalysisContext context)
     {
         var op = (IInvocationOperation)context.Operation;
-        if (op == null || op.TargetMethod == null)
+        if (op is null || op.TargetMethod is null)
             return;
 
         if (!op.TargetMethod.IsStatic)
             return;
 
-        if (!s_methodNames.Contains(op.TargetMethod.Name, StringComparer.Ordinal))
+        if (!MethodNames.Contains(op.TargetMethod.Name, StringComparer.Ordinal))
             return;
 
         if (!op.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
@@ -108,14 +108,14 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
         var regexOptions = CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
         if (!HasNonBacktracking(regexOptions) && !CheckTimeout(context, op.Arguments))
         {
-            context.ReportDiagnostic(s_timeoutRule, op);
+            context.ReportDiagnostic(TimeoutRule, op);
         }
     }
 
     protected static void AnalyzeObjectCreation(OperationAnalysisContext context)
     {
         var op = (IObjectCreationOperation)context.Operation;
-        if (op == null)
+        if (op is null)
             return;
 
         if (op.Arguments.Length == 0)
@@ -127,7 +127,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
         var regexOptions = CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
         if (!HasNonBacktracking(regexOptions) && !CheckTimeout(context, op.Arguments))
         {
-            context.ReportDiagnostic(s_timeoutRule, op);
+            context.ReportDiagnostic(TimeoutRule, op);
         }
     }
 
@@ -140,11 +140,11 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
     {
         var pattern = GetPattern();
         var (regexOptions, regexOptionsArgument) = GetRegexOptions();
-        if (pattern != null && regexOptions != null && regexOptionsArgument != null)
+        if (pattern is not null && regexOptions is not null && regexOptionsArgument is not null)
         {
             if (ShouldAddExplicitCapture(pattern, regexOptions.Value))
             {
-                context.ReportDiagnostic(s_explicitCaptureRule, regexOptionsArgument);
+                context.ReportDiagnostic(ExplicitCaptureRule, regexOptionsArgument);
             }
         }
 
@@ -155,7 +155,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
             if (patternArgumentIndex < arguments.Length)
             {
                 var argument = arguments[patternArgumentIndex];
-                if (argument.Value != null && argument.Value.ConstantValue.HasValue && argument.Value.ConstantValue.Value is string pattern)
+                if (argument.Value is not null && argument.Value.ConstantValue.HasValue && argument.Value.ConstantValue.Value is string pattern)
                     return pattern;
             }
 
@@ -164,12 +164,12 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
         (RegexOptions?, IArgumentOperation?) GetRegexOptions()
         {
-            if (regexOptionsSymbol == null)
+            if (regexOptionsSymbol is null)
                 return (null, null);
 
 
-            var arg = arguments.FirstOrDefault(a => a.Parameter != null && a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
-            if (arg == null || arg.Value == null || !arg.Value.ConstantValue.HasValue)
+            var arg = arguments.FirstOrDefault(a => a.Parameter is not null && a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
+            if (arg is null || arg.Value is null || !arg.Value.ConstantValue.HasValue)
                 return (null, arg);
 
             return ((RegexOptions)arg.Value.ConstantValue.Value!, arg);

@@ -67,7 +67,7 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsFixer : CodeF
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        if (value == null)
+        if (value is null)
         {
             editor.ReplaceNode(nodeToFix, nodeToFix.WithDefault(SyntaxFactory.EqualsValueClause((ExpressionSyntax)generator.NullLiteralExpression())));
         }

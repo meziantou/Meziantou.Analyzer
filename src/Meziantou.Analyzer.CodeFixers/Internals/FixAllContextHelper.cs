@@ -26,7 +26,7 @@ internal static class FixAllContextHelper
         switch (fixAllContext.Scope)
         {
             case FixAllScope.Document:
-                if (document != null)
+                if (document is not null)
                 {
                     var documentDiagnostics = await fixAllContext.GetDocumentDiagnosticsAsync(document).ConfigureAwait(false);
                     return ImmutableDictionary<Document, ImmutableArray<Diagnostic>>.Empty.SetItem(document, documentDiagnostics);
@@ -96,7 +96,7 @@ internal static class FixAllContextHelper
         {
             cancellationToken.ThrowIfCancellationRequested();
             var document = documentAndDiagnostics.Key;
-            if (document != null)
+            if (document is not null)
             {
                 var diagnosticsForDocument = documentAndDiagnostics.ToImmutableArray();
                 builder.Add(document, diagnosticsForDocument);
@@ -116,7 +116,7 @@ internal static class FixAllContextHelper
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var tree = await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(false);
-                if (tree != null)
+                if (tree is not null)
                 {
                     builder.Add(tree, document);
                 }
@@ -129,7 +129,7 @@ internal static class FixAllContextHelper
     private static Document? GetReportedDocument(Diagnostic diagnostic, ImmutableDictionary<SyntaxTree, Document> treeToDocumentsMap)
     {
         var tree = diagnostic.Location.SourceTree;
-        if (tree != null)
+        if (tree is not null)
         {
             if (treeToDocumentsMap.TryGetValue(tree, out var document))
             {

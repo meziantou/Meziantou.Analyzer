@@ -20,7 +20,7 @@ namespace TestHelper;
 
 public sealed partial class ProjectBuilder
 {
-    private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> s_cache = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> NuGetPackagesCache = new(StringComparer.Ordinal);
 
     private int _diagnosticMessageIndex;
 
@@ -46,7 +46,7 @@ public sealed partial class ProjectBuilder
 
     private static Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
     {
-        var task = s_cache.GetOrAdd(
+        var task = NuGetPackagesCache.GetOrAdd(
             packageName + '@' + version + ':' + string.Join(",", paths),
             _ => new Lazy<Task<string[]>>(Download));
 
@@ -89,7 +89,7 @@ public sealed partial class ProjectBuilder
             }
 
             Assert.NotEmpty(result);
-            return result.ToArray();
+            return [.. result];
         }
     }
 
@@ -115,7 +115,7 @@ public sealed partial class ProjectBuilder
                     continue;
 
                 var instance = (DiagnosticAnalyzer)Activator.CreateInstance(type);
-                if (instance.SupportedDiagnostics.Any(d => ruleIds.Contains(d.Id)))
+                if (instance.SupportedDiagnostics.Any(d => ruleIds.Contains(d.Id, StringComparer.Ordinal)))
                 {
                     DiagnosticAnalyzer.Add(instance);
                 }

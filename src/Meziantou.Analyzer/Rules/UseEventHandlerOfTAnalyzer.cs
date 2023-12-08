@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseEventHandlerOfT,
         title: "Use EventHandler<T> to declare events",
         messageFormat: "{0}",
@@ -18,7 +18,7 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseEventHandlerOfT));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -40,7 +40,7 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
         {
             var symbol = (IEventSymbol)context.Symbol;
             var method = (symbol.Type as INamedTypeSymbol)?.DelegateInvokeMethod;
-            if (method == null)
+            if (method is null)
                 return;
 
             if (IsValidSignature(method, out var message))
@@ -49,7 +49,7 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
             if (symbol.IsInterfaceImplementation())
                 return;
 
-            context.ReportDiagnostic(s_rule, symbol, message);
+            context.ReportDiagnostic(Rule, symbol, message);
         }
 
         private bool IsValidSignature(IMethodSymbol methodSymbol, [NotNullWhen(false)] out string? message)

@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ObjectGetTypeOnTypeInstance,
         title: "GetType() should not be used on System.Type instances",
         messageFormat: "GetType() should not be used on System.Type instances",
@@ -18,7 +18,7 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ObjectGetTypeOnTypeInstance));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -34,15 +34,15 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
             context.RegisterOperationAction(context =>
             {
                 var operation = (IInvocationOperation)context.Operation;
-                if (operation.Instance != null && operation.TargetMethod.Name == "GetType" && operation.TargetMethod.ContainingType.IsObject())
+                if (operation.Instance is not null && operation.TargetMethod.Name == "GetType" && operation.TargetMethod.ContainingType.IsObject())
                 {
                     var instanceType = operation.Instance.GetActualType();
-                    if (instanceType == null)
+                    if (instanceType is null)
                         return;
 
                     if (instanceType.IsOrInheritFrom(typeSymbol))
                     {
-                        context.ReportDiagnostic(s_rule, operation);
+                        context.ReportDiagnostic(Rule, operation);
                     }
                 }
 

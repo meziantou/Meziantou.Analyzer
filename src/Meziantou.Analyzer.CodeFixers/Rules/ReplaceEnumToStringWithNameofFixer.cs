@@ -30,7 +30,7 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Use nameof";
@@ -42,7 +42,7 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation is IInvocationOperation invocation && invocation.Instance != null)
+        if (operation is IInvocationOperation invocation && invocation.Instance is not null)
         {
             var newExpression = generator.NameOfExpression(invocation.Instance.Syntax);
             editor.ReplaceNode(nodeToFix, newExpression);
@@ -53,7 +53,7 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
             editor.ReplaceNode(nodeToFix, newExpression);
         }
 
-        if (operation == null)
+        if (operation is null)
             return document;
 
         return editor.GetChangedDocument();

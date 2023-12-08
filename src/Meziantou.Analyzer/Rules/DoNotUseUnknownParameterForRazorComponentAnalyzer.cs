@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseUnknownParameterForRazorComponent,
         title: "Unknown component parameter",
         messageFormat: "The parameter '{0}' does not exist on component '{1}'",
@@ -21,7 +21,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseUnknownParameterForRazorComponent));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -41,7 +41,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
     {
         private readonly ConcurrentDictionary<ITypeSymbol, ComponentDescriptor> _componentDescriptors = new(SymbolEqualityComparer.Default);
 
-        public bool IsValid => IComponentSymbol != null && ComponentBaseSymbol != null && ParameterSymbol != null;
+        public bool IsValid => IComponentSymbol is not null && ComponentBaseSymbol is not null && ParameterSymbol is not null;
 
         public INamedTypeSymbol? IComponentSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
         public INamedTypeSymbol? ComponentBaseSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
@@ -74,7 +74,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                             {
                                 currentComponent = null;
                             }
-                            else if (currentComponent != null && targetMethod.Name == "AddAttribute")
+                            else if (currentComponent is not null && targetMethod.Name == "AddAttribute")
                             {
                                 if (targetMethod.Parameters.Length >= 2 && targetMethod.Parameters[1].Type.IsString())
                                 {
@@ -83,7 +83,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                                     {
                                         if (!IsValidAttribute(currentComponent, parameterName))
                                         {
-                                            context.ReportDiagnostic(s_rule, invocation.Syntax, parameterName, currentComponent.ToDisplayString(NullableFlowState.None));
+                                            context.ReportDiagnostic(Rule, invocation.Syntax, parameterName, currentComponent.ToDisplayString(NullableFlowState.None));
                                         }
                                     }
                                 }
@@ -112,7 +112,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
             {
                 var descriptor = new ComponentDescriptor();
                 var currentSymbol = symbol as INamedTypeSymbol;
-                while (currentSymbol != null)
+                while (currentSymbol is not null)
                 {
                     foreach (var member in currentSymbol.GetMembers())
                     {
@@ -120,7 +120,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                         {
                             // https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.components.parameterattribute?view=aspnetcore-6.0&WT.mc_id=DT-MVP-5003978
                             var parameterAttribute = property.GetAttribute(ParameterSymbol, inherits: false); // the attribute is sealed
-                            if (parameterAttribute == null)
+                            if (parameterAttribute is null)
                                 continue;
 
                             if (descriptor.Parameters.Add(member.Name))

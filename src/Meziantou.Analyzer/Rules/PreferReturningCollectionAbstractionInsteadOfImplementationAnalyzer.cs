@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.PreferReturningCollectionAbstractionInsteadOfImplementation,
         title: "Prefer using collection abstraction instead of implementation",
         messageFormat: "Prefer using collection abstraction instead of implementation",
@@ -20,7 +20,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.PreferReturningCollectionAbstractionInsteadOfImplementation));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -74,11 +74,11 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
         public void AnalyzeField(SyntaxNodeAnalysisContext context)
         {
             var node = (FieldDeclarationSyntax)context.Node;
-            if (node == null || node.Declaration == null)
+            if (node is null || node.Declaration is null)
                 return;
 
             var firstVariable = node.Declaration.Variables.FirstOrDefault();
-            if (firstVariable == null)
+            if (firstVariable is null)
                 return;
 
             if (context.SemanticModel.GetDeclaredSymbol(firstVariable, context.CancellationToken) is not IFieldSymbol symbol)
@@ -90,13 +90,13 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             if (IsValidType(symbol.Type))
                 return;
 
-            context.ReportDiagnostic(s_rule, node.Declaration.Type);
+            context.ReportDiagnostic(Rule, node.Declaration.Type);
         }
 
         public void AnalyzeDelegate(SyntaxNodeAnalysisContext context)
         {
             var node = (DelegateDeclarationSyntax)context.Node;
-            if (node == null)
+            if (node is null)
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
@@ -104,9 +104,9 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                 return;
 
             var type = node.ReturnType;
-            if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+            if (type is not null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(s_rule, type);
+                context.ReportDiagnostic(Rule, type);
             }
 
             AnalyzeParameters(context, node.ParameterList?.Parameters);
@@ -115,7 +115,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
         public void AnalyzeIndexer(SyntaxNodeAnalysisContext context)
         {
             var node = (IndexerDeclarationSyntax)context.Node;
-            if (node == null)
+            if (node is null)
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
@@ -123,9 +123,9 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                 return;
 
             var type = node.Type;
-            if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+            if (type is not null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(s_rule, type);
+                context.ReportDiagnostic(Rule, type);
             }
 
             AnalyzeParameters(context, node.ParameterList?.Parameters);
@@ -134,7 +134,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
         public void AnalyzeProperty(SyntaxNodeAnalysisContext context)
         {
             var node = (PropertyDeclarationSyntax)context.Node;
-            if (node == null)
+            if (node is null)
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
@@ -142,19 +142,19 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                 return;
 
             var type = node.Type;
-            if (type == null || IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+            if (type is null || IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
                 return;
 
             if (IsXmlSerializableProperty(symbol))
                 return;
 
-            context.ReportDiagnostic(s_rule, type);
+            context.ReportDiagnostic(Rule, type);
         }
 
         public void AnalyzeMethod(SyntaxNodeAnalysisContext context)
         {
             var node = (MethodDeclarationSyntax)context.Node;
-            if (node == null)
+            if (node is null)
                 return;
 
             var symbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
@@ -162,9 +162,9 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                 return;
 
             var type = node.ReturnType;
-            if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+            if (type is not null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(s_rule, type);
+                context.ReportDiagnostic(Rule, type);
             }
 
             AnalyzeParameters(context, node.ParameterList?.Parameters);
@@ -172,7 +172,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
 
         public void AnalyzeParameters(SyntaxNodeAnalysisContext context, IEnumerable<ParameterSyntax>? parameters)
         {
-            if (parameters != null)
+            if (parameters is not null)
             {
                 foreach (var parameter in parameters)
                 {
@@ -184,15 +184,15 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
         public void AnalyzeParameter(SyntaxNodeAnalysisContext context, ParameterSyntax parameter)
         {
             var type = parameter.Type;
-            if (type != null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
+            if (type is not null && !IsValidType(context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type))
             {
-                context.ReportDiagnostic(s_rule, parameter);
+                context.ReportDiagnostic(Rule, parameter);
             }
         }
 
         private bool IsValidType(ITypeSymbol? symbol)
         {
-            if (symbol == null)
+            if (symbol is null)
                 return true;
 
             var originalDefinition = symbol.OriginalDefinition;

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿#pragma warning disable CA1030 // Use events where appropriate
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;

@@ -63,7 +63,7 @@ internal abstract class DocumentBasedFixAllProvider : FixAllProvider
         }
 
         var newRoot = await FixAllInDocumentAsync(fixAllContext, document, diagnostics).ConfigureAwait(false);
-        if (newRoot == null)
+        if (newRoot is null)
         {
             return document;
         }
@@ -91,7 +91,7 @@ internal abstract class DocumentBasedFixAllProvider : FixAllProvider
         for (var i = 0; i < documents.Length; i++)
         {
             var newDocumentRoot = await newDocuments[i].ConfigureAwait(false);
-            if (newDocumentRoot == null)
+            if (newDocumentRoot is null)
                 continue;
 
             solution = solution.WithDocumentSyntaxRoot(documents[i].Id, newDocumentRoot);

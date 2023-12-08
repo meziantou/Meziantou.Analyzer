@@ -13,7 +13,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.FileNameMustMatchTypeName,
         title: "File name must match type name",
         messageFormat: "File name must match type name",
@@ -23,7 +23,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FileNameMustMatchTypeName));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -49,14 +49,14 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 continue;
 
 #if ROSLYN_4_4_OR_GREATER
-            if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".exclude_file_local_types", defaultValue: true))
+            if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".exclude_file_local_types", defaultValue: true))
                 continue;
 #endif
 
             var symbolName = symbol.Name;
 
             // dotnet_diagnostic.MA0048.excluded_symbol_names
-            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + s_rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
+            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, "dotnet_diagnostic." + Rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
             if (!string.IsNullOrEmpty(excludedSymbolNames))
             {
                 var symbolDeclarationId = DocumentationCommentId.CreateDeclarationId(symbol);
@@ -75,7 +75,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             }
 
             // MA0048.only_validate_first_type
-            if (context.Options.GetConfigurationValue(location.SourceTree, s_rule.Id + ".only_validate_first_type", defaultValue: false))
+            if (context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".only_validate_first_type", defaultValue: false))
             {
                 var root = location.SourceTree.GetRoot(context.CancellationToken);
                 var symbolNode = root.FindNode(location.SourceSpan);
@@ -120,7 +120,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
             }
 
-            context.ReportDiagnostic(s_rule, location);
+            context.ReportDiagnostic(Rule, location);
         }
     }
 

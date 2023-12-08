@@ -24,8 +24,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringFixer : CodeFixProv
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
         // get the innermost node for ties.
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true) as InvocationExpressionSyntax;
-        if (nodeToFix == null)
+        if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax nodeToFix)
             return;
 
         var title = "Use string.Create";
@@ -44,7 +43,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringFixer : CodeFixProv
         var generator = editor.Generator;
 
         var cultureInfo = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
-        if (cultureInfo == null)
+        if (cultureInfo is null)
             return document;
 
         if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation op)

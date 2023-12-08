@@ -7,7 +7,7 @@ internal static class NamedParameterAnalyzerCommon
     public static int ArgumentIndex(ArgumentSyntax argument)
     {
         var argumentListExpression = argument.FirstAncestorOrSelf<ArgumentListSyntax>();
-        if (argumentListExpression == null)
+        if (argumentListExpression is null)
             return -1;
 
         for (var i = 0; i < argumentListExpression.Arguments.Count; i++)

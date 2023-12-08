@@ -16,7 +16,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_listMethodsRule = new(
+    private static readonly DiagnosticDescriptor ListMethodsRule = new(
         RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods,
         title: "Use direct methods instead of LINQ methods",
         messageFormat: "Use '{0}' instead of '{1}()'",
@@ -26,7 +26,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods));
 
-    private static readonly DiagnosticDescriptor s_indexerInsteadOfElementAtRule = new(
+    private static readonly DiagnosticDescriptor IndexerInsteadOfElementAtRule = new(
         RuleIdentifiers.UseIndexerInsteadOfElementAt,
         title: "Use indexer instead of LINQ methods",
         messageFormat: "Use '{0}' instead of '{1}()'",
@@ -36,7 +36,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseIndexerInsteadOfElementAt));
 
-    private static readonly DiagnosticDescriptor s_combineLinqMethodsRule = new(
+    private static readonly DiagnosticDescriptor CombineLinqMethodsRule = new(
         RuleIdentifiers.OptimizeEnumerable_CombineMethods,
         title: "Combine LINQ methods",
         messageFormat: "Combine '{0}' with '{1}'",
@@ -46,7 +46,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_CombineMethods));
 
-    private static readonly DiagnosticDescriptor s_duplicateOrderByMethodsRule = new(
+    private static readonly DiagnosticDescriptor DuplicateOrderByMethodsRule = new(
         RuleIdentifiers.DuplicateEnumerable_OrderBy,
         title: "Remove useless OrderBy call",
         messageFormat: "Remove the first '{0}' method or use '{1}'",
@@ -56,7 +56,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DuplicateEnumerable_OrderBy));
 
-    private static readonly DiagnosticDescriptor s_optimizeCountRule = new(
+    private static readonly DiagnosticDescriptor OptimizeCountRule = new(
         RuleIdentifiers.OptimizeEnumerable_Count,
         title: "Optimize Enumerable.Count() usage",
         messageFormat: "{0}",
@@ -66,7 +66,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_Count));
 
-    private static readonly DiagnosticDescriptor s_optimizeWhereAndOrderByRule = new(
+    private static readonly DiagnosticDescriptor OptimizeWhereAndOrderByRule = new(
         RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy,
         title: "Use Where before OrderBy",
         messageFormat: "Call 'Where' before '{0}'",
@@ -76,7 +76,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy));
 
-    private static readonly DiagnosticDescriptor s_useCastInsteadOfSelect = new(
+    private static readonly DiagnosticDescriptor UseCastInsteadOfSelect = new(
         RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect,
         title: "Use 'Cast' instead of 'Select' to cast",
         messageFormat: "Use 'Cast<{0}>' instead of 'Select' to cast",
@@ -86,7 +86,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect));
 
-    private static readonly DiagnosticDescriptor s_useCountInsteadOfAny = new(
+    private static readonly DiagnosticDescriptor UseCountInsteadOfAny = new(
         RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny,
         title: "Use 'Count > 0' instead of 'Any()'",
         messageFormat: "Use 'Count > 0' instead of 'Any()'",
@@ -97,14 +97,14 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
-        s_listMethodsRule,
-        s_indexerInsteadOfElementAtRule,
-        s_combineLinqMethodsRule,
-        s_duplicateOrderByMethodsRule,
-        s_optimizeCountRule,
-        s_optimizeWhereAndOrderByRule,
-        s_useCastInsteadOfSelect,
-        s_useCountInsteadOfAny);
+        ListMethodsRule,
+        IndexerInsteadOfElementAtRule,
+        CombineLinqMethodsRule,
+        DuplicateOrderByMethodsRule,
+        OptimizeCountRule,
+        OptimizeWhereAndOrderByRule,
+        UseCastInsteadOfSelect,
+        UseCountInsteadOfAny);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -185,7 +185,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 operation.TargetMethod.Name == nameof(Enumerable.OrderByDescending))
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType))
+                if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType))
                 {
                     if (parent.TargetMethod.Name == nameof(Enumerable.Where))
                     {
@@ -196,7 +196,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                            .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
                            .Add("MethodName", parent.TargetMethod.Name);
 
-                        context.ReportDiagnostic(s_optimizeWhereAndOrderByRule, properties, parent, operation.TargetMethod.Name);
+                        context.ReportDiagnostic(OptimizeWhereAndOrderByRule, properties, parent, operation.TargetMethod.Name);
                     }
                 }
             }
@@ -209,17 +209,17 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
             if (operation.TargetMethod.Name == nameof(Enumerable.Count))
             {
-                if (ICollectionOfTSymbol == null && IReadOnlyCollectionOfTSymbol == null)
+                if (ICollectionOfTSymbol is null && IReadOnlyCollectionOfTSymbol is null)
                     return;
 
                 var actualType = operation.Arguments[0].Value.GetActualType();
-                if (actualType == null)
+                if (actualType is null)
                     return;
 
                 if (actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLengthProperty);
-                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Length", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Length", operation.TargetMethod.Name);
                     return;
                 }
 
@@ -229,7 +229,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     if (HasNonExplicitCountMethod(actualType))
                     {
                         var properties = CreateProperties(OptimizeLinqUsageData.UseCountProperty);
-                        context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Count", operation.TargetMethod.Name);
+                        context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Count", operation.TargetMethod.Name);
                         return;
                     }
 
@@ -251,10 +251,10 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             else if (operation.TargetMethod.Name == nameof(Enumerable.LongCount))
             {
                 var actualType = operation.Arguments[0].Value.GetActualType();
-                if (actualType != null && actualType.TypeKind == TypeKind.Array)
+                if (actualType is not null && actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
-                    context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "LongLength", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "LongLength", operation.TargetMethod.Name);
                 }
             }
         }
@@ -268,7 +268,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             var firstArgumentType = operation.Arguments[0].Value.GetActualType();
-            if (firstArgumentType == null)
+            if (firstArgumentType is null)
                 return;
 
             if (firstArgumentType.OriginalDefinition.IsEqualTo(ListOfTSymbol))
@@ -281,13 +281,13 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (!context.Options.GetConfigurationValue(operation, s_listMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                    if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
                         return;
 
                     properties = CreateProperties(OptimizeLinqUsageData.UseFindMethodWithConversion);
                 }
 
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
             }
         }
         
@@ -300,7 +300,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             var firstArgumentType = operation.Arguments[0].Value.GetActualType();
-            if (firstArgumentType == null)
+            if (firstArgumentType is null)
                 return;
 
             if (firstArgumentType.OriginalDefinition.IsEqualTo(ListOfTSymbol))
@@ -313,13 +313,13 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (!context.Options.GetConfigurationValue(operation, s_listMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                    if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
                         return;
 
                     properties = CreateProperties(OptimizeLinqUsageData.UseTrueForAllMethodWithConversion);
                 }
 
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "TrueForAll()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "TrueForAll()", operation.TargetMethod.Name);
             }
         }
         
@@ -332,7 +332,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             var firstArgumentType = operation.Arguments[0].Value.GetActualType();
-            if (firstArgumentType == null)
+            if (firstArgumentType is null)
                 return;
 
             if (firstArgumentType.OriginalDefinition.IsEqualTo(ListOfTSymbol))
@@ -345,13 +345,13 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (!context.Options.GetConfigurationValue(operation, s_listMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                    if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
                         return;
 
                     properties = CreateProperties(OptimizeLinqUsageData.UseExistsMethodWithConversion);
                 }
 
-                context.ReportDiagnostic(s_listMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Exists()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Exists()", operation.TargetMethod.Name);
             }
         }
 
@@ -382,16 +382,16 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != argCount)
                 return;
 
-            if (IListOfTSymbol == null && IReadOnlyListOfTSymbol == null)
+            if (IListOfTSymbol is null && IReadOnlyListOfTSymbol is null)
                 return;
 
             var actualType = operation.Arguments[0].Value.GetActualType();
-            if (actualType == null)
+            if (actualType is null)
                 return;
 
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(IListOfTSymbol) || i.OriginalDefinition.IsEqualTo(IReadOnlyListOfTSymbol)))
             {
-                context.ReportDiagnostic(s_indexerInsteadOfElementAtRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
+                context.ReportDiagnostic(IndexerInsteadOfElementAtRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
             }
         }
 
@@ -421,7 +421,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
                 // Check parent methods
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
+                if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
                 {
                     if (CombinableLinqMethods.Contains(parent.TargetMethod.Name))
                     {
@@ -432,7 +432,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                            .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
                            .Add("MethodName", parent.TargetMethod.Name);
 
-                        context.ReportDiagnostic(s_combineLinqMethodsRule, properties, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
+                        context.ReportDiagnostic(CombineLinqMethodsRule, properties, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
                     }
                 }
             }
@@ -446,7 +446,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 operation.TargetMethod.Name == nameof(Enumerable.ThenByDescending))
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent != null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
+                if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
                 {
                     if (parent.TargetMethod.Name == nameof(Enumerable.OrderBy) ||
                         parent.TargetMethod.Name == nameof(Enumerable.OrderByDescending))
@@ -460,7 +460,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             .Add("ExpectedMethodName", expectedMethodName)
                             .Add("MethodName", parent.TargetMethod.Name);
 
-                        context.ReportDiagnostic(s_duplicateOrderByMethodsRule, properties, parent, operation.TargetMethod.Name, expectedMethodName);
+                        context.ReportDiagnostic(DuplicateOrderByMethodsRule, properties, parent, operation.TargetMethod.Name, expectedMethodName);
                     }
                 }
             }
@@ -472,7 +472,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             var binaryOperation = GetParentBinaryOperation(operation, out var countOperand);
-            if (binaryOperation == null)
+            if (binaryOperation is null)
                 return;
 
             if (!IsSupportedOperator(binaryOperation.OperatorKind))
@@ -483,7 +483,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
             var opKind = NormalizeOperator();
             var otherOperand = binaryOperation.LeftOperand == countOperand ? binaryOperation.RightOperand : binaryOperation.LeftOperand;
-            if (otherOperand == null)
+            if (otherOperand is null)
                 return;
 
             string? message = null;
@@ -685,7 +685,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            if (message != null)
+            if (message is not null)
             {
                 properties = properties
                        .Add("OperandOperationStart", otherOperand.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
@@ -693,7 +693,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                        .Add("CountOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
                        .Add("CountOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
 
-                context.ReportDiagnostic(s_optimizeCountRule, properties, binaryOperation, message);
+                context.ReportDiagnostic(OptimizeCountRule, properties, binaryOperation, message);
             }
 
             static bool IsSupportedOperator(BinaryOperatorKind operatorKind)
@@ -728,7 +728,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             static bool HasTake(IInvocationOperation operation, List<INamedTypeSymbol> extensionMethodOwnerTypes)
             {
                 var op = GetChildLinqOperation(operation);
-                if (op == null)
+                if (op is null)
                     return false;
 
                 return op.TargetMethod.Name == nameof(Enumerable.Take) && extensionMethodOwnerTypes.Contains(op.TargetMethod.ContainingType, SymbolEqualityComparer.Default);
@@ -757,7 +757,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             // If what's returned is not a cast value or the cast is done by 'as' operator
-            if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast || castOp.Type == null)
+            if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast || castOp.Type is null)
                 return;
 
             // If the cast is not applied directly to the source element (one of the selector's arguments)
@@ -786,7 +786,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect);
 
             var castType = castOp.Type.ToMinimalDisplayString(semanticModel, nullableFlowState, operation.Syntax.SpanStart);
-            context.ReportDiagnostic(s_useCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
+            context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
 
             static bool CanReplaceByCast(IConversionOperation op)
             {
@@ -797,7 +797,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 // Using Cast<T> is only possible when the enum underlying type is the same as the conversion type
                 var operandActualType = op.Operand.GetActualType();
                 var enumerationType = operandActualType.GetEnumerationType();
-                if (enumerationType != null)
+                if (enumerationType is not null)
                 {
                     if (!enumerationType.IsEqualTo(op.Type))
                         return false;
@@ -816,13 +816,13 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     return;
 
                 var operandType = operation.Arguments[0].Value.GetActualType();
-                if (operandType == null)
+                if (operandType is null)
                     return;
 
                 var implementedInterfaces = operandType.GetAllInterfacesIncludingThis().Select(i => i.OriginalDefinition);
                 if (implementedInterfaces.Any(i => i.IsEqualTo(ICollectionOfTSymbol) || i.IsEqualTo(ICollectionSymbol) || i.IsEqualTo(IReadOnlyCollectionOfTSymbol)))
                 {
-                    context.ReportDiagnostic(s_useCountInsteadOfAny, operation);
+                    context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCountInsteadOfAny, operation);
                 }
             }
         }

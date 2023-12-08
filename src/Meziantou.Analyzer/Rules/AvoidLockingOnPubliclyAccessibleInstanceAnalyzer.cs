@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AvoidLockingOnPubliclyAccessibleInstance,
         title: "Avoid locking on publicly accessible instance",
         messageFormat: "Avoid locking on publicly accessible instance",
@@ -18,7 +18,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : Diagnosti
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidLockingOnPubliclyAccessibleInstance));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -33,19 +33,19 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : Diagnosti
         var operation = (ILockOperation)context.Operation;
         if (operation.LockedValue is ITypeOfOperation)
         {
-            context.ReportDiagnostic(s_rule, operation.LockedValue);
+            context.ReportDiagnostic(Rule, operation.LockedValue);
         }
         else if (operation.LockedValue is IInstanceReferenceOperation)
         {
-            context.ReportDiagnostic(s_rule, operation.LockedValue);
+            context.ReportDiagnostic(Rule, operation.LockedValue);
         }
         else if (operation.LockedValue is IFieldReferenceOperation fieldReferenceOperation && fieldReferenceOperation.Field.IsVisibleOutsideOfAssembly())
         {
-            context.ReportDiagnostic(s_rule, operation.LockedValue);
+            context.ReportDiagnostic(Rule, operation.LockedValue);
         }
         else if (operation.LockedValue is ILocalReferenceOperation localReference && localReference.Local.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Type")))
         {
-            context.ReportDiagnostic(s_rule, operation.LockedValue);
+            context.ReportDiagnostic(Rule, operation.LockedValue);
         }
     }
 }

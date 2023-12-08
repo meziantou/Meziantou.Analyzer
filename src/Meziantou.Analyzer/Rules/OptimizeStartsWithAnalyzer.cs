@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.OptimizeStartsWith,
         title: "Optimize string method usage",
         messageFormat: "Use an overload with char instead of string",
@@ -20,7 +20,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeStartsWith));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -39,17 +39,19 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
         public AnalyzerContext(Compilation compilation)
         {
             StringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
-            if (StringComparisonSymbol != null)
+            if (StringComparisonSymbol is not null)
             {
                 StringComparison_Ordinal = StringComparisonSymbol.GetMembers(nameof(StringComparison.Ordinal)).FirstOrDefault();
                 StringComparison_CurrentCulture = StringComparisonSymbol.GetMembers(nameof(StringComparison.CurrentCulture)).FirstOrDefault();
+#pragma warning disable RS0030 // Do not use banned APIs
                 StringComparison_InvariantCulture = StringComparisonSymbol.GetMembers(nameof(StringComparison.InvariantCulture)).FirstOrDefault();
+#pragma warning restore RS0030
             }
 
             EnumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
 
             var stringSymbol = compilation.GetSpecialType(SpecialType.System_String);
-            if (stringSymbol != null)
+            if (stringSymbol is not null)
             {
                 foreach (var method in stringSymbol.GetMembers(nameof(string.StartsWith)).OfType<IMethodSymbol>())
                 {
@@ -183,7 +185,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
             {
                 if (operation.TargetMethod.Name is "StartsWith")
                 {
-                    if (StartsWith_Char == null || operation.TargetMethod.IsEqualTo(StartsWith_Char))
+                    if (StartsWith_Char is null || operation.TargetMethod.IsEqualTo(StartsWith_Char))
                         return;
 
                     if (operation.Arguments.Length == 2)
@@ -191,13 +193,13 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
                     }
                 }
                 else if (operation.TargetMethod.Name is "EndsWith")
                 {
-                    if (EndsWith_Char == null || operation.TargetMethod.IsEqualTo(EndsWith_Char))
+                    if (EndsWith_Char is null || operation.TargetMethod.IsEqualTo(EndsWith_Char))
                         return;
 
                     if (operation.Arguments.Length == 2)
@@ -205,13 +207,13 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
                     }
                 }
                 else if (operation.TargetMethod.Name is "Replace")
                 {
-                    if (Replace_Char_Char == null || operation.TargetMethod.IsEqualTo(Replace_Char_Char))
+                    if (Replace_Char_Char is null || operation.TargetMethod.IsEqualTo(Replace_Char_Char))
                         return;
 
                     if (operation.Arguments.Length == 2)
@@ -220,7 +222,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } })
                         {
                             // Improve the error message as the rule is reported on the method
-                            context.ReportDiagnostic(s_rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticReportOptions.ReportOnMethodName);
+                            context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticReportOptions.ReportOnMethodName);
                         }
                     }
                     else if (operation.Arguments.Length == 3)
@@ -229,7 +231,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticReportOptions.ReportOnMethodName);
+                            context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticReportOptions.ReportOnMethodName);
                         }
                     }
                 }
@@ -237,41 +239,41 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                 {
                     if (operation.Arguments.Length == 2)
                     {
-                        if (IndexOf_Char != null)
+                        if (IndexOf_Char is not null)
                         {
                             if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                                 operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                             {
-                                context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
                             }
                         }
 
-                        if (IndexOf_Char_StringComparison != null)
+                        if (IndexOf_Char_StringComparison is not null)
                         {
                             if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                                 operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
                             {
-                                context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
                             }
                         }
                     }
                     else if (operation.Arguments.Length == 3)
                     {
-                        if (IndexOf_Char_Int32 == null)
+                        if (IndexOf_Char_Int32 is null)
                             return;
 
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[1].Value.Type.IsInt32() &&
                             operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
                     }
                     else if (operation.Arguments.Length == 4)
                     {
-                        if (IndexOf_Char_Int32_Int32 == null)
+                        if (IndexOf_Char_Int32_Int32 is null)
                             return;
 
 
@@ -280,7 +282,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             operation.Arguments[2].Value.Type.IsInt32() &&
                             operation.Arguments[3].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
                     }
                 }
@@ -288,29 +290,29 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                 {
                     if (operation.Arguments.Length == 2)
                     {
-                        if (LastIndexOf_Char != null)
+                        if (LastIndexOf_Char is not null)
                         {
                             if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                                 operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                             {
-                                context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
                             }
                         }
 
-                        if (LastIndexOf_Char_StringComparison != null)
+                        if (LastIndexOf_Char_StringComparison is not null)
                         {
                             if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                                 operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
                             {
-                                context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
                             }
                         }
                     }
                     else if (operation.Arguments.Length == 3)
                     {
-                        if (LastIndexOf_Char_Int32 == null)
+                        if (LastIndexOf_Char_Int32 is null)
                             return;
 
 
@@ -318,12 +320,12 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             operation.Arguments[1].Value.Type.IsInt32() &&
                             operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
                     }
                     else if (operation.Arguments.Length == 4)
                     {
-                        if (LastIndexOf_Char_Int32_Int32 == null)
+                        if (LastIndexOf_Char_Int32_Int32 is null)
                             return;
 
 
@@ -332,7 +334,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             operation.Arguments[2].Value.Type.IsInt32() &&
                             operation.Arguments[3].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
                         {
-                            context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
                     }
                 }
@@ -346,30 +348,30 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             switch (operation.Arguments.Length)
                             {
                                 case 2:
-                                    if (Join_Char_ObjectArray != null && secondParameterType is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Object })
+                                    if (Join_Char_ObjectArray is not null && secondParameterType is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Object })
                                     {
-                                        context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                        context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                         return;
                                     }
 
-                                    if (Join_Char_StringArray != null && secondParameterType is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_String })
+                                    if (Join_Char_StringArray is not null && secondParameterType is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_String })
                                     {
-                                        context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                        context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                         return;
                                     }
 
-                                    if (Join_Char_IEnumerableT != null && secondParameterType is INamedTypeSymbol symbol && symbol.ConstructedFrom.IsEqualTo(EnumerableOfTSymbol))
+                                    if (Join_Char_IEnumerableT is not null && secondParameterType is INamedTypeSymbol symbol && symbol.ConstructedFrom.IsEqualTo(EnumerableOfTSymbol))
                                     {
-                                        context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                        context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                         return;
                                     }
 
                                     break;
 
                                 case 4:
-                                    if (Join_Char_StringArray_Int32_Int32 != null)
+                                    if (Join_Char_StringArray_Int32_Int32 is not null)
                                     {
-                                        context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                        context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                         return;
                                     }
 
@@ -379,11 +381,11 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     }
                     else if (operation.Arguments.Length == 4)
                     {
-                        if (Join_Char_StringArray_Int32_Int32 != null)
+                        if (Join_Char_StringArray_Int32_Int32 is not null)
                         {
                             if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } })
                             {
-                                context.ReportDiagnostic(s_rule, operation.Arguments[0].Value);
+                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
                             }
                         }

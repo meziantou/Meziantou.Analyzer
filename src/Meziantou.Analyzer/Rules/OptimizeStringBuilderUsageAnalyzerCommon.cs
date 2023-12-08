@@ -17,7 +17,7 @@ internal static class OptimizeStringBuilderUsageAnalyzerCommon
 
     public static bool TryGetConstStringValue(IOperation operation, StringBuilder sb)
     {
-        if (operation == null)
+        if (operation is null)
             return false;
 
         if (operation.ConstantValue.HasValue && operation.ConstantValue.Value is string str)
@@ -48,7 +48,7 @@ internal static class OptimizeStringBuilderUsageAnalyzerCommon
         if (operation is IInterpolatedStringContentOperation interpolated)
         {
             var op = interpolated.GetChildOperations().SingleOrDefaultIfMultiple();
-            if (op == null)
+            if (op is null)
                 return false;
 
             return TryGetConstStringValue(op, sb);

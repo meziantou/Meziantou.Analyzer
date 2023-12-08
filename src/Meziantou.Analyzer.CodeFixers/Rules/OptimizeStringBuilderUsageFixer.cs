@@ -30,14 +30,14 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var diagnostic = context.Diagnostics.FirstOrDefault();
-        if (diagnostic == null)
+        if (diagnostic is null)
             return;
 
-        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), out OptimizeStringBuilderUsageData data) || data == OptimizeStringBuilderUsageData.None)
+        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeStringBuilderUsageData data) || data == OptimizeStringBuilderUsageData.None)
             return;
 
         var title = "Optimize StringBuilder usage";
@@ -90,7 +90,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
@@ -103,7 +103,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
             if (part is IInterpolatedStringTextOperation str)
             {
                 var text = OptimizeStringBuilderUsageAnalyzerCommon.GetConstStringValue(str);
-                if (text == null)
+                if (text is null)
                     return document; // This should not happen
 
                 var newArgument = generator.LiteralExpression(text.Length == 1 ? text[0] : text);
@@ -129,20 +129,20 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
             }
             else if (part is IInterpolationOperation interpolation)
             {
-                if (interpolation.FormatString == null && interpolation.Alignment == null)
+                if (interpolation.FormatString is null && interpolation.Alignment is null)
                 {
                     newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), interpolation.Expression.Syntax);
                 }
                 else
                 {
                     var format = "{0";
-                    if (interpolation.Alignment != null)
+                    if (interpolation.Alignment is not null)
                     {
                         var value = interpolation.Alignment.ConstantValue.Value;
                         format += "," + string.Format(CultureInfo.InvariantCulture, "{0}", value);
                     }
 
-                    if (interpolation.FormatString != null)
+                    if (interpolation.FormatString is not null)
                     {
                         format += ":" + OptimizeStringBuilderUsageAnalyzerCommon.GetConstStringValue(interpolation.FormatString);
                     }
@@ -167,7 +167,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
@@ -187,7 +187,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
@@ -210,7 +210,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
@@ -250,7 +250,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
@@ -275,7 +275,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
@@ -300,7 +300,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
@@ -334,7 +334,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
-        if (argument != null)
+        if (argument is not null)
         {
             var newArgument = argument.WithExpression((ExpressionSyntax)editor.Generator.LiteralExpression(constValue));
             editor.ReplaceNode(argument, newArgument);

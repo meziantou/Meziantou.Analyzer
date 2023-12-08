@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary,
         title: "Use the lambda parameters instead of using a closure",
         messageFormat: "Use the lambda parameters instead of using a closure (captured variable: {0})",
@@ -22,7 +22,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary));
 
-    private static readonly DiagnosticDescriptor s_ruleFactoryArg = new(
+    private static readonly DiagnosticDescriptor RuleFactoryArg = new(
         RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg,
         title: "Avoid closure by using an overload with the 'factoryArgument' parameter",
         messageFormat: "Avoid closure by using an overload with the 'factoryArgument' parameter (captured variable: {0})",
@@ -32,7 +32,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleFactoryArg);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RuleFactoryArg);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -43,7 +43,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
         context.RegisterCompilationStartAction(ctx =>
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
-            if (analyzerContext.ConcurrentDictionarySymbol == null)
+            if (analyzerContext.ConcurrentDictionarySymbol is null)
                 return;
 
             ctx.RegisterOperationAction(ctx => analyzerContext.AnalyzeInvocation(ctx), OperationKind.Invocation);
@@ -56,7 +56,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
         public AnalyzerContext(Compilation compilation)
         {
             ConcurrentDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
-            if (ConcurrentDictionarySymbol == null)
+            if (ConcurrentDictionarySymbol is null)
                 return;
 
             Func2Symbol = compilation.GetBestTypeByMetadataName("System.Func`2");
@@ -166,7 +166,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
                             return false;
                     }
 
-                    context.ReportDiagnostic(s_rule, argumentOperation, read.Name);
+                    context.ReportDiagnostic(Rule, argumentOperation, read.Name);
                     return true;
                 }
             }
@@ -187,7 +187,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
                 var parameters = GetParameters(argumentOperation);
                 if (dataFlow.Captured.Any(s => !parameters.Contains(s, SymbolEqualityComparer.Default)))
                 {
-                    context.ReportDiagnostic(s_ruleFactoryArg, argumentOperation, string.Join(", ", dataFlow.Captured.Select(symbol => symbol.Name)));
+                    context.ReportDiagnostic(RuleFactoryArg, argumentOperation, string.Join(", ", dataFlow.Captured.Select(symbol => symbol.Name)));
                 }
             }
         }
@@ -211,7 +211,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
     [return: NotNullIfNotNull(nameof(node))]
     private static SyntaxNode? GetDataFlowArgument(SyntaxNode? node)
     {
-        if (node == null)
+        if (node is null)
             return null;
 
         if (node is ArrowExpressionClauseSyntax expression)

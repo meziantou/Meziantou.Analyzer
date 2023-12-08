@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotRaiseApplicationException,
         title: "Do not raise System.ApplicationException type",
         messageFormat: "Do not raise System.ApplicationException type",
@@ -18,7 +18,7 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotRaiseApplicationException));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -28,7 +28,7 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(ctx =>
         {
             var reservedExceptionType = ctx.Compilation.GetBestTypeByMetadataName("System.ApplicationException");
-            if (reservedExceptionType != null)
+            if (reservedExceptionType is not null)
             {
                 ctx.RegisterOperationAction(_ => Analyze(_, reservedExceptionType), OperationKind.Throw);
             }
@@ -38,13 +38,13 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
     private static void Analyze(OperationAnalysisContext context, INamedTypeSymbol reservedExceptionType)
     {
         var operation = (IThrowOperation)context.Operation;
-        if (operation == null || operation.Exception == null)
+        if (operation is null || operation.Exception is null)
             return;
 
         var exceptionType = operation.Exception.GetActualType();
         if (exceptionType.IsEqualTo(reservedExceptionType))
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

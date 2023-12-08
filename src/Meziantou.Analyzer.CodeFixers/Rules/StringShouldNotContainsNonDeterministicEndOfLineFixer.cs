@@ -25,7 +25,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         foreach (var newLine in new[] { null, "\n", "\r\n" })
@@ -75,7 +75,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         {
             var newText = eol.Length > 0 ? string.Concat(line.ToString().Replace("\"\"", "\"", StringComparison.Ordinal), newLine ?? eol.ToString()) : line.ToString();
             var literal = generator.LiteralExpression(newText);
-            if (node == null)
+            if (node is null)
             {
                 node = literal;
             }

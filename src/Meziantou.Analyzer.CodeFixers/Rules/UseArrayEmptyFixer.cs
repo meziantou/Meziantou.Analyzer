@@ -25,7 +25,7 @@ public sealed class UseArrayEmptyFixer : CodeFixProvider
         // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
         // get the innermost node for ties.
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Use Array.Empty<T>()";
@@ -44,7 +44,7 @@ public sealed class UseArrayEmptyFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var elementType = GetArrayElementType(nodeToFix, semanticModel, cancellationToken);
-        if (elementType == null)
+        if (elementType is null)
             return document;
 
         var arrayEmptyInvocation = GenerateArrayEmptyInvocation(generator, elementType, semanticModel).WithTriviaFrom(nodeToFix);

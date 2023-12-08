@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CommaAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MissingCommaInObjectInitializer,
         title: "Add a comma after the last value",
         messageFormat: "Add comma after the last value",
@@ -20,9 +20,9 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingCommaInObjectInitializer));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
-    private static readonly ImmutableArray<SyntaxKind> s_objectInitializerKinds = ImmutableArray.Create(SyntaxKind.ObjectInitializerExpression, SyntaxKind.ArrayInitializerExpression, SyntaxKind.CollectionInitializerExpression);
+    private static readonly ImmutableArray<SyntaxKind> ObjectInitializerKinds = ImmutableArray.Create(SyntaxKind.ObjectInitializerExpression, SyntaxKind.ArrayInitializerExpression, SyntaxKind.CollectionInitializerExpression);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -30,7 +30,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(HandleObjectInitializer, s_objectInitializerKinds);
+        context.RegisterSyntaxNodeAction(HandleObjectInitializer, ObjectInitializerKinds);
         context.RegisterSyntaxNodeAction(HandleAnonymousObjectInitializer, SyntaxKind.AnonymousObjectCreationExpression);
         context.RegisterSyntaxNodeAction(HandleEnumDeclaration, SyntaxKind.EnumDeclaration);
 #if CSHARP12_OR_GREATER
@@ -47,7 +47,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
             return;
 
         var lastMember = elements[^1];
-        context.ReportDiagnostic(s_rule, lastMember);
+        context.ReportDiagnostic(Rule, lastMember);
     }
 
 #if CSHARP12_OR_GREATER

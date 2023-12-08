@@ -45,7 +45,7 @@ public sealed class AvoidUsingRedundantElseFixer : CodeFixProvider
         {
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var nodeToFix = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-            if (nodeToFix == null)
+            if (nodeToFix is null)
                 continue;
 
             document = await RemoveRedundantElse(document, nodeToFix, cancellationToken).ConfigureAwait(false);

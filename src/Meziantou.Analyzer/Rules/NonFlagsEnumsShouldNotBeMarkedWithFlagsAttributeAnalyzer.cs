@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute,
         title: "Non-flags enums should not be marked with \"FlagsAttribute\"",
         messageFormat: "Non-flags enums should not be marked with \"FlagsAttribute\" ({0} is not a power of two or a combinaison of other values)",
@@ -21,7 +21,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -34,18 +34,18 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
-        if (symbol.EnumUnderlyingType == null)
+        if (symbol.EnumUnderlyingType is null)
             return;
 
         if (!symbol.HasAttribute(context.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute")))
             return;
 
-        if (!symbol.GetMembers().OfType<IFieldSymbol>().All(member => member.HasConstantValue && member.ConstantValue != null))
+        if (!symbol.GetMembers().OfType<IFieldSymbol>().All(member => member.HasConstantValue && member.ConstantValue is not null))
             return; // I cannot reproduce this case, but it was reported by some users.
 
         var members = symbol.GetMembers()
             .OfType<IFieldSymbol>()
-            .Where(member => member.ConstantValue != null)
+            .Where(member => member.ConstantValue is not null)
             .Select(member => (member, IsSingleBitSet: IsSingleBitSet(member.ConstantValue), IsZero: IsZero(member.ConstantValue)))
             .ToArray();
         foreach (var member in members)
@@ -62,7 +62,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
                 if (!otherMember.IsSingleBitSet)
                     continue;
 
-                if (otherMember.member.ConstantValue != null)
+                if (otherMember.member.ConstantValue is not null)
                 {
                     value = RemoveValue(value, otherMember.member.ConstantValue);
                 }
@@ -70,7 +70,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
 
             if (!IsZero(value))
             {
-                context.ReportDiagnostic(s_rule, symbol, member.member.Name);
+                context.ReportDiagnostic(Rule, symbol, member.member.Name);
                 return;
             }
         }

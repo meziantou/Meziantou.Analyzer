@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseIsPatternInsteadOfSequenceEqual,
         title: "Use 'is' operator instead of SequenceEqual",
         messageFormat: "Use 'is' operator instead of '{0}'",
@@ -20,7 +20,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseIsPatternInsteadOfSequenceEqual));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -56,14 +56,14 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnaly
         {
             if (IsConstantValue(operation.Arguments[1].Value))
             {
-                context.ReportDiagnostic(s_rule, operation, method.Name);
+                context.ReportDiagnostic(Rule, operation, method.Name);
             }
         }
         else if (method.Name is "Equals" && method.Parameters.Length == 3 && method.Parameters[0].Type.IsEqualTo(readOnlySpanCharSymbol))
         {
             if (IsConstantValue(operation.Arguments[1].Value) && IsStringComparisonOrdinal(operation.Arguments[2].Value, stringComparisonSymbol))
             {
-                context.ReportDiagnostic(s_rule, operation, method.Name);
+                context.ReportDiagnostic(Rule, operation, method.Name);
             }
         }
 

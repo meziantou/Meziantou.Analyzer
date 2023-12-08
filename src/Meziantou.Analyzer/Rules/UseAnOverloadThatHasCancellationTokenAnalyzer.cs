@@ -20,7 +20,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_useAnOverloadThatHasCancellationTokenRule = new(
+    private static readonly DiagnosticDescriptor UseAnOverloadThatHasCancellationTokenRule = new(
         RuleIdentifiers.UseAnOverloadThatHasCancellationToken,
         title: "Use an overload with a CancellationToken argument",
         messageFormat: "Use an overload with a CancellationToken",
@@ -30,7 +30,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHasCancellationToken));
 
-    private static readonly DiagnosticDescriptor s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule = new(
+    private static readonly DiagnosticDescriptor UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule = new(
         RuleIdentifiers.UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable,
         title: "Forward the CancellationToken parameter to methods that take one",
         messageFormat: "Use an overload with a CancellationToken, available tokens: {0}",
@@ -40,7 +40,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable));
 
-    private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRule = new(
+    private static readonly DiagnosticDescriptor FlowCancellationTokenInAwaitForEachRule = new(
         RuleIdentifiers.FlowCancellationTokenInAwaitForEach,
         title: "Use a cancellation token using .WithCancellation()",
         messageFormat: "Specify a CancellationToken",
@@ -50,7 +50,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEach));
 
-    private static readonly DiagnosticDescriptor s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule = new(
+    private static readonly DiagnosticDescriptor FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule = new(
         RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable,
         title: "Forward the CancellationToken using .WithCancellation()",
         messageFormat: "Specify a CancellationToken using WithCancellation(), available tokens: {0}",
@@ -60,7 +60,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_useAnOverloadThatHasCancellationTokenRule, s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, s_flowCancellationTokenInAwaitForEachRule, s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasCancellationTokenRule, UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, FlowCancellationTokenInAwaitForEachRule, FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -70,7 +70,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         context.RegisterCompilationStartAction(ctx =>
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
-            if (analyzerContext.CancellationTokenSymbol == null)
+            if (analyzerContext.CancellationTokenSymbol is null)
                 return;
 
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
@@ -96,7 +96,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         {
             foreach (var argument in operation.Arguments)
             {
-                if (argument.ArgumentKind == ArgumentKind.Explicit && argument.Parameter != null && argument.Parameter.Type.IsEqualTo(CancellationTokenSymbol))
+                if (argument.ArgumentKind == ArgumentKind.Explicit && argument.Parameter is not null && argument.Parameter.Type.IsEqualTo(CancellationTokenSymbol))
                     return true;
             }
 
@@ -116,7 +116,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return true;
 
             var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, CancellationTokenSymbol);
-            if (overload != null)
+            if (overload is not null)
             {
                 for (var i = 0; i < overload.Parameters.Length; i++)
                 {
@@ -138,7 +138,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             {
                 foreach (var arg in invocationOperation.Arguments)
                 {
-                    if (arg.IsImplicit && arg.Parameter != null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
+                    if (arg.IsImplicit && arg.Parameter is not null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
                     {
                         parameterInfo = new AdditionalParameterInfo(invocationOperation.TargetMethod.Parameters.IndexOf(arg.Parameter), arg.Parameter.Name, HasEnumerableCancellationAttribute(arg.Parameter));
                         return true;
@@ -152,7 +152,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private bool HasEnumerableCancellationAttribute(IParameterSymbol? parameterSymbol)
         {
-            if (parameterSymbol == null)
+            if (parameterSymbol is null)
                 return false;
 
             return parameterSymbol.HasAttribute(EnumeratorCancellationAttributeSymbol, inherits: false);
@@ -170,7 +170,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var availableCancellationTokens = FindCancellationTokens(operation, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
             {
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
             }
             else
             {
@@ -178,7 +178,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_useAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(UseAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
             }
         }
 
@@ -223,7 +223,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (availableCancellationTokens.Length > 0)
             {
                 var properties = CreateProperties(availableCancellationTokens, new AdditionalParameterInfo(-1, Name: null, HasEnumeratorCancellationAttribute: false));
-                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, properties, op.Collection, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule, properties, op.Collection, string.Join(", ", availableCancellationTokens));
             }
             else
             {
@@ -231,7 +231,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(s_flowCancellationTokenInAwaitForEachRule, op.Collection, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(FlowCancellationTokenInAwaitForEachRule, op.Collection, string.Join(", ", availableCancellationTokens));
             }
         }
 
@@ -292,7 +292,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     else
                     {
                         var typeMembers = GetMembers(memberTypeSymbol, maxDepth - 1);
-                        if (typeMembers != null)
+                        if (typeMembers is not null)
                         {
                             foreach (var objectMember in typeMembers)
                             {
@@ -311,7 +311,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
             {
                 var symbolType = symbol.GetSymbolType();
-                if (symbolType == null)
+                if (symbolType is null)
                     continue;
 
                 availableSymbols.Add(new(symbol.Name, symbolType));
@@ -326,18 +326,18 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var paths = new List<string>();
             foreach (var availableSymbol in availableSymbols)
             {
-                if (availableSymbol.TypeSymbol == null)
+                if (availableSymbol.TypeSymbol is null)
                     continue;
 
                 var members = GetMembers(availableSymbol.TypeSymbol, maxDepth: 1);
-                if (members != null)
+                if (members is not null)
                 {
                     foreach (var member in members)
                     {
                         if (!AreAllSymbolsAccessibleFromOperation(member, operation))
                             continue;
 
-                        if (availableSymbol.Name == null && isInStaticContext && member.Length > 0 && !member[0].IsStatic)
+                        if (availableSymbol.Name is null && isInStaticContext && member.Length > 0 && !member[0].IsStatic)
                             continue;
 
                         var fullPath = ComputeFullPath(availableSymbol.Name, member);
@@ -349,7 +349,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (paths.Count == 0)
                 return [];
 
-            return paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value, StringComparer.Ordinal).ToArray();
+            return [.. paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value, StringComparer.Ordinal)];
 
             static bool AreAllSymbolsAccessibleFromOperation(IEnumerable<ISymbol> symbols, IOperation operation)
             {
@@ -364,7 +364,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
             static string ComputeFullPath(string? prefix, IEnumerable<ISymbol> symbols)
             {
-                if (prefix == null)
+                if (prefix is null)
                     return string.Join(".", symbols.Select(symbol => symbol.Name));
 
                 var suffix = string.Join(".", symbols.Select(symbol => symbol.Name));
@@ -383,7 +383,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         private static ITypeSymbol? GetContainingType(IOperation operation, CancellationToken cancellationToken)
         {
             var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is TypeDeclarationSyntax);
-            if (ancestor == null)
+            if (ancestor is null)
                 return null;
 
             return operation.SemanticModel!.GetDeclaredSymbol(ancestor, cancellationToken) as ITypeSymbol;

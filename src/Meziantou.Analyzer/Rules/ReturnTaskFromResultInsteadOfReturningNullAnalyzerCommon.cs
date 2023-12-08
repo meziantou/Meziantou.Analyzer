@@ -13,10 +13,10 @@ internal static class ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon
 
     internal static IMethodSymbol? FindContainingMethod(SemanticModel? semanticModel, SyntaxNode? syntaxNode, CancellationToken cancellationToken)
     {
-        if (semanticModel == null)
+        if (semanticModel is null)
             return null;
 
-        while (syntaxNode != null)
+        while (syntaxNode is not null)
         {
             if (syntaxNode.IsKind(SyntaxKind.AnonymousMethodExpression))
             {

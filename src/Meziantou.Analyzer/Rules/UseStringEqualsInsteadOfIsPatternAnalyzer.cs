@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStringEqualsInsteadOfIsPatternAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rulePattern = new(
+    private static readonly DiagnosticDescriptor RulePattern = new(
         RuleIdentifiers.UseStringEqualsInsteadOfIsPattern,
         title: "Use String.Equals instead of is pattern",
         messageFormat: "Use string.Equals instead of 'is' pattern",
@@ -18,7 +18,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzer : DiagnosticAnalyz
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringEqualsInsteadOfIsPattern));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rulePattern);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RulePattern);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -37,7 +37,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzer : DiagnosticAnalyz
         {
             if (pattern is IConstantPatternOperation { Value.ConstantValue: { HasValue: true, Value: string { Length: > 0 } } })
             {
-                context.ReportDiagnostic(s_rulePattern, pattern);
+                context.ReportDiagnostic(RulePattern, pattern);
             }
             else if (pattern is IRecursivePatternOperation recursivePattern)
             {

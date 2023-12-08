@@ -24,11 +24,11 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel == null)
+        if (semanticModel is null)
             return;
 
         if (ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon.FindContainingMethod(semanticModel, nodeToFix, context.CancellationToken)?.ReturnType is not INamedTypeSymbol type)
@@ -52,7 +52,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         var generator = editor.Generator;
 
         var typeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (typeSymbol == null)
+        if (typeSymbol is null)
             return document;
 
         var newExpression = generator.MemberAccessExpression(generator.TypeExpression(typeSymbol), nameof(Task.CompletedTask));
@@ -75,7 +75,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         var generator = editor.Generator;
 
         var taskTypeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (taskTypeSymbol == null)
+        if (taskTypeSymbol is null)
             return document;
 
         var newExpression = generator.MemberAccessExpression(generator.TypeExpression(taskTypeSymbol), generator.GenericName("FromResult", typeSymbol.TypeArguments[0]));

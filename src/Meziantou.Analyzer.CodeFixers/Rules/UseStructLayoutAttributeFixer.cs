@@ -26,7 +26,7 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null || nodeToFix is not TypeDeclarationSyntax)
+        if (nodeToFix is null || nodeToFix is not TypeDeclarationSyntax)
             return;
 
         context.RegisterCodeFix(

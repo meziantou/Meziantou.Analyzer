@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.TheReturnValueOfStreamReadShouldBeUsed,
         title: "The value returned by Stream.Read/Stream.ReadAsync is not used",
         messageFormat: "The value returned by '{0}' is not used",
@@ -19,7 +19,7 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TheReturnValueOfStreamReadShouldBeUsed));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -29,7 +29,7 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAn
         context.RegisterCompilationStartAction(context =>
         {
             var streamSymbol = context.Compilation.GetBestTypeByMetadataName("System.IO.Stream");
-            if (streamSymbol == null)
+            if (streamSymbol is null)
                 return;
 
             context.RegisterOperationAction(context => AnalyzeOperation(context, streamSymbol), OperationKind.Invocation);
@@ -52,9 +52,9 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAn
             parent = parent.Parent;
         }
 
-        if (parent == null || parent is IBlockOperation || parent is IExpressionStatementOperation)
+        if (parent is null || parent is IBlockOperation || parent is IExpressionStatementOperation)
         {
-            context.ReportDiagnostic(s_rule, invocation, targetMethod.Name);
+            context.ReportDiagnostic(Rule, invocation, targetMethod.Name);
         }
     }
 }

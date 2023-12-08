@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseOperatingSystemInsteadOfRuntimeInformationAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseOperatingSystemInsteadOfRuntimeInformation,
         title: "Use System.OperatingSystem to check the current OS",
         messageFormat: "Use System.OperatingSystem to check the current OS",
@@ -18,7 +18,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationAnalyzer : Diag
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseOperatingSystemInsteadOfRuntimeInformation));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -45,7 +45,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationAnalyzer : Diag
             {
                 if (access.Member.ContainingType.IsEqualTo(osPlatformSymbol))
                 {
-                    context.ReportDiagnostic(s_rule, operation);
+                    context.ReportDiagnostic(Rule, operation);
                 }
             }
         }

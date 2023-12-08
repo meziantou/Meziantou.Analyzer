@@ -23,7 +23,7 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         if (context.Diagnostics[0].Id == RuleIdentifiers.UseDateTimeUnixEpoch)
@@ -50,7 +50,7 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var symbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName(type);
-        if (symbol == null)
+        if (symbol is null)
             return document;
 
         var generator = editor.Generator;

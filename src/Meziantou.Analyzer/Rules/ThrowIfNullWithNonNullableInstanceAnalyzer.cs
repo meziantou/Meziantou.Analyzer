@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ThrowIfNullWithNonNullableInstance,
         title: "ArgumentNullException.ThrowIfNull should not be used with non-nullable types",
         messageFormat: "ArgumentNullException.ThrowIfNull should not be used with non-nullable types",
@@ -19,7 +19,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ThrowIfNullWithNonNullableInstance));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -30,7 +30,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
         {
             var nullableSymbol = context.Compilation.GetBestTypeByMetadataName("System.Nullable`1");
             var symbol = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
-            if (symbol == null)
+            if (symbol is null)
                 return;
 
             var members = symbol.GetMembers("ThrowIfNull");
@@ -50,7 +50,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
 
                 var instance = operation.Arguments[0].Value;
                 var type = instance.GetActualType();
-                if (type == null)
+                if (type is null)
                     return;
 
                 // Generic type (T)
@@ -70,7 +70,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
                 if (type is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T)
                     return;
 
-                context.ReportDiagnostic(s_rule, operation);
+                context.ReportDiagnostic(Rule, operation);
             }, OperationKind.Invocation);
         });
     }

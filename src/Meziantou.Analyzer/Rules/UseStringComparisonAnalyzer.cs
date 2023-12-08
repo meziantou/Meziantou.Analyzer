@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_avoidCultureSensitiveMethodRule = new(
+    private static readonly DiagnosticDescriptor AvoidCultureSensitiveMethodRule = new(
         RuleIdentifiers.AvoidCultureSensitiveMethod,
         title: "Avoid implicit culture-sensitive methods",
         messageFormat: "Use an overload of '{0}' that has a StringComparison parameter",
@@ -20,7 +20,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidCultureSensitiveMethod));
 
-    private static readonly DiagnosticDescriptor s_useStringComparisonRule = new(
+    private static readonly DiagnosticDescriptor UseStringComparisonRule = new(
         RuleIdentifiers.UseStringComparison,
         title: "StringComparison is missing",
         messageFormat: "Use an overload of '{0}' that has a StringComparison parameter",
@@ -30,7 +30,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparison));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_avoidCultureSensitiveMethodRule, s_useStringComparisonRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AvoidCultureSensitiveMethodRule, UseStringComparisonRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -49,13 +49,13 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly OverloadFinder _overloadFinder = new OverloadFinder(compilation);
-        private readonly OperationUtilities _operationUtilities = new OperationUtilities(compilation);
+        private readonly OverloadFinder _overloadFinder = new(compilation);
+        private readonly OperationUtilities _operationUtilities = new(compilation);
         private readonly INamedTypeSymbol _stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison")!;
         private readonly INamedTypeSymbol? _jobjectSymbol = compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
         private readonly INamedTypeSymbol? _xunitAssertSymbol = compilation.GetBestTypeByMetadataName("XUnit.Assert");
 
-        public bool IsValid => _stringComparisonSymbol != null;
+        public bool IsValid => _stringComparisonSymbol is not null;
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -72,11 +72,11 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                 {
                     if (IsNonCultureSensitiveMethod(operation))
                     {
-                        context.ReportDiagnostic(s_useStringComparisonRule, operation, operation.TargetMethod.Name);
+                        context.ReportDiagnostic(UseStringComparisonRule, operation, operation.TargetMethod.Name);
                     }
                     else
                     {
-                        context.ReportDiagnostic(s_avoidCultureSensitiveMethodRule, operation, operation.TargetMethod.Name);
+                        context.ReportDiagnostic(AvoidCultureSensitiveMethodRule, operation, operation.TargetMethod.Name);
                     }
                 }
             }
@@ -85,7 +85,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         private static bool IsMethod(IInvocationOperation operation, ITypeSymbol type, string name)
         {
             var methodSymbol = operation.TargetMethod;
-            if (methodSymbol == null)
+            if (methodSymbol is null)
                 return false;
 
             if (!string.Equals(methodSymbol.Name, name, StringComparison.Ordinal))
@@ -100,7 +100,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         private bool IsNonCultureSensitiveMethod(IInvocationOperation operation)
         {
             var method = operation.TargetMethod;
-            if (method == null)
+            if (method is null)
                 return false;
 
             if (method.ContainingType.IsString())

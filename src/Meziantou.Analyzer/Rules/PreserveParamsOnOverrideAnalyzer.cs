@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PreserveParamsOnOverrideAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.PreserveParamsOnOverride,
         title: "Method overrides should not omit params keyword",
         messageFormat: "Method overrides should not omit params keyword",
@@ -20,7 +20,7 @@ public sealed class PreserveParamsOnOverrideAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.PreserveParamsOnOverride));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -49,7 +49,7 @@ public sealed class PreserveParamsOnOverrideAnalyzer : DiagnosticAnalyzer
             baseSymbol = method.GetImplementingInterfaceSymbol();
         }
 
-        if (baseSymbol == null)
+        if (baseSymbol is null)
             return;
 
         foreach (var parameter in method.Parameters)
@@ -66,7 +66,7 @@ public sealed class PreserveParamsOnOverrideAnalyzer : DiagnosticAnalyzer
                 if (HasParamsKeyword(parameter, context.CancellationToken))
                     continue;
 
-                context.ReportDiagnostic(s_rule, parameter);
+                context.ReportDiagnostic(Rule, parameter);
             }
         }
 

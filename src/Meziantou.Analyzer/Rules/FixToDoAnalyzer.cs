@@ -11,7 +11,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.FixToDo,
         title: "Fix TODO comment",
         messageFormat: "TODO {0}",
@@ -21,7 +21,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FixToDo));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     private static readonly char[] TrimStartChars = [' ', '\t', '*', '-', '/'];
 
@@ -46,7 +46,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
             else if (node.IsKind(SyntaxKind.MultiLineCommentTrivia))
             {
                 var nodeText = node.ToString().AsSpan();
-                nodeText = nodeText.Slice(2, nodeText.Length - 4); // Remove leading "/*" and trailing "*/"
+                nodeText = nodeText[2..^2]; // Remove leading "/*" and trailing "*/"
 
                 var startIndex = node.SpanStart + 2;
                 foreach (var line in nodeText.SplitLines())
@@ -61,7 +61,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                 // Trim start
                 while (text.Length > 0 && text.Length >= 4 && TrimStartChars.Contains(text[0]))
                 {
-                    text = text.Slice(1);
+                    text = text[1..];
                     startIndex++;
                 }
 
@@ -71,7 +71,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                 if (text.Length == 4)
                 {
                     var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
-                    var diagnostic = Diagnostic.Create(s_rule, location, "");
+                    var diagnostic = Diagnostic.Create(Rule, location, "");
                     context.ReportDiagnostic(diagnostic);
                 }
                 else
@@ -80,7 +80,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                     if (nextChar is ' ' or '\t' or ':' or '!' or '?')
                     {
                         var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
-                        var diagnostic = Diagnostic.Create(s_rule, location, text.Slice(5).Trim().ToString());
+                        var diagnostic = Diagnostic.Create(Rule, location, text[5..].Trim().ToString());
                         context.ReportDiagnostic(diagnostic);
                     }
                 }

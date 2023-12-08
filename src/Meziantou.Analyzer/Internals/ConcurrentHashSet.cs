@@ -30,7 +30,7 @@ internal sealed class ConcurrentHashSet<T> : ICollection<T>, IReadOnlyCollection
 
     public void AddRange(IEnumerable<T>? values)
     {
-        if (values != null)
+        if (values is not null)
         {
             foreach (var v in values)
             {

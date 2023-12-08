@@ -101,37 +101,30 @@ internal static class TimeSpanOperation
             {
                 if (objectCreationOperation.Type.IsEqualTo(compilation.GetBestTypeByMetadataName("System.TimeSpan")))
                 {
-                    switch (objectCreationOperation.Arguments.Length)
+                    return objectCreationOperation.Arguments.Length switch
                     {
-                        case 1: // new TimeSpan(long ticks)
-                            return GetMilliseconds(objectCreationOperation.Arguments[0].Value, 1d / TimeSpan.TicksPerMillisecond);
+                        // new TimeSpan(long ticks)
+                        1 => GetMilliseconds(objectCreationOperation.Arguments[0].Value, 1d / TimeSpan.TicksPerMillisecond),
 
-                        case 3: // new TimeSpan(int hours, int minutes, int seconds)
-                            return AddValues(
-                                GetMilliseconds(objectCreationOperation.Arguments[0].Value, HoursToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[1].Value, MinutesToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[2].Value, SecondsToMilliseconds)
-                                );
+                        // new TimeSpan(int hours, int minutes, int seconds)
+                        3 => AddValues(GetMilliseconds(objectCreationOperation.Arguments[0].Value, HoursToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[1].Value, MinutesToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[2].Value, SecondsToMilliseconds)),
 
-                        case 4: // new TimeSpan(int days, int hours, int minutes, int seconds)
-                            return AddValues(
-                                GetMilliseconds(objectCreationOperation.Arguments[0].Value, DaysToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[1].Value, HoursToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[2].Value, MinutesToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[3].Value, SecondsToMilliseconds)
-                                );
+                        // new TimeSpan(int days, int hours, int minutes, int seconds)
+                        4 => AddValues(GetMilliseconds(objectCreationOperation.Arguments[0].Value, DaysToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[1].Value, HoursToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[2].Value, MinutesToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[3].Value, SecondsToMilliseconds)),
 
-                        case 5: // new TimeSpan(int days, int hours, int minutes, int seconds, int milliseconds)
-                            return AddValues(
-                                GetMilliseconds(objectCreationOperation.Arguments[0].Value, DaysToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[1].Value, HoursToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[2].Value, MinutesToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[3].Value, SecondsToMilliseconds),
-                                GetMilliseconds(objectCreationOperation.Arguments[4].Value, 1)
-                                );
-                    }
-
-                    return null;
+                        // new TimeSpan(int days, int hours, int minutes, int seconds, int milliseconds)
+                        5 => AddValues(GetMilliseconds(objectCreationOperation.Arguments[0].Value, DaysToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[1].Value, HoursToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[2].Value, MinutesToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[3].Value, SecondsToMilliseconds),
+                                       GetMilliseconds(objectCreationOperation.Arguments[4].Value, 1)),
+                        _ => null,
+                    };
                 }
             }
 

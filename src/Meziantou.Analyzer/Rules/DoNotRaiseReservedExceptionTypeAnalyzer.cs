@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotRaiseReservedExceptionType,
         title: "Do not raise reserved exception type",
         messageFormat: "'{0}' is a reserved exception type",
@@ -20,7 +20,7 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotRaiseReservedExceptionType));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -52,16 +52,16 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
     private static void Analyze(OperationAnalysisContext context, IEnumerable<INamedTypeSymbol> reservedExceptionTypes)
     {
         var operation = (IThrowOperation)context.Operation;
-        if (operation == null || operation.Exception == null)
+        if (operation is null || operation.Exception is null)
             return;
 
         var exceptionType = operation.Exception.GetActualType();
-        if (exceptionType == null)
+        if (exceptionType is null)
             return;
 
         if (reservedExceptionTypes.Any(type => exceptionType.IsEqualTo(type) || exceptionType.InheritsFrom(type)))
         {
-            context.ReportDiagnostic(s_rule, operation, exceptionType.ToDisplayString());
+            context.ReportDiagnostic(Rule, operation, exceptionType.ToDisplayString());
         }
     }
 }

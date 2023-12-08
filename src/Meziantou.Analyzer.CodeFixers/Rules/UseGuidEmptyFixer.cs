@@ -26,7 +26,7 @@ public sealed class UseGuidEmptyFixer : CodeFixProvider
         // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
         // get the innermost node for ties.
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Use Guid.Empty";

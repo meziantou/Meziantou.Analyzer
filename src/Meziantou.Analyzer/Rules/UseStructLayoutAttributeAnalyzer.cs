@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MissingStructLayoutAttribute,
         title: "Add StructLayoutAttribute",
         messageFormat: "Add StructLayoutAttribute",
@@ -18,7 +18,7 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingStructLayoutAttribute));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -28,7 +28,7 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(compilationContext =>
         {
             var attributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
-            if (attributeType == null)
+            if (attributeType is null)
                 return;
 
             compilationContext.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
@@ -38,11 +38,11 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
     private static void Analyze(SymbolAnalysisContext context)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
-        if (!symbol.IsValueType || symbol.EnumUnderlyingType != null) // Only support struct
+        if (!symbol.IsValueType || symbol.EnumUnderlyingType is not null) // Only support struct
             return;
 
         var attributeType = context.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
-        if (attributeType == null)
+        if (attributeType is null)
             return;
 
         if (symbol.GetAttributes().Any(attr => attributeType.IsEqualTo(attr.AttributeClass)))
@@ -62,7 +62,7 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
 
         if (memberCount > 1)
         {
-            context.ReportDiagnostic(s_rule, symbol);
+            context.ReportDiagnostic(Rule, symbol);
         }
     }
 }

@@ -51,7 +51,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                     {
                         if (arg.Value is { ConstantValue: { HasValue: true, Value: string } })
                         {
-                            if (format != null)
+                            if (format is not null)
                             {
                                 format = null;
                                 break;
@@ -96,7 +96,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Parameter?.Type is IArrayTypeSymbol && invocation.Arguments[1].Value is IArrayCreationOperation arrayCreation)
                 {
                     var initializer = arrayCreation.Initializer;
-                    if (initializer == null)
+                    if (initializer is null)
                         return true;
 
                     return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
@@ -196,7 +196,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
     private bool IsCultureSensitiveType(ITypeSymbol? typeSymbol, CultureSensitiveOptions options)
     {
-        if (typeSymbol == null)
+        if (typeSymbol is null)
             return true;
 
         if (MustUnwrapNullableOfT(options))
@@ -260,7 +260,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (!IsCultureSensitiveType(symbol, options))
             return false;
 
-        if (instance != null)
+        if (instance is not null)
         {
             if (IsConstantPositiveNumber(instance) && format is null or { ConstantValue: { HasValue: true, Value: "" } })
                 return false;
@@ -288,14 +288,14 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     private static bool IsInvariantTimeSpanFormat(IOperation? valueOperation)
     {
         // note: "c" format is case-sensitive
-        return valueOperation == null || valueOperation is { ConstantValue: { HasValue: true, Value: null or "" or "c" or "t" or "T" } };
+        return valueOperation is null || valueOperation is { ConstantValue: { HasValue: true, Value: null or "" or "c" or "t" or "T" } };
     }
 
     // Only negative numbers are culture-sensitive (negative sign)
     // For instance, https://source.dot.net/#System.Private.CoreLib/Int32.cs,8d6f2d8bc0589463
     private static bool IsConstantPositiveNumber(IOperation operation)
     {
-        if (operation.Type != null && operation.ConstantValue.HasValue)
+        if (operation.Type is not null && operation.ConstantValue.HasValue)
         {
             // Only consider types where ToString() is culture-insensitive for positive values
             var constantValue = operation.ConstantValue.Value;

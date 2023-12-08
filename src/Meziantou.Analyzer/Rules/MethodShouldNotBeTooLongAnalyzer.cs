@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
@@ -11,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MethodShouldNotBeTooLong,
         title: "Method is too long",
         messageFormat: "Method is too long ({0})",
@@ -21,7 +22,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodShouldNotBeTooLong));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -50,7 +51,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
                 break;
 
             case PropertyDeclarationSyntax node:
-                if (node.AccessorList != null)
+                if (node.AccessorList is not null)
                 {
                     foreach (var accessor in node.AccessorList.Accessors)
                     {
@@ -75,7 +76,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeNode(SyntaxNodeAnalysisContext context, SyntaxNode? node, SyntaxToken reportNode)
     {
-        if (node == null)
+        if (node is null)
             return;
 
         var maximumLines = GetMaximumNumberOfLines(context);
@@ -123,7 +124,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
 
             if (lines > maximumLines)
             {
-                context.ReportDiagnostic(s_rule, reportNode, $"{lines} lines; maximum allowed: {maximumLines}");
+                context.ReportDiagnostic(Rule, reportNode, $"{lines.ToString(CultureInfo.InvariantCulture)} lines; maximum allowed: {maximumLines.ToString(CultureInfo.InvariantCulture)}");
                 return;
             }
         }
@@ -134,7 +135,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
             var statements = CountStatements(context, node);
             if (statements > maximumStatements)
             {
-                context.ReportDiagnostic(s_rule, reportNode, $"{statements} statements; maximum allowed: {maximumStatements}");
+                context.ReportDiagnostic(Rule, reportNode, $"{statements.ToString(CultureInfo.InvariantCulture)} statements; maximum allowed: {maximumStatements.ToString(CultureInfo.InvariantCulture)}");
                 return;
             }
         }
@@ -169,7 +170,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
     private static bool GetSkipLocalFunctions(SyntaxNodeAnalysisContext context)
     {
         var syntaxTree = context.Node?.SyntaxTree;
-        if (syntaxTree != null && context.Options != null && context.Options.GetConfigurationValue(syntaxTree, $"{s_rule.Id}.skip_local_functions", defaultValue: false))
+        if (syntaxTree is not null && context.Options is not null && context.Options.GetConfigurationValue(syntaxTree, $"{Rule.Id}.skip_local_functions", defaultValue: false))
             return true;
 
         return false;
@@ -178,12 +179,12 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
     private static int GetMaximumNumberOfStatements(SyntaxNodeAnalysisContext context)
     {
         var syntaxTree = context.Node.SyntaxTree;
-        return context.Options.GetConfigurationValue(syntaxTree, $"{s_rule.Id}.maximum_statements_per_method", defaultValue: 40);
+        return context.Options.GetConfigurationValue(syntaxTree, $"{Rule.Id}.maximum_statements_per_method", defaultValue: 40);
     }
 
     private static int GetMaximumNumberOfLines(SyntaxNodeAnalysisContext context)
     {
         var syntaxTree = context.Node.SyntaxTree;
-        return context.Options.GetConfigurationValue(syntaxTree, $"{s_rule.Id}.maximum_lines_per_method", 60);
+        return context.Options.GetConfigurationValue(syntaxTree, $"{Rule.Id}.maximum_lines_per_method", 60);
     }
 }

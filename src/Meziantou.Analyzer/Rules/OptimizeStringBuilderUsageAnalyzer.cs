@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.OptimizeStringBuilderUsage,
         title: "Optimize StringBuilder usage",
         messageFormat: "{0}",
@@ -20,7 +20,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeStringBuilderUsage));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -37,7 +37,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             return;
 
         var stringBuilderSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
-        if (stringBuilderSymbol == null)
+        if (stringBuilderSymbol is null)
             return;
 
         var method = operation.TargetMethod;
@@ -90,12 +90,12 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                     {
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
-                        context.ReportDiagnostic(s_rule, properties, operation, "Remove the useless argument");
+                        context.ReportDiagnostic(Rule, properties, operation, "Remove the useless argument");
                     }
                     else
                     {
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
-                        context.ReportDiagnostic(s_rule, properties, operation, "Remove this no-op call");
+                        context.ReportDiagnostic(Rule, properties, operation, "Remove this no-op call");
                     }
 
                     return true;
@@ -104,7 +104,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                 {
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
                         .Add("ConstantValue", constValue);
-                    context.ReportDiagnostic(s_rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
+                    context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
                     return true;
                 }
                 return false;
@@ -115,7 +115,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     return false;
 
                 var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitStringInterpolation);
-                context.ReportDiagnostic(s_rule, properties, operation, $"Replace string interpolation with multiple {methodName} calls");
+                context.ReportDiagnostic(Rule, properties, operation, $"Replace string interpolation with multiple {methodName} calls");
                 return true;
             }
         }
@@ -126,12 +126,12 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                 if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                 {
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
-                    context.ReportDiagnostic(s_rule, properties, operation, "Remove the useless argument");
+                    context.ReportDiagnostic(Rule, properties, operation, "Remove the useless argument");
                 }
                 else
                 {
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
-                    context.ReportDiagnostic(s_rule, properties, operation, "Remove this no-op call");
+                    context.ReportDiagnostic(Rule, properties, operation, "Remove this no-op call");
                 }
 
                 return true;
@@ -142,7 +142,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                 {
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
                         .Add("ConstantValue", constValue);
-                    context.ReportDiagnostic(s_rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
+                    context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
                     return true;
                 }
             }
@@ -159,7 +159,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                         return false;
 
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitAddOperator);
-                    context.ReportDiagnostic(s_rule, properties, operation, $"Replace the string concatenation by multiple {methodName} calls");
+                    context.ReportDiagnostic(Rule, properties, operation, $"Replace the string concatenation by multiple {methodName} calls");
                     return true;
                 }
             }
@@ -177,11 +177,11 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
                     if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(s_rule, properties, operation, "Replace with Append().AppendLine()");
+                        context.ReportDiagnostic(Rule, properties, operation, "Replace with Append().AppendLine()");
                     }
                     else
                     {
-                        context.ReportDiagnostic(s_rule, properties, operation, "Remove the ToString call");
+                        context.ReportDiagnostic(Rule, properties, operation, "Remove the ToString call");
                     }
 
                     return true;
@@ -192,11 +192,11 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                 var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringFormatWithAppendFormat);
                 if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                 {
-                    context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendFormat().AppendLine()");
+                    context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat().AppendLine()");
                 }
                 else
                 {
-                    context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendFormat()");
+                    context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat()");
                 }
 
                 return true;
@@ -209,11 +209,11 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringJoinWithAppendJoin);
                     if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
                     {
-                        context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendJoin().AppendLine()");
+                        context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendJoin().AppendLine()");
                     }
                     else
                     {
-                        context.ReportDiagnostic(s_rule, properties, operation, "Replace with AppendJoin()");
+                        context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendJoin()");
                     }
 
                     return true;
@@ -222,7 +222,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
             {
                 var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceSubstring);
-                context.ReportDiagnostic(s_rule, properties, operation, $"Use {methodName}(string, int, int) instead of Substring");
+                context.ReportDiagnostic(Rule, properties, operation, $"Use {methodName}(string, int, int) instead of Substring");
                 return true;
             }
         }

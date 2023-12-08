@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_dateTimeRule = new(
+    private static readonly DiagnosticDescriptor DateTimeRule = new(
         RuleIdentifiers.UseDateTimeUnixEpoch,
         title: "Use DateTime.UnixEpoch",
         messageFormat: "Use DateTime.UnixEpoch",
@@ -20,7 +20,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseDateTimeUnixEpoch));
 
-    private static readonly DiagnosticDescriptor s_dateTimeOffsetRule = new(
+    private static readonly DiagnosticDescriptor DateTimeOffsetRule = new(
         RuleIdentifiers.UseDateTimeOffsetUnixEpoch,
         title: "Use DateTimeOffset.UnixEpoch",
         messageFormat: "Use DateTimeOffset.UnixEpoch",
@@ -30,7 +30,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseDateTimeOffsetUnixEpoch));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_dateTimeRule, s_dateTimeOffsetRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(DateTimeRule, DateTimeOffsetRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -42,12 +42,12 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
             var dateTimeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.DateTime");
             var dateTimeOffsetSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
 
-            if (dateTimeSymbol != null && dateTimeSymbol.GetMembers("UnixEpoch").Length > 0)
+            if (dateTimeSymbol is not null && dateTimeSymbol.GetMembers("UnixEpoch").Length > 0)
             {
                 ctx.RegisterOperationAction(ctx => AnalyzeDateTimeObjectCreation(ctx, dateTimeSymbol), OperationKind.ObjectCreation);
             }
 
-            if (dateTimeSymbol != null && dateTimeOffsetSymbol != null && dateTimeOffsetSymbol.GetMembers("UnixEpoch").Length > 0)
+            if (dateTimeSymbol is not null && dateTimeOffsetSymbol is not null && dateTimeOffsetSymbol.GetMembers("UnixEpoch").Length > 0)
             {
                 ctx.RegisterOperationAction(ctx => AnalyzeDateTimeOffsetObjectCreation(ctx, dateTimeSymbol, dateTimeOffsetSymbol), OperationKind.ObjectCreation);
             }
@@ -59,7 +59,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         var operation = (IObjectCreationOperation)context.Operation;
         if (IsDateTimeUnixEpoch(operation, context.Compilation, dateTimeSymbol))
         {
-            context.ReportDiagnostic(s_dateTimeRule, operation);
+            context.ReportDiagnostic(DateTimeRule, operation);
         }
     }
     private static void AnalyzeDateTimeOffsetObjectCreation(OperationAnalysisContext context, ITypeSymbol dateTimeSymbol, ITypeSymbol dateTimeOffsetSymbol)
@@ -67,7 +67,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         var operation = (IObjectCreationOperation)context.Operation;
         if (IsDateTimeOffsetUnixEpoch())
         {
-            context.ReportDiagnostic(s_dateTimeOffsetRule, operation);
+            context.ReportDiagnostic(DateTimeOffsetRule, operation);
         }
 
         bool IsDateTimeOffsetUnixEpoch()
@@ -159,7 +159,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
     private static bool IsDateTimeKindUtc(Compilation compilation, IArgumentOperation argument)
     {
         var dateTimeKindSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeKind");
-        if (dateTimeKindSymbol == null)
+        if (dateTimeKindSymbol is null)
             return false;
 
         return argument.Value.ConstantValue.HasValue && (DateTimeKind)argument.Value.ConstantValue.Value! == DateTimeKind.Utc;

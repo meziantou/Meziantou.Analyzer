@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine,
         title: "String contains an implicit end of line character",
         messageFormat: "String contains an implicit end of line character",
@@ -19,7 +19,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.StringShouldNotContainsNonDeterministicEndOfLine));
 
-    private static readonly DiagnosticDescriptor s_ruleRawString = new(
+    private static readonly DiagnosticDescriptor RuleRawString = new(
         RuleIdentifiers.RawStringShouldNotContainsNonDeterministicEndOfLine,
         title: "Raw String contains an implicit end of line character",
         messageFormat: "Raw String contains an implicit end of line character",
@@ -29,7 +29,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RawStringShouldNotContainsNonDeterministicEndOfLine));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule, s_ruleRawString);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RuleRawString);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -59,7 +59,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
                 var position = text.GetLocation().GetLineSpan();
                 if (position.StartLinePosition.Line != position.EndLinePosition.Line)
                 {
-                    context.ReportDiagnostic(isRawString ? s_ruleRawString : s_rule, node);
+                    context.ReportDiagnostic(isRawString ? RuleRawString : Rule, node);
                     return;
                 }
             }
@@ -95,7 +95,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
 
         if (startLine != endLine)
         {
-            context.ReportDiagnostic(isRawString ? s_ruleRawString : s_rule, node);
+            context.ReportDiagnostic(isRawString ? RuleRawString : Rule, node);
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MethodOverridesShouldNotChangeParameterDefaults,
         title: "Method overrides should not change default values",
         messageFormat: "Method overrides should not change default values (original: {0}; current: {1})",
@@ -20,7 +20,7 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodOverridesShouldNotChangeParameterDefaults));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -49,7 +49,7 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
             baseSymbol = method.GetImplementingInterfaceSymbol();
         }
 
-        if (baseSymbol == null)
+        if (baseSymbol is null)
             return;
 
         foreach (var parameter in method.Parameters)
@@ -61,12 +61,12 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
             if (originalParameter.HasExplicitDefaultValue != parameter.HasExplicitDefaultValue)
             {
                 var properties = CreateProperties(originalParameter, context.CancellationToken);
-                context.ReportDiagnostic(s_rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
+                context.ReportDiagnostic(Rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
             }
             else if (originalParameter.HasExplicitDefaultValue && !Equals(originalParameter.ExplicitDefaultValue, parameter.ExplicitDefaultValue))
             {
                 var properties = CreateProperties(originalParameter, context.CancellationToken);
-                context.ReportDiagnostic(s_rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
+                context.ReportDiagnostic(Rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
             }
         }
 

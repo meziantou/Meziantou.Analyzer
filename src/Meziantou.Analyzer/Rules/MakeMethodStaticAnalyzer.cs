@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_methodRule = new(
+    private static readonly DiagnosticDescriptor MethodRule = new(
         RuleIdentifiers.MakeMethodStatic,
         title: "Make method static (deprecated, use CA1822 instead)",
         messageFormat: "Make method static (deprecated, use CA1822 instead)",
@@ -24,7 +24,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeMethodStatic));
 
-    private static readonly DiagnosticDescriptor s_propertyRule = new(
+    private static readonly DiagnosticDescriptor PropertyRule = new(
      RuleIdentifiers.MakePropertyStatic,
      title: "Make property static (deprecated, use CA1822 instead)",
      messageFormat: "Make property static (deprecated, use CA1822 instead)",
@@ -34,7 +34,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
      description: "",
      helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakePropertyStatic));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_methodRule, s_propertyRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(MethodRule, PropertyRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -66,11 +66,11 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 
                 if (symbol is IMethodSymbol)
                 {
-                    context.ReportDiagnostic(s_methodRule, symbol);
+                    context.ReportDiagnostic(MethodRule, symbol);
                 }
                 else if (symbol is IPropertySymbol)
                 {
-                    context.ReportDiagnostic(s_propertyRule, symbol);
+                    context.ReportDiagnostic(PropertyRule, symbol);
                 }
                 else
                 {
@@ -83,10 +83,10 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
         {
             var node = (MethodDeclarationSyntax)context.Node;
             var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (methodSymbol == null)
+            if (methodSymbol is null)
                 return;
 
-            if (context.Compilation == null)
+            if (context.Compilation is null)
                 return;
 
             if (!IsPotentialStatic(methodSymbol) ||
@@ -98,11 +98,11 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             }
 
             var body = (SyntaxNode?)node.Body ?? node.ExpressionBody;
-            if (body == null)
+            if (body is null)
                 return;
 
             var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
-            if (operation == null || HasInstanceUsages(operation))
+            if (operation is null || HasInstanceUsages(operation))
                 return;
 
             _potentialSymbols.Add(methodSymbol);
@@ -112,29 +112,29 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
         {
             var node = (PropertyDeclarationSyntax)context.Node;
             var propertySymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (propertySymbol == null)
+            if (propertySymbol is null)
                 return;
 
             if (!IsPotentialStatic(propertySymbol))
                 return;
 
-            if (node.ExpressionBody != null)
+            if (node.ExpressionBody is not null)
             {
                 var operation = context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken);
-                if (operation == null || HasInstanceUsages(operation))
+                if (operation is null || HasInstanceUsages(operation))
                     return;
             }
 
-            if (node.AccessorList != null)
+            if (node.AccessorList is not null)
             {
                 foreach (var accessor in node.AccessorList.Accessors)
                 {
                     var body = (SyntaxNode?)accessor.Body ?? accessor.ExpressionBody;
-                    if (body == null)
+                    if (body is null)
                         return;
 
                     var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
-                    if (operation == null || HasInstanceUsages(operation))
+                    if (operation is null || HasInstanceUsages(operation))
                         return;
                 }
             }
@@ -163,7 +163,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsOverride &&
                 !symbol.IsStatic &&
                 !symbol.IsInterfaceImplementation() &&
-                symbol.PartialDefinitionPart == null;
+                symbol.PartialDefinitionPart is null;
         }
 
         private static bool IsPotentialStatic(IPropertySymbol symbol)
@@ -178,7 +178,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 
         private static bool HasInstanceUsages(IOperation operation)
         {
-            if (operation == null)
+            if (operation is null)
                 return false;
 
             var operations = new Queue<IOperation>();
@@ -215,12 +215,12 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             }
 
             var imiddlewareSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.IMiddleware");
-            if (imiddlewareSymbol != null)
+            if (imiddlewareSymbol is not null)
             {
                 if (methodSymbol.ContainingType.Implements(imiddlewareSymbol))
                 {
                     var invokeAsyncSymbol = imiddlewareSymbol.GetMembers("InvokeAsync").FirstOrDefault();
-                    if (invokeAsyncSymbol != null)
+                    if (invokeAsyncSymbol is not null)
                     {
                         var implementationMember = methodSymbol.ContainingType.FindImplementationForInterfaceMember(invokeAsyncSymbol);
                         if (methodSymbol.IsEqualTo(implementationMember))

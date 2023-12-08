@@ -16,7 +16,7 @@ internal static class SuppressorHelpers
             return null;
 
         var syntaxTree = location.SourceTree;
-        if (syntaxTree == null)
+        if (syntaxTree is null)
             return null;
 
         var root = syntaxTree.GetRoot(cancellationToken);

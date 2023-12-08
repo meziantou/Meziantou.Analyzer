@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_asyncSuffixRule = new(
+    private static readonly DiagnosticDescriptor AsyncSuffixRule = new(
         RuleIdentifiers.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffix,
         title: "Use 'Async' suffix when a method returns an awaitable type",
         messageFormat: "Method returning an awaitable type must use the 'Async' suffix",
@@ -20,7 +20,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffix));
 
-    private static readonly DiagnosticDescriptor s_notAsyncSuffixRule = new(
+    private static readonly DiagnosticDescriptor NotAsyncSuffixRule = new(
         RuleIdentifiers.MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix,
         title: "Do not use 'Async' suffix when a method does not return an awaitable type",
         messageFormat: "Method not returning an awaitable type must not use the 'Async' suffix",
@@ -30,7 +30,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_asyncSuffixRule, s_notAsyncSuffixRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AsyncSuffixRule, NotAsyncSuffixRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -65,14 +65,14 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             {
                 if (!hasAsyncSuffix)
                 {
-                    context.ReportDiagnostic(s_asyncSuffixRule, method);
+                    context.ReportDiagnostic(AsyncSuffixRule, method);
                 }
             }
             else
             {
                 if (hasAsyncSuffix)
                 {
-                    context.ReportDiagnostic(s_notAsyncSuffixRule, method);
+                    context.ReportDiagnostic(NotAsyncSuffixRule, method);
                 }
             }
         }
@@ -87,14 +87,14 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             {
                 if (!hasAsyncSuffix)
                 {
-                    context.ReportDiagnostic(s_asyncSuffixRule, properties: default, operation, DiagnosticReportOptions.ReportOnMethodName);
+                    context.ReportDiagnostic(AsyncSuffixRule, properties: default, operation, DiagnosticReportOptions.ReportOnMethodName);
                 }
             }
             else
             {
                 if (hasAsyncSuffix)
                 {
-                    context.ReportDiagnostic(s_notAsyncSuffixRule, properties: default, operation, DiagnosticReportOptions.ReportOnMethodName);
+                    context.ReportDiagnostic(NotAsyncSuffixRule, properties: default, operation, DiagnosticReportOptions.ReportOnMethodName);
                 }
             }
         }

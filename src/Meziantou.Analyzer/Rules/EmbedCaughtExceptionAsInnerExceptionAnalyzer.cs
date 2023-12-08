@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.EmbedCaughtExceptionAsInnerException,
         title: "Embed the caught exception as innerException",
         messageFormat: "Embed the caught exception as innerException",
@@ -20,7 +20,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EmbedCaughtExceptionAsInnerException));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -31,7 +31,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
         {
             var overloadFinder = new OverloadFinder(context.Compilation);
             var exceptionSymbol = context.Compilation.GetBestTypeByMetadataName("System.Exception");
-            if (exceptionSymbol == null)
+            if (exceptionSymbol is null)
                 return;
 
             context.RegisterOperationAction(context => AnalyzeThrow(context, overloadFinder, exceptionSymbol), OperationKind.Throw);
@@ -41,24 +41,24 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
     private static void AnalyzeThrow(OperationAnalysisContext context, OverloadFinder overloadFinder, INamedTypeSymbol exceptionSymbol)
     {
         var operation = (IThrowOperation)context.Operation;
-        if (operation.Exception == null)
+        if (operation.Exception is null)
             return;
 
         var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();
-        if (catchOperation == null)
+        if (catchOperation is null)
             return;
 
         if (operation.Exception is IObjectCreationOperation objectCreationOperation)
         {
-            if (objectCreationOperation.Constructor == null)
+            if (objectCreationOperation.Constructor is null)
                 return;
 
             var argument = objectCreationOperation.Arguments.FirstOrDefault(arg => IsPotentialParameter(arg?.Parameter, exceptionSymbol));
-            if (argument == null)
+            if (argument is null)
             {
                 if (overloadFinder.HasOverloadWithAdditionalParameterOfType(objectCreationOperation.Constructor, exceptionSymbol))
                 {
-                    context.ReportDiagnostic(s_rule, objectCreationOperation);
+                    context.ReportDiagnostic(Rule, objectCreationOperation);
                 }
             }
         }
@@ -66,7 +66,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
 
     private static bool IsPotentialParameter(IParameterSymbol? parameter, ITypeSymbol exceptionSymbol)
     {
-        if (parameter == null)
+        if (parameter is null)
             return false;
 
         return parameter.Type.IsOrInheritFrom(exceptionSymbol);

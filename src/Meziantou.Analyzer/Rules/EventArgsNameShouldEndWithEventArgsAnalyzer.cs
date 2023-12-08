@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.EventArgsNameShouldEndWithEventArgs,
         title: "Class name should end with 'EventArgs'",
         messageFormat: "Class name should end with 'EventArgs'",
@@ -17,7 +17,7 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EventArgsNameShouldEndWithEventArgs));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -30,12 +30,12 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnal
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
-        if (symbol.Name == null)
+        if (symbol.Name is null)
             return;
 
         if (!symbol.Name.EndsWith("EventArgs", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.EventArgs")))
         {
-            context.ReportDiagnostic(s_rule, symbol);
+            context.ReportDiagnostic(Rule, symbol);
         }
     }
 }

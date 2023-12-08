@@ -6,11 +6,11 @@ namespace Meziantou.Analyzer;
 
 internal static class SyntaxTokenListExtensions
 {
-    private static readonly string[] s_modifiersSortOrder = GetModifiersOrder();
+    private static readonly string[] ModifiersSortOrder = GetModifiersOrder();
 
     private static string[] GetModifiersOrder()
     {
-        return "public,private,protected,internal,const,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async".Split(',').ToArray();
+        return ["public", "private", "protected", "internal", "const", "static", "extern", "new", "virtual", "abstract", "sealed", "override", "readonly", "unsafe", "volatile", "async"];
     }
 
     public static SyntaxTokenList Remove(this SyntaxTokenList list, SyntaxKind syntaxToRemove)
@@ -49,9 +49,9 @@ internal static class SyntaxTokenListExtensions
 
     private static int IndexOf(SyntaxToken token)
     {
-        for (var i = 0; i < s_modifiersSortOrder.Length; i++)
+        for (var i = 0; i < ModifiersSortOrder.Length; i++)
         {
-            if (s_modifiersSortOrder[i] == token.Text)
+            if (ModifiersSortOrder[i] == token.Text)
                 return i;
         }
 

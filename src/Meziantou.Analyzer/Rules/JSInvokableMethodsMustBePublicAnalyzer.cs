@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class JSInvokableMethodsMustBePublicAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.JSInvokableMethodsMustBePublic,
         title: "[JSInvokable] methods must be public",
         messageFormat: "[JSInvokable] methods must be public",
@@ -17,7 +17,7 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.JSInvokableMethodsMustBePublic));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -38,14 +38,14 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzer : DiagnosticAnalyzer
     {
         public INamedTypeSymbol? JsInvokableSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSInvokableAttribute");
 
-        public bool IsValid => JsInvokableSymbol != null;
+        public bool IsValid => JsInvokableSymbol is not null;
 
         internal void AnalyzeMethod(SymbolAnalysisContext context)
         {
             var method = (IMethodSymbol)context.Symbol;
             if (method.DeclaredAccessibility != Accessibility.Public && method.HasAttribute(JsInvokableSymbol, inherits: false))
             {
-                context.ReportDiagnostic(s_rule, method);
+                context.ReportDiagnostic(Rule, method);
             }
         }
     }

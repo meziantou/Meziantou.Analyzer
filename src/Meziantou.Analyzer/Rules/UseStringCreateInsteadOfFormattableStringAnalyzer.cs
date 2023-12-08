@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseStringCreateInsteadOfFormattableString,
         title: "Use string.Create instead of FormattableString",
         messageFormat: "Use string.Create instead of FormattableString",
@@ -19,7 +19,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringCreateInsteadOfFormattableString));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -55,7 +55,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
 
                 if (method.Name is "Invariant" or "CurrentCulture" && method.Parameters.Length == 1 && operation.Arguments[0].Value.UnwrapImplicitConversionOperations() is IInterpolatedStringOperation)
                 {
-                    context.ReportDiagnostic(s_rule, operation);
+                    context.ReportDiagnostic(Rule, operation);
                     return;
                 }
             }

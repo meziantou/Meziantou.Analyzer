@@ -27,7 +27,7 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var diagnostic = context.Diagnostics[0];
@@ -54,7 +54,7 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
         var logicalNotOperatorNeeded = bool.Parse(diagnostic.Properties["LogicalNotOperatorNeeded"]!);
 
         var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (syntaxRoot == null)
+        if (syntaxRoot is null)
             return document;
 
         var nodeToKeep = syntaxRoot.FindNode(new TextSpan(nodeToKeepSpanStart, nodeToKeepSpanLength), getInnermostNodeForTie: true);

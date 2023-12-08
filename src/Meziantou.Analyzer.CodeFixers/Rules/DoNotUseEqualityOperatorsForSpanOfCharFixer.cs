@@ -25,7 +25,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var title = "Use SequenceEquals";
@@ -44,7 +44,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var operation = (IBinaryOperation?)semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation == null)
+        if (operation is null)
             return document;
 
         var newExpression = generator.InvocationExpression(

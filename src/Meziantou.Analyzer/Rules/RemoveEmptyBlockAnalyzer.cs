@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RemoveEmptyBlockAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.RemoveEmptyBlock,
         title: "Remove empty else/finally block",
         messageFormat: "Remove empty {0} block",
@@ -20,7 +20,7 @@ public sealed class RemoveEmptyBlockAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RemoveEmptyBlock));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -36,7 +36,7 @@ public sealed class RemoveEmptyBlockAnalyzer : DiagnosticAnalyzer
         var finallyClause = (FinallyClauseSyntax)context.Node;
         if (IsEmptyBlock(finallyClause.Block))
         {
-            context.ReportDiagnostic(s_rule, finallyClause, "finally");
+            context.ReportDiagnostic(Rule, finallyClause, "finally");
         }
     }
 
@@ -47,14 +47,14 @@ public sealed class RemoveEmptyBlockAnalyzer : DiagnosticAnalyzer
         {
             if (IsEmptyBlock(blockSyntax))
             {
-                context.ReportDiagnostic(s_rule, elseClause, "else");
+                context.ReportDiagnostic(Rule, elseClause, "else");
             }
         }
     }
 
     private static bool IsEmptyBlock(BlockSyntax? block)
     {
-        if (block != null)
+        if (block is not null)
         {
             if (block.Statements.Count > 0)
                 return false;

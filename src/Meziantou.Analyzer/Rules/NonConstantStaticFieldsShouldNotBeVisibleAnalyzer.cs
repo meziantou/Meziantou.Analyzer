@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.NonConstantStaticFieldsShouldNotBeVisible,
         title: "Non-constant static fields should not be visible",
         messageFormat: "Non-constant static fields should not be visible",
@@ -17,7 +17,7 @@ public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzer : Diagnost
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.NonConstantStaticFieldsShouldNotBeVisible));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -34,9 +34,9 @@ public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzer : Diagnost
             return;
 
         // Skip enumerations
-        if (symbol.ContainingSymbol is INamedTypeSymbol typeSymbol && typeSymbol.EnumUnderlyingType != null)
+        if (symbol.ContainingSymbol is INamedTypeSymbol typeSymbol && typeSymbol.EnumUnderlyingType is not null)
             return;
 
-        context.ReportDiagnostic(s_rule, symbol);
+        context.ReportDiagnostic(Rule, symbol);
     }
 }

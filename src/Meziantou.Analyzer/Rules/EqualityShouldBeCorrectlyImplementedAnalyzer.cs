@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_implementIEquatableRule = new(
+    private static readonly DiagnosticDescriptor ImplementIEquatableRule = new(
         RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT,
         title: "A class that provides Equals(T) should implement IEquatable<T>",
         messageFormat: "A class that provides Equals(T) should implement IEquatable<T>",
@@ -20,7 +20,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT));
 
-    private static readonly DiagnosticDescriptor s_implementIComparableOfTRule = new(
+    private static readonly DiagnosticDescriptor ImplementIComparableOfTRule = new(
         RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT,
         title: "A class that provides CompareTo(T) should implement IComparable<T>",
         messageFormat: "A class that provides CompareTo(T) should implement IComparable<T>",
@@ -30,7 +30,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT));
 
-    private static readonly DiagnosticDescriptor s_overrideEqualsObjectRule = new(
+    private static readonly DiagnosticDescriptor OverrideEqualsObjectRule = new(
         RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject,
         title: "A class that implements IEquatable<T> should override Equals(object)",
         messageFormat: "A class that implements IEquatable<T> should override Equals(object)",
@@ -40,7 +40,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject));
 
-    private static readonly DiagnosticDescriptor s_implementIEquatableWhenIComparableRule = new(
+    private static readonly DiagnosticDescriptor ImplementIEquatableWhenIComparableRule = new(
         RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT,
         title: "A class that implements IComparable<T> should also implement IEquatable<T>",
         messageFormat: "A class that implements IComparable<T> should also implement IEquatable<T>",
@@ -50,7 +50,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT));
 
-    private static readonly DiagnosticDescriptor s_addComparisonRule = new(
+    private static readonly DiagnosticDescriptor AddComparisonRule = new(
         RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable,
         title: "A class that implements IComparable<T> or IComparable should override comparison operators",
         messageFormat: "A class that implements IComparable<T> or IComparable should override comparison operators",
@@ -61,11 +61,11 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
-        s_implementIEquatableWhenIComparableRule,
-        s_overrideEqualsObjectRule,
-        s_implementIEquatableRule,
-        s_implementIComparableOfTRule,
-        s_addComparisonRule);
+        ImplementIEquatableWhenIComparableRule,
+        OverrideEqualsObjectRule,
+        ImplementIEquatableRule,
+        ImplementIComparableOfTRule,
+        AddComparisonRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -100,11 +100,11 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
                 {
                     implementIComparable = true;
                 }
-                else if (IComparableOfTSymbol != null && implementedInterface.IsEqualTo(IComparableOfTSymbol.Construct(symbol)))
+                else if (IComparableOfTSymbol is not null && implementedInterface.IsEqualTo(IComparableOfTSymbol.Construct(symbol)))
                 {
                     implementIComparableOfT = true;
                 }
-                else if (IEquatableOfTSymbol != null && implementedInterface.IsEqualTo(IEquatableOfTSymbol.Construct(symbol)))
+                else if (IEquatableOfTSymbol is not null && implementedInterface.IsEqualTo(IEquatableOfTSymbol.Construct(symbol)))
                 {
                     implementIEquatableOfT = true;
                 }
@@ -119,31 +119,31 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             // IComparable<T> without IEquatable<T>
             if (implementIComparableOfT && !implementIEquatableOfT)
             {
-                context.ReportDiagnostic(s_implementIEquatableWhenIComparableRule, symbol);
+                context.ReportDiagnostic(ImplementIEquatableWhenIComparableRule, symbol);
             }
 
             // IEquatable<T> without Equals(object)
             if (implementIEquatableOfT && !HasMethod(symbol, IsEqualsMethod))
             {
-                context.ReportDiagnostic(s_overrideEqualsObjectRule, symbol);
+                context.ReportDiagnostic(OverrideEqualsObjectRule, symbol);
             }
 
             // Equals(T) without IEquatable<T>
             if (!implementIEquatableOfT && HasMethod(symbol, EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod))
             {
-                context.ReportDiagnostic(s_implementIEquatableRule, symbol);
+                context.ReportDiagnostic(ImplementIEquatableRule, symbol);
             }
 
             // CompareTo(T) without IComparable<T>
             if (!implementIComparableOfT && HasMethod(symbol, IsCompareToOfTMethod))
             {
-                context.ReportDiagnostic(s_implementIComparableOfTRule, symbol);
+                context.ReportDiagnostic(ImplementIComparableOfTRule, symbol);
             }
 
             // IComparable/IComparable<T> without operators
             if ((implementIComparable || implementIComparableOfT) && !HasComparisonOperator(symbol))
             {
-                context.ReportDiagnostic(s_addComparisonRule, symbol);
+                context.ReportDiagnostic(AddComparisonRule, symbol);
             }
         }
     }

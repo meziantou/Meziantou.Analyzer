@@ -38,14 +38,14 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return;
 
         var diagnostic = context.Diagnostics.FirstOrDefault();
-        if (diagnostic == null)
+        if (diagnostic is null)
             return;
 
-        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), out OptimizeLinqUsageData data) || data == OptimizeLinqUsageData.None)
+        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeLinqUsageData data) || data == OptimizeLinqUsageData.None)
             return;
 
         // If the so-called nodeToFix is a Name (most likely a method name such as 'Select' or 'Count'),
@@ -152,7 +152,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
     private static bool TryGetInvocationExpressionAncestor(ref SyntaxNode nodeToFix)
     {
         var node = nodeToFix;
-        while (node != null)
+        while (node is not null)
         {
             if (node.IsKind(SyntaxKind.InvocationExpression))
             {
@@ -171,7 +171,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
-        if (countNode == null)
+        if (countNode is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -203,13 +203,13 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
         var operandNode = root?.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
-        if (countNode == null || operandNode == null)
+        if (countNode is null || operandNode is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
         var operandOperation = semanticModel?.GetOperation(operandNode, cancellationToken);
-        if (semanticModel?.GetOperation(countNode, cancellationToken) is not IInvocationOperation countOperation || operandOperation == null)
+        if (semanticModel?.GetOperation(countNode, cancellationToken) is not IInvocationOperation countOperation || operandOperation is null)
             return document;
 
         var generator = editor.Generator;
@@ -253,13 +253,13 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
         var operandNode = root?.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
-        if (countNode == null || operandNode == null)
+        if (countNode is null || operandNode is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
         var operandOperation = semanticModel.GetOperation(operandNode, cancellationToken);
-        if (semanticModel.GetOperation(countNode, cancellationToken) is not IInvocationOperation countOperation || operandOperation == null)
+        if (semanticModel.GetOperation(countNode, cancellationToken) is not IInvocationOperation countOperation || operandOperation is null)
             return document;
 
         var generator = editor.Generator;
@@ -363,10 +363,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseLengthProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseLengthProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var expression = GetParentMemberExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -377,10 +377,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseLongLengthProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseLongLengthProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var expression = GetParentMemberExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -391,10 +391,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseCountProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseCountProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var expression = GetParentMemberExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -405,10 +405,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseListMethod(Document document, SyntaxNode nodeToFix, string methodName, bool convertPredicate, CancellationToken cancellationToken)
+    private static async Task<Document> UseListMethod(Document document, SyntaxNode nodeToFix, string methodName, bool convertPredicate, CancellationToken cancellationToken)
     {
         var expression = GetMemberAccessExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -418,18 +418,17 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (convertPredicate)
         {
             var compilation = editor.SemanticModel.Compilation;
-            var symbol = editor.SemanticModel.GetSymbolInfo(nodeToFix, cancellationToken: cancellationToken).Symbol as IMethodSymbol;
-            if (symbol == null || symbol.TypeArguments.Length != 1)
+            if (editor.SemanticModel.GetSymbolInfo(nodeToFix, cancellationToken: cancellationToken).Symbol is not IMethodSymbol symbol || symbol.TypeArguments.Length != 1)
                 return document;
 
             var type = symbol.TypeArguments[0];
-            if (type != null)
+            if (type is not null)
             {
                 var predicateType = compilation.GetBestTypeByMetadataName("System.Predicate`1")?.Construct(type);
-                if (predicateType != null)
+                if (predicateType is not null)
                 {
                     var predicate = ((InvocationExpressionSyntax)nodeToFix).ArgumentList.Arguments.Last().Expression;
-                    if (predicate != null)
+                    if (predicate is not null)
                     {
                         var newObject = editor.Generator.ObjectCreationExpression(predicateType, predicate);
                         editor.ReplaceNode(predicate, newObject);
@@ -441,10 +440,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseIndexer(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseIndexer(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var expression = GetParentMemberExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -460,10 +459,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseIndexerFirst(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseIndexerFirst(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var expression = GetParentMemberExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -478,10 +477,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private async static Task<Document> UseIndexerLast(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseIndexerLast(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var expression = GetParentMemberExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -501,7 +500,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         string GetMemberName()
         {
             var type = operation.Arguments[0].Value.GetActualType();
-            var isArray = type != null && type.TypeKind == TypeKind.Array;
+            var isArray = type is not null && type.TypeKind == TypeKind.Array;
             if (isArray)
                 return "Length";
 
@@ -521,7 +520,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
         var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
-        if (firstNode == null || lastNode == null)
+        if (firstNode is null || lastNode is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -544,11 +543,11 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
-        if (nodeToFix == null)
+        if (nodeToFix is null)
             return document;
 
         var expression = GetMemberAccessExpression(nodeToFix);
-        if (expression == null)
+        if (expression is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -572,7 +571,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
         var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
-        if (firstNode == null || lastNode == null)
+        if (firstNode is null || lastNode is null)
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
@@ -590,10 +589,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         SyntaxNode? CombineArguments(IArgumentOperation? argument1, IArgumentOperation? argument2)
         {
-            if (argument2 == null)
+            if (argument2 is null)
                 return argument1?.Syntax;
 
-            if (argument1 == null)
+            if (argument1 is null)
                 return argument2?.Syntax;
             if (argument1.Value is not IDelegateCreationOperation value1 || argument2.Value is not IDelegateCreationOperation value2)
                 return null;
@@ -649,7 +648,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
     private static ExpressionSyntax? GetParentMemberExpression(SyntaxNode invocationExpressionSyntax)
     {
         var memberAccessExpression = GetMemberAccessExpression(invocationExpressionSyntax);
-        if (memberAccessExpression == null)
+        if (memberAccessExpression is null)
             return null;
 
         return memberAccessExpression.Expression;
@@ -660,7 +659,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
         {
             var symbol = semanticModel.GetSymbolInfo(node).Symbol;
-            if (symbol != null && symbol.IsEqualTo(parameterSymbol))
+            if (symbol is not null && symbol.IsEqualTo(parameterSymbol))
             {
                 return IdentifierName(newParameterName);
             }

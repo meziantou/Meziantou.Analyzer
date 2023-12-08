@@ -18,7 +18,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseNamedParameter,
         title: "Add parameter name to improve readability",
         messageFormat: "Name the parameter to improve code readability",
@@ -28,7 +28,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNamedParameter));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -60,24 +60,24 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
             compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
             {
                 var argument = (ArgumentSyntax)syntaxContext.Node;
-                if (argument.NameColon != null)
+                if (argument.NameColon is not null)
                     return;
 
-                if (argument.Expression == null)
+                if (argument.Expression is null)
                     return;
 
-                if (callerMustUseNamedArgumentType != null)
+                if (callerMustUseNamedArgumentType is not null)
                 {
                     var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
-                    if (operation?.Parameter != null)
+                    if ((operation?.Parameter) is not null)
                     {
                         var attribute = operation.Parameter.GetAttribute(callerMustUseNamedArgumentType);
-                        if (attribute != null)
+                        if (attribute is not null)
                         {
                             var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
                             if (requireNamedArgument)
                             {
-                                syntaxContext.ReportDiagnostic(Diagnostic.Create(s_rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
+                                syntaxContext.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
                                 return;
                             }
                         }
@@ -115,7 +115,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
                 // Exclude in some methods such as ConfigureAwait(false)
                 var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t.IsKind(SyntaxKind.InvocationExpression) || t.IsKind(SyntaxKind.ObjectCreationExpression) || t.IsKind(SyntaxKind.ElementAccessExpression));
-                if (invocationExpression != null)
+                if (invocationExpression is not null)
                 {
                     BaseArgumentListSyntax? argumentList = invocationExpression switch
                     {
@@ -129,10 +129,10 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         return;
 
                     var invokedMethodSymbol = syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression, syntaxContext.CancellationToken).Symbol;
-                    if (invokedMethodSymbol == null && invocationExpression.IsKind(SyntaxKind.ElementAccessExpression))
+                    if (invokedMethodSymbol is null && invocationExpression.IsKind(SyntaxKind.ElementAccessExpression))
                         return; // Skip Array[index]
 
-                    if (invokedMethodSymbol != null)
+                    if (invokedMethodSymbol is not null)
                     {
                         var invokedMethodParameters = invokedMethodSymbol switch
                         {
@@ -246,7 +246,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                             return;
 
                         var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
-                        if (operation != null && operationUtilities.IsInExpressionContext(operation))
+                        if (operation is not null && operationUtilities.IsInExpressionContext(operation))
                             return;
 
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))
@@ -269,7 +269,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                     }
                 }
 
-                syntaxContext.ReportDiagnostic(s_rule, syntaxContext.Node);
+                syntaxContext.ReportDiagnostic(Rule, syntaxContext.Node);
 
                 static bool IsBooleanExpression(SyntaxNode node) => node.IsKind(SyntaxKind.TrueLiteralExpression) || node.IsKind(SyntaxKind.FalseLiteralExpression);
                 static bool IsStringExpression(SyntaxNode node) => node.IsKind(SyntaxKind.StringLiteralExpression) || node.IsKind(SyntaxKind.InterpolatedStringExpression);
@@ -279,7 +279,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
     private static bool IsMethod(ISymbol? method, ITypeSymbol? containingType, string methodName)
     {
-        if (containingType == null || method == null || method.ContainingType == null)
+        if (containingType is null || method is null || method.ContainingType is null)
             return false;
 
         if (!string.Equals(methodName, "*", StringComparison.Ordinal) && !string.Equals(method.Name, methodName, StringComparison.Ordinal))

@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseServerCertificateValidationCallback,
         title: "Do not write your own certificate validation method",
         messageFormat: "Do not write your own certificate validation method",
@@ -20,7 +20,7 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : Diagno
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseServerCertificateValidationCallback));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -32,13 +32,13 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : Diagno
             var symbols = new List<ISymbol>();
 
             var servicePointManagerSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Net.ServicePointManager");
-            if (servicePointManagerSymbol != null)
+            if (servicePointManagerSymbol is not null)
             {
                 symbols.AddIfNotNull(servicePointManagerSymbol.GetMembers("ServerCertificateValidationCallback").FirstOrDefault());
             }
 
             var httpClientHandlerSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Net.Http.HttpClientHandler");
-            if (httpClientHandlerSymbol != null)
+            if (httpClientHandlerSymbol is not null)
             {
                 symbols.AddIfNotNull(httpClientHandlerSymbol.GetMembers("ServerCertificateCustomValidationCallback").FirstOrDefault());
             }
@@ -55,7 +55,7 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : Diagno
         var operation = (IPropertyReferenceOperation)context.Operation;
         if (eventSymbols.Contains(operation.Property))
         {
-            context.ReportDiagnostic(s_rule, operation);
+            context.ReportDiagnostic(Rule, operation);
         }
     }
 }

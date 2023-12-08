@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor s_rule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.SimplifyCallerArgumentExpression,
         title: "Remove redundant argument value",
         messageFormat: "Remove redundant argument value",
@@ -19,7 +19,7 @@ public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SimplifyCallerArgumentExpression));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -84,7 +84,7 @@ public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyze
             var defaultValue = targetArgument.Value.Syntax.ToString();
             if (defaultValue == (string?)argument.Value.ConstantValue.Value)
             {
-                context.ReportDiagnostic(s_rule, argument);
+                context.ReportDiagnostic(Rule, argument);
             }
         }
     }
