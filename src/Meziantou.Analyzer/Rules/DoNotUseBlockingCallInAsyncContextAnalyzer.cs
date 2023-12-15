@@ -152,7 +152,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (_symbolsWithNoAsyncOverloads.Contains(targetMethod))
                 return;
 
-            if (HasAsyncEquivalent(context.Compilation, operation, out var diagnosticMessage))
+            if (HasAsyncEquivalent(operation, out var diagnosticMessage))
             {
                 ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage);
             }
@@ -162,7 +162,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
         }
 
-        private bool HasAsyncEquivalent(Compilation compilation, IInvocationOperation operation, [NotNullWhen(true)] out DiagnosticData? data)
+        private bool HasAsyncEquivalent(IInvocationOperation operation, [NotNullWhen(true)] out DiagnosticData? data)
         {
             data = null;
             var targetMethod = operation.TargetMethod;
