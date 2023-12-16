@@ -150,6 +150,8 @@ internal static class RuleIdentifiers
     public const string UnsafeAccessorAttribute_InvalidSignature = "MA0145";
     public const string UnsafeAccessorAttribute_NameMustBeSet = "MA0146";
     public const string DoNotUseAsyncDelegateForSyncDelegate = "MA0147";
+    public const string UsePatternMatchingForEqualityComparison = "MA0148";
+    public const string UsePatternMatchingForInequalityComparison = "MA0149";
 
     public static string GetHelpUri(string identifier)
     {
