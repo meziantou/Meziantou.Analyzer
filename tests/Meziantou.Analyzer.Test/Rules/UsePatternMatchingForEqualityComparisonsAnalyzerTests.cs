@@ -5,14 +5,14 @@ using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class UsePatternMatchingForNullCheckAnalyzerTests
+public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
 {
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UsePatternMatchingForNullCheckAnalyzer>()
-            .WithCodeFixProvider<UsePatternMatchingForNullCheckFixer>();
+            .WithAnalyzer<UsePatternMatchingForEqualityComparisonsAnalyzer>()
+            .WithCodeFixProvider<UsePatternMatchingForEqualityComparisonsFixer>();
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzerTests
               .ShouldFixCodeWith("_ = (int?)0 is null;")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NullCheckForNullableOfT_NotNull()
     {
@@ -41,7 +41,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzerTests
               .ShouldFixCodeWith("_ = new object() is null;")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NullCheckForObject_NullFirst()
     {
@@ -50,7 +50,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzerTests
               .ShouldFixCodeWith("_ = new object() is null;")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NullCheckForObject_NotNull_NullFirst()
     {
@@ -59,7 +59,7 @@ public sealed class UsePatternMatchingForNullCheckAnalyzerTests
               .ShouldFixCodeWith("_ = new object() is not null;")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NullCheckForObject_FixerKeepParentheses()
     {
@@ -114,6 +114,58 @@ public sealed class UsePatternMatchingForNullCheckAnalyzerTests
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"_ = (int?)0 is null;")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EqualityComparison_String()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($"""_ = [|(string)"dummy" == "dummy"|];""")
+              .ShouldFixCodeWith($"""_ = (string)"dummy" is "dummy";""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EqualityComparison_NullableInt32_Int32()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($"_ = [|(int?)0 == 1|];")
+              .ShouldFixCodeWith($"_ = (int?)0 is 1;")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EqualityComparison_Enum()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($"_ = [|(System.DayOfWeek)1 == System.DayOfWeek.Monday|];")
+              .ShouldFixCodeWith($"_ = (System.DayOfWeek)1 is System.DayOfWeek.Monday;")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EqualityComparison_NullableEnum()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($"_ = [|(System.DayOfWeek?)1 == System.DayOfWeek.Monday|];")
+              .ShouldFixCodeWith($"_ = (System.DayOfWeek?)1 is System.DayOfWeek.Monday;")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CustomOperator_Class_Int32()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                _ = new Sample() == 1;
+
+                class Sample
+                {
+                    public static bool operator ==(Sample left, int right) => false;
+                    public static bool operator !=(Sample left, int right) => false;
+                }                
+                """)
               .ValidateAsync();
     }
 }
