@@ -149,6 +149,7 @@
 |[MA0147](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0147.md)|Usage|Avoid async void method for delegate|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0148](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0148.md)|Usage|Use pattern matching instead of equality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0149](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0149.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call the default object.ToString explicitly|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -602,6 +603,9 @@ dotnet_diagnostic.MA0148.severity = none
 
 # MA0149: Use pattern matching instead of inequality operators for discrete value
 dotnet_diagnostic.MA0149.severity = none
+
+# MA0150: Do not call the default object.ToString explicitly
+dotnet_diagnostic.MA0150.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1050,4 +1054,7 @@ dotnet_diagnostic.MA0148.severity = none
 
 # MA0149: Use pattern matching instead of inequality operators for discrete value
 dotnet_diagnostic.MA0149.severity = none
+
+# MA0150: Do not call the default object.ToString explicitly
+dotnet_diagnostic.MA0150.severity = none
 ```
