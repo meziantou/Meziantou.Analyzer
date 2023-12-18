@@ -42,4 +42,10 @@ internal readonly struct DiagnosticReporter
     public CancellationToken CancellationToken { get; }
 
     public void ReportDiagnostic(Diagnostic diagnostic) => _reportDiagnostic(diagnostic);
+
+    public static implicit operator DiagnosticReporter(SymbolAnalysisContext context) => new(context);
+    public static implicit operator DiagnosticReporter(OperationAnalysisContext context) => new(context);
+    public static implicit operator DiagnosticReporter(OperationBlockAnalysisContext context) => new(context);
+    public static implicit operator DiagnosticReporter(SyntaxNodeAnalysisContext context) => new(context);
+    public static implicit operator DiagnosticReporter(CompilationAnalysisContext context) => new(context);
 }
