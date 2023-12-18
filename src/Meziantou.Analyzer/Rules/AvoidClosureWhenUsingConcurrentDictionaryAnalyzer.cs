@@ -184,8 +184,9 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
             var dataFlow = semanticModel.AnalyzeDataFlow(syntax);
             if (dataFlow.CapturedInside.Length > 0)
             {
+                // A parameter can be captured inside (by another lambda)
                 var parameters = GetParameters(argumentOperation);
-                if (dataFlow.Captured.Any(s => !parameters.Contains(s, SymbolEqualityComparer.Default)))
+                if (dataFlow.CapturedInside.Any(s => !parameters.Contains(s, SymbolEqualityComparer.Default)))
                 {
                     context.ReportDiagnostic(RuleFactoryArg, argumentOperation, string.Join(", ", dataFlow.Captured.Select(symbol => symbol.Name)));
                 }
