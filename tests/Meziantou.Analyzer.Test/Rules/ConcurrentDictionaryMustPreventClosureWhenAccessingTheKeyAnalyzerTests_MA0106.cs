@@ -119,4 +119,28 @@ a.GetOrAdd(key, k => new System.Func<int>(() => k)());
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task GetOrAdd_NoClosure()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Collections.Concurrent;
+            using System.Linq;
+
+            var dict = new ConcurrentDictionary<string, Type>();
+            dict.GetOrAdd("", static layout2 =>
+            {
+                var types = System.Array.Empty<string>().Where(t => t == layout2);
+                throw null!;
+            });
+
+            var dummy = new object();
+            var f = new System.Func<bool>(() => dummy != null);
+            """;
+        await CreateProjectBuilder()
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 }
