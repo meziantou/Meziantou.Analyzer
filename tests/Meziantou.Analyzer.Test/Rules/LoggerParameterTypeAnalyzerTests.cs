@@ -297,6 +297,26 @@ logger.LogInformation("{Prop}", (string?)null);
 Prop;System.String
 """)
               .ValidateAsync();
+    }    
+
+    [Fact]
+    public async Task Logger_LogTrace_InvalidParameterType_NullableReferenceType()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", [|(int?)null|]);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+#if ROSLYN_4_6_OR_GREATER
+              .ShouldReportDiagnosticWithMessage("""Parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.Nullable<global::System.Int32>'""")
+#endif
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.Nullable{System.String}
+""")
+              .ValidateAsync();
     }
 
     [Fact]
