@@ -404,8 +404,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             if (!Configuration.IsValid(context.Compilation, name, argumentType.Symbol, out var ruleFound))
             {
                 var expectedSymbols = Configuration.GetSymbols(name);
-                var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{s.ToDisplayString()}'"));
-                context.ReportDiagnostic(Rule, argumentType.Location, name, expectedSymbolsStr, argumentType.Symbol?.ToDisplayString());
+                var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{FormatType(s)}'"));
+                context.ReportDiagnostic(Rule, argumentType.Location, name, expectedSymbolsStr, FormatType(argumentType.Symbol));
             }
 
             if (!ruleFound)
@@ -501,6 +501,21 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             }
 
             return message is not null;
+        }
+
+        private static string FormatType(ISymbol? typeSymbol)
+        {
+            if (typeSymbol is null)
+                return "";
+
+            var format = SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
+                SymbolDisplayMiscellaneousOptions.ExpandNullable |
+#if ROSLYN_4_6_OR_GREATER
+                SymbolDisplayMiscellaneousOptions.ExpandValueTuple |
+#endif
+                SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier |
+                SymbolDisplayMiscellaneousOptions.UseErrorTypeSymbolName);
+            return typeSymbol.ToDisplayString(format);
         }
     }
 
