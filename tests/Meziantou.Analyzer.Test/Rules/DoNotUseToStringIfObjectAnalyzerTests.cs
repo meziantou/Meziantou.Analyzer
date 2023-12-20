@@ -248,17 +248,66 @@ public sealed class A {}
     }
 
     [Fact]
-    public async Task SealedClass_Overridden_Concat()
+    public async Task Interpolation_Int32()
     {
         var sourceCode = """
-var o = new A();
-_ = "" + o;
-
-public sealed class A { public override string ToString() => throw null;}
+var statusCode = 42;
+_ = $"{statusCode}";
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task Interpolation_CastEnumToInt32()
+    {
+        var sourceCode = """
+var statusCode = System.Net.HttpStatusCode.OK;
+_ = $"{(int)statusCode}";
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Interpolation_Enum()
+    {
+        var sourceCode = """
+var statusCode = System.Net.HttpStatusCode.OK;
+_ = $"{statusCode}";
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Interpolation_ReproCachingIssue()
+    {
+        var sourceCode = """
+using System;
+
+var url = args[0];
+var result = new Result(default);
+var encoding = "";
+Assert.False(result.IsSuccessStatusCode, $"{url}\nEncoding: {encoding}\nStatus code: {(int)result.StatusCode} {result.StatusCode}");
+Assert.True(result.IsSuccessStatusCode, $"{url}\nEncoding: {encoding}\nStatus code: {(int)result.StatusCode} {result.StatusCode}");
+
+class Assert
+{
+    public static void False(bool condition, string? errorMessage) { }
+    public static void True(bool condition, string? errorMessage) { }
+}
+
+record Result(System.Net.HttpStatusCode StatusCode)
+{
+    public bool IsSuccessStatusCode => false;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }

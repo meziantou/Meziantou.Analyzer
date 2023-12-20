@@ -106,7 +106,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
 
         private void AnalyzeExpression(DiagnosticReporter reporter, IOperation operation)
         {
-            var actualType = operation.GetActualType();
+            var actualType = operation.UnwrapImplicitConversionOperations().Type;
             if (actualType is null)
                 return;
 
@@ -124,6 +124,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (type is null)
                 return false;
 
+            var originalType = type;
             var overrideToString = false;
 
             while (type is not null)
@@ -133,13 +134,13 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
 
                 var method = type.GetMembers("ToString").OfType<IMethodSymbol>().Where(m => IsDefaultToString(m) && m.Override(ObjectToStringSymbol));
                 overrideToString = method.Any();
-                _overrideToStringCache.TryAdd(type, overrideToString);
                 if (overrideToString)
                     break;
 
                 type = type.BaseType;
             }
 
+            _overrideToStringCache.TryAdd(originalType, overrideToString);
             return overrideToString;
         }
 
