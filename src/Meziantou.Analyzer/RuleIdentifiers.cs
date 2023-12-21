@@ -153,6 +153,7 @@ internal static class RuleIdentifiers
     public const string UsePatternMatchingForEqualityComparison = "MA0148";
     public const string UsePatternMatchingForInequalityComparison = "MA0149";
     public const string DoNotUseToStringIfObject = "MA0150";
+    public const string DebuggerDisplayAttributeShouldContainValidExpressions = "MA0151";
 
     public static string GetHelpUri(string identifier)
     {
