@@ -55,5 +55,11 @@ internal static partial class ContextExtensions
 
     public static void ReportDiagnostic(this <#= type #> context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IOperation operation, params string?[] messageArgs)
         => ReportDiagnostic(new DiagnosticReporter(context), descriptor, properties, operation, messageArgs);
+
+    public static void ReportDiagnostic(this <#= type #> context, DiagnosticDescriptor descriptor, AttributeData attribute, params string?[]? messageArgs)
+        => ReportDiagnostic(new DiagnosticReporter(context), descriptor, attribute, messageArgs);
+
+    public static void ReportDiagnostic(this <#= type #> context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, AttributeData attribute, params string?[]? messageArgs)
+        => ReportDiagnostic(new DiagnosticReporter(context), descriptor, properties, attribute, messageArgs);
 <# } #>
 }

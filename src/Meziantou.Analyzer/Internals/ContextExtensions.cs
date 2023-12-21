@@ -59,6 +59,7 @@ internal static partial class ContextExtensions
 
         context.ReportDiagnostic(descriptor, properties, operation, messageArgs);
     }
+
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IInvocationOperation operation, DiagnosticReportOptions options, params string?[]? messageArgs)
     {
         if (options.HasFlag(DiagnosticReportOptions.ReportOnMethodName) &&
@@ -69,5 +70,18 @@ internal static partial class ContextExtensions
         }
 
         context.ReportDiagnostic(descriptor, properties, operation, messageArgs);
+    }
+
+    public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, AttributeData attribute, params string?[]? messageArgs)
+    {
+        ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, attribute, messageArgs);
+    }
+
+    public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, AttributeData attribute, params string?[]? messageArgs)
+    {
+        if (attribute.ApplicationSyntaxReference is not null)
+        {
+            context.ReportDiagnostic(descriptor, properties, attribute.ApplicationSyntaxReference, messageArgs);
+        }
     }
 }

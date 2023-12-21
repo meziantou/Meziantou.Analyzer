@@ -150,6 +150,7 @@
 |[MA0148](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0148.md)|Usage|Use pattern matching instead of equality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0149](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0149.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call the default object.ToString explicitly|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0151](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0151.md)|Usage|DebuggerDisplay must contain valid members|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -606,6 +607,9 @@ dotnet_diagnostic.MA0149.severity = none
 
 # MA0150: Do not call the default object.ToString explicitly
 dotnet_diagnostic.MA0150.severity = none
+
+# MA0151: DebuggerDisplay must contain valid members
+dotnet_diagnostic.MA0151.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1057,4 +1061,7 @@ dotnet_diagnostic.MA0149.severity = none
 
 # MA0150: Do not call the default object.ToString explicitly
 dotnet_diagnostic.MA0150.severity = none
+
+# MA0151: DebuggerDisplay must contain valid members
+dotnet_diagnostic.MA0151.severity = none
 ```
