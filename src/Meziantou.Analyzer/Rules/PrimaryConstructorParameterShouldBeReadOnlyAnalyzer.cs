@@ -40,7 +40,33 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
             context.RegisterOperationAction(AnalyzerAssignment, OperationKind.DeconstructionAssignment);
             context.RegisterOperationAction(AnalyzerIncrementOrDecrement, OperationKind.Increment);
             context.RegisterOperationAction(AnalyzerIncrementOrDecrement, OperationKind.Decrement);
+            context.RegisterOperationAction(AnalyzerInitializer, OperationKind.VariableDeclarator);
+            context.RegisterOperationAction(AnalyzerArgument, OperationKind.Argument);
         });
+    }
+
+    private void AnalyzerArgument(OperationAnalysisContext context)
+    {
+        var operation = (IArgumentOperation)context.Operation;
+        if (operation.Parameter is { RefKind: RefKind.Ref or RefKind.Out } && IsPrimaryConstructorParameter(operation.Value, context.CancellationToken))
+        {
+            context.ReportDiagnostic(Rule, operation.Value);
+        }
+    }
+
+    private void AnalyzerInitializer(OperationAnalysisContext context)
+    {
+        var operation = (IVariableDeclaratorOperation)context.Operation;
+        if (operation.Initializer is null)
+            return;
+
+        if (operation.Symbol.RefKind is RefKind.Ref or RefKind.Out)
+        {
+            if (IsPrimaryConstructorParameter(operation.Initializer.Value, context.CancellationToken))
+            {
+                context.ReportDiagnostic(Rule, operation.Initializer.Value);
+            }
+        }
     }
 
     private void AnalyzerIncrementOrDecrement(OperationAnalysisContext context)
