@@ -16,7 +16,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
         messageFormat: "ToString on '{0}' will use the default object.ToString",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseToStringIfObject));
 

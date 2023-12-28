@@ -14,7 +14,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzer : DiagnosticAna
         messageFormat: "Avoid async void method for delegate",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseAsyncDelegateForSyncDelegate));
 

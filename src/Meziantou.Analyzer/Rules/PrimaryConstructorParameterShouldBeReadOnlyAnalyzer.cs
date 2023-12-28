@@ -18,7 +18,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
         messageFormat: "Primary constructor parameters should be readonly",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.PrimaryConstructorParameterShouldBeReadOnly));
 
