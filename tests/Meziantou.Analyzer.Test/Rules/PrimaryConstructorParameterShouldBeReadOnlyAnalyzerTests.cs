@@ -143,5 +143,85 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task AssignVariable()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                class Test(string p)
+                {
+                    void A()
+                    {
+                        var a = p;
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Argument()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                class Test(string p)
+                {
+                    void A(string value)
+                    {
+                        A(p);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task EditUsingRefVariable()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                class Test(string p)
+                {
+                    void A()
+                    {
+                        ref var a = ref [|p|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EditUsingRefParameter()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                class Test(string p)
+                {
+                    void A(ref string a)
+                    {
+                        A(ref [|p|]);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EditUsingInParameter()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                class Test(string p)
+                {
+                    void A(in string a)
+                    {
+                        A(in p);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
 }
 #endif
