@@ -142,15 +142,16 @@
 |[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use pattern matching instead of inequality operators for null check|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use pattern matching instead of equality operators for null check|<span title='Info'>ℹ️</span>|❌|✔️|
-|[MA0143](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0143.md)|Design|Primary constructor parameters should be readonly|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0143](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0143.md)|Design|Primary constructor parameters should be readonly|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0144](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0144.md)|Performance|Use System.OperatingSystem to check the current OS|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0145](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0145.md)|Usage|Signature for \[UnsafeAccessorAttribute\] method is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0146](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0146.md)|Usage|Name must be set explicitly on local functions|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0147](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0147.md)|Usage|Avoid async void method for delegate|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0147](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0147.md)|Usage|Avoid async void method for delegate|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0148](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0148.md)|Usage|Use pattern matching instead of equality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0149](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0149.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
-|[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call the default object.ToString explicitly|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call the default object.ToString explicitly|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0151](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0151.md)|Usage|DebuggerDisplay must contain valid members|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0152](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0152.md)|Performance|Use Unwrap instead of using await twice|<span title='Info'>ℹ️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -585,7 +586,7 @@ dotnet_diagnostic.MA0141.severity = none
 dotnet_diagnostic.MA0142.severity = none
 
 # MA0143: Primary constructor parameters should be readonly
-dotnet_diagnostic.MA0143.severity = none
+dotnet_diagnostic.MA0143.severity = warning
 
 # MA0144: Use System.OperatingSystem to check the current OS
 dotnet_diagnostic.MA0144.severity = warning
@@ -597,7 +598,7 @@ dotnet_diagnostic.MA0145.severity = warning
 dotnet_diagnostic.MA0146.severity = warning
 
 # MA0147: Avoid async void method for delegate
-dotnet_diagnostic.MA0147.severity = none
+dotnet_diagnostic.MA0147.severity = warning
 
 # MA0148: Use pattern matching instead of equality operators for discrete value
 dotnet_diagnostic.MA0148.severity = none
@@ -606,10 +607,13 @@ dotnet_diagnostic.MA0148.severity = none
 dotnet_diagnostic.MA0149.severity = none
 
 # MA0150: Do not call the default object.ToString explicitly
-dotnet_diagnostic.MA0150.severity = none
+dotnet_diagnostic.MA0150.severity = warning
 
 # MA0151: DebuggerDisplay must contain valid members
 dotnet_diagnostic.MA0151.severity = warning
+
+# MA0152: Use Unwrap instead of using await twice
+dotnet_diagnostic.MA0152.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1064,4 +1068,7 @@ dotnet_diagnostic.MA0150.severity = none
 
 # MA0151: DebuggerDisplay must contain valid members
 dotnet_diagnostic.MA0151.severity = none
+
+# MA0152: Use Unwrap instead of using await twice
+dotnet_diagnostic.MA0152.severity = none
 ```
