@@ -10,8 +10,8 @@ public sealed class UseTaskUnwrapAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseTaskUnwrap,
-        title: "Use Unwrap instead of double await",
-        messageFormat: "Use Unwrap instead of double await",
+        title: "Use Unwrap instead of using await twice",
+        messageFormat: "Use Unwrap instead of using await twice",
         RuleCategories.Performance,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,

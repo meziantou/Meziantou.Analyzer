@@ -219,7 +219,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 if (actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLengthProperty);
-                    context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Length", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Length", operation.TargetMethod.Name);
                     return;
                 }
 
@@ -229,7 +229,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     if (HasNonExplicitCountMethod(actualType))
                     {
                         var properties = CreateProperties(OptimizeLinqUsageData.UseCountProperty);
-                        context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Count", operation.TargetMethod.Name);
+                        context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Count", operation.TargetMethod.Name);
                         return;
                     }
 
@@ -254,7 +254,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 if (actualType is not null && actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
-                    context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "LongLength", operation.TargetMethod.Name);
+                    context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "LongLength", operation.TargetMethod.Name);
                 }
             }
         }
@@ -287,7 +287,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     properties = CreateProperties(OptimizeLinqUsageData.UseFindMethodWithConversion);
                 }
 
-                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Find()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Find()", operation.TargetMethod.Name);
             }
         }
         
@@ -319,7 +319,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     properties = CreateProperties(OptimizeLinqUsageData.UseTrueForAllMethodWithConversion);
                 }
 
-                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "TrueForAll()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "TrueForAll()", operation.TargetMethod.Name);
             }
         }
         
@@ -351,7 +351,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     properties = CreateProperties(OptimizeLinqUsageData.UseExistsMethodWithConversion);
                 }
 
-                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "Exists()", operation.TargetMethod.Name);
+                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Exists()", operation.TargetMethod.Name);
             }
         }
 
@@ -391,7 +391,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
             if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(IListOfTSymbol) || i.OriginalDefinition.IsEqualTo(IReadOnlyListOfTSymbol)))
             {
-                context.ReportDiagnostic(IndexerInsteadOfElementAtRule, properties, operation, DiagnosticReportOptions.ReportOnMethodName, "[]", operation.TargetMethod.Name);
+                context.ReportDiagnostic(IndexerInsteadOfElementAtRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "[]", operation.TargetMethod.Name);
             }
         }
 
@@ -786,7 +786,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             var properties = CreateProperties(OptimizeLinqUsageData.UseCastInsteadOfSelect);
 
             var castType = castOp.Type.ToMinimalDisplayString(semanticModel, nullableFlowState, operation.Syntax.SpanStart);
-            context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCastInsteadOfSelect, properties, operation, DiagnosticReportOptions.ReportOnMethodName, castType);
+            context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCastInsteadOfSelect, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, castType);
 
             static bool CanReplaceByCast(IConversionOperation op)
             {

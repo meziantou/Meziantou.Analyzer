@@ -34,7 +34,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(ctx =>
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
-            ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeAwaitExpression, SyntaxKind.AwaitExpression);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeAwaitOperation, OperationKind.Await);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeForEachStatement, OperationKind.Loop);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeUsingOperation, OperationKind.Using);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeUsingDeclarationOperation, OperationKind.UsingDeclaration);
@@ -61,18 +61,23 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         private INamedTypeSymbol? AspNetCore_IFilterMetadata { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata");
         private INamedTypeSymbol? AspNetCore_IComponent { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
 
-        public void AnalyzeAwaitExpression(SyntaxNodeAnalysisContext context)
+        public void AnalyzeAwaitOperation(OperationAnalysisContext context)
         {
             // if expression is of type ConfiguredTaskAwaitable, do nothing
             // If ConfigureAwait(false) somewhere in a method, all following await calls should have ConfigureAwait(false)
             // Use ConfigureAwait(false) everywhere except if the parent class is a WPF, Winform, or ASP.NET class, or ASP.NET Core (because there is no SynchronizationContext)
-            var node = (AwaitExpressionSyntax)context.Node;
-            if (!CanAddConfigureAwait(context.SemanticModel, node, context.CancellationToken))
+            var operation = (IAwaitOperation)context.Operation;
+
+            var awaitedOperationType = operation.Operation.Type;
+            if (awaitedOperationType is null || operation.SemanticModel is null)
                 return;
 
-            if (MustUseConfigureAwait(context.SemanticModel, context.Options, node, context.CancellationToken))
+            if (!CanAddConfigureAwait(awaitedOperationType, operation))
+                return;
+
+            if (MustUseConfigureAwait(operation.SemanticModel, context.Options, operation.Operation.Syntax, context.CancellationToken))
             {
-                context.ReportDiagnostic(Rule, context.Node);
+                context.ReportDiagnostic(Rule, operation);
             }
         }
 
@@ -294,15 +299,6 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 return false;
 
             return true;
-        }
-
-        private static bool CanAddConfigureAwait(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
-        {
-            var awaitExpressionType = semanticModel.GetTypeInfo(awaitSyntax.Expression, cancellationToken).Type;
-            if (awaitExpressionType is null)
-                return false;
-
-            return CanAddConfigureAwait(awaitExpressionType, semanticModel, awaitSyntax.Expression);
         }
 
         private static bool CanAddConfigureAwait(ITypeSymbol awaitedType, IOperation operation)
