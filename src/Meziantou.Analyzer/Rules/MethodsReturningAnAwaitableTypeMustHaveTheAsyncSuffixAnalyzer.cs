@@ -87,14 +87,14 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             {
                 if (!hasAsyncSuffix)
                 {
-                    context.ReportDiagnostic(AsyncSuffixRule, properties: default, operation, DiagnosticReportOptions.ReportOnMethodName);
+                    context.ReportDiagnostic(AsyncSuffixRule, properties: default, operation, DiagnosticMethodReportOptions.ReportOnMethodName);
                 }
             }
             else
             {
                 if (hasAsyncSuffix)
                 {
-                    context.ReportDiagnostic(NotAsyncSuffixRule, properties: default, operation, DiagnosticReportOptions.ReportOnMethodName);
+                    context.ReportDiagnostic(NotAsyncSuffixRule, properties: default, operation, DiagnosticMethodReportOptions.ReportOnMethodName);
                 }
             }
         }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -8,240 +7,368 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
+    private static ProjectBuilder CreateProjectBuilder() =>
+        new ProjectBuilder()
             .WithAnalyzer<PreferReturningCollectionAbstractionInsteadOfImplementationAnalyzer>();
-    }
 
-    public static IEnumerable<object[]> ReturnTypeValues
+    public static TheoryData<string, string> ReturnTypeValuesValid => new()
     {
-        get
-        {
-            yield return new object[] { "private", "List<int>", true };
-            yield return new object[] { "public", "Task<List<int>>", false };
-            yield return new object[] { "public", "List<int>", false };
-            yield return new object[] { "protected", "List<int>", false };
-            yield return new object[] { "private protected", "List<int>", true };
-            yield return new object[] { "public", "string", true };
-        }
-    }
+        { "private", "List<int>" },
+        { "private protected", "List<int>" },
+        { "public", "string" },
+    };
 
-    public static IEnumerable<object[]> ParametersTypeValues
+    public static TheoryData<string, string> ReturnTypeValuesInvalid => new()
     {
-        get
-        {
-            yield return new object[] { "private", "List<int>", true };
-            yield return new object[] { "public", "List<int>", false };
-            yield return new object[] { "public", "System.Collections.ObjectModel.Collection<int>", false };
-            yield return new object[] { "protected", "List<int>", false };
-            yield return new object[] { "private protected", "List<int>", true };
-            yield return new object[] { "public", "string", true };
-        }
+        { "public", "Task<List<int>>" },
+        { "public", "List<int>" },
+        { "public", "System.Collections.ObjectModel.Collection<int>" },
+        { "protected", "List<int>" },
+        { "internal protected", "List<int>" },
+    };
+
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Fields_NoReport(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} {{type}} _dummy;
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ReturnTypeValues))]
-    public async Task Fields(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Fields_Reports(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @"
-    " + (isValid ? "" : "[||]") + type + @" _a;
-}");
-
-        await project.ValidateAsync();
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} [|{{type}}|] _dummy;
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ReturnTypeValues))]
-    public async Task Delegates(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Delegates_ReturnType_NoReport(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @" delegate
-    " + (isValid ? "" : "[||]") + type + @" A();
-}");
-
-        await project.ValidateAsync();
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} delegate {{type}} Dummy(int p);
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ParametersTypeValues))]
-    public async Task Delegates_Parameters(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Delegates_Parameter_NoReport(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @" delegate void A(
-    " + (isValid ? "" : "[||]") + type + @" p);
-}");
-
-        await project.ValidateAsync();
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} delegate void Dummy({{type}} p);
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ReturnTypeValues))]
-    public async Task Indexers(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Delegates_ReturnType_Report(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @"
-    " + (isValid ? "" : "[||]") + type + @" this[int value] => throw null;
-}");
-
-        await project.ValidateAsync();
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} delegate [|{{type}}|] Dummy(int p);
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ParametersTypeValues))]
-    public async Task Indexers_Parameters(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Delegates_Parameter_Report(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @" int this[
-    " + (isValid ? "" : "[||]") + type + @" value] => throw null;
-}");
-
-        await project.ValidateAsync();
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} delegate void Dummy([|{{type}}|] p);
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ReturnTypeValues))]
-    public async Task Properties(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Indexers_Valid(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @"
-    " + (isValid ? "" : "[||]") + type + @" A => throw null;
-}");
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} {{type}} this[int value] => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
 
-        await project.ValidateAsync();
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Indexers_Parameter_Valid(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} int this[{{type}} value] => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Indexers_Invalid(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} [|{{type}}|] this[int value] => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Indexers_Parameter_Invalid(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} int this[[|{{type}}|] value] => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Properties_Valid(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} {{type}} Dummy => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Properties_Invalid(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} [|{{type}}|] Dummy => throw null;
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Fact]
     public async Task Properties_XmlSerializable_XmlIgnore()
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Collections.Generic;
-using System.Xml.Serialization;
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Xml.Serialization;
 
-public class Test
-{
-    [XmlIgnore]
-    public [|List<int>|] A { get; set; }
-}");
-
-        await project.ValidateAsync();
+                public class Test
+                {
+                    [XmlIgnore]
+                    public [|List<int>|] A { get; set; }
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Fact]
     public async Task Properties_XmlSerializable_PropertyAttribute()
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Collections.Generic;
-using System.Xml.Serialization;
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Xml.Serialization;
 
-public class Test
-{
-    [XmlArray(""sample"")]
-    public List<int> A { get; set; }
-}");
-
-        await project.ValidateAsync();
+                public class Test
+                {
+                    [XmlArray("dummy")]
+                    public List<int> A { get; set; }
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Fact]
     public async Task Properties_XmlSerializable_ClassAttribute()
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Collections.Generic;
-using System.Xml.Serialization;
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Xml.Serialization;
 
-[XmlRoot(""sample"")]
-public class Test
-{
-    public List<int> A { get; set; }
-}");
-
-        await project.ValidateAsync();
+                [XmlRoot("sample")]
+                public class Test
+                {
+                    public List<int> A { get; set; }
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ReturnTypeValues))]
-    public async Task Methods(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Methods_Valid(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @"
-    " + (isValid ? "" : "[||]") + type + @" A() => throw null;
-}");
-
-        await project.ValidateAsync();
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} {{type}} Dummy() => throw null;
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Theory]
-    [MemberData(nameof(ParametersTypeValues))]
-    public async Task Methods_Parameters(string visibility, string type, bool isValid)
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Methods_Invalid(string visibility, string type)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Collections.Generic;using System.Threading.Tasks;
-public class Test
-{
-    " + visibility + @" void A(
-    " + (isValid ? "" : "[||]") + type + @" p) => throw null;
-}");
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} [|{{type}}|] Dummy() => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
 
-        await project.ValidateAsync();
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesValid))]
+    public async Task Methods_Parameter_Valid(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} void Dummy({{type}} p) => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(ReturnTypeValuesInvalid))]
+    public async Task Methods_Parameter_Invalid(string visibility, string type)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public class Test
+                {
+                    {{visibility}} void Dummy([|{{type}}|] p) => throw null;
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Fact]
     public async Task PrivateContainer()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-internal class Test
-{
-    public delegate List<int> B();
-    public List<int> _a;
-    protected List<int> _b;
-    public List<int> A() => throw null;
-}";
         await CreateProjectBuilder()
-             .WithSourceCode(SourceCode)
-             .ValidateAsync();
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                internal class Test
+                {
+                    public delegate List<int> B();
+                    public List<int> _a;
+                    protected List<int> _b;
+                    public List<int> A() => throw null;
+                }
+                """)
+            .ValidateAsync();
     }
 
     [Fact]
     public async Task InterfaceImplementation()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-public interface ITest
-{
-    [||]List<int> A();
-}
-
-public class Test : ITest
-{
-    public List<int> A() => throw null;
-}";
         await CreateProjectBuilder()
-             .WithSourceCode(SourceCode)
-             .ValidateAsync();
+            .WithSourceCode($$"""
+                using System.Collections.Generic;
+                using System.Threading.Tasks;
+                public interface ITest
+                {
+                    [||]List<int> A();
+                }
+                
+                public class Test : ITest
+                {
+                    public List<int> A() => throw null;
+                }
+                """)
+            .ValidateAsync();
     }
 }
