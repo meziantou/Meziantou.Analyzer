@@ -155,6 +155,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseToStringIfObject = "MA0150";
     public const string DebuggerDisplayAttributeShouldContainValidExpressions = "MA0151";
     public const string UseTaskUnwrap = "MA0152";
+    public const string DoNotLogClassifiedData = "MA0153";
 
     public static string GetHelpUri(string identifier)
     {

@@ -71,9 +71,12 @@ internal static class TypeSymbolExtensions
 
         foreach (var attribute in symbol.GetAttributes())
         {
+            if (attribute.AttributeClass is null)
+                continue;
+
             if (inherits)
             {
-                if (attributeType.IsOrInheritFrom(attribute.AttributeClass))
+                if (attribute.AttributeClass.IsOrInheritFrom(attributeType))
                     return attribute;
             }
             else
