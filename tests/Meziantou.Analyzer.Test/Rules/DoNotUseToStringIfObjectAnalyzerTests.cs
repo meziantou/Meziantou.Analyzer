@@ -282,6 +282,18 @@ _ = $"{statusCode}";
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Interpolation_AnonymousType()
+    {
+        var sourceCode = """
+var obj = new { FirstName = "" };
+_ = $"{obj}";
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Interpolation_ReproCachingIssue()
