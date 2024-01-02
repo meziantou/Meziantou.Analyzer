@@ -110,6 +110,9 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (actualType is null)
                 return;
 
+            if (actualType.IsAnonymousType)
+                return;
+
             if (actualType.IsSealed)  // Method cannot be overridden
             {
                 if (!OverrideToString(actualType))
