@@ -296,6 +296,17 @@ _ = $"{obj}";
     }
 
     [Fact]
+    public async Task ToString_AnonymousType()
+    {
+        var sourceCode = """
+new { FirstName = "" }.ToString();
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Interpolation_ReproCachingIssue()
     {
         var sourceCode = """
