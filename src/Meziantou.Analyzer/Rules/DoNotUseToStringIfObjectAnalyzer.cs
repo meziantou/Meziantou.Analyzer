@@ -78,6 +78,9 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
+            if (operation.Instance?.Type?.IsAnonymousType is true)
+                return;
+
             if (IsDefaultToString(operation.TargetMethod))
                 return;
 
