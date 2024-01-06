@@ -33,6 +33,46 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+    
+    [Theory]
+    [InlineData("Invalid")]
+    [InlineData("Invalid,np")]
+    [InlineData("Invalid()")]
+    [InlineData("Invalid.Length")]
+    public async Task UnknownMember_Name(string memberName)
+    {
+        var sourceCode = $$"""
+            using System.Diagnostics;
+            [[|DebuggerDisplay("", Name = "{{{memberName}}}")|]]
+            public class Dummy
+            {
+                public string Display { get; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Theory]
+    [InlineData("Invalid")]
+    [InlineData("Invalid,np")]
+    [InlineData("Invalid()")]
+    [InlineData("Invalid.Length")]
+    public async Task UnknownMember_Type(string memberName)
+    {
+        var sourceCode = $$"""
+            using System.Diagnostics;
+            [[|DebuggerDisplay("", Type = "{{{memberName}}}")|]]
+            public class Dummy
+            {
+                public string Display { get; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Valid()
@@ -40,6 +80,38 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         const string SourceCode = """
             using System.Diagnostics;
             [DebuggerDisplay("{Display}")]
+            public class Dummy
+            {
+                public string Display { get; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Valid_Name()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+            [DebuggerDisplay("", Name = "{Display}")]
+            public class Dummy
+            {
+                public string Display { get; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Valid_Type()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+            [DebuggerDisplay("", Type = "{Display}")]
             public class Dummy
             {
                 public string Display { get; }

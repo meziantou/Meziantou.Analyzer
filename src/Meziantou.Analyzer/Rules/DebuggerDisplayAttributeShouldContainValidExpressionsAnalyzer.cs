@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -46,19 +47,18 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
             if (!attribute.AttributeClass.IsEqualTo(attributeSymbol))
                 continue;
 
-            if (attribute.ConstructorArguments is [{ Kind: TypedConstantKind.Primitive, IsNull: false, Type.SpecialType: SpecialType.System_String, Value: string value }, ..])
             {
-                var members = ParseMembers(value.AsSpan());
-                if (members is not null)
+                if (attribute.ConstructorArguments is [{ Kind: TypedConstantKind.Primitive, Value: string value }, ..])
                 {
-                    foreach (var member in members)
-                    {
-                        if (!MemberExists(symbol, member))
-                        {
-                            context.ReportDiagnostic(Rule, attribute, member);
-                            return;
-                        }
-                    }
+                    ValidateValue(context, symbol, attribute, value);
+                }
+            }
+
+            foreach (var argument in attribute.NamedArguments)
+            {
+                if (argument.Key is nameof(DebuggerDisplayAttribute.Name) or nameof(DebuggerDisplayAttribute.Type) && argument.Value is { Kind: TypedConstantKind.Primitive, Value: string value2 })
+                {
+                    ValidateValue(context, symbol, attribute, value2);
                 }
             }
         }
@@ -110,6 +110,22 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
             }
 
             return result;
+        }
+
+        static void ValidateValue(SymbolAnalysisContext context, INamedTypeSymbol symbol, AttributeData attribute, string value)
+        {
+            var members = ParseMembers(value.AsSpan());
+            if (members is not null)
+            {
+                foreach (var member in members)
+                {
+                    if (!MemberExists(symbol, member))
+                    {
+                        context.ReportDiagnostic(Rule, attribute, member);
+                        return;
+                    }
+                }
+            }
         }
     }
 }
