@@ -31,6 +31,9 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzer : DiagnosticAna
     private static void AnalyzerDelegateCreationOperation(OperationAnalysisContext context)
     {
         var operation = (IDelegateCreationOperation)context.Operation;
+        if (operation.Parent is IEventAssignmentOperation)
+            return;
+
         if (operation.Type is INamedTypeSymbol { DelegateInvokeMethod: IMethodSymbol delegateInvokeMethod })
         {
             if (!delegateInvokeMethod.ReturnsVoid)
