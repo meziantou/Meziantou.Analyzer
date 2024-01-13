@@ -120,4 +120,20 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
                   """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Event_AsyncVoid()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  Sample.A += async (sender, e) => { };
+                  Sample.A -= async (sender, e) => { };
+
+                  class Sample
+                  {
+                      public static event System.EventHandler A;
+                  }
+                  """)
+              .ValidateAsync();
+    }
 }
