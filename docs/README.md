@@ -4,7 +4,7 @@
 |[MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0002](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0002.md)|Usage|IEqualityComparer\<string\> or IComparer\<string\> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0003](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0003.md)|Style|Add parameter name to improve readability|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0004](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0004.md)|Usage|Use Task.ConfigureAwait(false)|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0004](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0004.md)|Usage|Use Task.ConfigureAwait|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0005](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0005.md)|Performance|Use Array.Empty\<T\>()|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0006](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0006.md)|Usage|Use String.Equals instead of equality operator|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0007](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0007.md)|Style|Add a comma after the last value|<span title='Info'>ℹ️</span>|✔️|✔️|
@@ -172,7 +172,7 @@ dotnet_diagnostic.MA0002.severity = warning
 # MA0003: Add parameter name to improve readability
 dotnet_diagnostic.MA0003.severity = suggestion
 
-# MA0004: Use Task.ConfigureAwait(false)
+# MA0004: Use Task.ConfigureAwait
 dotnet_diagnostic.MA0004.severity = warning
 
 # MA0005: Use Array.Empty<T>()
@@ -632,7 +632,7 @@ dotnet_diagnostic.MA0002.severity = none
 # MA0003: Add parameter name to improve readability
 dotnet_diagnostic.MA0003.severity = none
 
-# MA0004: Use Task.ConfigureAwait(false)
+# MA0004: Use Task.ConfigureAwait
 dotnet_diagnostic.MA0004.severity = none
 
 # MA0005: Use Array.Empty<T>()
