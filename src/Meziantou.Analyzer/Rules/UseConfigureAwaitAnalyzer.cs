@@ -16,8 +16,8 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseConfigureAwaitFalse,
-        title: "Use Task.ConfigureAwait(false)",
-        messageFormat: "Use Task.ConfigureAwait(false) as the current SynchronizationContext is not needed",
+        title: "Use Task.ConfigureAwait",
+        messageFormat: "Use Task.ConfigureAwait(false) if the current SynchronizationContext is not needed",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
