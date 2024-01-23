@@ -637,4 +637,72 @@ class TypeName
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task Convert_ToChar_Object()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = System.Convert.ToChar((object)null);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task Convert_ToChar_String()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = System.Convert.ToChar("");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Convert_ToBoolean_Object()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = System.Convert.ToBoolean((object)null);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Convert_ToBoolean_String()
+    {
+        var sourceCode = $$"""
+class TypeName
+{
+    public void Test()
+    {
+        _ = System.Convert.ToBoolean("");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
