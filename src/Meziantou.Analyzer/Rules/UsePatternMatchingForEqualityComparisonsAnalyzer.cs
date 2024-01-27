@@ -65,30 +65,43 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
             if (tree.GetCSharpLanguageVersion() < Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
                 return;
 
-            context.RegisterOperationAction(AnalyzeBinary, OperationKind.Binary);
+            var analyzerContext = new AnalyzerContext(context.Compilation);
+            context.RegisterOperationAction(analyzerContext.AnalyzeBinary, OperationKind.Binary);
         });
     }
 
-    private static void AnalyzeBinary(OperationAnalysisContext context)
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        var operation = (IBinaryOperation)context.Operation;
-        if (operation is { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals, OperatorMethod: null })
+        private readonly OperationUtilities _operationUtilities = new(compilation);
+
+        public void AnalyzeBinary(OperationAnalysisContext context)
         {
-            var leftIsNull = UsePatternMatchingForEqualityComparisonsCommon.IsNull(operation.LeftOperand);
-            var rightIsNull = UsePatternMatchingForEqualityComparisonsCommon.IsNull(operation.RightOperand);
-            if (leftIsNull ^ rightIsNull)
+            var operation = (IBinaryOperation)context.Operation;
+            if (operation is { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals, OperatorMethod: null })
             {
-                context.ReportDiagnostic(operation.OperatorKind is BinaryOperatorKind.Equals ? RuleEqualNull : RuleNotEqualNull, operation);
-            }
-            else if (!leftIsNull && !rightIsNull)
-            {
-                var leftIsConstant = UsePatternMatchingForEqualityComparisonsCommon.IsConstantLiteral(operation.LeftOperand);
-                var rightIsConstant = UsePatternMatchingForEqualityComparisonsCommon.IsConstantLiteral(operation.RightOperand);
-                if (leftIsConstant ^ rightIsConstant)
+                var leftIsNull = UsePatternMatchingForEqualityComparisonsCommon.IsNull(operation.LeftOperand);
+                var rightIsNull = UsePatternMatchingForEqualityComparisonsCommon.IsNull(operation.RightOperand);
+                if (leftIsNull ^ rightIsNull)
                 {
-                    context.ReportDiagnostic(operation.OperatorKind is BinaryOperatorKind.Equals ? RuleEqualConstant : RuleNotEqualConstant, operation);
+                    if (_operationUtilities.IsInExpressionContext(operation))
+                        return;
+
+                    context.ReportDiagnostic(operation.OperatorKind is BinaryOperatorKind.Equals ? RuleEqualNull : RuleNotEqualNull, operation);
+                }
+                else if (!leftIsNull && !rightIsNull)
+                {
+                    var leftIsConstant = UsePatternMatchingForEqualityComparisonsCommon.IsConstantLiteral(operation.LeftOperand);
+                    var rightIsConstant = UsePatternMatchingForEqualityComparisonsCommon.IsConstantLiteral(operation.RightOperand);
+                    if (leftIsConstant ^ rightIsConstant)
+                    {
+                        if (_operationUtilities.IsInExpressionContext(operation))
+                            return;
+
+                        context.ReportDiagnostic(operation.OperatorKind is BinaryOperatorKind.Equals ? RuleEqualConstant : RuleNotEqualConstant, operation);
+                    }
                 }
             }
         }
     }
+
 }

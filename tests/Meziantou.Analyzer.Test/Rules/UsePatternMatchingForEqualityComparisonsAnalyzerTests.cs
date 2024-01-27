@@ -16,6 +16,19 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     }
 
     [Fact]
+    public async Task DisabledInExpression()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""              
+                  using System;
+                  using System.Linq;
+                  using System.Linq.Expressions;
+                  _ = (Expression<Func<int, bool>>)(item => item == 0);
+                  """)
+              .ValidateAsync();
+    }
+    
+    [Fact]
     public async Task NullCheckForNullableOfT()
     {
         await CreateProjectBuilder()
