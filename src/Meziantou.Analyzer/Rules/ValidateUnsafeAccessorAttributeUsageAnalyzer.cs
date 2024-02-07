@@ -92,8 +92,6 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
             return;
         }
 
-        var type = methodSymbol.Parameters[0].Type;
-
         if (accessorKind is UnsafeAccessorKind.Field or UnsafeAccessorKind.StaticField && methodSymbol.ReturnsVoid)
         {
             diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["return type does not match the field type"]);
@@ -126,6 +124,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
         }
 
         // Roslyn doesn't expose private members from other assemblies
+        //var type = methodSymbol.Parameters[0].Type;
         //switch (accessorKind)
         //{
         //    case UnsafeAccessorKind.Method:

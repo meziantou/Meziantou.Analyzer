@@ -28,14 +28,15 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
         context.RegisterCompilationStartAction(context =>
         {
             var awaitableTypes = new AwaitableTypes(context.Compilation);
+            var operationUtilities = new OperationUtilities(context.Compilation);
             context.RegisterSymbolStartAction(context =>
             {
-                context.RegisterOperationAction(context => AnalyzeOperation(context, awaitableTypes), OperationKind.Invocation);
+                context.RegisterOperationAction(context => AnalyzeOperation(context, operationUtilities, awaitableTypes), OperationKind.Invocation);
             }, SymbolKind.Method);
         });
     }
 
-    private static void AnalyzeOperation(OperationAnalysisContext context, AwaitableTypes awaitableTypes)
+    private static void AnalyzeOperation(OperationAnalysisContext context, OperationUtilities operationUtilities, AwaitableTypes awaitableTypes)
     {
         var operation = (IInvocationOperation)context.Operation;
 
@@ -49,6 +50,9 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
 
         if (parent is null or IBlockOperation or IExpressionStatementOperation)
         {
+            if (operationUtilities.IsInExpressionContext(operation))
+                return;
+
             var semanticModel = operation.SemanticModel!;
             var position = operation.Syntax.GetLocation().SourceSpan.End;
 
