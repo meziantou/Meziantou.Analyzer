@@ -11,7 +11,12 @@
       "separateMajorMinor": false
     },
     {
-      "matchPackageNames": [ "Microsoft.CodeAnalysis.Analyzers", "Microsoft.CodeAnalysis.CSharp.Workspaces" ],
+      "matchPackageNames": [ 
+        "Microsoft.CodeAnalysis.Analyzers",
+        "Microsoft.CodeAnalysis.CSharp",
+        "Microsoft.CodeAnalysis.CSharp.Workspaces",
+        "Microsoft.CodeAnalysis.Workspaces.Common"
+      ],
       "groupName": "roslyn-analyzers",
       "separateMajorMinor": true
     }
