@@ -21,8 +21,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.LoggerParameterType,
-        title: "Log Parameter type is not valid",
-        messageFormat: "Parameter '{0}' must be of type {1} but is of type '{2}'",
+        title: "Log parameter type is not valid",
+        messageFormat: "Log parameter '{0}' {1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -31,8 +31,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor RuleSerilog = new(
         RuleIdentifiers.LoggerParameterType_Serilog,
-        title: "Log Parameter type is not valid",
-        messageFormat: "Parameter '{0}' must be of type {1} but is of type '{2}'",
+        title: "Log parameter type is not valid",
+        messageFormat: "Log parameter '{0}' {1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -148,52 +148,57 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                             continue;
 
                         var parts = lineText.Split(';');
-                        if (parts.Length == 1)
-                            continue;
-
-                        var types = new List<ITypeSymbol>(capacity: parts.Length - 1);
-                        for (var i = 1; i < parts.Length; i++)
+                        var keyName = parts[0].Trim();
+                        if (configuration.ContainsKey(keyName))
                         {
-                            var typeName = parts[i].Trim();
-                            var type = compilation.GetTypesByMetadataName(typeName);
-                            if (type.Length > 0)
+                            errors.Add(Diagnostic.Create(RuleDuplicate, CreateLocation(file, sourceText, line), keyName));
+                        }
+
+                        if (parts.Length > 1)
+                        {
+                            var types = new List<ITypeSymbol>(capacity: parts.Length - 1);
+                            for (var i = 1; i < parts.Length; i++)
                             {
-                                types.AddRange(type);
-                            }
-                            else
-                            {
-                                var symbols = DocumentationCommentId.GetSymbolsForReferenceId(typeName, compilation);
-                                if (symbols.Length > 0)
+                                var typeName = parts[i].Trim();
+                                if (string.IsNullOrEmpty(typeName))
+                                    continue;
+
+                                var type = compilation.GetTypesByMetadataName(typeName);
+                                if (type.Length > 0)
                                 {
-                                    foreach (var symbol in symbols)
-                                    {
-                                        if (symbol.Kind is SymbolKind.NamedType or SymbolKind.ArrayType && symbol is ITypeSymbol typeSymbol)
-                                        {
-                                            types.Add(typeSymbol);
-                                        }
-                                        else
-                                        {
-                                            errors.Add(Diagnostic.Create(RuleInvalid, CreateLocation(file, sourceText, line), typeName));
-                                        }
-                                    }
+                                    types.AddRange(type);
                                 }
                                 else
                                 {
-                                    errors.Add(Diagnostic.Create(RuleInvalid, CreateLocation(file, sourceText, line), typeName));
+                                    var symbols = DocumentationCommentId.GetSymbolsForReferenceId(typeName, compilation);
+                                    if (symbols.Length > 0)
+                                    {
+                                        foreach (var symbol in symbols)
+                                        {
+                                            if (symbol.Kind is SymbolKind.NamedType or SymbolKind.ArrayType && symbol is ITypeSymbol typeSymbol)
+                                            {
+                                                types.Add(typeSymbol);
+                                            }
+                                            else
+                                            {
+                                                errors.Add(Diagnostic.Create(RuleInvalid, CreateLocation(file, sourceText, line), typeName));
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        errors.Add(Diagnostic.Create(RuleInvalid, CreateLocation(file, sourceText, line), typeName));
+                                    }
                                 }
-                            }
-                        }
-
-                        if (types.Count > 0)
-                        {
-                            var keyName = parts[0];
-                            if (configuration.ContainsKey(keyName))
-                            {
-                                errors.Add(Diagnostic.Create(RuleDuplicate, CreateLocation(file, sourceText, line), keyName));
                             }
 
                             configuration[keyName] = [.. types];
                         }
+                        else
+                        {
+                            configuration[keyName] = [];
+                        }
+
                     }
                 }
 
@@ -242,6 +247,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         {
             var operation = (IInvocationOperation)context.Operation;
             var containingType = operation.TargetMethod.ContainingType;
+            var isSerilog = false;
 
             IOperation? formatExpression = null;
             (ITypeSymbol? Symbol, SyntaxNode Location)[]? argumentTypes = null;
@@ -302,6 +308,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             }
             else if (SerilogLogMethodNames.Contains(operation.TargetMethod.Name) && operation.TargetMethod.ContainingType.IsEqualToAny(SerilogLogSymbol, SerilogILoggerSymbol))
             {
+                isSerilog = true;
                 var templateIndex = FindIndexOfTemplate(operation.Arguments);
                 if (templateIndex != -1)
                 {
@@ -339,7 +346,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
                 {
                     var value = operation.Arguments[1].Value;
-                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax));
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax), isSerilog: true);
                 }
 
                 return;
@@ -349,7 +356,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
                 {
                     var value = operation.Arguments[1].Value;
-                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax));
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax), isSerilog: true);
                 }
 
                 return;
@@ -359,7 +366,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
                 {
                     var value = operation.Arguments[1].Value;
-                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax));
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax), isSerilog: true);
                 }
 
                 return;
@@ -370,7 +377,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 {
                     var value = operation.Arguments[3].Value;
                     var valueType = operation.TargetMethod.TypeArguments[0];
-                    ValidateLogParameter(context, operation.Arguments[2].Value, SerilogPrefixes, valueName, (valueType, value.Syntax));
+                    ValidateLogParameter(context, operation.Arguments[2].Value, SerilogPrefixes, valueName, (valueType, value.Syntax), isSerilog: true);
                 }
 
                 return;
@@ -378,39 +385,59 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
             if (formatExpression is not null && argumentTypes is not null)
             {
-                var allowNonConstantFormat = context.Options.GetConfigurationValue(formatExpression, Rule.Id + ".allow_non_constant_formats", defaultValue: true);
+                var diagnosticDescriptor = isSerilog ? RuleSerilog : Rule;
+
+                var allowNonConstantFormat = context.Options.GetConfigurationValue(formatExpression, diagnosticDescriptor.Id + ".allow_non_constant_formats", defaultValue: true);
                 var format = TryGetFormatText(formatExpression, allowNonConstantFormat);
                 if (format is null)
                     return;
 
                 var logFormat = new LogValuesFormatter(format);
-                for (var i = 0; i < logFormat.ValueNames.Count && i < argumentTypes.Length; i++)
+                var i = 0;
+                for (; i < logFormat.ValueNames.Count && i < argumentTypes.Length; i++)
                 {
                     var name = logFormat.ValueNames[i];
                     var argumentType = argumentTypes[i];
-                    ValidateLogParameter(context, formatExpression, potentialNamePrefixes, name, argumentType);
+                    ValidateLogParameter(context, formatExpression, potentialNamePrefixes, name, argumentType, isSerilog);
+                }
+
+                for (; i < logFormat.ValueNames.Count; i++)
+                {
+                    var name = logFormat.ValueNames[i];
+                    ValidateParameterName(context, formatExpression, RemovePrefix(name, potentialNamePrefixes), isSerilog);
                 }
             }
         }
 
-        private void ValidateLogParameter(OperationAnalysisContext context, IOperation nameOperation, char[]? potentialNamePrefixes, string name, (ITypeSymbol? Symbol, SyntaxNode Location) argumentType)
+        private void ValidateLogParameter(OperationAnalysisContext context, IOperation nameOperation, char[]? potentialNamePrefixes, string name, (ITypeSymbol? Symbol, SyntaxNode Location) argumentType, bool isSerilog)
         {
             name = RemovePrefix(name, potentialNamePrefixes);
-            ValidateLogParameter(context, nameOperation, name, argumentType);
+            ValidateLogParameter(context, nameOperation, name, argumentType, isSerilog);
         }
 
-        private void ValidateLogParameter(OperationAnalysisContext context, IOperation nameOperation, string name, (ITypeSymbol? Symbol, SyntaxNode Location) argumentType)
+        private void ValidateLogParameter(OperationAnalysisContext context, IOperation nameOperation, string name, (ITypeSymbol? Symbol, SyntaxNode Location) argumentType, bool isSerilog)
         {
+            ValidateParameterName(context, nameOperation, name, isSerilog);
+
             if (!Configuration.IsValid(context.Compilation, name, argumentType.Symbol, out var ruleFound))
             {
-                var expectedSymbols = Configuration.GetSymbols(name);
-                var expectedSymbolsStr = string.Join(" or ", expectedSymbols.Select(s => $"'{FormatType(s)}'"));
-                context.ReportDiagnostic(Rule, argumentType.Location, name, expectedSymbolsStr, FormatType(argumentType.Symbol));
+                var expectedSymbols = Configuration.GetSymbols(name) ?? [];
+                var expectedSymbolsStr = $"must be of type {string.Join(" or ", expectedSymbols.Select(s => $"'{FormatType(s)}'"))} but is of type '{FormatType(argumentType.Symbol)}'";
+                context.ReportDiagnostic(isSerilog ? RuleSerilog : Rule, argumentType.Location, name, expectedSymbolsStr);
             }
 
             if (!ruleFound)
             {
                 context.ReportDiagnostic(RuleMissingConfiguration, nameOperation, name);
+            }
+        }
+
+        private void ValidateParameterName(OperationAnalysisContext context, IOperation nameOperation, string name, bool isSerilog)
+        {
+            var expectedSymbols = Configuration.GetSymbols(name);
+            if (expectedSymbols is [])
+            {
+                context.ReportDiagnostic(isSerilog ? RuleSerilog : Rule, nameOperation, name, "is not allowed by configuration");
             }
         }
 
@@ -553,6 +580,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             if (configuration.TryGetValue(name, out var validSymbols))
             {
                 hasRule = true;
+                if (validSymbols.Length == 0)
+                    return true; // the diagnostic is reported on the name, not the value
 
                 if (type is null)
                     return false;
@@ -574,12 +603,12 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        public ISymbol[] GetSymbols(string name)
+        public ISymbol[]? GetSymbols(string name)
         {
             if (configuration.TryGetValue(name, out var symbols))
                 return symbols;
 
-            return [];
+            return null;
         }
     }
 

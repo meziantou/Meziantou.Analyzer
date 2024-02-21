@@ -61,7 +61,7 @@ Log.Information("{Prop}{Prop}{Prop}{Prop}", 1, 1, 1, 1);
 Prop;System.Int32
 """)
               .ValidateAsync();
-    }    
+    }
 
     [Fact]
     public async Task SeriLog_Log_Information_AtPrefix()
@@ -78,7 +78,7 @@ Prop;System.Int32
 """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SeriLog_Log_Information_DollarPrefix()
     {
@@ -120,6 +120,7 @@ using Serilog;
 new LoggerConfiguration().Enrich.WithProperty("Prop", [||]"");
 """;
         await CreateProjectBuilder()
+              .WithDefaultAnalyzerId("MA0139")
               .WithSourceCode(SourceCode)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.Int32

@@ -310,7 +310,7 @@ logger.LogInformation("{Prop}", [|(int?)null|]);
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
 #if ROSLYN_4_6_OR_GREATER
-              .ShouldReportDiagnosticWithMessage("""Parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.Nullable<global::System.Int32>'""")
+              .ShouldReportDiagnosticWithMessage("""Log parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.Nullable<global::System.Int32>'""")
 #endif
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.Nullable{System.String}
@@ -404,6 +404,46 @@ logger.LogInformation("{Dummy}", 2);
 Dummy;System.Int32
 """)
               .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' has no configured type")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task DeniedParameter()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation([|"{Prop}"|], 2);
+logger.LogInformation("{Dummy}", 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Dummy;System.Int32
+Prop;
+""")
+              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' is not allowed by configuration")
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task DeniedParameterWithoutSemiColon()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation([|"{Prop}"|], 2);
+logger.LogInformation("{Dummy}", 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Dummy;System.Int32
+Prop
+""")
+              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' is not allowed by configuration")
               .ValidateAsync();
     }
 
