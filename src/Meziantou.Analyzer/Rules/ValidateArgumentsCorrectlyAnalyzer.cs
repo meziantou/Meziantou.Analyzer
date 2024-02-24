@@ -41,7 +41,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext
     {
-        private readonly List<ISymbol> _symbols;
+        private readonly HashSet<ISymbol> _symbols;
         private readonly INamedTypeSymbol? _argumentExceptionSymbol;
 
         public AnalyzerContext(Compilation compilation)
@@ -53,7 +53,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
             symbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.IEnumerator"));
             symbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerator`1"));
             symbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1"));
-            _symbols = symbols;
+            _symbols = new HashSet<ISymbol>(symbols, SymbolEqualityComparer.Default);
 
             _argumentExceptionSymbol = compilation.GetBestTypeByMetadataName("System.ArgumentException");
         }

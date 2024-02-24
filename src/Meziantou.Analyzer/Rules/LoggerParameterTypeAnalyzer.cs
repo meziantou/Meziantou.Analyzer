@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -13,6 +12,7 @@ using System.IO;
 using Microsoft.CodeAnalysis.Text;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis.CSharp;
+using Meziantou.Analyzer.Internals;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -619,7 +619,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
         public LogValuesFormatter(string format)
         {
-            var sb = new StringBuilder();
+            var sb = ObjectPool.SharedStringBuilderPool.Get();
             var scanIndex = 0;
             var endIndex = format.Length;
 
@@ -646,6 +646,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     scanIndex = closeBraceIndex + 1;
                 }
             }
+
+            ObjectPool.SharedStringBuilderPool.Return(sb);
         }
 
         public List<string> ValueNames { get; } = [];

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -253,10 +254,11 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)] out string? value)
     {
-        var sb = new StringBuilder();
+        var sb = ObjectPool.SharedStringBuilderPool.Get();
         if (OptimizeStringBuilderUsageAnalyzerCommon.TryGetConstStringValue(operation, sb))
         {
             value = sb.ToString();
+            ObjectPool.SharedStringBuilderPool.Return(sb);
             return true;
         }
 

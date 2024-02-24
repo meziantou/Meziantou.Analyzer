@@ -4,16 +4,16 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading;
-using Microsoft.CodeAnalysis.Text;
+using Meziantou.Analyzer.Internals;
+using System.Linq.Expressions;
 
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
 {
+    private static readonly ObjectPool<Queue<SyntaxNode>> NodeQueuePool = ObjectPool.Create<Queue<SyntaxNode>>();
+
     private static readonly HashSet<string> CSharpKeywords = new(StringComparer.Ordinal)
     {
         "abstract",
@@ -142,7 +142,13 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
                 // Detect the following patterns
                 // <c>{keyword}</c>
                 // <code>{keyword}</code>
-                var queue = new Queue<SyntaxNode>(documentation.ChildNodes());
+
+                var queue = NodeQueuePool.Get();
+                foreach (var item in documentation.ChildNodes())
+                {
+                    queue.Enqueue(item);
+                }
+
                 while (queue.TryDequeue(out var childNode))
                 {
                     if (childNode is XmlElementSyntax elementSyntax)
@@ -165,7 +171,40 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
                         }
                     }
                 }
+
+                NodeQueuePool.Return(queue);
             }
+        }
+    }
+
+    private sealed class NodeQueuePoolPolicy : IPooledObjectPolicy<Queue<SyntaxNode>>
+    {
+        private readonly Func<Queue<SyntaxNode>, int> _func;
+
+        public NodeQueuePoolPolicy()
+        {
+            var field = typeof(Queue<SyntaxNode>).GetField("_array");
+            if (field is not null)
+            {
+                var param = Expression.Parameter(typeof(Queue<SyntaxNode>));
+                var lambda = Expression.Lambda(Expression.Property(Expression.Field(param, field), "Length"), param);
+                _func = (Func<Queue<SyntaxNode>, int>)lambda.Compile();
+            }
+            else
+            {
+                _func = item => 0;
+            }
+        }
+
+        public Queue<SyntaxNode> Create() => new Queue<SyntaxNode>(capacity: 30);
+
+        public bool Return(Queue<SyntaxNode> obj)
+        {
+            if (_func(obj) > 100)
+                return false;
+
+            obj.Clear();
+            return true;
         }
     }
 }
