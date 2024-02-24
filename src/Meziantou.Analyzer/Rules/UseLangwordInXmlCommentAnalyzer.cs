@@ -159,7 +159,8 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
                             var item = elementSyntax.Content.SingleOrDefaultIfMultiple();
                             if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
                             {
-                                context.ReportDiagnostic(Rule, elementSyntax);
+                                var properties = ImmutableDictionary<string, string?>.Empty.Add("keyword", codeText.Text);
+                                context.ReportDiagnostic(Rule, properties, elementSyntax);
                             }
                         }
                         else
