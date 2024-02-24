@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,12 +48,11 @@ public sealed class NamedParameterFixer : CodeFixProvider
         if (argument is null || argument.NameColon is not null)
             return document;
 
-        var parameters = FindParameters(semanticModel, argument, cancellationToken);
-        if (parameters is null)
+        if (FindParameters(semanticModel, argument, cancellationToken) is not { } parameters)
             return document;
 
         var index = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
-        if (index < 0 || index >= parameters.Count)
+        if (index < 0 || index >= parameters.Length)
             return document;
 
         var parameter = parameters[index];
@@ -64,7 +62,7 @@ public sealed class NamedParameterFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static IReadOnlyList<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node, CancellationToken cancellationToken)
+    private static ImmutableArray<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node, CancellationToken cancellationToken)
     {
         while (node is not null)
         {

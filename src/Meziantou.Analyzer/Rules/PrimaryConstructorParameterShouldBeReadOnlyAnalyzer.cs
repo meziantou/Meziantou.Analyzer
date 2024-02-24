@@ -1,6 +1,7 @@
 ﻿#if CSHARP12_OR_GREATER
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -86,38 +87,39 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
         var target = operation.Target;
         if (target is ITupleOperation)
         {
-            foreach (var innerTarget in GetAllAssignmentTargets(target))
+            foreach (var innerTarget in GetAllPrimaryCtorAssignmentTargets(target, context.CancellationToken))
             {
-                if (IsPrimaryConstructorParameter(innerTarget, context.CancellationToken))
-                {
-                    context.ReportDiagnostic(Rule, innerTarget);
-                }
+                context.ReportDiagnostic(Rule, innerTarget);
             }
         }
         else if (IsPrimaryConstructorParameter(target, context.CancellationToken))
         {
             context.ReportDiagnostic(Rule, target);
         }
-    }
 
-    private static List<IOperation> GetAllAssignmentTargets(IOperation operation)
-    {
-        var result = new List<IOperation>();
-        GetAllAssignmentTargets(result, operation);
-        return result;
-
-        static void GetAllAssignmentTargets(List<IOperation> operations, IOperation operation)
+        static IEnumerable<IOperation> GetAllPrimaryCtorAssignmentTargets(IOperation operation, CancellationToken cancellationToken)
         {
-            if (operation is ITupleOperation tuple)
+            List<IOperation>? result = null;
+            GetAllAssignmentTargets(ref result, operation, cancellationToken);
+            return result ?? Enumerable.Empty<IOperation>();
+
+            static void GetAllAssignmentTargets(ref List<IOperation>? operations, IOperation operation, CancellationToken cancellationToken)
             {
-                foreach (var element in tuple.Elements)
+                if (operation is ITupleOperation tuple)
                 {
-                    GetAllAssignmentTargets(operations, element);
+                    foreach (var element in tuple.Elements)
+                    {
+                        GetAllAssignmentTargets(ref operations, element, cancellationToken);
+                    }
                 }
-            }
-            else
-            {
-                operations.Add(operation);
+                else
+                {
+                    if (IsPrimaryConstructorParameter(operation, cancellationToken))
+                    {
+                        operations ??= [];
+                        operations.Add(operation);
+                    }
+                }
             }
         }
     }

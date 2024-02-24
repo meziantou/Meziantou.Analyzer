@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -8,9 +9,13 @@ internal static class OptimizeStringBuilderUsageAnalyzerCommon
 {
     public static string? GetConstStringValue(IOperation operation)
     {
-        var sb = new StringBuilder();
+        var sb = ObjectPool.SharedStringBuilderPool.Get();
         if (TryGetConstStringValue(operation, sb))
-            return sb.ToString();
+        {
+            var result = sb.ToString();
+            ObjectPool.SharedStringBuilderPool.Return(sb);
+            return result;
+        }
 
         return null;
     }

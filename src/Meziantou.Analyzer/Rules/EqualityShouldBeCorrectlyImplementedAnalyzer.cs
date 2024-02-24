@@ -162,18 +162,18 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
     private static bool HasComparisonOperator(INamedTypeSymbol parentType)
     {
         var operatorNames = new List<string>(6)
-            {
-                "op_LessThan",
-                "op_LessThanOrEqual",
-                "op_GreaterThan",
-                "op_GreaterThanOrEqual",
-                "op_Equality",
-                "op_Inequality",
-            };
+        {
+            "op_LessThan",
+            "op_LessThanOrEqual",
+            "op_GreaterThan",
+            "op_GreaterThanOrEqual",
+            "op_Equality",
+            "op_Inequality",
+        };
 
         foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
         {
-            if (member.MethodKind == MethodKind.UserDefinedOperator)
+            if (member.MethodKind is MethodKind.UserDefinedOperator)
             {
                 operatorNames.Remove(member.Name);
             }

@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LocationExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\MethodSymbolExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\NamespaceSymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\ObjectPool.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OperationExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SyntaxTokenListExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\StringExtensions.cs" LinkBase="Internals" />
