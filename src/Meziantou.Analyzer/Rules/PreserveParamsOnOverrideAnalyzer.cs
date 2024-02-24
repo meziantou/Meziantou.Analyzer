@@ -59,8 +59,8 @@ public sealed class PreserveParamsOnOverrideAnalyzer : DiagnosticAnalyzer
 
             var originalParameter = baseSymbol.Parameters[parameter.Ordinal];
 
-            // We cannot use parameter.IsParams because on overrided member this is true as it is implicitly inherited.
-            // Instead we need to check if the syntax contains the keyword explicitly
+            // We cannot use parameter.IsParams because on overridden member this is true as it is implicitly inherited.
+            // Instead, we need to check if the syntax contains the keyword explicitly
             if (originalParameter.IsParams)
             {
                 if (HasParamsKeyword(parameter, context.CancellationToken))
