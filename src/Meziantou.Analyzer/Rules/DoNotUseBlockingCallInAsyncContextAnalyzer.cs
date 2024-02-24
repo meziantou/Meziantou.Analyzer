@@ -148,7 +148,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var targetMethod = operation.TargetMethod;
 
             // The cache only contains methods with no async equivalent methods.
-            // This optimize the best-case scenario where code is correctly written according to this analyzer.
+            // This optimizes the best-case scenario where code is correctly written according to this analyzer.
             if (_symbolsWithNoAsyncOverloads.Contains(targetMethod))
                 return;
 
