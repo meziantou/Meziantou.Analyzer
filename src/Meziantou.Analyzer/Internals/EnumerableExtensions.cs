@@ -1,19 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer;
 
 internal static class EnumerableExtensions
 {
-    [return: MaybeNull]
-    public static TSource SingleOrDefaultIfMultiple<TSource>(this IEnumerable<TSource> source)
-    {
-        var elements = source.Take(2).ToArray();
-
-        return (elements.Length == 1) ? elements[0] : default;
-    }
-
     [return: NotNullIfNotNull(parameterName: nameof(source))]
     public static IEnumerable<T>? WhereNotNull<T>(this IEnumerable<T?>? source) where T : class
     {
@@ -21,5 +14,26 @@ internal static class EnumerableExtensions
             return null;
 
         return source.Where(item => item is not null)!;
+    }
+
+    [return: MaybeNull]
+    public static T SingleOrDefaultIfMultiple<T>(this IEnumerable<T> source)
+    {
+        using var iterator = source.GetEnumerator();
+        try
+        {
+            if (iterator.MoveNext())
+            {
+                var result = iterator.Current;
+                if (!iterator.MoveNext())
+                    return result;
+            }
+        }
+        finally
+        {
+            iterator.Dispose();
+        }
+
+        return default;
     }
 }
