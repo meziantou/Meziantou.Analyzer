@@ -71,7 +71,7 @@ public class DoNotUseUnknownParameterForRazorComponentAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<DoNotUseUnknownParameterForRazorComponentAnalyzer>()
-            .WithTargetFramework(TargetFramework.AspNetCore6_0);
+            .WithTargetFramework(TargetFramework.AspNetCore8_0);
     }
 
     [Theory]
@@ -206,6 +206,26 @@ class TypeName : ComponentBase
             __builder2.CloseComponent();
         }
         ));
+        __builder.CloseComponent();
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(Usings + sourceCode + ComponentWithChildContent)
+              .ValidateAsync();
+    }
+    
+    [Fact]
+    public async Task InvalidParameterInAddComponentParameter_Net8()
+    {
+        var sourceCode = $$"""
+class TypeName : ComponentBase
+{
+    protected override void BuildRenderTree(global::Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder)
+    {
+        __builder.OpenComponent<CustomComponentBase>(1);
+        [||]__builder.AddComponentParameter(2, "Text", "DummyDisplayText");
+        [||]__builder.AddComponentParameter(3, "OtherAttribute", "Test");
         __builder.CloseComponent();
     }
 }
