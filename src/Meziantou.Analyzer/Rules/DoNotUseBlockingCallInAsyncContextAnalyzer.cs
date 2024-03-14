@@ -72,7 +72,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var consoleSymbol = compilation.GetBestTypeByMetadataName("System.Console");
             if (consoleSymbol is not null)
             {
-                ConsoleErrorAndOutSymbols = [.. consoleSymbol.GetMembers(nameof(Console.Out)), .. consoleSymbol.GetMembers(nameof(Console.Error))];
+                ConsoleErrorAndOutSymbols = [.. consoleSymbol.GetMembers("Out"), .. consoleSymbol.GetMembers("Error")];
             }
             else
             {

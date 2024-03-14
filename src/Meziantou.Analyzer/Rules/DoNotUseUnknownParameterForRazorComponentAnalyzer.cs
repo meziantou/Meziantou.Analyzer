@@ -74,7 +74,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                             {
                                 currentComponent = null;
                             }
-                            else if (currentComponent is not null && targetMethod.Name == "AddAttribute")
+                            else if (currentComponent is not null && targetMethod.Name is "AddAttribute" or "AddComponentParameter")
                             {
                                 if (targetMethod.Parameters.Length >= 2 && targetMethod.Parameters[1].Type.IsString())
                                 {
