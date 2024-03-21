@@ -4,6 +4,7 @@
 
 |                                                                                                                           |                                                                                            |
 |---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| [CA1018](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1018?WT.mc_id=DT-MVP-5003978) | [MA0010](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0010.md) |
 | [CA1036](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1036?WT.mc_id=DT-MVP-5003978) | [MA0097](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0097.md) |
 | [CA1050](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1050?WT.mc_id=DT-MVP-5003978) | [MA0047](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0047.md) |
 | [CA1058](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1058?WT.mc_id=DT-MVP-5003978) | [MA0013](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0013.md) |
