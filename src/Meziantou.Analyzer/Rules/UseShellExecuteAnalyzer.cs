@@ -55,7 +55,7 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
             compilation.GetBestTypeByMetadataName("System.Diagnostics.ProcessStartInfo")!;
 
         private readonly INamedTypeSymbol? _processSymbol =
-            compilation.GetBestTypeByMetadataName("System.Diagnostics.Process")!;
+            compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
 
         public bool IsValid => _processStartInfoSymbol is not null;
 
@@ -67,7 +67,7 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
                 if (!operation.Arguments.Any(IsProcessStartInfo))
                 {
                     // Calling Process.Start without ProcessStartInfo
-                    context.ReportDiagnostic(UseProcessStartOverload, operation.Syntax);
+                    context.ReportDiagnostic(UseProcessStartOverload, operation);
                 }
             }
         }
@@ -88,13 +88,13 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
                     if (useShellExecuteInitializer is null)
                     {
                         // Constructing ProcessStartInfo without setting UseShellExecute in the initializer
-                        context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation.Syntax);
+                        context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
                     }
                 }
                 else
                 {
                     // Constructing ProcessStartInfo with not initializer at all
-                    context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation.Syntax);
+                    context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
                 }
             }
         }
