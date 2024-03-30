@@ -16,7 +16,7 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
         messageFormat: "UseShellExecute must be explicitly set when initializing a ProcessStartInfo",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseShellExecuteMustBeSet));
 
@@ -24,6 +24,16 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
         RuleIdentifiers.UseShellExecuteMustBeSet,
         title: "UseShellExecute must be explicitly set",
         messageFormat: "Use an overload of Process.Start that has a ProcessStartInfo parameter",
+        RuleCategories.Usage,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseShellExecuteMustBeSet));
+
+    private static readonly DiagnosticDescriptor SetToFalseWhenRedirectingOutput = new(
+        RuleIdentifiers.UseShellExecuteMustBeSet,
+        title: "UseShellExecute must be explicitly set",
+        messageFormat: "Set UseShellExecute to false when redirecting standard input or output",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -51,11 +61,9 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly INamedTypeSymbol? _processStartInfoSymbol =
-            compilation.GetBestTypeByMetadataName("System.Diagnostics.ProcessStartInfo")!;
+        private readonly INamedTypeSymbol? _processStartInfoSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.ProcessStartInfo");
 
-        private readonly INamedTypeSymbol? _processSymbol =
-            compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
+        private readonly INamedTypeSymbol? _processSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
 
         public bool IsValid => _processStartInfoSymbol is not null;
 
@@ -87,8 +95,24 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
 
                     if (useShellExecuteInitializer is null)
                     {
-                        // Constructing ProcessStartInfo without setting UseShellExecute in the initializer
-                        context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
+                        if (IsRedirectingInputOrOutput(operation.SemanticModel!, initializer))
+                        {
+                            // Redirecting standard input or output while UseShellExecute is not explicitly set
+                            context.ReportDiagnostic(SetToFalseWhenRedirectingOutput, operation);
+                        }
+                        else
+                        {
+                            // Constructing ProcessStartInfo without setting UseShellExecute in the initializer
+                            context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
+                        }
+                    }
+                    else if (IsInitializedToTrue(operation.SemanticModel!, useShellExecuteInitializer))
+                    {
+                        if (IsRedirectingInputOrOutput(operation.SemanticModel!, initializer))
+                        {
+                            // Redirecting standard input or output while UseShellExecute is set to true
+                            context.ReportDiagnostic(SetToFalseWhenRedirectingOutput, operation);
+                        }
                     }
                 }
                 else
@@ -99,6 +123,15 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        private static bool IsInitializedToTrue(SemanticModel semanticModel, AssignmentExpressionSyntax assignmentExpressionSyntax)
+            => semanticModel.GetConstantValue(assignmentExpressionSyntax.Right) is { HasValue: true, Value: true };
+
+        private static bool IsRedirectingInputOrOutput(SemanticModel semanticModel,
+            InitializerExpressionSyntax initializer) =>
+            initializer.Expressions.OfType<AssignmentExpressionSyntax>()
+                .Any(x => x.Left is IdentifierNameSyntax { Identifier.Text: "RedirectStandardError" or "RedirectStandardInput" or "RedirectStandardOutput" }
+                                             && IsInitializedToTrue(semanticModel, x));
+
         private bool IsProcessStartInfo(IArgumentOperation operation)
             => operation.Value.Type.IsEqualTo(_processStartInfoSymbol);
 
@@ -106,7 +139,9 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
             => operation.Type.IsEqualTo(_processStartInfoSymbol);
 
         private bool IsProcessStartInvocation(IInvocationOperation operation)
-            => operation.TargetMethod.Name == "Start" && operation.TargetMethod.ContainingType.IsEqualTo(_processSymbol);
+            => operation.TargetMethod.Name == "Start"
+            && operation.TargetMethod.ContainingType.IsEqualTo(_processSymbol)
+            && operation.TargetMethod.IsStatic;
 
     }
 }

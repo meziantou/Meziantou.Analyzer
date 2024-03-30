@@ -73,6 +73,106 @@ public sealed class UseShellExecuteAnalyzerTests
     }
 
     [Fact]
+    public async Task Process_start_should_report_when_use_shell_execute_is_set_to_true_and_output_redirected()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          const bool useShellExecute = true;
+                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          {
+                                              RedirectStandardOutput = true,
+                                              UseShellExecute = useShellExecute,
+                                          };
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_and_output_redirected()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          {
+                                              RedirectStandardOutput = true,
+                                          };
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_and_error_redirected()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          {
+                                              RedirectStandardError = true,
+                                          };
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
+            .ValidateAsync();
+    }
+
+
+    [Fact]
+    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_and_input_redirected()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          {
+                                              RedirectStandardInput = true,
+                                              UseShellExecute = true,
+                                          };
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Process_start_should_report_false_positives()
     {
         const string SourceCode = """
