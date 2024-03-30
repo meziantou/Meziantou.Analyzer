@@ -169,7 +169,8 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0151](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0151.md)|Usage|DebuggerDisplay must contain valid members|⚠️|✔️|❌|
 |[MA0152](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0152.md)|Performance|Use Unwrap instead of using await twice|ℹ️|✔️|❌|
 |[MA0153](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0153.md)|Design|Do not log symbols decorated with DataClassificationAttribute directly|⚠️|✔️|❌|
-|[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|ℹ️|✔️|❌|
+|[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|ℹ️|✔️|✔️|
+|[MA0155](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0155.md)|Usage|UseShellExecute must be explicitly set|⚠️|❌|❌|
 
 <!-- rules -->
 

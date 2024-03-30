@@ -57,7 +57,10 @@ public sealed class UseShellExecuteAnalyzer : DiagnosticAnalyzer
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
         });
+
     }
+
+
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
