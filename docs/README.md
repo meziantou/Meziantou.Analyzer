@@ -153,7 +153,8 @@
 |[MA0151](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0151.md)|Usage|DebuggerDisplay must contain valid members|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0152](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0152.md)|Performance|Use Unwrap instead of using await twice|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0153](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0153.md)|Design|Do not log symbols decorated with DataClassificationAttribute directly|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0155](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0155.md)|Design|Do not use async void methods|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -622,6 +623,9 @@ dotnet_diagnostic.MA0153.severity = warning
 
 # MA0154: Use langword in XML comment
 dotnet_diagnostic.MA0154.severity = suggestion
+
+# MA0155: Do not use async void methods
+dotnet_diagnostic.MA0155.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1085,4 +1089,7 @@ dotnet_diagnostic.MA0153.severity = none
 
 # MA0154: Use langword in XML comment
 dotnet_diagnostic.MA0154.severity = none
+
+# MA0155: Do not use async void methods
+dotnet_diagnostic.MA0155.severity = none
 ```
