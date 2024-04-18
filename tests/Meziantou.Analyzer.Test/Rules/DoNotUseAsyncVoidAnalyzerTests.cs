@@ -52,4 +52,52 @@ public sealed class DoNotUseAsyncVoidAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task LocalFunction_Void()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      void A()
+                      {
+                        void Local() => throw null;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalFunction_AsyncVoid()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      void A()
+                      {
+                        [|async void Local() => throw null;|]
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalFunction_AsyncTask()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      void A()
+                      {
+                        async System.Threading.Tasks.Task Local() => throw null;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
 }

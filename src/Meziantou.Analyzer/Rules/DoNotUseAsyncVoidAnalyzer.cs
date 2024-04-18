@@ -1,6 +1,8 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -25,6 +27,16 @@ public sealed class DoNotUseAsyncVoidAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.Method);
+        context.RegisterOperationAction(AnalyzeLocalFunction, OperationKind.LocalFunction);
+    }
+
+    private void AnalyzeLocalFunction(OperationAnalysisContext context)
+    {
+        var operation = (ILocalFunctionOperation)context.Operation;
+        if (operation.Symbol is { ReturnsVoid: true, IsAsync: true })
+        {
+            context.ReportDiagnostic(Rule, operation);
+        }
     }
 
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
