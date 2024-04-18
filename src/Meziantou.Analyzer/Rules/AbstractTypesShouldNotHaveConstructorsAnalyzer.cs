@@ -35,7 +35,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticA
 
         foreach (var ctor in symbol.InstanceConstructors)
         {
-            if (ctor.DeclaredAccessibility == Accessibility.Public || ctor.DeclaredAccessibility == Accessibility.Internal)
+            if (ctor.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal)
             {
                 context.ReportDiagnostic(Rule, ctor);
             }

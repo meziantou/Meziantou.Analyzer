@@ -110,7 +110,7 @@ class TypeName
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task FormattableStringCurrentCulture()
     {

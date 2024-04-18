@@ -282,7 +282,7 @@ _ = $"{statusCode}";
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Interpolation_AnonymousType()
     {

@@ -101,7 +101,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
         {
             if ((node.IsKind(SyntaxKind.ThrowStatement) || node.IsKind(SyntaxKind.ThrowExpression)) && IsArgumentException(context, node))
                 return true;
-            
+
             if (node is InvocationExpressionSyntax invocationExpression)
             {
                 if (context.SemanticModel.GetOperation(invocationExpression, context.CancellationToken) is IInvocationOperation operation)

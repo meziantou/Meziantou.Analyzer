@@ -9,28 +9,28 @@ internal static class MethodSymbolExtensions
     private static readonly string[] NunitNamespaceParts = ["NUnit", "Framework"];
     private static readonly string[] XunitNamespaceParts = ["Xunit"];
 
-    public static bool IsInterfaceImplementation(this IMethodSymbol method)
+    public static bool IsInterfaceImplementation(this IMethodSymbol symbol)
     {
-        if (method.ExplicitInterfaceImplementations.Length > 0)
+        if (symbol.ExplicitInterfaceImplementations.Length > 0)
             return true;
 
-        return IsInterfaceImplementation((ISymbol)method);
+        return IsInterfaceImplementation((ISymbol)symbol);
     }
 
-    public static bool IsInterfaceImplementation(this IPropertySymbol property)
+    public static bool IsInterfaceImplementation(this IPropertySymbol symbol)
     {
-        if (property.ExplicitInterfaceImplementations.Length > 0)
+        if (symbol.ExplicitInterfaceImplementations.Length > 0)
             return true;
 
-        return IsInterfaceImplementation((ISymbol)property);
+        return IsInterfaceImplementation((ISymbol)symbol);
     }
 
-    public static bool IsInterfaceImplementation(this IEventSymbol method)
+    public static bool IsInterfaceImplementation(this IEventSymbol symbol)
     {
-        if (method.ExplicitInterfaceImplementations.Length > 0)
+        if (symbol.ExplicitInterfaceImplementations.Length > 0)
             return true;
 
-        return IsInterfaceImplementation((ISymbol)method);
+        return IsInterfaceImplementation((ISymbol)symbol);
     }
 
     private static bool IsInterfaceImplementation(this ISymbol symbol)

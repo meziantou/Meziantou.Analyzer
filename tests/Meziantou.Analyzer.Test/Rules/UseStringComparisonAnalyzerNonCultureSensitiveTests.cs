@@ -82,7 +82,7 @@ class TypeName
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task String_GetHashCode_ShouldReportDiagnostic()
     {

@@ -40,7 +40,7 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
             handler = op.Operand;
         }
 
-        if (handler is not null && handler is IDelegateCreationOperation delegateCreation)
+        if (handler is IDelegateCreationOperation delegateCreation)
         {
             if (delegateCreation.Target is IAnonymousFunctionOperation)
             {

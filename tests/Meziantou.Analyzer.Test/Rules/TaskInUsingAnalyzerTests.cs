@@ -28,7 +28,7 @@ public sealed class TaskInUsingAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SingleTaskAssignedInUsing()
     {

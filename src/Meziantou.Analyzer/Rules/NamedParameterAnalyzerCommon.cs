@@ -3,7 +3,7 @@
 namespace Meziantou.Analyzer.Rules;
 
 internal static class NamedParameterAnalyzerCommon
-{  
+{
     public static int ArgumentIndex(ArgumentSyntax argument)
     {
         var argumentListExpression = argument.FirstAncestorOrSelf<ArgumentListSyntax>();

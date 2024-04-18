@@ -10,7 +10,7 @@ public sealed class DiagnosticResult
 
     public IReadOnlyList<DiagnosticResultLocation> Locations
     {
-        get => _locations ??= Array.Empty<DiagnosticResultLocation>();
+        get => _locations ??= [];
         set => _locations = value;
     }
 

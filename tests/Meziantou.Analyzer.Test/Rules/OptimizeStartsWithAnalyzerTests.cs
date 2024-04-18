@@ -42,7 +42,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
                     """)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
     public async Task StartsWith_Report(string method, string fix)

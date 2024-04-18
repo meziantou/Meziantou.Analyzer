@@ -542,7 +542,7 @@ class Test
 }")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Append_StringJoin_AppendJoin_OldTargetFramework()
     {
@@ -557,7 +557,7 @@ class Test
 }")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Append_StringJoin_AppendJoin()
     {

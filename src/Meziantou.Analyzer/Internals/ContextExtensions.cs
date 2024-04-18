@@ -105,7 +105,7 @@ internal static partial class ContextExtensions
             ReportDiagnostic(context, descriptor, properties, location, messageArgs);
         }
     }
-    
+
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IPropertySymbol symbol, DiagnosticPropertyReportOptions reportOptions, string?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, symbol, reportOptions, messageArgs);
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IPropertySymbol symbol, DiagnosticPropertyReportOptions reportOptions, string?[]? messageArgs = null)
     {

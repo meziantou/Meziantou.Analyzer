@@ -126,7 +126,7 @@ class Test
     }
 
     [Fact]
-        public async Task Concat_Char_String_NoDiagnostic()
+    public async Task Concat_Char_String_NoDiagnostic()
     {
         var sourceCode = """
             class Test
@@ -266,7 +266,7 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringConcat_ToString_Int32ToString_ConfigNotExcludeToString()
     {

@@ -157,6 +157,7 @@ internal static class RuleIdentifiers
     public const string UseTaskUnwrap = "MA0152";
     public const string DoNotLogClassifiedData = "MA0153";
     public const string UseLangwordInXmlComment = "MA0154";
+    public const string DoNotUseAsyncVoid = "MA0155";
 
     public static string GetHelpUri(string identifier)
     {

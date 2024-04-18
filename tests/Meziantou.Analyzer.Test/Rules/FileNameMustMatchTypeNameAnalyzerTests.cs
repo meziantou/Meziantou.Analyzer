@@ -34,7 +34,7 @@ class Sample
 }")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task MatchFileName()
     {
@@ -171,7 +171,7 @@ class [||]Test0<TKey, TValue>
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task MatchOnlyFirstType_class3()
     {
@@ -183,7 +183,7 @@ class [||]Test0<TKey, TValue>
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task MatchOnlyFirstType_Enum()
     {
@@ -195,7 +195,7 @@ class [||]Test0<TKey, TValue>
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task MatchOnlyFirstType_Interface()
     {
@@ -206,8 +206,8 @@ class [||]Test0<TKey, TValue>
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
               .ValidateAsync();
-    }    
-    
+    }
+
     [Fact]
     public async Task MatchOnlyFirstType_Record()
     {

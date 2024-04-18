@@ -27,7 +27,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
                 """)
             .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task TaskOfTask_ConfigureAwait()
     {
@@ -40,7 +40,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
                 """)
             .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task TaskOfTask_ConfigureAwait_Root()
     {
@@ -53,7 +53,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
                 """)
             .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task TaskOfTask_Unwrap_ConfigureAwait_Root()
     {
@@ -79,7 +79,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
                 """)
             .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task TaskOfValueTaskOfInt32()
     {

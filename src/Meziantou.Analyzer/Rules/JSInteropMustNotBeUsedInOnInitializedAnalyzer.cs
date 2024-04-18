@@ -65,7 +65,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
             {
                 if (WebAssemblyJSRuntimeSymbol is not null)
                     return false; // There is no issue in WebAssembly
-                
+
                 if (WebViewJSRuntimeSymbol is not null)
                     return false; // There is no issue in WebView
 

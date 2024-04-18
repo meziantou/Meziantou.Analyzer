@@ -149,7 +149,7 @@ internal class SampleException : System.Exception
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Exception_ConfigEnabled()
     {

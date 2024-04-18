@@ -29,7 +29,7 @@ public class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringArrayWithoutSpanOverload_Out()
     {
@@ -43,7 +43,7 @@ public class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringArrayWithSpanOverload_Params()
     {
@@ -58,7 +58,7 @@ public class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringArrayWithoutSpanOverload()
     {
@@ -74,7 +74,7 @@ public class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringArrayWithoutSpanOverload_Complex()
     {
@@ -111,7 +111,7 @@ public class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData("System.Span<char>")]
     [InlineData("System.ReadOnlySpan<char>")]

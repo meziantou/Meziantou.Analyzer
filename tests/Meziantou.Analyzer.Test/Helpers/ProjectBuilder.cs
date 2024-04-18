@@ -105,11 +105,12 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder WithAnalyzerFromNuGet(string packageName, string version, string[] paths, string[] ruleIds)
     {
+        var ruleFound = false;
         var references = GetNuGetReferences(packageName, version, paths).Result;
         foreach (var reference in references)
         {
             var assembly = Assembly.LoadFrom(reference);
-            foreach (var type in assembly.GetExportedTypes())
+            foreach (var type in assembly.GetTypes())
             {
                 if (type.IsAbstract || !typeof(DiagnosticAnalyzer).IsAssignableFrom(type))
                     continue;
@@ -118,9 +119,13 @@ public sealed partial class ProjectBuilder
                 if (instance.SupportedDiagnostics.Any(d => ruleIds.Contains(d.Id, StringComparer.Ordinal)))
                 {
                     DiagnosticAnalyzer.Add(instance);
+                    ruleFound = true;
                 }
             }
         }
+
+        if (!ruleFound)
+            throw new InvalidOperationException("Rule id not found");
 
         return this;
     }
@@ -130,6 +135,13 @@ public sealed partial class ProjectBuilder
             "Microsoft.CodeAnalysis.NetAnalyzers",
             "7.0.1",
             paths: ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"],
+            ruleIds);
+
+    public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds) =>
+        WithAnalyzerFromNuGet(
+            "Microsoft.CodeAnalysis.CSharp.CodeStyle",
+            "4.10.0-2.final",
+            paths: ["analyzers/dotnet/cs/"],
             ruleIds);
 
     public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");

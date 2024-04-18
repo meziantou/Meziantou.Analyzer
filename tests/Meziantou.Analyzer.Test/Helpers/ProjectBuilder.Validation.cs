@@ -204,7 +204,7 @@ public sealed partial class ProjectBuilder
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0", "ref/net7.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "7.0.0", "ref/net7.0/");
                 break;
-                
+
             case TargetFramework.AspNetCore8_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0", "ref/net8.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "8.0.0", "ref/net8.0/");
@@ -262,7 +262,7 @@ public sealed partial class ProjectBuilder
         };
     }
 
-    [DebuggerStepThrough]
+    //[DebuggerStepThrough]
     private async Task<Diagnostic[]> GetSortedDiagnosticsFromDocuments(IList<DiagnosticAnalyzer> analyzers, Document[] documents, bool compileSolution)
     {
         var projects = new HashSet<Project>();

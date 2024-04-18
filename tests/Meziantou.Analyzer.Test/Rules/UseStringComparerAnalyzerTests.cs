@@ -254,7 +254,7 @@ class TypeName
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task OrderBy_String_ShouldReportDiagnostic()
     {
@@ -281,7 +281,7 @@ class TypeName
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task OrderByDescending_String_ShouldReportDiagnostic()
     {
@@ -308,7 +308,7 @@ class TypeName
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task ThenBy_String_ShouldReportDiagnostic()
     {
@@ -335,7 +335,7 @@ class TypeName
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task ThenByDescending_String_ShouldReportDiagnostic()
     {
