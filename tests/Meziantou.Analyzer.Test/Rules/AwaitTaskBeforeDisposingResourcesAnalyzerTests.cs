@@ -59,7 +59,7 @@ class TestClass
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NotAwaitedTaskYieldMethod_InUsing()
     {
@@ -82,7 +82,7 @@ class TestClass
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NotAwaitedExtensionMethodOnInt32_InUsing()
     {
@@ -107,7 +107,7 @@ static class TestClass
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NotAwaitedExtensionMethodOnValueTuple_InUsing()
     {
@@ -325,7 +325,7 @@ class TestClass
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NotAwaitedDefaultValueTask_InUsing()
     {

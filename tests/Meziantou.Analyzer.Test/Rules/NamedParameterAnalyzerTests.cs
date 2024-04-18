@@ -710,7 +710,7 @@ class Test
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task List_Add()
     {
@@ -744,7 +744,7 @@ class Test
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Expression_Constant()
     {

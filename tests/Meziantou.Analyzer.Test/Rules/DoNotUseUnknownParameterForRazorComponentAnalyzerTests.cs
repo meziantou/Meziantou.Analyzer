@@ -52,7 +52,7 @@ public class DoNotUseUnknownParameterForRazorComponentAnalyzerTests
             public string Param2 { get; set; }
         }
         """";
-    
+
     private const string ComponentWithChildContent = """"
         public class CustomComponentBase : ComponentBase
         {
@@ -180,7 +180,7 @@ class TypeName : ComponentBase
               .WithSourceCode(Usings + sourceCode + ComponentWithInheritedParameter)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task InvalidParameterInChildContent()
     {
@@ -214,7 +214,7 @@ class TypeName : ComponentBase
               .WithSourceCode(Usings + sourceCode + ComponentWithChildContent)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task InvalidParameterInAddComponentParameter_Net8()
     {

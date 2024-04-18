@@ -34,7 +34,7 @@ public sealed class EventsShouldHaveProperArgumentsFixer : CodeFixProvider
 
     private static async Task<Document> UseThis(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
-       var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.ReplaceNode(nodeToFix, editor.Generator.ThisExpression());
         return editor.GetChangedDocument();
     }

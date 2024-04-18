@@ -113,7 +113,7 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
 
         ParameterSyntax UpdateParameter(ParameterSyntax parameter)
         {
-            return parameter.WithAttributeLists(new SyntaxList<AttributeListSyntax>(parameter.AttributeLists.Select(UpdateAttributeList).Where(list=>list.Attributes.Count > 0)));
+            return parameter.WithAttributeLists(new SyntaxList<AttributeListSyntax>(parameter.AttributeLists.Select(UpdateAttributeList).Where(list => list.Attributes.Count > 0)));
         }
 
         AttributeListSyntax UpdateAttributeList(AttributeListSyntax attributes)

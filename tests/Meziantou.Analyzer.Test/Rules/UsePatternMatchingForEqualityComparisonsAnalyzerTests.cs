@@ -27,7 +27,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
                   """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NullCheckForNullableOfT()
     {

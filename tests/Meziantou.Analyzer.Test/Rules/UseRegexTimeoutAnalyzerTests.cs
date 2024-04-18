@@ -45,7 +45,7 @@ class TestClass
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IsMatch_NonBacktracking_WithoutTimeout_ShouldNotReportError()
     {
@@ -94,7 +94,7 @@ class TestClass
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Ctor_WithoutTimeout_NonBacktracking_ShouldNotReportError()
     {
@@ -150,7 +150,7 @@ class TestClass
 
         await project.ValidateAsync();
     }
-    
+
     [Fact]
     public async Task GeneratedRegex_WithTimeout()
     {

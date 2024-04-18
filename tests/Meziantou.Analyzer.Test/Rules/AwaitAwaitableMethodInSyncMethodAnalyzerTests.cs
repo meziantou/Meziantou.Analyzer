@@ -289,7 +289,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 """)
             .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Report_TaskInLocalFunction()
     {

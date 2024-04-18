@@ -47,7 +47,7 @@ class ClassTest
               .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData("new DateTimeOffset(DateTime.UnixEpoch)")]
     [InlineData("new DateTimeOffset(DateTime.UnixEpoch, TimeSpan.Zero)")]

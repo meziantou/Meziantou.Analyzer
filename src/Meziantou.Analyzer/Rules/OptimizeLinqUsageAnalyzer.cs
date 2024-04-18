@@ -290,7 +290,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Find()", operation.TargetMethod.Name);
             }
         }
-        
+
         private void UseTrueForAllInsteadOfAll(OperationAnalysisContext context, IInvocationOperation operation)
         {
             if (operation.TargetMethod.Name != nameof(Enumerable.All))
@@ -322,7 +322,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "TrueForAll()", operation.TargetMethod.Name);
             }
         }
-        
+
         private void UseExistsInsteadOfAny(OperationAnalysisContext context, IInvocationOperation operation)
         {
             if (operation.TargetMethod.Name != nameof(Enumerable.Any))

@@ -133,7 +133,7 @@ class Test
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task InvalidEventArgs_NamedArgument()
     {

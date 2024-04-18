@@ -139,7 +139,7 @@ line2""|];
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task VerbatimU8String()
     {
@@ -160,7 +160,7 @@ line2""|];
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task U8RawString()
     {
@@ -205,7 +205,7 @@ line2""|];
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SingleLineRawString2()
     {
@@ -224,7 +224,7 @@ line2""|];
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task RawString()
     {

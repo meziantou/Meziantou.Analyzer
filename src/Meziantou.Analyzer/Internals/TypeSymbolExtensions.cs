@@ -48,7 +48,7 @@ internal static class TypeSymbolExtensions
         if (interfaceType is null)
             return false;
 
-        return classSymbol.AllInterfaces.Any(i => interfaceType.IsEqualTo(i));
+        return classSymbol.AllInterfaces.Any(interfaceType.IsEqualTo);
     }
 
     public static bool IsOrImplements(this ITypeSymbol symbol, ITypeSymbol? interfaceType)
@@ -56,7 +56,7 @@ internal static class TypeSymbolExtensions
         if (interfaceType is null)
             return false;
 
-        return GetAllInterfacesIncludingThis(symbol).Any(i => interfaceType.IsEqualTo(i));
+        return GetAllInterfacesIncludingThis(symbol).Any(interfaceType.IsEqualTo);
     }
 
     public static AttributeData? GetAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)

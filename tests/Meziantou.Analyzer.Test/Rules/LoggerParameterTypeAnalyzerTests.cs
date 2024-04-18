@@ -296,7 +296,7 @@ logger.LogInformation("{Prop}", (string?)null);
 Prop;System.String
 """)
               .ValidateAsync();
-    }    
+    }
 
     [Fact]
     public async Task Logger_LogTrace_InvalidParameterType_NullableReferenceType()
@@ -353,7 +353,7 @@ Prop;System.Int32
 """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Configuration_UnknownParameterType()
     {
@@ -406,7 +406,7 @@ Dummy;System.Int32
               .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' has no configured type")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task DeniedParameter()
     {
@@ -426,7 +426,7 @@ Prop;
               .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' is not allowed by configuration")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task DeniedParameterWithoutSemiColon()
     {

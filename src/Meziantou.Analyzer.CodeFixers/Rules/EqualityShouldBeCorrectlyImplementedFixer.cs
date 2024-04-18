@@ -23,7 +23,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
         if (nodeToFix is null)
             return;
-        
+
         var title = "Implement System.IEquatable";
         var codeAction = CodeAction.Create(
             title,
@@ -36,7 +36,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
     private static async Task<Document> ImplementIEquatable(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        
+
         if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not ITypeSymbol declaredTypeSymbol)
             return document;
 

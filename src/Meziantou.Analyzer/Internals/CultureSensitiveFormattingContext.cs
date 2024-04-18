@@ -183,10 +183,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         if (operation is IDefaultValueOperation defaultValue)
             return IsCultureSensitiveType(defaultValue.Type, format: null, instance: null, options);
-        
+
         if (operation is IArrayElementReferenceOperation arrayElementReference)
             return IsCultureSensitiveType(arrayElementReference.Type, format: null, instance: null, options);
-        
+
         if (operation is IBinaryOperation binaryOperation)
             return IsCultureSensitiveType(binaryOperation.Type, format: null, instance: null, options);
 
@@ -288,7 +288,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     private static bool IsInvariantTimeSpanFormat(IOperation? valueOperation)
     {
         // note: "c" format is case-sensitive
-        return valueOperation is null || valueOperation is { ConstantValue: { HasValue: true, Value: null or "" or "c" or "t" or "T" } };
+        return valueOperation is null or { ConstantValue: { HasValue: true, Value: null or "" or "c" or "t" or "T" } };
     }
 
     // Only negative numbers are culture-sensitive (negative sign)

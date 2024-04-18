@@ -49,7 +49,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task ArgumentNameIsSpecified_LocalFunction_Static_ShouldNotReportError()
     {

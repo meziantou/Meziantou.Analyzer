@@ -37,7 +37,7 @@ class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataCla
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Logger_LogInformation_DataClassification_Property()
     {
@@ -62,7 +62,7 @@ class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataCla
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Logger_LogInformation_DataClassification_Property_Array()
     {
@@ -87,7 +87,7 @@ class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataCla
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Logger_LogInformation_DataClassification_Field()
     {
@@ -112,7 +112,7 @@ class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataCla
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Logger_LogInformation_DataClassification_Parameter()
     {
@@ -141,7 +141,7 @@ class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataCla
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Logger_BeginScope_DataClassification_Parameter()
     {

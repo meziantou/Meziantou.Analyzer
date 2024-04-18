@@ -48,7 +48,7 @@ class TypeName
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IsNotNull()
     {
@@ -66,7 +66,7 @@ class TypeName
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task PatternMatching()
     {

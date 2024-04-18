@@ -45,7 +45,7 @@ class TypeName
               .ShouldReportDiagnosticWithMessage("Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Int32_PositiveToStringWithoutCultureInfo_ShouldReportDiagnostic()
     {
@@ -94,7 +94,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SystemTimeSpanToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
     {
@@ -110,7 +110,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SystemTimeSpanImplicitToStringWithoutCultureInfo_InterpolatedString_ShouldNotReportDiagnostic()
     {
@@ -128,7 +128,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SystemTimeSpanToStringWithoutCultureInfo_FormatC_ShouldNotReportDiagnostic()
     {
@@ -144,7 +144,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SystemTimeSpanToStringWithoutCultureInfo_FormatT_ShouldNotReportDiagnostic()
     {
@@ -160,7 +160,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task SystemTimeSpanToStringWithoutCultureInfo_FormatG_ShouldReportDiagnostic()
     {
@@ -518,7 +518,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NullableInt32ToStringWithoutCultureInfo()
     {
@@ -535,7 +535,7 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task NullableInt32ToStringWithoutCultureInfo_DisabledConfig()
     {
@@ -552,7 +552,7 @@ class TypeName
               .AddAnalyzerConfiguration("MA0011.consider_nullable_types", "false")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringFormat_ArgsAreNonCultureSensitive()
     {
@@ -569,7 +569,7 @@ class TypeName
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringFormat_AlreadyHasFormatProvider()
     {
@@ -586,7 +586,7 @@ class TypeName
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringFormat_NoArgument()
     {
@@ -603,7 +603,7 @@ class TypeName
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringFormat_Report()
     {
@@ -620,7 +620,7 @@ class TypeName
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task StringFormat_ManyArgs_Report()
     {
@@ -637,7 +637,7 @@ class TypeName
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Convert_ToChar_Object()
     {
@@ -654,7 +654,7 @@ class TypeName
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Convert_ToChar_String()
     {

@@ -46,7 +46,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSRuntime_InvokeAsyncExplicit_ReturnNotUsed()
     {
@@ -79,7 +79,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSRuntime_InvokeAsyncExplicitWithCancellationToken_ReturnNotUsed()
     {
@@ -134,7 +134,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSRuntime_InvokeAsync_ReturnAsArgument()
     {
@@ -154,7 +154,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSRuntime_InvokeVoidAsync()
     {
@@ -194,7 +194,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSInProcessRuntime_InvokeVoid()
     {
@@ -214,7 +214,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSInProcessRuntime_InvokeAsync_ReturnNotUsed()
     {
@@ -246,8 +246,8 @@ class Sample
 }
 ")
               .ValidateAsync();
-    }    
-    
+    }
+
     [Fact]
     public async Task IJSInProcessRuntime_Invoke_ReturnNotUsed()
     {
@@ -280,7 +280,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSInProcessRuntime_InvokeAsync_ReturnAssigned()
     {
@@ -300,7 +300,7 @@ class Sample
 ")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IJSInProcessRuntime_Invoke_ReturnAssigned()
     {
@@ -319,5 +319,5 @@ class Sample
 }
 ")
               .ValidateAsync();
-    }    
+    }
 }

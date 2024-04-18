@@ -33,7 +33,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData("Invalid")]
     [InlineData("Invalid,np")]
@@ -53,7 +53,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-    
+
     [Theory]
     [InlineData("Invalid")]
     [InlineData("Invalid,np")]
@@ -89,7 +89,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Valid_Name()
     {
@@ -105,7 +105,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Valid_Type()
     {

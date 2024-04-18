@@ -159,7 +159,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
                 """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Argument()
     {
@@ -175,7 +175,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
                 """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task EditUsingRefVariable()
     {

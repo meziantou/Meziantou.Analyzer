@@ -105,7 +105,7 @@ class Test
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task TrueForAll()
     {
@@ -193,7 +193,7 @@ class Test
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Exists()
     {

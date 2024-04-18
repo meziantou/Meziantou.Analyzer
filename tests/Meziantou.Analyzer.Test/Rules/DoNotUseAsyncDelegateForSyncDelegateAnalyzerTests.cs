@@ -34,7 +34,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
                   """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CustomDelegate_Sync()
     {
@@ -47,7 +47,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
                   """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task CustomDelegate_AsyncVoid()
     {
@@ -60,7 +60,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
                   """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task Action_Sync()
     {

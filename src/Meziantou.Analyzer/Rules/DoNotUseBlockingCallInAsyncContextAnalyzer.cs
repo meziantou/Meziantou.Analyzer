@@ -217,7 +217,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
 
             // Console.Out|Error.Write
-            else if (targetMethod.Name == "WriteLine" || targetMethod.Name == "Write" || targetMethod.Name == "Flush")
+            else if (targetMethod.Name is "WriteLine" or "Write" or "Flush")
             {
                 var left = operation.GetChildOperations().FirstOrDefault();
                 if (left is IMemberReferenceOperation memberReference)
