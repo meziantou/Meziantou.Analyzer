@@ -10,6 +10,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     {
         return new ProjectBuilder()
             .WithAnalyzer<MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzer>()
+            .WithTargetFramework(TargetFramework.Net8_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
     }
 
@@ -33,7 +34,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         const string SourceCode = """
             class TypeName
             {
-                System.Threading.Tasks.Task [|Test|]() => throw null;
+                System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
             }
             """;
         await CreateProjectBuilder()
@@ -46,7 +47,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         const string SourceCode = """
             class TypeName
             {
-                void [|TestAsync|]() => throw null;
+                void {|MA0138:TestAsync|}() => throw null;
             }
             """;
         await CreateProjectBuilder()
@@ -76,7 +77,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             {
                 void Test()
                 {
-                    void [|FooAsync|]() => throw null;
+                    void {|MA0138:FooAsync|}() => throw null;
                 }
             }
             """;
@@ -111,7 +112,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 void Test()
                 {
                     _ = Foo();
-                    System.Threading.Tasks.Task [|Foo|]() => throw null;
+                    System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
                 }
             }
             """;
@@ -163,6 +164,36 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         await CreateProjectBuilder()
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IAsyncEnumerableWithoutSuffix()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Method returning IAsyncEnumerable<T> must use the 'Async' suffix")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IAsyncEnumerableWithSuffix()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Method not returning IAsyncEnumerable<T> must not use the 'Async' suffix")
               .ValidateAsync();
     }
 }

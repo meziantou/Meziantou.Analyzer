@@ -158,6 +158,8 @@ internal static class RuleIdentifiers
     public const string DoNotLogClassifiedData = "MA0153";
     public const string UseLangwordInXmlComment = "MA0154";
     public const string DoNotUseAsyncVoid = "MA0155";
+    public const string MethodsReturningIAsyncEnumerableMustHaveTheAsyncSuffix = "MA0156";
+    public const string MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix = "MA0157";
 
     public static string GetHelpUri(string identifier)
     {

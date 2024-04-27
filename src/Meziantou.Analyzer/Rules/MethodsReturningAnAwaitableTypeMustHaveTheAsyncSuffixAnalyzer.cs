@@ -30,7 +30,27 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AsyncSuffixRule, NotAsyncSuffixRule);
+    private static readonly DiagnosticDescriptor AsyncSuffixRuleAsyncEnumerable = new(
+       RuleIdentifiers.MethodsReturningIAsyncEnumerableMustHaveTheAsyncSuffix,
+       title: "Use 'Async' suffix when a method returns IAsyncEnumerable<T>",
+       messageFormat: "Method returning IAsyncEnumerable<T> must use the 'Async' suffix",
+       RuleCategories.Design,
+       DiagnosticSeverity.Warning,
+       isEnabledByDefault: false,
+       description: "",
+       helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodsReturningIAsyncEnumerableMustHaveTheAsyncSuffix));
+
+    private static readonly DiagnosticDescriptor NotAsyncSuffixRuleAsyncEnumerable = new(
+        RuleIdentifiers.MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix,
+        title: "Do not use 'Async' suffix when a method does not return IAsyncEnumerable<T>",
+        messageFormat: "Method not returning IAsyncEnumerable<T> must not use the 'Async' suffix",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: false,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AsyncSuffixRule, NotAsyncSuffixRule, AsyncSuffixRuleAsyncEnumerable, NotAsyncSuffixRuleAsyncEnumerable);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -47,6 +67,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly AwaitableTypes _awaitableTypes = new(compilation);
+        private readonly INamedTypeSymbol? _iasyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {
@@ -66,6 +87,17 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 if (!hasAsyncSuffix)
                 {
                     context.ReportDiagnostic(AsyncSuffixRule, method);
+                }
+            }
+            else if ((method.ReturnType as INamedTypeSymbol)?.ConstructedFrom.IsOrImplements(_iasyncEnumerableSymbol) is true)
+            {
+                if (hasAsyncSuffix)
+                {
+                    context.ReportDiagnostic(NotAsyncSuffixRuleAsyncEnumerable, method);
+                }
+                else
+                {
+                    context.ReportDiagnostic(AsyncSuffixRuleAsyncEnumerable, method);
                 }
             }
             else
@@ -88,6 +120,17 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 if (!hasAsyncSuffix)
                 {
                     context.ReportDiagnostic(AsyncSuffixRule, properties: default, operation, DiagnosticMethodReportOptions.ReportOnMethodName);
+                }
+            }
+            else if ((method.ReturnType as INamedTypeSymbol)?.ConstructedFrom.IsOrImplements(_iasyncEnumerableSymbol) is true)
+            {
+                if (hasAsyncSuffix)
+                {
+                    context.ReportDiagnostic(NotAsyncSuffixRuleAsyncEnumerable, method);
+                }
+                else
+                {
+                    context.ReportDiagnostic(AsyncSuffixRuleAsyncEnumerable, method);
                 }
             }
             else

@@ -175,6 +175,13 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
+    /// <summary>
+    /// <list type="bullet">
+    ///   <item>[|code|]</item>
+    ///   <item>{|ruleId:code|}</item>
+    /// </list>
+    /// </summary>
+    /// <param name="sourceCode"></param>
     private void ParseSourceCode(string sourceCode)
     {
         var sb = new StringBuilder();
@@ -183,6 +190,8 @@ public sealed partial class ProjectBuilder
 
         var lineIndex = 1;
         var columnIndex = 1;
+        char endChar = default;
+        string ruleId = default;
         for (var i = 0; i < sourceCode.Length; i++)
         {
             var c = sourceCode[i];
@@ -194,25 +203,34 @@ public sealed partial class ProjectBuilder
                     columnIndex = 1;
                     break;
 
+                case '{' when lineStart < 0 && Next() == '|':
+                    lineStart = lineIndex;
+                    columnStart = columnIndex;
+                    endChar = '}';
+                    i += 2;
+                    ruleId = TakeUntil(':');
+                    i += ruleId.Length;
+                    break;
+
                 case '[' when lineStart < 0 && Next() == '|':
                     lineStart = lineIndex;
                     columnStart = columnIndex;
                     i++;
+                    endChar = ']';
                     break;
 
-                case '|' when lineStart >= 0 && Next() == ']':
+                case '|' when lineStart >= 0 && Next() == endChar:
                     ShouldReportDiagnostic(new DiagnosticResult
                     {
-                        Id = DefaultAnalyzerId,
+                        Id = ruleId ?? DefaultAnalyzerId,
                         Message = DefaultAnalyzerMessage,
-                        Locations = new[]
-                        {
-                            new DiagnosticResultLocation(FileName ?? "Test0.cs", lineStart, columnStart, lineIndex, columnIndex),
-                        },
+                        Locations = [new DiagnosticResultLocation(FileName ?? "Test0.cs", lineStart, columnStart, lineIndex, columnIndex)],
                     });
 
                     lineStart = -1;
                     columnStart = -1;
+                    endChar = default;
+                    ruleId = default;
                     i++;
                     break;
 
@@ -222,9 +240,15 @@ public sealed partial class ProjectBuilder
                     break;
             }
 
-            char Next()
+            char Next() => i + 1 < sourceCode.Length ? sourceCode[i + 1] : default;
+            string TakeUntil(char c)
             {
-                return i + 1 < sourceCode.Length ? sourceCode[i + 1] : default;
+                var span = sourceCode.AsSpan(i);
+                var index = span.IndexOf(c);
+                if (index < 0)
+                    return span.ToString();
+
+                return span[0..index].ToString();
             }
         }
 
