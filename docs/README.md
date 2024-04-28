@@ -155,6 +155,8 @@
 |[MA0153](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0153.md)|Design|Do not log symbols decorated with DataClassificationAttribute directly|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0155](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0155.md)|Design|Do not use async void methods|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0156](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0156.md)|Design|Use 'Async' suffix when a method returns IAsyncEnumerable\<T\>|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|Do not use 'Async' suffix when a method does not return IAsyncEnumerable\<T\>|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -626,6 +628,12 @@ dotnet_diagnostic.MA0154.severity = suggestion
 
 # MA0155: Do not use async void methods
 dotnet_diagnostic.MA0155.severity = none
+
+# MA0156: Use 'Async' suffix when a method returns IAsyncEnumerable<T>
+dotnet_diagnostic.MA0156.severity = none
+
+# MA0157: Do not use 'Async' suffix when a method does not return IAsyncEnumerable<T>
+dotnet_diagnostic.MA0157.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1092,4 +1100,10 @@ dotnet_diagnostic.MA0154.severity = none
 
 # MA0155: Do not use async void methods
 dotnet_diagnostic.MA0155.severity = none
+
+# MA0156: Use 'Async' suffix when a method returns IAsyncEnumerable<T>
+dotnet_diagnostic.MA0156.severity = none
+
+# MA0157: Do not use 'Async' suffix when a method does not return IAsyncEnumerable<T>
+dotnet_diagnostic.MA0157.severity = none
 ```
