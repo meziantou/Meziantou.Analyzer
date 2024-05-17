@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -81,7 +82,8 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                                     var value = invocation.Arguments[1].Value.ConstantValue;
                                     if (value.HasValue && value.Value is string parameterName)
                                     {
-                                        if (!IsValidAttribute(currentComponent, parameterName))
+                                        var reportPascalCaseUnmatchedParameter = context.Options.GetConfigurationValue(operation, "MA0115.ReportPascalCaseUnmatchedParameter", defaultValue: true);
+                                        if (!IsValidAttribute(currentComponent, parameterName, reportPascalCaseUnmatchedParameter))
                                         {
                                             context.ReportDiagnostic(Rule, invocation.Syntax, parameterName, currentComponent.ToDisplayString(NullableFlowState.None));
                                         }
@@ -94,11 +96,16 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
             }
         }
 
-        private bool IsValidAttribute(ITypeSymbol componentType, string parameterName)
+        private bool IsValidAttribute(ITypeSymbol componentType, string parameterName, bool reportPascalCaseUnmatchedParameter)
         {
             var descriptor = GetComponentDescriptor(componentType);
             if (descriptor.HasMatchUnmatchedParameters)
+            {
+                if (reportPascalCaseUnmatchedParameter && parameterName.Length > 0 && char.IsUpper(parameterName[0]) && !descriptor.Parameters.Contains(parameterName))
+                    return false;
+
                 return true;
+            }
 
             if (descriptor.Parameters.Contains(parameterName))
                 return true;

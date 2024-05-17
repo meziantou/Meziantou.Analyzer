@@ -119,9 +119,8 @@ class TypeName : ComponentBase
     [Theory]
     [InlineData("Param1")]
     [InlineData("Param2")]
-    [InlineData("Param3")]
-    [InlineData("UnknownParams")]
-    public async Task ComponentWithCaptureUnmatchedValues_AnyValueIsValid(string parameterName)
+    [InlineData("unknownParams")]
+    public async Task ComponentWithCaptureUnmatchedValues_AnyLowercaseParameterIsValid(string parameterName)
     {
         var sourceCode = $$"""
 class TypeName : ComponentBase
@@ -136,6 +135,51 @@ class TypeName : ComponentBase
 """;
         await CreateProjectBuilder()
               .WithSourceCode(Usings + sourceCode + ComponentWithCaptureUnmatchedValues)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("UnknownParams")]
+    public async Task ComponentWithCaptureUnmatchedValues_PascalCaseParameterIsInvalid(string parameterName)
+    {
+        var sourceCode = $$"""
+class TypeName : ComponentBase
+{
+    protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder)
+    {
+        __builder.OpenComponent<SampleComponent>(0);
+        [||]__builder.AddAttribute(1, "{{parameterName}}", "test");
+        __builder.CloseComponent();
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(Usings + sourceCode + ComponentWithCaptureUnmatchedValues)
+              .AddAnalyzerConfiguration("MA0115.ReportPascalCaseUnmatchedParameter", "true")
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("Param1")]
+    [InlineData("Param2")]
+    [InlineData("Param3")]
+    [InlineData("UnknownParams")]
+    public async Task ComponentWithCaptureUnmatchedValues_PascalCaseParameterIsValid(string parameterName)
+    {
+        var sourceCode = $$"""
+class TypeName : ComponentBase
+{
+    protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder)
+    {
+        __builder.OpenComponent<SampleComponent>(0);
+        __builder.AddAttribute(1, "{{parameterName}}", "test");
+        __builder.CloseComponent();
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(Usings + sourceCode + ComponentWithCaptureUnmatchedValues)
+              .AddAnalyzerConfiguration("MA0115.ReportPascalCaseUnmatchedParameter", "false")
               .ValidateAsync();
     }
 

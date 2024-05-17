@@ -10,8 +10,7 @@ internal static class SyntaxNodeExtensions
         if (!syntaxNode.HasTrailingTrivia)
             return syntaxNode;
 
-        var trivia = syntaxNode.GetTrailingTrivia().Reverse();
-        var newTrivia = trivia.SkipWhile(t => t.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.WhitespaceTrivia));
-        return syntaxNode.WithTrailingTrivia(newTrivia.Reverse());
+        return syntaxNode.WithTrailingTrivia(
+            syntaxNode.GetTrailingTrivia().Reverse().SkipWhile(t => t.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.WhitespaceTrivia)).Reverse());
     }
 }
