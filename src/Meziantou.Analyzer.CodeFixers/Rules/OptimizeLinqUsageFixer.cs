@@ -594,22 +594,37 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
             if (argument1 is null)
                 return argument2?.Syntax;
-            if (argument1.Value is not IDelegateCreationOperation value1 || argument2.Value is not IDelegateCreationOperation value2)
-                return null;
+            if (argument1.Value is IDelegateCreationOperation value1 && argument2.Value is IDelegateCreationOperation value2)
+            {
+                var anonymousMethod1 = value1.Target as IAnonymousFunctionOperation;
+                var anonymousMethod2 = value2.Target as IAnonymousFunctionOperation;
 
-            var anonymousMethod1 = value1.Target as IAnonymousFunctionOperation;
-            var anonymousMethod2 = value2.Target as IAnonymousFunctionOperation;
+                var newParameterName =
+                    anonymousMethod1?.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
+                    anonymousMethod2?.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
+                    "x";
 
-            var newParameterName =
-                anonymousMethod1?.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
-                anonymousMethod2?.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
-                "x";
+                var left = PrepareSyntaxNode(generator, value1, newParameterName);
+                var right = PrepareSyntaxNode(generator, value2, newParameterName);
 
-            var left = PrepareSyntaxNode(generator, value1, newParameterName);
-            var right = PrepareSyntaxNode(generator, value2, newParameterName);
+                return generator.ValueReturningLambdaExpression(newParameterName,
+                    generator.LogicalAndExpression(left, right));
+            }
+            else if (argument1.Value.UnwrapConversionOperations() is IAnonymousFunctionOperation anonymousMethod1 && argument2.Value.UnwrapImplicitConversionOperations() is IAnonymousFunctionOperation anonymousMethod2)
+            {
+                var newParameterName =
+                    anonymousMethod1.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
+                    anonymousMethod2.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
+                    "x";
 
-            return generator.ValueReturningLambdaExpression(newParameterName,
-                generator.LogicalAndExpression(left, right));
+                var left = ReplaceParameter(anonymousMethod1, newParameterName);
+                var right = ReplaceParameter(anonymousMethod2, newParameterName);
+
+                return generator.ValueReturningLambdaExpression(newParameterName,
+                    generator.LogicalAndExpression(left, right));
+            }
+
+            return null;
         }
 
         static SyntaxNode PrepareSyntaxNode(SyntaxGenerator generator, IDelegateCreationOperation delegateCreationOperation, string parameterName)
