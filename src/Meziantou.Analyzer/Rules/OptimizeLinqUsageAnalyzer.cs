@@ -130,6 +130,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             ExtensionMethodOwnerTypes.AddIfNotNull(EnumerableSymbol);
             ExtensionMethodOwnerTypes.AddIfNotNull(QueryableSymbol);
 
+            ExpressionOfTSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression`1");
             ICollectionOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ICollection`1");
             IReadOnlyCollectionOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1");
             ListOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.List`1");
@@ -144,6 +145,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private INamedTypeSymbol? EnumerableSymbol { get; set; }
         private INamedTypeSymbol? QueryableSymbol { get; set; }
+        private INamedTypeSymbol? ExpressionOfTSymbol { get; set; }
         private INamedTypeSymbol? ICollectionOfTSymbol { get; set; }
         private INamedTypeSymbol? IReadOnlyCollectionOfTSymbol { get; set; }
         private INamedTypeSymbol? ListOfTSymbol { get; set; }
@@ -432,10 +434,26 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                            .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
                            .Add("MethodName", parent.TargetMethod.Name);
 
+                        if (parent.Arguments.Length > 1 && IsExpressionPredicateReference(parent.Arguments[1].Value))
+                            return;
+
+                        if (operation.Arguments.Length > 1 && IsExpressionPredicateReference(operation.Arguments[1].Value))
+                            return;
+
                         context.ReportDiagnostic(CombineLinqMethodsRule, properties, parent, operation.TargetMethod.Name, parent.TargetMethod.Name);
                     }
                 }
             }
+        }
+
+        private bool IsExpressionPredicateReference(IOperation operation)
+        {
+            if (operation.Type is null || !operation.Type.OriginalDefinition.IsEqualTo(ExpressionOfTSymbol))
+                return false;
+
+            operation = operation.UnwrapImplicitConversionOperations();
+
+            return operation.Kind is not OperationKind.AnonymousFunction;
         }
 
         private void RemoveTwoConsecutiveOrderBy(OperationAnalysisContext context, IInvocationOperation operation)

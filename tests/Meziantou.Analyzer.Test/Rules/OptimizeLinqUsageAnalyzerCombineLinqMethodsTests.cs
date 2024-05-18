@@ -80,6 +80,56 @@ class Test
     }
 
     [Fact]
+    public async Task CombineWhereWithTheFollowingWhereMethod_ExpressionWithPredicate()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                    using System;
+                    using System.Linq;
+                    using System.Linq.Expressions;
+                    class Test
+                    {
+                        public Test(Expression<Func<int, bool>> predicate)
+                        {
+                            IQueryable<int> queryable = null!;
+                            queryable.Where(x => x == 0).Where(predicate);
+                            queryable.Where(predicate).Where(x => x == 0);
+                        }
+                    }
+
+                    """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CombineWhereWithTheFollowingWhereMethod_IQueryable()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        System.Linq.IQueryable<int> enumerable = null;
+        [||]enumerable.Where(x => x == 0).Where(y => true);
+    }
+}
+")
+              .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Where'")
+              .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        System.Linq.IQueryable<int> enumerable = null;
+        enumerable.Where(x => x == 0 && true);
+    }
+}
+")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task CombineWhereWithTheFollowingMethod_CombineLambdaWithNothing()
     {
         await CreateProjectBuilder()
