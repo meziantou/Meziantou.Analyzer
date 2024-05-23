@@ -252,7 +252,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))
                         {
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
-                            if (Regex.IsMatch(declarationId, excludedMethodsRegex, RegexOptions.None, Timeout.InfiniteTimeSpan))
+                            if (declarationId is not null && Regex.IsMatch(declarationId, excludedMethodsRegex, RegexOptions.None, Timeout.InfiniteTimeSpan))
                                 return;
                         }
 

@@ -65,7 +65,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
                 foreach (var excludedSymbolName in excludedSymbolNamesSplit)
                 {
-                    if (IsWildcardMatch(symbolName, excludedSymbolName) || IsWildcardMatch(symbolDeclarationId, excludedSymbolName))
+                    if (IsWildcardMatch(symbolName, excludedSymbolName) || (symbolDeclarationId is not null && IsWildcardMatch(symbolDeclarationId, excludedSymbolName)))
                         matched = true;
                 }
 

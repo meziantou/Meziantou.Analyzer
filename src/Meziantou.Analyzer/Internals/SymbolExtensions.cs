@@ -35,12 +35,7 @@ internal static class SymbolExtensions
 
     public static bool IsOperator(this ISymbol? symbol)
     {
-        if (symbol is IMethodSymbol methodSymbol)
-        {
-            return methodSymbol.MethodKind == MethodKind.UserDefinedOperator || methodSymbol.MethodKind == MethodKind.Conversion;
-        }
-
-        return false;
+        return symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion };
     }
 
     public static bool IsOverrideOrInterfaceImplementation(this ISymbol? symbol)

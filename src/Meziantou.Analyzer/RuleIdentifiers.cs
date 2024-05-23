@@ -160,6 +160,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseAsyncVoid = "MA0155";
     public const string MethodsReturningIAsyncEnumerableMustHaveTheAsyncSuffix = "MA0156";
     public const string MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix = "MA0157";
+    public const string UseSystemThreadingLockInsteadOfObject = "MA0158";
 
     public static string GetHelpUri(string identifier)
     {

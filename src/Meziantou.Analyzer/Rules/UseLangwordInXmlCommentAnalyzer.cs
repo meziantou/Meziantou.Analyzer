@@ -197,7 +197,7 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        public Queue<SyntaxNode> Create() => new Queue<SyntaxNode>(capacity: 30);
+        public Queue<SyntaxNode> Create() => new(capacity: 30);
 
         public bool Return(Queue<SyntaxNode> obj)
         {

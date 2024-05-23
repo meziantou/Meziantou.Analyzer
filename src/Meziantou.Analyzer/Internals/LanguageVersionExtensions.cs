@@ -14,6 +14,11 @@ internal static class LanguageVersionExtensions
         return languageVersion >= (LanguageVersion)1100;
     }
 
+    public static bool IsCSharp13OrAbove(this LanguageVersion languageVersion)
+    {
+        return languageVersion >= (LanguageVersion)1300;
+    }
+
     public static bool IsCSharp10OrBellow(this LanguageVersion languageVersion)
     {
         return languageVersion <= (LanguageVersion)1000;
