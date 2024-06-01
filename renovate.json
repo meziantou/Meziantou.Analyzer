@@ -1,9 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "github>meziantou/renovate-config"
   ],
-  "schedule": [ "before 5am on monday" ],
   "packageRules": [
     {
       "matchPackagePatterns": [ ".*" ],
