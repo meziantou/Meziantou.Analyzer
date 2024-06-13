@@ -27,7 +27,8 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         RuleIdentifiers.DuplicateEnumerable_OrderBy,
         RuleIdentifiers.OptimizeEnumerable_CombineMethods,
         RuleIdentifiers.OptimizeEnumerable_Count,
-        RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect);
+        RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect,
+        RuleIdentifiers.OptimizeEnumerable_UseOrder);
 
     public override FixAllProvider GetFixAllProvider()
     {
@@ -45,7 +46,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (diagnostic is null)
             return;
 
-        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeLinqUsageData data) || data == OptimizeLinqUsageData.None)
+        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeLinqUsageData data) || data is OptimizeLinqUsageData.None)
             return;
 
         // If the so-called nodeToFix is a Name (most likely a method name such as 'Select' or 'Count'),
@@ -145,6 +146,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
             case OptimizeLinqUsageData.UseCastInsteadOfSelect:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseCastInsteadOfSelect(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                break;
+
+            case OptimizeLinqUsageData.UseOrder:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseOrderInsteadOfOrderBy(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
         }
     }
@@ -360,6 +365,25 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var literalNode = constantValue ? generator.TrueLiteralExpression() : generator.FalseLiteralExpression();
 
         editor.ReplaceNode(nodeToFix, literalNode);
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> UseOrderInsteadOfOrderBy(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        if (nodeToFix is not InvocationExpressionSyntax invocation)
+            return document;
+
+        var member = GetMemberAccessExpression(nodeToFix);
+        if (member is null)
+            return document;
+
+        var newName = member.Name.Identifier.ValueText is "OrderBy" ? "Order" : "OrderDescending";
+
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var generator = editor.Generator;
+
+        editor.RemoveNode(invocation.ArgumentList.Arguments.First());
+        editor.ReplaceNode(member, member.WithName(IdentifierName(newName)));
         return editor.GetChangedDocument();
     }
 

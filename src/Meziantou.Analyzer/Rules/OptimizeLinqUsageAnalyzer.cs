@@ -96,6 +96,16 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny));
 
+    private static readonly DiagnosticDescriptor UseOrderRule = new(
+        RuleIdentifiers.OptimizeEnumerable_UseOrder,
+        title: "Use 'Order' instead of 'OrderBy'",
+        messageFormat: "Use '{0}' instead of '{0}By'",
+        RuleCategories.Performance,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_UseOrder));
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         ListMethodsRule,
         IndexerInsteadOfElementAtRule,
@@ -104,7 +114,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         OptimizeCountRule,
         OptimizeWhereAndOrderByRule,
         UseCastInsteadOfSelect,
-        UseCountInsteadOfAny);
+        UseCountInsteadOfAny,
+        UseOrderRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -137,6 +148,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             IListOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IList`1");
             IReadOnlyListOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1");
             ICollectionSymbol = compilation.GetBestTypeByMetadataName("System.Collections.ICollection");
+
+            HasEnumerableOrderMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Order``1(System.Collections.Generic.IEnumerable{``0})", compilation) is not null;
         }
 
         public bool IsValid => ExtensionMethodOwnerTypes.Count > 0;
@@ -152,6 +165,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         private INamedTypeSymbol? IListOfTSymbol { get; set; }
         private INamedTypeSymbol? IReadOnlyListOfTSymbol { get; set; }
         private INamedTypeSymbol? ICollectionSymbol { get; set; }
+        private bool HasEnumerableOrderMethod { get; set; }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -170,6 +184,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             UseIndexerInsteadOfElementAt(context, operation);
             CombineWhereWithNextMethod(context, operation);
             RemoveTwoConsecutiveOrderBy(context, operation);
+            UseOrder(context, operation);
             WhereShouldBeBeforeOrderBy(context, operation);
             OptimizeCountUsage(context, operation);
             UseCastInsteadOfSelect(context, operation);
@@ -183,8 +198,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private void WhereShouldBeBeforeOrderBy(OperationAnalysisContext context, IInvocationOperation operation)
         {
-            if (operation.TargetMethod.Name == nameof(Enumerable.OrderBy) ||
-                operation.TargetMethod.Name == nameof(Enumerable.OrderByDescending))
+            if (operation.TargetMethod.Name is (nameof(Enumerable.OrderBy)) or (nameof(Enumerable.OrderByDescending)))
             {
                 var parent = GetParentLinqOperation(operation);
                 if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType))
@@ -480,6 +494,27 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
                         context.ReportDiagnostic(DuplicateOrderByMethodsRule, properties, parent, operation.TargetMethod.Name, expectedMethodName);
                     }
+                }
+            }
+        }
+
+        private void UseOrder(OperationAnalysisContext context, IInvocationOperation operation)
+        {
+            if (!HasEnumerableOrderMethod)
+                return;
+
+            if (operation.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) && operation.TargetMethod.ContainingType.IsEqualTo(EnumerableSymbol) && operation.Arguments.Length > 0)
+            {
+                var arg = operation.Arguments[1].Value;
+
+                // x => x
+                if (arg is IDelegateCreationOperation { Target: IAnonymousFunctionOperation { Symbol.Parameters: [var delegateParameter], Body: IBlockOperation { Operations: [IReturnOperation { ReturnedValue: IParameterReferenceOperation parameterReference }] } } } && parameterReference.Parameter.IsEqualTo(delegateParameter))
+                {
+                    var properties = CreateProperties(OptimizeLinqUsageData.UseOrder)
+                        .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                        .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+
+                    context.ReportDiagnostic(UseOrderRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, operation.TargetMethod.Name);
                 }
             }
         }

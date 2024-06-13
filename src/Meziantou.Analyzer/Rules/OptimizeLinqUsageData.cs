@@ -25,4 +25,5 @@ internal enum OptimizeLinqUsageData
     UseTrueForAllMethodWithConversion,
     UseExistsMethod,
     UseExistsMethodWithConversion,
+    UseOrder,
 }
