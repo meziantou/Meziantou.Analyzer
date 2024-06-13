@@ -33,63 +33,63 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         switch (data)
         {
             case DoNotUseBlockingCallInAsyncContextData.Thread_Sleep:
-                {
-                    var codeAction = CodeAction.Create(
-                        "Use Task.Delay",
-                        ct => UseTaskDelay(context.Document, nodeToFix, ct),
-                        equivalenceKey: "Thread_Sleep");
+            {
+                var codeAction = CodeAction.Create(
+                    "Use Task.Delay",
+                    ct => UseTaskDelay(context.Document, nodeToFix, ct),
+                    equivalenceKey: "Thread_Sleep");
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
-                }
-                break;
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
+            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Wait:
-                {
-                    var codeAction = CodeAction.Create(
-                        "Use await",
-                        ct => ReplaceTaskWaitWithAwait(context.Document, nodeToFix, ct),
-                        equivalenceKey: "Task_Wait");
+            {
+                var codeAction = CodeAction.Create(
+                    "Use await",
+                    ct => ReplaceTaskWaitWithAwait(context.Document, nodeToFix, ct),
+                    equivalenceKey: "Task_Wait");
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
-                }
-                break;
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
+            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Result:
-                {
-                    var codeAction = CodeAction.Create(
-                        "Use await",
-                        ct => ReplaceTaskResultWithAwait(context.Document, nodeToFix, ct),
-                        equivalenceKey: "Task_Result");
+            {
+                var codeAction = CodeAction.Create(
+                    "Use await",
+                    ct => ReplaceTaskResultWithAwait(context.Document, nodeToFix, ct),
+                    equivalenceKey: "Task_Result");
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
-                }
-                break;
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
+            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Overload:
-                {
-                    if (!properties.TryGetValue("MethodName", out var methodName) || methodName is null)
-                        return;
+            {
+                if (!properties.TryGetValue("MethodName", out var methodName) || methodName is null)
+                    return;
 
-                    var codeAction = CodeAction.Create(
-                        $"Use '{methodName}'",
-                        ct => ReplaceWithMethodName(context.Document, nodeToFix, methodName, ct),
-                        equivalenceKey: "Overload");
+                var codeAction = CodeAction.Create(
+                    $"Use '{methodName}'",
+                    ct => ReplaceWithMethodName(context.Document, nodeToFix, methodName, ct),
+                    equivalenceKey: "Overload");
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
-                }
-                break;
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
+            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Using:
             case DoNotUseBlockingCallInAsyncContextData.UsingDeclarator:
-                {
-                    var codeAction = CodeAction.Create(
-                        $"Use 'await using'",
-                        ct => ReplaceWithAwaitUsing(context.Document, nodeToFix, ct),
-                        equivalenceKey: "Overload");
+            {
+                var codeAction = CodeAction.Create(
+                    $"Use 'await using'",
+                    ct => ReplaceWithAwaitUsing(context.Document, nodeToFix, ct),
+                    equivalenceKey: "Overload");
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
-                }
-                break;
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
+            break;
         }
     }
 

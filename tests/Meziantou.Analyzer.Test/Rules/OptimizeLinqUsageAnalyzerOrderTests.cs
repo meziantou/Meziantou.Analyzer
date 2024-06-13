@@ -34,7 +34,7 @@ public sealed class OptimizeLinqUsageAnalyzerOrderTests
                   """)
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task IEnumerable_Order_LambdaNotValid()
     {
@@ -54,7 +54,7 @@ public sealed class OptimizeLinqUsageAnalyzerOrderTests
                   """)
               .ValidateAsync();
     }
-     
+
     [Fact]
     public async Task IEnumerable_Order_LambdaReferenceAnotherParameter()
     {

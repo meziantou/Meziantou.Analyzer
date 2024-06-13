@@ -380,8 +380,6 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var newName = member.Name.Identifier.ValueText is "OrderBy" ? "Order" : "OrderDescending";
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
-
         editor.RemoveNode(invocation.ArgumentList.Arguments.First());
         editor.ReplaceNode(member, member.WithName(IdentifierName(newName)));
         return editor.GetChangedDocument();
@@ -513,12 +511,21 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
             return document;
 
-        var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax,
-            generator.SubtractExpression(
-                generator.MemberAccessExpression(operation.Arguments[0].Syntax, GetMemberName()),
-                generator.LiteralExpression(1)));
+        // if C# 8.0, use ^1
+        if (expression.SyntaxTree.GetCSharpLanguageVersion() >= LanguageVersion.CSharp8 && editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Index") is not null)
+        {
+            var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, PrefixUnaryExpression(SyntaxKind.IndexExpression, LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1))));
+            editor.ReplaceNode(nodeToFix, newExpression);
+        }
+        else
+        {
+            var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax,
+                generator.SubtractExpression(
+                    generator.MemberAccessExpression(operation.Arguments[0].Syntax, GetMemberName()),
+                    generator.LiteralExpression(1)));
+            editor.ReplaceNode(nodeToFix, newExpression);
+        }
 
-        editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
 
         string GetMemberName()

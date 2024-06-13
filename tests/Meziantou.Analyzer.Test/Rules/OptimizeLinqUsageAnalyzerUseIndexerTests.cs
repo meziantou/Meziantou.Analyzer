@@ -139,6 +139,77 @@ class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7_3)
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Last_Array_CSharp8_IndexNotAvailable()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new int[5];
+        _ = list.[|Last|]();
+        list.First(x=> x == 0);
+    }
+}
+";
+        const string CodeFix = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new int[5];
+        _ = list[list.Length - 1];
+        list.First(x=> x == 0);
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Last_Array_CSharp8_IndexAvailable()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new int[5];
+        _ = list.[|Last|]();
+        list.First(x=> x == 0);
+    }
+}
+";
+        const string CodeFix = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var list = new int[5];
+        _ = list[^1];
+        list.First(x=> x == 0);
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+              .WithTargetFramework(TargetFramework.Net8_0)
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
               .ShouldFixCodeWith(CodeFix)
@@ -172,6 +243,7 @@ class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7_3)
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'Last()'")
               .ShouldFixCodeWith(CodeFix)
