@@ -91,6 +91,7 @@ public sealed class OptimizeLinqUsageAnalyzerOrderTests
                       }
                   }
                   """)
+              .ShouldReportDiagnosticWithMessage("Use 'Order' instead of 'OrderBy'")
               .ShouldFixCodeWith("""
                   using System.Collections.Generic;
                   using System.Linq;
@@ -122,6 +123,7 @@ public sealed class OptimizeLinqUsageAnalyzerOrderTests
                       }
                   }
                   """)
+              .ShouldReportDiagnosticWithMessage("Use 'OrderDescending' instead of 'OrderByDescending'")
               .ShouldFixCodeWith("""
                   using System.Collections.Generic;
                   using System.Linq;
