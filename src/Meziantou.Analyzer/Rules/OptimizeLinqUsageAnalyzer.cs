@@ -99,7 +99,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor UseOrderRule = new(
         RuleIdentifiers.OptimizeEnumerable_UseOrder,
         title: "Use 'Order' instead of 'OrderBy'",
-        messageFormat: "Use '{0}' instead of '{0}By'",
+        messageFormat: "Use '{0}' instead of '{1}'",
         RuleCategories.Performance,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
@@ -514,7 +514,9 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
                         .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
 
-                    context.ReportDiagnostic(UseOrderRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, operation.TargetMethod.Name);
+                    var newMethodName = operation.TargetMethod.Name is "OrderBy" ? "Order" : "OrderDescending";
+
+                    context.ReportDiagnostic(UseOrderRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, newMethodName, operation.TargetMethod.Name);
                 }
             }
         }
