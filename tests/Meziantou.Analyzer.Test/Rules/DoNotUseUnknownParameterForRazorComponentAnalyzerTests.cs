@@ -155,6 +155,7 @@ class TypeName : ComponentBase
 """;
         await CreateProjectBuilder()
               .WithSourceCode(Usings + sourceCode + ComponentWithCaptureUnmatchedValues)
+              .ShouldReportDiagnosticWithMessage("The parameter 'UnknownParams' does not exist on component 'SampleComponent'. Available parameters: Param1, Param2.")
               .AddAnalyzerConfiguration("MA0115.ReportPascalCaseUnmatchedParameter", "true")
               .ValidateAsync();
     }

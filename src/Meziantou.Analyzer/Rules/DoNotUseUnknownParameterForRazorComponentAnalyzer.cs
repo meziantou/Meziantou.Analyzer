@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -15,7 +16,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseUnknownParameterForRazorComponent,
         title: "Unknown component parameter",
-        messageFormat: "The parameter '{0}' does not exist on component '{1}'",
+        messageFormat: "The parameter '{0}' does not exist on component '{1}'. Available parameters: {2}.",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -85,7 +86,8 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                                         var reportPascalCaseUnmatchedParameter = context.Options.GetConfigurationValue(operation, "MA0115.ReportPascalCaseUnmatchedParameter", defaultValue: true);
                                         if (!IsValidAttribute(currentComponent, parameterName, reportPascalCaseUnmatchedParameter))
                                         {
-                                            context.ReportDiagnostic(Rule, invocation.Syntax, parameterName, currentComponent.ToDisplayString(NullableFlowState.None));
+                                            var availableParameters = string.Join(", ", GetComponentDescriptor(currentComponent).Parameters.Order(StringComparer.Ordinal));
+                                            context.ReportDiagnostic(Rule, invocation.Syntax, parameterName, currentComponent.ToDisplayString(NullableFlowState.None), availableParameters);
                                         }
                                     }
                                 }
