@@ -49,6 +49,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
 
             XmlClassAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlTypeAttribute"));
             XmlClassAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlRootAttribute"));
+            XmlClassAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.SerializableAttribute"));
 
             XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlElementAttribute"));
             XmlPropertyAttributeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Xml.Serialization.XmlArrayAttribute"));
