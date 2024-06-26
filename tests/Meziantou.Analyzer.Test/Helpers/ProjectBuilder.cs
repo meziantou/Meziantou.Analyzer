@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -165,10 +166,10 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithSourceCode(string sourceCode) =>
+    public ProjectBuilder WithSourceCode([StringSyntax("C#-test")] string sourceCode) =>
         WithSourceCode(fileName: null, sourceCode);
 
-    public ProjectBuilder WithSourceCode(string fileName, string sourceCode)
+    public ProjectBuilder WithSourceCode(string fileName, [StringSyntax("C#-test")] string sourceCode)
     {
         FileName = fileName;
         ParseSourceCode(sourceCode);
@@ -346,17 +347,17 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder ShouldFixCodeWith(string codeFix) =>
         ShouldFixCodeWith(index: null, codeFix);
 
-    public ProjectBuilder ShouldFixCodeWith(int? index, string codeFix)
+    public ProjectBuilder ShouldFixCodeWith(int? index, [StringSyntax("C#-test")] string codeFix)
     {
         ExpectedFixedCode = codeFix;
         CodeFixIndex = index;
         return this;
     }
 
-    public ProjectBuilder ShouldBatchFixCodeWith(string codeFix) =>
+    public ProjectBuilder ShouldBatchFixCodeWith([StringSyntax("C#-test")] string codeFix) =>
         ShouldBatchFixCodeWith(index: null, codeFix);
 
-    public ProjectBuilder ShouldBatchFixCodeWith(int? index, string codeFix)
+    public ProjectBuilder ShouldBatchFixCodeWith(int? index, [StringSyntax("C#-test")] string codeFix)
     {
         ExpectedFixedCode = codeFix;
         CodeFixIndex = index;
