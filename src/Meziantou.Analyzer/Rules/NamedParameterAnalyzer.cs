@@ -180,6 +180,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                                 invokedMethodSymbol.Name.StartsWith("Add", StringComparison.Ordinal) ||
                                 invokedMethodSymbol.Name.StartsWith("Remove", StringComparison.Ordinal) ||
                                 invokedMethodSymbol.Name.StartsWith("Contains", StringComparison.Ordinal) ||
+                                invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) ||
                                 invokedMethodSymbol.Name == "IndexOf" ||
                                 invokedMethodSymbol.Name == "IndexOfAny" ||
                                 invokedMethodSymbol.Name == "LastIndexOf" ||
