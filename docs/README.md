@@ -159,6 +159,7 @@
 |[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|Do not use 'Async' suffix when a method does not return IAsyncEnumerable\<T\>|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0158](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0158.md)|Performance|Use System.Threading.Lock|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0159](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0159.md)|Performance|Use 'Order' instead of 'OrderBy'|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Performance|Use ContainsKey instead of TryGetValue|<span title='Info'>ℹ️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -642,6 +643,9 @@ dotnet_diagnostic.MA0158.severity = warning
 
 # MA0159: Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0159.severity = suggestion
+
+# MA0160: Use ContainsKey instead of TryGetValue
+dotnet_diagnostic.MA0160.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1120,4 +1124,7 @@ dotnet_diagnostic.MA0158.severity = none
 
 # MA0159: Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0159.severity = none
+
+# MA0160: Use ContainsKey instead of TryGetValue
+dotnet_diagnostic.MA0160.severity = none
 ```
