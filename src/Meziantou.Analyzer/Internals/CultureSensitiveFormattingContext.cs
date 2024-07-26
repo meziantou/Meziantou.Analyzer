@@ -266,6 +266,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 return false;
         }
 
+        if (symbol.IsNumberType() && format is { ConstantValue: { HasValue: true, Value: string formatString } } && formatString is "B" or ['x', ..] or ['X', ..])
+            return false;
+
         if (symbol.IsDateTime() || symbol.IsEqualToAny(DateTimeOffsetSymbol, DateOnlySymbol, TimeOnlySymbol))
         {
             if (IsInvariantDateTimeFormat(format))

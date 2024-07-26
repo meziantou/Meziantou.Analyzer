@@ -62,6 +62,27 @@ class TypeName
               .ValidateAsync();
     }
 
+    [Theory]
+    [InlineData("x")]
+    [InlineData("x8")]
+    [InlineData("X")]
+    [InlineData("X8")]
+    [InlineData("B")]
+    public async Task Int32_InvariantFormat(string format)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          (-1).ToString("{{format}}");
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
     [Fact]
     public async Task BooleanToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
     {
