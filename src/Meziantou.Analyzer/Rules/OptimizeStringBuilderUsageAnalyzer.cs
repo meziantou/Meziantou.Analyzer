@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Meziantou.Analyzer.Internals;
@@ -28,63 +29,138 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(Analyze, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(compilationStartContext =>
+        {
+            var analyzerContext = new AnalyzerContext(compilationStartContext.Compilation);
+            if (!analyzerContext.IsValid)
+                return;
+
+            compilationStartContext.RegisterOperationAction(analyzerContext.Analyze, OperationKind.Invocation);
+        });
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    private sealed class AnalyzerContext
     {
-        var operation = (IInvocationOperation)context.Operation;
-        if (operation.Arguments.Length == 0)
-            return;
+        private readonly ITypeSymbol? _stringBuilderSymbol;
+        private readonly HashSet<ISymbol> _appendOverloadTypes = new(SymbolEqualityComparer.Default);
+        private readonly bool _hasAppendJoin;
 
-        var stringBuilderSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
-        if (stringBuilderSymbol is null)
-            return;
-
-        var method = operation.TargetMethod;
-        if (!method.ContainingType.IsEqualTo(stringBuilderSymbol))
-            return;
-
-        if (string.Equals(method.Name, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
+        public AnalyzerContext(Compilation compilation)
         {
-            if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
+            _stringBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+            if (_stringBuilderSymbol is null)
                 return;
 
-            if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0], stringBuilderSymbol))
-                return;
+            _hasAppendJoin = _stringBuilderSymbol.GetMembers("AppendJoin").Length > 0;
+
+            _appendOverloadTypes.AddIfNotNull(_stringBuilderSymbol);
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Int16));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Int32));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Int64));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_UInt16));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_UInt32));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_UInt64));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Boolean));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Byte));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_SByte));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Single));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Double));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Decimal));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_String));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Char));
+            _appendOverloadTypes.AddIfNotNull(compilation.CreateArrayTypeSymbol(compilation.GetSpecialType(SpecialType.System_Char)));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.ReadOnlyMemory`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
         }
-        else if (string.Equals(method.Name, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+
+        public bool IsValid => _stringBuilderSymbol is not null;
+
+        public void Analyze(OperationAnalysisContext context)
         {
-            if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
+            var operation = (IInvocationOperation)context.Operation;
+            if (operation.Arguments.Length == 0)
                 return;
 
-            if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0], stringBuilderSymbol))
+            var method = operation.TargetMethod;
+            if (!method.ContainingType.IsEqualTo(_stringBuilderSymbol))
                 return;
-        }
-        else if (string.Equals(method.Name, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
-        {
-            if (method.Parameters.Length == 2 && method.Parameters[1].Type.IsString())
+
+            if (string.Equals(method.Name, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
             {
-                if (!IsOptimizable(context, operation, method.Name, operation.Arguments[1], stringBuilderSymbol))
+                if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
+                    return;
+
+                if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
                     return;
             }
+            else if (string.Equals(method.Name, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+            {
+                if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
+                    return;
+
+                if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
+                    return;
+            }
+            else if (string.Equals(method.Name, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
+            {
+                if (method.Parameters.Length == 2 && method.Parameters[1].Type.IsString())
+                {
+                    if (!IsOptimizable(context, operation, method.Name, operation.Arguments[1]))
+                        return;
+                }
+            }
         }
-    }
 
-    private static ImmutableDictionary<string, string?> CreateProperties(OptimizeStringBuilderUsageData data)
-    {
-        return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
-    }
-
-    private static bool IsOptimizable(OperationAnalysisContext context, IOperation operation, string methodName, IArgumentOperation argument, ITypeSymbol stringBuilderSymbol)
-    {
-        if (argument.ConstantValue.HasValue)
-            return false;
-
-        var value = argument.Value;
-        if (value is IInterpolatedStringOperation)
+        private static ImmutableDictionary<string, string?> CreateProperties(OptimizeStringBuilderUsageData data)
         {
-            if (TryGetConstStringValue(value, out var constValue))
+            return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
+        }
+
+        private bool IsOptimizable(OperationAnalysisContext context, IOperation operation, string methodName, IArgumentOperation argument)
+        {
+            if (argument.ConstantValue.HasValue)
+                return false;
+
+            var value = argument.Value;
+            if (value is IInterpolatedStringOperation)
+            {
+                if (TryGetConstStringValue(value, out var constValue))
+                {
+                    if (constValue.Length == 0)
+                    {
+                        if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                        {
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
+                            context.ReportDiagnostic(Rule, properties, operation, "Remove the useless argument");
+                        }
+                        else
+                        {
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
+                            context.ReportDiagnostic(Rule, properties, operation, "Remove this no-op call");
+                        }
+
+                        return true;
+                    }
+                    else if (constValue.Length == 1)
+                    {
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
+                            .Add("ConstantValue", constValue);
+                        context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
+                        return true;
+                    }
+                    return false;
+                }
+                else
+                {
+                    if (string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
+                        return false;
+
+                    var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitStringInterpolation);
+                    context.ReportDiagnostic(Rule, properties, operation, $"Replace string interpolation with multiple {methodName} calls or use an interpolated string");
+                    return true;
+                }
+            }
+            else if (TryGetConstStringValue(value, out var constValue))
             {
                 if (constValue.Length == 0)
                 {
@@ -103,167 +179,115 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                 }
                 else if (constValue.Length == 1)
                 {
-                    var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
-                        .Add("ConstantValue", constValue);
-                    context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
-                    return true;
+                    if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
+                    {
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
+                            .Add("ConstantValue", constValue);
+                        context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
+                        return true;
+                    }
                 }
+
                 return false;
             }
-            else
+            else if (value is IBinaryOperation binaryOperation)
             {
-                if (string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
-                    return false;
+                if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                {
+                    if (binaryOperation.OperatorKind == BinaryOperatorKind.Add && value.Type.IsString())
+                    {
+                        if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
+                            return false;
 
-                var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitStringInterpolation);
-                context.ReportDiagnostic(Rule, properties, operation, $"Replace string interpolation with multiple {methodName} calls");
-                return true;
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitAddOperator);
+                        context.ReportDiagnostic(Rule, properties, operation, $"Replace the string concatenation by multiple {methodName} calls");
+                        return true;
+                    }
+                }
             }
-        }
-        else if (TryGetConstStringValue(value, out var constValue))
-        {
-            if (constValue.Length == 0)
+            else if (value is IInvocationOperation invocationOperation)
             {
-                if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                var targetMethod = invocationOperation.TargetMethod;
+                if (string.Equals(targetMethod.Name, "ToString", System.StringComparison.Ordinal))
                 {
-                    var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveArgument);
-                    context.ReportDiagnostic(Rule, properties, operation, "Remove the useless argument");
-                }
-                else
-                {
-                    var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveMethod);
-                    context.ReportDiagnostic(Rule, properties, operation, "Remove this no-op call");
-                }
+                    if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
+                    {
+                        if (invocationOperation.Instance?.Type is not null && !_appendOverloadTypes.Contains(invocationOperation.Instance.Type))
+                            return false;
 
-                return true;
-            }
-            else if (constValue.Length == 1)
-            {
-                if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
+                        if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                        {
+                            context.ReportDiagnostic(Rule, properties, operation, "Replace with Append().AppendLine()");
+                        }
+                        else
+                        {
+                            context.ReportDiagnostic(Rule, properties, operation, "Remove the ToString call");
+                        }
+
+                        return true;
+                    }
+                }
+                else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Format), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
                 {
-                    var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
-                        .Add("ConstantValue", constValue);
-                    context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
+                    var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringFormatWithAppendFormat);
+                    if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                    {
+                        context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat().AppendLine()");
+                    }
+                    else
+                    {
+                        context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat()");
+                    }
+
+                    return true;
+                }
+                else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Join), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
+                {
+                    // Check if StringBuilder.AppendJoin exists
+                    if (_hasAppendJoin)
+                    {
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringJoinWithAppendJoin);
+                        if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                        {
+                            context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendJoin().AppendLine()");
+                        }
+                        else
+                        {
+                            context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendJoin()");
+                        }
+
+                        return true;
+                    }
+                }
+                else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
+                {
+                    var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceSubstring);
+                    context.ReportDiagnostic(Rule, properties, operation, $"Use {methodName}(string, int, int) or {methodName}(ReadOnlySpan<char>) instead of Substring");
                     return true;
                 }
             }
 
             return false;
         }
-        else if (value is IBinaryOperation binaryOperation)
-        {
-            if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
-            {
-                if (binaryOperation.OperatorKind == BinaryOperatorKind.Add && value.Type.IsString())
-                {
-                    if (IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand))
-                        return false;
 
-                    var properties = CreateProperties(OptimizeStringBuilderUsageData.SplitAddOperator);
-                    context.ReportDiagnostic(Rule, properties, operation, $"Replace the string concatenation by multiple {methodName} calls");
-                    return true;
-                }
-            }
+        private static bool IsConstString(IOperation operation)
+        {
+            return TryGetConstStringValue(operation, out _);
         }
-        else if (value is IInvocationOperation invocationOperation)
+
+        private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)] out string? value)
         {
-            var targetMethod = invocationOperation.TargetMethod;
-            if (string.Equals(targetMethod.Name, "ToString", System.StringComparison.Ordinal))
+            var sb = ObjectPool.SharedStringBuilderPool.Get();
+            if (OptimizeStringBuilderUsageAnalyzerCommon.TryGetConstStringValue(operation, sb))
             {
-                if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
-                {
-                    if (invocationOperation.Instance?.Type?.IsValueType == true && !IsPrimitive(invocationOperation.Instance.Type))
-                        return false;
-
-                    var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
-                    if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
-                    {
-                        context.ReportDiagnostic(Rule, properties, operation, "Replace with Append().AppendLine()");
-                    }
-                    else
-                    {
-                        context.ReportDiagnostic(Rule, properties, operation, "Remove the ToString call");
-                    }
-
-                    return true;
-                }
-            }
-            else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Format), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
-            {
-                var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringFormatWithAppendFormat);
-                if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
-                {
-                    context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat().AppendLine()");
-                }
-                else
-                {
-                    context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat()");
-                }
-
+                value = sb.ToString();
+                ObjectPool.SharedStringBuilderPool.Return(sb);
                 return true;
             }
-            else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Join), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
-            {
-                // Check if StringBuilder.AppendJoin exists
-                if (stringBuilderSymbol.GetMembers("AppendJoin").Length > 0)
-                {
-                    var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringJoinWithAppendJoin);
-                    if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
-                    {
-                        context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendJoin().AppendLine()");
-                    }
-                    else
-                    {
-                        context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendJoin()");
-                    }
 
-                    return true;
-                }
-            }
-            else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
-            {
-                var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceSubstring);
-                context.ReportDiagnostic(Rule, properties, operation, $"Use {methodName}(string, int, int) instead of Substring");
-                return true;
-            }
+            value = default;
+            return false;
         }
-
-        return false;
     }
-
-    private static bool IsPrimitive(ITypeSymbol symbol)
-    {
-        return symbol.SpecialType == SpecialType.System_Boolean
-            || symbol.SpecialType == SpecialType.System_Byte
-            || symbol.SpecialType == SpecialType.System_Char
-            || symbol.SpecialType == SpecialType.System_Decimal
-            || symbol.SpecialType == SpecialType.System_Double
-            || symbol.SpecialType == SpecialType.System_Int16
-            || symbol.SpecialType == SpecialType.System_Int32
-            || symbol.SpecialType == SpecialType.System_Int64
-            || symbol.SpecialType == SpecialType.System_SByte
-            || symbol.SpecialType == SpecialType.System_UInt16
-            || symbol.SpecialType == SpecialType.System_UInt32
-            || symbol.SpecialType == SpecialType.System_UInt64;
-    }
-
-    private static bool IsConstString(IOperation operation)
-    {
-        return TryGetConstStringValue(operation, out _);
-    }
-
-    private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)] out string? value)
-    {
-        var sb = ObjectPool.SharedStringBuilderPool.Get();
-        if (OptimizeStringBuilderUsageAnalyzerCommon.TryGetConstStringValue(operation, sb))
-        {
-            value = sb.ToString();
-            ObjectPool.SharedStringBuilderPool.Return(sb);
-            return true;
-        }
-
-        value = default;
-        return false;
-    }
-
 }

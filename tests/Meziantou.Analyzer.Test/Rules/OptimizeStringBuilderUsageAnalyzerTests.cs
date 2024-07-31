@@ -91,6 +91,31 @@ class Test
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
+    [Theory]
+    [InlineData(@"""abc""")]
+    [InlineData(@"$""abc""")]
+    [InlineData(@"$""{0}abc""")]
+
+    public async Task AppendLine_Net8_NoDiagnostic(string text)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        new StringBuilder().AppendLine({{text}});
+                    }
+                }
+                """)
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .ValidateAsync();
+    }
+#endif
+
     [Theory]
     [InlineData(@"$""a{1}""")]
     [InlineData(@"""a"" + 10")]
@@ -668,6 +693,46 @@ class Test
         new StringBuilder().AppendLine(new MyStruct().ToString());
     }
 }")
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("System.ReadOnlySpan<char>")]
+    [InlineData("System.ReadOnlyMemory<char>")]
+    [InlineData("bool")]
+    [InlineData("byte")]
+    [InlineData("char")]
+    [InlineData("char[]")]
+    [InlineData("decimal")]
+    [InlineData("double")]
+    [InlineData("short")]
+    [InlineData("int")]
+    [InlineData("long")]
+    [InlineData("sbyte")]
+    [InlineData("float")]
+    [InlineData("string")]
+    [InlineData("System.Text.StringBuilder")]
+    [InlineData("ushort")]
+    [InlineData("uint")]
+    [InlineData("ulong")]
+    public async Task AppendLine_ValueToString_Report(string dataType)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""[||]new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());""")
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("object")]
+    [InlineData("System.ReadOnlySpan<bool>")]
+    public async Task AppendLine_ValueToString_NoReport(string dataType)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());""")
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithTargetFramework(TargetFramework.Net8_0)
               .ValidateAsync();
     }
 }

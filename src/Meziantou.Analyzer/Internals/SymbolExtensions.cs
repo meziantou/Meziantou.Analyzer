@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer;
 
 internal static class SymbolExtensions
 {
-    public static bool IsEqualTo(this ISymbol? symbol, ISymbol? expectedType)
+    public static bool IsEqualTo(this ISymbol? symbol, [NotNullWhen(true)] ISymbol? expectedType)
     {
         if (symbol is null || expectedType is null)
             return false;
