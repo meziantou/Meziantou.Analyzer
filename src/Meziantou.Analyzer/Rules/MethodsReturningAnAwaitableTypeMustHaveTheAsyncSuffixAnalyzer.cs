@@ -68,6 +68,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     {
         private readonly AwaitableTypes _awaitableTypes = new(compilation);
         private readonly INamedTypeSymbol? _iasyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
+        private readonly INamedTypeSymbol? _benchmarkSymbol = compilation.GetBestTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {
@@ -79,6 +80,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 return;
 
             if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
+                return;
+
+            if (MustIgnoreSymbol(method))
                 return;
 
             var hasAsyncSuffix = method.Name.EndsWith("Async", StringComparison.Ordinal);
@@ -140,6 +144,17 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                     context.ReportDiagnostic(NotAsyncSuffixRule, properties: default, operation, DiagnosticMethodReportOptions.ReportOnMethodName);
                 }
             }
+        }
+
+        private bool MustIgnoreSymbol(IMethodSymbol symbol)
+        {
+            if (symbol.HasAttribute(_benchmarkSymbol))
+                return true;
+
+            if (symbol.IsUnitTestMethod())
+                return true;
+
+            return false;
         }
     }
 }

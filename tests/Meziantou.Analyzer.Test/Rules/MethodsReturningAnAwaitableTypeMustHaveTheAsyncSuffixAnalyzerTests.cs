@@ -7,193 +7,168 @@ namespace Meziantou.Analyzer.Test.Rules;
 public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzerTests
 {
     private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
+        => new ProjectBuilder()
             .WithAnalyzer<MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzer>()
             .WithTargetFramework(TargetFramework.Net8_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
-    }
 
     [Fact]
-    public async Task AsyncMethodWithSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                System.Threading.Tasks.Task TestAsync() => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+    public Task AsyncMethodWithSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                    class TypeName
+                    {
+                        System.Threading.Tasks.Task TestAsync() => throw null;
+                    }
+                """)
               .ValidateAsync();
-    }
 
     [Fact]
-    public async Task AsyncMethodWithoutSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-    [Fact]
-    public async Task VoidMethodWithSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                void {|MA0138:TestAsync|}() => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task VoidMethodWithoutSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                void Test() => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task VoidLocalFunctionWithSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                void Test()
+    public Task AsyncMethodWithoutSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
                 {
-                    void {|MA0138:FooAsync|}() => throw null;
+                    System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
                 }
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+                """)
               .ValidateAsync();
-    }
+    [Fact]
+    public Task VoidMethodWithSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
+                {
+                    void {|MA0138:TestAsync|}() => throw null;
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task VoidMethodWithoutSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
+                {
+                    void Test() => throw null;
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task VoidLocalFunctionWithSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
+                {
+                    void Test()
+                    {
+                        void {|MA0138:FooAsync|}() => throw null;
+                    }
+                }
+                """)
+              .ValidateAsync();
 
     [Fact]
     public async Task VoidLocalFunctionWithoutSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                void Test()
+        => await CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
                 {
-                    void Foo() => throw null;
+                    void Test()
+                    {
+                        void Foo() => throw null;
+                    }
                 }
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+                """)
               .ValidateAsync();
-    }
 
     [Fact]
-    public async Task AwaitableLocalFunctionWithoutSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                void Test()
+    public Task AwaitableLocalFunctionWithoutSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
                 {
-                    _ = Foo();
-                    System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
+                    void Test()
+                    {
+                        _ = Foo();
+                        System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
+                    }
                 }
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+                """)
               .ValidateAsync();
-    }
 
     [Fact]
-    public async Task AwaitableLocalFunctionWithSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                void Test()
+    public Task AwaitableLocalFunctionWithSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
                 {
-                    System.Threading.Tasks.Task FooAsync() => throw null;
+                    void Test()
+                    {
+                        System.Threading.Tasks.Task FooAsync() => throw null;
+                    }
                 }
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+                """)
               .ValidateAsync();
-    }
 
     [Fact]
-    public async Task TopLevelStatement()
-    {
-        const string SourceCode = """
-            await System.Threading.Tasks.Task.Yield();
-            """;
-        await CreateProjectBuilder()
+    public Task TopLevelStatement()
+        => CreateProjectBuilder()
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
+              .WithSourceCode("""
+                await System.Threading.Tasks.Task.Yield();
+                """)
               .ValidateAsync();
-    }
 
     [Fact]
-    public async Task EntryPoint()
-    {
-        const string SourceCode = """
-            static class Program
-            {
-                static async System.Threading.Tasks.Task Main()
-                {
-                }
-            }
-            """;
-        await CreateProjectBuilder()
+    public Task EntryPoint()
+        => CreateProjectBuilder()
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
+              .WithSourceCode("""
+                 static class Program
+                 {
+                     static async System.Threading.Tasks.Task Main()
+                     {
+                     }
+                 }
+                 """)
               .ValidateAsync();
-    }
 
     [Fact]
-    public async Task IAsyncEnumerableWithoutSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+    public Task IAsyncEnumerableWithoutSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                 class TypeName
+                 {
+                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
+                 }
+                 """)
               .ShouldReportDiagnosticWithMessage("Method returning IAsyncEnumerable<T> must use the 'Async' suffix")
               .ValidateAsync();
-    }
 
     [Fact]
-    public async Task IAsyncEnumerableWithSuffix()
-    {
-        const string SourceCode = """
-            class TypeName
-            {
-                System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+    public Task IAsyncEnumerableWithSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                 class TypeName
+                 {
+                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
+                 }
+                 """)
               .ShouldReportDiagnosticWithMessage("Method not returning IAsyncEnumerable<T> must not use the 'Async' suffix")
               .ValidateAsync();
-    }
+
+    [Fact]
+    public Task IgnoreTestMethods()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                 class TypeName
+                 {
+                     [Xunit.Fact]
+                     System.Threading.Tasks.Task Foo() => throw null;
+                 }
+                 """)
+              .AddXUnitApi()
+              .ValidateAsync();
 }
