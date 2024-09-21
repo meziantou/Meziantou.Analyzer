@@ -33,6 +33,8 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(HandleObjectInitializer, ObjectInitializerKinds);
         context.RegisterSyntaxNodeAction(HandleAnonymousObjectInitializer, SyntaxKind.AnonymousObjectCreationExpression);
         context.RegisterSyntaxNodeAction(HandleEnumDeclaration, SyntaxKind.EnumDeclaration);
+        context.RegisterSyntaxNodeAction(HandleWithExpression, SyntaxKind.WithExpression);
+        context.RegisterSyntaxNodeAction(HandleSwitchExpression, SyntaxKind.SwitchExpression);
 #if CSHARP12_OR_GREATER
         context.RegisterSyntaxNodeAction(HandleCollectionExpression, SyntaxKind.CollectionExpression);
 #endif
@@ -57,6 +59,21 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         HandleSeparatedList(context, node, node.Elements);
     }
 #endif
+
+    private void HandleSwitchExpression(SyntaxNodeAnalysisContext context)
+    {
+        var node = (SwitchExpressionSyntax)context.Node;
+        HandleSeparatedList(context, node, node.Arms);
+    }
+
+    private void HandleWithExpression(SyntaxNodeAnalysisContext context)
+    {
+        var node = (WithExpressionSyntax)context.Node;
+        if (node.Initializer is null)
+            return;
+
+        HandleSeparatedList(context, node, node.Initializer.Expressions);
+    }
 
     private static void HandleEnumDeclaration(SyntaxNodeAnalysisContext context)
     {

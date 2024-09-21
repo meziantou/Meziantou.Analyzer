@@ -344,7 +344,7 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder ShouldFixCodeWith(string codeFix) =>
+    public ProjectBuilder ShouldFixCodeWith([StringSyntax("C#-test")] string codeFix) =>
         ShouldFixCodeWith(index: null, codeFix);
 
     public ProjectBuilder ShouldFixCodeWith(int? index, [StringSyntax("C#-test")] string codeFix)
