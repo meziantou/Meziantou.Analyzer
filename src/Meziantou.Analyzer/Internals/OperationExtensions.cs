@@ -109,6 +109,19 @@ internal static class OperationExtensions
         return operation;
     }
 
+    public static IOperation? UnwrapLabelOperations(this IOperation operation)
+    {
+        if (operation is ILabeledOperation label)
+        {
+            if (label.Operation is null)
+                return null;
+
+            return UnwrapLabelOperations(label.Operation);
+        }
+
+        return operation;
+    }
+
     public static bool HasArgumentOfType(this IInvocationOperation operation, ITypeSymbol argumentTypeSymbol)
     {
         foreach (var arg in operation.Arguments)

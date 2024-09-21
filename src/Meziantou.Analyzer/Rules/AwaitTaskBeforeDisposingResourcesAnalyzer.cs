@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -66,7 +67,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 
         private static bool IsInUsingOperation(IOperation operation)
         {
-            foreach (var parent in operation.Ancestors())
+            foreach (var parent in operation.Ancestors().Select(operation => operation.UnwrapLabelOperations()))
             {
                 if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
                     return false;
@@ -76,9 +77,9 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 
                 if (parent is IBlockOperation block)
                 {
-                    foreach (var blockOperation in block.Operations)
+                    foreach (var blockOperation in block.Operations.Select(operation => operation.UnwrapLabelOperations()))
                     {
-                        if (blockOperation == parent)
+                        if (blockOperation == operation)
                             break;
 
                         if (blockOperation is IUsingDeclarationOperation)
