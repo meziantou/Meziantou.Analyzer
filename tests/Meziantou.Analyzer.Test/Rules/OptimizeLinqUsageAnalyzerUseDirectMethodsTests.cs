@@ -15,6 +15,27 @@ public sealed class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
     }
 
     [Fact]
+    public Task FirstOrDefaultAsync_Net9()
+        => CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode("""
+                using System.Linq;
+                class Test
+                {
+                    public Test()
+                    {
+                        var enumerable = System.Linq.Enumerable.Empty<int>();
+                        var list = new System.Collections.Generic.List<int>();
+                        list.FirstOrDefault();
+                        list.FirstOrDefault(x => x == 0);
+                        enumerable.FirstOrDefault();
+                        enumerable.FirstOrDefault(x => x == 0);
+                    }
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
     public async Task FirstOrDefaultAsync()
     {
         const string SourceCode = @"using System.Linq;

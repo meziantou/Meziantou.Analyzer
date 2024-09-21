@@ -287,24 +287,28 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (firstArgumentType is null)
                 return;
 
-            if (firstArgumentType.OriginalDefinition.IsEqualTo(ListOfTSymbol))
+            if (!firstArgumentType.OriginalDefinition.IsEqualTo(ListOfTSymbol))
+                return;
+
+            // https://github.com/dotnet/runtime/issues/108064
+            if (context.Compilation.IsNet9OrGreater())
+                return;
+
+            ImmutableDictionary<string, string?> properties;
+            var predicateArgument = operation.Arguments[1].Value;
+            if (predicateArgument is IDelegateCreationOperation)
             {
-                ImmutableDictionary<string, string?> properties;
-                var predicateArgument = operation.Arguments[1].Value;
-                if (predicateArgument is IDelegateCreationOperation)
-                {
-                    properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
-                }
-                else
-                {
-                    if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
-                        return;
-
-                    properties = CreateProperties(OptimizeLinqUsageData.UseFindMethodWithConversion);
-                }
-
-                context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Find()", operation.TargetMethod.Name);
+                properties = CreateProperties(OptimizeLinqUsageData.UseFindMethod);
             }
+            else
+            {
+                if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                    return;
+
+                properties = CreateProperties(OptimizeLinqUsageData.UseFindMethodWithConversion);
+            }
+
+            context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Find()", operation.TargetMethod.Name);
         }
 
         private void UseTrueForAllInsteadOfAll(OperationAnalysisContext context, IInvocationOperation operation)

@@ -8,6 +8,13 @@ namespace Meziantou.Analyzer;
 
 internal static class CompilationExtensions
 {
+    public static bool IsNet9OrGreater(this Compilation compilation)
+    {
+        var type = compilation.GetSpecialType(SpecialType.System_Object);
+        var version = type.ContainingAssembly.Identity.Version;
+        return version.Major >= 9;
+    }
+
 #if ROSLYN_3_8
     public static ImmutableArray<INamedTypeSymbol> GetTypesByMetadataName(this Compilation compilation, string typeMetadataName)
     {
