@@ -73,6 +73,18 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 
                 if (parent is IUsingOperation)
                     return true;
+
+                if (parent is IBlockOperation block)
+                {
+                    foreach (var blockOperation in block.Operations)
+                    {
+                        if (blockOperation == parent)
+                            break;
+
+                        if (blockOperation is IUsingDeclarationOperation)
+                            return true;
+                    }
+                }
             }
 
             return false;

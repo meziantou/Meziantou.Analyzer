@@ -465,4 +465,47 @@ class TestClass
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ReturnInUsingStatement()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                System.Threading.Tasks.Task Test()
+                {
+                    using var disposable = (System.IDisposable)null;
+                    [||]return System.Threading.Tasks.Task.Delay(1);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+                .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingBlockBeforeAReturn()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                System.Threading.Tasks.Task Test()
+                {
+                    using (var disposable = (System.IDisposable)null)
+                    {
+                    }
+
+                    return System.Threading.Tasks.Task.Delay(1);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+                .WithSourceCode(originalCode)
+                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+                .ValidateAsync();
+    }
 }
