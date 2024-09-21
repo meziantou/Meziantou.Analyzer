@@ -259,4 +259,55 @@ class TypeName
             .ValidateAsync();
     }
 #endif
+
+    [Fact]
+    public async Task SwitchExpressionWithoutLeadingComma()
+        => await CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public void Test()
+                    {
+                        _ = 0 switch
+                        {
+                            1 => 1,
+                            [||]2 => 2
+                        };
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    public void Test()
+                    {
+                        _ = 0 switch
+                        {
+                            1 => 1,
+                            2 => 2,
+                        };
+                    }
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public async Task SwitchExpressionWithLeadingComma()
+        => await CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public void Test()
+                    {
+                        _ = 0 switch
+                        {
+                            1 => 1,
+                            2 => 2,
+                        };
+                    }
+                }
+                """)
+            .ValidateAsync();
 }

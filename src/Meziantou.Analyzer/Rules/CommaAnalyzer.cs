@@ -36,6 +36,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
 #if CSHARP12_OR_GREATER
         context.RegisterSyntaxNodeAction(HandleCollectionExpression, SyntaxKind.CollectionExpression);
 #endif
+        context.RegisterSyntaxNodeAction(HandleSwitchExpression, SyntaxKind.SwitchExpression);
     }
 
     private static void HandleSeparatedList<T>(SyntaxNodeAnalysisContext context, SyntaxNode node, SeparatedSyntaxList<T> elements) where T : SyntaxNode
@@ -57,6 +58,11 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         HandleSeparatedList(context, node, node.Elements);
     }
 #endif
+    private void HandleSwitchExpression(SyntaxNodeAnalysisContext context)
+    {
+        var node = (SwitchExpressionSyntax)context.Node;
+        HandleSeparatedList(context, node, node.Arms);
+    }
 
     private static void HandleEnumDeclaration(SyntaxNodeAnalysisContext context)
     {
