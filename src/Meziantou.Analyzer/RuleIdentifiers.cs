@@ -163,6 +163,9 @@ internal static class RuleIdentifiers
     public const string UseSystemThreadingLockInsteadOfObject = "MA0158";
     public const string OptimizeEnumerable_UseOrder = "MA0159";
     public const string UseContainsKeyInsteadOfTryGetValue = "MA0160";
+    public const string UseShellExecuteMustBeSet = "MA0161";
+    public const string UseProcessStartOverload = "MA0162";
+    public const string UseShellExecuteMustBeFalse = "MA0163";
 
     public static string GetHelpUri(string identifier)
     {

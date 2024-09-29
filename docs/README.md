@@ -160,6 +160,9 @@
 |[MA0158](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0158.md)|Performance|Use System.Threading.Lock|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0159](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0159.md)|Performance|Use 'Order' instead of 'OrderBy'|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Performance|Use ContainsKey instead of TryGetValue|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0161](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0161.md)|Usage|UseShellExecute must be explicitly set|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0162](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0162.md)|Usage|Use Process.Start overload with ProcessStartInfo|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0163](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0163.md)|Usage|UseShellExecute must be false when redirecting standard input or output|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -646,6 +649,15 @@ dotnet_diagnostic.MA0159.severity = suggestion
 
 # MA0160: Use ContainsKey instead of TryGetValue
 dotnet_diagnostic.MA0160.severity = suggestion
+
+# MA0161: UseShellExecute must be explicitly set
+dotnet_diagnostic.MA0161.severity = none
+
+# MA0162: Use Process.Start overload with ProcessStartInfo
+dotnet_diagnostic.MA0162.severity = none
+
+# MA0163: UseShellExecute must be false when redirecting standard input or output
+dotnet_diagnostic.MA0163.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1127,4 +1139,13 @@ dotnet_diagnostic.MA0159.severity = none
 
 # MA0160: Use ContainsKey instead of TryGetValue
 dotnet_diagnostic.MA0160.severity = none
+
+# MA0161: UseShellExecute must be explicitly set
+dotnet_diagnostic.MA0161.severity = none
+
+# MA0162: Use Process.Start overload with ProcessStartInfo
+dotnet_diagnostic.MA0162.severity = none
+
+# MA0163: UseShellExecute must be false when redirecting standard input or output
+dotnet_diagnostic.MA0163.severity = none
 ```
