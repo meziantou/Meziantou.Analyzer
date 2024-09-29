@@ -212,6 +212,47 @@ public sealed class ProcessStartAnalyzerTests
             .ValidateAsync();
     }
 
+    [Fact]
+    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_3()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          var processStartInfo = [||]new ProcessStartInfo("notepad");
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        await CreateProjectBuilder("MA0161")
+            .WithSourceCode(SourceCode)
+            .ShouldReportDiagnosticWithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo")
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_4()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          var processStartInfo = [||]new ProcessStartInfo("notepad", string.Empty);
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        await CreateProjectBuilder("MA0161")
+            .WithSourceCode(SourceCode)
+            .ShouldReportDiagnosticWithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo")
+            .ValidateAsync();
+    }
 
     [Fact]
     public async Task Process_start_should_report_when_using_overload_with_no_process_start_info()
@@ -224,6 +265,26 @@ public sealed class ProcessStartAnalyzerTests
                                       public void Test()
                                       {
                                           [||]Process.Start("notepad");
+                                      }
+                                  }
+                                  """;
+        await CreateProjectBuilder("MA0162")
+            .WithSourceCode(SourceCode)
+            .ShouldReportDiagnosticWithMessage("Use an overload of Process.Start that has a ProcessStartInfo parameter")
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Process_start_should_report_when_using_overload_with_no_process_start_info_2()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          [||]Process.Start("notepad", "file.txt");
                                       }
                                   }
                                   """;
