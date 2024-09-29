@@ -18,7 +18,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseSystemThreadingLockInsteadOfObject,
         title: "Use System.Threading.Lock",
-        messageFormat: "Use System.Threading.Lock",
+        messageFormat: "Use System.Threading.Lock if targeting .NET 9.0+; otherwise consider using the Backport.System.Threading.Lock library",
         RuleCategories.Performance,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
