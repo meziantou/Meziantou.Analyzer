@@ -176,6 +176,9 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0158](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0158.md)|Performance|Use System.Threading.Lock|⚠️|✔️|❌|
 |[MA0159](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0159.md)|Performance|Use 'Order' instead of 'OrderBy'|ℹ️|✔️|✔️|
 |[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Performance|Use ContainsKey instead of TryGetValue|ℹ️|✔️|❌|
+|[MA0161](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0161.md)|Usage|UseShellExecute must be explicitly set|ℹ️|❌|❌|
+|[MA0162](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0162.md)|Usage|Use Process.Start overload with ProcessStartInfo|ℹ️|❌|❌|
+|[MA0163](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0163.md)|Usage|UseShellExecute must be false when redirecting standard input or output|⚠️|✔️|❌|
 
 <!-- rules -->
 

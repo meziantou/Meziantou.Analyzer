@@ -339,6 +339,9 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder ShouldReportDiagnosticWithMessage(string message)
     {
+        if (_diagnosticMessageIndex >= ExpectedDiagnosticResults.Count)
+            throw new InvalidOperationException("Did you forget to annotate the code with [||]?");
+
         ExpectedDiagnosticResults[_diagnosticMessageIndex].Message = message;
         _diagnosticMessageIndex++;
         return this;
