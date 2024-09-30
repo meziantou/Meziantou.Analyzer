@@ -41,7 +41,7 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseShellExecuteMustBeFalse));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        [UseShellExecuteMustBeExplicitlySet, SetToFalseWhenRedirectingOutput, UseProcessStartOverload];
+        ImmutableArray.Create(UseShellExecuteMustBeExplicitlySet, SetToFalseWhenRedirectingOutput, UseProcessStartOverload);
 
     public override void Initialize(AnalysisContext context)
     {
