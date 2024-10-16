@@ -166,6 +166,7 @@ internal static class RuleIdentifiers
     public const string UseShellExecuteMustBeSet = "MA0161";
     public const string UseProcessStartOverload = "MA0162";
     public const string UseShellExecuteMustBeFalse = "MA0163";
+    public const string NotPatternShouldBeParenthesized = "MA0164";
 
     public static string GetHelpUri(string identifier)
     {
