@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.Linq;
-using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -112,14 +108,8 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
             }
         }
 
-        public void ExcludeSymbol(ISymbol symbol)
-        {
-            _ = _symbols.AddOrUpdate(symbol, addValue: false, (_, _) => false);
-        }
+        public void ExcludeSymbol(ISymbol symbol) => _symbols.AddOrUpdate(symbol, addValue: false, (_, _) => false);
 
-        public void AddPotentialSymbol(ISymbol symbol)
-        {
-            _ = _symbols.TryAdd(symbol, value: true);
-        }
+        public void AddPotentialSymbol(ISymbol symbol) => _symbols.TryAdd(symbol, value: true);
     }
 }

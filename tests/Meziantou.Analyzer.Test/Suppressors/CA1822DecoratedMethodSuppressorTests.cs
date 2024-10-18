@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿#if ROSLYN_4_10_OR_GREATER
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Suppressors;
 using TestHelper;
 using Xunit;
@@ -65,3 +66,4 @@ internal sealed class Sample
             .ValidateAsync();
     }
 }
+#endif

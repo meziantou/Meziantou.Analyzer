@@ -86,7 +86,7 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
             var operation = (IObjectCreationOperation)context.Operation;
             if (IsProcessStartInfoCreation(operation))
             {
-                if (operation is { Initializer: {} initializer } )
+                if (operation is { Initializer: { } initializer })
                 {
                     var useShellExecuteInitializer = initializer.Initializers.OfType<ISimpleAssignmentOperation>()
                         .FirstOrDefault(x => x.Target.Syntax is IdentifierNameSyntax { Identifier.Text: "UseShellExecute" });

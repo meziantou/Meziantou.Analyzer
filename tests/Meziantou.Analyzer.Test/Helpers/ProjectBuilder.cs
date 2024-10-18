@@ -134,14 +134,14 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds) =>
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.NetAnalyzers",
-            "7.0.1",
+            "9.0.0-preview.24454.1",
             paths: ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"],
             ruleIds);
 
     public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds) =>
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
-            "4.10.0-2.final",
+            "4.12.0-2.final",
             paths: ["analyzers/dotnet/cs/"],
             ruleIds);
 
