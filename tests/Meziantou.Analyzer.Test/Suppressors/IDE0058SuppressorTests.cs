@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿#if ROSLYN_4_10_OR_GREATER
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Suppressors;
 using Microsoft.CodeAnalysis;
 using TestHelper;
@@ -22,9 +23,8 @@ public sealed class IDE0058SuppressorTests
             .WithSourceCode("""
                 static void A()
                 {
-                    var sb = new System.Text.StringBuilder();
-                    [|sb.Append("Hello")|];
-                    System.Console.WriteLine(sb.ToString());
+                    [|new System.Text.StringBuilder().Append("Hello")|];
+                    [|System.IO.Directory.CreateDirectory("dir")|];
                 }
                 """)
             .ValidateAsync();
@@ -41,4 +41,16 @@ public sealed class IDE0058SuppressorTests
                 }
                 """)
             .ValidateAsync();
+
+    [Fact]
+    public async Task Directory_CreateDirectory()
+        => await CreateProjectBuilder()
+            .WithSourceCode("""
+                static void A()
+                {
+                    System.IO.Directory.CreateDirectory("dir");
+                }
+                """)
+            .ValidateAsync();
 }
+#endif

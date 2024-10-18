@@ -18,7 +18,10 @@ public sealed class IDE0058Suppressor : DiagnosticSuppressor
 
     public override void ReportSuppressions(SuppressionAnalysisContext context)
     {
-        var stringBuilderSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+#pragma warning disable IDE1006 // Naming Styles
+        var System_Text_StringBuilder = context.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+        var System_IO_Directory = context.Compilation.GetBestTypeByMetadataName("System.IO.Directory");
+#pragma warning restore IDE1006
 
         foreach (var diagnostic in context.ReportedDiagnostics)
         {
@@ -35,7 +38,13 @@ public sealed class IDE0058Suppressor : DiagnosticSuppressor
             if (operation is IInvocationOperation invocation)
             {
                 // StringBuilder
-                if (invocation.TargetMethod.Name is "Append" or "AppendLine" or "AppendJoin" or "AppendFormat" or "Clear" or "Remove" or "Insert" or "Replace" && invocation.TargetMethod.ContainingType.IsEqualTo(stringBuilderSymbol))
+                if (invocation.TargetMethod.Name is "Append" or "AppendLine" or "AppendJoin" or "AppendFormat" or "Clear" or "Remove" or "Insert" or "Replace" && invocation.TargetMethod.ContainingType.IsEqualTo(System_Text_StringBuilder))
+                {
+                    context.ReportSuppression(Suppression.Create(Descriptor, diagnostic));
+                }
+
+                // Directory.CreateDirectory
+                if (invocation.TargetMethod.Name is "CreateDirectory" && invocation.TargetMethod.ContainingType.IsEqualTo(System_IO_Directory))
                 {
                     context.ReportSuppression(Suppression.Create(Descriptor, diagnostic));
                 }
