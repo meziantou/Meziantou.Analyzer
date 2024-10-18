@@ -156,6 +156,14 @@ static string GenerateSuppressorsTable(List<DiagnosticSuppressor> diagnosticSupp
               .Append($"https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/").Append(suppression.SuppressedDiagnosticId.ToLowerInvariant()).Append("?WT.mc_id=DT-MVP-5003978")
               .Append(')');
         }
+        else if (suppression.SuppressedDiagnosticId.StartsWith("IDE", StringComparison.OrdinalIgnoreCase))
+        {
+            sb.Append('[')
+              .Append(suppression.SuppressedDiagnosticId)
+              .Append("](")
+              .Append($"https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/").Append(suppression.SuppressedDiagnosticId.ToLowerInvariant()).Append("?WT.mc_id=DT-MVP-5003978")
+              .Append(')');
+        }
         else
         {
             sb.Append('`').Append(suppression.SuppressedDiagnosticId).Append('`');

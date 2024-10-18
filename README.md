@@ -191,5 +191,6 @@ If you are already using other analyzers, you can check [which rules are duplica
 |--|---------------|-------------|
 |`MAS0001`|[CA1822](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822?WT.mc_id=DT-MVP-5003978)|Suppress CA1822 on methods decorated with BenchmarkDotNet attributes.|
 |`MAS0002`|[CA1822](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822?WT.mc_id=DT-MVP-5003978)|Suppress CA1822 on methods decorated with a System.Text.Json attribute such as \[JsonPropertyName\] or \[JsonInclude\].|
+|`MAS0003`|[IDE0058](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0058?WT.mc_id=DT-MVP-5003978)|Suppress IDE0058 on well-known types|
 
 <!-- suppressions -->
