@@ -12,8 +12,8 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.NotPatternShouldBeParenthesized,
-        title: "Use parentheses to not pattern clearer",
-        messageFormat: "Use parentheses to make it clearer",
+        title: "Use parentheses to make not pattern clearer",
+        messageFormat: "Use parentheses to make not pattern clearer",
         RuleCategories.Style,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,

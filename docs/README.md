@@ -163,7 +163,7 @@
 |[MA0161](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0161.md)|Usage|UseShellExecute must be explicitly set|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0162](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0162.md)|Usage|Use Process.Start overload with ProcessStartInfo|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0163](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0163.md)|Usage|UseShellExecute must be false when redirecting standard input or output|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0164](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0164.md)|Style|Use parentheses to not pattern clearer|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0164](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0164.md)|Style|Use parentheses to make not pattern clearer|<span title='Warning'>⚠️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -661,7 +661,7 @@ dotnet_diagnostic.MA0162.severity = none
 # MA0163: UseShellExecute must be false when redirecting standard input or output
 dotnet_diagnostic.MA0163.severity = warning
 
-# MA0164: Use parentheses to not pattern clearer
+# MA0164: Use parentheses to make not pattern clearer
 dotnet_diagnostic.MA0164.severity = warning
 ```
 
@@ -1154,6 +1154,6 @@ dotnet_diagnostic.MA0162.severity = none
 # MA0163: UseShellExecute must be false when redirecting standard input or output
 dotnet_diagnostic.MA0163.severity = none
 
-# MA0164: Use parentheses to not pattern clearer
+# MA0164: Use parentheses to make not pattern clearer
 dotnet_diagnostic.MA0164.severity = none
 ```
