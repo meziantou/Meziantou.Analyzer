@@ -52,5 +52,44 @@ public sealed class IDE0058SuppressorTests
                 }
                 """)
             .ValidateAsync();
+
+    [Fact]
+    public async Task System_IO_Stream_Seek_0_End()
+        => await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.IO;
+                static void A()
+                {
+                    Stream stream = null;
+                    [||]stream.Seek(0, SeekOrigin.End);
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public async Task System_IO_Stream_Seek_0_Begin()
+        => await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.IO;
+                static void A()
+                {
+                    Stream stream = null;
+                    stream.Seek(0, SeekOrigin.Begin);
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public async Task System_Collections_Generic_HashSet_Add()
+        => await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.IO;
+                static void A()
+                {
+                    System.Collections.Generic.HashSet<int> a = null;
+                    a.Add(0);
+                }
+                """)
+            .ValidateAsync();
 }
 #endif

@@ -21,6 +21,8 @@ public sealed class IDE0058Suppressor : DiagnosticSuppressor
 #pragma warning disable IDE1006 // Naming Styles
         var System_Text_StringBuilder = context.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
         var System_IO_Directory = context.Compilation.GetBestTypeByMetadataName("System.IO.Directory");
+        var System_IO_Stream = context.Compilation.GetBestTypeByMetadataName("System.IO.Stream");
+        var System_Collections_Generic_HashSet = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.HashSet`1");
 #pragma warning restore IDE1006
 
         foreach (var diagnostic in context.ReportedDiagnostics)
@@ -45,6 +47,18 @@ public sealed class IDE0058Suppressor : DiagnosticSuppressor
 
                 // Directory.CreateDirectory
                 if (invocation.TargetMethod.Name is "CreateDirectory" && invocation.TargetMethod.ContainingType.IsEqualTo(System_IO_Directory))
+                {
+                    context.ReportSuppression(Suppression.Create(Descriptor, diagnostic));
+                }
+
+                // Stream.Seek
+                if (invocation.TargetMethod.Name is "Seek" && invocation.TargetMethod.ContainingType.IsEqualTo(System_IO_Stream) && invocation.Arguments.Length is 2 && invocation.Arguments[0].Value.IsConstantZero() && invocation.Arguments[1].Value.IsConstantZero())
+                {
+                    context.ReportSuppression(Suppression.Create(Descriptor, diagnostic));
+                }
+
+                // HashSet<T>.Add
+                if (invocation.TargetMethod.Name is "Add" && invocation.TargetMethod.ContainingType.ConstructedFrom.IsEqualTo(System_Collections_Generic_HashSet))
                 {
                     context.ReportSuppression(Suppression.Create(Descriptor, diagnostic));
                 }
