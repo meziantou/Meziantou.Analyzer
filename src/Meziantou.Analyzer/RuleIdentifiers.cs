@@ -167,6 +167,7 @@ internal static class RuleIdentifiers
     public const string UseProcessStartOverload = "MA0162";
     public const string UseShellExecuteMustBeFalse = "MA0163";
     public const string NotPatternShouldBeParenthesized = "MA0164";
+    public const string MakeInterpolatedString = "MA0165";
 
     public static string GetHelpUri(string identifier)
     {
