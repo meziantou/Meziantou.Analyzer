@@ -6,17 +6,18 @@ using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
+using Meziantou.Framework;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-if (args.Length == 0)
+if (!FullPath.CurrentDirectory().TryFindFirstAncestorOrSelf(p => Directory.Exists(p / ".git"), out var outputFolder))
 {
-    Console.Error.WriteLine("You must specify the output folder");
-    return;
+    Console.WriteLine("Cannot find the current git folder");
+    return 1;
 }
 
-var outputFolder = Path.GetFullPath(args[0]);
+var fileWritten = 0;
 
 var assemblies = new[] { typeof(Meziantou.Analyzer.Rules.CommaAnalyzer).Assembly, typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly };
 var diagnosticAnalyzers = assemblies.SelectMany(assembly => assembly.GetExportedTypes())
@@ -59,14 +60,14 @@ Console.WriteLine(sb.ToString());
     var readmeContent = await File.ReadAllTextAsync(readmePath);
     var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + GenerateRulesTable(diagnosticAnalyzers, codeFixProviders, addTitle: false) + "\n", RegexOptions.Singleline);
     newContent = Regex.Replace(newContent, "(?<=<!-- suppressions -->\\r?\\n).*(?=<!-- suppressions -->)", "\n" + GenerateSuppressorsTable(diagnosticSuppressors) + "\n", RegexOptions.Singleline);
-    await File.WriteAllTextAsync(readmePath, newContent);
+    WriteFileIfChanged(readmePath, newContent);
 }
 
 // Update doc readme
 {
     var path = Path.GetFullPath(Path.Combine(outputFolder, "docs", "README.md"));
     Console.WriteLine(path);
-    await File.WriteAllTextAsync(path, sb.ToString());
+    WriteFileIfChanged(path, sb.ToString());
 }
 
 // Update title in rule pages
@@ -79,12 +80,33 @@ Console.WriteLine(sb.ToString());
         {
             var lines = await File.ReadAllLinesAsync(detailPath);
             lines[0] = title;
-            File.WriteAllLines(detailPath, lines);
+            WriteFileIfChanged(detailPath, string.Join('\n', lines) + "\n");
         }
         else
         {
-            await File.WriteAllTextAsync(detailPath, title);
+            WriteFileIfChanged(detailPath, title);
         }
+    }
+}
+
+return fileWritten;
+
+void WriteFileIfChanged(string path, string content)
+{
+    content = content.ReplaceLineEndings("\n");
+
+    if (!File.Exists(path))
+    {
+        File.WriteAllText(path, content);
+        fileWritten++;
+        return;
+    }
+
+    var existingContent = File.ReadAllText(path).ReplaceLineEndings();
+    if (existingContent != content)
+    {
+        File.WriteAllText(path, content);
+        fileWritten++;
     }
 }
 
