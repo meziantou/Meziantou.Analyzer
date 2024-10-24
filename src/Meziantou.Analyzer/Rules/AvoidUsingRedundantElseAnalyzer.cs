@@ -65,7 +65,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         if (controlFlowAnalysis is null || !controlFlowAnalysis.Succeeded)
             return;
 
-        if (!controlFlowAnalysis.EndPointIsReachable || controlFlowAnalysis.ExitPoints.Any(ep => IsDirectAccess(ifStatement, ep)))
+        if (!controlFlowAnalysis.EndPointIsReachable)
         {
             context.ReportDiagnostic(Rule, elseClause.ElseKeyword);
         }
@@ -90,29 +90,5 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
                     break;
             }
         }
-    }
-
-    /// <summary>
-    /// Determines if a given 'if' statement's access to an exit point is straightforward.
-    /// For instance, access to an exit point in a nested 'if' would not be considered straightforward.
-    /// </summary>
-    /// <param name="ifStatementSyntax">The 'if' statement whose 'else' is currently under scrutiny</param>
-    /// <param name="exitPoint">A reachable exit point detected by the semantic model</param>
-    /// <returns>true if the exit point is directly accessible, false otherwise</returns>
-    private static bool IsDirectAccess(IfStatementSyntax ifStatementSyntax, SyntaxNode exitPoint)
-    {
-        var node = exitPoint.Parent;
-        while (node is not null)
-        {
-            if (node == ifStatementSyntax)
-                return true;
-
-            if (!node.IsKind(SyntaxKind.Block))
-                break;
-
-            node = node.Parent;
-        }
-
-        return false;
     }
 }
