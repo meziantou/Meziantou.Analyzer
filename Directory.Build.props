@@ -34,11 +34,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Meziantou.DotNet.CodingStandard" Version="1.0.125">
+    <PackageReference Include="Meziantou.DotNet.CodingStandard" Version="1.0.135">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Meziantou.Polyfill" Version="1.0.39">
+    <PackageReference Include="Meziantou.Polyfill" Version="1.0.40">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

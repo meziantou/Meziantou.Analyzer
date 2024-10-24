@@ -25,6 +25,15 @@ defaults:
     shell: pwsh
 
 jobs:
+  check_documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+    - run: dotnet run --project src/DocumentationGenerator/DocumentationGenerator.csproj
+    - run: git status
+      if: failure()
+
   compute_package_version:
     runs-on: ubuntu-latest
     outputs:
@@ -47,9 +56,9 @@ jobs:
     env:
       RepositoryBranch: ${{github.ref}}
     steps:
-    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+    - uses: actions/checkout@v4
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4
+      uses: actions/setup-dotnet@v4
 
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
 
@@ -69,7 +78,7 @@ jobs:
     - run: dotnet pack src/Meziantou.Analyzer.pack.csproj --configuration Release --no-build /p:Version=${{ needs.compute_package_version.outputs.package_version }}
     - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release
 
-    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+    - uses: actions/upload-artifact@v4
       with:
         name: nuget
         if-no-files-found: error
@@ -80,10 +89,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ create_nuget ]
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+      - uses: actions/checkout@v4
       - name: Setup .NET Core (global.json)
-        uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
+        uses: actions/setup-dotnet@v4
+      - uses: actions/download-artifact@v4
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
@@ -113,12 +122,12 @@ jobs:
         roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'roslyn4.4', 'roslyn4.6', 'roslyn4.8', 'default' ]
       fail-fast: false
     steps:
-    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+    - uses: actions/checkout@v4
     - name: Setup .NET Core (global.json)
-      uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4
+      uses: actions/setup-dotnet@v4
     - run: dotnet test --configuration ${{ matrix.configuration }} --logger trx --logger "GitHubActions;report-warnings=false" --collect:"XPlat Code Coverage" --blame-hang --blame-hang-timeout 2min --results-directory "${{ env.TestResultsDirectory }}" /p:WarningsAsErrors=true /p:RoslynVersion=${{ matrix.roslyn-version}}
       name: Run tests
-    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+    - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.runs-on }}-${{ matrix.roslyn-version }}-${{ matrix.configuration }}
@@ -128,17 +137,17 @@ jobs:
 
   deploy:
     runs-on: 'ubuntu-latest'
-    needs: [ validate_nuget, build_and_test ]
+    needs: [ check_documentation, validate_nuget, build_and_test ]
     steps:
-    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 2
-    - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
+    - uses: actions/download-artifact@v4
       with:
         name: nuget
         path: ${{ env.NuGetDirectory }}
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4
+      uses: actions/setup-dotnet@v4
     - run: |
         Write-Host "Current ref: $env:GITHUB_REF"
         Write-Host "Searching nupkg in folder: ${{ env.NuGetDirectory }}"
@@ -167,7 +176,7 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+    - uses: actions/checkout@v4
     - run: 'gh release create "${{ needs.compute_package_version.outputs.package_version }}" --generate-notes --notes "NuGet package: <https://www.nuget.org/packages/Meziantou.Analyzer/${{ needs.compute_package_version.outputs.package_version }}>"'
       env:
         GH_TOKEN: ${{ github.token }}

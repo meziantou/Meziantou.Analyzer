@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "DocumentationGenerator": {
-      "commandName": "Project",
-      "commandLineArgs": "..\\..\\..\\..\\.."
-    }
-  }
-}
