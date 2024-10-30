@@ -206,4 +206,88 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task SkipEscapedBraces1()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"Person \{ Name = {Name} \}")]
+            public record Person(string Name);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SkipEscapedBraces2()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [[|DebuggerDisplay(@"Person \\{NameInvalid}")|]]
+            public record Person(string Name);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SkipEscapedBraces3()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"Person \\\{NameInvalid}")]
+            public record Person(string Name);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EscapeSingleChar()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"\")]
+            public record Person(int Value);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Escape_IncompleteExpression()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"{\")]
+            public record Person(int Value);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExpressionLessThan()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"{Value < 10}")]
+            public record Person(int Value);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly char[] MemberSeparators = [',', '(', '.', '['];
+    private static readonly char[] MemberSeparators = [',', '(', '.', '[', ' '];
 
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DebuggerDisplayAttributeShouldContainValidExpressions,
@@ -80,29 +80,44 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         {
             List<string>? result = null;
 
+            static int IndexOf(ReadOnlySpan<char> value, char c)
+            {
+                var skipped = 0;
+                while (!value.IsEmpty)
+                {
+                    var index = value.IndexOfAny(c, '\\');
+                    if (index < 0)
+                        return -1;
+
+                    if (value[index] == c)
+                        return index + skipped;
+
+                    if (index + 1 < value.Length)
+                    {
+                        skipped += index + 2;
+                        value = value[(index + 2)..];
+                    }
+                    else
+                    {
+                        return -1;
+                    }
+                }
+
+                return -1;
+            }
+
             while (!value.IsEmpty)
             {
-                var startIndex = value.IndexOf('{');
+                var startIndex = IndexOf(value, '{');
                 if (startIndex < 0)
                     break;
 
                 value = value[(startIndex + 1)..];
-                var endIndex = value.IndexOf('}');
+                var endIndex = IndexOf(value, '}');
                 if (endIndex < 0)
                     break;
 
                 var member = value[..endIndex];
-
-
-                static string GetMemberName(ReadOnlySpan<char> member)
-                {
-                    var index = member.IndexOfAny(MemberSeparators);
-                    if (index < 0)
-                        return member.ToString();
-
-                    return member[..index].ToString();
-                }
-
                 result ??= [];
                 result.Add(GetMemberName(member));
 
@@ -110,6 +125,15 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
             }
 
             return result;
+
+            static string GetMemberName(ReadOnlySpan<char> member)
+            {
+                var index = member.IndexOfAny(MemberSeparators);
+                if (index < 0)
+                    return member.ToString();
+
+                return member[..index].ToString();
+            }
         }
 
         static void ValidateValue(SymbolAnalysisContext context, INamedTypeSymbol symbol, AttributeData attribute, string value)
