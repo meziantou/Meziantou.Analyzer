@@ -98,23 +98,23 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
             static void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, IOperation reportOperation, INamedTypeSymbol dataClassificationAttributeSymbol)
             {
                 operation = operation.UnwrapConversionOperations();
-                if (operation is IParameterReferenceOperation parameterReferenceOperation)
+                if (operation is IParameterReferenceOperation { Parameter: var parameter })
                 {
-                    if (parameterReferenceOperation.Parameter.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                    if (parameter.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || parameter.Type.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
                     {
                         diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                     }
                 }
-                else if (operation is IPropertyReferenceOperation propertyReferenceOperation)
+                else if (operation is IPropertyReferenceOperation { Property: var property })
                 {
-                    if (propertyReferenceOperation.Property.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                    if (property.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || property.ContainingType.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
                     {
                         diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                     }
                 }
-                else if (operation is IFieldReferenceOperation fieldReferenceOperation)
+                else if (operation is IFieldReferenceOperation { Field: var field })
                 {
-                    if (fieldReferenceOperation.Field.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                    if (field.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || field.ContainingType.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
                     {
                         diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                     }

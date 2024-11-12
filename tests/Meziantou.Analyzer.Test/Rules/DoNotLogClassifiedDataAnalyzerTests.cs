@@ -143,7 +143,36 @@ class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataCla
     }
 
     [Fact]
-    public async Task Logger_BeginScope_DataClassification_Parameter()
+    public async Task Logger_LogInformation_DataClassification_Parameter_AttributeOnType()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+
+void A([TaxonomyAttribute]int param)
+{
+    logger.LogInformation("{Prop}", [|param|]);
+}
+
+[TaxonomyAttribute()]
+class Dummy
+{
+    public string Prop;
+}
+
+class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public TaxonomyAttribute() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_BeginScope_DataClassification_Property()
     {
         const string SourceCode = """
 using Microsoft.Extensions.Logging;
