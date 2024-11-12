@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 using Xunit;
 
@@ -279,5 +280,4 @@ class TypeName : ComponentBase
               .WithSourceCode(Usings + sourceCode + ComponentWithChildContent)
               .ValidateAsync();
     }
-
 }

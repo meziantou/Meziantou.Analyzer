@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -166,7 +167,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
                 if ((type?.OriginalDefinition) is null)
                     return;
 
-                if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
+                if (HashSetSymbols.Any(type.OriginalDefinition.IsEqualTo))
                 {
                     if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
                     {
@@ -186,7 +187,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             if (operation.Constructor is null)
                 return;
 
-            if (HashSetSymbols.Any(t => type.OriginalDefinition.IsEqualTo(t)))
+            if (HashSetSymbols.Any(type.OriginalDefinition.IsEqualTo))
             {
                 if (operation.Constructor.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol?.Construct(type.TypeArguments[0]))))
                     return;

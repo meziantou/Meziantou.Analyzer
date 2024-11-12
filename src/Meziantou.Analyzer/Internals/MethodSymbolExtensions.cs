@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 
-namespace Meziantou.Analyzer;
+namespace Meziantou.Analyzer.Internals;
 
 internal static class MethodSymbolExtensions
 {

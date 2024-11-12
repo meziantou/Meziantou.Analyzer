@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -276,7 +277,6 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (IndexOf_Char_Int32_Int32 is null)
                             return;
 
-
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[1].Value.Type.IsInt32() &&
                             operation.Arguments[2].Value.Type.IsInt32() &&
@@ -315,7 +315,6 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (LastIndexOf_Char_Int32 is null)
                             return;
 
-
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[1].Value.Type.IsInt32() &&
                             operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
@@ -327,7 +326,6 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     {
                         if (LastIndexOf_Char_Int32_Int32 is null)
                             return;
-
 
                         if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
                             operation.Arguments[1].Value.Type.IsInt32() &&

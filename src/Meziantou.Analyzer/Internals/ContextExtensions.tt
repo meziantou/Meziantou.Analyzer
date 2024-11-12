@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer;
+namespace Meziantou.Analyzer.Internals;
 
 internal static partial class ContextExtensions
 {

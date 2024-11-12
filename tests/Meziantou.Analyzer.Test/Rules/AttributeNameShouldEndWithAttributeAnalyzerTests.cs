@@ -38,5 +38,4 @@ class [||]CustomAttr : System.Attribute
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-
 }

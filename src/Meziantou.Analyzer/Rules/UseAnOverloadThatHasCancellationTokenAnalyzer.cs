@@ -131,7 +131,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return true;
             }
 
-
             return false;
 
             bool IsArgumentImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol cancellationTokenSymbol, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
@@ -301,6 +300,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                         }
                     }
                 }
+
                 return result;
             });
         }

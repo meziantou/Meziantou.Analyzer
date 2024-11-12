@@ -1,4 +1,4 @@
-﻿namespace TestHelper;
+﻿namespace Meziantou.Analyzer.Test.Helpers;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1027:Mark enums with FlagsAttribute")]
 public enum TargetFramework

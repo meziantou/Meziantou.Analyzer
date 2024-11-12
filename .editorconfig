@@ -42,6 +42,7 @@ insert_final_newline = true
 dotnet_diagnostic.RS1041.severity = none
 dotnet_diagnostic.RS2008.severity = none
 dotnet_diagnostic.CA1508.severity = none
+dotnet_diagnostic.IDE0303.severity = none
 
 [src/ListDotNetTypes/*.cs]
 dotnet_diagnostic.CA2007.severity = none

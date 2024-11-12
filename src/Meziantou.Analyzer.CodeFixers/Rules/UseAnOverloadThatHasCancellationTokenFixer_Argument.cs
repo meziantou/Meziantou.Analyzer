@@ -98,7 +98,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
             editor.ReplaceNode(nodeToFix, newInvocation);
         }
 
-
         return editor.GetChangedDocument();
     }
 }

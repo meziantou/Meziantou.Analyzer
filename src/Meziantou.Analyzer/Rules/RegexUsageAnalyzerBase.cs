@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -166,7 +167,6 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
         {
             if (regexOptionsSymbol is null)
                 return (null, null);
-
 
             var arg = arguments.FirstOrDefault(a => a.Parameter is not null && a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
             if (arg is null || arg.Value is null || !arg.Value.ConstantValue.HasValue)

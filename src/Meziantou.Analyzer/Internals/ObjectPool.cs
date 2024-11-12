@@ -7,7 +7,6 @@ using System.Text;
 
 namespace Meziantou.Analyzer.Internals;
 
-
 /// <summary>
 /// A pool of objects.
 /// </summary>

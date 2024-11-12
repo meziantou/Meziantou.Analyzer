@@ -198,7 +198,6 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                         {
                             configuration[keyName] = [];
                         }
-
                     }
                 }
 

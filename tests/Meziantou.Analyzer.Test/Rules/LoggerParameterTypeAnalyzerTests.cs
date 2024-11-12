@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 using Xunit;
 
@@ -361,7 +362,7 @@ Prop;System.Int32
               .WithSourceCode("")
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", "Prop;int")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0125", Locations = new[] { new DiagnosticResultLocation("LoggerParameterTypes.txt", 1, 1, 1, 1) } })
+              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0125", Locations = [new DiagnosticResultLocation("LoggerParameterTypes.txt", 1, 1, 1, 1)] })
               .ValidateAsync();
     }
 
@@ -372,7 +373,7 @@ Prop;System.Int32
               .WithSourceCode("")
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", "Prop;M:System.Int32.MaxValue")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0125", Locations = new[] { new DiagnosticResultLocation("LoggerParameterTypes.txt", 1, 1, 1, 1) } })
+              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0125", Locations = [new DiagnosticResultLocation("LoggerParameterTypes.txt", 1, 1, 1, 1)] })
               .ValidateAsync();
     }
 
@@ -384,7 +385,7 @@ Prop;System.Int32
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.1.txt", "Prop;System.String")
               .AddAdditionalFile("LoggerParameterTypes.2.txt", "New;System.String\nProp;System.String")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0126", Locations = new[] { new DiagnosticResultLocation("LoggerParameterTypes.2.txt", 2, 1, 2, 1) } })
+              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0126", Locations = [new DiagnosticResultLocation("LoggerParameterTypes.2.txt", 2, 1, 2, 1)] })
               .ValidateAsync();
     }
 

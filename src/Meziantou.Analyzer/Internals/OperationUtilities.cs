@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer;
+namespace Meziantou.Analyzer.Internals;
 
 internal sealed class OperationUtilities(Compilation compilation)
 {
@@ -36,5 +36,4 @@ internal sealed class OperationUtilities(Compilation compilation)
 
         return false;
     }
-
 }

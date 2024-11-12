@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Meziantou.Analyzer;
+namespace Meziantou.Analyzer.Internals;
 
 [Flags]
 public enum DiagnosticFieldReportOptions

@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis;
+using Meziantou.Analyzer.Internals;
 
 namespace Meziantou.Analyzer.Rules;
 internal static class UsePatternMatchingForEqualityComparisonsCommon

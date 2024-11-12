@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -82,7 +83,6 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
 
         context.ReportDiagnostic(Rule, operation);
     }
-
 
     private static bool IsNameFormat(object? format)
     {

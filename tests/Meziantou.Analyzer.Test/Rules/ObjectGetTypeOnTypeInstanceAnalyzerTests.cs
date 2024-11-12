@@ -51,5 +51,4 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzerTests
               .WithSourceCode(code)
               .ValidateAsync();
     }
-
 }

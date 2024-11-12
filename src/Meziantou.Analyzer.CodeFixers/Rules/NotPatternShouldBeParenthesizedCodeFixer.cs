@@ -58,7 +58,6 @@ public sealed class NotPatternShouldBeParenthesizedCodeFixer : CodeFixProvider
         if (nodeToFix is not UnaryPatternSyntax unary)
             return document;
 
-
         var root = unary.Ancestors().TakeWhile(IsOrPattern).LastOrDefault();
         if (root is null)
             return document;

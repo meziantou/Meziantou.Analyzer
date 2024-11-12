@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 using Xunit;
 
@@ -172,15 +173,18 @@ class Test
               .ValidateAsync();
     }
 
-    public static IEnumerable<object[]> EmptyStringsArguments
+    public static TheoryData<string> EmptyStringsArguments
     {
         get
         {
-            yield return new object[] { @"$""""" };
-            yield return new object[] { @"$""{""""}""" };
-            yield return new object[] { @"""""" };
-            yield return new object[] { @""""" + """"" };
-            yield return new object[] { @"string.Empty" };
+            return new TheoryData<string>
+            {
+                { @"$""""" },
+                { @"$""{""""}""" },
+                { @"""""" },
+                { @""""" + """"" },
+                { @"string.Empty" },
+            };
         }
     }
 

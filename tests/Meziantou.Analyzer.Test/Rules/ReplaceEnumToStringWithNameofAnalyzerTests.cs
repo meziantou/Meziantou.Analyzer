@@ -216,5 +216,4 @@ enum MyEnum
               .ShouldBatchFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-
 }

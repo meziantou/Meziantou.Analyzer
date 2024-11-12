@@ -127,7 +127,6 @@ class Test
 
     //
 
-
     [Fact]
     public async Task EmptyFinallyBlock()
     {

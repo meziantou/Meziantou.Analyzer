@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 using Xunit;
 
@@ -99,5 +100,4 @@ public sealed class DoNotUseAsyncVoidAnalyzerTests
                   """)
               .ValidateAsync();
     }
-
 }

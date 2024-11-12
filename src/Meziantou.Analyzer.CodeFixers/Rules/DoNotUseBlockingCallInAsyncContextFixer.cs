@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -40,8 +41,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     equivalenceKey: "Thread_Sleep");
 
                 context.RegisterCodeFix(codeAction, context.Diagnostics);
+                break;
             }
-            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Wait:
             {
@@ -51,8 +52,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     equivalenceKey: "Task_Wait");
 
                 context.RegisterCodeFix(codeAction, context.Diagnostics);
+                break;
             }
-            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Result:
             {
@@ -62,8 +63,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     equivalenceKey: "Task_Result");
 
                 context.RegisterCodeFix(codeAction, context.Diagnostics);
+                break;
             }
-            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Overload:
             {
@@ -76,8 +77,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     equivalenceKey: "Overload");
 
                 context.RegisterCodeFix(codeAction, context.Diagnostics);
+                break;
             }
-            break;
 
             case DoNotUseBlockingCallInAsyncContextData.Using:
             case DoNotUseBlockingCallInAsyncContextData.UsingDeclarator:
@@ -88,8 +89,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     equivalenceKey: "Overload");
 
                 context.RegisterCodeFix(codeAction, context.Diagnostics);
+                break;
             }
-            break;
         }
     }
 

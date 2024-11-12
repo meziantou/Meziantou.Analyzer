@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Meziantou.Analyzer;
+namespace Meziantou.Analyzer.Internals;
 
 internal static class ListExtensions
 {
@@ -8,7 +8,7 @@ internal static class ListExtensions
     {
         foreach (var item in items)
         {
-            AddIfNotNull(list, item);
+            list.AddIfNotNull(item);
         }
     }
 

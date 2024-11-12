@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -40,7 +41,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         if (method.MethodKind is not MethodKind.Ordinary and not MethodKind.Constructor)
             return;
 
-        if (!method.Parameters.Any(p => IsCandidateForSpanOrMemory(p)))
+        if (!method.Parameters.Any(IsCandidateForSpanOrMemory))
             return;
 
         var overloads = method.ContainingType.GetMembers(method.Name);

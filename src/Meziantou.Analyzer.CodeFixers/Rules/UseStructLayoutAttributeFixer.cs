@@ -3,6 +3,7 @@ using System.Composition;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -26,7 +27,7 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null || nodeToFix is not TypeDeclarationSyntax)
+        if (nodeToFix is null or not TypeDeclarationSyntax)
             return;
 
         context.RegisterCodeFix(
