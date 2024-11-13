@@ -139,7 +139,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         {
                             IMethodSymbol methodSymbol => methodSymbol.Parameters,
                             IPropertySymbol propertySymbol => propertySymbol.Parameters,
-                            _ => [],
+                            _ => ImmutableArray<IParameterSymbol>.Empty,
                         };
 
                         if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(syntaxContext.Options, expression))
