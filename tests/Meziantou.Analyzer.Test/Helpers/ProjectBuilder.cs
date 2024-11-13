@@ -8,8 +8,10 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -45,19 +47,28 @@ public sealed partial class ProjectBuilder
     public string DefaultAnalyzerId { get; set; }
     public string DefaultAnalyzerMessage { get; set; }
 
-    private static Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
+    private static async Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
     {
-        var task = NuGetPackagesCache.GetOrAdd(
-            packageName + '@' + version + ':' + string.Join(",", paths),
-            _ => new Lazy<Task<string[]>>(Download));
-
-        return task.Value;
+        var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(",", paths));
+#if NET8_0_OR_GREATER
+        var hash = SHA256.HashData(bytes);
+#else
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(bytes);
+#endif
+        var key = Convert.ToBase64String(hash).Replace('/', '_');
+        var task = NuGetPackagesCache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
+        return await task.Value.ConfigureAwait(false);
 
         async Task<string[]> Download()
         {
-            var tempFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Meziantou.AnalyzerTests", "ref", packageName + '@' + version);
-            if (!Directory.Exists(tempFolder) || !Directory.EnumerateFileSystemEntries(tempFolder).Any())
+            var cacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Meziantou.AnalyzerTests", "ref", key);
+            bool IsCacheValid() => Directory.Exists(cacheFolder) && Directory.EnumerateFileSystemEntries(cacheFolder).Any();
+
+            if (!IsCacheValid())
             {
+                var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+
                 Directory.CreateDirectory(tempFolder);
                 using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
@@ -66,9 +77,22 @@ public sealed partial class ProjectBuilder
                 {
                     entry.ExtractToFile(Path.Combine(tempFolder, entry.Name), overwrite: true);
                 }
+
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(cacheFolder));
+                    Directory.Move(tempFolder, cacheFolder);
+                }
+                catch (Exception ex)
+                {
+                    if (!IsCacheValid())
+                    {
+                        throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version + "\n" + ex);
+                    }
+                }
             }
 
-            var dlls = Directory.GetFiles(tempFolder, "*.dll");
+            var dlls = Directory.GetFiles(cacheFolder, "*.dll");
 
             // Filter invalid .NET assembly
             var result = new List<string>();
