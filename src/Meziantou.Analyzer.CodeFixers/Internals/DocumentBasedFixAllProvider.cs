@@ -1,4 +1,4 @@
-﻿#if !ROSLYN_3_8
+﻿#if ROSLYN_3_8
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 // File initially copied from
 //  https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/4d9b3e3bb785a55f73b3029a843f0c0b73cc9ea7/StyleCop.Analyzers/StyleCop.Analyzers.CodeFixes/Helpers/DocumentBasedFixAllProvider.cs
