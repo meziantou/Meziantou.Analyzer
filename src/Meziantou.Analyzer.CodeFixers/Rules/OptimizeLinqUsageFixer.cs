@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -164,8 +165,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 nodeToFix = node;
                 return true;
             }
+
             node = node.Parent;
         }
+
         return false;
     }
 
@@ -473,7 +476,6 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
         if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
             return document;
-
 
         var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, operation.Arguments[1].Syntax);
 

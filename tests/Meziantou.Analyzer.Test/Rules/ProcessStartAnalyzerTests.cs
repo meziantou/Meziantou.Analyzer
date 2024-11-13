@@ -140,7 +140,6 @@ public sealed class ProcessStartAnalyzerTests
             .ValidateAsync();
     }
 
-
     [Fact]
     public async Task Process_start_should_report_when_use_shell_execute_is_not_set_and_input_redirected()
     {

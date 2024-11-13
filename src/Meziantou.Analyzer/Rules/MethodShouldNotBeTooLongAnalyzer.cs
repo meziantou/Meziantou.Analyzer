@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq;
 using Meziantou.Analyzer.Configurations;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

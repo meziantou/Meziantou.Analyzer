@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -53,13 +54,12 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(attributeUsageAttribute, addImport: true),
-            new[]
-            {
+            [
                     generator.AttributeArgument(
                         generator.MemberAccessExpression(
                             generator.TypeExpression(attributeTargets, addImport: true),
                             nameof(AttributeTargets.All))),
-            });
+            ]);
 
         editor.AddAttribute(classNode, attribute);
         return editor.GetChangedDocument();

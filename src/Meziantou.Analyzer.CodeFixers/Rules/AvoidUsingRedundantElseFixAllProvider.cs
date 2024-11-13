@@ -9,16 +9,14 @@ internal sealed class AvoidUsingRedundantElseFixAllProvider : DocumentBasedFixAl
 {
     public static AvoidUsingRedundantElseFixAllProvider Instance { get; } = new AvoidUsingRedundantElseFixAllProvider();
 
-    protected override string CodeActionTitle => "Remove redundant else";
+    protected override string GetFixAllTitle(FixAllContext fixAllContext) => "Remove redundant else";
 
-    /// <inheritdoc/>
-    protected override async Task<SyntaxNode?> FixAllInDocumentAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics)
+    protected override async Task<Document?> FixAllAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics)
     {
         if (diagnostics.IsEmpty)
             return null;
 
         var newDocument = await AvoidUsingRedundantElseFixer.RemoveRedundantElseClausesInDocument(document, diagnostics, fixAllContext.CancellationToken).ConfigureAwait(false);
-
-        return await newDocument.GetSyntaxRootAsync(fixAllContext.CancellationToken).ConfigureAwait(false);
+        return newDocument;
     }
 }

@@ -38,5 +38,4 @@ class [||]CustomArgs : System.EventArgs
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-
 }

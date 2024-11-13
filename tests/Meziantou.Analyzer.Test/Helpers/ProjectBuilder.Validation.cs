@@ -399,6 +399,7 @@ public sealed partial class ProjectBuilder
                 }
             }
         }
+
         return builder.ToString();
     }
 

@@ -1,4 +1,6 @@
-﻿// File initially copied from
+﻿#if ROSLYN_3_8
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+// File initially copied from
 //  https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/4d9b3e3bb785a55f73b3029a843f0c0b73cc9ea7/StyleCop.Analyzers/StyleCop.Analyzers.CodeFixes/Helpers/DocumentBasedFixAllProvider.cs
 // Original copyright statement:
 //  Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
@@ -7,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -18,22 +21,22 @@ namespace Meziantou.Analyzer;
 /// </summary>
 internal abstract class DocumentBasedFixAllProvider : FixAllProvider
 {
-    protected abstract string CodeActionTitle { get; }
+    protected abstract string GetFixAllTitle(FixAllContext fixAllContext);
 
     public override Task<CodeAction?> GetFixAsync(FixAllContext fixAllContext)
     {
         return Task.FromResult(fixAllContext.Scope switch
         {
             FixAllScope.Document => CodeAction.Create(
-                                        CodeActionTitle,
+                                        GetFixAllTitle(fixAllContext),
                                         cancellationToken => GetDocumentFixesAsync(fixAllContext.WithCancellationToken(cancellationToken)),
                                         nameof(DocumentBasedFixAllProvider)),
             FixAllScope.Project => CodeAction.Create(
-                                        CodeActionTitle,
+                                        GetFixAllTitle(fixAllContext),
                                         cancellationToken => GetProjectFixesAsync(fixAllContext.WithCancellationToken(cancellationToken), fixAllContext.Project),
                                         nameof(DocumentBasedFixAllProvider)),
             FixAllScope.Solution => CodeAction.Create(
-                                        CodeActionTitle,
+                                        GetFixAllTitle(fixAllContext),
                                         cancellationToken => GetSolutionFixesAsync(fixAllContext.WithCancellationToken(cancellationToken)),
                                         nameof(DocumentBasedFixAllProvider)),
             _ => null,
@@ -47,11 +50,11 @@ internal abstract class DocumentBasedFixAllProvider : FixAllProvider
     /// <param name="document">The document to fix.</param>
     /// <param name="diagnostics">The diagnostics to fix in the document.</param>
     /// <returns>
-    /// <para>The new <see cref="SyntaxNode"/> representing the root of the fixed document.</para>
+    /// <para>The new <see cref="Document"/> representing the root of the fixed document.</para>
     /// <para>-or-</para>
     /// <para><see langword="null"/>, if no changes were made to the document.</para>
     /// </returns>
-    protected abstract Task<SyntaxNode?> FixAllInDocumentAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics);
+    protected abstract Task<Document?> FixAllAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics);
 
     private async Task<Document> GetDocumentFixesAsync(FixAllContext fixAllContext)
     {
@@ -62,13 +65,8 @@ internal abstract class DocumentBasedFixAllProvider : FixAllProvider
             return document;
         }
 
-        var newRoot = await FixAllInDocumentAsync(fixAllContext, document, diagnostics).ConfigureAwait(false);
-        if (newRoot is null)
-        {
-            return document;
-        }
-
-        return document.WithSyntaxRoot(newRoot);
+        var newDocument = await FixAllAsync(fixAllContext, document, diagnostics).ConfigureAwait(false);
+        return newDocument ?? document;
     }
 
     private async Task<Solution> GetSolutionFixesAsync(FixAllContext fixAllContext, ImmutableArray<Document> documents)
@@ -76,16 +74,16 @@ internal abstract class DocumentBasedFixAllProvider : FixAllProvider
         var documentDiagnosticsToFix = await FixAllContextHelper.GetDocumentDiagnosticsToFixAsync(fixAllContext).ConfigureAwait(false);
 
         var solution = fixAllContext.Solution;
-        var newDocuments = new List<Task<SyntaxNode?>>(documents.Length);
+        var newDocuments = new List<Task<Document?>>(documents.Length);
         foreach (var document in documents)
         {
             if (!documentDiagnosticsToFix.TryGetValue(document, out var diagnostics))
             {
-                newDocuments.Add(document.GetSyntaxRootAsync(fixAllContext.CancellationToken));
+                newDocuments.Add(Task.FromResult<Document?>(document));
                 continue;
             }
 
-            newDocuments.Add(FixAllInDocumentAsync(fixAllContext, document, diagnostics));
+            newDocuments.Add(FixAllAsync(fixAllContext, document, diagnostics));
         }
 
         for (var i = 0; i < documents.Length; i++)
@@ -94,7 +92,7 @@ internal abstract class DocumentBasedFixAllProvider : FixAllProvider
             if (newDocumentRoot is null)
                 continue;
 
-            solution = solution.WithDocumentSyntaxRoot(documents[i].Id, newDocumentRoot);
+            //solution = solution.WithDocumentSyntaxRoot(documents[i].Id, newDocumentRoot);
         }
 
         return solution;
@@ -111,3 +109,4 @@ internal abstract class DocumentBasedFixAllProvider : FixAllProvider
         return GetSolutionFixesAsync(fixAllContext, documents);
     }
 }
+#endif

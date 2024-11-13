@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -95,7 +96,6 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
                     handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[0]);
                     handled |= DetectPotentialUsageOfLambdaParameter(context, op.Arguments[1].Value, op.Arguments[2]);
                 }
-
             }
             else if (op.TargetMethod.Name is "AddOrUpdate")
             {
@@ -121,7 +121,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
                 }
             }
 
-            if (!handled && (GetOrAddHasOverloadWithArg && op.TargetMethod.Name is "GetOrAdd") || (AddOrUpdateHasOverloadWithArg && op.TargetMethod.Name is "AddOrUpdate"))
+            if ((!handled && GetOrAddHasOverloadWithArg && op.TargetMethod.Name is "GetOrAdd") || (AddOrUpdateHasOverloadWithArg && op.TargetMethod.Name is "AddOrUpdate"))
             {
                 foreach (var arg in op.Arguments)
                 {
@@ -205,7 +205,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
                 return GetParameters(delegateCreation.Target);
             }
 
-            return Enumerable.Empty<ISymbol>();
+            return [];
         }
     }
 

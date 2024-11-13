@@ -2,6 +2,7 @@
 using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -46,5 +47,4 @@ public sealed class ClassMustBeSealedFixer : CodeFixProvider
         editor.ReplaceNode(classNode, classNode.WithModifiers(modifiers).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
-
 }

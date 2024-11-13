@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Globalization;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -34,8 +35,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
     {
         var binaryOperation = (IBinaryOperation)context.Operation;
 
-        if (binaryOperation.OperatorKind != BinaryOperatorKind.Equals &&
-            binaryOperation.OperatorKind != BinaryOperatorKind.NotEquals)
+        if (binaryOperation.OperatorKind is not BinaryOperatorKind.Equals and not BinaryOperatorKind.NotEquals)
         {
             return;
         }

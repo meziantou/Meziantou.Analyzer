@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
-namespace TestHelper;
+namespace Meziantou.Analyzer.Test.Helpers;
 
 public sealed class DiagnosticResult
 {

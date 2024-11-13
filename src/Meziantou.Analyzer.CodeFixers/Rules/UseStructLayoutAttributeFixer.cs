@@ -3,6 +3,7 @@ using System.Composition;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -26,7 +27,7 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null || nodeToFix is not TypeDeclarationSyntax)
+        if (nodeToFix is null or not TypeDeclarationSyntax)
             return;
 
         context.RegisterCodeFix(
@@ -57,13 +58,12 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(structLayoutAttribute).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),
-            new[]
-            {
+            [
                 generator.AttributeArgument(
                     generator.MemberAccessExpression(
                         generator.TypeExpression(layoutKindEnum).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),
                         layoutKind.ToString())),
-            });
+            ]);
 
         editor.AddAttribute(nodeToFix, attribute);
         return editor.GetChangedDocument();

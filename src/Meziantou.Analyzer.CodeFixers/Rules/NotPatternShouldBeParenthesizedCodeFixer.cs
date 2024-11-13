@@ -34,6 +34,7 @@ public sealed class NotPatternShouldBeParenthesizedCodeFixer : CodeFixProvider
                 equivalenceKey: title);
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
+
         {
             var title = "Negate all or patterns";
             var codeAction = CodeAction.Create(
@@ -57,7 +58,6 @@ public sealed class NotPatternShouldBeParenthesizedCodeFixer : CodeFixProvider
 
         if (nodeToFix is not UnaryPatternSyntax unary)
             return document;
-
 
         var root = unary.Ancestors().TakeWhile(IsOrPattern).LastOrDefault();
         if (root is null)

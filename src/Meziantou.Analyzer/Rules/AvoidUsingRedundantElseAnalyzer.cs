@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -75,6 +76,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
     {
         foreach (var child in node.DescendantNodes())
         {
+#pragma warning disable 
             switch (child)
             {
                 case VariableDeclaratorSyntax variableDeclarator:
@@ -89,6 +91,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
                     yield return singleVariableDesignation.Identifier.Text;
                     break;
             }
+#pragma warning restore IDE0010 // Add missing cases
         }
     }
 }

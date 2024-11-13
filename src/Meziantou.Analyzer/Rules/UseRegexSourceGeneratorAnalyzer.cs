@@ -65,13 +65,13 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                 return;
         }
 
-        var properties = ImmutableDictionary.CreateRange(new[]
-        {
+        var properties = ImmutableDictionary.CreateRange(
+        [
             new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "0"),
             new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 1 ? "1" : null),
             new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 2 ? "2" : null),
             new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 2 ? TimeSpanOperation.GetMilliseconds(op.Arguments[2].Value)?.ToString(CultureInfo.InvariantCulture) : null),
-        });
+        ]);
 
         context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
     }
@@ -110,13 +110,13 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                     return;
             }
 
-            var properties = ImmutableDictionary.CreateRange(new[]
-            {
+            var properties = ImmutableDictionary.CreateRange(
+            [
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "1"),
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 2 ? "2" : null),
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 3 ? "3" : null),
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 3 ? TimeSpanOperation.GetMilliseconds(op.Arguments[3].Value)?.ToString(CultureInfo.InvariantCulture) : null),
-            });
+            ]);
 
             context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
         }
@@ -138,13 +138,13 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                     return;
             }
 
-            var properties = ImmutableDictionary.CreateRange(new[]
-            {
+            var properties = ImmutableDictionary.CreateRange(
+            [
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "1"),
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 3 ? "3" : null),
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 4 ? "4" : null),
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 4 ? TimeSpanOperation.GetMilliseconds(op.Arguments[4].Value)?.ToString(CultureInfo.InvariantCulture) : null),
-            });
+            ]);
 
             context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
         }

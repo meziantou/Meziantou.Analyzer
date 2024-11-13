@@ -148,6 +148,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                         context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
                         return true;
                     }
+
                     return false;
                 }
                 else

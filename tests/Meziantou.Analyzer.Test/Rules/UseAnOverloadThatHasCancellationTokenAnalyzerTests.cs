@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 using Xunit;
 
@@ -593,7 +594,6 @@ record struct Test
               .ValidateAsync();
     }
 #endif
-
 
 #if CSHARP10_OR_GREATER
     [Fact]

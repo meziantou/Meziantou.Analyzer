@@ -62,5 +62,4 @@ namespace System.Diagnostics.CodeAnalysis
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-
 }

@@ -1,6 +1,7 @@
 ﻿#if ROSLYN_4_10_OR_GREATER
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Suppressors;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 using Xunit;
 

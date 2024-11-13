@@ -39,10 +39,15 @@ indent_size = 2
 insert_final_newline = true
 
 [*.cs]
+dotnet_diagnostic.IDE0058.severity = none
+dotnet_diagnostic.IDE0303.severity = none
+dotnet_diagnostic.CA1508.severity = none
+dotnet_diagnostic.CA2000.severity = none
 dotnet_diagnostic.RS1041.severity = none
 dotnet_diagnostic.RS2008.severity = none
-dotnet_diagnostic.CA1508.severity = none
 
 [src/ListDotNetTypes/*.cs]
 dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.MA0004.severity = none
+
+

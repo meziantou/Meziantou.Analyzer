@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Meziantou.Analyzer.Internals;
+using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Rules;
 
