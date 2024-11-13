@@ -10,6 +10,6 @@ internal static class AvoidUsingRedundantElseAnalyzerCommon
     {
         return elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax ?
             elseBlockSyntax.ChildNodes() :
-            new[] { elseClauseSyntax.Statement };
+            [elseClauseSyntax.Statement];
     }
 }

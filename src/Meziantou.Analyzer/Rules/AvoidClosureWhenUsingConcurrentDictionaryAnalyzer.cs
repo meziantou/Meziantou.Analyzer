@@ -205,7 +205,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
                 return GetParameters(delegateCreation.Target);
             }
 
-            return Enumerable.Empty<ISymbol>();
+            return [];
         }
     }
 

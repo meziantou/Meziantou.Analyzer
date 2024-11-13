@@ -135,7 +135,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
         {
             SymbolKind.Method => ((IMethodSymbol)symbol).Parameters,
             SymbolKind.Property => ((IPropertySymbol)symbol).Parameters,
-            _ => ImmutableArray<IParameterSymbol>.Empty,
+            _ => [],
         };
     }
 }

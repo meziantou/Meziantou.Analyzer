@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Meziantou.Analyzer;
+namespace Meziantou.Analyzer.Internals;
 
 internal static class OperationExtensions
 {

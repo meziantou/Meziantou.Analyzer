@@ -119,5 +119,4 @@ class [|Test|] : IComparable<string>
               .WithSourceCode(originalCode)
               .ValidateAsync();
     }
-
 }

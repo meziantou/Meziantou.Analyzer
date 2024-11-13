@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Meziantou.Analyzer.Rules;
+namespace Meziantou.Analyzer.Internals;
 
 internal static partial class StringExtensions
 {

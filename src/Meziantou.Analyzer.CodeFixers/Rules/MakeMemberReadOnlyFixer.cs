@@ -103,16 +103,15 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
     {
         public static MakeMemberReadOnlyFixAllProvider Instance { get; } = new MakeMemberReadOnlyFixAllProvider();
 
-        protected override string CodeActionTitle => "Add readonly";
+        protected override string GetFixAllTitle(FixAllContext fixAllContext) => "Add readonly";
 
-        /// <inheritdoc/>
-        protected override async Task<SyntaxNode?> FixAllInDocumentAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics)
+        protected override async Task<Document?> FixAllAsync(FixAllContext fixAllContext, Document document, ImmutableArray<Diagnostic> diagnostics)
         {
             if (diagnostics.IsEmpty)
                 return null;
 
             var newDocument = await MakeReadOnly(document, diagnostics, fixAllContext.CancellationToken).ConfigureAwait(false);
-            return await newDocument.GetSyntaxRootAsync(fixAllContext.CancellationToken).ConfigureAwait(false);
+            return newDocument;
         }
 
         internal static async Task<Document> MakeReadOnly(Document document, ImmutableArray<Diagnostic> diagnostics, CancellationToken cancellationToken)

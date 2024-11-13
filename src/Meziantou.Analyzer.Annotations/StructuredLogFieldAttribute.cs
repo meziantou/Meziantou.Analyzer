@@ -2,7 +2,6 @@
 #pragma warning disable IDE0060
 #pragma warning disable IDE0290
 #pragma warning disable CA1019
-#nullable disable
 
 namespace Meziantou.Analyzer.Annotations;
 

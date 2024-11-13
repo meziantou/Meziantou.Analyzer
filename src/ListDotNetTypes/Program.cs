@@ -27,7 +27,9 @@ foreach (var includePreview in new[] { false, true })
         Console.WriteLine(packageName + "@" + latestVersion);
 
         using var packageStream = new MemoryStream();
-        await resource.CopyNupkgToStreamAsync(packageName, latestVersion, packageStream, cache, NullLogger.Instance, CancellationToken.None);
+        if (!await resource.CopyNupkgToStreamAsync(packageName, latestVersion, packageStream, cache, NullLogger.Instance, CancellationToken.None))
+            throw new InvalidOperationException("Cannot copy NuGet package");
+
         packageStream.Seek(0, SeekOrigin.Begin);
 
         using var zipArchive = new ZipArchive(packageStream, ZipArchiveMode.Read);

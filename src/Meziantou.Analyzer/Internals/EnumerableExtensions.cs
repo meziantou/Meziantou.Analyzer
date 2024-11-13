@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Meziantou.Analyzer;
+namespace Meziantou.Analyzer.Internals;
 
 internal static class EnumerableExtensions
 {

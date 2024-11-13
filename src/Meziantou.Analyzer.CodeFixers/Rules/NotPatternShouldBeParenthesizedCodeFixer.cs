@@ -34,6 +34,7 @@ public sealed class NotPatternShouldBeParenthesizedCodeFixer : CodeFixProvider
                 equivalenceKey: title);
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
+
         {
             var title = "Negate all or patterns";
             var codeAction = CodeAction.Create(

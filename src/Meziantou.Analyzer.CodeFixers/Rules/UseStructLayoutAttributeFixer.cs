@@ -58,13 +58,12 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(structLayoutAttribute).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),
-            new[]
-            {
+            [
                 generator.AttributeArgument(
                     generator.MemberAccessExpression(
                         generator.TypeExpression(layoutKindEnum).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),
                         layoutKind.ToString())),
-            });
+            ]);
 
         editor.AddAttribute(nodeToFix, attribute);
         return editor.GetChangedDocument();
