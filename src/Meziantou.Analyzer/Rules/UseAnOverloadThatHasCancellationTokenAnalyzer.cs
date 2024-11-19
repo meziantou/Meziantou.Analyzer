@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -105,7 +106,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name, bool HasEnumeratorCancellationAttribute);
 
-        private bool HasAnOverloadWithCancellationToken(IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
+        private bool HasAnOverloadWithCancellationToken(OperationAnalysisContext context, IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
         {
             parameterInfo = default;
             var method = operation.TargetMethod;
@@ -115,7 +116,8 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (IsArgumentImplicitlyDeclared(operation, CancellationTokenSymbol, out parameterInfo))
                 return true;
 
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, CancellationTokenSymbol);
+            var allowOptionalParameters = context.Options.GetConfigurationValue(operation, "MA0032.allowOverloadsWithOptionalParameters", defaultValue: false);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, allowOptionalParameters, CancellationTokenSymbol);
             if (overload is not null)
             {
                 for (var i = 0; i < overload.Parameters.Length; i++)
@@ -163,7 +165,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (HasExplicitCancellationTokenArgument(operation))
                 return;
 
-            if (!HasAnOverloadWithCancellationToken(operation, out var parameterInfo))
+            if (!HasAnOverloadWithCancellationToken(context, operation, out var parameterInfo))
                 return;
 
             var availableCancellationTokens = FindCancellationTokens(operation, context.CancellationToken);
@@ -208,7 +210,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return;
 
                 // Already handled by AnalyzeInvocation
-                if (HasAnOverloadWithCancellationToken(invocation, out _))
+                if (HasAnOverloadWithCancellationToken(context, invocation, out _))
                     return;
 
                 collection = invocation.GetChildOperations().FirstOrDefault();

@@ -1187,4 +1187,45 @@ class Test
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task SuggestOverloadWithOptionalParameters_AllowOptionalParameters_True()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                [|Sample.Repro()|];
+
+                class Sample
+                {
+                    public static void Repro() => throw null;
+                    public static void Repro(CancellationToken cancellationToken, bool dummy = false) => throw null;
+                }
+                """)
+              .AddAnalyzerConfiguration("MA0032.allowOverloadsWithOptionalParameters", "true")
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SuggestOverloadWithOptionalParameters_AllowOptionalParameters_False()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                Sample.Repro();
+
+                class Sample
+                {
+                    public static void Repro() => throw null;
+                    public static void Repro(CancellationToken cancellationToken, bool dummy = false) => throw null;
+                }
+                """)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .ValidateAsync();
+    }
 }

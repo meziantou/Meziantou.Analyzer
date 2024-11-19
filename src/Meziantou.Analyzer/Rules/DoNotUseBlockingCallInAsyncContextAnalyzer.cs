@@ -299,10 +299,10 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (methodSymbol.HasAttribute(ObsoleteAttributeSymbol))
                     return false;
 
-                if (OverloadFinder.HasSimilarParameters(method, methodSymbol))
+                if (OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false))
                     return true;
 
-                if (CancellationTokenSymbol is not null && OverloadFinder.HasSimilarParameters(method, methodSymbol, CancellationTokenSymbol))
+                if (CancellationTokenSymbol is not null && OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false, CancellationTokenSymbol))
                     return true;
             }
 
