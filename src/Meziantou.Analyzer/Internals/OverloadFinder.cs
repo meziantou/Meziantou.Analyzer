@@ -22,40 +22,43 @@ internal sealed class OverloadFinder(Compilation compilation)
         if (currentOperation.SemanticModel is null)
             return false;
 
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: currentOperation.Syntax, includeObsoleteMethods: false, additionalParameterTypes) is not null;
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: currentOperation.Syntax, includeObsoleteMethods: false, allowOptionalParameters: false, additionalParameterTypes) is not null;
     }
 
     private IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
         IMethodSymbol methodSymbol,
         params ITypeSymbol[] additionalParameterTypes)
     {
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, includeObsoleteMethods: false, additionalParameterTypes);
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, includeObsoleteMethods: false, allowOptionalParameters: false, additionalParameterTypes);
     }
 
     public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
         IMethodSymbol methodSymbol,
         bool includeObsoleteMethods,
+        bool allowOptionalParameters,
         params ITypeSymbol[] additionalParameterTypes)
     {
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: null, includeObsoleteMethods, additionalParameterTypes);
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: null, includeObsoleteMethods, allowOptionalParameters, additionalParameterTypes);
     }
 
     public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
         IMethodSymbol methodSymbol,
         IOperation operation,
         bool includeObsoleteMethods,
+        bool allowOptionalParameters,
         params ITypeSymbol[] additionalParameterTypes)
     {
         if (operation.SemanticModel is null)
             return null;
 
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, operation.Syntax, includeObsoleteMethods, additionalParameterTypes);
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, operation.Syntax, includeObsoleteMethods, allowOptionalParameters, additionalParameterTypes);
     }
 
     public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
         IMethodSymbol methodSymbol,
         SyntaxNode? syntaxNode,
         bool includeObsoleteMethods,
+        bool allowOptionalParameters,
         params ITypeSymbol[] additionalParameterTypes)
     {
         if (additionalParameterTypes is null)
@@ -83,7 +86,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 if (!includeObsoleteMethods && IsObsolete(method))
                     continue;
 
-                if (HasSimilarParameters(methodSymbol, method, additionalParameterTypes))
+                if (HasSimilarParameters(methodSymbol, method, allowOptionalParameters, additionalParameterTypes))
                     return method;
             }
         }
@@ -91,12 +94,12 @@ internal sealed class OverloadFinder(Compilation compilation)
         return null;
     }
 
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, params ITypeSymbol[] additionalParameterTypes)
+    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ITypeSymbol[] additionalParameterTypes)
     {
         if (method.IsEqualTo(otherMethod))
             return false;
 
-        if (otherMethod.Parameters.Length - method.Parameters.Length != additionalParameterTypes.Length)
+        if (!allowOptionalParameters && otherMethod.Parameters.Length - method.Parameters.Length != additionalParameterTypes.Length)
             return false;
 
         // Most of the time, an overload has the same order for the parameters
@@ -139,6 +142,7 @@ internal sealed class OverloadFinder(Compilation compilation)
         }
 
         // Slower search, allows to find overload with different parameter order
+        // Also, handle allow optional parameters
         {
             var otherMethodParameters = otherMethod.Parameters;
 
@@ -166,7 +170,16 @@ internal sealed class OverloadFinder(Compilation compilation)
                 }
             }
 
-            return otherMethodParameters.Length == 0;
+            if (otherMethodParameters.Length == 0)
+                return true;
+
+            if (allowOptionalParameters)
+            {
+                if (otherMethodParameters.All(p => p.IsOptional))
+                    return true;
+            }
+
+            return false;
         }
     }
 
