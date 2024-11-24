@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 using Xunit;
 
@@ -55,6 +56,23 @@ sealed class Test2 : Test
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
+    }
+
+
+    [Fact]
+    public async Task GivenPublicRecord_CodeFix_ReturnsPublicRecord()
+    {
+        var violation = "public record [||]SomeRecord(int Id);";
+
+        var fix = "public sealed record SomeRecord(int Id);";
+
+        await CreateProjectBuilder()
+            .WithSourceCode(violation)
+            .WithTargetFramework(TargetFramework.Net8_0)
+            .AddAnalyzerConfiguration("MA0053.public_class_should_be_sealed", "true")
+            .ShouldFixCodeWith(fix)
+            .ShouldReportDiagnosticWithMessage("Public record 'SomeRecord' should be annotated with 'sealed'.")
+            .ValidateAsync();
     }
 
     [Fact]
