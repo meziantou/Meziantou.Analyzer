@@ -70,8 +70,9 @@ sealed class Test2 : Test
             .WithSourceCode(violation)
             .WithTargetFramework(TargetFramework.Net8_0)
             .AddAnalyzerConfiguration("MA0053.public_class_should_be_sealed", "true")
+            .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_should_be_sealed", "true")
             .ShouldFixCodeWith(fix)
-            .ShouldReportDiagnosticWithMessage("Public record 'SomeRecord' should be annotated with 'sealed'.")
+            .ShouldReportDiagnosticWithMessage("Make class sealed")
             .ValidateAsync();
     }
 
