@@ -85,6 +85,17 @@ internal static class SymbolExtensions
         }
     }
 
+    public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol? symbol, string name)
+    {
+        while (symbol is not null)
+        {
+            foreach (var member in symbol.GetMembers(name))
+                yield return member;
+
+            symbol = symbol.BaseType;
+        }
+    }
+
     public static bool IsTopLevelStatement(this ISymbol symbol, CancellationToken cancellationToken)
     {
         if (symbol.DeclaringSyntaxReferences.Length == 0)
@@ -102,12 +113,7 @@ internal static class SymbolExtensions
 
     public static bool IsTopLevelStatementsEntryPointMethod([NotNullWhen(true)] this IMethodSymbol? methodSymbol)
     {
-        return methodSymbol?.IsStatic == true && methodSymbol.Name switch
-        {
-            "$Main" => true,
-            "<Main>$" => true,
-            _ => false
-        };
+        return methodSymbol is { IsStatic: true, Name: "$Main" or "<Main>$" };
     }
 
     public static bool IsTopLevelStatementsEntryPointType([NotNullWhen(true)] this INamedTypeSymbol? typeSymbol)
@@ -117,7 +123,7 @@ internal static class SymbolExtensions
 
         foreach (var member in typeSymbol.GetMembers())
         {
-            if (member.Kind == SymbolKind.Method)
+            if (member.Kind is SymbolKind.Method)
             {
                 var method = (IMethodSymbol)member;
                 if (method.IsTopLevelStatementsEntryPointMethod())

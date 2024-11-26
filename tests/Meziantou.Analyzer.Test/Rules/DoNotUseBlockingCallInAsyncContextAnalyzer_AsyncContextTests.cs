@@ -927,4 +927,16 @@ class Sample
 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task UsingNewMemoryStream()
+    {
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using var ms = new System.IO.MemoryStream();
+                """)
+              .ValidateAsync();
+    }
 }

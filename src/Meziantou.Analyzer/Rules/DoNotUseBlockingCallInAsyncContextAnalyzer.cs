@@ -79,6 +79,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 ConsoleErrorAndOutSymbols = [];
             }
 
+            MemoryStreamSymbol = compilation.GetBestTypeByMetadataName("System.IO.MemoryStream");
             ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
             CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
             ObsoleteAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
@@ -115,6 +116,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             _taskAwaiterLikeSymbols = [.. taskAwaiterLikeSymbols];
         }
 
+        private ISymbol? MemoryStreamSymbol { get; }
         private ISymbol? ProcessSymbol { get; }
         private ISymbol[] ConsoleErrorAndOutSymbols { get; }
         private INamedTypeSymbol? CancellationTokenSymbol { get; }
@@ -377,7 +379,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private bool HasDisposeAsyncMethod(INamedTypeSymbol symbol)
         {
-            var members = symbol.GetMembers("DisposeAsync");
+            var members = symbol.GetAllMembers("DisposeAsync");
             foreach (var member in members.OfType<IMethodSymbol>())
             {
                 if (member.Parameters.Length != 0)
@@ -401,6 +403,10 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private bool CanBeAwaitUsing(IOperation operation)
         {
             if (operation.GetActualType() is not INamedTypeSymbol type)
+                return false;
+
+            // using var ms = new MemoryStream();
+            if (operation is IObjectCreationOperation objectCreationOperation && objectCreationOperation.Type.IsEqualTo(MemoryStreamSymbol))
                 return false;
 
             return HasDisposeAsyncMethod(type);
