@@ -26,7 +26,7 @@ public sealed class ClassMustBeSealedFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not ClassDeclarationSyntax nodeToFix)
+        if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not TypeDeclarationSyntax nodeToFix)
             return;
 
         var title = "Add sealed modifier";
@@ -42,7 +42,7 @@ public sealed class ClassMustBeSealedFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var classNode = (ClassDeclarationSyntax)nodeToFix;
+        var classNode = (TypeDeclarationSyntax)nodeToFix;
         var modifiers = classNode.Modifiers.Add(SyntaxKind.SealedKeyword);
         editor.ReplaceNode(classNode, classNode.WithModifiers(modifiers).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();

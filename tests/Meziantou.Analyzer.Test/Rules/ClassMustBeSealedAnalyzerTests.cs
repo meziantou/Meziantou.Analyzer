@@ -242,6 +242,20 @@ internal class Test
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task Record()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true")
+              .WithSourceCode("""
+                internal record [||]Sample();
+                """)
+              .ShouldFixCodeWith("""
+                internal sealed record Sample();
+                """)
+              .ValidateAsync();
+    }
+
 #if CSHARP10_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_10()
