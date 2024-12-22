@@ -73,9 +73,16 @@ public sealed partial class ProjectBuilder
                 using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
+                var hasEntry = false;
                 foreach (var entry in zip.Entries.Where(file => paths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                 {
                     entry.ExtractToFile(Path.Combine(tempFolder, entry.Name), overwrite: true);
+                    hasEntry = true;
+                }
+
+                if (!hasEntry)
+                {
+                    throw new InvalidOperationException("The NuGet package " + packageName + "@" + version + " does not contain any file matching the paths " + string.Join(", ", paths));
                 }
 
                 try

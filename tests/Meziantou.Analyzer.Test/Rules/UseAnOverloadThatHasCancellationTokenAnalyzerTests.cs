@@ -1228,4 +1228,47 @@ class Test
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Xunit2()
+    {
+        await CreateProjectBuilder()
+              .AddNuGetReference("xunit.abstractions", "2.0.3", "lib/netstandard2.0/")
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                {|MA0032:Sample.Repro()|};
+
+                class Sample
+                {
+                    public static void Repro() => throw null;
+                    public static void Repro(CancellationToken cancellationToken) => throw null;
+                }
+                """)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Xunit3()
+    {
+        await CreateProjectBuilder()
+              .AddNuGetReference("xunit.v3.extensibility.core", "1.0.0", "lib/netstandard2.0/")
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                {|MA0040:Sample.Repro()|};
+
+                class Sample
+                {
+                    public static void Repro() => throw null;
+                    public static void Repro(CancellationToken cancellationToken) => throw null;
+                }
+                """)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: Xunit.TestContext.Current.CancellationToken")
+              .ValidateAsync();
+    }
 }

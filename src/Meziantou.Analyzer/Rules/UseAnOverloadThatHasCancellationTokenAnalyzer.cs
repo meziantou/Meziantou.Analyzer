@@ -92,6 +92,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         private INamedTypeSymbol? TaskOfTSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
         private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
         private INamedTypeSymbol? EnumeratorCancellationAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
+        private INamedTypeSymbol? XunitTestContextSymbol { get; } = compilation.GetBestTypeByMetadataName("Xunit.TestContext");
 
         private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
         {
@@ -179,7 +180,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(UseAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(UseAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, parameterInfo), operation);
             }
         }
 
@@ -309,7 +310,9 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private string[] FindCancellationTokens(IOperation operation, CancellationToken cancellationToken)
         {
+
             var availableSymbols = new List<NameAndType>();
+
             foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
             {
                 var symbolType = symbol.GetSymbolType();
@@ -319,7 +322,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 availableSymbols.Add(new(symbol.Name, symbolType));
             }
 
-            if (availableSymbols.Count == 0)
+            if (availableSymbols.Count == 0 && XunitTestContextSymbol is null)
                 return [];
 
             var isInStaticContext = operation.IsInStaticContext(cancellationToken);
@@ -346,6 +349,11 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                         paths.Add(fullPath);
                     }
                 }
+            }
+
+            if (XunitTestContextSymbol != null)
+            {
+                paths.Add("Xunit.TestContext.Current.CancellationToken");
             }
 
             if (paths.Count == 0)
