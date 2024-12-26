@@ -34,63 +34,63 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         switch (data)
         {
             case DoNotUseBlockingCallInAsyncContextData.Thread_Sleep:
-            {
-                var codeAction = CodeAction.Create(
-                    "Use Task.Delay",
-                    ct => UseTaskDelay(context.Document, nodeToFix, ct),
-                    equivalenceKey: "Thread_Sleep");
+                {
+                    var codeAction = CodeAction.Create(
+                        "Use Task.Delay",
+                        ct => UseTaskDelay(context.Document, nodeToFix, ct),
+                        equivalenceKey: "Thread_Sleep");
 
-                context.RegisterCodeFix(codeAction, context.Diagnostics);
-                break;
-            }
+                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    break;
+                }
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Wait:
-            {
-                var codeAction = CodeAction.Create(
-                    "Use await",
-                    ct => ReplaceTaskWaitWithAwait(context.Document, nodeToFix, ct),
-                    equivalenceKey: "Task_Wait");
+                {
+                    var codeAction = CodeAction.Create(
+                        "Use await",
+                        ct => ReplaceTaskWaitWithAwait(context.Document, nodeToFix, ct),
+                        equivalenceKey: "Task_Wait");
 
-                context.RegisterCodeFix(codeAction, context.Diagnostics);
-                break;
-            }
+                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    break;
+                }
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Result:
-            {
-                var codeAction = CodeAction.Create(
-                    "Use await",
-                    ct => ReplaceTaskResultWithAwait(context.Document, nodeToFix, ct),
-                    equivalenceKey: "Task_Result");
+                {
+                    var codeAction = CodeAction.Create(
+                        "Use await",
+                        ct => ReplaceTaskResultWithAwait(context.Document, nodeToFix, ct),
+                        equivalenceKey: "Task_Result");
 
-                context.RegisterCodeFix(codeAction, context.Diagnostics);
-                break;
-            }
+                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    break;
+                }
 
             case DoNotUseBlockingCallInAsyncContextData.Overload:
-            {
-                if (!properties.TryGetValue("MethodName", out var methodName) || methodName is null)
-                    return;
+                {
+                    if (!properties.TryGetValue("MethodName", out var methodName) || methodName is null)
+                        return;
 
-                var codeAction = CodeAction.Create(
-                    $"Use '{methodName}'",
-                    ct => ReplaceWithMethodName(context.Document, nodeToFix, methodName, ct),
-                    equivalenceKey: "Overload");
+                    var codeAction = CodeAction.Create(
+                        $"Use '{methodName}'",
+                        ct => ReplaceWithMethodName(context.Document, nodeToFix, methodName, ct),
+                        equivalenceKey: "Overload");
 
-                context.RegisterCodeFix(codeAction, context.Diagnostics);
-                break;
-            }
+                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    break;
+                }
 
             case DoNotUseBlockingCallInAsyncContextData.Using:
             case DoNotUseBlockingCallInAsyncContextData.UsingDeclarator:
-            {
-                var codeAction = CodeAction.Create(
-                    $"Use 'await using'",
-                    ct => ReplaceWithAwaitUsing(context.Document, nodeToFix, ct),
-                    equivalenceKey: "Overload");
+                {
+                    var codeAction = CodeAction.Create(
+                        $"Use 'await using'",
+                        ct => ReplaceWithAwaitUsing(context.Document, nodeToFix, ct),
+                        equivalenceKey: "Overload");
 
-                context.RegisterCodeFix(codeAction, context.Diagnostics);
-                break;
-            }
+                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    break;
+                }
         }
     }
 
@@ -115,11 +115,18 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var invocation = (InvocationExpressionSyntax)nodeToFix;
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        var nodeToReplace = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
+            IdentifierNameSyntax identifier => identifier,
+            _ => null,
+        };
+
+        if (nodeToReplace is null)
             return document;
 
-        var newNode = nodeToFix.ReplaceNode(memberAccess.Name, generator.IdentifierName(methodName));
-        var newExpression = generator.AwaitExpression(newNode);
+        var newNode = nodeToFix.ReplaceNode(nodeToReplace, generator.IdentifierName(methodName));
+        var newExpression = generator.AwaitExpression(newNode).Parentheses();
         editor.ReplaceNode(nodeToFix, newExpression);
 
         return editor.GetChangedDocument();
@@ -134,7 +141,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         if (expr is null)
             return document;
 
-        var newExpression = generator.AwaitExpression(expr);
+        var newExpression = generator.AwaitExpression(expr).Parentheses();
         editor.ReplaceNode(nodeToFix, newExpression);
 
         return editor.GetChangedDocument();
@@ -150,7 +157,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         if (expr is null)
             return document;
 
-        var newExpression = generator.AwaitExpression(expr);
+        var newExpression = generator.AwaitExpression(expr).Parentheses();
         editor.ReplaceNode(nodeToFix, newExpression);
 
         return editor.GetChangedDocument();
@@ -168,7 +175,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var invocation = (InvocationExpressionSyntax)nodeToFix;
         var delay = invocation.ArgumentList.Arguments[0].Expression;
 
-        var newExpression = generator.AwaitExpression(generator.InvocationExpression(generator.MemberAccessExpression(generator.TypeExpression(taskSymbol), "Delay"), delay));
+        var newExpression = generator.AwaitExpression(generator.InvocationExpression(generator.MemberAccessExpression(generator.TypeExpression(taskSymbol), "Delay"), delay)).Parentheses();
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
     }

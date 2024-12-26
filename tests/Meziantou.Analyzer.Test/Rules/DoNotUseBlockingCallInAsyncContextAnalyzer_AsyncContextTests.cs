@@ -38,6 +38,39 @@ class Test
 }")
               .ValidateAsync();
     }
+    
+    [Fact]
+    public async Task FixerShouldAddParentheses()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        _ = [||]Write().Length;
+                    }
+
+                    public string Write() => throw null;
+                    public Task<string> WriteAsync() => throw null;
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        _ = (await WriteAsync()).Length;
+                    }
+                
+                    public string Write() => throw null;
+                    public Task<string> WriteAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task Async_Wait_Int32_Diagnostic()
