@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <developmentDependency>true</developmentDependency>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+    <Version>2.0.0</Version>
+
+    <PackageId>Meziantou.Analyzer</PackageId>
+    <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
+    <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="Meziantou.DotNet.CodingStandard" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="" />
+
+    <None Include="build/**" Pack="true" PackagePath="build" />
+    <None Include="buildMultiTargeting/**" Pack="true" PackagePath="buildMultiTargeting" />
+    <None Include="buildTransitive/**" Pack="true" PackagePath="buildTransitive" />
+    
+    <None Include="configuration/*.editorconfig" Pack="true" PackagePath="configuration" />
+
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn3.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn3.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
+
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.2\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.2\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
+
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.4\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.4/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.4\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.4/cs/" />
+
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
+    
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
+  </ItemGroup>
+</Project>

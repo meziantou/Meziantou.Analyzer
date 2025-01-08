@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <EditorConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'None'" Include="$(MSBuildThisFileDirectory)\..\configuration\none.editorconfig" />
+    <EditorConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'Default'"  Include="$(MSBuildThisFileDirectory)\..\configuration\default.editorconfig" />
+  </ItemGroup>
+</Project>

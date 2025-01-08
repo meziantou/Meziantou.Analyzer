@@ -195,3 +195,15 @@ If you are already using other analyzers, you can check [which rules are duplica
 |`MAS0003`|[IDE0058](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0058?WT.mc_id=DT-MVP-5003978)|Suppress IDE0058 on well-known types|
 
 <!-- suppressions -->
+
+# Configuration
+
+You can set the `<MeziantouAnalysisMode>` MSBuild property to configure the default severity of the rules. The default value is `Default`. You can set it to `None` to disable all rules by default.
+
+````
+<Project>
+  <PropertyGroup>
+    <MeziantouAnalysisMode>None</MeziantouAnalysisMode>
+  </PropertyGroup>
+</Project>
+````
