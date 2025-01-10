@@ -157,7 +157,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                      System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
                  }
                  """)
-              .ShouldReportDiagnosticWithMessage("Method not returning IAsyncEnumerable<T> must not use the 'Async' suffix")
+              .ShouldReportDiagnosticWithMessage("Method returning IAsyncEnumerable<T> must not use the 'Async' suffix")
               .ValidateAsync();
 
     [Fact]
