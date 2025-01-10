@@ -172,7 +172,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|ℹ️|✔️|✔️|
 |[MA0155](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0155.md)|Design|Do not use async void methods|⚠️|❌|❌|
 |[MA0156](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0156.md)|Design|Use 'Async' suffix when a method returns IAsyncEnumerable\<T\>|⚠️|❌|❌|
-|[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|Do not use 'Async' suffix when a method does not return IAsyncEnumerable\<T\>|⚠️|❌|❌|
+|[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|Do not use 'Async' suffix when a method returns IAsyncEnumerable\<T\>|⚠️|❌|❌|
 |[MA0158](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0158.md)|Performance|Use System.Threading.Lock|⚠️|✔️|❌|
 |[MA0159](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0159.md)|Performance|Use 'Order' instead of 'OrderBy'|ℹ️|✔️|✔️|
 |[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Performance|Use ContainsKey instead of TryGetValue|ℹ️|✔️|❌|

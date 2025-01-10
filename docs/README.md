@@ -156,7 +156,7 @@
 |[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0155](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0155.md)|Design|Do not use async void methods|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0156](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0156.md)|Design|Use 'Async' suffix when a method returns IAsyncEnumerable\<T\>|<span title='Warning'>⚠️</span>|❌|❌|
-|[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|Do not use 'Async' suffix when a method does not return IAsyncEnumerable\<T\>|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|Do not use 'Async' suffix when a method returns IAsyncEnumerable\<T\>|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0158](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0158.md)|Performance|Use System.Threading.Lock|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0159](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0159.md)|Performance|Use 'Order' instead of 'OrderBy'|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Performance|Use ContainsKey instead of TryGetValue|<span title='Info'>ℹ️</span>|✔️|❌|
@@ -641,7 +641,7 @@ dotnet_diagnostic.MA0155.severity = none
 # MA0156: Use 'Async' suffix when a method returns IAsyncEnumerable<T>
 dotnet_diagnostic.MA0156.severity = none
 
-# MA0157: Do not use 'Async' suffix when a method does not return IAsyncEnumerable<T>
+# MA0157: Do not use 'Async' suffix when a method returns IAsyncEnumerable<T>
 dotnet_diagnostic.MA0157.severity = none
 
 # MA0158: Use System.Threading.Lock
@@ -1137,7 +1137,7 @@ dotnet_diagnostic.MA0155.severity = none
 # MA0156: Use 'Async' suffix when a method returns IAsyncEnumerable<T>
 dotnet_diagnostic.MA0156.severity = none
 
-# MA0157: Do not use 'Async' suffix when a method does not return IAsyncEnumerable<T>
+# MA0157: Do not use 'Async' suffix when a method returns IAsyncEnumerable<T>
 dotnet_diagnostic.MA0157.severity = none
 
 # MA0158: Use System.Threading.Lock
