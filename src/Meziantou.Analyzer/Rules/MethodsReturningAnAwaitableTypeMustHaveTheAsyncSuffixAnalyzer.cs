@@ -42,8 +42,8 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
     private static readonly DiagnosticDescriptor NotAsyncSuffixRuleAsyncEnumerable = new(
         RuleIdentifiers.MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix,
-        title: "Do not use 'Async' suffix when a method does not return IAsyncEnumerable<T>",
-        messageFormat: "Method not returning IAsyncEnumerable<T> must not use the 'Async' suffix",
+        title: "Do not use 'Async' suffix when a method returns IAsyncEnumerable<T>",
+        messageFormat: "Method returning IAsyncEnumerable<T> must not use the 'Async' suffix",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: false,
