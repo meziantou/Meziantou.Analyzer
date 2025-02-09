@@ -86,6 +86,9 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 var isFirstType = true;
                 foreach (var node in root.DescendantNodesAndSelf(descendIntoChildren: node => !IsTypeDeclaration(node)))
                 {
+                    if (!IsTypeDeclaration(node))
+                        continue;
+
                     if (node.SpanStart < symbolNode.SpanStart)
                     {
                         isFirstType = false;
