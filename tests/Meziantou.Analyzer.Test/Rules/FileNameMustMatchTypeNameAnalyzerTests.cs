@@ -247,6 +247,19 @@ class [||]Test0<TKey, TValue>
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task MatchOnlyFirstType_TypeWithNamespaceDeclaration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  namespace Sample;
+                  struct [||]Foo {}
+                  struct Bar {}
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+
     [Theory]
     [InlineData("Sample")]
     [InlineData("T:MyNamespace.Sample")]
