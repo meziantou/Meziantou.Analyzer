@@ -248,7 +248,23 @@ class [||]Test0<TKey, TValue>
     }
 
     [Fact]
-    public async Task MatchOnlyFirstType_TypeWithNamespaceDeclaration()
+    public async Task MatchOnlyFirstType_TypeWithBlockScopedNamespaceDeclaration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0.cs", """
+                  namespace Sample
+                  {
+                      struct [||]Foo {}
+                      struct Bar {}
+                  }
+                  """)
+              .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task MatchOnlyFirstType_TypeWithFileScopedNamespaceDeclaration()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
@@ -259,6 +275,7 @@ class [||]Test0<TKey, TValue>
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
               .ValidateAsync();
     }
+#endif
 
     [Theory]
     [InlineData("Sample")]
