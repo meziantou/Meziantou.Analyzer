@@ -7,6 +7,7 @@ namespace Meziantou.Analyzer.Internals;
 internal sealed class AwaitableTypes
 {
     private readonly INamedTypeSymbol[] _taskOrValueTaskSymbols;
+    private readonly Compilation _compilation;
 
     public AwaitableTypes(Compilation compilation)
     {
@@ -30,6 +31,8 @@ internal sealed class AwaitableTypes
         {
             _taskOrValueTaskSymbols = [];
         }
+
+        _compilation = compilation;
     }
 
     private INamedTypeSymbol? TaskSymbol { get; }
@@ -74,7 +77,7 @@ internal sealed class AwaitableTypes
         return false;
     }
 
-    public bool IsAwaitable(ITypeSymbol? symbol, Compilation compilation)
+    public bool IsAwaitable(ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -95,7 +98,7 @@ internal sealed class AwaitableTypes
             if (potentialSymbol is not IMethodSymbol getAwaiterMethod)
                 continue;
 
-            if (!compilation.IsSymbolAccessibleWithin(potentialSymbol, compilation.Assembly))
+            if (!_compilation.IsSymbolAccessibleWithin(potentialSymbol, _compilation.Assembly))
                 continue;
 
             if (!getAwaiterMethod.Parameters.IsEmpty)

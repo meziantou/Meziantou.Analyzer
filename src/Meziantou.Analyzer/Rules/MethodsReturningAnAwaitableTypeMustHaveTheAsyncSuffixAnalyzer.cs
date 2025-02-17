@@ -86,7 +86,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 return;
 
             var hasAsyncSuffix = method.Name.EndsWith("Async", StringComparison.Ordinal);
-            if (_awaitableTypes.IsAwaitable(method.ReturnType, context.Compilation))
+            if (_awaitableTypes.IsAwaitable(method.ReturnType))
             {
                 if (!hasAsyncSuffix)
                 {
@@ -119,7 +119,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             var method = operation.Symbol;
 
             var hasAsyncSuffix = method.Name.EndsWith("Async", StringComparison.Ordinal);
-            if (_awaitableTypes.IsAwaitable(method.ReturnType, context.Compilation))
+            if (_awaitableTypes.IsAwaitable(method.ReturnType))
             {
                 if (!hasAsyncSuffix)
                 {
