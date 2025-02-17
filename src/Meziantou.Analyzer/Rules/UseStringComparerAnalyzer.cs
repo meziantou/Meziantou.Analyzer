@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -77,6 +77,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? ComparerStringType { get; } = GetIComparerString(compilation);
         public INamedTypeSymbol? EnumerableType { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
         public INamedTypeSymbol? ISetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+        public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+        public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
 
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {
@@ -109,11 +111,18 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             // Most ISet implementation already configured the IEqualityComparer in this constructor,
             // so it should be ok to skip method calls on those types.
             // A concrete use-case is HashSet<string>.Contains which has an extension method IEnumerable.Contains(value, comparer)
-            if (ISetType is not null && method.ContainingType.IsOrImplements(ISetType))
-                return;
+            foreach (var type in (ReadOnlySpan<ITypeSymbol?>)[ISetType, IReadOnlySetType, IImmutableSetType])
+            {
 
-            if (operation.Instance is not null && operation.Instance.GetActualType()?.IsOrImplements(ISetType) == true)
-                return;
+                if (type is null)
+                    continue;
+
+                if (method.ContainingType.IsOrImplements(type))
+                    return;
+
+                if (operation.Instance is not null && operation.Instance.GetActualType()?.IsOrImplements(type) is true)
+                    return;
+            }
 
             if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
                 return;

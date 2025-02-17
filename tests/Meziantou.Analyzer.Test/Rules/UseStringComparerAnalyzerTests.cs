@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -454,6 +454,48 @@ class TypeName
 
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IReadOnlySet_Contain()
+    {
+        const string SourceCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IReadOnlySet<string> obj = null;
+                    obj.Contains("");
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IImmutableSet_Contain()
+    {
+        const string SourceCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.IImmutableSet<string> obj = null;
+                    obj.Contains("");
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -219,10 +219,10 @@ public sealed partial class ProjectBuilder
                 break;
         }
 
-        AddNuGetReference("System.Collections.Immutable", "1.5.0", "lib/netstandard2.0/");
 
         if (TargetFramework is not TargetFramework.Net7_0 and not TargetFramework.Net8_0 and not TargetFramework.Net9_0)
         {
+            AddNuGetReference("System.Collections.Immutable", "1.5.0", "lib/netstandard2.0/");
             AddNuGetReference("System.Numerics.Vectors", "4.5.0", "ref/netstandard2.0/");
         }
 
