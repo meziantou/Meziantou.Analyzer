@@ -1,9 +1,11 @@
-﻿using System.Collections.Immutable;
+using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Internals;
 
@@ -156,14 +158,39 @@ internal static partial class ContextExtensions
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IInvocationOperation operation, DiagnosticInvocationReportOptions options, params string?[]? messageArgs)
     {
+        TextSpan? span = null;
+
         if (options.HasFlag(DiagnosticInvocationReportOptions.ReportOnMember) &&
             operation.Syntax.ChildNodes().FirstOrDefault() is MemberAccessExpressionSyntax memberAccessExpression)
         {
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, memberAccessExpression.Name.GetLocation(), properties, messageArgs));
+            SetSpan(memberAccessExpression.Name.Span);
+        }
+
+        if (options.HasFlag(DiagnosticInvocationReportOptions.ReportOnArguments) &&
+            operation.Syntax is InvocationExpressionSyntax invocationExpression)
+        {
+            SetSpan(invocationExpression.ArgumentList.Span);
+        }
+
+        if (span is not null)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(descriptor, Location.Create(operation.Syntax.SyntaxTree, span.Value), properties, messageArgs));
             return;
         }
 
         context.ReportDiagnostic(descriptor, properties, operation, messageArgs);
+
+        void SetSpan(TextSpan newSpan)
+        {
+            if (span is null)
+            {
+                span = newSpan;
+            }
+            else
+            {
+                span = TextSpan.FromBounds(Math.Min(span.Value.Start, newSpan.Start), Math.Max(span.Value.End, newSpan.End));
+            }
+        }
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, AttributeData attribute, params string?[]? messageArgs)

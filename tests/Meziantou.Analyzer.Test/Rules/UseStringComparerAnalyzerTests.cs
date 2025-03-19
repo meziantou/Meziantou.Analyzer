@@ -183,7 +183,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        [||]obj.Contains("""");
+        obj.[|Contains("""")|];
     }
 }";
         const string CodeFix = @"using System.Linq;
@@ -210,7 +210,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        [||]obj.ToDictionary(p => p);
+        obj.[|ToDictionary(p => p)|];
     }
 }";
         const string CodeFix = @"using System.Linq;
@@ -237,7 +237,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        [||]obj.Order();
+        obj.[|Order()|];
     }
 }";
         const string CodeFix = @"using System.Linq;
@@ -265,7 +265,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        [||]obj.OrderBy(p => p);
+        obj.[|OrderBy(p => p)|];
     }
 }";
         const string CodeFix = @"using System.Linq;
@@ -292,7 +292,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        [||]obj.OrderByDescending(p => p);
+        obj.[|OrderByDescending(p => p)|];
     }
 }";
         const string CodeFix = @"using System.Linq;
@@ -319,7 +319,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        [||]obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenBy(p => p);
+        obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenBy(p => p)|];
     }
 }";
         const string CodeFix = @"using System.Linq;
@@ -346,7 +346,7 @@ class TypeName
     public void Test()
     {
         System.Collections.Generic.IEnumerable<string> obj = null;
-        [||]obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenByDescending(p => p);
+        obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenByDescending(p => p)|];
     }
 }";
         const string CodeFix = @"using System.Linq;
@@ -387,7 +387,7 @@ class Usage
     void A()
     {
         var a = new TypeName();
-        [||]a.Test();
+        a.[|Test()|];
     }
 }
 ";

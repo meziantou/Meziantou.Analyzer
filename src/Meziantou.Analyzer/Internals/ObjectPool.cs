@@ -1,4 +1,4 @@
-﻿#pragma warning disable MA0048 // File name must match type name
+#pragma warning disable MA0048 // File name must match type name
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 using System.Collections.Concurrent;
 using System.Threading;
@@ -56,14 +56,14 @@ internal interface IPooledObjectPolicy<T> where T : notnull
     /// Create a <typeparamref name="T"/>.
     /// </summary>
     /// <returns>The <typeparamref name="T"/> which was created.</returns>
-    T Create();
+    public T Create();
 
     /// <summary>
     /// Runs some processing when an object was returned to the pool. Can be used to reset the state of an object and indicate if the object should be returned to the pool.
     /// </summary>
     /// <param name="obj">The object to return to the pool.</param>
     /// <returns><see langword="true" /> if the object should be returned to the pool. <see langword="false" /> if it's not possible/desirable for the pool to keep the object.</returns>
-    bool Return(T obj);
+    public bool Return(T obj);
 }
 
 /// <summary>
@@ -249,7 +249,7 @@ internal interface IResettable
     /// <remarks>
     /// In general, this method is not expected to be thread-safe.
     /// </remarks>
-    bool TryReset();
+    public bool TryReset();
 }
 
 internal sealed class DisposableObjectPool<T> : DefaultObjectPool<T>, IDisposable where T : class

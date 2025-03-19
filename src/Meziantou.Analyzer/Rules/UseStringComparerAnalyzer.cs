@@ -14,6 +14,8 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 {
+    private const DiagnosticInvocationReportOptions DefaultDiagnosticInvocationReportOptions = DiagnosticInvocationReportOptions.ReportOnMember | DiagnosticInvocationReportOptions.ReportOnArguments;
+
     private static readonly string[] EnumerableMethods =
     [
         "Contains",
@@ -130,7 +132,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, EqualityComparerStringType)) ||
                 (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, ComparerStringType)))
             {
-                ctx.ReportDiagnostic(Rule, operation);
+                ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 return;
             }
 
@@ -164,7 +166,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
                 if (!HasEqualityComparerArgument(operation.Arguments))
                 {
-                    ctx.ReportDiagnostic(Rule, operation);
+                    ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 }
             }
         }
