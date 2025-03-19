@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Meziantou.Analyzer.Internals;
 
@@ -7,4 +7,5 @@ public enum DiagnosticInvocationReportOptions
 {
     None = 0x0,
     ReportOnMember = 0x1,
+    ReportOnArguments = 0x2,
 }
