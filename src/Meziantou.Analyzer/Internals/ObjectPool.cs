@@ -56,14 +56,14 @@ internal interface IPooledObjectPolicy<T> where T : notnull
     /// Create a <typeparamref name="T"/>.
     /// </summary>
     /// <returns>The <typeparamref name="T"/> which was created.</returns>
-    public T Create();
+    T Create();
 
     /// <summary>
     /// Runs some processing when an object was returned to the pool. Can be used to reset the state of an object and indicate if the object should be returned to the pool.
     /// </summary>
     /// <param name="obj">The object to return to the pool.</param>
     /// <returns><see langword="true" /> if the object should be returned to the pool. <see langword="false" /> if it's not possible/desirable for the pool to keep the object.</returns>
-    public bool Return(T obj);
+    bool Return(T obj);
 }
 
 /// <summary>
@@ -249,7 +249,7 @@ internal interface IResettable
     /// <remarks>
     /// In general, this method is not expected to be thread-safe.
     /// </remarks>
-    public bool TryReset();
+    bool TryReset();
 }
 
 internal sealed class DisposableObjectPool<T> : DefaultObjectPool<T>, IDisposable where T : class

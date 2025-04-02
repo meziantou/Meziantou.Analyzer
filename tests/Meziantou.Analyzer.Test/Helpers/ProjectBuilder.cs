@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -165,14 +165,14 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds) =>
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.NetAnalyzers",
-            "9.0.0-preview.24454.1",
+            "9.0.0",
             paths: ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"],
             ruleIds);
 
     public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds) =>
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
-            "4.12.0-2.final",
+            "4.13.0",
             paths: ["analyzers/dotnet/cs/"],
             ruleIds);
 

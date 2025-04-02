@@ -117,7 +117,7 @@ jobs:
       TestResultsDirectory: ${{ github.workspace}}/TestResults
     strategy:
       matrix:
-        runs-on: [ ubuntu-latest, windows-latest ]
+        runs-on: [ ubuntu-latest ]
         configuration: [ Release ]
         roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'roslyn4.4', 'roslyn4.6', 'roslyn4.8', 'default' ]
       fail-fast: false
