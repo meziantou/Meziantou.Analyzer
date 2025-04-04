@@ -493,3 +493,9 @@ dotnet_diagnostic.MA0164.severity = warning
 
 # MA0165: Make interpolated string
 dotnet_diagnostic.MA0165.severity = silent
+
+# MA0166: Forward the TimeProvider to methods that take one
+dotnet_diagnostic.MA0166.severity = suggestion
+
+# MA0167: Use an overload with a TimeProvider argument
+dotnet_diagnostic.MA0167.severity = none
