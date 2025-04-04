@@ -33,7 +33,6 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
               .ValidateAsync();
     }
 
-
     [Fact]
     public async Task NoReport_WrongOverload()
     {
@@ -42,8 +41,11 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
             {
                 public void A()
                 {
-                    System.Threading.Tasks.Task.Delay(100);
+                    B();
                 }
+
+                void B() { }
+                void B(int a) { }
             }
             """;
         await CreateProjectBuilder()
