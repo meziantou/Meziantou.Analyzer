@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -85,7 +85,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private readonly OverloadFinder _overloadFinder = new(compilation);
 
-        public Compilation Compilation { get; } = compilation;
         public INamedTypeSymbol CancellationTokenSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
         public INamedTypeSymbol? CancellationTokenSourceSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
         private INamedTypeSymbol? TaskSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
