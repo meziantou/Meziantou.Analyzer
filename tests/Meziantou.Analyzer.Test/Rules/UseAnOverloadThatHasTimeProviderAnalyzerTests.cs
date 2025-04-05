@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
+using Microsoft.CodeAnalysis;
 using TestHelper;
 using Xunit;
 
@@ -15,6 +16,19 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
             .WithAnalyzer<UseAnOverloadThatHasTimeProviderAnalyzer>()
             .WithCodeFixProvider<UseAnOverloadThatHasTimeProviderFixer>();
     }
+
+    [Fact]
+    public async Task NoReport_ConsoleWriteLine()
+    {
+        const string SourceCode = """
+            System.Console.WriteLine("test");
+            """;
+        await CreateProjectBuilder()
+              .WithOutputKind(OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
 
     [Fact]
     public async Task NotAvailable()

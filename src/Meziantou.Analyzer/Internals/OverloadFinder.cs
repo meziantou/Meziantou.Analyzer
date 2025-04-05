@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
@@ -94,19 +94,33 @@ internal sealed class OverloadFinder(Compilation compilation)
         return null;
     }
 
+    /// <summary>
+    /// Methods are similar if:
+    /// <list type="bullet">
+    /// <item><paramref name="method"/> and <paramref name="otherMethod"/> are not the same method</item>
+    /// <item><paramref name="method"/> and <paramref name="otherMethod"/> have parameters of the same types, order is not important</item>
+    /// <item><paramref name="otherMethod"/> can have additional parameters of type specified by <paramref name="additionalParameterTypes"/></item>
+    /// <item>If <paramref name="allowOptionalParameters"/>, <paramref name="otherMethod"/> can have more parameters if they are optional</item>
+    /// </list>
+    /// </summary>
     public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ITypeSymbol[] additionalParameterTypes)
     {
         if (method.IsEqualTo(otherMethod))
             return false;
 
+        // The new method must have at least the same number of parameters as the old method, plus the number of additional parameters        
+        if (otherMethod.Parameters.Length - method.Parameters.Length < additionalParameterTypes.Length)
+            return false;
+
+        // If allowOptionalParameters is false, the new method must have exactly the same number of parameters as the old method
         if (!allowOptionalParameters && otherMethod.Parameters.Length - method.Parameters.Length != additionalParameterTypes.Length)
             return false;
 
-        // Most of the time, an overload has the same order for the parameters
+        // Most of the time, an overload has the same order for the parameters. Try to match them in order first (faster)
         {
             int i = 0, j = 0;
             var additionalParameterIndex = 0;
-            while (i < method.Parameters.Length && j < method.Parameters.Length)
+            while (i < method.Parameters.Length && j < otherMethod.Parameters.Length)
             {
                 var methodParameter = method.Parameters[i];
                 var otherMethodParameter = otherMethod.Parameters[j];

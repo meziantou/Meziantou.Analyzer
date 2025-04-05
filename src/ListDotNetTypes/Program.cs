@@ -1,4 +1,4 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -38,7 +38,7 @@ foreach (var includePreview in new[] { false, true })
             if (!string.Equals(Path.GetExtension(entry.Name), ".dll", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            using var entryStream = CopyToMemoryStream(zipArchive.GetEntry(entry.FullName)!);
+            await using var entryStream = CopyToMemoryStream(zipArchive.GetEntry(entry.FullName)!);
             using var portableExecutableReader = new PEReader(entryStream);
             var metadataReader = portableExecutableReader.GetMetadataReader();
 
@@ -58,7 +58,7 @@ foreach (var includePreview in new[] { false, true })
         }
     }
 
-    await File.WriteAllLinesAsync(Path.Combine(args.Length > 0 ? args[0] : "../../../../Meziantou.Analyzer/Resources/", includePreview ? "bcl-preview.txt" : "bcl.txt"), types.OrderBy(t => t, StringComparer.Ordinal));
+    await File.WriteAllLinesAsync(Path.Combine(args.Length > 0 ? args[0] : "../../../../Meziantou.Analyzer/Resources/", includePreview ? "bcl-preview.txt" : "bcl.txt"), types.Order(StringComparer.Ordinal));
 }
 
 static MemoryStream CopyToMemoryStream(ZipArchiveEntry entry)
