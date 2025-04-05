@@ -151,7 +151,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 break;
             }
 
-            if (i == method.Parameters.Length && j == otherMethod.Parameters.Length)
+            if (i == method.Parameters.Length && j == otherMethod.Parameters.Length && additionalParameterIndex == additionalParameterTypes.Length)
                 return true;
         }
 
@@ -162,26 +162,36 @@ internal sealed class OverloadFinder(Compilation compilation)
 
             foreach (var param in method.Parameters)
             {
+                var found = false;
                 for (var i = 0; i < otherMethodParameters.Length; i++)
                 {
                     if (otherMethodParameters[i].Type.IsEqualTo(param.Type))
                     {
                         otherMethodParameters = otherMethodParameters.RemoveAt(i);
+                        found = true;
                         break;
                     }
                 }
+
+                if (!found)
+                    return false;
             }
 
             foreach (var paramType in additionalParameterTypes)
             {
+                var found = false;
                 for (var i = 0; i < otherMethodParameters.Length; i++)
                 {
                     if (otherMethodParameters[i].Type.IsEqualTo(paramType))
                     {
                         otherMethodParameters = otherMethodParameters.RemoveAt(i);
+                        found = true;
                         break;
                     }
                 }
+
+                if (!found)
+                    return false;
             }
 
             if (otherMethodParameters.Length == 0)
