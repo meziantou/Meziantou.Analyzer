@@ -29,6 +29,17 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task NoReport_TimeSpanFromSeconds()
+    {
+        const string SourceCode = """
+            _ = System.TimeSpan.FromSeconds(1);
+            """;
+        await CreateProjectBuilder()
+              .WithOutputKind(OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 
     [Fact]
     public async Task NotAvailable()
