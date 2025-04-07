@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Meziantou.Analyzer.Internals;
@@ -270,6 +270,12 @@ internal static class OperationExtensions
 
                 if (isInInitializer)
                     continue;
+
+                // Cannot use variables declared in top-level statements when not in this context
+                if (symbol.ContainingSymbol?.IsTopLevelStatement(cancellationToken) is true && operation.GetContainingMethod(cancellationToken)?.IsTopLevelStatement(cancellationToken) is not true)
+                {
+                    continue;
+                }
             }
 
             yield return symbol;

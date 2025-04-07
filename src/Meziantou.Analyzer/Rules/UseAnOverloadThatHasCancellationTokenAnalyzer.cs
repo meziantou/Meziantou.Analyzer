@@ -309,7 +309,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private string[] FindCancellationTokens(IOperation operation, CancellationToken cancellationToken)
         {
-
             var availableSymbols = new List<NameAndType>();
 
             foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
