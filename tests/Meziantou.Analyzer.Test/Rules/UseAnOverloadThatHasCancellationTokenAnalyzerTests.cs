@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -1269,6 +1269,31 @@ class Test
                 """)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: Xunit.TestContext.Current.CancellationToken")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TopLevelStatements()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                var cancellationToken = CancellationToken.None;
+
+                class Sample
+                {
+                    void Foo()
+                    {
+                        {|MA0032:Repro()|};
+                    }
+
+                    public static void Repro() => throw null;
+                    public static void Repro(CancellationToken cancellationToken) => throw null;
+                }
+                """)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .ValidateAsync();
     }
 }
