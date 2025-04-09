@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -199,7 +199,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private void WhereShouldBeBeforeOrderBy(OperationAnalysisContext context, IInvocationOperation operation)
         {
-            if (operation.TargetMethod.Name is (nameof(Enumerable.OrderBy)) or (nameof(Enumerable.OrderByDescending)))
+            if (operation.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) or "Order" or "OrderDescending")
             {
                 var parent = GetParentLinqOperation(operation);
                 if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType))
@@ -477,16 +477,12 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private void RemoveTwoConsecutiveOrderBy(OperationAnalysisContext context, IInvocationOperation operation)
         {
-            if (operation.TargetMethod.Name == nameof(Enumerable.OrderBy) ||
-                operation.TargetMethod.Name == nameof(Enumerable.OrderByDescending) ||
-                operation.TargetMethod.Name == nameof(Enumerable.ThenBy) ||
-                operation.TargetMethod.Name == nameof(Enumerable.ThenByDescending))
+            if (operation.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) or nameof(Enumerable.ThenBy) or nameof(Enumerable.ThenByDescending) or "Order" or "OrderDescending")
             {
                 var parent = GetParentLinqOperation(operation);
                 if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
                 {
-                    if (parent.TargetMethod.Name == nameof(Enumerable.OrderBy) ||
-                        parent.TargetMethod.Name == nameof(Enumerable.OrderByDescending))
+                    if (parent.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) or "Order" or "OrderDescending")
                     {
                         var expectedMethodName = parent.TargetMethod.Name.Replace("OrderBy", "ThenBy", StringComparison.Ordinal);
                         var properties = CreateProperties(OptimizeLinqUsageData.DuplicatedOrderBy)
