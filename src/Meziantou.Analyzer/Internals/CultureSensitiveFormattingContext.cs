@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -6,6 +6,7 @@ namespace Meziantou.Analyzer.Internals;
 
 internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 {
+    public INamedTypeSymbol? CultureInsensitiveTypeAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute");
     public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
     public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
     public INamedTypeSymbol? NumberStyleSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
@@ -252,7 +253,28 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsOrInheritFrom(SystemWindowsMediaBrushSymbol))
             return false;
 
-        return typeSymbol.Implements(SystemIFormattableSymbol);
+        if (!typeSymbol.Implements(SystemIFormattableSymbol))
+            return false;
+
+        if (typeSymbol.HasAttribute(CultureInsensitiveTypeAttributeSymbol))
+            return false;
+
+        foreach (var attribute in compilation.Assembly.GetAttributes())
+        {
+            if (attribute.ConstructorArguments.Length != 1)
+                continue;
+
+            if (!attribute.AttributeClass.IsEqualTo(CultureInsensitiveTypeAttributeSymbol))
+                continue;
+
+            if (attribute.ConstructorArguments[0].Value is INamedTypeSymbol attributeType && attributeType.IsEqualTo(typeSymbol))
+                return false;
+        }
+
+        if (compilation.Assembly.HasAttribute(CultureInsensitiveTypeAttributeSymbol))
+            return false;
+
+        return true;
     }
 
     private bool IsCultureSensitiveType(ITypeSymbol? symbol, IOperation? format, IOperation? instance, CultureSensitiveOptions options)

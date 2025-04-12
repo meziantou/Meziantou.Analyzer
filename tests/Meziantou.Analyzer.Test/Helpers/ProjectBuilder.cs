@@ -11,6 +11,7 @@ using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Annotations;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis;
@@ -190,6 +191,13 @@ public sealed partial class ProjectBuilder
         .AddNuGetReference("System.Runtime.CompilerServices.Unsafe", "4.7.1", "ref/netstandard2.0/");
 
     public ProjectBuilder AddSystemTextJson() => AddNuGetReference("System.Text.Json", "4.7.2", "lib/netstandard2.0/");
+
+    public ProjectBuilder AddMeziantouAttributes()
+    {
+        var location = typeof(RequireNamedArgumentAttribute).Assembly.Location;
+        References.Add(MetadataReference.CreateFromFile(location));
+        return this;
+    }
 
     public ProjectBuilder WithOutputKind(OutputKind outputKind)
     {

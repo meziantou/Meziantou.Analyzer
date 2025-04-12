@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -12,6 +12,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<DoNotUseImplicitCultureSensitiveToStringAnalyzer>()
+            .AddMeziantouAttributes()
             .WithTargetFramework(TargetFramework.NetLatest);
     }
 
@@ -350,6 +351,76 @@ class Test
     {
         bool? value = null;
         _ = "=" + (value == true);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IgnoreTypeUsingAssemblyAttribute()
+    {
+        var sourceCode = """
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime))]
+
+class Test
+{
+    void A()
+    {
+        _ = "abc" + new System.DateTime();
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IgnoreTypeUsingAttribute()
+    {
+        var sourceCode = """
+class Test
+{
+    void A()
+    {
+        _ = "abc" + new Sample();
+    }
+}
+
+[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+class Sample : System.IFormattable
+{
+    public string ToString(string? format, System.IFormatProvider? formatProvider)
+    {
+        return "abc";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CustomTypeImplementingIFormattable()
+    {
+        var sourceCode = """
+class Test
+{
+    void A()
+    {
+        _ = "abc" + [|new Sample()|];
+    }
+}
+
+class Sample : System.IFormattable
+{
+    public string ToString(string? format, System.IFormatProvider? formatProvider)
+    {
+        return "abc";
     }
 }
 """;
