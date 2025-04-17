@@ -499,3 +499,6 @@ dotnet_diagnostic.MA0166.severity = none
 
 # MA0167: Use an overload with a TimeProvider argument
 dotnet_diagnostic.MA0167.severity = none
+
+# MA0168: Use readonly struct for in or ref readonly parameter
+dotnet_diagnostic.MA0168.severity = none

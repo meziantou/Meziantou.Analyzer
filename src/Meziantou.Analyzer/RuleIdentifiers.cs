@@ -170,6 +170,7 @@ internal static class RuleIdentifiers
     public const string MakeInterpolatedString = "MA0165";
     public const string UseAnOverloadThatHasTimeProviderWhenAvailable = "MA0166";
     public const string UseAnOverloadThatHasTimeProvider = "MA0167";
+    public const string UseReadOnlyStructForRefReadOnlyParameters = "MA0168";
 
     public static string GetHelpUri(string identifier)
     {
