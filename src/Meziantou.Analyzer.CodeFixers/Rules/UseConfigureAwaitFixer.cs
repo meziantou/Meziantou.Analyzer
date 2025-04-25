@@ -1,8 +1,9 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -49,13 +50,55 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(context.Document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
+        if (context.Diagnostics[0].Properties.TryGetValue("kind", out var kind))
+        {
+            if (kind is "foreach")
+            {
+                var foreachSyntax = nodeToFix.FirstAncestorOrSelf<ForEachStatementSyntax>();
+                if (foreachSyntax is null)
+                    return editor.GetChangedDocument();
+
+                var collection = foreachSyntax.Expression;
+                var newExpression = (ExpressionSyntax)generator.InvocationExpression(
+                       generator.MemberAccessExpression(collection.Parentheses(), nameof(Task.ConfigureAwait)),
+                       generator.LiteralExpression(value))
+                       .Parentheses();
+
+                var newForeachSyntax = foreachSyntax.WithExpression(newExpression);
+
+                editor.ReplaceNode(foreachSyntax, newForeachSyntax);
+                return editor.GetChangedDocument();
+            }
+            else if (kind is "using")
+            {
+                var usingSyntax = nodeToFix.FirstAncestorOrSelf<UsingStatementSyntax>();
+                if (usingSyntax is null)
+                    return editor.GetChangedDocument();
+
+                var expression = usingSyntax.Expression;
+                if (expression is not null)
+                {
+                    var newExpression = (ExpressionSyntax)generator.InvocationExpression(
+                           generator.MemberAccessExpression(expression.Parentheses(), nameof(Task.ConfigureAwait)),
+                           generator.LiteralExpression(value))
+                           .Parentheses();
+
+                    var newSyntax = usingSyntax.WithExpression(newExpression);
+                    editor.ReplaceNode(usingSyntax, newSyntax);
+                }
+
+                return editor.GetChangedDocument();
+            }
+        }
+
         if (nodeToFix is AwaitExpressionSyntax awaitSyntax)
         {
             if (awaitSyntax.Expression is not null)
             {
                 var newExpression = (ExpressionSyntax)generator.InvocationExpression(
-                    generator.MemberAccessExpression(awaitSyntax.Expression, nameof(Task.ConfigureAwait)),
-                    generator.LiteralExpression(value));
+                    generator.MemberAccessExpression(awaitSyntax.Expression.Parentheses(), nameof(Task.ConfigureAwait)),
+                    generator.LiteralExpression(value))
+                    .Parentheses();
 
                 var newInvokeExpression = awaitSyntax.WithExpression(newExpression);
 
@@ -160,7 +203,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         {
             return (ExpressionSyntax)generator.InvocationExpression(
                 generator.MemberAccessExpression(expressionSyntax, nameof(Task.ConfigureAwait)),
-                generator.LiteralExpression(value));
+                generator.LiteralExpression(value)).Parentheses();
         }
     }
 }

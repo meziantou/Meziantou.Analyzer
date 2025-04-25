@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -113,7 +113,8 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             if (MustUseConfigureAwait(operation.SemanticModel!, context.Options, operation.Syntax, context.CancellationToken))
             {
-                context.ReportDiagnostic(Rule, operation.Collection);
+                var data = ImmutableDictionary<string, string?>.Empty.Add("kind", "foreach");
+                context.ReportDiagnostic(Rule, data, operation.Collection);
             }
 
             static bool HasConfigureAwait(IOperation operation)
@@ -154,24 +155,25 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             if (!operation.IsAsynchronous)
                 return;
 
-            var firstChild = operation.GetChildOperations().FirstOrDefault();
-            if (firstChild is IVariableDeclarationGroupOperation declarationGroup)
+            var resources = operation.Resources;
+            if (resources is IVariableDeclarationGroupOperation declarationGroup)
             {
                 // await using(var a = expr, b = expr)
                 AnalyzeVariableDeclarationGroupOperation(context, declarationGroup);
             }
-            else if (firstChild is not null)
+            else
             {
                 // await using(expr)
-                if (firstChild.Type is null)
+                if (resources.Type is null)
                     return;
 
-                if (!CanAddConfigureAwait(firstChild.Type, firstChild))
+                if (!CanAddConfigureAwait(resources.Type, resources))
                     return;
 
-                if (MustUseConfigureAwait(firstChild.SemanticModel!, context.Options, firstChild.Syntax, context.CancellationToken))
+                if (MustUseConfigureAwait(resources.SemanticModel!, context.Options, resources.Syntax, context.CancellationToken))
                 {
-                    context.ReportDiagnostic(Rule, firstChild);
+                    var properties = ImmutableDictionary<string, string?>.Empty.Add("kind", "using");
+                    context.ReportDiagnostic(Rule, properties, resources);
                 }
             }
         }

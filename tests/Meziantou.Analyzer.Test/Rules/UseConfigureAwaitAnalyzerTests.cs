@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis;
@@ -69,6 +69,45 @@ class ClassTest
         IAsyncEnumerable<int> Enumerable() => throw null;
 
         await foreach(var item in Enumerable().ConfigureAwait(false))
+        {
+        }
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MissingConfigureAwait_AwaitForeach_ShouldReportError_ConfigureAwait()
+    {
+        const string SourceCode = @"
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
+class ClassTest
+{
+    async Task Test()
+    {
+        Task<IAsyncEnumerable<int>> Enumerable() => throw null;
+
+        await foreach(var item in [||]await Enumerable().ConfigureAwait(false))
+        {
+        }
+    }
+}";
+        const string CodeFix = @"
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
+class ClassTest
+{
+    async Task Test()
+    {
+        Task<IAsyncEnumerable<int>> Enumerable() => throw null;
+
+        await foreach(var item in (await Enumerable().ConfigureAwait(false)).ConfigureAwait(false))
         {
         }
     }
@@ -661,6 +700,36 @@ class ClassTest
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AwaitUsingAwait_NoVariable()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+            await using ([||]await A().ConfigureAwait(false))
+            {
+            }
+
+            Task<IAsyncDisposable> A() => throw null;
+            """;
+
+        const string CodeFix = """
+            using System;
+            using System.Threading.Tasks;
+            await using ((await A().ConfigureAwait(false)).ConfigureAwait(false))
+            {
+            }
+            
+            Task<IAsyncDisposable> A() => throw null;
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .WithOutputKind(@OutputKind.ConsoleApplication)
               .ValidateAsync();
     }
 }
