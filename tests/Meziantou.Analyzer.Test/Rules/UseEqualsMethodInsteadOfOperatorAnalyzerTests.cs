@@ -45,6 +45,7 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
     [InlineData("double")]
     [InlineData("decimal")]
     [InlineData("System.DayOfWeek")]
+    [InlineData("System.DayOfWeek?")]
     public async Task NoReport_EqualsOperator(string type)
     {
         await CreateProjectBuilder()
@@ -52,6 +53,27 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
                 {{type}} a = default;
                 {{type}} b = default;
                 _ = a == b;
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClassWithParentEqualsMethod()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                B a = default;
+                B b = default;
+                _ = a == b;
+
+                class A
+                {
+                    public override bool Equals(object obj) => throw null;
+                }
+
+                class B : A
+                {
+                }
                 """)
               .ValidateAsync();
     }
