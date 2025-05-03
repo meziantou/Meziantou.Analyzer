@@ -502,3 +502,6 @@ dotnet_diagnostic.MA0167.severity = none
 
 # MA0168: Use readonly struct for in or ref readonly parameter
 dotnet_diagnostic.MA0168.severity = none
+
+# MA0169: Use Equals method instead of operator
+dotnet_diagnostic.MA0169.severity = none

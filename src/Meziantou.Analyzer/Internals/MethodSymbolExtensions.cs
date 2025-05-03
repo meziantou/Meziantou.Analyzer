@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
@@ -54,6 +54,41 @@ internal static class MethodSymbolExtensions
         return symbol.ContainingType.AllInterfaces
             .SelectMany(@interface => @interface.GetMembers())
             .FirstOrDefault(interfaceMember => SymbolEqualityComparer.Default.Equals(symbol, symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMember)));
+    }
+
+    public static bool IsOrOverrideMethod(this IMethodSymbol? symbol, IMethodSymbol? baseMethod)
+    {
+        if (symbol is null || baseMethod is null)
+            return false;
+
+        if (symbol.IsEqualTo(baseMethod))
+            return true;
+
+        while (symbol is not null)
+        {
+            if (symbol.IsEqualTo(baseMethod))
+                return true;
+
+            symbol = symbol.OverriddenMethod!;
+        }
+
+        return false;
+    }
+
+    public static bool OverrideMethod(this IMethodSymbol? symbol, IMethodSymbol? baseMethod)
+    {
+        if (symbol is null || baseMethod is null)
+            return false;
+
+        while (symbol.OverriddenMethod is not null)
+        {
+            if (symbol.OverriddenMethod.IsEqualTo(baseMethod))
+                return true;
+
+            symbol = symbol.OverriddenMethod!;
+        }
+
+        return false;
     }
 
     public static bool IsUnitTestMethod(this IMethodSymbol methodSymbol)
