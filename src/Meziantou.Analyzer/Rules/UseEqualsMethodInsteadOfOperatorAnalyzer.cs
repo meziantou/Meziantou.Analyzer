@@ -32,11 +32,11 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
             if (context.Compilation.GetSpecialType(SpecialType.System_Object).GetMembers("Equals").FirstOrDefault() is not IMethodSymbol objectEqualsSymbol)
                 return;
 
-            context.RegisterOperationAction(context => AnalyzerBinaryOperation(context, objectEqualsSymbol), OperationKind.Binary);
+            context.RegisterOperationAction(context => AnalyzerBinaryOperation(context, objectEqualsSymbol, context.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo")), OperationKind.Binary);
         });
     }
 
-    private static void AnalyzerBinaryOperation(OperationAnalysisContext context, IMethodSymbol objectEqualsSymbol)
+    private static void AnalyzerBinaryOperation(OperationAnalysisContext context, IMethodSymbol objectEqualsSymbol, ITypeSymbol? cultureInfoSymbol)
     {
         var operation = (IBinaryOperation)context.Operation;
         if (operation is { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals, OperatorMethod: null })
@@ -63,6 +63,10 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
                 case SpecialType.System_String:
                     return;
             }
+
+            // Most usages of CultureInfo are safe to ignore as instance of CultureInfo are cached. Reference equality is usually ok.
+            if (leftType.IsEqualTo(cultureInfoSymbol))
+                return;
 
             var overrideEqualsSymbol = leftType.GetMembers("Equals").OfType<IMethodSymbol>().FirstOrDefault(m => m.IsOrOverrideMethod(objectEqualsSymbol));
             if (overrideEqualsSymbol is not null)
