@@ -505,3 +505,6 @@ dotnet_diagnostic.MA0168.severity = none
 
 # MA0169: Use Equals method instead of operator
 dotnet_diagnostic.MA0169.severity = warning
+
+# MA0170: Type cannot be used as an attribute argument
+dotnet_diagnostic.MA0170.severity = none

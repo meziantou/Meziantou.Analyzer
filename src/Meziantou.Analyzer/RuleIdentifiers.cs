@@ -172,6 +172,7 @@ internal static class RuleIdentifiers
     public const string UseAnOverloadThatHasTimeProvider = "MA0167";
     public const string UseReadOnlyStructForRefReadOnlyParameters = "MA0168";
     public const string UseEqualsMethodInsteadOfOperator = "MA0169";
+    public const string TypeCannotBeUsedInAnAttributeParameter = "MA0170";
 
     public static string GetHelpUri(string identifier)
     {
