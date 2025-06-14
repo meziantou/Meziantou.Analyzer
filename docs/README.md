@@ -169,6 +169,7 @@
 |[MA0167](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0167.md)|Usage|Use an overload with a TimeProvider argument|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0168](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0168.md)|Performance|Use readonly struct for in or ref readonly parameter|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0169](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0169.md)|Design|Use Equals method instead of operator|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0170](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0170.md)|Design|Type cannot be used as an attribute argument|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -684,6 +685,9 @@ dotnet_diagnostic.MA0168.severity = none
 
 # MA0169: Use Equals method instead of operator
 dotnet_diagnostic.MA0169.severity = warning
+
+# MA0170: Type cannot be used as an attribute argument
+dotnet_diagnostic.MA0170.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1192,4 +1196,7 @@ dotnet_diagnostic.MA0168.severity = none
 
 # MA0169: Use Equals method instead of operator
 dotnet_diagnostic.MA0169.severity = none
+
+# MA0170: Type cannot be used as an attribute argument
+dotnet_diagnostic.MA0170.severity = none
 ```
