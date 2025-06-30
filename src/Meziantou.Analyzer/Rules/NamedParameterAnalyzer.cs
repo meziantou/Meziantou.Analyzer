@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -69,19 +69,27 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
                 if (callerMustUseNamedArgumentType is not null)
                 {
-                    var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
-                    if ((operation?.Parameter) is not null)
+                    if (IsCallerMustUseNamedArgumentAttribute(syntaxContext, argument, callerMustUseNamedArgumentType))
                     {
-                        var attribute = operation.Parameter.GetAttribute(callerMustUseNamedArgumentType);
-                        if (attribute is not null)
+                        syntaxContext.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
+                        return;
+                    }
+
+                    static bool IsCallerMustUseNamedArgumentAttribute(SyntaxNodeAnalysisContext context, SyntaxNode argument, INamedTypeSymbol callerMustUseNamedArgumentType)
+                    {
+                        var operation = context.SemanticModel.GetOperation(argument, context.CancellationToken) as IArgumentOperation;
+                        if ((operation?.Parameter) is not null)
                         {
-                            var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
-                            if (requireNamedArgument)
+                            var attribute = operation.Parameter.GetAttribute(callerMustUseNamedArgumentType);
+                            if (attribute is not null)
                             {
-                                syntaxContext.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
-                                return;
+                                var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
+                                if (requireNamedArgument)
+                                    return true;
                             }
                         }
+
+                        return false;
                     }
                 }
 
@@ -113,6 +121,15 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
                 if (argument.Parent.IsKind(SyntaxKind.TupleExpression))
                     return; // Don't consider tuple
+
+
+                var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
+                if (operation?.Parameter is not null)
+                {
+                    var parameterName = operation.Parameter.Name;
+                    if (!IsMeaningfulParameterName(parameterName))
+                        return;
+                }
 
                 // Exclude in some methods such as ConfigureAwait(false)
                 var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t.IsKind(SyntaxKind.InvocationExpression) || t.IsKind(SyntaxKind.ObjectCreationExpression) || t.IsKind(SyntaxKind.ElementAccessExpression));
@@ -247,7 +264,6 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
                             return;
 
-                        var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken);
                         if (operation is not null && operationUtilities.IsInExpressionContext(operation))
                             return;
 
@@ -321,6 +337,32 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     {
         var options = GetExpressionKindsConfiguration(context.Options, expression);
         return (options & kind) == kind;
+    }
+
+    private static bool IsMeaningfulParameterName(string parameterName)
+    {
+        if (string.IsNullOrEmpty(parameterName))
+            return false;
+
+        if (parameterName is "obj")
+            return false;
+
+        // arg, arg1, arg2, etc. are not meaningful
+        if (parameterName.StartsWith("arg", StringComparison.OrdinalIgnoreCase) && IsAllDigit(parameterName.AsSpan(3)))
+            return false;
+
+        return true;
+
+        static bool IsAllDigit(ReadOnlySpan<char> span)
+        {
+            for (var i = 0; i < span.Length; i++)
+            {
+                if (!char.IsDigit(span[i]))
+                    return false;
+            }
+
+            return true;
+        }
     }
 
     [Flags]

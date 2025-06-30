@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -1080,6 +1080,40 @@ class Test
     }
 }
 ")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task System_Action_1()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          System.Action<string> action = null;
+                          action(null);
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task System_Action_2()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          System.Action<string, string> action = null;
+                          action(null, null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 }
