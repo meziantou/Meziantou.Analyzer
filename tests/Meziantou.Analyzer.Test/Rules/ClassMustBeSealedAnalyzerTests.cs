@@ -273,6 +273,23 @@ internal class Test
     }
 
     [Theory]
+    [InlineData("private")]
+    [InlineData("internal")]
+    [InlineData("private protected")]
+    public async Task ClassWithMultiplePrivateCtors(string visibility)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                public class [||]Sample
+                {
+                    private Sample(int a) { }
+                    {{visibility}} Sample() { }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Theory]
     [InlineData("public")]
     [InlineData("protected")]
     [InlineData("protected internal")]
@@ -282,6 +299,23 @@ internal class Test
               .WithSourceCode($$"""
                 public class Sample
                 {
+                    {{visibility}} Sample() { }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("public")]
+    [InlineData("protected")]
+    [InlineData("protected internal")]
+    public async Task ClassWithPrivateAndPublicCtor(string visibility)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                public class Sample
+                {
+                    private Sample(int a) { }
                     {{visibility}} Sample() { }
                 }
                 """)
