@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -252,6 +252,38 @@ internal class Test
                 """)
               .ShouldFixCodeWith("""
                 internal sealed record Sample();
+                """)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("private")]
+    [InlineData("internal")]
+    [InlineData("private protected")]
+    public async Task ClassWithPrivateCtor(string visibility)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                public class [||]Sample
+                {
+                    {{visibility}} Sample() { }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("public")]
+    [InlineData("protected")]
+    [InlineData("protected internal")]
+    public async Task ClassWithPublicCtor(string visibility)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                public class Sample
+                {
+                    {{visibility}} Sample() { }
+                }
                 """)
               .ValidateAsync();
     }

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -113,8 +113,10 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
             if (symbol.GetMembers().Any(member => member.IsVirtual) && !SealedClassWithVirtualMember(options, symbol))
                 return false;
 
-            if (symbol.IsVisibleOutsideOfAssembly() && !PublicClassShouldBeSealed(options, symbol))
+            var canBeInheritedOutsideOfAssembly = symbol.IsVisibleOutsideOfAssembly() && symbol.GetMembers().OfType<IMethodSymbol>().Where(member => member.MethodKind is MethodKind.Constructor).All(member => member.IsVisibleOutsideOfAssembly());
+            if (canBeInheritedOutsideOfAssembly && !PublicClassShouldBeSealed(options, symbol))
                 return false;
+
 
             return true;
         }
