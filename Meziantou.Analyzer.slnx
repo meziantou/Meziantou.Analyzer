@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/ci.yml" />
+    <File Path="CHANGELOG.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="global.json" />
+    <File Path="README.md" />
+    <File Path="renovate.json" />
+  </Folder>
+  <Project Path="src/DocumentationGenerator/DocumentationGenerator.csproj" />
+  <Project Path="src/ListDotNetTypes/ListDotNetTypes.csproj" />
+  <Project Path="src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj" />
+  <Project Path="src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj" />
+  <Project Path="src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj" />
+  <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.csproj" />
+  <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.csproj" />
+</Solution>
