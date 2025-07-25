@@ -1,3 +1,5 @@
-`Meziantou.Analyzer.Annotations` helps configuring some rules by annotating your code.
+`Meziantou.Analyzer.Annotations` enables you to configure certain analyzer rules by adding annotations directly to your code.
 
-All usages of Meziantou.Analyzer.Annotations attributes are erased from metadata by default, which means no actual binary reference to 'Meziantou.Analyzer.Annotations.dll' assembly is produced. If you need to preserve these attributes in metadata, just define 'MEZIANTOU_ANALYZER_ANNOTATIONS' conditional compilation symbol in your projects.
+By default, all usages of attributes from `Meziantou.Analyzer.Annotations` are removed from the compiled assembly metadata. This means your binaries will not reference the `Meziantou.Analyzer.Annotations.dll` assembly.
+
+If you want to keep these attributes in the metadata (for example, for reflection or tooling purposes), define the `MEZIANTOU_ANALYZER_ANNOTATIONS` conditional compilation symbol in your project settings.
