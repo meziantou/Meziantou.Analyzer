@@ -2,17 +2,34 @@
 
   <PropertyGroup>
     <LangVersion>preview</LangVersion>
+
+    <Features>strict</Features>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <NoWarn>$(NoWarn);CA1014</NoWarn>
+    <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Debug'">true</TreatWarningsAsErrors>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
     <RestoreSources>https://api.nuget.org/v3/index.json</RestoreSources>
+
+    <MeziantouPolyfill_IncludedPolyfills>*</MeziantouPolyfill_IncludedPolyfills>
   </PropertyGroup>
 
   <PropertyGroup>
+    <Authors>Meziantou</Authors>
+    <Company>Meziantou</Company>
     <PackageProjectUrl>https://github.com/meziantou/Meziantou.Analyzer</PackageProjectUrl>
     <RepositoryUrl>https://github.com/meziantou/Meziantou.Analyzer.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\icon.png" Pack="true" PackagePath="" />
     <None Include="$(MSBuildThisFileDirectory)\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
