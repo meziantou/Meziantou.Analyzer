@@ -8,10 +8,6 @@
     <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="" />
-  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Remove="Meziantou.Polyfill" />

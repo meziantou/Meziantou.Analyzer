@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Test.Helpers;
 
 public sealed class DiagnosticResult
 {
-    private IReadOnlyList<DiagnosticResultLocation> _locations;
+    private IReadOnlyList<DiagnosticResultLocation>? _locations;
 
     public IReadOnlyList<DiagnosticResultLocation> Locations
     {
@@ -15,9 +15,9 @@ public sealed class DiagnosticResult
 
     public DiagnosticSeverity? Severity { get; set; }
 
-    public string Id { get; set; }
+    public string? Id { get; set; }
 
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     public string Path => Locations.Count > 0 ? Locations[0].Path : "";
 
