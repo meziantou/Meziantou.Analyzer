@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Remove="Meziantou.DotNet.CodingStandard" />
+    <Analyzers Remove="Meziantou.DotNet.CodingStandard" />
   </ItemGroup>
 
   <ItemGroup>
