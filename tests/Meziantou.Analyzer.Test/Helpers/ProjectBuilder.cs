@@ -170,12 +170,16 @@ public sealed partial class ProjectBuilder
             paths: ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"],
             ruleIds);
 
-    public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds) =>
-        WithAnalyzerFromNuGet(
+    public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds)
+    {
+        AddNuGetReference("Microsoft.Bcl.AsyncInterfaces", "9.0.7", "lib/netstandard2.1/");
+
+        return WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
-            "4.13.0",
+            "4.14.0",
             paths: ["analyzers/dotnet/cs/"],
             ruleIds);
+    }
 
     public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
 
