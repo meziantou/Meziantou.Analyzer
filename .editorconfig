@@ -1,5 +1,6 @@
-﻿# Schema: http://EditorConfig.org
-# Docs: https://learn.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference?WT.mc_id=DT-MVP-5003978
+﻿# reference:https://raw.githubusercontent.com/meziantou/Meziantou.DotNet.CodingStandard/refs/heads/main/.editorconfig
+# Schema: http://EditorConfig.org
+# Docs: https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference
 
 # top-most EditorConfig file
 root = true
@@ -30,13 +31,14 @@ indent_size = 2
 [*.sh]
 end_of_line = lf
 
-[*.{cmd,bat}]
+[*.{cmd,bat,ps1}]
 end_of_line = crlf
 
 # Web Files
 [*.{htm,html,js,ts,css,scss,less}]
 indent_size = 2
 insert_final_newline = true
+# endreference
 
 [*.cs]
 dotnet_diagnostic.IDE0058.severity = none
