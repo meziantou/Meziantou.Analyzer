@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -19,7 +19,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
     [InlineData("==", "false", "!")]
     [InlineData("!=", "true", "!")]
     [InlineData("!=", "false", null)]
-    public async Task ComparingVariableWithBoolLiteral_RemovesComparisonAndKeepsVariable(string op, string literal, string expectedPrefix)
+    public async Task ComparingVariableWithBoolLiteral_RemovesComparisonAndKeepsVariable(string op, string literal, string? expectedPrefix)
     {
         var originalCode = $@"
 class TestClass
@@ -85,7 +85,7 @@ class TestClass
     [InlineData("==", "false", "!")]
     [InlineData("!=", "true", "!")]
     [InlineData("!=", "false", null)]
-    public async Task ComparingVariableWithBoolConstant_RemovesComparisonAndKeepsVariable(string op, string constBool, string expectedPrefix)
+    public async Task ComparingVariableWithBoolConstant_RemovesComparisonAndKeepsVariable(string op, string constBool, string? expectedPrefix)
     {
         var originalCode = $@"
 class TestClass
@@ -116,7 +116,7 @@ class TestClass
     [Theory]
     [InlineData("!=", "true", "!")]
     [InlineData("==", "MyConstant2", null)]
-    public async Task ComparingBoolConstantsAndLiterals_RemovesComparisonAndKeepsRightOperand(string op, string rightOperand, string expectedPrefix)
+    public async Task ComparingBoolConstantsAndLiterals_RemovesComparisonAndKeepsRightOperand(string op, string rightOperand, string? expectedPrefix)
     {
         var originalCode = $@"
 class TestClass

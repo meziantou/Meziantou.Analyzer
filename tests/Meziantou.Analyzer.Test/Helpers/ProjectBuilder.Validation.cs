@@ -44,7 +44,7 @@ public sealed partial class ProjectBuilder
 
         if (ExpectedFixedCode is not null)
         {
-            await VerifyFix(DiagnosticAnalyzer, CodeFixProvider, ExpectedFixedCode, CodeFixIndex).ConfigureAwait(false);
+            await VerifyFix(DiagnosticAnalyzer, CodeFixProvider!, ExpectedFixedCode, CodeFixIndex).ConfigureAwait(false);
         }
     }
 
@@ -243,9 +243,9 @@ public sealed partial class ProjectBuilder
             AppendFile(newFileName, source);
         }
 
-        return Task.FromResult(solution.GetProject(projectId));
+        return Task.FromResult(solution.GetProject(projectId)!);
 
-        void AppendFile(string filename, string content)
+        void AppendFile(string? filename, string content)
         {
             filename ??= fileNamePrefix + count.ToString(CultureInfo.InvariantCulture) + fileExt;
             var documentId = DocumentId.CreateNewId(projectId, debugName: filename);
@@ -283,18 +283,18 @@ public sealed partial class ProjectBuilder
             // Enable diagnostic
             options = options.WithSpecificDiagnosticOptions(analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics.Select(diag => new KeyValuePair<string, ReportDiagnostic>(diag.Id, GetReportDiagnostic(diag)))));
 
-            var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
+            var compilation = (await project.GetCompilationAsync().ConfigureAwait(false))!.WithOptions(options);
             if (compileSolution)
             {
                 using var ms = new MemoryStream();
                 var result = compilation.Emit(ms);
                 if (!result.Success)
                 {
-                    string sourceCode = null;
+                    string? sourceCode = null;
                     var document = project.Documents.FirstOrDefault();
                     if (document is not null)
                     {
-                        sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
+                        sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false))!.ToFullString();
                     }
 
                     Assert.Fail("The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
@@ -376,7 +376,7 @@ public sealed partial class ProjectBuilder
                     {
                         Assert.True(location.IsInSource, $"Test base does not currently handle diagnostics in metadata locations. Diagnostic in metadata: {diagnostics[i]}\r\n");
 
-                        var resultMethodName = diagnostics[i].Location.SourceTree.FilePath.EndsWith(".cs", StringComparison.Ordinal) ? "GetCSharpResultAt" : "GetBasicResultAt";
+                        var resultMethodName = diagnostics[i].Location.SourceTree!.FilePath.EndsWith(".cs", StringComparison.Ordinal) ? "GetCSharpResultAt" : "GetBasicResultAt";
                         var linePosition = diagnostics[i].Location.GetLineSpan().StartLinePosition;
 
                         builder.AppendFormat(
@@ -468,7 +468,7 @@ public sealed partial class ProjectBuilder
     private static async Task<IEnumerable<Diagnostic>> GetCompilerDiagnostics(Document document)
     {
         var semanticModel = await document.GetSemanticModelAsync().ConfigureAwait(false);
-        return semanticModel.GetDiagnostics();
+        return semanticModel!.GetDiagnostics();
     }
 
     private async Task VerifyFix(IList<DiagnosticAnalyzer> analyzers, CodeFixProvider codeFixProvider, string newSource, int? codeFixIndex)
@@ -499,9 +499,9 @@ public sealed partial class ProjectBuilder
             {
                 var action = actions[codeFixIndex ?? 0];
                 var fixAllContext = new FixAllContext(document, codeFixProvider, FixAllScope.Document, action.EquivalenceKey, analyzerDiagnostics.Select(d => d.Id).Distinct(StringComparer.Ordinal), new CustomDiagnosticProvider(analyzerDiagnostics), CancellationToken.None);
-                var fixes = await codeFixProvider.GetFixAllProvider().GetFixAsync(fixAllContext).ConfigureAwait(false);
+                var fixes = await codeFixProvider.GetFixAllProvider()!.GetFixAsync(fixAllContext).ConfigureAwait(false);
 
-                document = await ApplyFix(document, fixes, mustCompile: IsValidFixCode).ConfigureAwait(false);
+                document = await ApplyFix(document, fixes!, mustCompile: IsValidFixCode).ConfigureAwait(false);
             }
         }
         else
@@ -541,31 +541,31 @@ public sealed partial class ProjectBuilder
         {
             var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true, metadataImportOptions: MetadataImportOptions.All);
             var project = solution.Projects.Single();
-            var compilation = (await project.GetCompilationAsync().ConfigureAwait(false)).WithOptions(options);
+            var compilation = (await project.GetCompilationAsync().ConfigureAwait(false))!.WithOptions(options);
 
             using var ms = new MemoryStream();
             var result = compilation.Emit(ms);
             if (!result.Success)
             {
-                string sourceCode = null;
-                document = project.Documents.FirstOrDefault();
-                if (document is not null)
+                string? sourceCode = null;
+                var firstDocument = project.Documents.FirstOrDefault();
+                if (firstDocument is not null)
                 {
-                    sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false)).ToFullString();
+                    sourceCode = (await firstDocument.GetSyntaxRootAsync().ConfigureAwait(false))!.ToFullString();
                 }
 
                 Assert.Fail("The fixed code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
             }
         }
 
-        return solution.GetDocument(document.Id);
+        return solution.GetDocument(document.Id)!;
     }
 
     private static async Task<string> GetStringFromDocument(Document document)
     {
         var simplifiedDoc = await Simplifier.ReduceAsync(document, Simplifier.Annotation).ConfigureAwait(false);
         var root = await simplifiedDoc.GetSyntaxRootAsync().ConfigureAwait(false);
-        root = Formatter.Format(root, Formatter.Annotation, simplifiedDoc.Project.Solution.Workspace);
+        root = Formatter.Format(root!, Formatter.Annotation, simplifiedDoc.Project.Solution.Workspace);
         return root.GetText().ToString();
     }
 
@@ -579,7 +579,7 @@ public sealed partial class ProjectBuilder
         public override async Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
         {
             var documentRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            return diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree.GetRoot(cancellationToken));
+            return diagnostics.Where(diagnostic => documentRoot == diagnostic.Location.SourceTree!.GetRoot(cancellationToken));
         }
 
         public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(Project project, CancellationToken cancellationToken)

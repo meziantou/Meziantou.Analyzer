@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
@@ -169,12 +169,12 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
         {
             // Avoid an allocation when creating the key
-            if (rule == StringConcatRule)
+            if (StringConcatRule.Equals(rule))
             {
                 Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString);
                 return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".consider_nullable_types", defaultValue: true);
             }
-            else if (rule == StringInterpolationRule)
+            else if (StringInterpolationRule.Equals(rule))
             {
                 Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation);
                 return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".consider_nullable_types", defaultValue: true);

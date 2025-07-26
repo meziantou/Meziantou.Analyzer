@@ -29,10 +29,10 @@ public sealed partial class ProjectBuilder
     private int _diagnosticMessageIndex;
 
     public OutputKind OutputKind { get; private set; } = OutputKind.DynamicallyLinkedLibrary;
-    public string FileName { get; private set; }
+    public string? FileName { get; private set; }
     public string SourceCode { get; private set; } = "";
-    public Dictionary<string, string> AnalyzerConfiguration { get; private set; }
-    public Dictionary<string, string> AdditionalFiles { get; private set; }
+    public Dictionary<string, string>? AnalyzerConfiguration { get; private set; }
+    public Dictionary<string, string>? AdditionalFiles { get; private set; }
     public bool IsValidCode { get; private set; } = true;
     public bool IsValidFixCode { get; private set; } = true;
     public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
@@ -40,13 +40,13 @@ public sealed partial class ProjectBuilder
     public IList<MetadataReference> References { get; } = new List<MetadataReference>();
     public IList<string> ApiReferences { get; } = new List<string>();
     public IList<DiagnosticAnalyzer> DiagnosticAnalyzer { get; } = new List<DiagnosticAnalyzer>();
-    public CodeFixProvider CodeFixProvider { get; private set; }
+    public CodeFixProvider? CodeFixProvider { get; private set; }
     public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = new List<DiagnosticResult>();
-    public string ExpectedFixedCode { get; private set; }
+    public string? ExpectedFixedCode { get; private set; }
     public int? CodeFixIndex { get; private set; }
     public bool UseBatchFixer { get; private set; }
-    public string DefaultAnalyzerId { get; set; }
-    public string DefaultAnalyzerMessage { get; set; }
+    public string? DefaultAnalyzerId { get; set; }
+    public string? DefaultAnalyzerMessage { get; set; }
 
     private static async Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
     {
@@ -88,7 +88,7 @@ public sealed partial class ProjectBuilder
 
                 try
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(cacheFolder));
+                    Directory.CreateDirectory(Path.GetDirectoryName(cacheFolder)!);
                     Directory.Move(tempFolder, cacheFolder);
                 }
                 catch (Exception ex)
@@ -148,7 +148,7 @@ public sealed partial class ProjectBuilder
                 if (type.IsAbstract || !typeof(DiagnosticAnalyzer).IsAssignableFrom(type))
                     continue;
 
-                var instance = (DiagnosticAnalyzer)Activator.CreateInstance(type);
+                var instance = (DiagnosticAnalyzer)Activator.CreateInstance(type)!;
                 if (instance.SupportedDiagnostics.Any(d => ruleIds.Contains(d.Id, StringComparer.Ordinal)))
                 {
                     DiagnosticAnalyzer.Add(instance);
@@ -170,12 +170,16 @@ public sealed partial class ProjectBuilder
             paths: ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"],
             ruleIds);
 
-    public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds) =>
-        WithAnalyzerFromNuGet(
+    public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds)
+    {
+        AddNuGetReference("Microsoft.Bcl.AsyncInterfaces", "9.0.7", "lib/netstandard2.1/");
+
+        return WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
-            "4.13.0",
+            "4.14.0",
             paths: ["analyzers/dotnet/cs/"],
             ruleIds);
+    }
 
     public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
 
@@ -208,7 +212,7 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithSourceCode([StringSyntax("C#-test")] string sourceCode) =>
         WithSourceCode(fileName: null, sourceCode);
 
-    public ProjectBuilder WithSourceCode(string fileName, [StringSyntax("C#-test")] string sourceCode)
+    public ProjectBuilder WithSourceCode(string? fileName, [StringSyntax("C#-test")] string sourceCode)
     {
         FileName = fileName;
         ParseSourceCode(sourceCode);
@@ -231,7 +235,7 @@ public sealed partial class ProjectBuilder
         var lineIndex = 1;
         var columnIndex = 1;
         char endChar = default;
-        string ruleId = default;
+        string? ruleId = default;
         for (var i = 0; i < sourceCode.Length; i++)
         {
             var c = sourceCode[i];
@@ -346,7 +350,7 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithAnalyzer(DiagnosticAnalyzer diagnosticAnalyzer, string id = null, string message = null)
+    public ProjectBuilder WithAnalyzer(DiagnosticAnalyzer diagnosticAnalyzer, string? id = null, string? message = null)
     {
         DiagnosticAnalyzer.Add(diagnosticAnalyzer);
         DefaultAnalyzerId = id;
@@ -354,7 +358,7 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithAnalyzer<T>(string id = null, string message = null) where T : DiagnosticAnalyzer, new() =>
+    public ProjectBuilder WithAnalyzer<T>(string? id = null, string? message = null) where T : DiagnosticAnalyzer, new() =>
         WithAnalyzer(new T(), id, message);
 
     public ProjectBuilder WithCodeFixProvider(CodeFixProvider codeFixProvider)

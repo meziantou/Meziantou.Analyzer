@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +43,7 @@ internal static class SharedHttpClient
             const int MaxRetries = 5;
             for (var i = 1; ; i++)
             {
-                HttpResponseMessage result = null;
+                HttpResponseMessage? result = null;
                 try
                 {
                     result = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
