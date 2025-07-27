@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -14,16 +14,34 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
     }
 
     [Fact]
-    public async Task LockThis()
+    public async Task LockThis_Internal()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        lock ([||]this) {}
+        const string SourceCode = """
+            internal class Test
+            {
+                void A()
+                {
+                    lock (this) {}
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
     }
-}";
+
+    [Fact]
+    public async Task LockThis_Public()
+    {
+        const string SourceCode = """
+            public class Test
+            {
+                void A()
+                {
+                    lock ([|this|]) {}
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -32,17 +50,18 @@ class Test
     [Fact]
     public async Task LockTypeof()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        lock ([||]typeof(Test))
-        {
-            throw null;
-        }
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    lock ([||]typeof(Test))
+                    {
+                        throw null;
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -51,15 +70,16 @@ class Test
     [Fact]
     public async Task LockVariableOfTypeSystemType()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        System.Type type = null;
-        lock ([||]type) {}
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    System.Type type = null;
+                    lock ([||]type) {}
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -68,15 +88,16 @@ class Test
     [Fact]
     public async Task LockPubliclyAccessibleField()
     {
-        const string SourceCode = @"
-public class Test
-{
-    public string TestField;
-    void A()
-    {
-        lock ([||]TestField) {}
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                public string TestField;
+                void A()
+                {
+                    lock ([||]TestField) {}
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -85,15 +106,16 @@ public class Test
     [Fact]
     public async Task LockPrivateFieldShouldNotReport()
     {
-        const string SourceCode = @"
-public class Test
-{
-    private string TestField;
-    void A()
-    {
-        lock (TestField) {}
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                private string TestField;
+                void A()
+                {
+                    lock (TestField) {}
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -102,16 +124,17 @@ public class Test
     [Fact]
     public async Task LockVariableOfTypeStringShouldNotReport()
     {
-        const string SourceCode = @"
-public class Test
-{
-    private string TestField;
-    void A()
-    {
-        string test = """";
-        lock (test) {}
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                private string TestField;
+                void A()
+                {
+                    string test = "";
+                    lock (test) {}
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

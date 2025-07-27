@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -38,7 +38,11 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : Diagnosti
         }
         else if (operation.LockedValue is IInstanceReferenceOperation)
         {
-            context.ReportDiagnostic(Rule, operation.LockedValue);
+            if (operation.LockedValue.Type.IsVisibleOutsideOfAssembly())
+            {
+                context.ReportDiagnostic(Rule, operation.LockedValue);
+            }
+
         }
         else if (operation.LockedValue is IFieldReferenceOperation fieldReferenceOperation && fieldReferenceOperation.Field.IsVisibleOutsideOfAssembly())
         {
