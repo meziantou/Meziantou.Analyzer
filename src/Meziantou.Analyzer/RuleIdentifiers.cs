@@ -173,6 +173,7 @@ internal static class RuleIdentifiers
     public const string UseReadOnlyStructForRefReadOnlyParameters = "MA0168";
     public const string UseEqualsMethodInsteadOfOperator = "MA0169";
     public const string TypeCannotBeUsedInAnAttributeParameter = "MA0170";
+    public const string UsePatternMatchingInsteadOfHasvalue = "MA0171";
 
     public static string GetHelpUri(string identifier)
     {

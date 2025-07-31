@@ -77,7 +77,7 @@ internal abstract class ObjectPoolProvider
     /// <typeparam name="T">The type to create a pool for.</typeparam>
     public ObjectPool<T> Create<T>() where T : class, new()
     {
-        return Create<T>(new DefaultPooledObjectPolicy<T>());
+        return Create(new DefaultPooledObjectPolicy<T>());
     }
 
     /// <summary>

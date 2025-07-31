@@ -151,7 +151,7 @@ public sealed partial class ProjectBuilder
         return documents;
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope")]
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope")]
     private Task<Project> CreateProject()
     {
         var fileNamePrefix = "Test";
