@@ -14,7 +14,7 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task TestAsync()
+    public async Task TestAsync()
     {
         const string SourceCode = @"using System.Collections.Generic;
 class Test

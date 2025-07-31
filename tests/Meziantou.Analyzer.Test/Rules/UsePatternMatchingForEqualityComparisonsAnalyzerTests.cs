@@ -117,7 +117,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
                 {
                     public static bool operator ==(Sample left, Sample right) => false;
                     public static bool operator !=(Sample left, Sample right) => false;
-                }                
+                }
                 """)
               .ValidateAsync();
     }
@@ -177,7 +177,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
                 {
                     public static bool operator ==(Sample left, int right) => false;
                     public static bool operator !=(Sample left, int right) => false;
-                }                
+                }
                 """)
               .ValidateAsync();
     }

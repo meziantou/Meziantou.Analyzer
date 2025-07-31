@@ -173,7 +173,7 @@ static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, L
     return sb.ToString();
 }
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "The url must be lowercase")]
+[SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "The url must be lowercase")]
 static string GenerateSuppressorsTable(List<DiagnosticSuppressor> diagnosticSuppressors)
 {
     var sb = new StringBuilder();

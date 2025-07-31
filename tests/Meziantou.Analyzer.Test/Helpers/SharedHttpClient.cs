@@ -21,7 +21,7 @@ internal static class SharedHttpClient
         }
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope")]
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope")]
     private static HttpClient CreateHttpClient()
     {
 #if NETCOREAPP2_1_OR_GREATER
