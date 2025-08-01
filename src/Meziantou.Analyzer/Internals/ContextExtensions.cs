@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Data;
 using System.Linq;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -11,9 +12,29 @@ namespace Meziantou.Analyzer.Internals;
 
 internal static partial class ContextExtensions
 {
-    private static Diagnostic CreateDiagnostic(DiagnosticDescriptor descriptor, Location location, ImmutableDictionary<string, string?>? properties, string?[]? messageArgs)
+    private static Diagnostic CreateDiagnostic(DiagnosticDescriptor descriptor, Location? location, ImmutableDictionary<string, string?>? properties, string?[]? messageArgs)
     {
         return Diagnostic.Create(descriptor, location, properties, messageArgs);
+    }
+
+    public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IEnumerable<Location> locations, string?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, locations, messageArgs);
+    public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IEnumerable<Location> locations, params string?[]? messageArgs)
+    {
+        var inSource = locations.Where(l => l.IsInSource);
+        if (!inSource.Any())
+        {
+            context.ReportDiagnostic(CreateDiagnostic(descriptor, location: null, properties, messageArgs));
+            return;
+        }
+
+        var diagnostic = Diagnostic.Create(
+                 descriptor,
+                 location: inSource.First(),
+                 additionalLocations: inSource.Skip(1),
+                 properties: properties,
+                 messageArgs: messageArgs);
+
+        context.ReportDiagnostic(diagnostic);
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, SyntaxReference syntaxReference, string?[]? messageArgs = null)
@@ -40,15 +61,13 @@ internal static partial class ContextExtensions
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ISymbol symbol, string?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, symbol, messageArgs);
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, ISymbol symbol, string?[]? messageArgs = null)
     {
-        foreach (var location in symbol.Locations)
-        {
-            ReportDiagnostic(context, descriptor, properties, location, messageArgs);
-        }
+        ReportDiagnostic(context, descriptor, properties, symbol.Locations, messageArgs);
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IFieldSymbol symbol, DiagnosticFieldReportOptions reportOptions, string?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, symbol, reportOptions, messageArgs);
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IFieldSymbol symbol, DiagnosticFieldReportOptions reportOptions, string?[]? messageArgs = null)
     {
+        List<Location>? locations = null;
         foreach (var location in symbol.Locations)
         {
             if (reportOptions.HasFlag(DiagnosticFieldReportOptions.ReportOnReturnType))
@@ -61,13 +80,17 @@ internal static partial class ContextExtensions
                 }
             }
 
-            ReportDiagnostic(context, descriptor, properties, location, messageArgs);
+            locations ??= [];
+            locations.Add(location);
         }
+
+        ReportDiagnostic(context, descriptor, properties, locations ?? [], messageArgs);
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IMethodSymbol symbol, DiagnosticMethodReportOptions reportOptions, string?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, symbol, reportOptions, messageArgs);
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IMethodSymbol symbol, DiagnosticMethodReportOptions reportOptions, string?[]? messageArgs = null)
     {
+        List<Location>? locations = null;
         foreach (var location in symbol.Locations)
         {
             if (reportOptions.HasFlag(DiagnosticMethodReportOptions.ReportOnReturnType))
@@ -86,13 +109,17 @@ internal static partial class ContextExtensions
                 }
             }
 
-            ReportDiagnostic(context, descriptor, properties, location, messageArgs);
+            locations ??= [];
+            locations.Add(location);
         }
+
+        ReportDiagnostic(context, descriptor, properties, locations ?? [], messageArgs);
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IParameterSymbol symbol, DiagnosticParameterReportOptions reportOptions, string?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, symbol, reportOptions, messageArgs);
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IParameterSymbol symbol, DiagnosticParameterReportOptions reportOptions, string?[]? messageArgs = null)
     {
+        List<Location>? locations = null;
         foreach (var location in symbol.Locations)
         {
             if (reportOptions.HasFlag(DiagnosticParameterReportOptions.ReportOnType))
@@ -105,13 +132,17 @@ internal static partial class ContextExtensions
                 }
             }
 
-            ReportDiagnostic(context, descriptor, properties, location, messageArgs);
+            locations ??= [];
+            locations.Add(location);
         }
+
+        ReportDiagnostic(context, descriptor, properties, locations ?? [], messageArgs);
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IPropertySymbol symbol, DiagnosticPropertyReportOptions reportOptions, string?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, symbol, reportOptions, messageArgs);
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IPropertySymbol symbol, DiagnosticPropertyReportOptions reportOptions, string?[]? messageArgs = null)
     {
+        List<Location>? locations = null;
         foreach (var location in symbol.Locations)
         {
             if (reportOptions.HasFlag(DiagnosticPropertyReportOptions.ReportOnReturnType))
@@ -130,8 +161,11 @@ internal static partial class ContextExtensions
                 }
             }
 
-            ReportDiagnostic(context, descriptor, properties, location, messageArgs);
+            locations ??= [];
+            locations.Add(location);
         }
+
+        ReportDiagnostic(context, descriptor, properties, locations ?? [], messageArgs);
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IOperation operation, string?[]? messageArgs = null)
