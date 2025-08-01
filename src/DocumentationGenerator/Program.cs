@@ -1,4 +1,4 @@
-﻿#pragma warning disable RS1035
+#pragma warning disable RS1035
 #pragma warning disable CA1849
 #pragma warning disable MA0004
 #pragma warning disable MA0009

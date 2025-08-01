@@ -14,6 +14,10 @@ namespace Meziantou.Analyzer.Internals;
 internal static partial class ContextExtensions
 {
 <# foreach (string type in new string[] { "SyntaxNodeAnalysisContext", "SymbolAnalysisContext", "OperationAnalysisContext", "OperationBlockAnalysisContext", "CompilationAnalysisContext" }) { #>
+    public static void ReportDiagnostic(this <#= type #> context, DiagnosticDescriptor descriptor, IEnumerable<Location> locations, string?[]? messageArgs = null) => ReportDiagnostic(new DiagnosticReporter(context), descriptor, locations, messageArgs);
+
+    public static void ReportDiagnostic(this <#= type #> context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IEnumerable<Location> locations, params string?[]? messageArgs) => ReportDiagnostic(new DiagnosticReporter(context), descriptor, properties, locations, messageArgs);
+
     public static void ReportDiagnostic(this <#= type #> context, DiagnosticDescriptor descriptor, SyntaxToken syntaxToken, params string?[]? messageArgs)
         => ReportDiagnostic(new DiagnosticReporter(context), descriptor, syntaxToken, messageArgs);
 
