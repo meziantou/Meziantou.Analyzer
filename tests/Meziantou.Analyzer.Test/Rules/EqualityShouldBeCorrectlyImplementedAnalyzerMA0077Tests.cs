@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -53,6 +53,40 @@ struct Test : System.IEquatable<Test>     //  This comment stays
               .ShouldFixCodeWith(modifiedCode)
               .ValidateAsync();
     }
+
+#if CSHARP12_OR_GREATER
+    [Fact]
+    public async Task RefStruct_CSharp12()
+    {
+        var originalCode = @"
+ref struct Test
+{
+    public bool Equals(Test other) => throw null;
+}";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithTargetFramework(Helpers.TargetFramework.Net9_0)
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
+#endif
+
+#if CSHARP13_OR_GREATER
+    [Fact]
+    public async Task RefStruct_CSharp13()
+    {
+        var originalCode = @"
+ref struct [|Test|]
+{
+    public bool Equals(Test other) => throw null;
+}";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13)
+              .WithTargetFramework(Helpers.TargetFramework.Net9_0)
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
+#endif
 
     [Fact]
     public async Task Test_ClassImplementsSystemIEquatableWithTOfWrongTypeButProvidesCompatibleEqualsMethod_DiagnosticIsReported()

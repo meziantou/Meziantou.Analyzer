@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -85,11 +85,15 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         public INamedTypeSymbol? IComparableSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable");
         public INamedTypeSymbol? IComparableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable`1");
         public INamedTypeSymbol? IEquatableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+        public bool SupportRefStructs { get; } = compilation.GetCSharpLanguageVersion().IsCSharp13OrAbove() && compilation.IsNet9OrGreater();
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (symbol.TypeKind != TypeKind.Class && symbol.TypeKind != TypeKind.Structure)
+            if (symbol.TypeKind is not TypeKind.Class and not TypeKind.Structure)
+                return;
+
+            if (symbol.TypeKind is TypeKind.Struct && symbol.IsRefLikeType && !SupportRefStructs)
                 return;
 
             var implementIComparable = false;

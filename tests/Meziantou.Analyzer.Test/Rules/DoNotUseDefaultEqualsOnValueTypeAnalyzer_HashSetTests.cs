@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 using Xunit;
@@ -34,6 +34,43 @@ struct Test
     }
 }
 ";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("System.Collections.Immutable.ImmutableHashSet<Test>.Empty")]
+    public async Task Empty_WithComparer(string text)
+    {
+        var sourceCode = $$"""
+            struct Test
+            {
+                void A()
+                {
+                    var collection = {{text}}.WithComparer(default);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<Test, object>.Empty")]
+    [InlineData("System.Collections.Immutable.ImmutableSortedDictionary<Test, object>.Empty")]
+    public async Task Empty_WithComparers(string text)
+    {
+        var sourceCode = $$"""
+            struct Test
+            {
+                void A()
+                {
+                    var collection = {{text}}.WithComparers(default);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
