@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using Meziantou.Analyzer.Internals;
@@ -44,7 +44,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             return false;
 
         // https://github.com/dotnet/runtime/pull/66111
-        if (operation.GetCSharpLanguageVersion().IsCSharp10OrBellow())
+        if (operation.GetCSharpLanguageVersion().IsCSharp10OrBelow())
             return false;
 
         return true;

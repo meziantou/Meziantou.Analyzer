@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -161,7 +158,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         public void AnalyzeFieldReferenceOperation(OperationAnalysisContext context)
         {
             var operation = (IFieldReferenceOperation)context.Operation;
-            if (operation.Field.Name == "Empty")
+            if (operation.Field.Name is "Empty")
             {
                 var type = operation.Field.ContainingType;
                 if ((type?.OriginalDefinition) is null)
@@ -171,6 +168,9 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
                 {
                     if (IsStruct(type.TypeArguments[0]) && HasDefaultEqualsOrHashCodeImplementations(type.TypeArguments[0]))
                     {
+                        if (operation.Parent is IInvocationOperation { TargetMethod.Name: "WithComparer" or "WithComparers" })
+                            return;
+
                         context.ReportDiagnostic(Rule2, operation);
                     }
                 }

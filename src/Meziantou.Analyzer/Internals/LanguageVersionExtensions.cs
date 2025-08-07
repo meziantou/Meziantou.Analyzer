@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Meziantou.Analyzer.Internals;
 
@@ -19,7 +19,7 @@ internal static class LanguageVersionExtensions
         return languageVersion >= (LanguageVersion)1300;
     }
 
-    public static bool IsCSharp10OrBellow(this LanguageVersion languageVersion)
+    public static bool IsCSharp10OrBelow(this LanguageVersion languageVersion)
     {
         return languageVersion <= (LanguageVersion)1000;
     }
