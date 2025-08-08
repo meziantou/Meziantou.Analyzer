@@ -511,3 +511,6 @@ dotnet_diagnostic.MA0170.severity = none
 
 # MA0171: Use pattern matching instead of inequality operators for discrete value
 dotnet_diagnostic.MA0171.severity = none
+
+# MA0172: Both sides of the logical operation are identical
+dotnet_diagnostic.MA0172.severity = none
