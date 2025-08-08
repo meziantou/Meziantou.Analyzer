@@ -171,6 +171,7 @@
 |[MA0169](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0169.md)|Design|Use Equals method instead of operator|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0170](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0170.md)|Design|Type cannot be used as an attribute argument|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0172](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0172.md)|Usage|Both sides of the logical operation are identical|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -692,6 +693,9 @@ dotnet_diagnostic.MA0170.severity = none
 
 # MA0171: Use pattern matching instead of inequality operators for discrete value
 dotnet_diagnostic.MA0171.severity = none
+
+# MA0172: Both sides of the logical operation are identical
+dotnet_diagnostic.MA0172.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1206,4 +1210,7 @@ dotnet_diagnostic.MA0170.severity = none
 
 # MA0171: Use pattern matching instead of inequality operators for discrete value
 dotnet_diagnostic.MA0171.severity = none
+
+# MA0172: Both sides of the logical operation are identical
+dotnet_diagnostic.MA0172.severity = none
 ```
