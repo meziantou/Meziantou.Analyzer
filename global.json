@@ -4,8 +4,8 @@
     "rollForward": "latestPatch"
   },
   "msbuild-sdks": {
-    "Meziantou.NET.Sdk": "1.0.4",
-    "Meziantou.NET.Sdk.Test": "1.0.4",
-    "Meziantou.NET.Sdk.Web": "1.0.4"
+    "Meziantou.NET.Sdk": "1.0.5",
+    "Meziantou.NET.Sdk.Test": "1.0.5",
+    "Meziantou.NET.Sdk.Web": "1.0.5"
   }
 }
