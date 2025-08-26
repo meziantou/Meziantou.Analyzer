@@ -17,6 +17,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
     [Fact]
     public async Task Ctor()
     {
+        Assert.Fail("test");
         const string SourceCode = @"
 abstract class Test
 {
