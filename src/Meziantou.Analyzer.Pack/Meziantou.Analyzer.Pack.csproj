@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Meziantou.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -12,15 +12,11 @@
     <PackageId>Meziantou.Analyzer</PackageId>
     <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
     <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
+
+    <SearchReadmeFileAbove>true</SearchReadmeFileAbove>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Remove="Meziantou.DotNet.CodingStandard" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="" />
-
     <None Include="build/**" Pack="true" PackagePath="build" />
     <None Include="buildMultiTargeting/**" Pack="true" PackagePath="buildMultiTargeting" />
     <None Include="buildTransitive/**" Pack="true" PackagePath="buildTransitive" />

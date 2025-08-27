@@ -1,6 +1,11 @@
 {
   "sdk": {
-    "version": "9.0.303",
+    "version": "9.0.304",
     "rollForward": "latestPatch"
+  },
+  "msbuild-sdks": {
+    "Meziantou.NET.Sdk": "1.0.9",
+    "Meziantou.NET.Sdk.Test": "1.0.9",
+    "Meziantou.NET.Sdk.Web": "1.0.9"
   }
 }
