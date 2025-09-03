@@ -283,4 +283,5 @@ internal static class OperationExtensions
     }
 
     public static bool IsConstantZero(this IOperation operation) => operation is { ConstantValue: { HasValue: true, Value: 0 or 0L or 0u or 0uL or 0f or 0d or 0m } };
+    public static bool IsNull(this IOperation operation) => operation is { ConstantValue: { HasValue: true, Value: null } };
 }
