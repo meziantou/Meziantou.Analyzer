@@ -33,7 +33,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
               .WithSourceCode("""
                 Sample a = default;
                 [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
-                class Sample;
+                class Sample { };
             """)
               .ValidateAsync();
     }
@@ -45,7 +45,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
               .WithSourceCode("""
                 Sample a = default;
                 [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default)|];
-                class Sample;
+                class Sample { };
             """)
               .ValidateAsync();
     }
@@ -57,7 +57,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
               .WithSourceCode("""
                 Sample a = default;
                 System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default);
-                struct Sample;
+                struct Sample { };
             """)
               .ValidateAsync();
     }
