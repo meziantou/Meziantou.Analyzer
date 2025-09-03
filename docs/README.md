@@ -172,6 +172,7 @@
 |[MA0170](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0170.md)|Design|Type cannot be used as an attribute argument|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0172](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0172.md)|Usage|Both sides of the logical operation are identical|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0173](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0173.md)|Design|Use LazyInitializer.EnsureInitialize|<span title='Info'>ℹ️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -696,6 +697,9 @@ dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical
 dotnet_diagnostic.MA0172.severity = none
+
+# MA0173: Use LazyInitializer.EnsureInitialize
+dotnet_diagnostic.MA0173.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1213,4 +1217,7 @@ dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical
 dotnet_diagnostic.MA0172.severity = none
+
+# MA0173: Use LazyInitializer.EnsureInitialize
+dotnet_diagnostic.MA0173.severity = none
 ```
