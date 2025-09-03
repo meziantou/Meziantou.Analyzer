@@ -514,3 +514,6 @@ dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical
 dotnet_diagnostic.MA0172.severity = none
+
+# MA0173: Use LazyInitializer.EnsureInitialize
+dotnet_diagnostic.MA0173.severity = none

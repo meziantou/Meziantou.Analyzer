@@ -175,6 +175,7 @@ internal static class RuleIdentifiers
     public const string TypeCannotBeUsedInAnAttributeParameter = "MA0170";
     public const string UsePatternMatchingInsteadOfHasvalue = "MA0171";
     public const string BothSideOfTheConditionAreIdentical = "MA0172";
+    public const string UseLazyInitializerEnsureInitialize = "MA0173";
 
     public static string GetHelpUri(string identifier)
     {
