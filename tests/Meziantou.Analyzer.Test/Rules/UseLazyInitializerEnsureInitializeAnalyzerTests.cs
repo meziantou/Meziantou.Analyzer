@@ -39,6 +39,18 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
     }
 
     [Fact]
+    public async Task NewCustomClass_Object_Null()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                object? a = default;
+                [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
+                class Sample { };
+            """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NewCustomClass_Default()
     {
         await CreateProjectBuilder()

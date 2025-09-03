@@ -38,7 +38,7 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
                 // Interlocked.CompareExchange(ref _instance, new Sample(), null)
                 if (operation.Arguments.Length is 3 && targetMethod.Name is "CompareExchange" && targetMethod.ContainingType.IsEqualTo(interlockedType))
                 {
-                    if (operation.Arguments[2].Value.IsNull() && operation.Arguments[1].Value is IObjectCreationOperation)
+                    if (operation.Arguments[2].Value.IsNull() && operation.Arguments[1].Value.UnwrapImplicitConversionOperations() is IObjectCreationOperation)
                     {
                         context.ReportDiagnostic(Rule, operation);
                     }
