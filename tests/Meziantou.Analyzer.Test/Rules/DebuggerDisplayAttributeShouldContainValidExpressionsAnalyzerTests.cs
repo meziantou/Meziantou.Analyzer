@@ -1,8 +1,6 @@
-﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
@@ -20,6 +18,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Invalid,np")]
     [InlineData("Invalid()")]
     [InlineData("Invalid.Length")]
+    [InlineData("System.IO.Path.DirectorySeparatorChar.Unknown()")]
     public async Task UnknownMember(string memberName)
     {
         var sourceCode = $$"""
@@ -60,6 +59,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Invalid,np")]
     [InlineData("Invalid()")]
     [InlineData("Invalid.Length")]
+    [InlineData("Display.UnknownProperty")]
     public async Task UnknownMember_Type(string memberName)
     {
         var sourceCode = $$"""
@@ -75,19 +75,21 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .ValidateAsync();
     }
 
-    [Fact]
-    public async Task Valid()
+    [Theory]
+    [InlineData("Display")]
+    [InlineData("System.IO.Path.DirectorySeparatorChar.ToString()")]
+    public async Task Valid(string value)
     {
-        const string SourceCode = """
+        var sourceCode = $$"""
             using System.Diagnostics;
-            [DebuggerDisplay("{Display}")]
+            [DebuggerDisplay("{{{value}}}")]
             public class Dummy
             {
                 public string Display { get; }
             }
             """;
         await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+              .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 
@@ -171,19 +173,22 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .ValidateAsync();
     }
 
-    [Fact]
-    public async Task Valid_Method()
+    [Theory]
+    [InlineData("Display()")]
+    [InlineData("Display().Length")]
+    [InlineData("Display().Invalid")] // Invalid is ignored because we cannot determine the return type of Display()
+    public async Task Valid_Method(string value)
     {
-        const string SourceCode = """
+        var sourceCode = $$"""
             using System.Diagnostics;
-            [DebuggerDisplay("{Display()}")]
+            [DebuggerDisplay("{{{value}}}")]
             public class Dummy
             {
                 private string Display() => "";
             }
             """;
         await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+              .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 
@@ -278,14 +283,143 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .ValidateAsync();
     }
 
+    [Theory]
+    [InlineData("Value + 1")]
+    [InlineData("Value - 1")]
+    [InlineData("Value < 10")]
+    [InlineData("Value <= 10")]
+    [InlineData("Value > 10")]
+    [InlineData("Value >= 10")]
+    [InlineData("Value == 10")]
+    [InlineData("Value != 10")]
+    [InlineData("Demo.Display(Value > 1)")]
+    [InlineData("Demo.Display(Value > 1, Value)")]
+    public async Task Valid_BinaryOperator(string value)
+    {
+        var sourceCode = $$"""
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"{{{value}}}")]
+            public record Person(int Value);
+
+            public class Demo
+            {
+                public static string Display(bool a) => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("(Unknown + 1)")]
+    [InlineData("(Unknown + (1))")]
+    [InlineData("((Unknown) + (1))")]
+    [InlineData("Unknown + 1")]
+    [InlineData("Unknown - 1")]
+    [InlineData("Unknown < 10")]
+    [InlineData("Unknown <= 10")]
+    [InlineData("Unknown > 10")]
+    [InlineData("Unknown >= 10")]
+    [InlineData("Unknown == 10")]
+    [InlineData("Unknown != 10")]
+    [InlineData("Unknown != \\\"abc\\\"")]
+    [InlineData("Unknown != 'a'")]
+    [InlineData("Demo.Display(Unknown > 1)")]
+    [InlineData("Demo.Display(Unknown > 1.0)")]
+    [InlineData("Demo.Display(Unknown > 1u)")]
+    [InlineData("Demo.Display(Unknown > 1uL)")]
+    [InlineData("Demo.Display(Unknown > 1L)")]
+    [InlineData("Demo.Display(Unknown > 1.0f)")]
+    [InlineData("Demo.Display(Unknown > 1.0d)")]
+    [InlineData("Demo.Display(Unknown > 1.0m)")]
+    [InlineData("Demo.Display(Unknown > 1e+3)")]
+    [InlineData("Demo.Display(Value > 1, Unknown)")]
+    public async Task Invalid_BinaryOperator(string value)
+    {
+        var sourceCode = $$"""
+            using System.Diagnostics;
+
+            [[|DebuggerDisplay("{{{value}}}")|]]
+            public record Person(int Value);
+
+            public class Demo
+            {
+                public static string Display(bool a) => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("!Value")]
+    public async Task Valid_UnaryOperator(string value)
+    {
+        var sourceCode = $$"""
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"{{{value}}}")]
+            public record Person(bool Value);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("!Unknown")]
+    public async Task Invalid_UnaryOperator(string value)
+    {
+        var sourceCode = $$"""
+            using System.Diagnostics;
+
+            [[|DebuggerDisplay(@"{{{value}}}")|]]
+            public record Person(bool Value);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
     [Fact]
-    public async Task ExpressionLessThan()
+    public async Task CallStaticMethodOnAnotherType()
     {
         const string SourceCode = """
             using System.Diagnostics;
 
-            [DebuggerDisplay(@"{Value < 10}")]
-            public record Person(int Value);
+            [DebuggerDisplay(@"{System.Linq.Enumerable.Count(Test)}")]
+            public record Person(string[] Test);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallStaticMethodOnAnotherUsingKeyword()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay(@"{char.IsAscii(Test)}")]
+            public record Person(char Test);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallStaticMethodOnAnotherType_InvalidMethodName()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [[|DebuggerDisplay(@"{System.Linq.Enumerable.InvalidMethod(Test)}")|]]
+            public record Person(string[] Test);
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)

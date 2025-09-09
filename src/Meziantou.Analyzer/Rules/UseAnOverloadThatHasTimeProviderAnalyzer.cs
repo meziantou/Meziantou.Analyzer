@@ -215,6 +215,9 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
             foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
             {
+                if (symbol is IMethodSymbol)
+                    continue;
+
                 var symbolType = symbol.GetSymbolType();
                 if (symbolType is null)
                     continue;
