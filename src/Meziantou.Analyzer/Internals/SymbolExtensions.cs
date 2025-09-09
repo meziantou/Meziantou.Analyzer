@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -85,6 +85,24 @@ internal static class SymbolExtensions
         }
     }
 
+    public static IEnumerable<ISymbol> GetAllMembers(this INamespaceOrTypeSymbol? symbol)
+    {
+        while (symbol is not null)
+        {
+            foreach (var member in symbol.GetMembers())
+                yield return member;
+
+            if (symbol is ITypeSymbol typeSymbol)
+            {
+                symbol = typeSymbol.BaseType;
+            }
+            else
+            {
+                yield break;
+            }
+        }
+    }
+
     public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol? symbol, string name)
     {
         while (symbol is not null)
@@ -93,6 +111,24 @@ internal static class SymbolExtensions
                 yield return member;
 
             symbol = symbol.BaseType;
+        }
+    }
+
+    public static IEnumerable<ISymbol> GetAllMembers(this INamespaceOrTypeSymbol? symbol, string name)
+    {
+        while (symbol is not null)
+        {
+            foreach (var member in symbol.GetMembers(name))
+                yield return member;
+
+            if (symbol is ITypeSymbol typeSymbol)
+            {
+                symbol = typeSymbol.BaseType;
+            }
+            else
+            {
+                yield break;
+            }
         }
     }
 
@@ -142,6 +178,7 @@ internal static class SymbolExtensions
             IFieldSymbol field => field.Type,
             IPropertySymbol { GetMethod: not null } property => property.Type,
             ILocalSymbol local => local.Type,
+            IMethodSymbol method => method.ReturnType,
             _ => null,
         };
     }
