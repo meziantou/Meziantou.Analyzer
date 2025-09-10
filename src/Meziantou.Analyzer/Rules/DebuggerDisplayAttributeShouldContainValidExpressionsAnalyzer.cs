@@ -210,7 +210,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         }
 
         var firstMember = syntax.First();
-        var current = FindSymbol(rootSymbol, firstMember) ?? FindGlobalSymbol(compilation, firstMember);
+        var current = FindSymbol(compilation, rootSymbol, firstMember) ?? FindGlobalSymbol(compilation, firstMember);
         if (current is null)
         {
             invalidMember = firstMember;
@@ -219,7 +219,14 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
         foreach (var member in syntax.Skip(1))
         {
-            var next = FindSymbol(current, member);
+            if (current is ITypeSymbol { TypeKind: TypeKind.TypeParameter })
+            {
+                // Cannot continue analysis easily
+                invalidMember = null;
+                return true;
+            }
+
+            var next = FindSymbol(compilation, current, member);
             if (next is null)
             {
                 invalidMember = member;
@@ -232,8 +239,13 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         invalidMember = null;
         return true;
 
-        static ISymbol? FindSymbol(ISymbol parent, string name)
+        static ISymbol? FindSymbol(Compilation compilation, ISymbol parent, string name)
         {
+            if (name is "ToString" or "GetHashCode")
+            {
+                compilation.GetSpecialType(SpecialType.System_Object).GetMembers(name).FirstOrDefault();
+            }
+
             if (parent is INamespaceOrTypeSymbol typeSymbol)
             {
                 if (typeSymbol.GetAllMembers(name).FirstOrDefault() is { } member)

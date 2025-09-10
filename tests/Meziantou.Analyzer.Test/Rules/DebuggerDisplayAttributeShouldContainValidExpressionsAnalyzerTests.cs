@@ -442,4 +442,24 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task GenericTypes()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+            [DebuggerDisplay("{Condition.ToString(),nq}")]
+            public class ValueConditionNode<TCondition> : IValueConditionNode<TCondition>
+            {
+                public TCondition Condition => throw null;
+            }
+
+            public interface IValueConditionNode<TCondition>
+            {
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
