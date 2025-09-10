@@ -121,6 +121,15 @@ internal static class SymbolExtensions
             foreach (var member in symbol.GetMembers(name))
                 yield return member;
 
+            if(symbol is INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol)
+            {
+                foreach(var iface in interfaceSymbol.AllInterfaces)
+                {
+                    foreach (var member in iface.GetMembers(name))
+                        yield return member;
+                }
+            }
+
             if (symbol is ITypeSymbol typeSymbol)
             {
                 symbol = typeSymbol.BaseType;

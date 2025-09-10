@@ -425,4 +425,21 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task IListOfT_Count()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+            [DebuggerDisplay("{referenceString} ({allStrings.Count})")]
+            public struct ContainedStrings
+            {
+                private readonly System.Collections.Generic.IList<string> allStrings;
+                private readonly string referenceString;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
