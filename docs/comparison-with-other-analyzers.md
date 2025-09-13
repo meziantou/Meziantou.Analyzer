@@ -6,6 +6,7 @@
 |---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
 | [CA1018](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1018?WT.mc_id=DT-MVP-5003978) | [MA0010](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0010.md) |
 | [CA1036](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1036?WT.mc_id=DT-MVP-5003978) | [MA0097](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0097.md) |
+| [CA1041](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1041?WT.mc_id=DT-MVP-5003978) | [MA0070](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0070.md) |
 | [CA1050](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1050?WT.mc_id=DT-MVP-5003978) | [MA0047](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0047.md) |
 | [CA1058](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1058?WT.mc_id=DT-MVP-5003978) | [MA0013](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0013.md) |
 | [CA1065](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1065?WT.mc_id=DT-MVP-5003978) | [MA0072](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0072.md) |
@@ -16,6 +17,7 @@
 | [CA1307](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1307?WT.mc_id=DT-MVP-5003978) | [MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md), [MA0074](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0074.md) |
 | [CA1309](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1309?WT.mc_id=DT-MVP-5003978) | [MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md), [MA0074](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0074.md) |
 | [CA1310](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1310?WT.mc_id=DT-MVP-5003978) | [MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md) |
+| [CA1507](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1507?WT.mc_id=DT-MVP-5003978) | [MA0043](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0043.md) |
 | [CA1710](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1710?WT.mc_id=DT-MVP-5003978) | [MA0057](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0057.md) |
 | [CA1710](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1710?WT.mc_id=DT-MVP-5003978) | [MA0058](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0058.md) |
 | [CA1710](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1710?WT.mc_id=DT-MVP-5003978) | [MA0059](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0059.md) |
@@ -24,6 +26,7 @@
 | [CA1826](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1829?WT.mc_id=DT-MVP-5003978) | [MA0020](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0020.md) |
 | [CA1830](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1830?WT.mc_id=DT-MVP-5003978) | [MA0028](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0028.md) |
 | [CA1834](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1834?WT.mc_id=DT-MVP-5003978) | [MA0028](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0028.md) |
+| [CA1860](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1860?WT.mc_id=DT-MVP-5003978) | [MA0112](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0112.md) |
 | [CA2200](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2200?WT.mc_id=DT-MVP-5003978) | [MA0027](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0027.md) |
 | [CA2201](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2201?WT.mc_id=DT-MVP-5003978) | [MA0012](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0012.md) |
 | [CA2201](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2201?WT.mc_id=DT-MVP-5003978) | [MA0014](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0014.md) |
@@ -33,6 +36,7 @@
 | [CA2217](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2217?WT.mc_id=DT-MVP-5003978) | [MA0062](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0062.md) |
 | [CA2219](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2219?WT.mc_id=DT-MVP-5003978) | [MA0072](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0072.md) |
 | [CA2242](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2242?WT.mc_id=DT-MVP-5003978) | [MA0082](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0082.md) |
+| [CA2259](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2259?WT.mc_id=DT-MVP-5003978) | [MA0033](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0033.md) |
 | [CA5359](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5359?WT.mc_id=DT-MVP-5003978) | [MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md) |
 | [S3442](https://rules.sonarsource.com/csharp/RSPEC-3442/)                                                                  | [MA0017](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0017.md) |
 | [S3450](https://rules.sonarsource.com/csharp/RSPEC-3450/)                                                                  | [MA0087](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0087.md) |
