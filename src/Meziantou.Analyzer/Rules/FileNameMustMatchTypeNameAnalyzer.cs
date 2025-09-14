@@ -166,7 +166,9 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             TypeKind.Interface => "interface",
             TypeKind.Enum => "enum",
             TypeKind.Delegate => "delegate",
-            _ => symbol.TypeKind.ToString().ToUpperInvariant()
+#pragma warning disable CA1308 // Normalize strings to uppercase
+            _ => symbol.TypeKind.ToString().ToLowerInvariant(),
+#pragma warning restore CA1308 // Normalize strings to uppercase
         };
     }
 }
