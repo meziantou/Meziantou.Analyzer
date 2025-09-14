@@ -159,9 +159,13 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     {
         return symbol.TypeKind switch
         {
+#if ROSLYN_4_2_OR_GREATER
             TypeKind.Class when symbol.IsRecord => "record",
+#endif
             TypeKind.Class => "class",
+#if ROSLYN_4_2_OR_GREATER
             TypeKind.Struct when symbol.IsRecord => "record struct",
+#endif
             TypeKind.Struct => "struct",
             TypeKind.Interface => "interface",
             TypeKind.Enum => "enum",
