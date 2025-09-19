@@ -21,6 +21,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
 class [||]Sample
 {
 }")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
               .ValidateAsync();
     }
 
@@ -380,6 +381,89 @@ file class [||]Sample
 }
 ")
               .AddAnalyzerConfiguration("MA0048.exclude_file_local_types", "false")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TypeKindIncludedInMessage_Class()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test.cs", @"
+class [||]Sample
+{
+}")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TypeKindIncludedInMessage_Struct()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test.cs", @"
+struct [||]Sample
+{
+}")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (struct Sample)")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TypeKindIncludedInMessage_Interface()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test.cs", @"
+interface [||]ISample
+{
+}")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (interface ISample)")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TypeKindIncludedInMessage_Enum()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test.cs", @"
+enum [||]Sample
+{
+    Value1
+}")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (enum Sample)")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TypeKindIncludedInMessage_Record()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test.cs", @"
+record [||]Sample;")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (record Sample)")
+              .ValidateAsync();
+    }
+
+#if CSHARP11_OR_GREATER
+    [Fact]
+    public async Task TypeKindIncludedInMessage_RecordStruct()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test.cs", @"
+record struct [||]Sample;")
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .ShouldReportDiagnosticWithMessage("File name must match type name (record struct Sample)")
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task TypeKindIncludedInMessage_Delegate()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test.cs", @"
+delegate void [||]Sample();")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (delegate Sample)")
               .ValidateAsync();
     }
 #endif

@@ -17,7 +17,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.FileNameMustMatchTypeName,
         title: "File name must match type name",
-        messageFormat: "File name must match type name",
+        messageFormat: "File name must match type name ({0} {1})",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -124,7 +124,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
             }
 
-            context.ReportDiagnostic(Rule, location);
+            context.ReportDiagnostic(Rule, location, GetTypeKindDisplayString(symbol), symbolName);
         }
     }
 
@@ -153,5 +153,26 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     {
         var wildcardPattern = $"^{Regex.Escape(pattern).Replace("\\*", ".*", StringComparison.Ordinal)}$";
         return Regex.IsMatch(input, wildcardPattern, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+    }
+
+    private static string GetTypeKindDisplayString(INamedTypeSymbol symbol)
+    {
+        return symbol.TypeKind switch
+        {
+#if CSHARP10_OR_GREATER
+            TypeKind.Class when symbol.IsRecord => "record",
+#endif
+            TypeKind.Class => "class",
+#if CSHARP10_OR_GREATER
+            TypeKind.Struct when symbol.IsRecord => "record struct",
+#endif
+            TypeKind.Struct => "struct",
+            TypeKind.Interface => "interface",
+            TypeKind.Enum => "enum",
+            TypeKind.Delegate => "delegate",
+#pragma warning disable CA1308 // Normalize strings to uppercase
+            _ => symbol.TypeKind.ToString().ToLowerInvariant(),
+#pragma warning restore CA1308 // Normalize strings to uppercase
+        };
     }
 }
