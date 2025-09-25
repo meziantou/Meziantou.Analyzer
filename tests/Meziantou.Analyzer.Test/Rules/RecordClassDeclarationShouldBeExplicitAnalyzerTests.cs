@@ -20,7 +20,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public [|record|] Target { public required int Id { get; init; } }
+                public [|record|] Target { }
                 """)
             .ValidateAsync();
     }
@@ -31,7 +31,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public sealed [|record|] Target { public required int Id { get; init; } }
+                public sealed [|record|] Target { }
                 """)
             .ValidateAsync();
     }
@@ -42,7 +42,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record class Target { public required int Id { get; init; } }
+                public record class Target { }
                 """)
             .ValidateAsync();
     }
@@ -53,7 +53,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record struct Target { public required int Id { get; init; } }
+                public record struct Target { }
                 """)
             .ValidateAsync();
     }
@@ -64,7 +64,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public class Target { public required int Id { get; init; } }
+                public class Target { }
                 """)
             .ValidateAsync();
     }
@@ -75,7 +75,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public struct Target { public int Id { get; init; } }
+                public struct Target { }
                 """)
             .ValidateAsync();
     }
@@ -133,7 +133,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public abstract [|record|] BaseRecord { }           
+                public abstract [|record|] BaseRecord { }
                 public [|record|] Target : BaseRecord { }
                 """)
             .ValidateAsync();
