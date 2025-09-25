@@ -173,6 +173,8 @@
 |[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0172](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0172.md)|Usage|Both sides of the logical operation are identical|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0173](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0173.md)|Design|Use LazyInitializer.EnsureInitialize|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0174](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0174.md)|Style|Record should use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0175](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0175.md)|Style|Record should not use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -700,6 +702,12 @@ dotnet_diagnostic.MA0172.severity = none
 
 # MA0173: Use LazyInitializer.EnsureInitialize
 dotnet_diagnostic.MA0173.severity = suggestion
+
+# MA0174: Record should use explicit 'class' keyword
+dotnet_diagnostic.MA0174.severity = none
+
+# MA0175: Record should not use explicit 'class' keyword
+dotnet_diagnostic.MA0175.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1220,4 +1228,10 @@ dotnet_diagnostic.MA0172.severity = none
 
 # MA0173: Use LazyInitializer.EnsureInitialize
 dotnet_diagnostic.MA0173.severity = none
+
+# MA0174: Record should use explicit 'class' keyword
+dotnet_diagnostic.MA0174.severity = none
+
+# MA0175: Record should not use explicit 'class' keyword
+dotnet_diagnostic.MA0175.severity = none
 ```
