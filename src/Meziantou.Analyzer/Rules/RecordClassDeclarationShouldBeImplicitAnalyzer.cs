@@ -1,3 +1,4 @@
+#if CSHARP10_OR_GREATER
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -41,3 +42,4 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzer : DiagnosticA
         }
     }
 }
+#endif
