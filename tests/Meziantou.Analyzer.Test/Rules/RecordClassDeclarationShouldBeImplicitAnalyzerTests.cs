@@ -20,7 +20,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record [|class|] Target { public required int Id { get; init; } }
+                public record [|class|] Target { }
                 """)
             .ValidateAsync();
     }
@@ -31,7 +31,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public sealed record [|class|] Target { public required int Id { get; init; } }
+                public sealed record [|class|] Target { }
                 """)
             .ValidateAsync();
     }
@@ -42,7 +42,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record Target { public required int Id { get; init; } }
+                public record Target { }
                 """)
             .ValidateAsync();
     }
@@ -53,7 +53,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record struct Target { public required int Id { get; init; } }
+                public record struct Target { }
                 """)
             .ValidateAsync();
     }
@@ -64,7 +64,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public class Target { public required int Id { get; init; } }
+                public class Target { }
                 """)
             .ValidateAsync();
     }
@@ -75,7 +75,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public struct Target { public int Id { get; init; } }
+                public struct Target { }
                 """)
             .ValidateAsync();
     }
@@ -86,7 +86,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record [|class|] Target(int Id);
+                public record [|class|] Target(int Id) { }
                 """)
             .ValidateAsync();
     }
@@ -97,7 +97,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record Target(int Id);
+                public record Target(int Id) { }
                 """)
             .ValidateAsync();
     }
@@ -108,7 +108,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record [|class|] Target<T> { public required T Value { get; init; } }
+                public record [|class|] Target<T> { }
                 """)
             .ValidateAsync();
     }
@@ -121,7 +121,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
             .WithSourceCode("""
                 namespace MyNamespace
                 {
-                    public record [|class|] Target { public required int Id { get; init; } }
+                    public record [|class|] Target { }
                 }
                 """)
             .ValidateAsync();
@@ -133,8 +133,8 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public abstract record BaseRecord;            
-                public record [|class|] Target : BaseRecord { public required int Id { get; init; } }
+                public abstract record BaseRecord { }
+                public record [|class|] Target : BaseRecord { }
                 """)
             .ValidateAsync();
     }

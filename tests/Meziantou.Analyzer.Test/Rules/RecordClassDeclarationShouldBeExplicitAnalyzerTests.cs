@@ -86,7 +86,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public [|record|] Target(int Id);
+                public [|record|] Target(int Id) { }
                 """)
             .ValidateAsync();
     }
@@ -97,7 +97,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public record class Target(int Id);
+                public record class Target(int Id) { }
                 """)
             .ValidateAsync();
     }
@@ -108,7 +108,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public [|record|] Target<T> { public required T Value { get; init; } }
+                public [|record|] Target<T> { }
                 """)
             .ValidateAsync();
     }
@@ -121,7 +121,7 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
             .WithSourceCode("""
                 namespace MyNamespace
                 {
-                    public [|record|] Target { public required int Id { get; init; } }
+                    public [|record|] Target { }
                 }
                 """)
             .ValidateAsync();
@@ -133,8 +133,8 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public abstract [|record|] BaseRecord;            
-                public [|record|] Target : BaseRecord { public required int Id { get; init; } }
+                public abstract [|record|] BaseRecord { }           
+                public [|record|] Target : BaseRecord { }
                 """)
             .ValidateAsync();
     }
@@ -145,8 +145,8 @@ public sealed class RecordClassDeclarationShouldBeExplicitAnalyzerTests
 
         await CreateProjectBuilder()
             .WithSourceCode("""
-                public abstract record class BaseRecord;            
-                public record class Target : BaseRecord { public required int Id { get; init; } }
+                public abstract record class BaseRecord { }
+                public record class Target : BaseRecord { }
                 """)
             .ValidateAsync();
     }
