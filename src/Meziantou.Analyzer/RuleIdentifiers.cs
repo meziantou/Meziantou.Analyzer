@@ -176,6 +176,8 @@ internal static class RuleIdentifiers
     public const string UsePatternMatchingInsteadOfHasvalue = "MA0171";
     public const string BothSideOfTheConditionAreIdentical = "MA0172";
     public const string UseLazyInitializerEnsureInitialize = "MA0173";
+    public const string RecordClassDeclarationShouldBeExplicit = "MA0174";
+    public const string RecordClassDeclarationShouldBeImplicit = "MA0175";
 
     public static string GetHelpUri(string identifier)
     {

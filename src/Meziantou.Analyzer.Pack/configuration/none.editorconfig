@@ -517,3 +517,9 @@ dotnet_diagnostic.MA0172.severity = none
 
 # MA0173: Use LazyInitializer.EnsureInitialize
 dotnet_diagnostic.MA0173.severity = none
+
+# MA0174: Record should use explicit 'class' keyword
+dotnet_diagnostic.MA0174.severity = none
+
+# MA0175: Record should not use explicit 'class' keyword
+dotnet_diagnostic.MA0175.severity = none
