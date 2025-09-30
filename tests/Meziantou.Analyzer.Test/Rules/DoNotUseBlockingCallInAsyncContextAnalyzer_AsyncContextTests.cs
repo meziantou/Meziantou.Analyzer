@@ -73,6 +73,50 @@ class Test
     }
 
     [Fact]
+    public async Task FixerKeepsGenericArgument()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode(
+                @"using System.Threading.Tasks;
+class Buz
+{
+    private static async Task Do()
+    {
+        [||]Bar.Foo<int>();
+    }
+}
+
+class Bar
+{
+    public static T Foo<T>()
+        => default;
+
+    public static Task<T> FooAsync<T>()
+        => Task.FromResult(default(T));
+}")
+            .ShouldFixCodeWith(
+                @"using System.Threading.Tasks;
+class Buz
+{
+    private static async Task Do()
+    {
+        await Bar.FooAsync<int>();
+    }
+}
+
+class Bar
+{
+    public static T Foo<T>()
+        => default;
+
+    public static Task<T> FooAsync<T>()
+        => Task.FromResult(default(T));
+}")
+            .ValidateAsync();
+    }
+
+
+    [Fact]
     public async Task Async_Wait_Int32_Diagnostic()
     {
         await CreateProjectBuilder()

@@ -125,7 +125,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         if (nodeToReplace is null)
             return document;
 
-        var newNode = nodeToFix.ReplaceNode(nodeToReplace, generator.IdentifierName(methodName));
+        var newMethodName = nodeToReplace switch
+        {
+            GenericNameSyntax genericName => generator.GenericName(methodName, genericName.TypeArgumentList.Arguments),
+            _ => generator.IdentifierName(methodName),
+        };
+        var newNode = nodeToFix.ReplaceNode(nodeToReplace, newMethodName);
         var newExpression = generator.AwaitExpression(newNode).Parentheses();
         editor.ReplaceNode(nodeToFix, newExpression);
 
