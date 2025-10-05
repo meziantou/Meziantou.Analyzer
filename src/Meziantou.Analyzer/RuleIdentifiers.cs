@@ -178,6 +178,7 @@ internal static class RuleIdentifiers
     public const string UseLazyInitializerEnsureInitialize = "MA0173";
     public const string RecordClassDeclarationShouldBeExplicit = "MA0174";
     public const string RecordClassDeclarationShouldBeImplicit = "MA0175";
+    public const string OptimizeGuidCreation = "MA0176";
 
     public static string GetHelpUri(string identifier)
     {
