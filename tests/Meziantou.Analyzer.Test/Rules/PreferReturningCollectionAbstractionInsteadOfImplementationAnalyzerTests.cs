@@ -371,4 +371,44 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ConversionOperator()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""                
+                public class Sample
+                {
+                    public static implicit operator Sample(System.Collections.Generic.List<string> _) => throw null;
+                    public static implicit operator System.Collections.Generic.List<string>(Sample _) => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AddOperator()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""                                
+                public class Sample
+                {
+                    public static Sample operator+(Sample instance, [|System.Collections.Generic.List<int>|] value) => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AddOperator_Instance()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""                                
+                public class Sample : System.Collections.Generic.List<int>
+                {
+                    public static Sample operator+(Sample instance, int value) => throw null;
+                }
+                """)
+            .ValidateAsync();
+    }
 }
