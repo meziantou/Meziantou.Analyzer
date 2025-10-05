@@ -146,6 +146,9 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                     break;
 
                 case IMethodSymbol methodSymbol when methodSymbol.MethodKind is not MethodKind.PropertyGet and not MethodKind.PropertySet:
+                    if (context.Symbol is IMethodSymbol { MethodKind: MethodKind.Conversion })
+                        return;
+
                     if (!IsValidType(methodSymbol.ReturnType))
                     {
                         context.ReportDiagnostic(Rule, methodSymbol, DiagnosticMethodReportOptions.ReportOnReturnType);
