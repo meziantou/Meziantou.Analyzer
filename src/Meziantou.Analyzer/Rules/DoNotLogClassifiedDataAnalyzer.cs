@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
@@ -34,6 +34,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                 return;
 
             context.RegisterOperationAction(ctx.AnalyzeInvocationDeclaration, OperationKind.Invocation);
+            context.RegisterSymbolAction(ctx.AnalyzeMethodSymbol, SymbolKind.Method);
         });
     }
 
@@ -47,6 +48,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
 
             LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
+            LoggerMessageAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute");
             StructuredLogFieldAttributeSymbol = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute");
 
             DataClassificationAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute");
@@ -57,10 +59,35 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? LoggerSymbol { get; }
         public INamedTypeSymbol? LoggerExtensionsSymbol { get; }
         public INamedTypeSymbol? LoggerMessageSymbol { get; }
+        public INamedTypeSymbol? LoggerMessageAttributeSymbol { get; }
 
         public INamedTypeSymbol? DataClassificationAttributeSymbol { get; }
 
         public bool IsValid => DataClassificationAttributeSymbol is not null && LoggerSymbol is not null;
+
+        public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
+        {
+            var method = (IMethodSymbol)context.Symbol;
+            
+            // Check if method has LoggerMessageAttribute
+            if (!method.HasAttribute(LoggerMessageAttributeSymbol))
+                return;
+
+            // Validate each parameter
+            foreach (var parameter in method.Parameters)
+            {
+                // Skip the ILogger parameter
+                if (parameter.Type.IsEqualTo(LoggerSymbol))
+                    continue;
+
+                // Check if parameter or its type has DataClassificationAttribute
+                if (parameter.HasAttribute(DataClassificationAttributeSymbol!, inherits: true) || 
+                    parameter.Type.HasAttribute(DataClassificationAttributeSymbol!, inherits: true))
+                {
+                    context.ReportDiagnostic(Rule, parameter);
+                }
+            }
+        }
 
         public void AnalyzeInvocationDeclaration(OperationAnalysisContext context)
         {

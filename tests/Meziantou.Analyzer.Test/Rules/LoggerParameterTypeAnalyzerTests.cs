@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -475,6 +475,261 @@ namespace Meziantou.Analyzer.Annotations
               .WithSourceCode(SourceCode)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_ValidParameterTypes()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+    static partial void LogTestMessage(ILogger logger, string Prop, int Name);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.String
+Name;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_InvalidParameterType()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+    static partial void LogTestMessage(ILogger logger, int [|Prop|], string Name);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.String
+Name;System.String
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_MultipleInvalidParameterTypes()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+    static partial void LogTestMessage(ILogger logger, int [|Prop|], int [|Name|]);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop;System.String
+Name;System.String
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_MissingConfiguration()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+    static partial void LogTestMessage(ILogger logger, string [|Prop|], int Name);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Name;System.Int32
+""")
+              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' has no configured type")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_DeniedParameter()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+    static partial void LogTestMessage(ILogger logger, string [|Prop|], int Name);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Name;System.Int32
+Prop;
+""")
+              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' is not allowed by configuration")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_SkipILoggerParameter()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Name}")]
+    static partial void LogTestMessage(ILogger logger, int Name);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Name;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_WithCallerMemberName()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message from {Method} with {Name}")]
+    static partial void LogTestMessage(ILogger logger, int Name, [CallerMemberName] string Method = "");
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Method;System.String
+Name;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_NullableParameterType()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test with {Value}")]
+    static partial void LogTestMessage(ILogger logger, int Value);
+    
+    [LoggerMessage(10_005, LogLevel.Trace, "Test with {Value}")]
+    static partial void LogTestMessage2(ILogger logger, int? Value);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Value;System.Nullable{System.Int32}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_NoConfiguration()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop}")]
+    static partial void LogTestMessage(ILogger logger, string Prop);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_EmptyFormatString()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "")]
+    static partial void LogTestMessage(ILogger logger);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Name;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LoggerMessageAttribute_NoFormatParameters()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+partial class LoggerExtensions
+{
+    [LoggerMessage(10_004, LogLevel.Trace, "Test message without parameters")]
+    static partial void LogTestMessage(ILogger logger);
+}
+
+class Program { static void Main() { } }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Name;System.Int32
 """)
               .ValidateAsync();
     }
