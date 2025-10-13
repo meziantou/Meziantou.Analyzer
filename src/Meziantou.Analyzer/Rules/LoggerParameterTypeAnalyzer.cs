@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -82,6 +82,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 return;
 
             context.RegisterOperationAction(ctx.AnalyzeInvocationDeclaration, OperationKind.Invocation);
+            context.RegisterSymbolAction(ctx.AnalyzeMethodSymbol, SymbolKind.Method);
         });
     }
 
@@ -104,6 +105,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
             LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
+            LoggerMessageAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute");
             StructuredLogFieldAttributeSymbol = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute");
 
             SerilogLoggerEnrichmentConfigurationWithPropertySymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.Configuration.LoggerEnrichmentConfiguration.WithProperty(System.String,System.Object,System.Boolean)", compilation);
@@ -230,6 +232,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? LoggerSymbol { get; }
         public INamedTypeSymbol? LoggerExtensionsSymbol { get; }
         public INamedTypeSymbol? LoggerMessageSymbol { get; }
+        public INamedTypeSymbol? LoggerMessageAttributeSymbol { get; }
 
         public INamedTypeSymbol? SerilogLogSymbol { get; }
         public INamedTypeSymbol? SerilogILoggerSymbol { get; }
@@ -241,6 +244,68 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         public LoggerConfigurationFile Configuration { get; }
 
         public bool IsValid => Configuration.Count > 0;
+
+        public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
+        {
+            var method = (IMethodSymbol)context.Symbol;
+
+            // Check if method has LoggerMessageAttribute
+            var loggerMessageAttribute = method.GetAttribute(LoggerMessageAttributeSymbol);
+            if (loggerMessageAttribute is null)
+                return;
+
+            // Get the message format string from the attribute
+            string? formatString = null;
+            foreach (var arg in loggerMessageAttribute.ConstructorArguments)
+            {
+                if (arg.Type.IsString() && arg.Value is string str)
+                {
+                    formatString = str;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(formatString))
+                return;
+
+            // Parse the format string to get template parameter names
+            var logFormat = new LogValuesFormatter(formatString);
+            if (logFormat.ValueNames.Count == 0)
+                return;
+
+            // Create a dictionary mapping parameter names to their types
+            var parameterMap = new Dictionary<string, (ITypeSymbol Type, IParameterSymbol Parameter)>(StringComparer.OrdinalIgnoreCase);
+            foreach (var parameter in method.Parameters)
+            {
+                // Skip the ILogger parameter
+                if (parameter.Type.IsEqualTo(LoggerSymbol))
+                    continue;
+
+                parameterMap[parameter.Name] = (parameter.Type, parameter);
+            }
+
+            // Validate each template parameter
+            foreach (var templateParamName in logFormat.ValueNames)
+            {
+                if (parameterMap.TryGetValue(templateParamName, out var paramInfo))
+                {
+                    // Validate the parameter type
+                    ValidateParameterName(context, paramInfo.Parameter, templateParamName);
+
+                    if (!Configuration.IsValid(context.Compilation, templateParamName, paramInfo.Type, out var ruleFound))
+                    {
+                        var expectedSymbols = Configuration.GetSymbols(templateParamName) ?? [];
+                        var expectedSymbolsStr = $"must be of type {string.Join(" or ", expectedSymbols.Select(s => $"'{FormatType(s)}'"))} but is of type '{FormatType(paramInfo.Type)}'";
+                        context.ReportDiagnostic(Rule, paramInfo.Parameter, templateParamName, expectedSymbolsStr);
+                    }
+
+                    if (!ruleFound)
+                    {
+                        context.ReportDiagnostic(RuleMissingConfiguration, paramInfo.Parameter, templateParamName);
+                    }
+                }
+            }
+        }
 
         public void AnalyzeInvocationDeclaration(OperationAnalysisContext context)
         {
@@ -437,6 +502,15 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             if (expectedSymbols is [])
             {
                 context.ReportDiagnostic(isSerilog ? RuleSerilog : Rule, nameOperation, name, "is not allowed by configuration");
+            }
+        }
+
+        private void ValidateParameterName(SymbolAnalysisContext context, IParameterSymbol parameter, string name)
+        {
+            var expectedSymbols = Configuration.GetSymbols(name);
+            if (expectedSymbols is [])
+            {
+                context.ReportDiagnostic(Rule, parameter, name, "is not allowed by configuration");
             }
         }
 
