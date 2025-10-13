@@ -250,7 +250,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             var method = (IMethodSymbol)context.Symbol;
 
             // Check if method has LoggerMessageAttribute
-            var loggerMessageAttribute = method.GetAttributes().FirstOrDefault(attr => attr.AttributeClass.IsEqualTo(LoggerMessageAttributeSymbol));
+            var loggerMessageAttribute = method.GetAttribute(LoggerMessageAttributeSymbol);
             if (loggerMessageAttribute is null)
                 return;
 
@@ -258,7 +258,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             string? formatString = null;
             foreach (var arg in loggerMessageAttribute.ConstructorArguments)
             {
-                if (arg.Type?.SpecialType == SpecialType.System_String && arg.Value is string str)
+                if (arg.Type.IsString() && arg.Value is string str)
                 {
                     formatString = str;
                     break;
