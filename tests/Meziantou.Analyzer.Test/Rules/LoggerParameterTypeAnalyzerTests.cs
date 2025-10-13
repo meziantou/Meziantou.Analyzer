@@ -515,11 +515,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
     static partial void LogTestMessage(ILogger logger, int [|Prop|], string Name);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.String
 Name;System.String
@@ -539,11 +538,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
     static partial void LogTestMessage(ILogger logger, int [|Prop|], int [|Name|]);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.String
 Name;System.String
@@ -563,11 +561,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
     static partial void LogTestMessage(ILogger logger, string [|Prop|], int Name);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Name;System.Int32
 """)
@@ -587,11 +584,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
     static partial void LogTestMessage(ILogger logger, string [|Prop|], int Name);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Name;System.Int32
 Prop;
@@ -611,11 +607,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Name}")]
     static partial void LogTestMessage(ILogger logger, int Name);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Name;System.Int32
 """)
@@ -634,11 +629,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message from {Method} with {Name}")]
     static partial void LogTestMessage(ILogger logger, int Name, [CallerMemberName] string Method = "");
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Method;System.String
 Name;System.Int32
@@ -660,11 +654,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_005, LogLevel.Trace, "Test with {Value}")]
     static partial void LogTestMessage2(ILogger logger, int? Value);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Value;System.Nullable{System.Int32}
 """)
@@ -682,11 +675,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop}")]
     static partial void LogTestMessage(ILogger logger, string Prop);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .ValidateAsync();
     }
 
@@ -701,11 +693,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "")]
     static partial void LogTestMessage(ILogger logger);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Name;System.Int32
 """)
@@ -723,11 +714,10 @@ partial class LoggerExtensions
     [LoggerMessage(10_004, LogLevel.Trace, "Test message without parameters")]
     static partial void LogTestMessage(ILogger logger);
 }
-
-class Program { static void Main() { } }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Name;System.Int32
 """)
