@@ -613,7 +613,6 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 #if ROSLYN_4_6_OR_GREATER
                 SymbolDisplayMiscellaneousOptions.ExpandValueTuple |
 #endif
-                SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier |
                 SymbolDisplayMiscellaneousOptions.UseErrorTypeSymbolName);
             return typeSymbol.ToDisplayString(format);
         }
