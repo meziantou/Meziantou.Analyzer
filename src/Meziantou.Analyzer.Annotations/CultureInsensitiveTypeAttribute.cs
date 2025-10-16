@@ -1,7 +1,4 @@
 #pragma warning disable CS1591
-
-using System;
-
 namespace Meziantou.Analyzer.Annotations;
 
 /// <summary>
@@ -14,7 +11,11 @@ namespace Meziantou.Analyzer.Annotations;
 public sealed class CultureInsensitiveTypeAttribute : System.Attribute
 {
     public CultureInsensitiveTypeAttribute() { }
+    public CultureInsensitiveTypeAttribute(string format) => Format = format;
     public CultureInsensitiveTypeAttribute(System.Type type) => Type = type;
+    public CultureInsensitiveTypeAttribute(System.Type type, string format)
+        => (Type, Format) = (type, format);
 
     public Type? Type { get; }
+    public string? Format { get; }
 }

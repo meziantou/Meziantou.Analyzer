@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -59,10 +59,10 @@ internal static class TypeSymbolExtensions
         return GetAllInterfacesIncludingThis(symbol).Any(interfaceType.IsEqualTo);
     }
 
-    public static AttributeData? GetAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
+    public static IEnumerable<AttributeData> GetAttributes(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
     {
         if (attributeType is null)
-            return null;
+            yield break;
 
         if (attributeType.IsSealed)
         {
@@ -77,17 +77,20 @@ internal static class TypeSymbolExtensions
             if (inherits)
             {
                 if (attribute.AttributeClass.IsOrInheritFrom(attributeType))
-                    return attribute;
+                    yield return attribute;
             }
             else
             {
                 if (attributeType.IsEqualTo(attribute.AttributeClass))
-                    return attribute;
+                    yield return attribute;
 
             }
         }
+    }
 
-        return null;
+    public static AttributeData? GetAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
+    {
+        return GetAttributes(symbol, attributeType, inherits).FirstOrDefault();
     }
 
     public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)

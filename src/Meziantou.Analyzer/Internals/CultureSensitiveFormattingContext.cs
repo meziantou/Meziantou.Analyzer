@@ -1,5 +1,7 @@
-using System.Linq;
+using System;
+using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
@@ -256,23 +258,40 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (!typeSymbol.Implements(SystemIFormattableSymbol))
             return false;
 
-        if (typeSymbol.HasAttribute(CultureInsensitiveTypeAttributeSymbol))
+        if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol, format: null))
             return false;
 
-        foreach (var attribute in compilation.Assembly.GetAttributes())
-        {
-            if (attribute.ConstructorArguments.Length != 1)
-                continue;
+        return true;
+    }
 
-            if (!attribute.AttributeClass.IsEqualTo(CultureInsensitiveTypeAttributeSymbol))
+    private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol, string? format)
+    {
+        var attributes = typeSymbol.GetAttributes(CultureInsensitiveTypeAttributeSymbol);
+        foreach (var attr in attributes)
+        {
+            if (attr.ConstructorArguments.IsEmpty)
+                return false; // no format is set, so the type is culture insensitive
+
+            var attrFormat = attr.ConstructorArguments[0].Value;
+            if (attrFormat is null || (attrFormat is string attrFormatValue && (string.IsNullOrEmpty(attrFormatValue) || attrFormatValue == format)))
+                return false; // no format is set, so the type is culture insensitive
+        }
+
+        foreach (var attribute in compilation.Assembly.GetAttributes(CultureInsensitiveTypeAttributeSymbol))
+        {
+            if (attribute.ConstructorArguments.IsEmpty)
                 continue;
 
             if (attribute.ConstructorArguments[0].Value is INamedTypeSymbol attributeType && attributeType.IsEqualTo(typeSymbol))
-                return false;
-        }
+            {
+                if (attribute.ConstructorArguments.Length == 1)
+                    return false;
 
-        if (compilation.Assembly.HasAttribute(CultureInsensitiveTypeAttributeSymbol))
-            return false;
+                var attrFormat = attribute.ConstructorArguments[1].Value;
+                if (attrFormat is null || (attrFormat is string attrFormatValue && (string.IsNullOrEmpty(attrFormatValue) || attrFormatValue == format)))
+                    return false; // no format is set, so the type is culture insensitive
+            }
+        }
 
         return true;
     }
@@ -282,13 +301,15 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (!IsCultureSensitiveType(symbol, options))
             return false;
 
+        var formatString = format?.ConstantValue.Value as string;
+
         if (instance is not null)
         {
-            if (IsConstantPositiveNumber(instance) && format is null or { ConstantValue: { HasValue: true, Value: "" } })
+            if (IsConstantPositiveNumber(instance) && string.IsNullOrEmpty(formatString))
                 return false;
         }
 
-        if (symbol.IsNumberType() && format is { ConstantValue: { HasValue: true, Value: string formatString } } && formatString is "B" or ['x', ..] or ['X', ..])
+        if (symbol.IsNumberType() && formatString is "B" or ['x', ..] or ['X', ..])
             return false;
 
         if (symbol.IsDateTime() || symbol.IsEqualToAny(DateTimeOffsetSymbol, DateOnlySymbol, TimeOnlySymbol))
@@ -301,6 +322,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (IsInvariantTimeSpanFormat(format))
                 return false;
         }
+
+        if (symbol is not null && !IsCultureSensitiveTypeUsingAttribute(symbol, formatString))
+            return false;
 
         return true;
     }

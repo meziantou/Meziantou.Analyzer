@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
@@ -66,7 +66,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             if (IsExcludedMethod(context, operation))
                 return;
-
+            
             var options = MustUnwrapNullableTypes(context, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
             if (!_cultureSensitiveContext.IsCultureSensitiveOperation(operation, options))
                 return;

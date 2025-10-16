@@ -379,6 +379,65 @@ class Test
     }
 
     [Fact]
+    public async Task IgnoreTypeUsingAssemblyAttribute_MultipleAttributes()
+    {
+        var sourceCode = """
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "a")]
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "b")]
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "c")]
+
+class Test
+{
+    void A()
+    {
+        _ = $"abc{new System.DateTime():b}";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat()
+    {
+        var sourceCode = """
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "abc")]
+
+class Test
+{
+    void A()
+    {
+        _ = $"abc{new System.DateTime():abc}";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormatNotMatchingAttribute()
+    {
+        var sourceCode = """
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "abc")]
+
+class Test
+{
+    void A()
+    {
+        _ = $"abc[|{new System.DateTime():other}|]";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task IgnoreTypeUsingAttribute()
     {
         var sourceCode = """
