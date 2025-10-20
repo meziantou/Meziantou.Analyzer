@@ -170,7 +170,7 @@
 |[MA0168](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0168.md)|Performance|Use readonly struct for in or ref readonly parameter|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0169](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0169.md)|Design|Use Equals method instead of operator|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0170](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0170.md)|Design|Type cannot be used as an attribute argument|<span title='Warning'>⚠️</span>|❌|❌|
-|[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of HasValue for Nullable\<T\> check|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0172](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0172.md)|Usage|Both sides of the logical operation are identical|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0173](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0173.md)|Design|Use LazyInitializer.EnsureInitialize|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0174](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0174.md)|Style|Record should use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|❌|
@@ -695,7 +695,7 @@ dotnet_diagnostic.MA0169.severity = warning
 # MA0170: Type cannot be used as an attribute argument
 dotnet_diagnostic.MA0170.severity = none
 
-# MA0171: Use pattern matching instead of inequality operators for discrete value
+# MA0171: Use pattern matching instead of HasValue for Nullable<T> check
 dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical
@@ -1224,7 +1224,7 @@ dotnet_diagnostic.MA0169.severity = none
 # MA0170: Type cannot be used as an attribute argument
 dotnet_diagnostic.MA0170.severity = none
 
-# MA0171: Use pattern matching instead of inequality operators for discrete value
+# MA0171: Use pattern matching instead of HasValue for Nullable<T> check
 dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical
