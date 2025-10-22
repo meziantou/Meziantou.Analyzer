@@ -1,8 +1,6 @@
-﻿using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using TestHelper;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 public sealed class TaskInUsingAnalyzerTests

@@ -1,7 +1,5 @@
-using System;
 using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test;
 public sealed class RuleHelpUri

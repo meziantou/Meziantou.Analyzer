@@ -1,4 +1,3 @@
-﻿using System.Text;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;

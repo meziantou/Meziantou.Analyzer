@@ -1,7 +1,4 @@
-using System;
-using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;

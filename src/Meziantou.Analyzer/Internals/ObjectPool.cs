@@ -1,9 +1,6 @@
 #pragma warning disable MA0048 // File name must match type name
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 using System.Collections.Concurrent;
-using System.Threading;
-using System;
-using System.Text;
 
 namespace Meziantou.Analyzer.Internals;
 

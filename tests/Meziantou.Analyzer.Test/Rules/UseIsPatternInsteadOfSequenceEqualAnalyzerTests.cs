@@ -1,9 +1,7 @@
-﻿#if CSHARP11_OR_GREATER
-using System.Threading.Tasks;
+#if CSHARP11_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests

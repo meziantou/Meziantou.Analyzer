@@ -2,8 +2,6 @@
 #pragma warning disable CA1849
 #pragma warning disable MA0004
 #pragma warning disable MA0009
-using System.Globalization;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using Meziantou.Framework;

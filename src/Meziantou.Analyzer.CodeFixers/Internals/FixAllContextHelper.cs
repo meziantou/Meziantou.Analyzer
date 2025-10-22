@@ -1,13 +1,10 @@
-﻿// File initially copied from
+// File initially copied from
 //  https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/4d9b3e3bb785a55f73b3029a843f0c0b73cc9ea7/StyleCop.Analyzers/StyleCop.Analyzers.CodeFixes/Helpers/FixAllContextHelper.cs
 // Original copyright statement:
 //  Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
 //  Licensed under the MIT License. See LICENSE in the project root for license information.
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 
