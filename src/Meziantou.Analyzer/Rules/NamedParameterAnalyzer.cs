@@ -32,29 +32,29 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(context =>
         {
-            var callerMustUseNamedArgumentType = compilationContext.Compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute");
+            var callerMustUseNamedArgumentType = context.Compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute");
 
-            var objectType = compilationContext.Compilation.GetSpecialType(SpecialType.System_Object);
-            var taskTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            var taskGenericTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-            var valueTaskTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-            var valueTaskGenericTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-            var taskCompletionSourceType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
-            var methodBaseTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Reflection.MethodBase");
-            var fieldInfoTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Reflection.FieldInfo");
-            var propertyInfoTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Reflection.PropertyInfo");
-            var msTestAssertTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
-            var nunitAssertTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("NUnit.Framework.Assert");
-            var xunitAssertTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("Xunit.Assert");
-            var keyValuePairTokenType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
-            var propertyBuilderType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
-            var syntaxNodeType = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
-            var expressionType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
-            var operationUtilities = new OperationUtilities(compilationContext.Compilation);
+            var objectType = context.Compilation.GetSpecialType(SpecialType.System_Object);
+            var taskTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            var taskGenericTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            var valueTaskTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            var valueTaskGenericTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            var taskCompletionSourceType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
+            var methodBaseTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.MethodBase");
+            var fieldInfoTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.FieldInfo");
+            var propertyInfoTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.PropertyInfo");
+            var msTestAssertTokenType = context.Compilation.GetBestTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+            var nunitAssertTokenType = context.Compilation.GetBestTypeByMetadataName("NUnit.Framework.Assert");
+            var xunitAssertTokenType = context.Compilation.GetBestTypeByMetadataName("Xunit.Assert");
+            var keyValuePairTokenType = context.Compilation.GetBestTypeByMetadataName("System.Collection.Generic.KeyValuePair`2");
+            var propertyBuilderType = context.Compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
+            var syntaxNodeType = context.Compilation.GetBestTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
+            var expressionType = context.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
+            var operationUtilities = new OperationUtilities(context.Compilation);
 
-            compilationContext.RegisterSyntaxNodeAction(syntaxContext =>
+            context.RegisterSyntaxNodeAction(syntaxContext =>
             {
                 var argument = (ArgumentSyntax)syntaxContext.Node;
                 if (argument.NameColon is not null)
@@ -152,7 +152,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         {
                             IMethodSymbol methodSymbol => methodSymbol.Parameters,
                             IPropertySymbol propertySymbol => propertySymbol.Parameters,
-                            _ => [],
+                            _ => ImmutableArray<IParameterSymbol>.Empty,
                         };
 
                         if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(syntaxContext.Options, expression))
