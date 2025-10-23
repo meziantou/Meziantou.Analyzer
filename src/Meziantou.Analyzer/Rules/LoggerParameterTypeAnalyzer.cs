@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.IO;
 using Microsoft.CodeAnalysis.Text;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis.CSharp;
@@ -213,7 +207,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
                         if (attribute.ConstructorArguments is [{ Type.SpecialType: SpecialType.System_String, IsNull: false, Value: string name }, TypedConstant { Kind: TypedConstantKind.Array } types])
                         {
-                            configuration[name] = types.Values.Select(v => v.Value as ITypeSymbol).WhereNotNull().ToArray();
+                            configuration[name] = [.. types.Values.Select(v => v.Value as ITypeSymbol).WhereNotNull()];
                         }
                     }
                 }
@@ -335,7 +329,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                         return;
 
                     formatExpression = arg.Value;
-                    argumentTypes = operation.TargetMethod.TypeArguments.Select((arg, index) => ((ITypeSymbol?)arg, GetSyntaxNode(operation, index))).ToArray();
+                    argumentTypes = [.. operation.TargetMethod.TypeArguments.Select((arg, index) => ((ITypeSymbol?)arg, GetSyntaxNode(operation, index)))];
 
                     static SyntaxNode GetSyntaxNode(IOperation operation, int index)
                     {
@@ -364,7 +358,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                         {
                             if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
                             {
-                                argumentTypes = arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax)).ToArray();
+                                argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax))];
                             }
                         }
                     }
@@ -384,13 +378,13 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
                         if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
                         {
-                            argumentTypes = arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax)).ToArray();
+                            argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax))];
                         }
                     }
 
                     if (operation.Arguments.Length >= templateIndex && argumentTypes is null)
                     {
-                        argumentTypes = operation.Arguments.Skip(templateIndex + 1).Select(v => (v.Value.UnwrapImplicitConversionOperations().Type, v.Syntax)).ToArray();
+                        argumentTypes = [.. operation.Arguments.Skip(templateIndex + 1).Select(v => (v.Value.UnwrapImplicitConversionOperations().Type, v.Syntax))];
                     }
                 }
 

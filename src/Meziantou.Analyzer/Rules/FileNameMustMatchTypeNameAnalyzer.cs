@@ -1,7 +1,4 @@
-﻿using System;
 using System.Collections.Immutable;
-using System.Globalization;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -113,7 +110,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
 
                 // Type{T}
-                if (fileName.Equals((symbolName + '{' + string.Join(",", symbol.TypeParameters.Select(t => t.Name)) + '}').AsSpan(), StringComparison.OrdinalIgnoreCase))
+                if (fileName.Equals((symbolName + '{' + string.Join(',', symbol.TypeParameters.Select(t => t.Name)) + '}').AsSpan(), StringComparison.OrdinalIgnoreCase))
                     continue;
             }
 

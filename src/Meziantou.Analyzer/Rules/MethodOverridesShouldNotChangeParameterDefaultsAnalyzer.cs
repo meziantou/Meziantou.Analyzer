@@ -1,6 +1,4 @@
-﻿using System;
 using System.Collections.Immutable;
-using System.Threading;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -99,6 +97,6 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
             return "null";
         }
 
-        return FormattableString.Invariant($"'{parameter.ExplicitDefaultValue}'");
+        return string.Create(CultureInfo.InvariantCulture, $"'{parameter.ExplicitDefaultValue}'");
     }
 }

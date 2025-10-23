@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -319,7 +313,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return;
 
             // Task`1.Result
-            if (string.Equals(operation.Property.Name, nameof(Task<int>.Result), StringComparison.Ordinal))
+            if (string.Equals(operation.Property.Name, nameof(Task<>.Result), StringComparison.Ordinal))
             {
                 if (operation.Member.ContainingType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol))
                 {

@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 public class UseEqualsMethodInsteadOfOperatorAnalyzerTests

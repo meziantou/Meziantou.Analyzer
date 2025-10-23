@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -27,7 +27,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationAnalyzer : Diag
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterCompilationStartAction(context =>
         {
-            var isOSPlatformSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform)", context.Compilation) as IMethodSymbol;
+            var isOSPlatformSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform)", context.Compilation);
             var osPlatformSymbol = context.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.OSPlatform");
             var operatingSystemSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.OperatingSystem.IsWindows", context.Compilation);
             if (isOSPlatformSymbol is null || operatingSystemSymbol is null || !context.Compilation.IsSymbolAccessibleWithin(operatingSystemSymbol, context.Compilation.Assembly) || osPlatformSymbol is null)
@@ -37,7 +37,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationAnalyzer : Diag
         });
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context, IMethodSymbol runtimeInformationSymbol, INamedTypeSymbol osPlatformSymbol)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, ISymbol runtimeInformationSymbol, INamedTypeSymbol osPlatformSymbol)
     {
         var operation = (IInvocationOperation)context.Operation;
         if (operation.Arguments.Length == 1 && SymbolEqualityComparer.Default.Equals(runtimeInformationSymbol, operation.TargetMethod))

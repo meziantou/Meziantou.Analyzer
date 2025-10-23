@@ -1,10 +1,5 @@
-﻿using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -117,13 +112,13 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
                 TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
             };
-            foreach (var index in indices.Where(value => value is not null).OrderByDescending(value => value))
+            foreach (var index in indices.Where(value => value is not null).OrderDescending())
             {
                 arguments = arguments.RemoveAt(index.GetValueOrDefault());
             }
 
             var createRegexMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
-            var method = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), arguments.Select(arg => arg.Syntax).ToArray());
+            var method = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
 
             newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, method);
         }

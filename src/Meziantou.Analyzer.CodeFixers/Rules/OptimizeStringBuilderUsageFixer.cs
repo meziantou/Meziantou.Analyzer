@@ -1,11 +1,5 @@
-﻿using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -260,7 +254,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
         var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendFormat"),
-            stringFormatOperation.Arguments.Select(a => a.Syntax).ToArray());
+            [.. stringFormatOperation.Arguments.Select(a => a.Syntax)]);
 
         if (isAppendLine)
         {
@@ -285,7 +279,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
         var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendJoin"),
-            stringFormatOperation.Arguments.Select(a => a.Syntax).ToArray());
+            [.. stringFormatOperation.Arguments.Select(a => a.Syntax)]);
 
         if (isAppendLine)
         {

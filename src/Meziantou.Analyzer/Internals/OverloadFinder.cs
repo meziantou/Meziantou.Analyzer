@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
@@ -64,7 +63,7 @@ internal sealed class OverloadFinder(Compilation compilation)
         if (additionalParameterTypes is null)
             return null;
 
-        additionalParameterTypes = additionalParameterTypes.Where(type => type is not null).ToArray();
+        additionalParameterTypes = [.. additionalParameterTypes.Where(type => type is not null)];
         if (additionalParameterTypes.Length == 0)
             return null;
 

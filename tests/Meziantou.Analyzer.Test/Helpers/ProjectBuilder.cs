@@ -1,24 +1,15 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Annotations;
-using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Xunit;
 
 namespace TestHelper;
 
@@ -37,11 +28,11 @@ public sealed partial class ProjectBuilder
     public bool IsValidFixCode { get; private set; } = true;
     public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
     public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetStandard2_0;
-    public IList<MetadataReference> References { get; } = new List<MetadataReference>();
-    public IList<string> ApiReferences { get; } = new List<string>();
-    public IList<DiagnosticAnalyzer> DiagnosticAnalyzer { get; } = new List<DiagnosticAnalyzer>();
+    public IList<MetadataReference> References { get; } = [];
+    public IList<string> ApiReferences { get; } = [];
+    public IList<DiagnosticAnalyzer> DiagnosticAnalyzer { get; } = [];
     public CodeFixProvider? CodeFixProvider { get; private set; }
-    public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = new List<DiagnosticResult>();
+    public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = [];
     public string? ExpectedFixedCode { get; private set; }
     public int? CodeFixIndex { get; private set; }
     public bool UseBatchFixer { get; private set; }
@@ -50,13 +41,8 @@ public sealed partial class ProjectBuilder
 
     private static async Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
     {
-        var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(",", paths));
-#if NET8_0_OR_GREATER
+        var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(',', paths));
         var hash = SHA256.HashData(bytes);
-#else
-        using var sha256 = SHA256.Create();
-        var hash = sha256.ComputeHash(bytes);
-#endif
         var key = Convert.ToBase64String(hash).Replace('/', '_');
         var task = NuGetPackagesCache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
         return await task.Value.ConfigureAwait(false);
@@ -71,13 +57,13 @@ public sealed partial class ProjectBuilder
                 var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
 
                 Directory.CreateDirectory(tempFolder);
-                using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
-                using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+                await using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
+                await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
                 var hasEntry = false;
                 foreach (var entry in zip.Entries.Where(file => paths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                 {
-                    entry.ExtractToFile(Path.Combine(tempFolder, entry.Name), overwrite: true);
+                    await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
                     hasEntry = true;
                 }
 

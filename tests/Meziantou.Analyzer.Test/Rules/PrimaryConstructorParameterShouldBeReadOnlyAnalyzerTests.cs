@@ -1,8 +1,6 @@
-﻿#if CSHARP12_OR_GREATER
-using System.Threading.Tasks;
+#if CSHARP12_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using TestHelper;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 

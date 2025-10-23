@@ -1,8 +1,6 @@
 #if ROSLYN_4_8_OR_GREATER
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Rules;
 using TestHelper;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 

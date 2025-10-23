@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -73,7 +73,7 @@ public sealed class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedAnalyzer 
                     parent = parent.Parent;
                 }
 
-                if (parent is null || parent is IBlockOperation || parent is IExpressionStatementOperation)
+                if (parent is null or IBlockOperation or IExpressionStatementOperation)
                     return false;
 
                 return true;

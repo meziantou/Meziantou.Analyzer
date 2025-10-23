@@ -1,9 +1,7 @@
-﻿#if ROSLYN_4_10_OR_GREATER
-using System.Threading.Tasks;
+#if ROSLYN_4_10_OR_GREATER
 using Meziantou.Analyzer.Suppressors;
 using Microsoft.CodeAnalysis;
 using TestHelper;
-using Xunit;
 
 namespace Meziantou.Analyzer.Test.Suppressors;
 public sealed class IDE0058SuppressorTests

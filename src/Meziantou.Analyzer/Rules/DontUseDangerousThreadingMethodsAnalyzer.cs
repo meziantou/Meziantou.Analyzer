@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;

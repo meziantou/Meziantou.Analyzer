@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -36,8 +36,7 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(OperationAnalysisContext context, OperationUtilities operationUtilities)
     {
         var operation = (IBinaryOperation)context.Operation;
-        if (operation.OperatorKind == BinaryOperatorKind.Equals ||
-            operation.OperatorKind == BinaryOperatorKind.NotEquals)
+        if (operation.OperatorKind is BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals)
         {
             if (operation.LeftOperand.Type.IsString() && operation.RightOperand.Type.IsString())
             {

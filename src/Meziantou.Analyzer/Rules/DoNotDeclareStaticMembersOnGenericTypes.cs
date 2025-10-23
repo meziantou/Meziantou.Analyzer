@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -54,7 +54,7 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
                     continue;
 
                 // Exclude protected member as the usage is easy from a derived class
-                if (member.DeclaredAccessibility == Accessibility.Protected || member.DeclaredAccessibility == Accessibility.ProtectedOrInternal)
+                if (member.DeclaredAccessibility is Accessibility.Protected or Accessibility.ProtectedOrInternal)
                     continue;
 
                 context.ReportDiagnostic(Rule, member);

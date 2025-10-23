@@ -1,4 +1,4 @@
-﻿# reference:https://raw.githubusercontent.com/meziantou/Meziantou.DotNet.CodingStandard/refs/heads/main/.editorconfig
+# reference:https://raw.githubusercontent.com/meziantou/Meziantou.DotNet.CodingStandard/refs/heads/main/.editorconfig
 # Schema: http://EditorConfig.org
 # Docs: https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference
 
@@ -41,7 +41,6 @@ insert_final_newline = true
 # endreference
 
 [*.cs]
-dotnet_diagnostic.IDE0058.severity = none
 dotnet_diagnostic.IDE0303.severity = none
 dotnet_diagnostic.CA1508.severity = none
 dotnet_diagnostic.CA2000.severity = none

@@ -1,5 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -34,7 +32,7 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzer : Diagnostic
     private static void Analyze(OperationAnalysisContext context)
     {
         var operation = (IPropertyReferenceOperation)context.Operation;
-        if (!string.Equals(operation.Member.Name, nameof(EqualityComparer<string>.Default), StringComparison.Ordinal))
+        if (!string.Equals(operation.Member.Name, nameof(EqualityComparer<>.Default), StringComparison.Ordinal))
             return;
 
         var equalityComparerSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");

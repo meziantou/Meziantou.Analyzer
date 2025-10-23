@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
-using System.Linq;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -10,7 +6,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
-using static System.FormattableString;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -566,7 +561,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             // expr.Count() == 1
                             if (!HasTake(operation, ExtensionMethodOwnerTypes))
                             {
-                                message = Invariant($"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
+                                message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
                                 properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                             }
                         }
@@ -591,7 +586,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             // expr.Count() != 1
                             if (!HasTake(operation, ExtensionMethodOwnerTypes))
                             {
-                                message = Invariant($"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
+                                message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
                                 properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                             }
                         }
@@ -614,7 +609,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() < 10
-                            message = Invariant($"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
+                            message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
                                 .Add("SkipMinusOne", value: "");
                         }
@@ -637,7 +632,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() < 10
-                            message = Invariant($"Replace 'Count() <= {value}' with 'Skip({value}).Any() == false'");
+                            message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() <= {value}' with 'Skip({value}).Any() == false'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny);
                         }
 
@@ -659,7 +654,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() > 1
-                            message = Invariant($"Replace 'Count() > {value}' with 'Skip({value}).Any()'");
+                            message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() > {value}' with 'Skip({value}).Any()'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny);
                         }
 
@@ -681,7 +676,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() >= 2
-                            message = Invariant($"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
+                            message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
                                 .Add("SkipMinusOne", value: "");
                         }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Threading.Tasks;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Composition;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -71,7 +71,7 @@ public sealed class UsePatternMatchingInsteadOfHasvalueFixer : CodeFixProvider
             }
         }
 
-        if (operation.Parent is IIsPatternOperation { Pattern: IConstantPatternOperation { Value: ILiteralOperation { ConstantValue: { Value: bool value } } } })
+        if (operation.Parent is IIsPatternOperation { Pattern: IConstantPatternOperation { Value: ILiteralOperation { ConstantValue.Value: bool value } } })
         {
             if (value)
             {

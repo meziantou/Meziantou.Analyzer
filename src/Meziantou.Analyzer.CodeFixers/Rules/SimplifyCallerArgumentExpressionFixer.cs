@@ -1,7 +1,5 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Composition;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -24,7 +22,7 @@ public sealed class SimplifyCallerArgumentExpressionFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: false);
-        if (nodeToFix is null || nodeToFix is not ArgumentSyntax)
+        if (nodeToFix is null or not ArgumentSyntax)
             return;
 
         var title = "Remove argument";

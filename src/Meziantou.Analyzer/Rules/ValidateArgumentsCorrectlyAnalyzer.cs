@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
-using System.Linq;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -153,7 +150,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                 if (operation is IMethodBodyOperation)
                     break;
 
-                if (operation.Parent is not null && operation.Parent is IBlockOperation)
+                if (operation.Parent is IBlockOperation)
                 {
                     if (operation.Parent.Parent is IMethodBodyOperation)
                         break;

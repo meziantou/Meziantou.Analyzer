@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.IO;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -41,7 +40,7 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAn
     {
         var invocation = (IInvocationOperation)context.Operation;
         var targetMethod = invocation.TargetMethod;
-        if (targetMethod.Name != nameof(Stream.Read) && targetMethod.Name != nameof(Stream.ReadAsync))
+        if (targetMethod.Name is not nameof(Stream.Read) and not nameof(Stream.ReadAsync))
             return;
 
         if (!targetMethod.ContainingType.IsOrInheritFrom(streamSymbol))
@@ -53,7 +52,7 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzer : DiagnosticAn
             parent = parent.Parent;
         }
 
-        if (parent is null || parent is IBlockOperation || parent is IExpressionStatementOperation)
+        if (parent is null or IBlockOperation or IExpressionStatementOperation)
         {
             context.ReportDiagnostic(Rule, invocation, targetMethod.Name);
         }

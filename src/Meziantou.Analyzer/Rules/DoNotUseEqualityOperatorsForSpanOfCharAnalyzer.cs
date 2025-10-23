@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -45,8 +45,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharAnalyzer : DiagnosticAnalyzer
         public void AnalyzeBinaryOperator(OperationAnalysisContext context)
         {
             var operation = (IBinaryOperation)context.Operation;
-            if (operation.OperatorKind == BinaryOperatorKind.Equals ||
-                operation.OperatorKind == BinaryOperatorKind.NotEquals)
+            if (operation.OperatorKind is BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals)
             {
                 if (!IsSpanOfString(operation.LeftOperand.Type) || !IsSpanOfString(operation.RightOperand.Type))
                     return;

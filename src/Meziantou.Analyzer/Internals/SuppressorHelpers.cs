@@ -1,4 +1,3 @@
-﻿using System.Threading;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;

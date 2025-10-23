@@ -1,7 +1,5 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Composition;
-using System.Threading;
-using System.Threading.Tasks;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -27,7 +25,7 @@ public sealed class MakeMethodStaticFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is MethodDeclarationSyntax || nodeToFix is PropertyDeclarationSyntax)
+        if (nodeToFix is MethodDeclarationSyntax or PropertyDeclarationSyntax)
         {
             var title = "Add static modifier";
             var codeAction = CodeAction.Create(

@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Meziantou.Analyzer;
 
 internal static class RuleIdentifiers

@@ -1,5 +1,3 @@
-﻿using System.Collections.Generic;
-
 namespace Meziantou.Analyzer.Internals;
 
 internal static class ListExtensions

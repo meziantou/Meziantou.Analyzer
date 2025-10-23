@@ -1,5 +1,3 @@
-﻿using System;
-
 namespace Meziantou.Analyzer.Internals;
 
 [Flags]

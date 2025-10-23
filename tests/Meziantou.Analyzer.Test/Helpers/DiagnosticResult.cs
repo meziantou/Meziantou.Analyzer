@@ -1,16 +1,13 @@
-using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Test.Helpers;
 
 public sealed class DiagnosticResult
 {
-    private IReadOnlyList<DiagnosticResultLocation>? _locations;
-
     public IReadOnlyList<DiagnosticResultLocation> Locations
     {
-        get => _locations ??= [];
-        set => _locations = value;
+        get => field ??= [];
+        set;
     }
 
     public DiagnosticSeverity? Severity { get; set; }

@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.SymbolStore;
-using System.Globalization;
-using System.Linq;
-using System.Linq.Expressions;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -209,7 +203,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
             return true;
         }
 
-        var firstMember = syntax.First();
+        var firstMember = syntax[0];
         var current = FindSymbol(compilation, rootSymbol, firstMember) ?? FindGlobalSymbol(compilation, firstMember);
         if (current is null)
         {

@@ -1,9 +1,7 @@
-﻿using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Operations;
-using System.Linq;
-using System;
 using Meziantou.Analyzer.Internals;
 
 namespace Meziantou.Analyzer.Rules;
