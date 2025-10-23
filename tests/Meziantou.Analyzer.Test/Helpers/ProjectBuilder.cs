@@ -42,12 +42,7 @@ public sealed partial class ProjectBuilder
     private static async Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
     {
         var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(',', paths));
-#if NET8_0_OR_GREATER
         var hash = SHA256.HashData(bytes);
-#else
-        using var sha256 = SHA256.Create();
-        var hash = sha256.ComputeHash(bytes);
-#endif
         var key = Convert.ToBase64String(hash).Replace('/', '_');
         var task = NuGetPackagesCache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
         return await task.Value.ConfigureAwait(false);
@@ -62,13 +57,13 @@ public sealed partial class ProjectBuilder
                 var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
 
                 Directory.CreateDirectory(tempFolder);
-                using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
-                using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+                await using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
+                await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
                 var hasEntry = false;
                 foreach (var entry in zip.Entries.Where(file => paths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                 {
-                    entry.ExtractToFile(Path.Combine(tempFolder, entry.Name), overwrite: true);
+                    await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
                     hasEntry = true;
                 }
 
