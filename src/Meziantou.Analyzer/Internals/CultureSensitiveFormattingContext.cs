@@ -5,6 +5,8 @@ namespace Meziantou.Analyzer.Internals;
 
 internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 {
+    private readonly HashSet<ISymbol> _excludedMethods = CreateExcludedMethods(compilation);
+
     public INamedTypeSymbol? CultureInsensitiveTypeAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute");
     public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
     public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
@@ -24,6 +26,26 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     public INamedTypeSymbol? SystemIFormattableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormattable");
     public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.FontStretch");
     public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush");
+    public INamedTypeSymbol? NuGetVersioningSemanticVersionSymbol { get; } = compilation.GetBestTypeByMetadataName("NuGet.Versioning.SemanticVersion");
+
+    private static HashSet<ISymbol> CreateExcludedMethods(Compilation compilation)
+    {
+        var result = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        AddDocumentationId(result, compilation, "M:System.Convert.ToChar(System.String)");
+        AddDocumentationId(result, compilation, "M:System.Convert.ToChar(System.Object)");
+        AddDocumentationId(result, compilation, "M:System.Convert.ToBoolean(System.String)");
+        AddDocumentationId(result, compilation, "M:System.Convert.ToBoolean(System.Object)");
+        return result;
+
+        static void AddDocumentationId(HashSet<ISymbol> result, Compilation compilation, string id)
+        {
+            foreach (var item in DocumentationCommentId.GetSymbolsForDeclarationId(id, compilation))
+            {
+                result.Add(item);
+            }
+        }
+    }
+
 
     private static bool MustUnwrapNullableOfT(CultureSensitiveOptions options)
     {
@@ -40,6 +62,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         if (operation is IInvocationOperation invocation)
         {
+            if (_excludedMethods.Contains(invocation.TargetMethod))
+                return false;
+
             var methodName = invocation.TargetMethod.Name;
             if (methodName is "ToString")
             {
@@ -49,7 +74,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 {
                     foreach (var arg in invocation.Arguments)
                     {
-                        if (arg.Value is { ConstantValue: { HasValue: true, Value: string } })
+                        if (arg.Value is { ConstantValue: { HasValue: true, Value: string } } or IConversionOperation { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: null } })
                         {
                             if (format is not null)
                             {
@@ -252,16 +277,19 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsOrInheritFrom(SystemWindowsMediaBrushSymbol))
             return false;
 
+        if (typeSymbol.IsOrInheritFrom(NuGetVersioningSemanticVersionSymbol))
+            return false;
+
         if (!typeSymbol.Implements(SystemIFormattableSymbol))
             return false;
 
-        if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol, format: null))
+        if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol, hasFormat: false, format: null))
             return false;
 
         return true;
     }
 
-    private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol, string? format)
+    private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol, bool hasFormat, string? format)
     {
         var attributes = typeSymbol.GetAttributes(CultureInsensitiveTypeAttributeSymbol);
         foreach (var attr in attributes)
@@ -269,8 +297,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (attr.ConstructorArguments.IsEmpty)
                 return false; // no format is set, so the type is culture insensitive
 
-            var attrFormat = attr.ConstructorArguments[0].Value;
-            if (attrFormat is null || (attrFormat is string attrFormatValue && (string.IsNullOrEmpty(attrFormatValue) || attrFormatValue == format)))
+            if (!hasFormat)
+                continue;
+
+            var attrFormat = attr.ConstructorArguments[0].Value as string;
+            if (attrFormat == format)
                 return false; // no format is set, so the type is culture insensitive
         }
 
@@ -284,8 +315,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 if (attribute.ConstructorArguments.Length == 1)
                     return false;
 
-                var attrFormat = attribute.ConstructorArguments[1].Value;
-                if (attrFormat is null || (attrFormat is string attrFormatValue && (string.IsNullOrEmpty(attrFormatValue) || attrFormatValue == format)))
+                if (!hasFormat)
+                    continue;
+
+                var attrFormat = attribute.ConstructorArguments[1].Value as string;
+                if (attrFormat == format)
                     return false; // no format is set, so the type is culture insensitive
             }
         }
@@ -298,6 +332,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (!IsCultureSensitiveType(symbol, options))
             return false;
 
+        var hasFormatString = format is { ConstantValue.HasValue: true };
         var formatString = format?.ConstantValue.Value as string;
 
         if (instance is not null)
@@ -320,7 +355,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 return false;
         }
 
-        if (symbol is not null && !IsCultureSensitiveTypeUsingAttribute(symbol, formatString))
+        if (symbol is not null && !IsCultureSensitiveTypeUsingAttribute(symbol, hasFormatString, formatString))
             return false;
 
         return true;

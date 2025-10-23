@@ -37,25 +37,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
     {
         private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new(compilation);
         private readonly OverloadFinder _overloadFinder = new(compilation);
-        private readonly HashSet<ISymbol> _excludedMethods = CreateExcludedMethods(compilation);
-
-        private static HashSet<ISymbol> CreateExcludedMethods(Compilation compilation)
-        {
-            var result = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-            AddDocumentationId(result, compilation, "M:System.Convert.ToChar(System.String)");
-            AddDocumentationId(result, compilation, "M:System.Convert.ToChar(System.Object)");
-            AddDocumentationId(result, compilation, "M:System.Convert.ToBoolean(System.String)");
-            AddDocumentationId(result, compilation, "M:System.Convert.ToBoolean(System.Object)");
-            return result;
-
-            static void AddDocumentationId(HashSet<ISymbol> result, Compilation compilation, string id)
-            {
-                foreach (var item in DocumentationCommentId.GetSymbolsForDeclarationId(id, compilation))
-                {
-                    result.Add(item);
-                }
-            }
-        }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -65,7 +46,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             if (IsExcludedMethod(context, operation))
                 return;
-            
+
             var options = MustUnwrapNullableTypes(context, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
             if (!_cultureSensitiveContext.IsCultureSensitiveOperation(operation, options))
                 return;
@@ -81,7 +62,11 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, allowOptionalParameters: false, _cultureSensitiveContext.FormatProviderSymbol);
                 if (overload is not null)
                 {
-                    context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
+                    if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
+                    {
+                        context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
+                    }
+
                     return;
                 }
 
@@ -108,17 +93,18 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, includeObsoleteMethods: false, allowOptionalParameters: false, _cultureSensitiveContext.CultureInfoSymbol);
                 if (overload is not null)
                 {
-                    context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.CultureInfoSymbol.ToDisplayString());
+                    if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
+                    {
+                        context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.CultureInfoSymbol.ToDisplayString());
+                    }
+
                     return;
                 }
             }
         }
 
-        private bool IsExcludedMethod(OperationAnalysisContext context, IInvocationOperation operation)
+        private static bool IsExcludedMethod(OperationAnalysisContext context, IInvocationOperation operation)
         {
-            if (_excludedMethods.Contains(operation.TargetMethod))
-                return true;
-
             // ToString show culture-sensitive data by default
             if (operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
             {
