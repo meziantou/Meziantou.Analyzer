@@ -37,7 +37,7 @@ internal static class FixAllContextHelper
                 break;
 
             case FixAllScope.Solution:
-                projectsToFix = [.. project.Solution.Projects.Where(p => p.Language == project.Language)];
+                projectsToFix = ImmutableArray<Project>.Empty.AddRange(project.Solution.Projects.Where(p => p.Language == project.Language));
 
                 var diagnostics = new ConcurrentDictionary<ProjectId, ImmutableArray<Diagnostic>>();
                 var tasks = new Task[projectsToFix.Length];
