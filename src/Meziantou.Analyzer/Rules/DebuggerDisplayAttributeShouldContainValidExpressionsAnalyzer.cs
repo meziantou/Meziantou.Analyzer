@@ -203,7 +203,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
             return true;
         }
 
-        var firstMember = syntax.First();
+        var firstMember = syntax[0];
         var current = FindSymbol(compilation, rootSymbol, firstMember) ?? FindGlobalSymbol(compilation, firstMember);
         if (current is null)
         {

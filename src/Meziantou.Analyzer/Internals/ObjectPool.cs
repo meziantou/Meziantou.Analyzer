@@ -125,7 +125,7 @@ internal class DefaultObjectPool<T> : ObjectPool<T> where T : class
     public override T Get()
     {
         var item = FastItem;
-        if (item == null || Interlocked.CompareExchange(ref FastItem, null, item) != item)
+        if (item == null || Interlocked.CompareExchange(ref FastItem, value: null, item) != item)
         {
             if (Items.TryDequeue(out item))
             {

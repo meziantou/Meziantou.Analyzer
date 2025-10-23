@@ -313,7 +313,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return;
 
             // Task`1.Result
-            if (string.Equals(operation.Property.Name, nameof(Task<int>.Result), StringComparison.Ordinal))
+            if (string.Equals(operation.Property.Name, nameof(Task<>.Result), StringComparison.Ordinal))
             {
                 if (operation.Member.ContainingType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol))
                 {

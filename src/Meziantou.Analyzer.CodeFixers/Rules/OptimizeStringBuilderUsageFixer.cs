@@ -254,7 +254,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
         var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendFormat"),
-            stringFormatOperation.Arguments.Select(a => a.Syntax).ToArray());
+            [.. stringFormatOperation.Arguments.Select(a => a.Syntax)]);
 
         if (isAppendLine)
         {
@@ -279,7 +279,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
         var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendJoin"),
-            stringFormatOperation.Arguments.Select(a => a.Syntax).ToArray());
+            [.. stringFormatOperation.Arguments.Select(a => a.Syntax)]);
 
         if (isAppendLine)
         {

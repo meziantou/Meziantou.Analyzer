@@ -110,7 +110,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
 
                 // Type{T}
-                if (fileName.Equals((symbolName + '{' + string.Join(",", symbol.TypeParameters.Select(t => t.Name)) + '}').AsSpan(), StringComparison.OrdinalIgnoreCase))
+                if (fileName.Equals((symbolName + '{' + string.Join(',', symbol.TypeParameters.Select(t => t.Name)) + '}').AsSpan(), StringComparison.OrdinalIgnoreCase))
                     continue;
             }
 

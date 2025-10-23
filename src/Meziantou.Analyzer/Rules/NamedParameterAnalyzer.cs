@@ -152,7 +152,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         {
                             IMethodSymbol methodSymbol => methodSymbol.Parameters,
                             IPropertySymbol propertySymbol => propertySymbol.Parameters,
-                            _ => ImmutableArray<IParameterSymbol>.Empty,
+                            _ => [],
                         };
 
                         if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(syntaxContext.Options, expression))
@@ -216,10 +216,10 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (IsMethod(invokedMethodSymbol, valueTaskTokenType, nameof(Task.FromResult)))
                             return;
 
-                        if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.SetResult)))
+                        if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<>.SetResult)))
                             return;
 
-                        if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<object>.TrySetResult)))
+                        if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<>.TrySetResult)))
                             return;
 
                         if (IsMethod(invokedMethodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)

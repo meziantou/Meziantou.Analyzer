@@ -110,7 +110,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
             if (symbol.GetMembers().Any(member => member.IsVirtual) && !SealedClassWithVirtualMember(options, symbol))
                 return false;
 
-            var canBeInheritedOutsideOfAssembly = symbol.IsVisibleOutsideOfAssembly() && symbol.GetMembers().OfType<IMethodSymbol>().Where(member => member.MethodKind is MethodKind.Constructor).Any(member => member.IsVisibleOutsideOfAssembly());
+            var canBeInheritedOutsideOfAssembly = symbol.IsVisibleOutsideOfAssembly() && symbol.GetMembers().OfType<IMethodSymbol>().Any(member => member.MethodKind is MethodKind.Constructor && member.IsVisibleOutsideOfAssembly());
             if (canBeInheritedOutsideOfAssembly && !PublicClassShouldBeSealed(options, symbol))
                 return false;
 

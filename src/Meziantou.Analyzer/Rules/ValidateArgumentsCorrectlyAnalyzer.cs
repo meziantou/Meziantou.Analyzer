@@ -150,7 +150,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                 if (operation is IMethodBodyOperation)
                     break;
 
-                if (operation.Parent is not null && operation.Parent is IBlockOperation)
+                if (operation.Parent is IBlockOperation)
                 {
                     if (operation.Parent.Parent is IMethodBodyOperation)
                         break;

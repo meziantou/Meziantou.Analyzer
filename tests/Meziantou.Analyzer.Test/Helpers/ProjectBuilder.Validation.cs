@@ -58,14 +58,14 @@ public sealed partial class ProjectBuilder
         var expectedCount = expectedResults.Count;
         if (DefaultAnalyzerId is not null)
         {
-            actualResults = actualResults.Where(diagnostic => diagnostic.Id == DefaultAnalyzerId).ToArray();
+            actualResults = [.. actualResults.Where(diagnostic => diagnostic.Id == DefaultAnalyzerId)];
         }
 
         var actualCount = actualResults.Count();
 
         if (expectedCount != actualCount)
         {
-            var diagnosticsOutput = actualResults.Any() ? FormatDiagnostics(analyzers, actualResults.ToArray()) : "    NONE.";
+            var diagnosticsOutput = actualResults.Any() ? FormatDiagnostics(analyzers, [.. actualResults]) : "    NONE.";
 
             Assert.Fail($"Mismatch between number of diagnostics returned, expected \"{expectedCount.ToString(CultureInfo.InvariantCulture)}\" actual \"{actualCount.ToString(CultureInfo.InvariantCulture)}\"\r\n\r\nDiagnostics:\r\n{diagnosticsOutput}\r\n");
         }
@@ -474,7 +474,7 @@ public sealed partial class ProjectBuilder
         {
             if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
             {
-                Assert.Fail($"The CodeFixProvider is not valid for the DiagnosticAnalyzer. DiagnosticId: {diagnostic.Id}, Supported diagnostics: {string.Join(",", codeFixProvider.FixableDiagnosticIds)}");
+                Assert.Fail($"The CodeFixProvider is not valid for the DiagnosticAnalyzer. DiagnosticId: {diagnostic.Id}, Supported diagnostics: {string.Join(',', codeFixProvider.FixableDiagnosticIds)}");
             }
         }
 

@@ -97,6 +97,6 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
             return "null";
         }
 
-        return FormattableString.Invariant($"'{parameter.ExplicitDefaultValue}'");
+        return string.Create(CultureInfo.InvariantCulture, $"'{parameter.ExplicitDefaultValue}'");
     }
 }

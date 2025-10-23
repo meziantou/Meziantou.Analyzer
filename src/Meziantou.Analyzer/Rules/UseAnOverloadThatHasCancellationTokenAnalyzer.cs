@@ -236,7 +236,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 .Add("ParameterIndex", parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
                 .Add("ParameterName", parameterInfo.Name)
                 .Add("ParameterIsEnumeratorCancellation", parameterInfo.HasEnumeratorCancellationAttribute.ToString())
-                .Add("CancellationTokens", string.Join(",", cancellationTokens));
+                .Add("CancellationTokens", string.Join(',', cancellationTokens));
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)
@@ -291,7 +291,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                         {
                             foreach (var objectMember in typeMembers)
                             {
-                                result.Add(Prepend(member, objectMember).ToArray());
+                                result.Add([.. Prepend(member, objectMember)]);
                             }
                         }
                     }
@@ -370,9 +370,9 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             static string ComputeFullPath(string? prefix, IEnumerable<ISymbol> symbols)
             {
                 if (prefix is null)
-                    return string.Join(".", symbols.Select(symbol => symbol.Name));
+                    return string.Join('.', symbols.Select(symbol => symbol.Name));
 
-                var suffix = string.Join(".", symbols.Select(symbol => symbol.Name));
+                var suffix = string.Join('.', symbols.Select(symbol => symbol.Name));
                 if (string.IsNullOrEmpty(suffix))
                     return prefix;
 

@@ -135,7 +135,7 @@ struct Test
     [InlineData("System.Collections.Immutable.ImmutableSortedDictionary.Create<Test, object>()")]
     public async Task GetHashCode_Enum(string text)
     {
-        string sourceCode = @"
+        var sourceCode = @"
 enum Test
 {
     A,

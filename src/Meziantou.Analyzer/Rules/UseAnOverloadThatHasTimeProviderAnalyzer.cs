@@ -138,7 +138,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             return ImmutableDictionary.Create<string, string?>()
                 .Add("ParameterIndex", parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
                 .Add("ParameterName", parameterInfo.Name)
-                .Add("Paths", string.Join(",", cancellationTokens));
+                .Add("Paths", string.Join(',', cancellationTokens));
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)
@@ -190,7 +190,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                         {
                             foreach (var objectMember in typeMembers)
                             {
-                                result.Add(Prepend(member, objectMember).ToArray());
+                                result.Add([.. Prepend(member, objectMember)]);
                             }
                         }
                     }
@@ -261,9 +261,9 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             static string ComputeFullPath(string? prefix, IEnumerable<ISymbol> symbols)
             {
                 if (prefix is null)
-                    return string.Join(".", symbols.Select(symbol => symbol.Name));
+                    return string.Join('.', symbols.Select(symbol => symbol.Name));
 
-                var suffix = string.Join(".", symbols.Select(symbol => symbol.Name));
+                var suffix = string.Join('.', symbols.Select(symbol => symbol.Name));
                 if (string.IsNullOrEmpty(suffix))
                     return prefix;
 
