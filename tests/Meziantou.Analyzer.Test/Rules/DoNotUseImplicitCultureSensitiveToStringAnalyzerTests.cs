@@ -416,6 +416,48 @@ class Test
               .ValidateAsync();
     }
 
+    [Theory]
+    [InlineData(""" $"abc{new System.DateTime()}" """)]
+    [InlineData(""" $"abc[|{new System.DateTime():a}|]" """)]
+    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatInvariant(string content)
+    {
+        var sourceCode = $$"""
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: true)]
+
+class Test
+{
+    void A()
+    {
+        _ = {{content}};
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData(""" $"abc[|{new System.DateTime()}|]" """)]
+    [InlineData(""" $"abc[|{new System.DateTime():a}|]" """)]
+    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatCultureSensitive(string content)
+    {
+        var sourceCode = $$"""
+[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: false)]
+
+class Test
+{
+    void A()
+    {
+        _ = {{content}};
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
     [Fact]
     public async Task IgnoreTypeUsingAssemblyAttribute_WithFormatNotMatchingAttribute()
     {
