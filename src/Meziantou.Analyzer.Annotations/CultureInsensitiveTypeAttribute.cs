@@ -2,7 +2,7 @@
 namespace Meziantou.Analyzer.Annotations;
 
 /// <summary>
-/// Indicates that the type is culture insensitive. This can be used to suppress rules such as <c>MA0075</c>, <c>MA0076</c> or <c>MA0107</c>.
+/// Indicates that the type is culture insensitive. This can be used to suppress rules such as <c>MA0075</c>, <c>MA0076</c>.
 /// <para><code>[CultureInsensitiveType]class Foo { }</code></para>
 /// <para><code>[assembly: CultureInsensitiveType(typeof(Foo))]</code></para>
 /// </summary>
@@ -11,9 +11,9 @@ namespace Meziantou.Analyzer.Annotations;
 public sealed class CultureInsensitiveTypeAttribute : System.Attribute
 {
     public CultureInsensitiveTypeAttribute() { }
-    public CultureInsensitiveTypeAttribute(string format) => Format = format;
+    public CultureInsensitiveTypeAttribute(string? format) => Format = format;
     public CultureInsensitiveTypeAttribute(System.Type type) => Type = type;
-    public CultureInsensitiveTypeAttribute(System.Type type, string format)
+    public CultureInsensitiveTypeAttribute(System.Type type, string? format)
         => (Type, Format) = (type, format);
 
     public Type? Type { get; }

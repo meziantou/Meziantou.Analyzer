@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <Version>1.1.0</Version>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <Version>1.1.1</Version>
     <Description>Annotations to configure Meziantou.Analyzer</Description>
     <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
