@@ -12,10 +12,14 @@ public sealed class CultureInsensitiveTypeAttribute : System.Attribute
 {
     public CultureInsensitiveTypeAttribute() { }
     public CultureInsensitiveTypeAttribute(string? format) => Format = format;
+    public CultureInsensitiveTypeAttribute(bool isDefaultFormatCultureInsensitive) => IsDefaultFormatCultureInsensitive = isDefaultFormatCultureInsensitive;
     public CultureInsensitiveTypeAttribute(System.Type type) => Type = type;
     public CultureInsensitiveTypeAttribute(System.Type type, string? format)
         => (Type, Format) = (type, format);
+    public CultureInsensitiveTypeAttribute(System.Type type, bool isDefaultFormatCultureInsensitive)
+        => (Type, IsDefaultFormatCultureInsensitive) = (type, isDefaultFormatCultureInsensitive);
 
     public Type? Type { get; }
     public string? Format { get; }
+    public bool IsDefaultFormatCultureInsensitive { get; }
 }

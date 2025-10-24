@@ -286,8 +286,32 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (!typeSymbol.Implements(SystemIFormattableSymbol))
             return false;
 
-        if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol, hasFormat: false, format: null))
+        if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol))
             return false;
+
+        return true;
+    }
+
+    private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol)
+    {
+        var attributes = typeSymbol.GetAttributes(CultureInsensitiveTypeAttributeSymbol);
+        foreach (var attr in attributes)
+        {
+            if (attr.ConstructorArguments.IsEmpty)
+                return false; // no format is set, so the type is culture insensitive
+        }
+
+        foreach (var attribute in compilation.Assembly.GetAttributes(CultureInsensitiveTypeAttributeSymbol))
+        {
+            if (attribute.ConstructorArguments.IsEmpty)
+                continue;
+
+            if (attribute.ConstructorArguments[0].Value is INamedTypeSymbol attributeType && attributeType.IsEqualTo(typeSymbol))
+            {
+                if (attribute.ConstructorArguments.Length == 1)
+                    return false;
+            }
+        }
 
         return true;
     }
@@ -300,10 +324,16 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (attr.ConstructorArguments.IsEmpty)
                 return false; // no format is set, so the type is culture insensitive
 
+            var attrValue = attr.ConstructorArguments[0].Value;
             if (!hasFormat)
-                continue;
+            {
+                if (attrValue is bool isDefaultFormatCultureInsensitive && isDefaultFormatCultureInsensitive)
+                    return false;
 
-            var attrFormat = attr.ConstructorArguments[0].Value as string;
+                continue;
+            }
+
+            var attrFormat = attrValue as string;
             if (attrFormat == format)
                 return false; // no format is set, so the type is culture insensitive
         }
@@ -318,10 +348,16 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 if (attribute.ConstructorArguments.Length == 1)
                     return false;
 
+                var attrValue = attribute.ConstructorArguments[1].Value;
                 if (!hasFormat)
-                    continue;
+                {
+                    if (attrValue is bool isDefaultFormatCultureInsensitive && isDefaultFormatCultureInsensitive)
+                        return false;
 
-                var attrFormat = attribute.ConstructorArguments[1].Value as string;
+                    continue;
+                }
+
+                var attrFormat = attrValue as string;
                 if (attrFormat == format)
                     return false; // no format is set, so the type is culture insensitive
             }
