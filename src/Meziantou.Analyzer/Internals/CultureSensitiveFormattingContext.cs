@@ -68,6 +68,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             var methodName = invocation.TargetMethod.Name;
             if (methodName is "ToString")
             {
+                if (invocation.HasArgumentOfType(FormatProviderSymbol, inherits: true))
+                    return false;
+
                 // Try get the format. Most of ToString have only 1 string parameter to define the format
                 IOperation? format = null;
                 if (invocation.Arguments.Length > 0)

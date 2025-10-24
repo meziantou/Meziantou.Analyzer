@@ -100,7 +100,7 @@ internal static class TypeSymbolExtensions
         if (expectedType is null)
             return false;
 
-        return symbol.IsEqualTo(expectedType) || symbol.InheritsFrom(expectedType);
+        return symbol.IsEqualTo(expectedType) || (!expectedType.IsSealed && symbol.InheritsFrom(expectedType));
     }
 
     public static bool IsEqualToAny(this ITypeSymbol? symbol, params ITypeSymbol?[]? expectedTypes)

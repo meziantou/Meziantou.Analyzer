@@ -119,11 +119,24 @@ internal static class OperationExtensions
         return operation;
     }
 
-    public static bool HasArgumentOfType(this IInvocationOperation operation, ITypeSymbol argumentTypeSymbol)
+    public static bool HasArgumentOfType(this IInvocationOperation operation, ITypeSymbol? argumentTypeSymbol, bool inherits = false)
     {
+        if (argumentTypeSymbol is null)
+            return false;
+
+        if (inherits && argumentTypeSymbol.IsSealed)
+        {
+            inherits = false;
+        }
+
         foreach (var arg in operation.Arguments)
         {
-            if (argumentTypeSymbol.IsEqualTo(arg.Value.Type))
+            if (inherits)
+            {
+                if (arg.Value.Type is not null && arg.Value.Type.IsOrInheritFrom(argumentTypeSymbol))
+                    return true;
+            }
+            else if (argumentTypeSymbol.IsEqualTo(arg.Value.Type))
                 return true;
         }
 

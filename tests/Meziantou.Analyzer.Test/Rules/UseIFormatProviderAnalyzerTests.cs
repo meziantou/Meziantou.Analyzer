@@ -285,4 +285,21 @@ _ = new System.DateTime().ToString(format: null);
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ToString_IFormattable()
+    {
+        var sourceCode = """
+_ = [|new Sample().ToString()|];
+
+class Sample : System.IFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
