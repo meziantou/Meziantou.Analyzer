@@ -317,7 +317,7 @@ dotnet_diagnostic.MA0105.severity = suggestion
 # MA0106: Avoid closure by using an overload with the 'factoryArgument' parameter
 dotnet_diagnostic.MA0106.severity = suggestion
 
-# MA0107: Do not use culture-sensitive object.ToString
+# MA0107: Do not use object.ToString
 dotnet_diagnostic.MA0107.severity = none
 
 # MA0108: Remove redundant argument value
