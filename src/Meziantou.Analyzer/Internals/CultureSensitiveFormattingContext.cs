@@ -7,7 +7,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 {
     private readonly HashSet<ISymbol> _excludedMethods = CreateExcludedMethods(compilation);
 
-    public INamedTypeSymbol? CultureInsensitiveTypeAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute");
     public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
     public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
     public INamedTypeSymbol? NumberStyleSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
@@ -45,7 +44,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             }
         }
     }
-
 
     private static bool MustUnwrapNullableOfT(CultureSensitiveOptions options)
     {
@@ -292,17 +290,46 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return true;
     }
 
+    private static bool IsCultureSensitiveAttributeSymbol(ITypeSymbol? symbol)
+    {
+        // The attribute can be defined in multiple assemblies, so it's identified by its full name only
+        // Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute
+        return symbol is
+        {
+            Name: "CultureInsensitiveTypeAttribute",
+            ContainingSymbol: INamespaceSymbol
+            {
+                Name: "Annotations",
+                ContainingSymbol: INamespaceSymbol
+                {
+                    Name: "Analyzer",
+                    ContainingSymbol: INamespaceSymbol
+                    {
+                        Name: "Meziantou",
+                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
+                    }
+                }
+            }
+        };
+    }
+
     private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol)
     {
-        var attributes = typeSymbol.GetAttributes(CultureInsensitiveTypeAttributeSymbol);
+        var attributes = typeSymbol.GetAttributes();
         foreach (var attr in attributes)
         {
+            if (!IsCultureSensitiveAttributeSymbol(attr.AttributeClass))
+                continue;
+
             if (attr.ConstructorArguments.IsEmpty)
                 return false; // no format is set, so the type is culture insensitive
         }
 
-        foreach (var attribute in compilation.Assembly.GetAttributes(CultureInsensitiveTypeAttributeSymbol))
+        foreach (var attribute in compilation.Assembly.GetAttributes())
         {
+            if (!IsCultureSensitiveAttributeSymbol(attribute.AttributeClass))
+                continue;
+
             if (attribute.ConstructorArguments.IsEmpty)
                 continue;
 
@@ -318,9 +345,12 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
     private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol, bool hasFormat, string? format)
     {
-        var attributes = typeSymbol.GetAttributes(CultureInsensitiveTypeAttributeSymbol);
+        var attributes = typeSymbol.GetAttributes();
         foreach (var attr in attributes)
         {
+            if (!IsCultureSensitiveAttributeSymbol(attr.AttributeClass))
+                continue;
+
             if (attr.ConstructorArguments.IsEmpty)
                 return false; // no format is set, so the type is culture insensitive
 
@@ -338,8 +368,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 return false; // no format is set, so the type is culture insensitive
         }
 
-        foreach (var attribute in compilation.Assembly.GetAttributes(CultureInsensitiveTypeAttributeSymbol))
+        foreach (var attribute in compilation.Assembly.GetAttributes())
         {
+            if (!IsCultureSensitiveAttributeSymbol(attribute.AttributeClass))
+                continue;
+
             if (attribute.ConstructorArguments.IsEmpty)
                 continue;
 
