@@ -85,9 +85,9 @@ public sealed class CultureInsensitiveTypeAttribute : System.Attribute
     /// <summary>
     /// Gets a value indicating whether the default format (i.e., the <c>ToString()</c> method) is culture insensitive.
     /// </summary>
-	/// <value>
+    /// <value>
     /// <see langword="true"/> to mark the default format (i.e., the <c>ToString()</c> method) as culture insensitive;
-	/// otherwise, <see langword="false"/>.
-	/// </value>
+    /// otherwise, <see langword="false"/>.
+    /// </value>
     public bool IsDefaultFormatCultureInsensitive { get; }
 }
