@@ -17,8 +17,6 @@ public sealed class CultureInsensitiveTypeAttribute : System.Attribute
     /// This can be applied on a given type to mark all its formats as culture insensitive.
     /// </remarks>
     public CultureInsensitiveTypeAttribute() { }
-	
-	
     /// <summary>
     /// Initializes a new instance of the <see cref="CultureInsensitiveTypeAttribute"/> class with the specified format.
     /// </summary>
