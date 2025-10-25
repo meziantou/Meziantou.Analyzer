@@ -34,8 +34,6 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(context =>
         {
-            var callerMustUseNamedArgumentType = context.Compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute");
-
             var objectType = context.Compilation.GetSpecialType(SpecialType.System_Object);
             var taskTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
             var taskGenericTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
@@ -63,30 +61,30 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                 if (argument.Expression is null)
                     return;
 
-                if (callerMustUseNamedArgumentType is not null)
+                if (IsCallerMustUseNamedArgumentAttribute(syntaxContext, argument))
                 {
-                    if (IsCallerMustUseNamedArgumentAttribute(syntaxContext, argument, callerMustUseNamedArgumentType))
-                    {
-                        syntaxContext.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
-                        return;
-                    }
+                    syntaxContext.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
+                    return;
+                }
 
-                    static bool IsCallerMustUseNamedArgumentAttribute(SyntaxNodeAnalysisContext context, SyntaxNode argument, INamedTypeSymbol callerMustUseNamedArgumentType)
+                static bool IsCallerMustUseNamedArgumentAttribute(SyntaxNodeAnalysisContext context, SyntaxNode argument)
+                {
+                    var operation = context.SemanticModel.GetOperation(argument, context.CancellationToken) as IArgumentOperation;
+                    if ((operation?.Parameter) is not null)
                     {
-                        var operation = context.SemanticModel.GetOperation(argument, context.CancellationToken) as IArgumentOperation;
-                        if ((operation?.Parameter) is not null)
+                        var attributes = operation.Parameter.GetAttributes();
+                        foreach (var attribute in attributes)
                         {
-                            var attribute = operation.Parameter.GetAttribute(callerMustUseNamedArgumentType);
-                            if (attribute is not null)
-                            {
-                                var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
-                                if (requireNamedArgument)
-                                    return true;
-                            }
-                        }
+                            if (!AnnotationAttributes.IsRequireNamedArgumentAttributeSymbol(attribute.AttributeClass))
+                                continue;
 
-                        return false;
+                            var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
+                            if (requireNamedArgument)
+                                return true;
+                        }
                     }
+
+                    return false;
                 }
 
                 var expression = argument.Expression;

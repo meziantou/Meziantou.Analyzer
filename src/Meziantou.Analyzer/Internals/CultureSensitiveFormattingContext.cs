@@ -290,35 +290,12 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return true;
     }
 
-    private static bool IsCultureSensitiveAttributeSymbol(ITypeSymbol? symbol)
-    {
-        // The attribute can be defined in multiple assemblies, so it's identified by its full name only
-        // Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute
-        return symbol is
-        {
-            Name: "CultureInsensitiveTypeAttribute",
-            ContainingSymbol: INamespaceSymbol
-            {
-                Name: "Annotations",
-                ContainingSymbol: INamespaceSymbol
-                {
-                    Name: "Analyzer",
-                    ContainingSymbol: INamespaceSymbol
-                    {
-                        Name: "Meziantou",
-                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
-                    }
-                }
-            }
-        };
-    }
-
     private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol)
     {
         var attributes = typeSymbol.GetAttributes();
         foreach (var attr in attributes)
         {
-            if (!IsCultureSensitiveAttributeSymbol(attr.AttributeClass))
+            if (!AnnotationAttributes.IsCultureSensitiveAttributeSymbol(attr.AttributeClass))
                 continue;
 
             if (attr.ConstructorArguments.IsEmpty)
@@ -327,7 +304,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         foreach (var attribute in compilation.Assembly.GetAttributes())
         {
-            if (!IsCultureSensitiveAttributeSymbol(attribute.AttributeClass))
+            if (!AnnotationAttributes.IsCultureSensitiveAttributeSymbol(attribute.AttributeClass))
                 continue;
 
             if (attribute.ConstructorArguments.IsEmpty)
@@ -348,7 +325,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         var attributes = typeSymbol.GetAttributes();
         foreach (var attr in attributes)
         {
-            if (!IsCultureSensitiveAttributeSymbol(attr.AttributeClass))
+            if (!AnnotationAttributes.IsCultureSensitiveAttributeSymbol(attr.AttributeClass))
                 continue;
 
             if (attr.ConstructorArguments.IsEmpty)
@@ -370,7 +347,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         foreach (var attribute in compilation.Assembly.GetAttributes())
         {
-            if (!IsCultureSensitiveAttributeSymbol(attribute.AttributeClass))
+            if (!AnnotationAttributes.IsCultureSensitiveAttributeSymbol(attribute.AttributeClass))
                 continue;
 
             if (attribute.ConstructorArguments.IsEmpty)

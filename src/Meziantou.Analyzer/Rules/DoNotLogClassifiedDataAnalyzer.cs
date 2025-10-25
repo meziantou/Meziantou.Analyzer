@@ -45,12 +45,8 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
 
             LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
-            StructuredLogFieldAttributeSymbol = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute");
-
             DataClassificationAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute");
         }
-
-        public INamedTypeSymbol? StructuredLogFieldAttributeSymbol { get; private set; }
 
         public INamedTypeSymbol? LoggerSymbol { get; }
         public INamedTypeSymbol? LoggerExtensionsSymbol { get; }
