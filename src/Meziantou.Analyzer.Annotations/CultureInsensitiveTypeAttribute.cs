@@ -71,7 +71,7 @@ public sealed class CultureInsensitiveTypeAttribute : System.Attribute
     /// Gets the <see cref="Type"/> for which to change the culture insensitivity.
     /// </summary>
     /// <value>
-    /// The <see cref="Type"/> for which to change the culture insensitivit, or <see langword="null"/> to change the culture insensitivity of
+    /// The <see cref="Type"/> for which to change the culture insensitivity, or <see langword="null"/> to change the culture insensitivity of
 	/// the type on which the attribute is applied.
     /// </value>
     public Type? Type { get; }
