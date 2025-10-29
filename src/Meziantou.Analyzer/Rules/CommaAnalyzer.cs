@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -63,6 +64,14 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
     private void HandleSwitchExpression(SyntaxNodeAnalysisContext context)
     {
         var node = (SwitchExpressionSyntax)context.Node;
+        var options = context.Options.GetConfigurationValue(node, Rule.Id + ".IgnoreCatchAllArm", defaultValue: false);
+        if (options is true)
+        {
+            var last = node.Arms.LastOrDefault();
+            if (last is not null && last.Pattern is DiscardPatternSyntax)
+                return;
+        }
+
         HandleSeparatedList(context, node, node.Arms);
     }
 

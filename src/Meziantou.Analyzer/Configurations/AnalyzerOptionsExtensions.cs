@@ -14,6 +14,11 @@ public static class AnalyzerOptionsExtensions
         return defaultValue;
     }
 
+    public static string GetConfigurationValue(this AnalyzerOptions options, SyntaxNode syntaxNode, string key, string defaultValue)
+    {
+        return GetConfigurationValue(options, syntaxNode.SyntaxTree, key, defaultValue);
+    }
+
     public static string GetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, string defaultValue)
     {
         return GetConfigurationValue(options, operation.Syntax.SyntaxTree, key, defaultValue);
@@ -26,6 +31,12 @@ public static class AnalyzerOptionsExtensions
             return ChangeType(value, defaultValue);
 
         return defaultValue;
+    }
+
+    [return: NotNullIfNotNull(nameof(defaultValue))]
+    public static bool? GetConfigurationValue(this AnalyzerOptions options, SyntaxNode syntaxNode, string key, bool? defaultValue)
+    {
+        return GetConfigurationValue(options, syntaxNode.SyntaxTree, key, defaultValue);
     }
 
     [return: NotNullIfNotNull(nameof(defaultValue))]

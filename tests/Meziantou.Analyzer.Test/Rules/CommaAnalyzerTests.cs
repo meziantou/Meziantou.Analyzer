@@ -260,6 +260,58 @@ class TypeName
 #endif
 
     [Fact]
+    public Task SwitchExpressionWithoutLeadingComma_CatchAll()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public void Test()
+                    {
+                        _ = 0 switch
+                        {
+                            1 => 1,
+                            [||]_ => 2
+                        };
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    public void Test()
+                    {
+                        _ = 0 switch
+                        {
+                            1 => 1,
+                            _ => 2,
+                        };
+                    }
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public Task SwitchExpressionWithoutLeadingComma_IgnoreCatchAll()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+            .AddAnalyzerConfiguration("MA0007.IgnoreCatchAllArm", "true")
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public void Test()
+                    {
+                        _ = 0 switch
+                        {
+                            1 => 1,
+                            _ => 2
+                        };
+                    }
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
     public Task SwitchExpressionWithoutLeadingComma()
         => CreateProjectBuilder()
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
