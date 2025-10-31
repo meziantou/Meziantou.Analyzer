@@ -32,3 +32,5 @@ In addition to the rules enforced by `.editorconfig`, you SHOULD:
 - The tests must be under `tests/Meziantou.Analyzer.Test/Rules`
 
 The analyzer must use `IOperation` or `ISymbol` to analyze the content. Only fallback to `SyntaxNode` when the other ways are not supported.
+
+The tests must indicates which part of the snippet must report a diagnostic using the `[|code|]` syntax or `{|id:code|}` syntax. Do not explicitly indicates lines or columns.
