@@ -94,12 +94,11 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
     [InlineData("public bool CompareTo(Test other)")]
     public async Task ClassImplementsNoInterfaceAndProvidesIncompatibleCompareToMethod_NoDiagnosticReported(string methodSignature)
     {
-        var originalCode = $$"""
-            class Test
-            {
-                {{methodSignature}} => throw null;
-            }
-            """;
+        var originalCode = $@"
+class Test
+{{
+    {methodSignature} => throw null;
+}}";
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ValidateAsync();

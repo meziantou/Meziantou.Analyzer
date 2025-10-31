@@ -21,9 +21,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("System.IO.Path.DirectorySeparatorChar.Unknown()")]
     public async Task UnknownMember(string memberName)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("{{memberName}}")|]]
+            [[|DebuggerDisplay("{{{memberName}}}")|]]
             public class Dummy
             {
                 public string Display { get; }
@@ -41,9 +41,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Invalid.Length")]
     public async Task UnknownMember_Name(string memberName)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("", Name = "{{memberName}}")|]]
+            [[|DebuggerDisplay("", Name = "{{{memberName}}}")|]]
             public class Dummy
             {
                 public string Display { get; }
@@ -62,9 +62,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Display.UnknownProperty")]
     public async Task UnknownMember_Type(string memberName)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("", Type = "{{memberName}}")|]]
+            [[|DebuggerDisplay("", Type = "{{{memberName}}}")|]]
             public class Dummy
             {
                 public string Display { get; }
@@ -80,9 +80,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("System.IO.Path.DirectorySeparatorChar.ToString()")]
     public async Task Valid(string value)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
-            [DebuggerDisplay("{{value}}")]
+            [DebuggerDisplay("{{{value}}}")]
             public class Dummy
             {
                 public string Display { get; }
@@ -179,9 +179,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Display().Invalid")] // Invalid is ignored because we cannot determine the return type of Display()
     public async Task Valid_Method(string value)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
-            [DebuggerDisplay("{{value}}")]
+            [DebuggerDisplay("{{{value}}}")]
             public class Dummy
             {
                 private string Display() => "";
@@ -234,25 +234,23 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                         const string SourceCode = ""
                             using System.Diagnostics;
                 
-                            [[|DebuggerDisplay("""
-                                Person \\{NameInvalid}
-                                                """|]]
-                                            public record Person(string Name);
-                                            """;
-                                        await CreateProjectBuilder()
-                                              .WithSourceCode(SourceCode)
-                                              .ValidateAsync();
-                                    }
-                                
-                                    [Fact]
-                                    public async Task SkipEscapedBraces3()
-                                    {
-                                        const string SourceCode = ""
-                                            using System.Diagnostics;
-                                
-                                            [DebuggerDisplay(""
-                                                Person \\\{NameInvalid}
-                                """]
+                            [[|DebuggerDisplay(@"Person \\{NameInvalid}
+                """|]]
+            public record Person(string Name);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SkipEscapedBraces3()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay("""
+                Person \\\{NameInvalid}")]
                             public record Person(string Name);
                             """;
                         await CreateProjectBuilder()
@@ -266,25 +264,23 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                         const string SourceCode = ""
                             using System.Diagnostics;
                 
-                            [DebuggerDisplay("""
-                                \
-                                                """]
-                                            public record Person(int Value);
-                                            """;
-                                        await CreateProjectBuilder()
-                                              .WithSourceCode(SourceCode)
-                                              .ValidateAsync();
-                                    }
-                                
-                                    [Fact]
-                                    public async Task Escape_IncompleteExpression()
-                                    {
-                                        const string SourceCode = ""
-                                            using System.Diagnostics;
-                                
-                                            [DebuggerDisplay(""
-                                                {\
-                                """]
+                            [DebuggerDisplay(@"\
+                """]
+            public record Person(int Value);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Escape_IncompleteExpression()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay("""
+                {\")]
                             public record Person(int Value);
                             """;
                         await CreateProjectBuilder()
@@ -306,7 +302,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Demo.Display(Value > 1, Value)")]
     public async Task Valid_BinaryOperator(string value)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
 
             [DebuggerDisplay("""
@@ -350,10 +346,10 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Demo.Display(Value > 1, Unknown)")]
     public async Task Invalid_BinaryOperator(string value)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
 
-            [[|DebuggerDisplay("{{value}}")|]]
+            [[|DebuggerDisplay("{{{value}}}")|]]
             public record Person(int Value);
 
             public class Demo
@@ -370,7 +366,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("!Value")]
     public async Task Valid_UnaryOperator(string value)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
 
             [DebuggerDisplay("""
@@ -387,7 +383,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                 """]
     public async Task Invalid_UnaryOperator(string value)
     {
-        var sourceCode = $$$"""
+        var sourceCode = $$"""
             using System.Diagnostics;
 
             [[|DebuggerDisplay("""
@@ -405,25 +401,23 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                         const string SourceCode = ""
                             using System.Diagnostics;
                 
-                            [DebuggerDisplay("""
-                                {System.Linq.Enumerable.Count(Test)}
-                                                """]
-                                            public record Person(string[] Test);
-                                            """;
-                                        await CreateProjectBuilder()
-                                              .WithSourceCode(SourceCode)
-                                              .ValidateAsync();
-                                    }
-                                
-                                    [Fact]
-                                    public async Task CallStaticMethodOnAnotherUsingKeyword()
-                                    {
-                                        const string SourceCode = ""
-                                            using System.Diagnostics;
-                                
-                                            [DebuggerDisplay(""
-                                                {char.IsAscii(Test)}
-                                """]
+                            [DebuggerDisplay(@"{System.Linq.Enumerable.Count(Test)}
+                """]
+            public record Person(string[] Test);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallStaticMethodOnAnotherUsingKeyword()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+
+            [DebuggerDisplay("""
+                {char.IsAscii(Test)}")]
                             public record Person(char Test);
                             """;
                         await CreateProjectBuilder()
@@ -437,23 +431,21 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                         const string SourceCode = ""
                             using System.Diagnostics;
                 
-                            [[|DebuggerDisplay("""
-                                {System.Linq.Enumerable.InvalidMethod(Test)}
-                                                """|]]
-                                            public record Person(string[] Test);
-                                            """;
-                                        await CreateProjectBuilder()
-                                              .WithSourceCode(SourceCode)
-                                              .ValidateAsync();
-                                    }
-                                
-                                    [Fact]
-                                    public async Task IListOfT_Count()
-                                    {
-                                        const string SourceCode = ""
-                                            using System.Diagnostics;
-                                            [DebuggerDisplay("{referenceString} ({allStrings.Count})
-                                """]
+                            [[|DebuggerDisplay(@"{System.Linq.Enumerable.InvalidMethod(Test)}
+                """|]]
+            public record Person(string[] Test);
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IListOfT_Count()
+    {
+        const string SourceCode = """
+            using System.Diagnostics;
+            [DebuggerDisplay("{referenceString} ({allStrings.Count})")]
             public struct ContainedStrings
             {
                 private readonly System.Collections.Generic.IList<string> allStrings;

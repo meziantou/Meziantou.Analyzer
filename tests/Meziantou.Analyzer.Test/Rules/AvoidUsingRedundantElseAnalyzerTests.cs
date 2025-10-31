@@ -44,46 +44,44 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     public async Task Test_WhenIfJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
     {
         var @else = expectElseRemoval ? "[|else|]" : "else";
-        var originalCode = $$"""
-            class TestClass
-            {
-                void Test()
-                {
-                    var value = -1;
-                    while (true)
-                    {
-                        if (value < 0)
-                        {
-                            {{statement}};
-                        }
-                        {{@else}}
-                            value--;
-                    }
-                LABEL:
-                    value++;
-                }
-            }
-            """;
-        var modifiedCode = $$"""
-            class TestClass
-            {
-                void Test()
-                {
-                    var value = -1;
-                    while (true)
-                    {
-                        if (value < 0)
-                        {
-                            {{statement}};
-                        }
-            
-                        value--;
-                    }
-                LABEL:
-                    value++;
-                }
-            }
-            """;
+        var originalCode = $@"
+class TestClass
+{{
+    void Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                {statement};
+            }}
+            {@else}
+                value--;
+        }}
+    LABEL:
+        value++;
+    }}
+}}";
+        var modifiedCode = $@"
+class TestClass
+{{
+    void Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                {statement};
+            }}
+
+            value--;
+        }}
+    LABEL:
+        value++;
+    }}
+}}";
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ShouldFixCodeWith(expectElseRemoval ? modifiedCode : originalCode)
@@ -97,46 +95,44 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     public async Task Test_WhenIfYieldJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
     {
         var @else = expectElseRemoval ? "[|else|]" : "else";
-        var originalCode = $$"""
-            class TestClass
-            {
-                System.Collections.Generic.IEnumerable<int> Test()
-                {
-                    var value = -1;
-                    while (true)
-                    {
-                        if (value < 0)
-                        {
-                            value++;
-                            {{statement}};
-                        }
-                        {@else}
-                        {
-                            value--;
-                        }
-                    }
-                }
-            }
-            """;
-        var modifiedCode = $$"""
-            class TestClass
-            {
-                System.Collections.Generic.IEnumerable<int> Test()
-                {
-                    var value = -1;
-                    while (true)
-                    {
-                        if (value < 0)
-                        {
-                            value++;
-                            {{statement}};
-                        }
-            
-                        value--;
-                    }
-                }
-            }
-            """;
+        var originalCode = $@"
+class TestClass
+{{
+    System.Collections.Generic.IEnumerable<int> Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                value++;
+                {statement};
+            }}
+            {@else}
+            {{
+                value--;
+            }}
+        }}
+    }}
+}}";
+        var modifiedCode = $@"
+class TestClass
+{{
+    System.Collections.Generic.IEnumerable<int> Test()
+    {{
+        var value = -1;
+        while (true)
+        {{
+            if (value < 0)
+            {{
+                value++;
+                {statement};
+            }}
+
+            value--;
+        }}
+    }}
+}}";
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ShouldFixCodeWith(expectElseRemoval ? modifiedCode : originalCode)
@@ -540,24 +536,23 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     [InlineData("switch (value) { case string local: break; }")]
     public async Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_NoDiagnosticReported(string localDeclaration)
     {
-        var originalCode = $$"""
-            class TestClass
-            {
-                void Test()
-                {
-                    object value = string.Empty;
-                    if (value != null)
-                    {
-                        {{localDeclaration}}
-                        return;
-                    }
-                    else
-                    {
-                        int local() => throw null;
-                    }
-                }
-            }
-            """;
+        var originalCode = $@"
+class TestClass
+{{
+    void Test()
+    {{
+        object value = string.Empty;
+        if (value != null)
+        {{
+            {localDeclaration}
+            return;
+        }}
+        else
+        {{
+            int local() => throw null;
+        }}
+    }}
+}}";
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ValidateAsync();
