@@ -145,17 +145,18 @@ class TestClass
     [Fact]
     public async Task ComparingNullableBoolVariableWithBoolLiteral_NoDiagnosticReported()
     {
-        var originalCode = @"
-class TestClass
-{
-    void Test()
-    {
-        bool? value = true;
-        if (value == true)
-        {
-        }
-    }
-}";
+        var originalCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    bool? value = true;
+                    if (value == true)
+                    {
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ValidateAsync();
@@ -191,20 +192,21 @@ class TestClass
     [Fact]
     public async Task NotComparingBoolVariable_NoDiagnosticReported()
     {
-        var originalCode = @"
-class TestClass
-{
-    void Test()
-    {
-        bool value = true;
-        if (value)
-        {
-        }
-        if (!value)
-        {
-        }
-    }
-}";
+        var originalCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    bool value = true;
+                    if (value)
+                    {
+                    }
+                    if (!value)
+                    {
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ValidateAsync();
@@ -213,16 +215,17 @@ class TestClass
     [Fact]
     public async Task ComparingNullableLongVariableWithNullLiteral_NoDiagnosticReported()
     {
-        var originalCode = @"
-class TestClass
-{
-    void Test(long? number)
-    {
-        if (number == null)
-        {
-        }
-    }
-}";
+        var originalCode = """
+            class TestClass
+            {
+                void Test(long? number)
+                {
+                    if (number == null)
+                    {
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ValidateAsync();

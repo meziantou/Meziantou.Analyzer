@@ -14,13 +14,15 @@ public sealed class OptionalParametersAttributeAnalyzerMA0087Tests
     [Fact]
     public async Task MissingOptionalAttribute()
     {
-        const string SourceCode = @"using System.Runtime.InteropServices;
-class Test
-{
-    void A([DefaultParameterValue(10)]int [|a|])
-    {
-    }
-}";
+        const string SourceCode = """
+            using System.Runtime.InteropServices;
+            class Test
+            {
+                void A([DefaultParameterValue(10)]int [|a|])
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -29,13 +31,15 @@ class Test
     [Fact]
     public async Task BothAttributes()
     {
-        const string SourceCode = @"using System.Runtime.InteropServices;
-class Test
-{
-    void A([Optional, DefaultParameterValue(10)]int a)
-    {
-    }
-}";
+        const string SourceCode = """
+            using System.Runtime.InteropServices;
+            class Test
+            {
+                void A([Optional, DefaultParameterValue(10)]int a)
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -44,13 +48,15 @@ class Test
     [Fact]
     public async Task OptionalAttribute()
     {
-        const string SourceCode = @"using System.Runtime.InteropServices;
-class Test
-{
-    void A([Optional]int a)
-    {
-    }
-}";
+        const string SourceCode = """
+            using System.Runtime.InteropServices;
+            class Test
+            {
+                void A([Optional]int a)
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

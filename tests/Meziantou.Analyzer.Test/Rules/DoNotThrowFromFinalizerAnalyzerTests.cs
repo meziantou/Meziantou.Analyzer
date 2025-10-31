@@ -14,14 +14,15 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
     [Fact]
     public async Task Finalizer_DiagnosticIsReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    ~TestClass()
-    {
-        [|throw new System.Exception(""Unbecoming exception"");|]        
-    }
-}";
+        const string SourceCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    [|throw new System.Exception(""Unbecoming exception"");|]        
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -30,21 +31,22 @@ class TestClass
     [Fact]
     public async Task FinalizerDoesNotThrow_NoDiagnosticReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    ~TestClass()
-    {
-        var value = 1;
-        try
-        {
-        }
-        finally
-        {
-            value++;
-        }        
-    }
-}";
+        const string SourceCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    var value = 1;
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        value++;
+                    }        
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -53,25 +55,26 @@ class TestClass
     [Fact]
     public async Task FinalizerThrowsFromNestedBlock_DiagnosticIsReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    ~TestClass()
-    {
-        var value = 1;
-        try
-        {
-        }
-        finally
-        {
+        const string SourceCode = """
+            class TestClass
             {
-                Increment(ref value);
-                [|throw new System.Exception($""Unbecoming exception No {value}"");|]
+                ~TestClass()
+                {
+                    var value = 1;
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        {
+                            Increment(ref value);
+                            [|throw new System.Exception($""Unbecoming exception No {value}"");|]
+                        }
+                        void Increment(ref int val) => val++;
+                    }        
+                }
             }
-            void Increment(ref int val) => val++;
-        }        
-    }
-}";
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -80,26 +83,27 @@ class TestClass
     [Fact]
     public async Task FinalizerThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    ~TestClass()
-    {
-        try
-        {
-        }
-        finally
-        {
-            try
+        const string SourceCode = """
+            class TestClass
             {
-                [|throw new System.Exception();|]
+                ~TestClass()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            [|throw new System.Exception();|]
+                        }
+                        catch
+                        {
+                        }
+                    }        
+                }
             }
-            catch
-            {
-            }
-        }        
-    }
-}";
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

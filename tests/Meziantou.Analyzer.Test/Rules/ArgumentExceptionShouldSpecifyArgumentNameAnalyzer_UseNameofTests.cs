@@ -15,25 +15,27 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameof
     [Fact]
     public async Task Property()
     {
-        const string SourceCode = @"
-class Sample
-{
-    string Prop
-    {
-        get { throw null; }
-        set { throw new System.ArgumentNullException([||]""value""); }
-    }
-}";
+        const string SourceCode = """
+            class Sample
+            {
+                string Prop
+                {
+                    get { throw null; }
+                    set { throw new System.ArgumentNullException([||]""value""); }
+                }
+            }
+            """;
 
-        const string CodeFix = @"
-class Sample
-{
-    string Prop
-    {
-        get { throw null; }
-        set { throw new System.ArgumentNullException(nameof(value)); }
-    }
-}";
+        const string CodeFix = """
+            class Sample
+            {
+                string Prop
+                {
+                    get { throw null; }
+                    set { throw new System.ArgumentNullException(nameof(value)); }
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -44,23 +46,25 @@ class Sample
     [Fact]
     public async Task Method()
     {
-        const string SourceCode = @"
-class Sample
-{
-    string M(string arg0)
-    {
-        throw new System.ArgumentNullException([||]""arg0"");
-    }
-}";
+        const string SourceCode = """
+            class Sample
+            {
+                string M(string arg0)
+                {
+                    throw new System.ArgumentNullException([||]""arg0"");
+                }
+            }
+            """;
 
-        const string CodeFix = @"
-class Sample
-{
-    string M(string arg0)
-    {
-        throw new System.ArgumentNullException(nameof(arg0));
-    }
-}";
+        const string CodeFix = """
+            class Sample
+            {
+                string M(string arg0)
+                {
+                    throw new System.ArgumentNullException(nameof(arg0));
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -71,23 +75,25 @@ class Sample
     [Fact]
     public async Task Operator()
     {
-        const string SourceCode = @"
-class Sample
-{
-    public static Sample operator +(Sample first, Sample second)
-    {
-        throw new System.ArgumentNullException([||]""first"");
-    }
-}";
+        const string SourceCode = """
+            class Sample
+            {
+                public static Sample operator +(Sample first, Sample second)
+                {
+                    throw new System.ArgumentNullException([||]""first"");
+                }
+            }
+            """;
 
-        const string CodeFix = @"
-class Sample
-{
-    public static Sample operator +(Sample first, Sample second)
-    {
-        throw new System.ArgumentNullException(nameof(first));
-    }
-}";
+        const string CodeFix = """
+            class Sample
+            {
+                public static Sample operator +(Sample first, Sample second)
+                {
+                    throw new System.ArgumentNullException(nameof(first));
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)

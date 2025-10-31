@@ -14,11 +14,11 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzerTests
     [Fact]
     public async Task NameEndsWithAttribute()
     {
-        const string SourceCode = @"
-class CustomAttribute : System.Attribute
-{
-}
-";
+        const string SourceCode = """
+            class CustomAttribute : System.Attribute
+            {
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -27,11 +27,11 @@ class CustomAttribute : System.Attribute
     [Fact]
     public async Task NameDoesNotEndWithAttribute()
     {
-        const string SourceCode = @"
-class [||]CustomAttr : System.Attribute
-{
-}
-";
+        const string SourceCode = """
+            class [||]CustomAttr : System.Attribute
+            {
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

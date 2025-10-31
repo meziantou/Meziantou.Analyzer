@@ -15,20 +15,21 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
     [Fact]
     public async Task Ctor()
     {
-        const string SourceCode = @"
-abstract class Test
-{
-    protected Test(int a) { }
-    private Test(object a) { }
-}
-
-class Test2
-{
-    public Test2() { }
-    internal Test2(long a) { }
-    protected Test2(int a) { }
-    private Test2(object a) { }
-}";
+        const string SourceCode = """
+            abstract class Test
+            {
+                protected Test(int a) { }
+                private Test(object a) { }
+            }
+            
+            class Test2
+            {
+                public Test2() { }
+                internal Test2(long a) { }
+                protected Test2(int a) { }
+                private Test2(object a) { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -37,17 +38,19 @@ class Test2
     [Fact]
     public async Task PublicCtor()
     {
-        var sourceCode = @"
-abstract class Test
-{
-    public [||]Test() { }
-}";
+        var sourceCode = """
+            abstract class Test
+            {
+                public [||]Test() { }
+            }
+            """;
 
-        var expectedCodeFix = @"
-abstract class Test
-{
-    protected Test() { }
-}";
+        var expectedCodeFix = """
+            abstract class Test
+            {
+                protected Test() { }
+            }
+            """;
 
         await CreateProjectBuilder()
                 .WithSourceCode(sourceCode)
@@ -58,17 +61,19 @@ abstract class Test
     [Fact]
     public async Task InternalCtor()
     {
-        var sourceCode = @"
-abstract class Test
-{
-    internal [||]Test() { }
-}";
+        var sourceCode = """
+            abstract class Test
+            {
+                internal [||]Test() { }
+            }
+            """;
 
-        var codeFix = @"
-abstract class Test
-{
-    protected Test() { }
-}";
+        var codeFix = """
+            abstract class Test
+            {
+                protected Test() { }
+            }
+            """;
 
         await CreateProjectBuilder()
                 .WithSourceCode(sourceCode)
@@ -79,21 +84,23 @@ abstract class Test
     [Fact]
     public async Task InternalCtor_BatchFix()
     {
-        var sourceCode = @"
-abstract class Test
-{
-    internal [||]Test() { }
+        var sourceCode = """
+            abstract class Test
+            {
+                internal [||]Test() { }
+            
+                internal [||]Test(int a) { }
+            }
+            """;
 
-    internal [||]Test(int a) { }
-}";
-
-        var codeFix = @"
-abstract class Test
-{
-    protected Test() { }
-
-    protected Test(int a) { }
-}";
+        var codeFix = """
+            abstract class Test
+            {
+                protected Test() { }
+            
+                protected Test(int a) { }
+            }
+            """;
 
         await CreateProjectBuilder()
                 .WithSourceCode(sourceCode)

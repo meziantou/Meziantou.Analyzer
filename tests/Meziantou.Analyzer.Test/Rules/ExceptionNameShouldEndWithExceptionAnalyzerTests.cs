@@ -14,11 +14,11 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzerTests
     [Fact]
     public async Task NameEndsWithException()
     {
-        const string SourceCode = @"
-class CustomException : System.Exception
-{
-}
-";
+        const string SourceCode = """
+            class CustomException : System.Exception
+            {
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -27,11 +27,11 @@ class CustomException : System.Exception
     [Fact]
     public async Task NameDoesNotEndWithAttribute()
     {
-        const string SourceCode = @"
-class [||]CustomEx : System.Exception
-{
-}
-";
+        const string SourceCode = """
+            class [||]CustomEx : System.Exception
+            {
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

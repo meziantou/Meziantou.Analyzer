@@ -57,15 +57,16 @@ class TestClass
     [Fact]
     public async Task Length_ShouldNotReportError()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        int length = 0;
-        var a = new int[length];
-    }
-}";
+        const string SourceCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    int length = 0;
+                    var a = new int[length];
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -74,18 +75,19 @@ class TestClass
     [Fact]
     public async Task ParamsMethod_ShouldNotReportError()
     {
-        const string SourceCode = @"
-public class TestClass
-{
-    public void Test(params string[] values)
-    {
-    }
-
-    public void CallTest()
-    {
-        Test();
-    }
-}";
+        const string SourceCode = """
+            public class TestClass
+            {
+                public void Test(params string[] values)
+                {
+                }
+            
+                public void CallTest()
+                {
+                    Test();
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -94,12 +96,13 @@ public class TestClass
     [Fact]
     public async Task EmptyArrayInAttribute_ShouldNotReportError()
     {
-        const string SourceCode = @"
-[Test(new int[0])]
-class TestAttribute : System.Attribute
-{
-    public TestAttribute(int[] data) { }
-}";
+        const string SourceCode = """
+            [Test(new int[0])]
+            class TestAttribute : System.Attribute
+            {
+                public TestAttribute(int[] data) { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

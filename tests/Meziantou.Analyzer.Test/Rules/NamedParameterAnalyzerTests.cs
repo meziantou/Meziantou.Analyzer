@@ -18,20 +18,21 @@ public sealed class NamedParameterAnalyzerTests
 
     public async Task MethodWithNoParameter()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    TypeName() { }
-    void A() { }
-    int B => 0;
-
-    public void Test()
-    {
-        _ = new TypeName();
-        A();
-        _ = B;
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                TypeName() { }
+                void A() { }
+                int B => 0;
+            
+                public void Test()
+                {
+                    _ = new TypeName();
+                    A();
+                    _ = B;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -41,14 +42,15 @@ class TypeName
 
     public async Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public async System.Threading.Tasks.Task Test()
-    {
-        await System.Threading.Tasks.Task.Run(()=>{}).ConfigureAwait(false);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public async System.Threading.Tasks.Task Test()
+                {
+                    await System.Threading.Tasks.Task.Run(()=>{}).ConfigureAwait(false);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -57,14 +59,15 @@ class TypeName
     [Fact]
     public async Task Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public async System.Threading.Tasks.Task Test()
-    {
-        await System.Threading.Tasks.Task.Run(() => 10).ConfigureAwait(true);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public async System.Threading.Tasks.Task Test()
+                {
+                    await System.Threading.Tasks.Task.Run(() => 10).ConfigureAwait(true);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -73,14 +76,15 @@ class TypeName
     [Fact]
     public async Task NamedParameter_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        object.Equals(objA: true, """");
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    object.Equals(objA: true, """");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -89,22 +93,24 @@ class TypeName
     [Fact]
     public async Task True_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        var a = string.Compare("""", """", [||]true);
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        var a = string.Compare("""", """", ignoreCase: true);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare("""", """", [||]true);
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare("""", """", ignoreCase: true);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -114,14 +120,15 @@ class TypeName
     [Fact]
     public async Task True_WithOptions_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        var a = string.Compare("""", """", true);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare("""", """", true);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "None")
@@ -131,17 +138,18 @@ class TypeName
     [Fact]
     public async Task String_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        var a = string.Compare(
-                        [||]"""",
-                        [||]"""",
-                        [||]true);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var a = string.Compare(
+                                    [||]"""",
+                                    [||]"""",
+                                    [||]true);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
@@ -245,15 +253,16 @@ class TypeName
     [Fact]
     public async Task Int32_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        A([||]1, [||]1L, [||]3);
-        void A(int a, long b, short c) { }
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    A([||]1, [||]1L, [||]3);
+                    void A(int a, long b, short c) { }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
@@ -263,19 +272,20 @@ class TypeName
     [Fact]
     public async Task Int32_WithOptions_ShouldNotReportDiagnosticForArrayIndexer()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        int[] array = new[] {5, 4};
-
-        if (array[0] == 5)
-        {
-            array[0] = 6;
-        }
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    int[] array = new[] {5, 4};
+            
+                    if (array[0] == 5)
+                    {
+                        array[0] = 6;
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
@@ -285,16 +295,17 @@ class TypeName
     [Fact]
     public async Task Int32_ExcludedMethod_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        MyMethod(1, 1L, 3);
-    }
-
-    void MyMethod(int a, long b, short c) { }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    MyMethod(1, 1L, 3);
+                }
+            
+                void MyMethod(int a, long b, short c) { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "M[a-z][A-Z]ethod")
@@ -304,14 +315,15 @@ class TypeName
     [Fact]
     public async Task False_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        object.Equals(false, """");
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    object.Equals(false, """");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -320,14 +332,15 @@ class TypeName
     [Fact]
     public async Task Null_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        object.Equals(null, """");
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    object.Equals(null, """");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -336,14 +349,15 @@ class TypeName
     [Fact]
     public async Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        typeof(TypeName).GetMethod("""").Invoke(null, new object[0]);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    typeof(TypeName).GetMethod("""").Invoke(null, new object[0]);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -352,22 +366,24 @@ class TypeName
     [Fact]
     public async Task MethodBaseInvoke_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        typeof(TypeName).GetMethod("""").Invoke(null, [||]null);
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        typeof(TypeName).GetMethod("""").Invoke(null, parameters: null);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    typeof(TypeName).GetMethod("""").Invoke(null, [||]null);
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    typeof(TypeName).GetMethod("""").Invoke(null, parameters: null);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -377,11 +393,12 @@ class TypeName
     [Fact]
     public async Task MSTestAssert_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
+            }
+            """;
         await CreateProjectBuilder()
               .AddMSTestApi()
               .WithSourceCode(SourceCode)
@@ -391,11 +408,12 @@ class TypeName
     [Fact]
     public async Task NunitAssert_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
+            }
+            """;
         await CreateProjectBuilder()
               .AddNUnitApi()
               .WithSourceCode(SourceCode)
@@ -405,11 +423,12 @@ class TypeName
     [Fact]
     public async Task XunitAssert_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test() => Xunit.Assert.Equal(null, ""dummy"");
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test() => Xunit.Assert.Equal(null, ""dummy"");
+            }
+            """;
         await CreateProjectBuilder()
               .AddXUnitApi()
               .WithSourceCode(SourceCode)
@@ -419,26 +438,28 @@ class TypeName
     [Fact]
     public async Task Ctor_ShouldUseTheRightParameterName()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        new TypeName([||]null);
-    }
-
-    TypeName(string a) { }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        new TypeName(a: null);
-    }
-
-    TypeName(string a) { }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new TypeName([||]null);
+                }
+            
+                TypeName(string a) { }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new TypeName(a: null);
+                }
+            
+                TypeName(string a) { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -448,26 +469,28 @@ class TypeName
     [Fact]
     public async Task ImplicitCtor_ShouldUseTheRightParameterName()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        TypeName a = new([||]null);
-    }
-
-    TypeName(string a) { }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        TypeName a = new(a: null);
-    }
-
-    TypeName(string a) { }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    TypeName a = new([||]null);
+                }
+            
+                TypeName(string a) { }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    TypeName a = new(a: null);
+                }
+            
+                TypeName(string a) { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -477,26 +500,28 @@ class TypeName
     [Fact]
     public async Task CtorChaining()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public TypeName()
-        : this([||]null)
-    {
-    }
-
-    public TypeName(string a) { }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public TypeName()
-        : this(a: null)
-    {
-    }
-
-    public TypeName(string a) { }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public TypeName()
+                    : this([||]null)
+                {
+                }
+            
+                public TypeName(string a) { }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public TypeName()
+                    : this(a: null)
+                {
+                }
+            
+                public TypeName(string a) { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -506,30 +531,32 @@ class TypeName
     [Fact]
     public async Task CtorBase()
     {
-        const string SourceCode = @"
-class BaseType
-{
-    protected BaseType(string a) { }
-}
-class TypeName: BaseType
-{
-    public TypeName()
-        : base([||]null)
-    {
-    }
-}";
-        const string CodeFix = @"
-class BaseType
-{
-    protected BaseType(string a) { }
-}
-class TypeName: BaseType
-{
-    public TypeName()
-        : base(a: null)
-    {
-    }
-}";
+        const string SourceCode = """
+            class BaseType
+            {
+                protected BaseType(string a) { }
+            }
+            class TypeName: BaseType
+            {
+                public TypeName()
+                    : base([||]null)
+                {
+                }
+            }
+            """;
+        const string CodeFix = """
+            class BaseType
+            {
+                protected BaseType(string a) { }
+            }
+            class TypeName: BaseType
+            {
+                public TypeName()
+                    : base(a: null)
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -539,23 +566,23 @@ class TypeName: BaseType
     [Fact]
     public async Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public async System.Threading.Tasks.Task Test()
-    {
-        new Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder<int>().IsUnicode(false);
-    }
-}
-
-namespace Microsoft.EntityFrameworkCore.Metadata.Builders
-{
-    public class PropertyBuilder<TProperty>
-    {
-        public bool IsUnicode(bool value) => throw null;
-    }
-}
-";
+        const string SourceCode = """
+            class TypeName
+            {
+                public async System.Threading.Tasks.Task Test()
+                {
+                    new Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder<int>().IsUnicode(false);
+                }
+            }
+            
+            namespace Microsoft.EntityFrameworkCore.Metadata.Builders
+            {
+                public class PropertyBuilder<TProperty>
+                {
+                    public bool IsUnicode(bool value) => throw null;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -564,15 +591,15 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
     [Fact]
     public async Task Task_FromResult_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        _ = System.Threading.Tasks.Task.FromResult(true);
-    }
-}
-";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = System.Threading.Tasks.Task.FromResult(true);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -581,15 +608,15 @@ class TypeName
     [Fact]
     public async Task ValueTask_FromResult_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        _ = System.Threading.Tasks.ValueTask.FromResult<System.ReadOnlyMemory<byte>?>(null);
-    }
-}
-";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = System.Threading.Tasks.ValueTask.FromResult<System.ReadOnlyMemory<byte>?>(null);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)

@@ -15,20 +15,21 @@ public class JSInvokableMethodsMustBePublicAnalyzerTests
     [Fact]
     public async Task Test()
     {
-        const string SourceCode = @"
-using Microsoft.JSInterop;
-
-class Test
-{
-    [JSInvokable]
-    public void A() => throw null;
-
-    [JSInvokable]
-    internal void [||]B() => throw null;
-
-    [JSInvokable]
-    static void [||]C() => throw null;
-}";
+        const string SourceCode = """
+            using Microsoft.JSInterop;
+            
+            class Test
+            {
+                [JSInvokable]
+                public void A() => throw null;
+            
+                [JSInvokable]
+                internal void [||]B() => throw null;
+            
+                [JSInvokable]
+                static void [||]C() => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

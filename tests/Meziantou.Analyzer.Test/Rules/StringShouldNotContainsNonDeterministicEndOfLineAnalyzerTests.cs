@@ -17,12 +17,13 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
     [Fact]
     public async Task Valid()
     {
-        const string SourceCode = @"
-class Dummy
-{
-    void Test()
-    {
-        _ = ""test"";
+        const string SourceCode = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = ""test"
+            """;
         _ = $""test"";
         _ = ""test\r\nabc"";
         _ = $""test{0}\r\nabc"";
@@ -42,24 +43,25 @@ class Dummy
     [Fact]
     public async Task VerbatimString()
     {
-        const string SourceCode = @"
-class Dummy
-{
-    void Test()
-    {
-        _ = [|@""line1
-line2""|];
-    }
-}
-";
+        const string SourceCode = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = [|@""line1
+            line2""|];
+                }
+            }
+            """;
 
-        const string CodeFix = @"
-class Dummy
-{
-    void Test()
-    {
-        _ = ""line1\n"" +
-            ""line2"";
+        const string CodeFix = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = ""line1\n"" +
+                        ""line2"
+            """;
     }
 }
 ";
@@ -72,24 +74,25 @@ class Dummy
     [Fact]
     public async Task VerbatimString2()
     {
-        const string SourceCode = @"
-class Dummy
-{
-    void Test()
-    {
-        _ = [|@""line1""""\t
-line2""|];
-    }
-}
-";
+        const string SourceCode = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = [|@""line1""""\t
+            line2""|];
+                }
+            }
+            """;
 
-        const string CodeFix = @"
-class Dummy
-{
-    void Test()
-    {
-        _ = ""line1\""\\t\r\n"" +
-            ""line2"";
+        const string CodeFix = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = ""line1\""\\t\r\n"" +
+                        ""line2"
+            """;
     }
 }
 ";
@@ -102,16 +105,16 @@ class Dummy
     [Fact]
     public async Task VerbatimInterpolatedString()
     {
-        const string SourceCode = @"
-class Dummy
-{
-    void Test()
-    {
-        _ = [|$@""line1{0}
-line2""|];
-    }
-}
-";
+        const string SourceCode = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = [|$@""line1{0}
+            line2""|];
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)

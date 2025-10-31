@@ -16,15 +16,16 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
     [Fact]
     public async Task TooLongMethod_Statements()
     {
-        const string SourceCode = @"
-public class Test
-{
-    void [||]Method()
-    {
-        var a = 0;var b = 0;
-        void A(){var c = 0;}
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                void [||]Method()
+                {
+                    var a = 0;var b = 0;
+                    void A(){var c = 0;}
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0051.maximum_statements_per_method", "2")
@@ -34,14 +35,15 @@ public class Test
     [Fact]
     public async Task ValidMethod_Statements()
     {
-        const string SourceCode = @"
-public class Test
-{
-    void Method()
-    {
-        var a = 0;var b = 0;var c = 0;
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                void Method()
+                {
+                    var a = 0;var b = 0;var c = 0;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0051.maximum_statements_per_method", "3")
@@ -51,16 +53,17 @@ public class Test
     [Fact]
     public async Task TooLongMethod_Lines()
     {
-        const string SourceCode = @"
-public class Test
-{
-    void [||]Method()
-    {
-        var a = 0;var d = 0;
-        var b = 0;var e = 0;
-        var c = 0;
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                void [||]Method()
+                {
+                    var a = 0;var d = 0;
+                    var b = 0;var e = 0;
+                    var c = 0;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "2")
@@ -70,16 +73,17 @@ public class Test
     [Fact]
     public async Task ValidMethod_Lines()
     {
-        const string SourceCode = @"
-public class Test
-{
-    void Method()
-    {
-        var a = 0;var d = 0;
-        var b = 0;var e = 0;
-        var c = 0;
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                void Method()
+                {
+                    var a = 0;var d = 0;
+                    var b = 0;var e = 0;
+                    var c = 0;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "4")
@@ -89,21 +93,22 @@ public class Test
     [Fact]
     public async Task TooLong_SkipLocalFunction_False()
     {
-        const string SourceCode = @"
-public class Test
-{
-    void [||]Method()
-    {
-        var a = 0;
-        var b = 0;
-        var c = 0;
-
-        void A()
-        {
-            void B() { }
-        }
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                void [||]Method()
+                {
+                    var a = 0;
+                    var b = 0;
+                    var c = 0;
+            
+                    void A()
+                    {
+                        void B() { }
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "5")
@@ -114,21 +119,22 @@ public class Test
     [Fact]
     public async Task ValidMethod_SkipLocalFunction_True()
     {
-        const string SourceCode = @"
-public class Test
-{
-    void Method()
-    {
-        var a = 0;
-        var b = 0;
-        var c = 0;
-
-        void A()
-        {
-            void B() { }
-        }
-    }
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                void Method()
+                {
+                    var a = 0;
+                    var b = 0;
+                    var c = 0;
+            
+                    void A()
+                    {
+                        void B() { }
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "5")
@@ -167,11 +173,12 @@ public class Test
     [Fact]
     public void CountStatement_ForLoop()
     {
-        const string SourceCode = @"
-for (int a = 0; i < 0; i++)
-{
-    throw null;
-}";
+        const string SourceCode = """
+            for (int a = 0; i < 0; i++)
+            {
+                throw null;
+            }
+            """;
 
         var count = CountStatements(SourceCode);
         Assert.Equal(2, count);
@@ -180,14 +187,14 @@ for (int a = 0; i < 0; i++)
     [Fact]
     public void CountStatement_LocalFunction()
     {
-        const string SourceCode = @"
-throw null;
-
-void B()
-{
-    throw null;
-}
-";
+        const string SourceCode = """
+            throw null;
+            
+            void B()
+            {
+                throw null;
+            }
+            """;
 
         var count = CountStatements(SourceCode);
         Assert.Equal(2, count);
@@ -196,12 +203,12 @@ void B()
     [Fact]
     public void CountStatement_If()
     {
-        const string SourceCode = @"
-if (true)
-{
-    throw null;
-}
-";
+        const string SourceCode = """
+            if (true)
+            {
+                throw null;
+            }
+            """;
 
         var count = CountStatements(SourceCode);
         Assert.Equal(2, count);

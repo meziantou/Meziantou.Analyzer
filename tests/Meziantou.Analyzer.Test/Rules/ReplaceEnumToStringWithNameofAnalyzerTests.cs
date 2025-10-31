@@ -15,33 +15,35 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
     [Fact]
     public async Task ConstantEnumValueToString()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        _ = [||]MyEnum.A.ToString();
-    }
-}
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = [||]MyEnum.A.ToString();
+                }
+            }
+            
+            enum MyEnum
+            {
+                A,
+            }
+            """;
 
-enum MyEnum
-{
-    A,
-}";
-
-        const string CodeFix = @"
-class Test
-{
-    void A()
-    {
-        _ = nameof(MyEnum.A);
-    }
-}
-
-enum MyEnum
-{
-    A,
-}";
+        const string CodeFix = """
+            class Test
+            {
+                void A()
+                {
+                    _ = nameof(MyEnum.A);
+                }
+            }
+            
+            enum MyEnum
+            {
+                A,
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -51,20 +53,21 @@ enum MyEnum
     [Fact]
     public async Task EnumVariableToString()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        var a = MyEnum.A;
-        _ = a.ToString();
-    }
-}
-
-enum MyEnum
-{
-    A,
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    var a = MyEnum.A;
+                    _ = a.ToString();
+                }
+            }
+            
+            enum MyEnum
+            {
+                A,
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)

@@ -16,28 +16,30 @@ public sealed class OptimizeLinqUsageAnalyzerUseIndexerTests
     [Fact]
     public async Task ElementAt_ListAsync()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        _ = list.[|ElementAt|](10);
-        list.ElementAtOrDefault(10);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        _ = list[10];
-        list.ElementAtOrDefault(10);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    _ = list.[|ElementAt|](10);
+                    list.ElementAtOrDefault(10);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    _ = list[10];
+                    list.ElementAtOrDefault(10);
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -49,28 +51,30 @@ class Test
     [Fact]
     public async Task ElementAt_ArrayAsync()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list.[|ElementAt|](10);
-        list.ElementAtOrDefault(10);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list[10];
-        list.ElementAtOrDefault(10);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list.[|ElementAt|](10);
+                    list.ElementAtOrDefault(10);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list[10];
+                    list.ElementAtOrDefault(10);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use '[]' instead of 'ElementAt()'")
@@ -81,28 +85,30 @@ class Test
     [Fact]
     public async Task First_ArrayAsync()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list.[|First|]();
-        list.First(x=> x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list[0];
-        list.First(x=> x == 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list.[|First|]();
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list[0];
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -114,28 +120,30 @@ class Test
     [Fact]
     public async Task Last_Array()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list.[|Last|]();
-        list.First(x=> x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list[list.Length - 1];
-        list.First(x=> x == 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list.[|Last|]();
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list[list.Length - 1];
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7_3)
@@ -148,28 +156,30 @@ class Test
     [Fact]
     public async Task Last_Array_CSharp8_IndexNotAvailable()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list.[|Last|]();
-        list.First(x=> x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list[list.Length - 1];
-        list.First(x=> x == 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list.[|Last|]();
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list[list.Length - 1];
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
@@ -183,28 +193,30 @@ class Test
     [Fact]
     public async Task Last_Array_CSharp8_IndexAvailable()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list.[|Last|]();
-        list.First(x=> x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[5];
-        _ = list[^1];
-        list.First(x=> x == 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list.[|Last|]();
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[5];
+                    _ = list[^1];
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
@@ -218,28 +230,30 @@ class Test
     [Fact]
     public async Task Last_List()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        _ = list.[|Last|]();
-        list.First(x=> x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        _ = list[list.Count - 1];
-        list.First(x=> x == 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    _ = list.[|Last|]();
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    _ = list[list.Count - 1];
+                    list.First(x=> x == 0);
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7_3)

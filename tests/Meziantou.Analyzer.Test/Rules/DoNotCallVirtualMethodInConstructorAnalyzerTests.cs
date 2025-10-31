@@ -14,16 +14,17 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
     [Fact]
     public async Task CtorWithVirtualCall()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        [||]A();
-    }
-
-    public virtual void A() { }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    [||]A();
+                }
+            
+                public virtual void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -32,16 +33,17 @@ class Test
     [Fact]
     public async Task CtorWithAbstractCall()
     {
-        const string SourceCode = @"
-abstract class Test
-{
-    Test()
-    {
-        [||]A();
-    }
-
-    public abstract void A();
-}";
+        const string SourceCode = """
+            abstract class Test
+            {
+                Test()
+                {
+                    [||]A();
+                }
+            
+                public abstract void A();
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -50,16 +52,17 @@ abstract class Test
     [Fact]
     public async Task CtorWithNoVirtualCall()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        A();
-    }
-
-    public void A() { }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    A();
+                }
+            
+                public void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -68,17 +71,18 @@ class Test
     [Fact]
     public async Task CtorWithVirtualCallOnAnotherInstance()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        var test = new Test();
-        test.A();
-    }
-
-    public virtual void A() { }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    var test = new Test();
+                    test.A();
+                }
+            
+                public virtual void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -87,16 +91,17 @@ class Test
     [Fact]
     public async Task CtorWithVirtualPropertyAssignment()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        [||]A = 10;
-    }
-
-    public virtual int A { get; set; }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    [||]A = 10;
+                }
+            
+                public virtual int A { get; set; }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -105,17 +110,18 @@ class Test
     [Fact]
     public async Task CtorWithVirtualPropertyAssignmentOnAnotherInstance()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        var test = new Test();
-        test.A = 10;
-    }
-
-    public virtual int A { get; set; }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    var test = new Test();
+                    test.A = 10;
+                }
+            
+                public virtual int A { get; set; }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -124,16 +130,17 @@ class Test
     [Fact]
     public async Task CtorWithVirtualPropertyGet()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        _ = [||]A;
-    }
-
-    public virtual int A => 10;
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    _ = [||]A;
+                }
+            
+                public virtual int A => 10;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -142,21 +149,22 @@ class Test
     [Fact]
     public async Task CtorWithOverridedMethod()
     {
-        const string SourceCode = @"
-class Base
-{
-    public virtual void A() { }
-}
-
-class Test : Base
-{
-    Test()
-    {
-        [||]A();
-    }
-
-    public override void A() { }
-}";
+        const string SourceCode = """
+            class Base
+            {
+                public virtual void A() { }
+            }
+            
+            class Test : Base
+            {
+                Test()
+                {
+                    [||]A();
+                }
+            
+                public override void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -165,16 +173,17 @@ class Test : Base
     [Fact]
     public async Task CtorWithVirtualPropertyReferenceInNameOf()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        _ = nameof(A);
-    }
-
-    public virtual int A => 10;
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    _ = nameof(A);
+                }
+            
+                public virtual int A => 10;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -183,18 +192,19 @@ class Test
     [Fact]
     public async Task AssignVirtualEvent()
     {
-        const string SourceCode = @"
-class Test
-{
-    protected virtual event System.Action SampleEvent;
-    
-    Test()
-    {
-        [||]SampleEvent += A;
-    }
-
-    public void A() { }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                protected virtual event System.Action SampleEvent;
+                
+                Test()
+                {
+                    [||]SampleEvent += A;
+                }
+            
+                public void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -203,18 +213,19 @@ class Test
     [Fact]
     public async Task AssignEvent()
     {
-        const string SourceCode = @"
-class Test
-{
-    protected event System.Action SampleEvent;
-    
-    Test()
-    {
-        SampleEvent += A;
-    }
-
-    public void A() { }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                protected event System.Action SampleEvent;
+                
+                Test()
+                {
+                    SampleEvent += A;
+                }
+            
+                public void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -223,16 +234,17 @@ class Test
     [Fact]
     public async Task VirtualDelegate()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        System.Action a = A;
-    }
-
-    public virtual void A() { }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    System.Action a = A;
+                }
+            
+                public virtual void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -241,16 +253,17 @@ class Test
     [Fact]
     public async Task VirtualDelegate2()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        System.Action a = () => A();
-    }
-
-    public virtual void A() { }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    System.Action a = () => A();
+                }
+            
+                public virtual void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -259,16 +272,17 @@ class Test
     [Fact]
     public async Task CtorWithVirtualGetOnlyPropertyAssignment()
     {
-        const string SourceCode = @"
-class Test
-{
-    Test()
-    {
-        A = 10;
-    }
-
-    public virtual int A { get; }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                Test()
+                {
+                    A = 10;
+                }
+            
+                public virtual int A { get; }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

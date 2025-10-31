@@ -121,23 +121,25 @@ class Test
     [Fact]
     public async Task EditorRequired_MissingParameter()
     {
-        const string SourceCode = @"
-using Microsoft.AspNetCore.Components;
-
-class Test
-{
-    [EditorRequired]
-    public int [||]A { get; set; }
-}";
-        const string Fix = @"
-using Microsoft.AspNetCore.Components;
-
-class Test
-{
-    [EditorRequired]
-    [Parameter]
-    public int A { get; set; }
-}";
+        const string SourceCode = """
+            using Microsoft.AspNetCore.Components;
+            
+            class Test
+            {
+                [EditorRequired]
+                public int [||]A { get; set; }
+            }
+            """;
+        const string Fix = """
+            using Microsoft.AspNetCore.Components;
+            
+            class Test
+            {
+                [EditorRequired]
+                [Parameter]
+                public int A { get; set; }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(Fix)
@@ -147,17 +149,18 @@ class Test
     [Fact]
     public async Task EditorRequired_WithParameter()
     {
-        const string SourceCode = @"
-using Microsoft.AspNetCore.Components;
-
-class Test
-{
-    [Parameter]
-    [EditorRequired]
-    public int A { get; set; }
-
-    public int B { get; set; }
-}";
+        const string SourceCode = """
+            using Microsoft.AspNetCore.Components;
+            
+            class Test
+            {
+                [Parameter]
+                [EditorRequired]
+                public int A { get; set; }
+            
+                public int B { get; set; }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -166,17 +169,18 @@ class Test
     [Fact]
     public async Task EditorRequired_WithCascadingParameter()
     {
-        const string SourceCode = @"
-using Microsoft.AspNetCore.Components;
-
-class Test
-{
-    [CascadingParameter]
-    [EditorRequired]
-    public int [||]A { get; set; }
-
-    public int B { get; set; }
-}";
+        const string SourceCode = """
+            using Microsoft.AspNetCore.Components;
+            
+            class Test
+            {
+                [CascadingParameter]
+                [EditorRequired]
+                public int [||]A { get; set; }
+            
+                public int B { get; set; }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

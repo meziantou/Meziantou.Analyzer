@@ -51,28 +51,33 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     [InlineData("\"abc\"", "default(System.Numerics.Vector<int>)")]
     public async Task ConcatDiagnostic(string left, string right)
     {
-        var sourceCode = @"
-class Test
-{
-    void A() { _ = " + left + " + [|" + right + @"|]; }
-}";
+        var sourceCode = """
+            class Test
+            {
+                void A() { _ = " + left + " + [|" + right + @"|]; }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
 
-        var invertedSourceCode = @"
-class Test
-{
-    void A() { _ = [|" + right + "|] + " + left + @"; }
+        var invertedSourceCode = """
+            class Test
+            {
+                void A() { _ = [|" + right + "|] + " + left + @
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(invertedSourceCode)
               .ValidateAsync();
 
-        var multiConcat = @"
-class Test
-{
-    void A() { string value = """"; value += " + left + " + [|" + right + @"|]; }
+        var multiConcat = """
+            class Test
+            {
+                void A() { string value = """
+            """;
+         value += " + left + " + [|" + right + @"|]; }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(multiConcat)
@@ -106,19 +111,23 @@ class Test
     [InlineData("\"abc\"", "default(System.Uri)")]
     public async Task ConcatNoDiagnostic(string left, string right)
     {
-        var sourceCode = @"
-class Test
-{
-    void A() { _ = " + left + " + " + right + @"; }
+        var sourceCode = """
+            class Test
+            {
+                void A() { _ = " + left + " + " + right + @
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
 
-        var invertedSourceCode = @"
-class Test
-{
-    void A() { _ = " + right + " + " + left + @"; }
+        var invertedSourceCode = """
+            class Test
+            {
+                void A() { _ = " + right + " + " + left + @
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(invertedSourceCode)
@@ -163,10 +172,13 @@ class Test
     [InlineData(@"test[|{new System.DateOnly(2023,1,1)}|]")]
     public async Task InterpolatedStringDiagnostic(string content)
     {
-        var sourceCode = @"using System.Linq;
-class Test
-{
-    void A() { string str = $""" + content + @"""; }
+        var sourceCode = """
+            using System.Linq;
+            class Test
+            {
+                void A() { string str = $""" + content + @""
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -188,10 +200,13 @@ class Test
     [InlineData(@"test{new System.DateOnly(2023,1,1):o}")]
     public async Task InterpolatedStringNoDiagnostic(string content)
     {
-        var sourceCode = @"using System.Linq;
-class Test
-{
-    void A() { string str = $""" + content + @"""; }
+        var sourceCode = """
+            using System.Linq;
+            class Test
+            {
+                void A() { string str = $""" + content + @""
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -203,10 +218,13 @@ class Test
     [InlineData("abc{(nint)1}")]
     public async Task InterpolatedStringNoDiagnostic_CSharp11(string content)
     {
-        var sourceCode = @"using System.Linq;
-class Test
-{
-    void A() { string str = $""" + content + @"""; }
+        var sourceCode = """
+            using System.Linq;
+            class Test
+            {
+                void A() { string str = $""" + content + @""
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -218,10 +236,12 @@ class Test
     [Fact]
     public async Task FormattableString()
     {
-        var sourceCode = @"
-class Test
-{
-    void A() { System.FormattableString a = $""abc{-1}""; }
+        var sourceCode = """
+            class Test
+            {
+                void A() { System.FormattableString a = $""abc{-1}"
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -231,11 +251,12 @@ class Test
     [Fact]
     public async Task FormattableString_Invariant()
     {
-        var sourceCode = @"
-class Test
-{
-    void A() { string a = System.FormattableString.Invariant($""abc{1}""); }
-}";
+        var sourceCode = """
+            class Test
+            {
+                void A() { string a = System.FormattableString.Invariant($""abc{1}""); }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
@@ -244,10 +265,12 @@ class Test
     [Fact]
     public async Task StringConcatFormattableString()
     {
-        var sourceCode = @"
-class Test
-{
-    void A() { var a = ""abc"" + $""[|{-1}|]""; }
+        var sourceCode = """
+            class Test
+            {
+                void A() { var a = ""abc"" + $""[|{-1}|]"
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -257,10 +280,12 @@ class Test
     [Fact]
     public async Task StringConcat_ToString_Int32ToString()
     {
-        var sourceCode = @"
-class Test
-{
-    void ToString() { var a = ""abc"" + $""{-1}""; }
+        var sourceCode = """
+            class Test
+            {
+                void ToString() { var a = ""abc"" + $""{-1}"
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -270,10 +295,12 @@ class Test
     [Fact]
     public async Task StringConcat_ToString_Int32ToString_ConfigNotExcludeToString()
     {
-        var sourceCode = @"
-class Test
-{
-    void ToString() { var a = ""abc"" + $""[|{-1}|]""; }
+        var sourceCode = """
+            class Test
+            {
+                void ToString() { var a = ""abc"" + $""[|{-1}|]"
+            """;
+         }
 }";
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -284,11 +311,12 @@ class Test
     [Fact]
     public async Task ObjectToString()
     {
-        var sourceCode = @"
-class Test
-{
-    string A() => [|new object().ToString()|];
-}";
+        var sourceCode = """
+            class Test
+            {
+                string A() => [|new object().ToString()|];
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
@@ -297,11 +325,12 @@ class Test
     [Fact]
     public async Task Int32ToString()
     {
-        var sourceCode = @"
-class Test
-{
-    string A() => (-1).ToString();
-}";
+        var sourceCode = """
+            class Test
+            {
+                string A() => (-1).ToString();
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
@@ -310,11 +339,12 @@ class Test
     [Fact]
     public async Task SubClassToString()
     {
-        var sourceCode = @"
-class Test
-{
-    string A() => new Test().ToString();
-}";
+        var sourceCode = """
+            class Test
+            {
+                string A() => new Test().ToString();
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();

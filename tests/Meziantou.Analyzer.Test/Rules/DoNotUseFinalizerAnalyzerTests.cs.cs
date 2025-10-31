@@ -14,16 +14,17 @@ public sealed class DoNotUseFinalizerAnalyzerTests
     [Fact]
     public async Task TestFinalizerReportError()
     {
-        const string SourceCode = @"
-class Test
-{
-    public Test() { }
-    internal void A() { }
-
-    ~[||]Test()
-    {
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                public Test() { }
+                internal void A() { }
+            
+                ~[||]Test()
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

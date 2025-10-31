@@ -15,26 +15,28 @@ public sealed class PreserveParamsOnOverrideAnalyzerTests
     [Fact]
     public async Task MissingParamsFromBaseClass()
     {
-        const string SourceCode = @"
-class Test
-{
-    protected virtual void A(params string[] a) => throw null;
-}
-
-class Test2 : Test
-{
-    protected override void A(string[] [|a|]) => throw null;
-}";
-        const string Fix = @"
-class Test
-{
-    protected virtual void A(params string[] a) => throw null;
-}
-
-class Test2 : Test
-{
-    protected override void A(params string[] a) => throw null;
-}";
+        const string SourceCode = """
+            class Test
+            {
+                protected virtual void A(params string[] a) => throw null;
+            }
+            
+            class Test2 : Test
+            {
+                protected override void A(string[] [|a|]) => throw null;
+            }
+            """;
+        const string Fix = """
+            class Test
+            {
+                protected virtual void A(params string[] a) => throw null;
+            }
+            
+            class Test2 : Test
+            {
+                protected override void A(params string[] a) => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(Fix)
@@ -44,26 +46,28 @@ class Test2 : Test
     [Fact]
     public async Task MissingParamsFromInterface()
     {
-        const string SourceCode = @"
-interface ITest
-{
-    void A(params string[] a);
-}
-
-class Test2 : ITest
-{
-    public void A(string[] [|a|]) => throw null;
-}";
-        const string Fix = @"
-interface ITest
-{
-    void A(params string[] a);
-}
-
-class Test2 : ITest
-{
-    public void A(params string[] a) => throw null;
-}";
+        const string SourceCode = """
+            interface ITest
+            {
+                void A(params string[] a);
+            }
+            
+            class Test2 : ITest
+            {
+                public void A(string[] [|a|]) => throw null;
+            }
+            """;
+        const string Fix = """
+            interface ITest
+            {
+                void A(params string[] a);
+            }
+            
+            class Test2 : ITest
+            {
+                public void A(params string[] a) => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(Fix)
@@ -73,16 +77,17 @@ class Test2 : ITest
     [Fact]
     public async Task ParamsFromBaseClass()
     {
-        const string SourceCode = @"
-class Test
-{
-    protected virtual void A(params string[] a) => throw null;
-}
-
-class Test2 : Test
-{
-    protected override void A(params string[] a) => throw null;
-}";
+        const string SourceCode = """
+            class Test
+            {
+                protected virtual void A(params string[] a) => throw null;
+            }
+            
+            class Test2 : Test
+            {
+                protected override void A(params string[] a) => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -91,16 +96,17 @@ class Test2 : Test
     [Fact]
     public async Task ParamsFromInterface()
     {
-        const string SourceCode = @"
-interface ITest
-{
-    void A(params string[] a);
-}
-
-class Test2 : ITest
-{
-    public void A(params string[] a) => throw null;
-}";
+        const string SourceCode = """
+            interface ITest
+            {
+                void A(params string[] a);
+            }
+            
+            class Test2 : ITest
+            {
+                public void A(params string[] a) => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

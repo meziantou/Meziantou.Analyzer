@@ -16,17 +16,18 @@ public sealed class CommaAnalyzerTests
     [Fact]
     public async Task OneLineDeclarationWithMissingTrailingComma_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public async System.Threading.Tasks.Task Test()
-    {
-        new TypeName() { A = 1 };
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
+            
+                public async System.Threading.Tasks.Task Test()
+                {
+                    new TypeName() { A = 1 };
+                }
+            }
+            """;
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ValidateAsync();
@@ -35,21 +36,22 @@ class TypeName
     [Fact]
     public async Task MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public async System.Threading.Tasks.Task Test()
-    {
-        new TypeName()
-        {
-            A = 1,
-            B = 2,
-        };
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
+            
+                public async System.Threading.Tasks.Task Test()
+                {
+                    new TypeName()
+                    {
+                        A = 1,
+                        B = 2,
+                    };
+                }
+            }
+            """;
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ValidateAsync();
@@ -58,36 +60,38 @@ class TypeName
     [Fact]
     public async Task MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public async System.Threading.Tasks.Task Test()
-    {
-        new TypeName()
-        {
-            A = 1,
-            [||]B = 2
-        };
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public async System.Threading.Tasks.Task Test()
-    {
-        new TypeName()
-        {
-            A = 1,
-            B = 2,
-        };
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
+            
+                public async System.Threading.Tasks.Task Test()
+                {
+                    new TypeName()
+                    {
+                        A = 1,
+                        [||]B = 2
+                    };
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
+            
+                public async System.Threading.Tasks.Task Test()
+                {
+                    new TypeName()
+                    {
+                        A = 1,
+                        B = 2,
+                    };
+                }
+            }
+            """;
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ShouldFixCodeWith(CodeFix)
@@ -97,12 +101,13 @@ class TypeName
     [Fact]
     public async Task EnumsWithLeadingComma()
     {
-        const string SourceCode = @"
-enum TypeName
-{
-    A = 1,
-    B = 2,
-}";
+        const string SourceCode = """
+            enum TypeName
+            {
+                A = 1,
+                B = 2,
+            }
+            """;
 
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
@@ -112,18 +117,20 @@ enum TypeName
     [Fact]
     public async Task EnumsWithoutLeadingComma()
     {
-        const string SourceCode = @"
-enum TypeName
-{
-    A = 1,
-    [||]B = 2
-}";
-        const string CodeFix = @"
-enum TypeName
-{
-    A = 1,
-    B = 2,
-}";
+        const string SourceCode = """
+            enum TypeName
+            {
+                A = 1,
+                [||]B = 2
+            }
+            """;
+        const string CodeFix = """
+            enum TypeName
+            {
+                A = 1,
+                B = 2,
+            }
+            """;
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ShouldFixCodeWith(CodeFix)
@@ -133,18 +140,19 @@ enum TypeName
     [Fact]
     public async Task AnonymousObjectWithLeadingComma()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        _ = new
-        {
-            A = 1,
-            B = 2,
-        };
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = new
+                    {
+                        A = 1,
+                        B = 2,
+                    };
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
@@ -154,30 +162,32 @@ class TypeName
     [Fact]
     public async Task AnonymousObjectWithoutLeadingComma()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        _ = new
-        {
-            A = 1,
-            [||]B = 2
-        };
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        _ = new
-        {
-            A = 1,
-            B = 2,
-        };
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = new
+                    {
+                        A = 1,
+                        [||]B = 2
+                    };
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = new
+                    {
+                        A = 1,
+                        B = 2,
+                    };
+                }
+            }
+            """;
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ShouldFixCodeWith(CodeFix)
@@ -187,36 +197,38 @@ class TypeName
     [Fact]
     public async Task ImplicitCtorWithoutLeadingComma()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public void Test()
-    {
-        TypeName a = new()
-        {
-            A = 1,
-            [||]B = 2
-        };
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public int A { get; set; }
-    public int B { get; set; }
-
-    public void Test()
-    {
-        TypeName a = new()
-        {
-            A = 1,
-            B = 2,
-        };
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
+            
+                public void Test()
+                {
+                    TypeName a = new()
+                    {
+                        A = 1,
+                        [||]B = 2
+                    };
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
+            
+                public void Test()
+                {
+                    TypeName a = new()
+                    {
+                        A = 1,
+                        B = 2,
+                    };
+                }
+            }
+            """;
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ShouldFixCodeWith(CodeFix)
@@ -227,30 +239,32 @@ class TypeName
     [Fact]
     public async Task CollectionExpressionWithoutLeadingComma()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        int[] a =
-        [
-            1,
-            [||]2
-        ];
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        int[] a =
-        [
-            1,
-            2,
-        ];
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    int[] a =
+                    [
+                        1,
+                        [||]2
+                    ];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    int[] a =
+                    [
+                        1,
+                        2,
+                    ];
+                }
+            }
+            """;
         await CreateProjectBuilder()
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
             .WithSourceCode(SourceCode)

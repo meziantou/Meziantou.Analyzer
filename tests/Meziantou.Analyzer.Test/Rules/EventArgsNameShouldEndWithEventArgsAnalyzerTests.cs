@@ -14,11 +14,11 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
     [Fact]
     public async Task NameEndsWithEventArgs()
     {
-        const string SourceCode = @"
-class CustomEventArgs : System.EventArgs
-{
-}
-";
+        const string SourceCode = """
+            class CustomEventArgs : System.EventArgs
+            {
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -27,11 +27,11 @@ class CustomEventArgs : System.EventArgs
     [Fact]
     public async Task NameDoesNotEndWithEventArgs()
     {
-        const string SourceCode = @"
-class [||]CustomArgs : System.EventArgs
-{
-}
-";
+        const string SourceCode = """
+            class [||]CustomArgs : System.EventArgs
+            {
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

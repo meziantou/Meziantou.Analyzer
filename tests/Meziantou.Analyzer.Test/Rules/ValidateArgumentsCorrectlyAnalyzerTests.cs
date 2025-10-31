@@ -16,13 +16,15 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     [Fact]
     public async Task ReturnVoid()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    void A()
-    {
-    }
-}";
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                void A()
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -31,14 +33,16 @@ class TypeName
     [Fact]
     public async Task ReturnString()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    string A()
-    {
-        throw null;
-    }
-}";
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                string A()
+                {
+                    throw null;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -47,14 +51,16 @@ class TypeName
     [Fact]
     public async Task OutParameter()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(out int a)
-    {
-        throw null;
-    }
-}";
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(out int a)
+                {
+                    throw null;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -63,14 +69,16 @@ class TypeName
     [Fact]
     public async Task NoValidation()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        yield return 0;
-    }
-}";
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    yield return 0;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -79,18 +87,20 @@ class TypeName
     [Fact]
     public async Task SameBlock()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        if (a == null)
-        {
-            throw new System.ArgumentNullException(nameof(a));
-            yield return 0;
-        }        
-    }
-}";
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                    {
+                        throw new System.ArgumentNullException(nameof(a));
+                        yield return 0;
+                    }        
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -99,20 +109,22 @@ class TypeName
     [Fact]
     public async Task StatementInMiddleOfArgumentValidation()
     {
-        const string SourceCode = @"using System.Collections;
-class TypeName
-{
-    IEnumerable A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        yield break;
-
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-    }
-}";
+        const string SourceCode = """
+            using System.Collections;
+            class TypeName
+            {
+                IEnumerable A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+            
+                    yield break;
+            
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -121,41 +133,45 @@ class TypeName
     [Fact]
     public async Task ReportDiagnostic()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> [||]A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        yield return 0;
-        if (a == null)
-        {
-            yield return 1;
-        }
-    }
-}";
-
-        const string CodeFix = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        return A(a);
-        IEnumerable<int> A(string a)
-        {
-            yield return 0;
-            if (a == null)
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
             {
-                yield return 1;
+                IEnumerable<int> [||]A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+            
+                    yield return 0;
+                    if (a == null)
+                    {
+                        yield return 1;
+                    }
+                }
             }
-        }
-    }
-}";
+            """;
+
+        const string CodeFix = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+            
+                    return A(a);
+                    IEnumerable<int> A(string a)
+                    {
+                        yield return 0;
+                        if (a == null)
+                        {
+                            yield return 1;
+                        }
+                    }
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -166,26 +182,28 @@ class TypeName
     [Fact]
     public async Task ValidValidation()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        return A();
-
-        IEnumerable<int> A()
-        {
-            yield return 0;
-            if (a == null)
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
             {
-                yield return 1;
+                IEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+            
+                    return A();
+            
+                    IEnumerable<int> A()
+                    {
+                        yield return 0;
+                        if (a == null)
+                        {
+                            yield return 1;
+                        }
+                    }
+                }
             }
-        }
-    }
-}";
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -195,25 +213,27 @@ class TypeName
     [Fact]
     public async Task ValidValidation_ThrowIfNull()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        System.ArgumentNullException.ThrowIfNull(a);
-
-        return A();
-
-        IEnumerable<int> A()
-        {
-            yield return 0;
-            if (a == null)
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
             {
-                yield return 1;
+                IEnumerable<int> A(string a)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+            
+                    return A();
+            
+                    IEnumerable<int> A()
+                    {
+                        yield return 0;
+                        if (a == null)
+                        {
+                            yield return 1;
+                        }
+                    }
+                }
             }
-        }
-    }
-}";
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -224,37 +244,41 @@ class TypeName
     [Fact]
     public async Task ReportDiagnostic_IAsyncEnumerable()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    async IAsyncEnumerable<int> [||]A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                async IAsyncEnumerable<int> [||]A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+            
+                    await System.Threading.Tasks.Task.Delay(1);
+                    yield return 0;
+                    
+                }
+            }
+            """;
 
-        await System.Threading.Tasks.Task.Delay(1);
-        yield return 0;
-        
-    }
-}";
-
-        const string CodeFix = @"using System.Collections.Generic;
-class TypeName
-{
-    IAsyncEnumerable<int> A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        return A(a);
-
-        async IAsyncEnumerable<int> A(string a)
-        {
-            await System.Threading.Tasks.Task.Delay(1);
-            yield return 0;
-        }
-    }
-}";
+        const string CodeFix = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IAsyncEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+            
+                    return A(a);
+            
+                    async IAsyncEnumerable<int> A(string a)
+                    {
+                        await System.Threading.Tasks.Task.Delay(1);
+                        yield return 0;
+                    }
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .AddAsyncInterfaceApi()
@@ -266,35 +290,39 @@ class TypeName
     [Fact]
     public async Task ReportDiagnostic_IAsyncEnumerable_ThrowIfNull()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    async IAsyncEnumerable<int> [||]A(string a)
-    {
-        System.ArgumentNullException.ThrowIfNull(a);
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                async IAsyncEnumerable<int> [||]A(string a)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+            
+                    await System.Threading.Tasks.Task.Delay(1);
+                    yield return 0;
+                    
+                }
+            }
+            """;
 
-        await System.Threading.Tasks.Task.Delay(1);
-        yield return 0;
-        
-    }
-}";
-
-        const string CodeFix = @"using System.Collections.Generic;
-class TypeName
-{
-    IAsyncEnumerable<int> A(string a)
-    {
-        System.ArgumentNullException.ThrowIfNull(a);
-
-        return A(a);
-
-        async IAsyncEnumerable<int> A(string a)
-        {
-            await System.Threading.Tasks.Task.Delay(1);
-            yield return 0;
-        }
-    }
-}";
+        const string CodeFix = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IAsyncEnumerable<int> A(string a)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+            
+                    return A(a);
+            
+                    async IAsyncEnumerable<int> A(string a)
+                    {
+                        await System.Threading.Tasks.Task.Delay(1);
+                        yield return 0;
+                    }
+                }
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)

@@ -15,22 +15,24 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzerTests
     [Fact]
     public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
     {
-        const string SourceCode = @"using System;
-class TestAttribute
-{
-    void Test()
-    {
-        throw new Exception();
-
-        try
-        {
-        }
-        catch (NotImplementedException)
-        {
-            throw;
-        }
-    }
-}";
+        const string SourceCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
+                {
+                    throw new Exception();
+            
+                    try
+                    {
+                    }
+                    catch (NotImplementedException)
+                    {
+                        throw;
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -39,14 +41,16 @@ class TestAttribute
     [Fact]
     public async Task RaiseNotImplementedException_ShouldReportErrorAsync()
     {
-        const string SourceCode = @"using System;
-class TestAttribute
-{
-    void Test()
-    {
-        [||]throw new NotImplementedException();
-    }
-}";
+        const string SourceCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
+                {
+                    [||]throw new NotImplementedException();
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

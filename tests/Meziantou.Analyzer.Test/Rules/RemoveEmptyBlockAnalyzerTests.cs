@@ -14,19 +14,20 @@ public sealed class RemoveEmptyBlockAnalyzerTests
     [Fact]
     public async Task EmptyElseBlock()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A(bool condition)
-    {
-        if (condition)
-        {
-        }
-        [|else
-        {
-        }|]
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                    }
+                    [|else
+                    {
+                    }|]
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -35,21 +36,22 @@ class Test
     [Fact]
     public async Task ElseBlockContainingABlock()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A(bool condition)
-    {
-        if (condition)
-        {
-        }
-        else
-        {
+        const string SourceCode = """
+            class Test
             {
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                    }
+                    else
+                    {
+                        {
+                        }
+                    }
+                }
             }
-        }
-    }
-}";
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -58,20 +60,21 @@ class Test
     [Fact]
     public async Task ElseBlockWithComment()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A(bool condition)
-    {
-        if (condition)
-        {
-        }
-        else
-        {
-            // Comment
-        }
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                    }
+                    else
+                    {
+                        // Comment
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -80,22 +83,23 @@ class Test
     [Fact]
     public async Task ElseBlockWithMultilineComment()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A(bool condition)
-    {
-        if (condition)
-        {
-        }
-        else
-        {
-            /*
-                Comment
-            */
-        }
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                    }
+                    else
+                    {
+                        /*
+                            Comment
+                        */
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -104,20 +108,21 @@ class Test
     [Fact]
     public async Task ElseBlockWithStatement()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A(bool condition)
-    {
-        if (condition)
-        {
-        }
-        else
-        {
-            _ = condition;
-        }
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                    }
+                    else
+                    {
+                        _ = condition;
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -128,19 +133,20 @@ class Test
     [Fact]
     public async Task EmptyFinallyBlock()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        try
-        {
-        }
-        [|finally
-        {
-        }|]
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    try
+                    {
+                    }
+                    [|finally
+                    {
+                    }|]
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -149,20 +155,21 @@ class Test
     [Fact]
     public async Task FinallyBlockWithComment()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        try
-        {
-        }
-        finally
-        {
-            // Comment
-        }
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        // Comment
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -171,22 +178,23 @@ class Test
     [Fact]
     public async Task FinallyBlockWithMultilineComment()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A()
-    {
-        try
-        {
-        }
-        finally
-        {
-            /*
-                Comment
-            */
-        }
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        /*
+                            Comment
+                        */
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -195,20 +203,21 @@ class Test
     [Fact]
     public async Task FinallyBlockWithStatement()
     {
-        const string SourceCode = @"
-class Test
-{
-    void A(bool condition)
-    {
-        try
-        {
-        }
-        finally
-        {
-            _ = condition;
-        }
-    }
-}";
+        const string SourceCode = """
+            class Test
+            {
+                void A(bool condition)
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        _ = condition;
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

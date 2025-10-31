@@ -14,13 +14,14 @@ public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
     [Fact]
     public async Task DifferentName()
     {
-        const string SourceCode = @"
-namespace TestNamespace
-{
-    class TestClass
-    {
-    }
-}";
+        const string SourceCode = """
+            namespace TestNamespace
+            {
+                class TestClass
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -29,13 +30,14 @@ namespace TestNamespace
     [Fact]
     public async Task SameName()
     {
-        const string SourceCode = @"
-namespace Test
-{
-    class [||]Test
-    {
-    }
-}";
+        const string SourceCode = """
+            namespace Test
+            {
+                class [||]Test
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -44,16 +46,17 @@ namespace Test
     [Fact]
     public async Task SameNameInNestedType()
     {
-        const string SourceCode = @"
-namespace Test
-{
-    class TestClass
-    {
-        class Test
-        {
-        }
-    }
-}";
+        const string SourceCode = """
+            namespace Test
+            {
+                class TestClass
+                {
+                    class Test
+                    {
+                    }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

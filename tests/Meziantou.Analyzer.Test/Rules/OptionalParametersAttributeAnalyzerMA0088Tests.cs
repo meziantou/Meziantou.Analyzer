@@ -14,16 +14,17 @@ public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
     [Fact]
     public async Task DefaultParameterValue()
     {
-        const string SourceCode = @"
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-
-class Test
-{
-    void A([Optional, DefaultParameterValue(10)]int a)
-    {
-    }
-}";
+        const string SourceCode = """
+            using System.ComponentModel;
+            using System.Runtime.InteropServices;
+            
+            class Test
+            {
+                void A([Optional, DefaultParameterValue(10)]int a)
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -32,16 +33,17 @@ class Test
     [Fact]
     public async Task DefaultValue()
     {
-        const string SourceCode = @"
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-
-class Test
-{
-    void A([DefaultValue(10)]int [|a|])
-    {
-    }
-}";
+        const string SourceCode = """
+            using System.ComponentModel;
+            using System.Runtime.InteropServices;
+            
+            class Test
+            {
+                void A([DefaultValue(10)]int [|a|])
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -50,16 +52,17 @@ class Test
     [Fact]
     public async Task BothAttributes()
     {
-        const string SourceCode = @"
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-
-class Test
-{
-    void A([Optional, DefaultParameterValue(10), DefaultValue(10)]int a)
-    {
-    }
-}";
+        const string SourceCode = """
+            using System.ComponentModel;
+            using System.Runtime.InteropServices;
+            
+            class Test
+            {
+                void A([Optional, DefaultParameterValue(10), DefaultValue(10)]int a)
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

@@ -14,16 +14,17 @@ public sealed class ValueReturnedByStreamReadShouldBeUsedAnalyzerTests
     [Fact]
     public async Task Read_ReturnValueNotUsed()
     {
-        const string SourceCode = @"using System.IO;
-class Test
-{
-    void A()
-    {
-        var stream = File.OpenRead("""");
-        [||]stream.Read(null, 0, 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.IO;
+            class Test
+            {
+                void A()
+                {
+                    var stream = File.OpenRead("""");
+                    [||]stream.Read(null, 0, 0);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -32,16 +33,17 @@ class Test
     [Fact]
     public async Task ReadAsync_ReturnValueNotUsed()
     {
-        const string SourceCode = @"using System.IO;
-class Test
-{
-    async void A()
-    {
-        var stream = File.OpenRead("""");
-        await [||]stream.ReadAsync(null, 0, 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.IO;
+            class Test
+            {
+                async void A()
+                {
+                    var stream = File.OpenRead("""");
+                    await [||]stream.ReadAsync(null, 0, 0);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -50,16 +52,17 @@ class Test
     [Fact]
     public async Task ReadAsync_ReturnValueUsed_DiscardOperator()
     {
-        const string SourceCode = @"using System.IO;
-class Test
-{
-    async void A()
-    {
-        var stream = File.OpenRead("""");
-        _ = await stream.ReadAsync(null, 0, 0);
-    }
-}
-";
+        const string SourceCode = """
+            using System.IO;
+            class Test
+            {
+                async void A()
+                {
+                    var stream = File.OpenRead("""");
+                    _ = await stream.ReadAsync(null, 0, 0);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -68,16 +71,17 @@ class Test
     [Fact]
     public async Task Read_ReturnValueUsed_MethodCall()
     {
-        const string SourceCode = @"using System.IO;
-class Test
-{
-    async void A()
-    {
-        var stream = File.OpenRead("""");
-        System.Console.Write(stream.Read(null, 0, 0));
-    }
-}
-";
+        const string SourceCode = """
+            using System.IO;
+            class Test
+            {
+                async void A()
+                {
+                    var stream = File.OpenRead("""");
+                    System.Console.Write(stream.Read(null, 0, 0));
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

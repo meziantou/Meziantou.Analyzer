@@ -14,13 +14,13 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzerTests
     [Fact]
     public async Task HasMessage()
     {
-        const string SourceCode = @"
-class Test
-{
-    [System.Obsolete(""message"")]
-    public void A() { }
-}
-";
+        const string SourceCode = """
+            class Test
+            {
+                [System.Obsolete(""message"")]
+                public void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -29,13 +29,13 @@ class Test
     [Fact]
     public async Task HasNoMessage()
     {
-        const string SourceCode = @"
-class Test
-{
-    [[|System.Obsolete()|]]
-    public void A() { }
-}
-";
+        const string SourceCode = """
+            class Test
+            {
+                [[|System.Obsolete()|]]
+                public void A() { }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

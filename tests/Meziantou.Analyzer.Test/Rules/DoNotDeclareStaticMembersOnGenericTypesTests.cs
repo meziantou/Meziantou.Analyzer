@@ -15,17 +15,18 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
     [Fact]
     public async Task StaticMembersInNonGenericClass()
     {
-        const string SourceCode = @"
-public class Test
-{
-    public static string field;
-    public static string Prop => throw null;
-    public static string Method() => throw null;
-
-    public string field2;
-    public string Prop2 => throw null;
-    public string Method2() => throw null;
-}";
+        const string SourceCode = """
+            public class Test
+            {
+                public static string field;
+                public static string Prop => throw null;
+                public static string Method() => throw null;
+            
+                public string field2;
+                public string Prop2 => throw null;
+                public string Method2() => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -34,13 +35,14 @@ public class Test
     [Fact]
     public async Task NonStaticMembersInGenericClass()
     {
-        const string SourceCode = @"
-public class Test<T>
-{
-    public string field2;
-    public string Prop2 => throw null;
-    public string Method2() => throw null;
-}";
+        const string SourceCode = """
+            public class Test<T>
+            {
+                public string field2;
+                public string Prop2 => throw null;
+                public string Method2() => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -49,11 +51,12 @@ public class Test<T>
     [Fact]
     public async Task StaticMembers_Field()
     {
-        const string SourceCode = @"
-public class Test<T>
-{
-    public static string [||]field;
-}";
+        const string SourceCode = """
+            public class Test<T>
+            {
+                public static string [||]field;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -62,11 +65,12 @@ public class Test<T>
     [Fact]
     public async Task StaticMembers_Property()
     {
-        const string SourceCode = @"
-public class Test<T>
-{
-    public static string [||]Prop => throw null;
-}";
+        const string SourceCode = """
+            public class Test<T>
+            {
+                public static string [||]Prop => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -75,11 +79,12 @@ public class Test<T>
     [Fact]
     public async Task StaticMembers_Method()
     {
-        const string SourceCode = @"
-public class Test<T>
-{
-    public static string [||]Method() => throw null;
-}";
+        const string SourceCode = """
+            public class Test<T>
+            {
+                public static string [||]Method() => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -88,11 +93,12 @@ public class Test<T>
     [Fact]
     public async Task StaticMembers_Operator()
     {
-        const string SourceCode = @"
-public class Test<T>
-{
-    public static implicit operator Test<T>(int i) => throw null;
-}";
+        const string SourceCode = """
+            public class Test<T>
+            {
+                public static implicit operator Test<T>(int i) => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -101,10 +107,11 @@ public class Test<T>
     [Fact]
     public async Task Const()
     {
-        const string SourceCode = @"
-public class Test<T>
-{    
-    public const string PasswordlessSignInPurpose = ""PasswordlessSignIn"";
+        const string SourceCode = """
+            public class Test<T>
+            {    
+                public const string PasswordlessSignInPurpose = ""PasswordlessSignIn"
+            """;
 }";
 
         await CreateProjectBuilder()
@@ -115,15 +122,16 @@ public class Test<T>
     [Fact]
     public async Task NonPublicStaticMembers()
     {
-        const string SourceCode = @"
-public class Test<T>
-{
-    internal protected static string Method1() => throw null;
-    protected static string Method2() => throw null;
-    private protected static string Method3() => throw null;
-    internal static string Method4() => throw null;
-    private static string Method5() => throw null;
-}";
+        const string SourceCode = """
+            public class Test<T>
+            {
+                internal protected static string Method1() => throw null;
+                protected static string Method2() => throw null;
+                private protected static string Method3() => throw null;
+                internal static string Method4() => throw null;
+                private static string Method5() => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

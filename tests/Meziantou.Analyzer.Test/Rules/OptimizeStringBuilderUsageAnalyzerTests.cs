@@ -16,14 +16,16 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     [Fact]
     public async Task AppendFormat_NoDiagnostic()
     {
-        const string SourceCode = @"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendFormat(""{10}"", 10);
-    }
-}";
+        const string SourceCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendFormat(""{10}"", 10);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

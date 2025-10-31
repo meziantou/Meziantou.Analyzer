@@ -17,24 +17,26 @@ public sealed class DoNotUseEqualityOperatorsForSpanOfCharAnalyzerTests
     [Fact]
     public async Task SpanEquals()
     {
-        const string SourceCode = @"
-using System;
-class Test
-{
-    void A()
-    {
-        _ = [|""a"".AsSpan() == ""ab"".AsSpan().Slice(0, 1)|];
-    }
-}";
-        const string CodeFix = @"
-using System;
-class Test
-{
-    void A()
-    {
-        _ = ""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1));
-    }
-}";
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void A()
+                {
+                    _ = [|""a"".AsSpan() == ""ab"".AsSpan().Slice(0, 1)|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System;
+            class Test
+            {
+                void A()
+                {
+                    _ = ""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1));
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -44,24 +46,26 @@ class Test
     [Fact]
     public async Task SpanNotEquals()
     {
-        const string SourceCode = @"
-using System;
-class Test
-{
-    void A()
-    {
-        _ = [|""a"".AsSpan() != ""ab"".AsSpan().Slice(0, 1)|];
-    }
-}";
-        const string CodeFix = @"
-using System;
-class Test
-{
-    void A()
-    {
-        _ = !""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1));
-    }
-}";
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void A()
+                {
+                    _ = [|""a"".AsSpan() != ""ab"".AsSpan().Slice(0, 1)|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System;
+            class Test
+            {
+                void A()
+                {
+                    _ = !""a"".AsSpan().SequenceEqual(""ab"".AsSpan().Slice(0, 1));
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -71,13 +75,14 @@ class Test
     [Fact]
     public async Task StringEquals()
     {
-        const string SourceCode = @"
-using System;
-class Test
-{
-    void A()
-    {
-        _ = ""a"" == ""ab"";
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void A()
+                {
+                    _ = ""a"" == ""ab"
+            """;
     }
 }";
         await CreateProjectBuilder()

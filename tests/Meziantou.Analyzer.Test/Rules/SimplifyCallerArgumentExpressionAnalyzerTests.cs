@@ -21,18 +21,18 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
     [Fact]
     public async Task NotCSharp10()
     {
-        const string SourceCode = @"
-using System.Runtime.CompilerServices;
-class Sample
-{
-    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
-
-    void A(string value)
-    {
-        NotNull(value, ""value"");
-    }
-}
-";
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
+            
+                void A(string value)
+                {
+                    NotNull(value, ""value"");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
               .WithSourceCode(SourceCode)
@@ -43,30 +43,30 @@ class Sample
     [Fact]
     public async Task ReportDiagnostic()
     {
-        const string SourceCode = @"
-using System.Runtime.CompilerServices;
-class Sample
-{
-    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
-
-    void A(string value)
-    {
-        NotNull(value.Length, [|""value.Length""|]);
-    }
-}
-";
-        const string ExpectedCode = @"
-using System.Runtime.CompilerServices;
-class Sample
-{
-    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
-
-    void A(string value)
-    {
-        NotNull(value.Length);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
+            
+                void A(string value)
+                {
+                    NotNull(value.Length, [|""value.Length""|]);
+                }
+            }
+            """;
+        const string ExpectedCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
+            
+                void A(string value)
+                {
+                    NotNull(value.Length);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(ExpectedCode)
@@ -76,30 +76,30 @@ class Sample
     [Fact]
     public async Task ReportDiagnostic_NamedParameter()
     {
-        const string SourceCode = @"
-using System.Runtime.CompilerServices;
-class Sample
-{
-    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null, string extra = null) { }
-
-    void A(string value)
-    {
-        NotNull(value, [|parameterName: ""value""|], ""extra"");
-    }
-}
-";
-        const string ExpectedCode = @"
-using System.Runtime.CompilerServices;
-class Sample
-{
-    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null, string extra = null) { }
-
-    void A(string value)
-    {
-        NotNull(value, ""extra"");
-    }
-}
-";
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null, string extra = null) { }
+            
+                void A(string value)
+                {
+                    NotNull(value, [|parameterName: ""value""|], ""extra"");
+                }
+            }
+            """;
+        const string ExpectedCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null, string extra = null) { }
+            
+                void A(string value)
+                {
+                    NotNull(value, ""extra"");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(ExpectedCode)
@@ -109,18 +109,18 @@ class Sample
     [Fact]
     public async Task NotSameValue()
     {
-        const string SourceCode = @"
-using System.Runtime.CompilerServices;
-class Sample
-{
-    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
-
-    void A(string value)
-    {
-        NotNull(value, ""value2"");
-    }
-}
-";
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
+            
+                void A(string value)
+                {
+                    NotNull(value, ""value2"");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -129,18 +129,18 @@ class Sample
     [Fact]
     public async Task ValueNotConstant()
     {
-        const string SourceCode = @"
-using System.Runtime.CompilerServices;
-class Sample
-{
-    void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
-
-    void A(string value)
-    {
-        NotNull(value, value);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression(""target"")] string? parameterName = null) { }
+            
+                void A(string value)
+                {
+                    NotNull(value, value);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

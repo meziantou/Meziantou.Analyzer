@@ -169,15 +169,16 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
     public async Task IndexOf_NoReport(string method)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = str.IndexOf(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.IndexOf(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
@@ -187,15 +188,16 @@ class Test
     [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
     public async Task IndexOf_NoReport_Netstandard2_0(string method)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = str.IndexOf(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.IndexOf(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .WithTargetFramework(TargetFramework.NetStandard2_0)
@@ -245,15 +247,16 @@ class Test
     [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
     public async Task LastIndexOf_NoReport(string method)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = str.LastIndexOf(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.LastIndexOf(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
@@ -263,15 +266,16 @@ class Test
     [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
     public async Task LastIndexOf_NoReport_Netstandard2_0(string method)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = str.LastIndexOf(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.LastIndexOf(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .WithTargetFramework(TargetFramework.NetStandard2_0)
@@ -287,15 +291,16 @@ class Test
     [InlineData(@"""a"", ""b"", false, null")]
     public async Task Replace_NoReport(string method)
     {
-        var sourceCode = @"
-using System;
-class Test
-{
-    void A(string str)
-    {
-        _ = str.Replace(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.Replace(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .ValidateAsync();
@@ -339,18 +344,19 @@ class Test
     [InlineData(@"[|"",""|], Enumerable.Empty<string>()")]
     public async Task Join_Report(string method)
     {
-        var sourceCode = @"
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-class Test
-{
-    void A()
-    {
-        _ = string.Join(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
+            
+            class Test
+            {
+                void A()
+                {
+                    _ = string.Join(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .WithTargetFramework(TargetFramework.Net6_0)
@@ -365,18 +371,19 @@ class Test
     [InlineData(@""","", Enumerable.Empty<string>()")]
     public async Task Join_NoReport_netstandard2_0(string method)
     {
-        var sourceCode = @"
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-class Test
-{
-    void A()
-    {
-        _ = string.Join(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
+            
+            class Test
+            {
+                void A()
+                {
+                    _ = string.Join(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .WithTargetFramework(TargetFramework.NetStandard2_0)
@@ -397,18 +404,19 @@ class Test
     [InlineData(@"',', Enumerable.Empty<string>()")]
     public async Task Join_NoReport(string method)
     {
-        var sourceCode = @"
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-class Test
-{
-    void A()
-    {
-        _ = string.Join(" + method + @");
-    }
-}";
+        var sourceCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
+            
+            class Test
+            {
+                void A()
+                {
+                    _ = string.Join(" + method + @");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
               .WithTargetFramework(TargetFramework.Net6_0)

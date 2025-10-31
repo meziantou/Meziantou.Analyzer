@@ -14,20 +14,21 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
     [Fact]
     public async Task FinallyThrowsDirectly_DiagnosticIsReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        try
-        {
-        }
-        finally
-        {
-            [|throw new System.Exception(""Unbecoming exception"");|]
-        }        
-    }
-}";
+        const string SourceCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        [|throw new System.Exception(""Unbecoming exception"");|]
+                    }        
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -36,21 +37,22 @@ class TestClass
     [Fact]
     public async Task FinallyDoesNotThrow_NoDiagnosticReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        var value = 1;
-        try
-        {
-        }
-        finally
-        {
-            value++;
-        }        
-    }
-}";
+        const string SourceCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    var value = 1;
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        value++;
+                    }        
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -59,25 +61,26 @@ class TestClass
     [Fact]
     public async Task FinallyThrowsFromNestedBlock_DiagnosticIsReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        var value = 1;
-        try
-        {
-        }
-        finally
-        {
+        const string SourceCode = """
+            class TestClass
             {
-                Increment(ref value);
-                [|throw new System.Exception($""Unbecoming exception No {value}"");|]
+                void Test()
+                {
+                    var value = 1;
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        {
+                            Increment(ref value);
+                            [|throw new System.Exception($""Unbecoming exception No {value}"");|]
+                        }
+                        void Increment(ref int val) => val++;
+                    }        
+                }
             }
-            void Increment(ref int val) => val++;
-        }        
-    }
-}";
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -86,26 +89,27 @@ class TestClass
     [Fact]
     public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        try
-        {
-        }
-        finally
-        {
-            try
+        const string SourceCode = """
+            class TestClass
             {
-                [|throw new System.Exception();|]
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            [|throw new System.Exception();|]
+                        }
+                        catch
+                        {
+                        }
+                    }        
+                }
             }
-            catch
-            {
-            }
-        }        
-    }
-}";
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -114,26 +118,27 @@ class TestClass
     [Fact]
     public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsUnhandled_DiagnosticIsReported()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        try
-        {
-        }
-        finally
-        {
-            try
+        const string SourceCode = """
+            class TestClass
             {
-                [|throw new System.Exception();|]
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            [|throw new System.Exception();|]
+                        }
+                        catch (System.ArgumentException)
+                        {
+                        }
+                    }        
+                }
             }
-            catch (System.ArgumentException)
-            {
-            }
-        }        
-    }
-}";
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -142,27 +147,28 @@ class TestClass
     [Fact]
     public async Task FinallyThrowsFromSeveralLocations_DiagnosticIsReportedForEachOne()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        try
-        {
-        }
-        finally
-        {
-            if (true)
+        const string SourceCode = """
+            class TestClass
             {
-                [|throw new System.Exception();|]
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        if (true)
+                        {
+                            [|throw new System.Exception();|]
+                        }
+                        else
+                        {
+                            [|throw new System.Exception();|]
+                        }
+                    }        
+                }
             }
-            else
-            {
-                [|throw new System.Exception();|]
-            }
-        }        
-    }
-}";
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

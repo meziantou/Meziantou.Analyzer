@@ -15,26 +15,28 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
     [Fact]
     public async Task TestAsync()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class Test
-{
-    internal void Sample()
-    {
-        _ = EqualityComparer<int>.Default.Equals(0, 0);
-        _ = [||]EqualityComparer<string>.Default.Equals(null, null);
-    }
-}
-";
-        const string CodeFix = @"using System.Collections.Generic;
-class Test
-{
-    internal void Sample()
-    {
-        _ = EqualityComparer<int>.Default.Equals(0, 0);
-        _ = System.StringComparer.Ordinal.Equals(null, null);
-    }
-}
-";
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class Test
+            {
+                internal void Sample()
+                {
+                    _ = EqualityComparer<int>.Default.Equals(0, 0);
+                    _ = [||]EqualityComparer<string>.Default.Equals(null, null);
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Collections.Generic;
+            class Test
+            {
+                internal void Sample()
+                {
+                    _ = EqualityComparer<int>.Default.Equals(0, 0);
+                    _ = System.StringComparer.Ordinal.Equals(null, null);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)

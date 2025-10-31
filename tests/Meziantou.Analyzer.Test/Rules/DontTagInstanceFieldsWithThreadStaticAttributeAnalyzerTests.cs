@@ -14,13 +14,14 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
     [Fact]
     public async Task DontReport()
     {
-        const string SourceCode = @"
-class Test2
-{
-    int _a;
-    [System.ThreadStatic]
-    static int _b;
-}";
+        const string SourceCode = """
+            class Test2
+            {
+                int _a;
+                [System.ThreadStatic]
+                static int _b;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -29,12 +30,13 @@ class Test2
     [Fact]
     public async Task Report()
     {
-        const string SourceCode = @"
-class Test2
-{
-    [System.ThreadStatic]
-    int [||]_a;
-}";
+        const string SourceCode = """
+            class Test2
+            {
+                [System.ThreadStatic]
+                int [||]_a;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

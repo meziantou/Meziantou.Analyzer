@@ -15,15 +15,17 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzerTests
     [Fact]
     public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
     {
-        const string SourceCode = @"using System;
-class TestAttribute
-{
-    void Test()
-    {
-        throw new Exception();
-        throw new ArgumentException();
-    }
-}";
+        const string SourceCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
+                {
+                    throw new Exception();
+                    throw new ArgumentException();
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -32,14 +34,16 @@ class TestAttribute
     [Fact]
     public async Task RaiseReservedException_ShouldReportErrorAsync()
     {
-        const string SourceCode = @"using System;
-class TestAttribute
-{
-    void Test()
-    {
-        [||]throw new IndexOutOfRangeException();
-    }
-}";
+        const string SourceCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
+                {
+                    [||]throw new IndexOutOfRangeException();
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("'System.IndexOutOfRangeException' is a reserved exception type")
@@ -49,14 +53,16 @@ class TestAttribute
     [Fact]
     public async Task ThrowNull()
     {
-        const string SourceCode = @"using System;
-class TestAttribute
-{
-    void Test()
-    {
-        throw null;
-    }
-}";
+        const string SourceCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
+                {
+                    throw null;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
