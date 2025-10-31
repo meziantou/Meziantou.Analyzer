@@ -56,7 +56,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                         {
                             {{statement}};
                         }
-                        {@else}
+                        {{@else}}
                             value--;
                     }
                 LABEL:
