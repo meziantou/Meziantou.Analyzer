@@ -15,14 +15,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public async Task PublicNonAsync_Wait_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    public void A()
-    {
-        Task.Delay(1).Wait();
-    }
-}")
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  public class Test
+                  {
+                      public void A()
+                      {
+                          Task.Delay(1).Wait();
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -30,17 +32,19 @@ public class Test
     public async Task PublicNonAsync_AsyncSuffix_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    public void A()
-    {
-        Write();
-    }
-
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  public class Test
+                  {
+                      public void A()
+                      {
+                          Write();
+                      }
+                  
+                      public void Write() => throw null;
+                      public Task WriteAsync() => throw null;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -48,14 +52,16 @@ public class Test
     public async Task PrivateNonAsync_Wait_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        [||]Task.Delay(1).Wait();
-    }
-}")
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  public class Test
+                  {
+                      private void A()
+                      {
+                          [||]Task.Delay(1).Wait();
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -63,17 +69,19 @@ public class Test
     public async Task PrivateNonAsync_AsyncSuffix()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        [||]Write();
-    }
-
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  public class Test
+                  {
+                      private void A()
+                      {
+                          [||]Write();
+                      }
+                  
+                      public void Write() => throw null;
+                      public Task WriteAsync() => throw null;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -81,20 +89,22 @@ public class Test
     public async Task PrivateNonAsync_AsyncSuffix_InLock()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        lock (this)
-        {
-            Write();
-        }
-    }
-
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  public class Test
+                  {
+                      private void A()
+                      {
+                          lock (this)
+                          {
+                              Write();
+                          }
+                      }
+                  
+                      public void Write() => throw null;
+                      public Task WriteAsync() => throw null;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -102,17 +112,19 @@ public class Test
     public async Task LambdaInLock()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        lock (this)
-        {
-            _ = Task.FromResult(0).ContinueWith(t => t.Result);
-        }
-    }
-}")
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  public class Test
+                  {
+                      private void A()
+                      {
+                          lock (this)
+                          {
+                              _ = Task.FromResult(0).ContinueWith(t => t.Result);
+                          }
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 }

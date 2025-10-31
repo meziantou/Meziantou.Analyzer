@@ -21,27 +21,29 @@ public sealed class OptimizeLinqUsageAnalyzerCountTests
     public async Task Count_AlwaysFalse(string text)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = Enumerable.Empty<int>();
-        _ = [||]" + text + @";
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          var enumerable = Enumerable.Empty<int>();
+                          _ = [||]" + text + @";
+                      }
+                  }
+                  """)
             .ShouldReportDiagnosticWithMessage("Expression is always false")
-            .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = Enumerable.Empty<int>();
-        _ = false;
-    }
-}
-")
+            .ShouldFixCodeWith("""
+                using System.Linq;
+                class Test
+                {
+                    public Test()
+                    {
+                        var enumerable = Enumerable.Empty<int>();
+                        _ = false;
+                    }
+                }
+                """)
             .ValidateAsync();
     }
 
@@ -53,29 +55,31 @@ class Test
     public async Task Count_AlwaysTrue(string text)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = Enumerable.Empty<int>();
-        _ = [||]" + text + @";
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          int n = 10;
+                          var enumerable = Enumerable.Empty<int>();
+                          _ = [||]" + text + @";
+                      }
+                  }
+                  """)
               .ShouldReportDiagnosticWithMessage("Expression is always true")
-              .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = Enumerable.Empty<int>();
-        _ = true;
-    }
-}
-")
+              .ShouldFixCodeWith("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          int n = 10;
+                          var enumerable = Enumerable.Empty<int>();
+                          _ = true;
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -86,27 +90,29 @@ class Test
     public async Task Count_AnyFalse(string text, string expectedMessage)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          var enumerable = System.Linq.Enumerable.Empty<int>();
+                          _ = [||]enumerable." + text + @";
+                      }
+                  }
+                  """)
                .ShouldReportDiagnosticWithMessage(expectedMessage)
-               .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = !enumerable.Any();
-    }
-}
-")
+               .ShouldFixCodeWith("""
+                   using System.Linq;
+                   class Test
+                   {
+                       public Test()
+                       {
+                           var enumerable = System.Linq.Enumerable.Empty<int>();
+                           _ = !enumerable.Any();
+                       }
+                   }
+                   """)
                .ValidateAsync();
     }
 
@@ -117,27 +123,29 @@ class Test
     public async Task Count_AnyTrue(string text, string expectedMessage)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          var enumerable = System.Linq.Enumerable.Empty<int>();
+                          _ = [||]enumerable." + text + @";
+                      }
+                  }
+                  """)
                .ShouldReportDiagnosticWithMessage(expectedMessage)
-               .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable.Any();
-    }
-}
-")
+               .ShouldFixCodeWith("""
+                   using System.Linq;
+                   class Test
+                   {
+                       public Test()
+                       {
+                           var enumerable = System.Linq.Enumerable.Empty<int>();
+                           _ = enumerable.Any();
+                       }
+                   }
+                   """)
                .ValidateAsync();
     }
 
@@ -149,29 +157,31 @@ class Test
     public async Task Count_TakeAndCount(string text, string fix, string expectedMessage)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          int n = 10;
+                          var enumerable = System.Linq.Enumerable.Empty<int>();
+                          _ = [||]enumerable." + text + @";
+                      }
+                  }
+                  """)
                .ShouldReportDiagnosticWithMessage(expectedMessage)
-               .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + fix + @";
-    }
-}
-")
+               .ShouldFixCodeWith("""
+                   using System.Linq;
+                   class Test
+                   {
+                       public Test()
+                       {
+                           int n = 10;
+                           var enumerable = System.Linq.Enumerable.Empty<int>();
+                           _ = enumerable." + fix + @";
+                       }
+                   }
+                   """)
                .ValidateAsync();
     }
 
@@ -184,29 +194,31 @@ class Test
     public async Task Count_SkipAndAny(string text, string fix, string expectedMessage)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          int n = 10;
+                          var enumerable = Enumerable.Empty<int>();
+                          _ = [||]enumerable." + text + @";
+                      }
+                  }
+                  """)
                .ShouldReportDiagnosticWithMessage(expectedMessage)
-               .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = Enumerable.Empty<int>();
-        _ = enumerable." + fix + @";
-    }
-}
-")
+               .ShouldFixCodeWith("""
+                   using System.Linq;
+                   class Test
+                   {
+                       public Test()
+                       {
+                           int n = 10;
+                           var enumerable = Enumerable.Empty<int>();
+                           _ = enumerable." + fix + @";
+                       }
+                   }
+                   """)
                .ValidateAsync();
     }
 
@@ -220,29 +232,31 @@ class Test
     public async Task Count_NotSkipAndAny(string text, string fix, string expectedMessage)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          int n = 10;
+                          var enumerable = Enumerable.Empty<int>();
+                          _ = [||]enumerable." + text + @";
+                      }
+                  }
+                  """)
                .ShouldReportDiagnosticWithMessage(expectedMessage)
-               .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = Enumerable.Empty<int>();
-        _ = !enumerable." + fix + @";
-    }
-}
-")
+               .ShouldFixCodeWith("""
+                   using System.Linq;
+                   class Test
+                   {
+                       public Test()
+                       {
+                           int n = 10;
+                           var enumerable = Enumerable.Empty<int>();
+                           _ = !enumerable." + fix + @";
+                       }
+                   }
+                   """)
                .ValidateAsync();
     }
 
@@ -251,16 +265,17 @@ class Test
     public async Task Count_Equals(string text)
     {
         var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
-    }
-}
-");
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          var enumerable = System.Linq.Enumerable.Empty<int>();
+                          _ = enumerable." + text + @";
+                      }
+                  }
+                  """;
 
         await project.ValidateAsync();
     }
@@ -270,17 +285,18 @@ class Test
     public async Task Count_NotEquals(string text)
     {
         var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        int n = 10;
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = enumerable." + text + @";
-    }
-}
-");
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          int n = 10;
+                          var enumerable = System.Linq.Enumerable.Empty<int>();
+                          _ = enumerable." + text + @";
+                      }
+                  }
+                  """;
         await project.ValidateAsync();
     }
 }

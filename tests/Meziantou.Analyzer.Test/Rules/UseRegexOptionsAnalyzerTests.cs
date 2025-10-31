@@ -21,12 +21,14 @@ public sealed class UseRegexOptionsAnalyzerTests
     public async Task IsMatch_RegexOptions(string regex, string options, bool isValid)
     {
         var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[||]") + options + @", default);
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  class TestClass
+                  {
+                      void Test()
+                      {
+                          Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[||]
+                  """+ options + @", default);
     }
 }");
         await project.ValidateAsync();
@@ -42,12 +44,14 @@ class TestClass
     public async Task Ctor_RegexOptions(string regex, string options, bool isValid)
     {
         var project = CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        new Regex(""" + regex + @""", " + (isValid ? "" : "[||]") + options + @", default);
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  class TestClass
+                  {
+                      void Test()
+                      {
+                          new Regex(""" + regex + @""", " + (isValid ? "" : "[||]
+                  """+ options + @", default);
     }
 }");
 
@@ -65,14 +69,16 @@ class TestClass
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
               .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(@"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [GeneratedRegex(""" + regex + @""", " + options + @", 0)]
-    private static partial Regex Test();
-
-    private static partial Regex Test() => throw null;
-}");
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  partial class TestClass
+                  {
+                      [GeneratedRegex(""" + regex + @""", " + options + @", 0)]
+                      private static partial Regex Test();
+                  
+                      private static partial Regex Test() => throw null;
+                  }
+                  """;
 
         await project.ValidateAsync();
     }
@@ -84,16 +90,18 @@ partial class TestClass
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
               .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(@"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [[||][||]GeneratedRegex(""" + regex + @""", " + options + @", 0)]
-    private static partial Regex Test();
-}
-partial class TestClass
-{
-    private static partial Regex Test() => throw null;
-}");
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  partial class TestClass
+                  {
+                      [[||][||]GeneratedRegex(""" + regex + @""", " + options + @", 0)]
+                      private static partial Regex Test();
+                  }
+                  partial class TestClass
+                  {
+                      private static partial Regex Test() => throw null;
+                  }
+                  """;
 
         await project.ValidateAsync();
     }

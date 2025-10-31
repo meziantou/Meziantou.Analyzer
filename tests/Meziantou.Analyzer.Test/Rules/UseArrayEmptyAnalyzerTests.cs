@@ -26,14 +26,15 @@ class TestClass
         var a = [||]{code};
     }}
 }}")
-              .ShouldFixCodeWith(@"
-class TestClass
-{
-    void Test()
-    {
-        var a = System.Array.Empty<int>();
-    }
-}")
+              .ShouldFixCodeWith("""
+                  class TestClass
+                  {
+                      void Test()
+                      {
+                          var a = System.Array.Empty<int>();
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 

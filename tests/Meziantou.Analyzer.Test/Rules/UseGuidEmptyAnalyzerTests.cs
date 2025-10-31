@@ -25,14 +25,15 @@ class TestClass
         _ = [||]{code};
     }}
 }}")
-              .ShouldFixCodeWith(@"
-class TestClass
-{
-    void Test()
-    {
-        _ = System.Guid.Empty;
-    }
-}")
+              .ShouldFixCodeWith("""
+                  class TestClass
+                  {
+                      void Test()
+                      {
+                          _ = System.Guid.Empty;
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 

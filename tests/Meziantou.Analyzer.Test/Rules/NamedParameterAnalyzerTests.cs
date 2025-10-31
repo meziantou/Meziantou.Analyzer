@@ -628,36 +628,37 @@ public sealed class NamedParameterAnalyzerTests
     {
 
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Linq;
-using System.Collections.Generic;
-
-class Test
-{
-    public Test()
-    {
-        IEnumerable<string> query = null;
-        query.Where(x => M([||]false));
-    }
-
-    static bool M(bool a) => false;
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  using System.Collections.Generic;
+                  
+                  class Test
+                  {
+                      public Test()
+                      {
+                          IEnumerable<string> query = null;
+                          query.Where(x => M([||]false));
+                      }
+                  
+                      static bool M(bool a) => false;
+                  }
+                  """)
               .ValidateAsync();
 
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        IQueryable<string> query = null;
-        query.Where(x => M(false));
-    }
-
-    static bool M(bool a) => false;
-}
-")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class Test
+                  {
+                      public Test()
+                      {
+                          IQueryable<string> query = null;
+                          query.Where(x => M(false));
+                      }
+                  
+                      static bool M(bool a) => false;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -665,32 +666,32 @@ class Test
     public async Task Expression_ShouldNotReportDiagnostic2()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Linq;
-using System.Linq.Expressions;
-
-class Test
-{
-    public Test()
-    {
-        Mock<ITest> mock = null;
-        mock.Setup(x => x.M(false));
-    }
-
-    static bool M(bool a) => false;
-}
-
-interface ITest
-{
-    bool M(bool a);
-}
-
-class Mock<T>
-{
-    public void Setup<TResult>(Expression<Func<T, TResult>> expression) => throw null;
-}
-")
+              .WithSourceCode("""
+                  using System;
+                  using System.Linq;
+                  using System.Linq.Expressions;
+                  
+                  class Test
+                  {
+                      public Test()
+                      {
+                          Mock<ITest> mock = null;
+                          mock.Setup(x => x.M(false));
+                      }
+                  
+                      static bool M(bool a) => false;
+                  }
+                  
+                  interface ITest
+                  {
+                      bool M(bool a);
+                  }
+                  
+                  class Mock<T>
+                  {
+                      public void Setup<TResult>(Expression<Func<T, TResult>> expression) => throw null;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -698,24 +699,24 @@ class Mock<T>
     public async Task SyntaxNode_With()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        var a = new Microsoft.CodeAnalysis.SyntaxNode();
-        _ = a.WithElse(null);
-    }
-}
-
-namespace Microsoft.CodeAnalysis
-{
-    public class SyntaxNode
-    {
-        public SyntaxNode WithElse(object value) => throw null;
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          var a = new Microsoft.CodeAnalysis.SyntaxNode();
+                          _ = a.WithElse(null);
+                      }
+                  }
+                  
+                  namespace Microsoft.CodeAnalysis
+                  {
+                      public class SyntaxNode
+                      {
+                          public SyntaxNode WithElse(object value) => throw null;
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -723,17 +724,17 @@ namespace Microsoft.CodeAnalysis
     public async Task SyntaxNode_EnablePrefix()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        EnableTest(false);
-    }
-
-    void EnableTest(bool value) { }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          EnableTest(false);
+                      }
+                  
+                      void EnableTest(bool value) { }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -741,16 +742,16 @@ class Test
     public async Task List_Add()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        var list = new System.Collections.Generic.List<string>();
-        list.Add(null);
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          var list = new System.Collections.Generic.List<string>();
+                          list.Add(null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -758,16 +759,16 @@ class Test
     public async Task TaskCompletionSource_SetResult()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        var a = new System.Threading.Tasks.TaskCompletionSource<string>();
-        a.SetResult(null);
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          var a = new System.Threading.Tasks.TaskCompletionSource<string>();
+                          a.SetResult(null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -775,15 +776,15 @@ class Test
     public async Task Expression_Constant()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        _ = System.Linq.Expressions.Expression.Constant(null);
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          _ = System.Linq.Expressions.Expression.Constant(null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -791,16 +792,16 @@ class Test
     public async Task TaskCompletionSource_TrySetResult()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        var a = new System.Threading.Tasks.TaskCompletionSource<string>();
-        _ = a.TrySetResult(null);
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          var a = new System.Threading.Tasks.TaskCompletionSource<string>();
+                          _ = a.TrySetResult(null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -808,15 +809,15 @@ class Test
     public async Task StringFormat_Params()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        string.Format(""Hi {0}, {1}, {2}, {3}."", null, null, null, null);
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          string.Format(""Hi {0}, {1}, {2}, {3}."", null, null, null, null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -824,15 +825,15 @@ class Test
     public async Task StringFormat_Array()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        string.Format(""Hi {0}, {1}, {2}, {3}."", new object[] { null, null, null, null });
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          string.Format(""Hi {0}, {1}, {2}, {3}."", new object[] { null, null, null, null });
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -840,15 +841,15 @@ class Test
     public async Task StringFormat_Array_Null()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        string.Format(""Hi {0}, {1}, {2}, {3}."", (object[])null);
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          string.Format(""Hi {0}, {1}, {2}, {3}."", (object[])null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -856,17 +857,17 @@ class Test
     public async Task Params_Array_Null()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        B([||]null);
-    }
-
-    void B(params int[] a) {}
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          B([||]null);
+                      }
+                  
+                      void B(params int[] a) {}
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -874,17 +875,17 @@ class Test
     public async Task Ctor_Params_Null()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public Test(params object[] a) { }
-
-    void A()
-    {
-        new Test(null, null);
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public Test(params object[] a) { }
+                  
+                      void A()
+                      {
+                          new Test(null, null);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -892,13 +893,14 @@ class Test
     public async Task ArrayIndexer()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        var d = new[] {""Foo""};
-        if (d[0] == ""X"")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          var d = new[] {""Foo""};
+                          if (d[0] == ""X"
+                  """)
         {
             d[0] = ""XXX"";
         }
@@ -912,17 +914,17 @@ class Test
     public async Task Indexer()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public int this[string value] => 0;
-
-    void A()
-    {
-        _ = this[null];
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public int this[string value] => 0;
+                  
+                      void A()
+                      {
+                          _ = this[null];
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -930,16 +932,16 @@ class Test
     public async Task Dictionary_Indexer()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    void A()
-    {
-        var dict = new System.Collections.Generic.Dictionary<bool, object>();
-        dict[false] = null;
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          var dict = new System.Collections.Generic.Dictionary<bool, object>();
+                          dict[false] = null;
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -947,17 +949,17 @@ class Test
     public async Task Indexer_MultipleArgument()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public int this[int x, int y] => 0;
-
-    void A()
-    {
-        _ = this[[||]0, [||]0];
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public int this[int x, int y] => 0;
+                  
+                      void A()
+                      {
+                          _ = this[[||]0, [||]0];
+                      }
+                  }
+                  """)
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
               .ValidateAsync();
     }
@@ -966,17 +968,17 @@ class Test
     public async Task Tuples()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public Test(string a) { }
-
-    void A()
-    {
-        _ = (false, new Test([||]null));
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public Test(string a) { }
+                  
+                      void A()
+                      {
+                          _ = (false, new Test([||]null));
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -984,23 +986,23 @@ class Test
     public async Task CallerMustUseNamedArgument()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object a) { }
-
-    void A()
-    {
-        _ = new Test([||]new object());
-    }
-}
-
-namespace Meziantou.Analyzer.Annotations
-{
-    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-    internal class RequireNamedArgumentAttribute : System.Attribute {}
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object a) { }
+                  
+                      void A()
+                      {
+                          _ = new Test([||]new object());
+                      }
+                  }
+                  
+                  namespace Meziantou.Analyzer.Annotations
+                  {
+                      [System.AttributeUsage(System.AttributeTargets.Parameter)]
+                      internal class RequireNamedArgumentAttribute : System.Attribute {}
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -1008,27 +1010,27 @@ namespace Meziantou.Analyzer.Annotations
     public async Task CallerMustUseNamedArgument_False()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(false)]object a) { }
-
-    void A()
-    {
-        _ = new Test(new object());
-    }
-}
-
-namespace Meziantou.Analyzer.Annotations
-{
-    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-    internal class RequireNamedArgumentAttribute : System.Attribute
-    {
-        public RequireNamedArgumentAttribute() {}
-        public RequireNamedArgumentAttribute(bool value) {}
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(false)]object a) { }
+                  
+                      void A()
+                      {
+                          _ = new Test(new object());
+                      }
+                  }
+                  
+                  namespace Meziantou.Analyzer.Annotations
+                  {
+                      [System.AttributeUsage(System.AttributeTargets.Parameter)]
+                      internal class RequireNamedArgumentAttribute : System.Attribute
+                      {
+                          public RequireNamedArgumentAttribute() {}
+                          public RequireNamedArgumentAttribute(bool value) {}
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -1036,27 +1038,27 @@ namespace Meziantou.Analyzer.Annotations
     public async Task CallerMustUseNamedArgument_True()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
-
-    void A()
-    {
-        _ = new Test([||]new object());
-    }
-}
-
-namespace Meziantou.Analyzer.Annotations
-{
-    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-    internal class RequireNamedArgumentAttribute : System.Attribute
-    {
-        public RequireNamedArgumentAttribute() {}
-        public RequireNamedArgumentAttribute(bool value) {}
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
+                  
+                      void A()
+                      {
+                          _ = new Test([||]new object());
+                      }
+                  }
+                  
+                  namespace Meziantou.Analyzer.Annotations
+                  {
+                      [System.AttributeUsage(System.AttributeTargets.Parameter)]
+                      internal class RequireNamedArgumentAttribute : System.Attribute
+                      {
+                          public RequireNamedArgumentAttribute() {}
+                          public RequireNamedArgumentAttribute(bool value) {}
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -1065,27 +1067,27 @@ namespace Meziantou.Analyzer.Annotations
     {
         await CreateProjectBuilder()
               .AddAnalyzerConfiguration("MA0003.minimum_method_parameters", "2")
-              .WithSourceCode(@"
-class Test
-{
-    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
-
-    void A()
-    {
-        _ = new Test([||]new object());
-    }
-}
-
-namespace Meziantou.Analyzer.Annotations
-{
-    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-    internal class RequireNamedArgumentAttribute : System.Attribute
-    {
-        public RequireNamedArgumentAttribute() {}
-        public RequireNamedArgumentAttribute(bool value) {}
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
+                  
+                      void A()
+                      {
+                          _ = new Test([||]new object());
+                      }
+                  }
+                  
+                  namespace Meziantou.Analyzer.Annotations
+                  {
+                      [System.AttributeUsage(System.AttributeTargets.Parameter)]
+                      internal class RequireNamedArgumentAttribute : System.Attribute
+                      {
+                          public RequireNamedArgumentAttribute() {}
+                          public RequireNamedArgumentAttribute(bool value) {}
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -1094,17 +1096,17 @@ namespace Meziantou.Analyzer.Annotations
     {
         await CreateProjectBuilder()
               .AddAnalyzerConfiguration("MA0003.minimum_method_parameters", "2")
-              .WithSourceCode(@"
-class Test
-{
-    public Test(object a) { }
-
-    void A()
-    {
-        _ = new Test(new object());
-    }
-}
-")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public Test(object a) { }
+                  
+                      void A()
+                      {
+                          _ = new Test(new object());
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 

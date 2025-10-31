@@ -40,15 +40,17 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     public async Task DoNotReportDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"public class Dummy { }")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NestedType_DoNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"public class Dummy { public class Action { } }")
+              .WithSourceCode("""
+                  public class Dummy { }")
+                                .ValidateAsync();
+                      }
+                  
+                      [Fact]
+                      public async Task NestedType_DoNotReportDiagnostic()
+                      {
+                          await CreateProjectBuilder()
+                                .WithSourceCode(@"public class Dummy { public class Action { } }
+                  """)
               .ValidateAsync();
     }
 
@@ -56,8 +58,10 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     public async Task Regex_DoNotReportDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"public class Action { }")
-              .AddAnalyzerConfiguration("MA0104.namespaces_regex", "dummy")
+              .WithSourceCode("""
+                  public class Action { }")
+                                .AddAnalyzerConfiguration("MA0104.namespaces_regex", "dummy
+                  """)
               .ValidateAsync();
     }
 
@@ -65,8 +69,10 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     public async Task Regex_DoNotReportDiagnostic_OldConfigurationName()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"public class Action { }")
-              .AddAnalyzerConfiguration("MA0104.namepaces_regex", "dummy")
+              .WithSourceCode("""
+                  public class Action { }")
+                                .AddAnalyzerConfiguration("MA0104.namepaces_regex", "dummy
+                  """)
               .ValidateAsync();
     }
 }

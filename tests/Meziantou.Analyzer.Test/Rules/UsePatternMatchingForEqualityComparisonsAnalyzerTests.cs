@@ -124,15 +124,17 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     public async Task NullCheckForNullableOfT_IsNull()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"_ = (int?)0 is null;")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task EqualityComparison_String()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode($"""_ = [|(string)"dummy" == "dummy"|];""")
+              .WithSourceCode("""
+                  _ = (int?)0 is null;")
+                                .ValidateAsync();
+                      }
+                  
+                      [Fact]
+                      public async Task EqualityComparison_String()
+                      {
+                          await CreateProjectBuilder()
+                                .WithSourceCode($"""_ = [|(string)"dummy" == "dummy"|];""
+                  """)
               .ShouldFixCodeWith($"""_ = (string)"dummy" is "dummy";""")
               .ValidateAsync();
     }

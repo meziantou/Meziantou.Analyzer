@@ -19,14 +19,16 @@ public sealed class DontUseDangerousThreadingMethodsAnalyzerTests
     {
         await CreateProjectBuilder()
 
-              .WithSourceCode(@"using System.Threading;
-public class Test
-{
-    public void A()
-    {
-        [||]" + text + @";
-    }
-}")
+              .WithSourceCode("""
+                  using System.Threading;
+                  public class Test
+                  {
+                      public void A()
+                      {
+                          [||]" + text + @";
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 }

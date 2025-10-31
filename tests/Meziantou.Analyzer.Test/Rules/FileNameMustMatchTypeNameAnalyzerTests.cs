@@ -15,10 +15,11 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     public async Task DoesNotMatchFileName()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class [||]Sample
-{
-}")
+              .WithSourceCode("""
+                  class [||]Sample
+                  {
+                  }
+                  """)
               .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
               .ValidateAsync();
     }
@@ -49,10 +50,11 @@ class Bar
     public async Task DoesMatchFileName()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test0
-{
-}")
+              .WithSourceCode("""
+                  class Test0
+                  {
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -60,10 +62,11 @@ class Test0
     public async Task DoesMatchFileName_Generic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test0<T>
-{
-}")
+              .WithSourceCode("""
+                  class Test0<T>
+                  {
+                  }
+                  """)
               .ValidateAsync();
     }
 

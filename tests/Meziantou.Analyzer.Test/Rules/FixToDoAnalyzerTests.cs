@@ -63,11 +63,12 @@ public sealed class FixToDoAnalyzerTests
     public async Task MultiTodoComment()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-/*
- * [|TODO a|]
- * [|TODO: b|]
- */")
+              .WithSourceCode("""
+                  /*
+                   * [|TODO a|]
+                   * [|TODO: b|]
+                   */
+                  """)
               .ShouldReportDiagnosticWithMessage("TODO a")
               .ShouldReportDiagnosticWithMessage("TODO b")
               .ValidateAsync();

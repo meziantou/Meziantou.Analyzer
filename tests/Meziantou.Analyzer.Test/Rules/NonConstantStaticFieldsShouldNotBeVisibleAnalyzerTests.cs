@@ -15,11 +15,12 @@ public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzerTests
     public async Task ReportDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-public class Sample
-{
-    public static int [||]a = 0;
-}")
+              .WithSourceCode("""
+                  public class Sample
+                  {
+                      public static int [||]a = 0;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -27,11 +28,12 @@ public class Sample
     public async Task InternalClass()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-internal class Sample
-{
-    public static int a = 0;
-}")
+              .WithSourceCode("""
+                  internal class Sample
+                  {
+                      public static int a = 0;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -39,11 +41,12 @@ internal class Sample
     public async Task StaticReadOnly()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-public class Sample
-{
-    public static readonly int a = 0;
-}")
+              .WithSourceCode("""
+                  public class Sample
+                  {
+                      public static readonly int a = 0;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -51,11 +54,12 @@ public class Sample
     public async Task InstanceField()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-public class Sample
-{
-    public int a = 0;
-}")
+              .WithSourceCode("""
+                  public class Sample
+                  {
+                      public int a = 0;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -63,12 +67,13 @@ public class Sample
     public async Task EnumMembers()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-public enum Sample
-{
-    A = 1,
-    B,
-}")
+              .WithSourceCode("""
+                  public enum Sample
+                  {
+                      A = 1,
+                      B,
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -76,11 +81,12 @@ public enum Sample
     public async Task Const()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-public class Sample
-{
-    public const int a = 0;
-}")
+              .WithSourceCode("""
+                  public class Sample
+                  {
+                      public const int a = 0;
+                  }
+                  """)
               .ValidateAsync();
     }
 }

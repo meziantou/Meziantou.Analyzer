@@ -148,11 +148,13 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
         const string SourceCode = """
             record struct [||]TypeName(int A, int B);";
             
-                    const string CodeFix = @"using System.Runtime.InteropServices;
-            
-            [StructLayout(LayoutKind.Auto)]
-            record struct TypeName(int A, int B);
-            """;
+                    const string CodeFix = """
+                        using System.Runtime.InteropServices;
+                                    
+                                    [StructLayout(LayoutKind.Auto)]
+                                    record struct TypeName(int A, int B);
+                                    ""
+                        """;
 
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)

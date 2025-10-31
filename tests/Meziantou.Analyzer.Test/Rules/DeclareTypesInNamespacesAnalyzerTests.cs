@@ -16,13 +16,14 @@ public sealed class DeclareTypesInNamespacesAnalyzerTests
     public async Task InNamespace_IsValid()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-namespace Test
-{
-    class Sample
-    {
-    }
-}")
+              .WithSourceCode("""
+                  namespace Test
+                  {
+                      class Sample
+                      {
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -30,11 +31,12 @@ namespace Test
     public async Task NotInNamespace_IsInvalid()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class [||]Sample
-{
-    class Nested { }
-}")
+              .WithSourceCode("""
+                  class [||]Sample
+                  {
+                      class Nested { }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -44,8 +46,9 @@ class [||]Sample
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
               .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode(@"
-System.Console.WriteLine();")
+              .WithSourceCode("""
+                  System.Console.WriteLine();
+                  """)
               .ValidateAsync();
     }
 
@@ -56,8 +59,9 @@ System.Console.WriteLine();")
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode(@"
-System.Console.WriteLine();")
+              .WithSourceCode("""
+                  System.Console.WriteLine();
+                  """)
               .ValidateAsync();
     }
 
@@ -67,11 +71,11 @@ System.Console.WriteLine();")
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode(@"
-System.Console.WriteLine();
-
-public partial class Program { }
-")
+              .WithSourceCode("""
+                  System.Console.WriteLine();
+                  
+                  public partial class Program { }
+                  """)
               .ValidateAsync();
     }
 #endif

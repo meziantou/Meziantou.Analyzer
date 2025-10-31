@@ -15,11 +15,12 @@ public sealed class UseEventHandlerOfTAnalyzerTests
     public async Task ValidEvent()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    event System.EventHandler<System.EventArgs> myevent;
-}")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      event System.EventHandler<System.EventArgs> myevent;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -27,15 +28,16 @@ class Test
     public async Task ValidEvent_CustomEventArgs()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class SampleEventArgs : System.EventArgs
-{
-}
-
-class Test
-{
-    event System.EventHandler<SampleEventArgs> myevent;
-}")
+              .WithSourceCode("""
+                  class SampleEventArgs : System.EventArgs
+                  {
+                  }
+                  
+                  class Test
+                  {
+                      event System.EventHandler<SampleEventArgs> myevent;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -43,17 +45,18 @@ class Test
     public async Task ValidEvent_CustomDelegate()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class SampleEventArgs : System.EventArgs
-{
-}
-
-delegate void CustomEventHandler(object sender, SampleEventArgs e);
-
-class Test
-{
-    event CustomEventHandler myevent;
-}")
+              .WithSourceCode("""
+                  class SampleEventArgs : System.EventArgs
+                  {
+                  }
+                  
+                  delegate void CustomEventHandler(object sender, SampleEventArgs e);
+                  
+                  class Test
+                  {
+                      event CustomEventHandler myevent;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -63,11 +66,12 @@ class Test
     public async Task InvalidEvent(string signature)
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    event " + signature + @" [||]myevent;
-}")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      event " + signature + @" [||]myevent;
+                  }
+                  """)
               .ValidateAsync();
     }
 }

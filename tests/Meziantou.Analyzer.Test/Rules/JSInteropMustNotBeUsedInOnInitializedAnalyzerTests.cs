@@ -17,18 +17,19 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzerTests
     {
         await CreateProjectBuilder()
               .AddNuGetReference("Microsoft.JSInterop.WebAssembly", "6.0.10", "lib/net6.0/")
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-
-class MyComponent : ComponentBase
-{
-    public IJSRuntime JS { get; set; }
-    
-    protected override void OnInitialized()
-    {
-        _ = JS.InvokeVoidAsync("""");
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  using Microsoft.AspNetCore.Components;
+                  using Microsoft.JSInterop;
+                  
+                  class MyComponent : ComponentBase
+                  {
+                      public IJSRuntime JS { get; set; }
+                      
+                      protected override void OnInitialized()
+                      {
+                          _ = JS.InvokeVoidAsync("""
+                  """;
     }
 
     protected override async Task OnInitializedAsync()
@@ -45,17 +46,18 @@ class MyComponent : ComponentBase
     public async Task OnInitialized_Report()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-class MyComponent : ComponentBase
-{
-    public IJSRuntime JS { get; set; }
-    
-    protected override void OnInitialized()
-    {
-        _ = [||]JS.InvokeVoidAsync("""");
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  using Microsoft.AspNetCore.Components;
+                  using Microsoft.JSInterop;
+                  class MyComponent : ComponentBase
+                  {
+                      public IJSRuntime JS { get; set; }
+                      
+                      protected override void OnInitialized()
+                      {
+                          _ = [||]JS.InvokeVoidAsync("""
+                  """;
     }
 }
 ")
@@ -66,17 +68,18 @@ class MyComponent : ComponentBase
     public async Task OnInitializedAsync_JsRuntimeExtensionMethod_Report()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-class MyComponent : ComponentBase
-{
-    public IJSRuntime JS { get; set; }
-    
-    protected override async Task OnInitializedAsync()
-    {
-        await [||]JS.InvokeVoidAsync("""");
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  using Microsoft.AspNetCore.Components;
+                  using Microsoft.JSInterop;
+                  class MyComponent : ComponentBase
+                  {
+                      public IJSRuntime JS { get; set; }
+                      
+                      protected override async Task OnInitializedAsync()
+                      {
+                          await [||]JS.InvokeVoidAsync("""
+                  """;
         await base.OnInitializedAsync();
     }
 }
@@ -88,21 +91,21 @@ class MyComponent : ComponentBase
     public async Task OnInitializedAsync_JsRuntimeInstance_Report()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-class MyComponent : ComponentBase
-{
-    public IJSRuntime JS { get; set; }
-    
-    protected override async Task OnInitializedAsync()
-    {
-        await [||]JS.InvokeAsync<object>(identifier: """", args: new object[0]);
-        await base.OnInitializedAsync();
-    }
-}
-")
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  using Microsoft.AspNetCore.Components;
+                  using Microsoft.JSInterop;
+                  class MyComponent : ComponentBase
+                  {
+                      public IJSRuntime JS { get; set; }
+                      
+                      protected override async Task OnInitializedAsync()
+                      {
+                          await [||]JS.InvokeAsync<object>(identifier: """", args: new object[0]);
+                          await base.OnInitializedAsync();
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -110,18 +113,19 @@ class MyComponent : ComponentBase
     public async Task OnInitializedAsync_ProtectedLocalStorage_Report()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using Microsoft.JSInterop;
-class MyComponent : ComponentBase
-{
-    public ProtectedLocalStorage Storage { get; set; }
-    
-    protected override async Task OnInitializedAsync()
-    {
-        await [||]Storage.GetAsync<string>("""");
+              .WithSourceCode("""
+                  using System.Threading.Tasks;
+                  using Microsoft.AspNetCore.Components;
+                  using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+                  using Microsoft.JSInterop;
+                  class MyComponent : ComponentBase
+                  {
+                      public ProtectedLocalStorage Storage { get; set; }
+                      
+                      protected override async Task OnInitializedAsync()
+                      {
+                          await [||]Storage.GetAsync<string>("""
+                  """;
     }
 }
 ")

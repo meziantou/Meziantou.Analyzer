@@ -16,11 +16,12 @@ public sealed class RemoveUselessToStringAnalyzerTests
     public async Task IntToString_ShouldNotReportDiagnostic()
     {
         var project = CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public void A() => 1.ToString();
-}");
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public void A() => 1.ToString();
+                  }
+                  """;
 
         await project.ValidateAsync();
     }
@@ -29,16 +30,18 @@ class Test
     public async Task StringToString_ShouldReportDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test
-{
-    public string A() => [||]"""".ToString();
-}")
-              .ShouldFixCodeWith(@"
-class Test
-{
-    public string A() => """";
-}")
+              .WithSourceCode("""
+                  class Test
+                  {
+                      public string A() => [||]"""".ToString();
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class Test
+                  {
+                      public string A() => """";
+                  }
+                  """)
               .ValidateAsync();
     }
 }

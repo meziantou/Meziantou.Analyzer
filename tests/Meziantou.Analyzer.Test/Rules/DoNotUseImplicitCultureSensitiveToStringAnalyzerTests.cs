@@ -167,55 +167,65 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     [InlineData("abc[|{(float)1}|]")]
     [InlineData("abc[|{(double)1}|]")]
     [InlineData("abc[|{(decimal)1}|]")]
-    [InlineData(@"test[|{new int[0].Min()}|]")]
-    [InlineData(@"test[|{System.Int128.One}|]")]
-    [InlineData(@"test[|{new System.DateOnly(2023,1,1)}|]")]
-    public async Task InterpolatedStringDiagnostic(string content)
-    {
-        var sourceCode = """
-            using System.Linq;
-            class Test
+    [InlineData("""
+        test[|{new int[0].Min()}|]")]
+            [InlineData(@"test[|{System.Int128.One}|]
+        """]
+    [InlineData("""
+        test[|{new System.DateOnly(2023,1,1)}|]")]
+            public async Task InterpolatedStringDiagnostic(string content)
             {
-                void A() { string str = $""" + content + @""
-            """;
-         }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Theory]
-    [InlineData("abc")]
+                var sourceCode = ""
+                    using System.Linq;
+                    class Test
+                    {
+                        void A() { string str = $""" + content + @"
+                    """;
+                 }
+        }";
+                await CreateProjectBuilder()
+                      .WithSourceCode(sourceCode)
+                      .ValidateAsync();
+            }
+        
+            [Theory]
+            [InlineData("abc
+        """]
     [InlineData("abc{\"def\"}")]
     [InlineData("abc{'a'}")]
     [InlineData("abc{(byte)1}")]
     [InlineData("abc{(ushort)1}")]
     [InlineData("abc{(uint)1}")]
     [InlineData("abc{(ulong)1}")]
-    [InlineData(@"test{new System.Uri("""")}")]
-    [InlineData(@"test{new int[0].Length}")]
-    [InlineData(@"test{new int[0].Count()}")]
-    [InlineData(@"test{new System.Collections.Generic.List<int>().Count}")]
-    [InlineData(@"test{new System.DateOnly(2023,1,1):o}")]
-    public async Task InterpolatedStringNoDiagnostic(string content)
-    {
-        var sourceCode = """
-            using System.Linq;
-            class Test
+    [InlineData("""
+        test{new System.Uri("""")}")]
+            [InlineData(@"test{new int[0].Length}
+        """]
+    [InlineData("""
+        test{new int[0].Count()}")]
+            [InlineData(@"test{new System.Collections.Generic.List<int>().Count}
+        """]
+    [InlineData("""
+        test{new System.DateOnly(2023,1,1):o}")]
+            public async Task InterpolatedStringNoDiagnostic(string content)
             {
-                void A() { string str = $""" + content + @""
-            """;
-         }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-#if CSHARP11_OR_GREATER
-    [Theory]
-    [InlineData("abc{(nint)1}")]
+                var sourceCode = ""
+                    using System.Linq;
+                    class Test
+                    {
+                        void A() { string str = $""" + content + @"
+                    """;
+                 }
+        }";
+                await CreateProjectBuilder()
+                      .WithSourceCode(sourceCode)
+                      .ValidateAsync();
+            }
+        
+        #if CSHARP11_OR_GREATER
+            [Theory]
+            [InlineData("abc{(nint)1}
+        """]
     public async Task InterpolatedStringNoDiagnostic_CSharp11(string content)
     {
         var sourceCode = """

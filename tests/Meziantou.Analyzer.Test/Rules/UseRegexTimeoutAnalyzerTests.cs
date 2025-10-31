@@ -169,16 +169,18 @@ public sealed class UseRegexTimeoutAnalyzerTests
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
               .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(@"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [GeneratedRegex(""pattern"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Test();
-}
-partial class TestClass
-{
-    private static partial Regex Test() => throw null;
-}");
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  partial class TestClass
+                  {
+                      [GeneratedRegex(""pattern"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+                      private static partial Regex Test();
+                  }
+                  partial class TestClass
+                  {
+                      private static partial Regex Test() => throw null;
+                  }
+                  """;
 
         await project.ValidateAsync();
     }
@@ -189,16 +191,18 @@ partial class TestClass
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
               .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(@"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [GeneratedRegex(""pattern"", RegexOptions.NonBacktracking)]
-    private static partial Regex Test();
-}
-partial class TestClass
-{
-    private static partial Regex Test() => throw null;
-}");
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  partial class TestClass
+                  {
+                      [GeneratedRegex(""pattern"", RegexOptions.NonBacktracking)]
+                      private static partial Regex Test();
+                  }
+                  partial class TestClass
+                  {
+                      private static partial Regex Test() => throw null;
+                  }
+                  """;
 
         await project.ValidateAsync();
     }
