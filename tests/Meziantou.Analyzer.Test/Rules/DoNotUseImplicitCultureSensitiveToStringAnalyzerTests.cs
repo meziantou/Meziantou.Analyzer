@@ -181,7 +181,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
                     using System.Linq;
                     class Test
                     {
-                        void A() { string str = $""" + content + @"
+                        void A() { string str = $$""" + content + @"
                     """;
                  }
         }";
@@ -219,7 +219,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
                     using System.Linq;
                     class Test
                     {
-                        void A() { string str = $""" + content + @"
+                        void A() { string str = $$""" + content + @"
                     """;
                  }
         }";
@@ -238,7 +238,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
             using System.Linq;
             class Test
             {
-                void A() { string str = $""" + content + @""
+                void A() { string str = $$""" + content + @""
             """;
          }
 }";
@@ -467,14 +467,14 @@ class Test
     [InlineData(""" $"abc[|{new System.DateTime():a}|]" """)]
     public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatInvariant(string content)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
 [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: true)]
 
 class Test
 {
     void A()
     {
-        _ = {{content}};
+        _ = {content};
     }
 }
 """;
@@ -488,14 +488,14 @@ class Test
     [InlineData(""" $"abc[|{new System.DateTime():a}|]" """)]
     public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatCultureSensitive(string content)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
 [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: false)]
 
 class Test
 {
     void A()
     {
-        _ = {{content}};
+        _ = {content};
     }
 }
 """;

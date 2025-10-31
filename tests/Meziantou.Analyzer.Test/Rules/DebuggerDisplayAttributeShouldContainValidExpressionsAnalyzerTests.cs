@@ -21,9 +21,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("System.IO.Path.DirectorySeparatorChar.Unknown()")]
     public async Task UnknownMember(string memberName)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("{{{memberName}}}")|]]
+            [[|DebuggerDisplay("{{memberName}}")|]]
             public class Dummy
             {
                 public string Display { get; }
@@ -41,9 +41,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Invalid.Length")]
     public async Task UnknownMember_Name(string memberName)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("", Name = "{{{memberName}}}")|]]
+            [[|DebuggerDisplay("", Name = "{{memberName}}")|]]
             public class Dummy
             {
                 public string Display { get; }
@@ -62,9 +62,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Display.UnknownProperty")]
     public async Task UnknownMember_Type(string memberName)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("", Type = "{{{memberName}}}")|]]
+            [[|DebuggerDisplay("", Type = "{{memberName}}")|]]
             public class Dummy
             {
                 public string Display { get; }
@@ -80,9 +80,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("System.IO.Path.DirectorySeparatorChar.ToString()")]
     public async Task Valid(string value)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
-            [DebuggerDisplay("{{{value}}}")]
+            [DebuggerDisplay("{{value}}")]
             public class Dummy
             {
                 public string Display { get; }
@@ -179,9 +179,9 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Display().Invalid")] // Invalid is ignored because we cannot determine the return type of Display()
     public async Task Valid_Method(string value)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
-            [DebuggerDisplay("{{{value}}}")]
+            [DebuggerDisplay("{{value}}")]
             public class Dummy
             {
                 private string Display() => "";
@@ -306,7 +306,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Demo.Display(Value > 1, Value)")]
     public async Task Valid_BinaryOperator(string value)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
 
             [DebuggerDisplay("""
@@ -350,10 +350,10 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Demo.Display(Value > 1, Unknown)")]
     public async Task Invalid_BinaryOperator(string value)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
 
-            [[|DebuggerDisplay("{{{value}}}")|]]
+            [[|DebuggerDisplay("{{value}}")|]]
             public record Person(int Value);
 
             public class Demo
@@ -370,7 +370,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("!Value")]
     public async Task Valid_UnaryOperator(string value)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
 
             [DebuggerDisplay("""
@@ -387,7 +387,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                 """]
     public async Task Invalid_UnaryOperator(string value)
     {
-        var sourceCode = $$"""
+        var sourceCode = $$$"""
             using System.Diagnostics;
 
             [[|DebuggerDisplay("""

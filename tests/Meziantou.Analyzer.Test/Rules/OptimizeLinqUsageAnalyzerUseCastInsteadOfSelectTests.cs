@@ -38,39 +38,39 @@ public sealed class OptimizeLinqUsageAnalyzerUseCastInsteadOfSelectTests
         string expectedReplacement,
         bool enableNullable = false)
     {
-        var originalCode = $"""
+        var originalCode = $$"""
             #nullable {(enableNullable ? "enable" : "disable")}
             using System.Linq;
             using Gen = System.Collections.Generic;
             
             class Test
-            {{
-                class BaseType {{ public string Name {{ get; set; }} }}
-                class DerivedType : BaseType {{}}
+            {
+                class BaseType { public string Name { get; set; } }
+                class DerivedType : BaseType {}
             
                 public Test()
-                {{
+                {
                     var source = System.Linq.Enumerable.Empty<DerivedType>();
-                    {selectInvocation};
-                }}
-            }}
+                    {{selectInvocation}};
+                }
+            }
             """;
-        var modifiedCode = $"""
+        var modifiedCode = $$"""
             #nullable {(enableNullable ? "enable" : "disable")}
             using System.Linq;
             using Gen = System.Collections.Generic;
             
             class Test
-            {{
-                class BaseType {{ public string Name {{ get; set; }} }}
-                class DerivedType : BaseType {{}}
+            {
+                class BaseType { public string Name { get; set; } }
+                class DerivedType : BaseType {}
             
                 public Test()
-                {{
+                {
                     var source = System.Linq.Enumerable.Empty<DerivedType>();
-                    {expectedReplacement};
-                }}
-            }}
+                    {{expectedReplacement}};
+                }
+            }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
@@ -84,19 +84,19 @@ public sealed class OptimizeLinqUsageAnalyzerUseCastInsteadOfSelectTests
     [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
     public async Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
     {
-        var originalCode = $"""
+        var originalCode = $$"""
             using System.Linq;
             class Test
-            {{
-                class BaseType {{ public string Name {{ get; set; }} }}
-                class DerivedType : BaseType {{}}
+            {
+                class BaseType { public string Name { get; set; } }
+                class DerivedType : BaseType {}
             
                 public Test()
-                {{
+                {
                     var source = System.Linq.Enumerable.Empty<DerivedType>();
-                    {selectInvocation};
-                }}
-            }}
+                    {{selectInvocation}};
+                }
+            }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)

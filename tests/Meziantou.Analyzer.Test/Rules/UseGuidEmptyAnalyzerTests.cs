@@ -17,14 +17,14 @@ public sealed class UseGuidEmptyAnalyzerTests
     public async Task ShouldReportError(string code)
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"""
+              .WithSourceCode($$"""
                   class TestClass
-                  {{
+                  {
                       void Test()
-                      {{
-                          _ = [||]{code};
-                      }}
-                  }}
+                      {
+                          _ = [||]{{code}};
+                      }
+                  }
                   """)
               .ShouldFixCodeWith("""
                   class TestClass
@@ -43,14 +43,14 @@ public sealed class UseGuidEmptyAnalyzerTests
     public async Task ShouldNotReportError(string code)
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"""
+              .WithSourceCode($$"""
                   class TestClass
-                  {{
+                  {
                       void Test()
-                      {{
-                          _ = {code};
-                      }}
-                  }}
+                      {
+                          _ = {{code}};
+                      }
+                  }
                   """)
               .ValidateAsync();
     }

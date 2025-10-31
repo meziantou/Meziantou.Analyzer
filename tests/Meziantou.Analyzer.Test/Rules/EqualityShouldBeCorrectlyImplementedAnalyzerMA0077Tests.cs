@@ -243,11 +243,11 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     [InlineData("public bool EqualsTo(Test other)")]
     public async Task Test_ClassImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
     {
-        var originalCode = $"""
+        var originalCode = $$"""
             class Test
-            {{
-                {methodSignature} => throw null;
-            }}
+            {
+                {{methodSignature}} => throw null;
+            }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
@@ -263,11 +263,11 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     [InlineData("public bool EqualsTo(Test other)")]
     public async Task Test_StructImplementsNoInterfaceAndProvidesIncompatibleEqualsMethod_NoDiagnosticReported(string methodSignature)
     {
-        var originalCode = $"""
+        var originalCode = $$"""
             struct Test
-            {{
-                {methodSignature} => throw null;
-            }}
+            {
+                {{methodSignature}} => throw null;
+            }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)

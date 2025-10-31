@@ -244,7 +244,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
         {
             return new TheoryData<string>
             {
-                { @"$""""" },
+                { @"$$""""" },
                 { @"$""{""""}""" },
                 { @"""""" },
                 { @""""" + """"" },
@@ -875,7 +875,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public async Task AppendLine_ValueToString_Report(string dataType)
     {
         await CreateProjectBuilder()
-              .WithSourceCode($$"""[||]new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());""")
+              .WithSourceCode($$$"""[||]new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());""")
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithTargetFramework(TargetFramework.Net8_0)
               .ValidateAsync();

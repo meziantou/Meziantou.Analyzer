@@ -67,23 +67,23 @@ public sealed class OptimizeStartsWithAnalyzerTests
     public async Task StartsWith_Report(string method, string fix)
     {
         await CreateProjectBuilder()
-              .WithSourceCode($$"""
+              .WithSourceCode($$$"""
                     using System;
                     class Test
                     {
                         void A(string str)
                         {
-                            _ = str.StartsWith({{method}});
+                            _ = str.StartsWith({method});
                         }
                     }
                     """)
-              .ShouldFixCodeWith($$"""
+              .ShouldFixCodeWith($$$"""
                     using System;
                     class Test
                     {
                         void A(string str)
                         {
-                            _ = str.StartsWith({{fix}});
+                            _ = str.StartsWith({fix});
                         }
                     }
                     """)
@@ -143,23 +143,23 @@ public sealed class OptimizeStartsWithAnalyzerTests
     public async Task EndsWith_Report(string method, string fix)
     {
         await CreateProjectBuilder()
-              .WithSourceCode($$"""
+              .WithSourceCode($$$"""
                     using System;
                     class Test
                     {
                         void A(string str)
                         {
-                            _ = str.EndsWith({{method}});
+                            _ = str.EndsWith({method});
                         }
                     }
                     """)
-              .ShouldFixCodeWith($$"""
+              .ShouldFixCodeWith($$$"""
                     using System;
                     class Test
                     {
                         void A(string str)
                         {
-                            _ = str.EndsWith({{fix}});
+                            _ = str.EndsWith({fix});
                         }
                     }
                     """)
@@ -192,13 +192,13 @@ public sealed class OptimizeStartsWithAnalyzerTests
                                   }
                                   ""
                 """)
-              .ShouldFixCodeWith($$"""
+              .ShouldFixCodeWith($$$"""
                   using System;
                   class Test
                   {
                       void A(string str)
                       {
-                          _ = str.IndexOf({{fix}});
+                          _ = str.IndexOf({fix});
                       }
                   }
                   """)
@@ -293,13 +293,13 @@ public sealed class OptimizeStartsWithAnalyzerTests
                           }
                           ""
         """)
-              .ShouldFixCodeWith($$"""
+              .ShouldFixCodeWith($$$"""
                   using System;
                   class Test
                   {
                       void A(string str)
                       {
-                          _ = str.LastIndexOf({{fix}});
+                          _ = str.LastIndexOf({fix});
                       }
                   }
                   """)
@@ -430,13 +430,13 @@ public sealed class OptimizeStartsWithAnalyzerTests
                                     }
                                     ""
                 """)
-              .ShouldFixCodeWith($$"""
+              .ShouldFixCodeWith($$$"""
                     using System;
                     class Test
                     {
                         void A(string str)
                         {
-                            _ = str.Replace({{fix}});
+                            _ = str.Replace({fix});
                         }
                     }
                     """)

@@ -18,14 +18,14 @@ public sealed class UseArrayEmptyAnalyzerTests
     public async Task EmptyArray_ShouldReportError(string code)
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"""
+              .WithSourceCode($$"""
                   class TestClass
-                  {{
+                  {
                       void Test()
-                      {{
-                          var a = [||]{code};
-                      }}
-                  }}
+                      {
+                          var a = [||]{{code}};
+                      }
+                  }
                   """)
               .ShouldFixCodeWith("""
                   class TestClass
@@ -45,14 +45,14 @@ public sealed class UseArrayEmptyAnalyzerTests
     public async Task NonEmptyArray_ShouldReportError(string code)
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"""
+              .WithSourceCode($$"""
                   class TestClass
-                  {{
+                  {
                       void Test()
-                      {{
-                          var a = {code};
-                      }}
-                  }}
+                      {
+                          var a = {{code}};
+                      }
+                  }
                   """)
               .ValidateAsync();
     }
