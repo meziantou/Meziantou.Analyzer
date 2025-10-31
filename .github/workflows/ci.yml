@@ -10,7 +10,7 @@ on:
       - "GenerateDocumentation.cmd"
       - ".markdownlint.json"
       - ".github/ISSUE_TEMPLATE/**"
-      - ".github/FUNDING.yml"
+      - ".github/*"
   pull_request:
     branches:
       - '*'
