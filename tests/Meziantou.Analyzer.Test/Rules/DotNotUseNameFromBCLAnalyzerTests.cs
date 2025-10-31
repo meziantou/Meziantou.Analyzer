@@ -49,8 +49,10 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
                       public async Task NestedType_DoNotReportDiagnostic()
                       {
                           await CreateProjectBuilder()
-                                .WithSourceCode(@"public class Dummy { public class Action { } }
-                  """)
+                                .WithSourceCode("""
+                                    public class Dummy { public class Action { } }
+                                                      ""
+                                    """)
               .ValidateAsync();
     }
 

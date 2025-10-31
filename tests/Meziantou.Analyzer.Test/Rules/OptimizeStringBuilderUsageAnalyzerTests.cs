@@ -36,76 +36,90 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     [InlineData("10 + 20")]
     [InlineData("""
         ""abc""")]
-            [InlineData(@"$""abc""
-        """]
-    [InlineData("""
-        $""abc{""test""}""")]
-            [InlineData(@"""abc"" + ""test""
-        """]
-    [InlineData("""
-        $""abc{""test""}"" + ""test""")]
+            [InlineData("""
+                $""abc""
+                        """]
+                    [InlineData(""
+                        $""abc{""test""}""
+                """]
+            [InlineData("""
+                ""abc"" + ""test""
+                        """]
+                    [InlineData(""
+                        $""abc{""test""}"" + ""test""
+                """]
             public async Task Append_NoDiagnostic(string text)
             {
                 await CreateProjectBuilder()
-                      .WithSourceCode(@"using System.Text;
-        class Test
-        {
-            void A()
-            {
-                new StringBuilder().Append(" + text + @
-        """;
-    }
-}")
+                      .WithSourceCode("""
+                          using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          new StringBuilder().Append(" + text + @
+                                  """;
+                              }
+                          }
+                          """)
               .ValidateAsync();
     }
 
     [Theory]
     [InlineData("""
         $""a{1}""")]
-            [InlineData(@"""a"" + 10
-        """]
-    [InlineData("""
-        10 + 20 + ""a""")]
-            [InlineData(@"""""
-        """]
-    [InlineData("""
-        """" + """"")]
-            [InlineData(@""""".Substring(0, 10)
-        """]
-    public async Task Append_ReportDiagnostic(string text)
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Text;
-                  class Test
-                  {
-                      void A()
-                      {
-                          [||]new StringBuilder().Append(" + text + @
-                  """;
-    }
-}")
+            [InlineData("""
+                ""a"" + 10
+                        """]
+                    [InlineData(""
+                        10 + 20 + ""a""
+                """]
+            [InlineData("""
+                """"
+                        """]
+                    [InlineData(""
+                        """" + """"
+                """]
+            [InlineData("""
+                """".Substring(0, 10)
+                        """]
+                    public async Task Append_ReportDiagnostic(string text)
+                    {
+                        await CreateProjectBuilder()
+                              .WithSourceCode(""
+                                  using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          [||]new StringBuilder().Append(" + text + @
+                                  """;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
     [Theory]
     [InlineData("""
         ""abc""")]
-            [InlineData(@"$""abc""
-        """]
-    public async Task AppendLine_NoDiagnostic(string text)
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Text;
-                  class Test
-                  {
-                      void A()
-                      {
-                          new StringBuilder().AppendLine(" + text + @
-                  """;
-    }
-}")
+            [InlineData("""
+                $""abc""
+                        """]
+                    public async Task AppendLine_NoDiagnostic(string text)
+                    {
+                        await CreateProjectBuilder()
+                              .WithSourceCode(""
+                                  using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          new StringBuilder().AppendLine(" + text + @
+                                  """;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -113,10 +127,12 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     [Theory]
     [InlineData("""
         ""abc""")]
-            [InlineData(@"$""abc""
-        """]
-    [InlineData("""
-        $""{0}abc""")]
+            [InlineData("""
+                $""abc""
+                        """]
+                    [InlineData(""
+                        $""{0}abc""
+                """]
         
             public async Task AppendLine_Net8_NoDiagnostic(string text)
             {
@@ -141,54 +157,64 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     [Theory]
     [InlineData("""
         $""a{1}""")]
-            [InlineData(@"""a"" + 10
-        """]
-    [InlineData("""
-        10 + 20 + ""a""")]
-            [InlineData(@"10.ToString()
-        """]
-    public async Task AppendLine_ReportDiagnostic(string text)
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Text;
-                  class Test
-                  {
-                      void A()
-                      {
-                          [||]new StringBuilder().AppendLine(" + text + @
-                  """;
-    }
-}")
+            [InlineData("""
+                ""a"" + 10
+                        """]
+                    [InlineData(""
+                        10 + 20 + ""a""
+                """]
+            [InlineData("""
+                10.ToString()
+                        """]
+                    public async Task AppendLine_ReportDiagnostic(string text)
+                    {
+                        await CreateProjectBuilder()
+                              .WithSourceCode(""
+                                  using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          [||]new StringBuilder().AppendLine(" + text + @
+                                  """;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
     [Theory]
     [InlineData("""
         ""abc""")]
-            [InlineData(@"$""abc""
-        """]
-    [InlineData("""
-        $""a{1}""")]
-            [InlineData(@"""a"" + 10
-        """]
-    [InlineData("""
-        10 + 20 + ""a""")]
-            [InlineData(@"string.Format(""{0}"", 0)
-        """]
-    public async Task Insert_NoDiagnostic(string text)
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Text;
-                  class Test
-                  {
-                      void A()
-                      {
-                          new StringBuilder().Insert(0, " + text + @
-                  """;
-    }
-}")
+            [InlineData("""
+                $""abc""
+                        """]
+                    [InlineData(""
+                        $""a{1}""
+                """]
+            [InlineData("""
+                ""a"" + 10
+                        """]
+                    [InlineData(""
+                        10 + 20 + ""a""
+                """]
+            [InlineData("""
+                string.Format(""{0}"", 0)
+                        """]
+                    public async Task Insert_NoDiagnostic(string text)
+                    {
+                        await CreateProjectBuilder()
+                              .WithSourceCode(""
+                                  using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          new StringBuilder().Insert(0, " + text + @
+                                  """;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -198,15 +224,17 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             public async Task Insert_Diagnostic(string text)
             {
                 await CreateProjectBuilder()
-                      .WithSourceCode(@"using System.Text;
-        class Test
-        {
-            void A()
-            {
-                [||]new StringBuilder().Insert(0, " + text + @
-        """;
-    }
-}")
+                      .WithSourceCode("""
+                          using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          [||]new StringBuilder().Insert(0, " + text + @
+                                  """;
+                              }
+                          }
+                          """)
               .ValidateAsync();
     }
 
@@ -315,15 +343,17 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             public async Task Append_OneCharString(string text)
             {
                 await CreateProjectBuilder()
-                      .WithSourceCode(@"using System.Text;
-        class Test
-        {
-            void A()
-            {
-                new StringBuilder().Append([||]" + text + @
-        """;
-    }
-}")
+                      .WithSourceCode("""
+                          using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          new StringBuilder().Append([||]" + text + @
+                                  """;
+                              }
+                          }
+                          """)
               .ShouldFixCodeWith("""
                   using System.Text;
                   class Test
@@ -343,15 +373,17 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             public async Task Insert_OneCharString(string text)
             {
                 await CreateProjectBuilder()
-                      .WithSourceCode(@"using System.Text;
-        class Test
-        {
-            void A()
-            {
-                new StringBuilder().Insert(0, [||]" + text + @
-        """;
-    }
-}")
+                      .WithSourceCode("""
+                          using System.Text;
+                                  class Test
+                                  {
+                                      void A()
+                                      {
+                                          new StringBuilder().Insert(0, [||]" + text + @
+                                  """;
+                              }
+                          }
+                          """)
               .ShouldFixCodeWith("""
                   using System.Text;
                   class Test

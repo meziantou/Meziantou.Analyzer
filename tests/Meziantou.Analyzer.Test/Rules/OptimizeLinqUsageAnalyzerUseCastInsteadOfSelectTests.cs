@@ -38,36 +38,40 @@ public sealed class OptimizeLinqUsageAnalyzerUseCastInsteadOfSelectTests
         string expectedReplacement,
         bool enableNullable = false)
     {
-        var originalCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
-using System.Linq;
-using Gen = System.Collections.Generic;
-
-class Test
-{{
-    class BaseType {{ public string Name {{ get; set; }} }}
-    class DerivedType : BaseType {{}}
-
-    public Test()
-    {{
-        var source = System.Linq.Enumerable.Empty<DerivedType>();
-        {selectInvocation};
-    }}
-}}";
-        var modifiedCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
-using System.Linq;
-using Gen = System.Collections.Generic;
-
-class Test
-{{
-    class BaseType {{ public string Name {{ get; set; }} }}
-    class DerivedType : BaseType {{}}
-
-    public Test()
-    {{
-        var source = System.Linq.Enumerable.Empty<DerivedType>();
-        {expectedReplacement};
-    }}
-}}";
+        var originalCode = $"""
+            #nullable {(enableNullable ? "enable" : "disable")}
+            using System.Linq;
+            using Gen = System.Collections.Generic;
+            
+            class Test
+            {{
+                class BaseType {{ public string Name {{ get; set; }} }}
+                class DerivedType : BaseType {{}}
+            
+                public Test()
+                {{
+                    var source = System.Linq.Enumerable.Empty<DerivedType>();
+                    {selectInvocation};
+                }}
+            }}
+            """;
+        var modifiedCode = $"""
+            #nullable {(enableNullable ? "enable" : "disable")}
+            using System.Linq;
+            using Gen = System.Collections.Generic;
+            
+            class Test
+            {{
+                class BaseType {{ public string Name {{ get; set; }} }}
+                class DerivedType : BaseType {{}}
+            
+                public Test()
+                {{
+                    var source = System.Linq.Enumerable.Empty<DerivedType>();
+                    {expectedReplacement};
+                }}
+            }}
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ShouldFixCodeWith(modifiedCode)
@@ -80,18 +84,20 @@ class Test
     [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
     public async Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
     {
-        var originalCode = $@"using System.Linq;
-class Test
-{{
-    class BaseType {{ public string Name {{ get; set; }} }}
-    class DerivedType : BaseType {{}}
-
-    public Test()
-    {{
-        var source = System.Linq.Enumerable.Empty<DerivedType>();
-        {selectInvocation};
-    }}
-}}";
+        var originalCode = $"""
+            using System.Linq;
+            class Test
+            {{
+                class BaseType {{ public string Name {{ get; set; }} }}
+                class DerivedType : BaseType {{}}
+            
+                public Test()
+                {{
+                    var source = System.Linq.Enumerable.Empty<DerivedType>();
+                    {selectInvocation};
+                }}
+            }}
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ValidateAsync();
