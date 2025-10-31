@@ -22,15 +22,16 @@ In addition to the rules enforced by `.editorconfig`, you SHOULD:
 - Do not update `global.json` file
 - When writing tests, do not emit "Act", "Arrange" or "Assert" comments.
 - There should be no trailing whitespace in any lines.
-- There should be an empty line before the beginning of XML documentation comments if there is code before them.
+- Add a blank line before XML documentation comments (`///`) when they follow other code (methods, properties, fields, etc.).
 
 ## Implementing Roslyn analyzers
 
 - When creating a new rule, create a new constant in `src/Meziantou.Analyzer/RuleIdentifiers.cs` using the name of the new rule. The value must be unique and incremented from the last rule.
-- The analyzers must be under `src/Meziantou.Analyzer/Rules/` 
+- The analyzers must be under `src/Meziantou.Analyzer/Rules/`
 - The code fixers must be under `src/Meziantou.Analyzer.CodeFixers/Rules`
 - The tests must be under `tests/Meziantou.Analyzer.Test/Rules`
 
 The analyzer must use `IOperation` or `ISymbol` to analyze the content. Only fallback to `SyntaxNode` when the other ways are not supported.
 
-The tests must indicates which part of the snippet must report a diagnostic using the `[|code|]` syntax or `{|id:code|}` syntax. Do not explicitly indicates lines or columns.
+Code snippets in tests must use raw string literals (`"""`) and must be minimized to only include the necessary code to reproduce the issue. Avoid including unnecessary code that does not contribute to the test case.
+When reporting a diagnostic, the snippet must use the `[|code|]` syntax or `{|id:code|}` syntax. Do not explicitly indicates lines or columns.
