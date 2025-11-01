@@ -4,7 +4,7 @@ You MUST make your best effort to ensure your changes satisfy those criteria bef
 
 Do not complete without checking the relevant code builds and relevant tests still pass after the last edits you make. Do not simply assume that your changes fix test failures you see, actually build and run those tests again to confirm.
 Also, always run `dotnet run --project src/DocumentationGenerator` to update the markdown documentation after modifying analyzer code or documentation comments.
-After running the command, review the changes made to the markdown files and ensure they are accurate and appropriate.
+After running the command, review the changes made to the markdown files and ensure they are accurate and appropriate. If you make any changes to the markdown files, you MUST re-run the command to verify that no further changes are necessary.
 
 You MUST follow all code-formatting and naming conventions defined in [`.editorconfig`](/.editorconfig).
 
