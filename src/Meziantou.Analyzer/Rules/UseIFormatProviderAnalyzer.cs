@@ -47,6 +47,17 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             if (IsExcludedMethod(context, operation))
                 return;
 
+            // Special case: Check if ToString() has a ToString(IFormatProvider) overload even if the type doesn't implement IFormattable
+            if (operation.TargetMethod.Name == "ToString" && operation.Arguments.IsEmpty && _cultureSensitiveContext.FormatProviderSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.FormatProviderSymbol))
+            {
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, allowOptionalParameters: false, _cultureSensitiveContext.FormatProviderSymbol);
+                if (overload is not null)
+                {
+                    context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
+                    return;
+                }
+            }
+
             var options = MustUnwrapNullableTypes(context, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
             if (!_cultureSensitiveContext.IsCultureSensitiveOperation(operation, options))
                 return;

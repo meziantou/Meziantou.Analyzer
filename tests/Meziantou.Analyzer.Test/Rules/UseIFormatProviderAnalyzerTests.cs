@@ -302,4 +302,21 @@ class Sample : System.IFormattable
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ToString_WithIFormatProviderOverload_WithoutIFormattable()
+    {
+        var sourceCode = """
+_ = [|new Location().ToString()|];
+
+class Location
+{
+    public override string ToString() => throw null;
+    public string ToString(System.IFormatProvider formatProvider) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
