@@ -8,18 +8,6 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly HashSet<string> RootXmlElements = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "summary",
-        "remarks",
-        "returns",
-        "value",
-        "example",
-        "param",
-        "typeparam",
-        "exception",
-    };
-
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseInlineXmlCommentSyntaxWhenPossible,
         title: "Use inline XML comment syntax when possible",
@@ -68,15 +56,11 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
                 {
                     if (childNode is XmlElementSyntax elementSyntax)
                     {
-                        var elementName = elementSyntax.StartTag.Name.LocalName.Text;
-                        if (!RootXmlElements.Contains(elementName))
-                            continue;
-
                         // Check if element spans multiple lines
                         var startLine = elementSyntax.StartTag.GetLocation().GetLineSpan().StartLinePosition.Line;
                         var endLine = elementSyntax.EndTag.GetLocation().GetLineSpan().EndLinePosition.Line;
 
-                        if (endLine <= startLine)
+                        if (endLine == startLine)
                             continue; // Single line, no issue
 
                         // Check if content is single-line (ignoring whitespace)

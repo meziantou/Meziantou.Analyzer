@@ -19,15 +19,15 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-/// [|<summary>
-/// description
-/// </summary>|]
-class Sample { }
-""")
+                  /// [|<summary>
+                  /// description
+                  /// </summary>|]
+                  class Sample { }
+                  """)
               .ShouldFixCodeWith("""
-/// <summary>description</summary>
-class Sample { }
-""")
+                  /// <summary>description</summary>
+                  class Sample { }
+                  """)
               .ValidateAsync();
     }
 
@@ -36,12 +36,12 @@ class Sample { }
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-/// <summary>
-/// description line 1
-/// description line 2
-/// </summary>
-class Sample { }
-""")
+                  /// <summary>
+                  /// description line 1
+                  /// description line 2
+                  /// </summary>
+                  class Sample { }
+                  """)
               .ValidateAsync();
     }
 
@@ -50,9 +50,9 @@ class Sample { }
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-/// <summary>description</summary>
-class Sample { }
-""")
+                  /// <summary>description</summary>
+                  class Sample { }
+                  """)
               .ValidateAsync();
     }
 
@@ -61,21 +61,21 @@ class Sample { }
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-class Sample
-{
-    /// [|<param name="value">
-    /// The value
-    /// </param>|]
-    public void Method(int value) { }
-}
-""")
+                  class Sample
+                  {
+                      /// [|<param name="value">
+                      /// The value
+                      /// </param>|]
+                      public void Method(int value) { }
+                  }
+                  """)
               .ShouldFixCodeWith("""
-class Sample
-{
-    /// <param name="value">The value</param>
-    public void Method(int value) { }
-}
-""")
+                  class Sample
+                  {
+                      /// <param name="value">The value</param>
+                      public void Method(int value) { }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -84,15 +84,15 @@ class Sample
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-/// [|<remarks>
-/// This is a remark
-/// </remarks>|]
-class Sample { }
-""")
+                  /// [|<remarks>
+                  /// This is a remark
+                  /// </remarks>|]
+                  class Sample { }
+                  """)
               .ShouldFixCodeWith("""
-/// <remarks>This is a remark</remarks>
-class Sample { }
-""")
+                  /// <remarks>This is a remark</remarks>
+                  class Sample { }
+                  """)
               .ValidateAsync();
     }
 
@@ -101,21 +101,21 @@ class Sample { }
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-class Sample
-{
-    /// [|<returns>
-    /// The result
-    /// </returns>|]
-    public int Method() => 42;
-}
-""")
+                  class Sample
+                  {
+                      /// [|<returns>
+                      /// The result
+                      /// </returns>|]
+                      public int Method() => 42;
+                  }
+                  """)
               .ShouldFixCodeWith("""
-class Sample
-{
-    /// <returns>The result</returns>
-    public int Method() => 42;
-}
-""")
+                  class Sample
+                  {
+                      /// <returns>The result</returns>
+                      public int Method() => 42;
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -124,13 +124,13 @@ class Sample
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-/// <summary>
-/// This has <c>
-/// code
-/// </c> inside
-/// </summary>
-class Sample { }
-""")
+                  /// <summary>
+                  /// This has <c>
+                  /// code
+                  /// </c> inside
+                  /// </summary>
+                  class Sample { }
+                  """)
               .ValidateAsync();
     }
 
@@ -139,14 +139,14 @@ class Sample { }
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-/// [|<summary>
-/// </summary>|]
-class Sample { }
-""")
+                  /// [|<summary>
+                  /// </summary>|]
+                  class Sample { }
+                  """)
               .ShouldFixCodeWith("""
-/// <summary></summary>
-class Sample { }
-""")
+                  /// <summary></summary>
+                  class Sample { }
+                  """)
               .ValidateAsync();
     }
 
@@ -155,15 +155,15 @@ class Sample { }
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-/// [|<typeparam name="T">
-/// The type parameter
-/// </typeparam>|]
-class Sample<T> { }
-""")
+                  /// [|<typeparam name="T">
+                  /// The type parameter
+                  /// </typeparam>|]
+                  class Sample<T> { }
+                  """)
               .ShouldFixCodeWith("""
-/// <typeparam name="T">The type parameter</typeparam>
-class Sample<T> { }
-""")
+                  /// <typeparam name="T">The type parameter</typeparam>
+                  class Sample<T> { }
+                  """)
               .ValidateAsync();
     }
 
@@ -172,21 +172,21 @@ class Sample<T> { }
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-class Sample
-{
-    /// [|<exception cref="System.ArgumentNullException">
-    /// Thrown when argument is null
-    /// </exception>|]
-    public void Method(string value) { }
-}
-""")
+                  class Sample
+                  {
+                      /// [|<exception cref="System.ArgumentNullException">
+                      /// Thrown when argument is null
+                      /// </exception>|]
+                      public void Method(string value) { }
+                  }
+                  """)
               .ShouldFixCodeWith("""
-class Sample
-{
-    /// <exception cref="System.ArgumentNullException">Thrown when argument is null</exception>
-    public void Method(string value) { }
-}
-""")
+                  class Sample
+                  {
+                      /// <exception cref="System.ArgumentNullException">Thrown when argument is null</exception>
+                      public void Method(string value) { }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -195,21 +195,72 @@ class Sample
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-class Sample
-{
-    /// [|<value>
-    /// The property value
-    /// </value>|]
-    public int Property { get; set; }
-}
-""")
+                  class Sample
+                  {
+                      /// [|<value>
+                      /// The property value
+                      /// </value>|]
+                      public int Property { get; set; }
+                  }
+                  """)
               .ShouldFixCodeWith("""
-class Sample
-{
-    /// <value>The property value</value>
-    public int Property { get; set; }
-}
-""")
+                  class Sample
+                  {
+                      /// <value>The property value</value>
+                      public int Property { get; set; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ContentOnSameLineAsOpenTag_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// [|<summary>line 1
+                  /// </summary>|]
+                  class Sample { }
+                  """)
+              .ShouldFixCodeWith("""
+                  /// <summary>line 1</summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ContentOnSameLineAsOpenTagAndCloseTag_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// <summary>line 1
+                  /// line 2</summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CDataSection_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// <summary><![CDATA[Sample
+                  /// Text 123]]></summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EntityReference_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// <summary>line1&#10;line2</summary>
+                  class Sample { }
+                  """)
               .ValidateAsync();
     }
 }
