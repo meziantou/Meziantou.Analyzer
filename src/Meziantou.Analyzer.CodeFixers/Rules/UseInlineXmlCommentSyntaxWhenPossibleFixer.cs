@@ -14,7 +14,7 @@ namespace Meziantou.Analyzer.Rules;
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
 public sealed class UseInlineXmlCommentSyntaxWhenPossibleFixer : CodeFixProvider
 {
-    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseInlineXmlCommentSyntaxWhenPossible);
+    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseSingleLineXmlCommentSyntaxWhenPossible);
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -25,7 +25,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleFixer : CodeFixProvider
         if (nodeToFix is not XmlElementSyntax elementSyntax)
             return;
 
-        var title = "Use inline XML comment syntax";
+        var title = "Use single-line XML comment syntax";
         var codeAction = CodeAction.Create(
             title,
             cancellationToken => Fix(context.Document, elementSyntax, cancellationToken),
@@ -61,7 +61,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleFixer : CodeFixProvider
             }
         }
 
-        // Create inline syntax
+        // Create single-line syntax
         var elementName = elementSyntax.StartTag.Name;
         var attributes = elementSyntax.StartTag.Attributes;
 

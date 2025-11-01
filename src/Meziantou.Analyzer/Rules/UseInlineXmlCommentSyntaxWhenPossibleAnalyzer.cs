@@ -9,14 +9,14 @@ namespace Meziantou.Analyzer.Rules;
 public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
-        RuleIdentifiers.UseInlineXmlCommentSyntaxWhenPossible,
-        title: "Use inline XML comment syntax when possible",
-        messageFormat: "Use inline XML comment syntax when possible",
+        RuleIdentifiers.UseSingleLineXmlCommentSyntaxWhenPossible,
+        title: "Use single-line XML comment syntax when possible",
+        messageFormat: "Use single-line XML comment syntax when possible",
         RuleCategories.Style,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseInlineXmlCommentSyntaxWhenPossible));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseSingleLineXmlCommentSyntaxWhenPossible));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
