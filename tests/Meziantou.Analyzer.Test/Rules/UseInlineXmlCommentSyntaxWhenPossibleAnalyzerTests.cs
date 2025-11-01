@@ -263,4 +263,53 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
                   """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task MaxLineLength_WouldExceedLimit_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("max_line_length", "50")
+              .WithSourceCode("""
+                  /// <summary>
+                  /// This is a very long description that would exceed the max line length limit
+                  /// </summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MaxLineLength_WithinLimit_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("max_line_length", "100")
+              .WithSourceCode("""
+                  /// [|<summary>
+                  /// Short description
+                  /// </summary>|]
+                  class Sample { }
+                  """)
+              .ShouldFixCodeWith("""
+                  /// <summary>Short description</summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MaxLineLength_NotConfigured_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// [|<summary>
+                  /// This is a very long description that could potentially exceed some line length limit
+                  /// </summary>|]
+                  class Sample { }
+                  """)
+              .ShouldFixCodeWith("""
+                  /// <summary>This is a very long description that could potentially exceed some line length limit</summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
 }
