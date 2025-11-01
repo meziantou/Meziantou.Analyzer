@@ -4,6 +4,7 @@
 #pragma warning disable MA0009
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
+using System.Text.Unicode;
 using Meziantou.Framework;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -103,15 +104,39 @@ Console.WriteLine(sb.ToString());
     }
 }
 
+if (fileWritten > 0)
+{
+    Console.WriteLine($"{fileWritten} file(s) updated.");
+    Console.WriteLine();
+    Console.WriteLine("Changes:");
+
+    var psi = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "git",
+        Arguments = "--no-pager diff",
+        WorkingDirectory = outputFolder.Value,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true,
+    };
+    var process = System.Diagnostics.Process.Start(psi)!;
+    process.OutputDataReceived += (sender, e) => { if (e.Data is not null) Console.WriteLine(e.Data); };
+    process.ErrorDataReceived += (sender, e) => { if (e.Data is not null) Console.WriteLine(e.Data); };
+    process.BeginOutputReadLine();
+    process.BeginErrorReadLine();
+    await process.WaitForExitAsync();
+}
 return fileWritten;
 
 void WriteFileIfChanged(FullPath path, string content)
 {
+    var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     content = content.ReplaceLineEndings("\n");
     if (!File.Exists(path))
     {
         path.CreateParentDirectory();
-        File.WriteAllText(path, content);
+        File.WriteAllText(path, content, encoding);
         fileWritten++;
         return;
     }
@@ -119,7 +144,7 @@ void WriteFileIfChanged(FullPath path, string content)
     var existingContent = File.ReadAllText(path).ReplaceLineEndings();
     if (existingContent != content)
     {
-        File.WriteAllText(path, content);
+        File.WriteAllText(path, content, encoding);
         fileWritten++;
     }
 }
