@@ -526,3 +526,6 @@ dotnet_diagnostic.MA0175.severity = none
 
 # MA0176: Optimize guid creation
 dotnet_diagnostic.MA0176.severity = suggestion
+
+# MA0177: Use single-line XML comment syntax when possible
+dotnet_diagnostic.MA0177.severity = none

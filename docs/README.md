@@ -176,6 +176,7 @@
 |[MA0174](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0174.md)|Style|Record should use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0175](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0175.md)|Style|Record should not use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0176](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0176.md)|Performance|Optimize guid creation|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0177](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0177.md)|Style|Use single-line XML comment syntax when possible|<span title='Info'>ℹ️</span>|❌|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -712,6 +713,9 @@ dotnet_diagnostic.MA0175.severity = none
 
 # MA0176: Optimize guid creation
 dotnet_diagnostic.MA0176.severity = suggestion
+
+# MA0177: Use single-line XML comment syntax when possible
+dotnet_diagnostic.MA0177.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1241,4 +1245,7 @@ dotnet_diagnostic.MA0175.severity = none
 
 # MA0176: Optimize guid creation
 dotnet_diagnostic.MA0176.severity = none
+
+# MA0177: Use single-line XML comment syntax when possible
+dotnet_diagnostic.MA0177.severity = none
 ```
