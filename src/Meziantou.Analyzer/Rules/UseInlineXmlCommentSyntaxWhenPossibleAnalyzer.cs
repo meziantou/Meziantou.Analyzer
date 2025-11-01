@@ -64,7 +64,8 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
                             continue; // Single line, no issue
 
                         // Check if content is single-line (ignoring whitespace)
-                        // Count the number of text tokens that have meaningful content
+                        // Skip if content contains CDATA sections or other non-text elements
+                        var hasCDataOrOtherElements = false;
                         var meaningfulTextTokenCount = 0;
                         foreach (var content in elementSyntax.Content)
                         {
@@ -83,10 +84,17 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
                                     }
                                 }
                             }
+                            else if (content is XmlCDataSectionSyntax || content is XmlElementSyntax)
+                            {
+                                // Skip elements with CDATA sections or nested elements
+                                hasCDataOrOtherElements = true;
+                                break;
+                            }
                         }
 
                         // Report diagnostic if content is effectively single-line (0 or 1 meaningful text tokens)
-                        if (meaningfulTextTokenCount <= 1)
+                        // and doesn't contain CDATA or other nested elements
+                        if (!hasCDataOrOtherElements && meaningfulTextTokenCount <= 1)
                         {
                             // Check if the single-line version would fit within max_line_length
                             if (WouldFitInMaxLineLength(context, elementSyntax))
