@@ -59,7 +59,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, allowOptionalParameters: false, _cultureSensitiveContext.FormatProviderSymbol);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false), [_cultureSensitiveContext.FormatProviderSymbol]);
                 if (overload is not null)
                 {
                     if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
@@ -71,7 +71,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 }
 
                 var targetMethodType = operation.TargetMethod.ContainingType;
-                if (targetMethodType.IsNumberType() && _cultureSensitiveContext.NumberStyleSymbol is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.NumberStyleSymbol))
+                if (targetMethodType.IsNumberType() && _cultureSensitiveContext.NumberStyleSymbol is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [_cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.NumberStyleSymbol]))
                 {
                     context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
                     return;
@@ -80,14 +80,14 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var isDateTime = targetMethodType.IsDateTime() || targetMethodType.IsEqualToAny(_cultureSensitiveContext.DateTimeOffsetSymbol, _cultureSensitiveContext.DateOnlySymbol, _cultureSensitiveContext.TimeOnlySymbol);
                 if (isDateTime)
                 {
-                    if (_cultureSensitiveContext.DateTimeStyleSymbol is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, _cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.DateTimeStyleSymbol))
+                    if (_cultureSensitiveContext.DateTimeStyleSymbol is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [_cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.DateTimeStyleSymbol]))
                     {
                         context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
                         return;
                     }
                 }
 
-                if (operation.Arguments.IsEmpty && targetMethodType.Implements(_cultureSensitiveContext.SystemIFormattableSymbol) && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, _cultureSensitiveContext.FormatProviderSymbol, compilation.GetSpecialType(SpecialType.System_String)))
+                if (operation.Arguments.IsEmpty && targetMethodType.Implements(_cultureSensitiveContext.SystemIFormattableSymbol) && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [_cultureSensitiveContext.FormatProviderSymbol, compilation.GetSpecialType(SpecialType.System_String)]))
                 {
                     context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
                     return;
@@ -96,7 +96,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             if (_cultureSensitiveContext.CultureInfoSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.CultureInfoSymbol))
             {
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, includeObsoleteMethods: false, allowOptionalParameters: false, _cultureSensitiveContext.CultureInfoSymbol);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false), [_cultureSensitiveContext.CultureInfoSymbol]);
                 if (overload is not null)
                 {
                     if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))

@@ -67,7 +67,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                     return;
 
                 // Check if there is an overload with a StringComparison
-                if (_overloadFinder.HasOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, _stringComparisonSymbol))
+                if (_overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [_stringComparisonSymbol]))
                 {
                     if (IsNonCultureSensitiveMethod(operation))
                     {

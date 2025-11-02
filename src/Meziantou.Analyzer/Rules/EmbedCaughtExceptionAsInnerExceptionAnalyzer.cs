@@ -55,7 +55,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
             var argument = objectCreationOperation.Arguments.FirstOrDefault(arg => IsPotentialParameter(arg?.Parameter, exceptionSymbol));
             if (argument is null)
             {
-                if (overloadFinder.HasOverloadWithAdditionalParameterOfType(objectCreationOperation.Constructor, exceptionSymbol))
+                if (overloadFinder.HasOverloadWithAdditionalParameterOfType(objectCreationOperation, options: default, [exceptionSymbol]))
                 {
                     context.ReportDiagnostic(Rule, objectCreationOperation);
                 }

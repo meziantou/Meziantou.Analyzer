@@ -75,7 +75,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             if (IsArgumentImplicitlyDeclared(operation, TimeProviderSymbol, out parameterInfo))
                 return true;
 
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, allowOptionalParameters: true, TimeProviderSymbol);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true), [TimeProviderSymbol]);
             if (overload is not null)
             {
                 for (var i = 0; i < overload.Parameters.Length; i++)

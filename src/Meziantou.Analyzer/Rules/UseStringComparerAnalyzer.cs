@@ -89,8 +89,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (method is null)
                 return;
 
-            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, EqualityComparerStringType)) ||
-                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, ComparerStringType)))
+            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, [EqualityComparerStringType])) ||
+                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, [ComparerStringType])))
             {
                 ctx.ReportDiagnostic(Rule, operation);
             }
@@ -126,8 +126,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
                 return;
 
-            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, EqualityComparerStringType)) ||
-                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, operation, ComparerStringType)))
+            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [EqualityComparerStringType])) ||
+                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [ComparerStringType])))
             {
                 ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 return;
