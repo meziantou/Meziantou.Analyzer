@@ -111,7 +111,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return true;
 
             var allowOptionalParameters = context.Options.GetConfigurationValue(operation, "MA0032.allowOverloadsWithOptionalParameters", defaultValue: false);
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, operation, includeObsoleteMethods: false, allowOptionalParameters, CancellationTokenSymbol);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), [CancellationTokenSymbol]);
             if (overload is not null)
             {
                 for (var i = 0; i < overload.Parameters.Length; i++)

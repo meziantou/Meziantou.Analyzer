@@ -1,77 +1,116 @@
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
+
 internal sealed class OverloadFinder(Compilation compilation)
 {
     private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
 
-    public bool HasOverloadWithAdditionalParameterOfType(
-        IMethodSymbol methodSymbol,
-        params ITypeSymbol[] additionalParameterTypes)
+    private static ReadOnlySpan<OverloadParameterType> Wrap(ReadOnlySpan<ITypeSymbol?> types)
     {
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, additionalParameterTypes) is not null;
+        var result = new OverloadParameterType[types.Length];
+        for (var i = 0; i < types.Length; i++)
+        {
+            result[i] = new OverloadParameterType(types[i]);
+        }
+
+        return result;
     }
 
-    public bool HasOverloadWithAdditionalParameterOfType(
-        IMethodSymbol methodSymbol,
-        IOperation currentOperation,
-        params ITypeSymbol[] additionalParameterTypes)
+    private static ReadOnlySpan<OverloadParameterType> RemoveNulls(ReadOnlySpan<OverloadParameterType> types)
     {
-        if (currentOperation.SemanticModel is null)
-            return false;
+        foreach (var type in types)
+        {
+            if (type.Symbol is not null)
+                continue;
 
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: currentOperation.Syntax, includeObsoleteMethods: false, allowOptionalParameters: false, additionalParameterTypes) is not null;
+            var list = new List<OverloadParameterType>(types.Length - 1); // We know there are at least one null
+            foreach (var t in types)
+            {
+                if (t.Symbol is not null)
+                {
+                    list.Add(t);
+                }
+            }
+
+            return list.ToArray();
+        }
+
+        return types;
     }
 
-    private IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
-        IMethodSymbol methodSymbol,
-        params ITypeSymbol[] additionalParameterTypes)
+    public bool HasOverloadWithAdditionalParameterOfType(IObjectCreationOperation operation, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
     {
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, includeObsoleteMethods: false, allowOptionalParameters: false, additionalParameterTypes);
+        return FindOverloadWithAdditionalParameterOfType(operation, options, additionalParameterTypes) is not null;
     }
 
-    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
-        IMethodSymbol methodSymbol,
-        bool includeObsoleteMethods,
-        bool allowOptionalParameters,
-        params ITypeSymbol[] additionalParameterTypes)
+    public bool HasOverloadWithAdditionalParameterOfType(IInvocationOperation operation, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
     {
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, syntaxNode: null, includeObsoleteMethods, allowOptionalParameters, additionalParameterTypes);
+        return FindOverloadWithAdditionalParameterOfType(operation, options, additionalParameterTypes) is not null;
     }
 
-    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
-        IMethodSymbol methodSymbol,
-        IOperation operation,
-        bool includeObsoleteMethods,
-        bool allowOptionalParameters,
-        params ITypeSymbol[] additionalParameterTypes)
+    public bool HasOverloadWithAdditionalParameterOfType(IInvocationOperation operation, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
-        if (operation.SemanticModel is null)
+        return FindOverloadWithAdditionalParameterOfType(operation, options, additionalParameterTypes) is not null;
+    }
+
+    public bool HasOverloadWithAdditionalParameterOfType(IMethodSymbol methodSymbol, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
+    {
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, options, additionalParameterTypes) is not null;
+    }
+
+    public bool HasOverloadWithAdditionalParameterOfType(IMethodSymbol methodSymbol, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+    {
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, options, additionalParameterTypes) is not null;
+    }
+
+    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IInvocationOperation operation, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
+    {
+        if (options.SyntaxNode is null)
+        {
+            options = options with { SyntaxNode = operation.Syntax };
+        }
+
+        return FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, options, Wrap(additionalParameterTypes));
+    }
+
+    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IInvocationOperation operation, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+    {
+        if (options.SyntaxNode is null)
+        {
+            options = options with { SyntaxNode = operation.Syntax };
+        }
+
+        return FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, options, additionalParameterTypes);
+    }
+
+    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IObjectCreationOperation operation, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
+    {
+        if (operation.Constructor is null)
             return null;
 
-        return FindOverloadWithAdditionalParameterOfType(methodSymbol, operation.Syntax, includeObsoleteMethods, allowOptionalParameters, additionalParameterTypes);
+        return FindOverloadWithAdditionalParameterOfType(operation.Constructor, options, Wrap(additionalParameterTypes));
     }
 
-    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(
-        IMethodSymbol methodSymbol,
-        SyntaxNode? syntaxNode,
-        bool includeObsoleteMethods,
-        bool allowOptionalParameters,
-        params ITypeSymbol[] additionalParameterTypes)
+    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IMethodSymbol methodSymbol, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
     {
-        if (additionalParameterTypes is null)
-            return null;
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, options, Wrap(additionalParameterTypes));
+    }
 
-        additionalParameterTypes = [.. additionalParameterTypes.Where(type => type is not null)];
-        if (additionalParameterTypes.Length == 0)
+    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IMethodSymbol methodSymbol, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+    {
+        additionalParameterTypes = RemoveNulls(additionalParameterTypes);
+        if (additionalParameterTypes.IsEmpty)
             return null;
 
         ImmutableArray<ISymbol> members;
-        if (syntaxNode is not null)
+        if (options.SyntaxNode is not null)
         {
-            var semanticModel = compilation.GetSemanticModel(syntaxNode.SyntaxTree);
-            members = semanticModel.LookupSymbols(syntaxNode.GetLocation().SourceSpan.End, methodSymbol.ContainingType, methodSymbol.Name, includeReducedExtensionMethods: true);
+            var semanticModel = compilation.GetSemanticModel(options.SyntaxNode.SyntaxTree);
+            members = semanticModel.LookupSymbols(options.SyntaxNode.GetLocation().SourceSpan.End, methodSymbol.ContainingType, methodSymbol.Name, includeReducedExtensionMethods: true);
         }
         else
         {
@@ -82,15 +121,20 @@ internal sealed class OverloadFinder(Compilation compilation)
         {
             if (member is IMethodSymbol method)
             {
-                if (!includeObsoleteMethods && IsObsolete(method))
+                if (!options.IncludeObsoleteMembers && IsObsolete(method))
                     continue;
 
-                if (HasSimilarParameters(methodSymbol, method, allowOptionalParameters, additionalParameterTypes))
+                if (HasSimilarParameters(methodSymbol, method, options.AllowOptionalParameters, additionalParameterTypes))
                     return method;
             }
         }
 
         return null;
+    }
+
+    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
+    {
+        return HasSimilarParameters(method, otherMethod, allowOptionalParameters, Wrap(additionalParameterTypes));
     }
 
     /// <summary>
@@ -102,7 +146,7 @@ internal sealed class OverloadFinder(Compilation compilation)
     /// <item>If <paramref name="allowOptionalParameters"/>, <paramref name="otherMethod"/> can have more parameters if they are optional</item>
     /// </list>
     /// </summary>
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ITypeSymbol[] additionalParameterTypes)
+    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
         if (method.IsEqualTo(otherMethod))
             return false;
@@ -135,13 +179,13 @@ internal sealed class OverloadFinder(Compilation compilation)
                     break;
 
                 var additionalParameter = additionalParameterTypes[additionalParameterIndex];
-                if (methodParameter.Type.IsEqualTo(additionalParameter))
+                if (IsEqualTo(methodParameter.Type, additionalParameter))
                 {
                     i++;
                     continue;
                 }
 
-                if (otherMethodParameter.Type.IsEqualTo(additionalParameter))
+                if (IsEqualTo(otherMethodParameter.Type, additionalParameter))
                 {
                     j++;
                     continue;
@@ -181,7 +225,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var found = false;
                 for (var i = 0; i < otherMethodParameters.Length; i++)
                 {
-                    if (otherMethodParameters[i].Type.IsEqualTo(paramType))
+                    if (IsEqualTo(otherMethodParameters[i].Type, paramType))
                     {
                         otherMethodParameters = otherMethodParameters.RemoveAt(i);
                         found = true;
@@ -203,6 +247,18 @@ internal sealed class OverloadFinder(Compilation compilation)
             }
 
             return false;
+        }
+
+        static bool IsEqualTo(ITypeSymbol left, OverloadParameterType right)
+        {
+            if (right.AllowInherits)
+            {
+                return left.IsOrInheritFrom(right.Symbol);
+            }
+            else
+            {
+                return left.IsEqualTo(right.Symbol);
+            }
         }
     }
 

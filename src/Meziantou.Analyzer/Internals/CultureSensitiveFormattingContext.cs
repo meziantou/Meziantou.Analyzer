@@ -63,12 +63,12 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (_excludedMethods.Contains(invocation.TargetMethod))
                 return false;
 
+            if (invocation.HasArgumentOfType(FormatProviderSymbol, inherits: true))
+                return false;
+
             var methodName = invocation.TargetMethod.Name;
             if (methodName is "ToString")
             {
-                if (invocation.HasArgumentOfType(FormatProviderSymbol, inherits: true))
-                    return false;
-
                 // Try get the format. Most of ToString have only 1 string parameter to define the format
                 IOperation? format = null;
                 if (invocation.Arguments.Length > 0)
@@ -281,13 +281,25 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsOrInheritFrom(NuGetVersioningSemanticVersionSymbol))
             return false;
 
-        if (!typeSymbol.Implements(SystemIFormattableSymbol))
+        if (!IsFormattableType(typeSymbol))
             return false;
 
         if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol))
             return false;
 
         return true;
+
+        bool IsFormattableType(ITypeSymbol type)
+        {
+            if (type.Implements(SystemIFormattableSymbol))
+                return true;
+
+            // May have ToString(IFormatProvider) even if IFormattable is not implemented directly
+            if (type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public))
+                return true;
+
+            return false;
+        }
     }
 
     private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol)
