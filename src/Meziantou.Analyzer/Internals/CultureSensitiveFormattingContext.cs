@@ -13,6 +13,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     public INamedTypeSymbol? DateTimeStyleSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.DateTimeStyles");
     public INamedTypeSymbol? StringBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
     public INamedTypeSymbol? StringBuilder_AppendInterpolatedStringHandlerSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler");
+    public INamedTypeSymbol? DefaultInterpolatedStringHandlerSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
     public INamedTypeSymbol? GuidSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Guid");
     public INamedTypeSymbol? EnumSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Enum");
     public INamedTypeSymbol? DateTimeOffsetSymbol { get; } = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
@@ -130,6 +131,16 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 else
                 {
                     return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
+                }
+            }
+
+            // Check if any argument is a DefaultInterpolatedStringHandler that is culture-sensitive
+            foreach (var arg in invocation.Arguments)
+            {
+                if (arg.Parameter?.RefKind is RefKind.Ref && arg.Value.Type.IsEqualTo(DefaultInterpolatedStringHandlerSymbol))
+                {
+                    if (!IsCultureSensitiveOperation(arg.Value, options))
+                        return false;
                 }
             }
 

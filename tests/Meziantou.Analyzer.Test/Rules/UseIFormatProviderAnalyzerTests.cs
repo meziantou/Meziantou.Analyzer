@@ -319,4 +319,157 @@ class Location
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_CultureInvariant_DateTime()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+Print($"{DateTime.Now:o}");
+
+static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_CultureSensitive_DateTime()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+[||]Print($"{DateTime.Now:D}");
+
+static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_CultureInvariant_CustomType()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+using Meziantou.Analyzer.Annotations;
+
+Print($"{new Bar():o}");
+
+static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+[CultureInsensitiveType(format: "o")]
+public sealed class Bar : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_CultureSensitive_CustomType()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+using Meziantou.Analyzer.Annotations;
+
+[||]Print($"{new Bar():D}");
+
+static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+[CultureInsensitiveType(format: "o")]
+public sealed class Bar : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_Mixed_CultureInvariantAndSensitive()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+using Meziantou.Analyzer.Annotations;
+
+[||]Print($"{new Bar():o} | {new Bar():D}");
+
+static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+[CultureInsensitiveType(format: "o")]
+public sealed class Bar : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_OnlyText()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+Print($"XXX");
+
+static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+
+static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler)
+{
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
