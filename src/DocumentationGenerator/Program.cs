@@ -4,7 +4,6 @@
 #pragma warning disable MA0009
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
-using System.Text.Unicode;
 using Meziantou.Framework;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -69,21 +68,80 @@ Console.WriteLine(sb.ToString());
     WriteFileIfChanged(path, sb.ToString());
 }
 
-// Update title in rule pages
+// Update title in rule pages and add links to source code
 {
-    foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+    foreach (var diagnosticAnalyzer in diagnosticAnalyzers)
     {
-        var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
-        var detailPath = outputFolder / "docs" / "Rules" / (diagnostic.Id + ".md");
-        if (File.Exists(detailPath))
+        foreach (var diagnostic in diagnosticAnalyzer.SupportedDiagnostics)
         {
-            var lines = await File.ReadAllLinesAsync(detailPath);
-            lines[0] = title;
-            WriteFileIfChanged(detailPath, string.Join('\n', lines) + "\n");
-        }
-        else
-        {
-            WriteFileIfChanged(detailPath, title);
+            var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
+            var detailPath = outputFolder / "docs" / "Rules" / (diagnostic.Id + ".md");
+            if (File.Exists(detailPath))
+            {
+                var lines = (await File.ReadAllLinesAsync(detailPath)).ToList();
+                lines[0] = title;
+
+                if (!lines.Any(line => line.Contains("<!-- sources -->", StringComparison.Ordinal)))
+                {
+                    lines.Insert(1, "<!-- sources -->");
+                    lines.Insert(1, "<!-- sources -->");
+                }
+
+                var newContent = string.Join('\n', lines) + "\n";
+
+                var sourceLinks = new List<string>();
+                string GetFilePath(string name)
+                {
+                    try
+                    {
+                        var files = Directory.GetFiles(outputFolder / "src", name + ".cs", SearchOption.AllDirectories);
+                        if (files.Length == 0)
+                        {
+                            files = Directory.GetFiles(outputFolder / "src", name + "." + diagnostic.Id + ".cs", SearchOption.AllDirectories);
+                        }
+                        if (files.Length == 0)
+                        {
+                            files = Directory.GetFiles(outputFolder / "src", name + ".*.cs", SearchOption.AllDirectories);
+                        }
+
+                        if (files.Length == 0)
+                            throw new InvalidOperationException($"Cannot find source file for {name}");
+
+                        if (files.Length > 1)
+                            throw new InvalidOperationException($"Cannot find source file for {name}");
+
+                        var sourceFile = FullPath.FromPath(files.Single());
+                        var relativePath = sourceFile.MakePathRelativeTo(outputFolder);
+                        return "https://github.com/meziantou/Meziantou.Analyzer/blob/main/" + relativePath.Replace('\\', '/');
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException($"Cannot find source file for {name}", ex);
+                    }
+                }
+                void AddLink(string name)
+                {
+                    var url = GetFilePath(name);
+                    var text = Path.GetFileName(url);
+                    sourceLinks.Add($"[{text}]({url})");
+                }
+
+                AddLink(diagnosticAnalyzer.GetType().Name);
+
+                var fixers = codeFixProviders.Where(fixer => fixer.FixableDiagnosticIds.Contains(diagnostic.Id, StringComparer.Ordinal)).ToArray();
+                foreach (var fixer in fixers)
+                {
+                    AddLink(fixer.GetType().Name);
+                }
+
+                newContent = Regex.Replace(newContent, "(?<=<!-- sources -->\\r?\\n).*(?=<!-- sources -->)", (sourceLinks.Count == 1 ? "Source: " : "Sources: ") + string.Join(", ", sourceLinks) + "\n", RegexOptions.Singleline);
+
+                WriteFileIfChanged(detailPath, newContent);
+            }
+            else
+            {
+                WriteFileIfChanged(detailPath, title);
+            }
         }
     }
 }
