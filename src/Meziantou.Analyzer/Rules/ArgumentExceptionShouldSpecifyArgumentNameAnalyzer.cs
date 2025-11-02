@@ -41,13 +41,14 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         {
             var argumentExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
             var argumentNullExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
+            var argumentOutOfRangeExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentOutOfRangeException");
             var callerArgumentExpressionAttribute = context.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
 
             if (argumentExceptionType is null || argumentNullExceptionType is null)
                 return;
 
             context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
-            context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType, callerArgumentExpressionAttribute), OperationKind.Invocation);
+            context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType, argumentOutOfRangeExceptionType, callerArgumentExpressionAttribute), OperationKind.Invocation);
         });
     }
 
@@ -123,7 +124,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         }
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType, INamedTypeSymbol? callerArgumentExpressionAttribute)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType, INamedTypeSymbol? argumentOutOfRangeExceptionType, INamedTypeSymbol? callerArgumentExpressionAttribute)
     {
         var op = (IInvocationOperation)context.Operation;
         if (op is null)
@@ -133,12 +134,13 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         if (method is null || !method.IsStatic)
             return;
 
-        // Check if this is a ThrowIfXxx method on ArgumentException or ArgumentNullException
+        // Check if this is a ThrowIfXxx method on ArgumentException, ArgumentNullException, or ArgumentOutOfRangeException
         var containingType = method.ContainingType;
         if (containingType is null)
             return;
 
-        if (!containingType.IsEqualTo(argumentExceptionType) && !containingType.IsEqualTo(argumentNullExceptionType))
+        if (!containingType.IsEqualTo(argumentExceptionType) && !containingType.IsEqualTo(argumentNullExceptionType) &&
+            (argumentOutOfRangeExceptionType is null || !containingType.IsEqualTo(argumentOutOfRangeExceptionType)))
             return;
 
         // Check if the method name starts with "ThrowIf"

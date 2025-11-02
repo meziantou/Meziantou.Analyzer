@@ -754,4 +754,199 @@ class TestAttribute
               .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ArgumentOutOfRangeException_ThrowIfNegative_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(int value)
+                {
+                    ArgumentOutOfRangeException.ThrowIfNegative(value);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentOutOfRangeException_ThrowIfNegative_InvalidParameter_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(int value)
+                {
+                    ArgumentOutOfRangeException.ThrowIfNegative([|Count|]);
+                }
+
+                public static int Count { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'Count' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentOutOfRangeException_ThrowIfNegativeOrZero_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(int value)
+                {
+                    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentOutOfRangeException_ThrowIfGreaterThan_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(int value)
+                {
+                    ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 100);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithNullExpression_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(null);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithNullExpressionAndValidParamName_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(null, nameof(test));
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithNullExpressionAndInvalidParamName_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(null, [|"invalid"|]);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithBooleanExpression_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(0 == 1);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithBooleanExpressionAndValidParamName_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(0 == 1, nameof(test));
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithBooleanExpressionAndInvalidParamName_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(0 == 1, [|"invalid"|]);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
+              .ValidateAsync();
+    }
 }
