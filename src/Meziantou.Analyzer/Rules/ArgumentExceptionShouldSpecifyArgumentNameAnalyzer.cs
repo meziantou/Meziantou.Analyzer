@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -47,7 +47,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             if (argumentExceptionType is null || argumentNullExceptionType is null)
                 return;
 
-            context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
+            context.RegisterOperationAction(AnalyzeObjectCreation, OperationKind.ObjectCreation);
 
             if (callerArgumentExpressionAttribute is not null)
             {
@@ -56,7 +56,8 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         });
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    // Validate throw new ArgumentException("message", "paramName");
+    private static void AnalyzeObjectCreation(OperationAnalysisContext context)
     {
         var op = (IObjectCreationOperation)context.Operation;
         if (op is null)
@@ -142,16 +143,16 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         if (!method.Name.StartsWith("ThrowIf", StringComparison.Ordinal))
             return;
 
+        // There must be at least one argument
+        if (op.Arguments.Length == 0)
+            return;
+
         // Check if this is a ThrowIfXxx method on ArgumentException, ArgumentNullException, or ArgumentOutOfRangeException
         var containingType = method.ContainingType;
         if (containingType is null)
             return;
 
         if (!containingType.IsEqualToAny(argumentExceptionType, argumentNullExceptionType, argumentOutOfRangeExceptionType))
-            return;
-
-        // The first parameter is the argument being validated
-        if (op.Arguments.Length == 0)
             return;
 
         // Find the parameter with CallerArgumentExpressionAttribute
@@ -179,9 +180,9 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
             // Find the argument for the paramName parameter
             var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
-            if (paramNameArgument is not null && paramNameArgument.Value is not null)
+            if (paramNameArgument is not null && !paramNameArgument.IsImplicit && paramNameArgument.Value is not null)
             {
-                ValidateParamNameArgument(context, op, paramNameArgument);
+                ValidateParamNameArgument(context, paramNameArgument);
                 return;
             }
 
@@ -195,13 +196,13 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         }
     }
 
-    private static void ValidateParamNameArgument(OperationAnalysisContext context, IInvocationOperation op, IArgumentOperation paramNameArgument)
+    private static void ValidateParamNameArgument(OperationAnalysisContext context, IArgumentOperation paramNameArgument)
     {
         // Check if the argument is a constant string value
         if (!paramNameArgument.Value.ConstantValue.HasValue || paramNameArgument.Value.ConstantValue.Value is not string paramNameValue)
             return;
 
-        var availableParameterNames = GetParameterNames(op, context.CancellationToken);
+        var availableParameterNames = GetParameterNames(paramNameArgument, context.CancellationToken);
         if (availableParameterNames.Contains(paramNameValue, StringComparer.Ordinal))
         {
             if (paramNameArgument.Value is not INameOfOperation)
@@ -222,16 +223,12 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             return;
 
         var unwrappedValue = argument.Value.UnwrapImplicitConversionOperations();
-
-        // Check if the argument is a parameter reference
         if (unwrappedValue is IParameterReferenceOperation)
         {
             // Parameter references are always valid - no need to validate the name
             return;
         }
 
-        // If the expression is not a parameter or member reference, report an error
-        // as it cannot be matched to a parameter name
         context.ReportDiagnostic(Rule, argument, "The expression does not match a parameter");
     }
 
