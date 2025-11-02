@@ -189,7 +189,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             var referencedArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(referencedParameter));
             if (referencedArgument is not null)
             {
-                ValidateExpression(context, op, referencedArgument);
+                ValidateExpression(context, referencedArgument);
                 return;
             }
         }
@@ -216,36 +216,35 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         context.ReportDiagnostic(Rule, paramNameArgument, $"'{paramNameValue}' is not a valid parameter name");
     }
 
-    private static void ValidateExpression(OperationAnalysisContext context, IInvocationOperation op, IArgumentOperation argument)
+    private static void ValidateExpression(OperationAnalysisContext context, IArgumentOperation argument)
     {
         if (argument.Value is null)
             return;
 
-        // Check if the argument is a parameter reference or a member access to a property/field
-        string argumentName;
+        var unwrappedValue = argument.Value.UnwrapImplicitConversionOperations();
 
-        if (argument.Value is IParameterReferenceOperation parameterRef)
+        // Check if the argument is a parameter reference
+        if (unwrappedValue is IParameterReferenceOperation)
         {
-            argumentName = parameterRef.Parameter.Name;
-        }
-        else if (argument.Value is IMemberReferenceOperation memberRef)
-        {
-            argumentName = memberRef.Member.Name;
-        }
-        else
-        {
-            // If the expression is not a parameter or member reference, report an error
-            // as it cannot be matched to a parameter name
-            context.ReportDiagnostic(Rule, argument, "The expression does not match a parameter");
+            // Parameter references are always valid - no need to validate the name
             return;
         }
 
-        // Check if this argument name corresponds to a valid parameter in the current scope
-        var availableParameterNames = GetParameterNames(op, context.CancellationToken);
-        if (!availableParameterNames.Contains(argumentName, StringComparer.Ordinal))
+        // Check if the argument is a member access to a property/field
+        if (unwrappedValue is IMemberReferenceOperation memberRef)
         {
-            context.ReportDiagnostic(Rule, argument, $"'{argumentName}' is not a valid parameter name");
+            var memberName = memberRef.Member.Name;
+            var availableParameterNames = GetParameterNames(argument, context.CancellationToken);
+            if (!availableParameterNames.Contains(memberName, StringComparer.Ordinal))
+            {
+                context.ReportDiagnostic(Rule, argument, $"'{memberName}' is not a valid parameter name");
+            }
+            return;
         }
+
+        // If the expression is not a parameter or member reference, report an error
+        // as it cannot be matched to a parameter name
+        context.ReportDiagnostic(Rule, argument, "The expression does not match a parameter");
     }
 
     private static IEnumerable<string> GetParameterNames(IOperation operation, CancellationToken cancellationToken)
