@@ -250,14 +250,9 @@ internal sealed class OverloadFinder(Compilation compilation)
 
         static bool IsEqualTo(ITypeSymbol left, OverloadParameterType right)
         {
-            if (right.AllowInherits)
-            {
-                return left.IsOrInheritFrom(right.Symbol);
-            }
-            else
-            {
-                return left.IsEqualTo(right.Symbol);
-            }
+            return right.AllowInherits
+                ? left.IsOrInheritFrom(right.Symbol)
+                : left.IsEqualTo(right.Symbol);
         }
     }
 
