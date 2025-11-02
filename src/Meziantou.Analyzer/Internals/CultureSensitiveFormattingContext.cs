@@ -134,15 +134,25 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 }
             }
 
-            // Check if any argument is a DefaultInterpolatedStringHandler that is culture-sensitive
+            // Check if all DefaultInterpolatedStringHandler arguments are culture-invariant
+            var hasDefaultInterpolatedStringHandlerArgument = false;
+            var allHandlersAreCultureInvariant = true;
             foreach (var arg in invocation.Arguments)
             {
                 if (arg.Parameter?.RefKind is RefKind.Ref && arg.Value.Type.IsEqualTo(DefaultInterpolatedStringHandlerSymbol))
                 {
-                    if (!IsCultureSensitiveOperation(arg.Value, options))
-                        return false;
+                    hasDefaultInterpolatedStringHandlerArgument = true;
+                    if (IsCultureSensitiveOperation(arg.Value, options))
+                    {
+                        allHandlersAreCultureInvariant = false;
+                        break;
+                    }
                 }
             }
+
+            // If we found at least one DefaultInterpolatedStringHandler argument and all of them are culture-invariant, return false
+            if (hasDefaultInterpolatedStringHandlerArgument && allHandlersAreCultureInvariant)
+                return false;
 
             if ((options & CultureSensitiveOptions.UseInvocationReturnType) == CultureSensitiveOptions.UseInvocationReturnType)
                 return IsCultureSensitiveType(invocation.Type, options);
