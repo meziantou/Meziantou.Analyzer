@@ -41,12 +41,13 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         {
             var argumentExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
             var argumentNullExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
+            var callerArgumentExpressionAttribute = context.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
 
             if (argumentExceptionType is null || argumentNullExceptionType is null)
                 return;
 
             context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
-            context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType), OperationKind.Invocation);
+            context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType, callerArgumentExpressionAttribute), OperationKind.Invocation);
         });
     }
 
@@ -122,7 +123,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         }
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType, INamedTypeSymbol? callerArgumentExpressionAttribute)
     {
         var op = (IInvocationOperation)context.Operation;
         if (op is null)
@@ -148,14 +149,30 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         if (op.Arguments.Length == 0)
             return;
 
-        // If there's a second argument (paramName) and it's not null, check that instead
-        if (op.Arguments.Length >= 2)
+        // Find the parameter with CallerArgumentExpressionAttribute
+        if (callerArgumentExpressionAttribute is not null)
         {
-            var secondArgument = op.Arguments[1];
-            if (secondArgument.Parameter?.Type.IsString() == true && secondArgument.Value is not null)
+            foreach (var parameter in method.Parameters)
             {
-                ValidateParamNameArgument(context, op, secondArgument);
-                return;
+                if (!parameter.Type.IsString())
+                    continue;
+
+                foreach (var attribute in parameter.GetAttributes())
+                {
+                    if (!attribute.AttributeClass.IsEqualTo(callerArgumentExpressionAttribute))
+                        continue;
+
+                    if (attribute.ConstructorArguments.Length == 0)
+                        continue;
+
+                    // Find the argument for this parameter
+                    var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter.IsEqualTo(parameter));
+                    if (paramNameArgument is not null && paramNameArgument.Value is not null)
+                    {
+                        ValidateParamNameArgument(context, op, paramNameArgument);
+                        return;
+                    }
+                }
             }
         }
 
