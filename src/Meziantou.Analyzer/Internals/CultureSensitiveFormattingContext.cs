@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -135,23 +136,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             }
 
             // Check if all DefaultInterpolatedStringHandler arguments are culture-invariant
-            var hasDefaultInterpolatedStringHandlerArgument = false;
-            var allHandlersAreCultureInvariant = true;
-            foreach (var arg in invocation.Arguments)
-            {
-                if (arg.Parameter?.RefKind is RefKind.Ref && arg.Value.Type.IsEqualTo(DefaultInterpolatedStringHandlerSymbol))
-                {
-                    hasDefaultInterpolatedStringHandlerArgument = true;
-                    if (IsCultureSensitiveOperation(arg.Value, options))
-                    {
-                        allHandlersAreCultureInvariant = false;
-                        break;
-                    }
-                }
-            }
+            var defaultInterpolatedStringHandlerArgs = invocation.Arguments
+                .Where(arg => arg.Parameter?.RefKind is RefKind.Ref && arg.Value.Type.IsEqualTo(DefaultInterpolatedStringHandlerSymbol))
+                .ToList();
 
-            // If we found at least one DefaultInterpolatedStringHandler argument and all of them are culture-invariant, return false
-            if (hasDefaultInterpolatedStringHandlerArgument && allHandlersAreCultureInvariant)
+            if (defaultInterpolatedStringHandlerArgs.Count > 0 && defaultInterpolatedStringHandlerArgs.All(arg => !IsCultureSensitiveOperation(arg.Value, options)))
                 return false;
 
             if ((options & CultureSensitiveOptions.UseInvocationReturnType) == CultureSensitiveOptions.UseInvocationReturnType)
