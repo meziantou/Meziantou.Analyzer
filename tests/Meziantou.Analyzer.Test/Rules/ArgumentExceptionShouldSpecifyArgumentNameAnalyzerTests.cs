@@ -450,4 +450,209 @@ class TestAttribute
               .ValidateAsync();
     }
 #endif
+
+    [Fact]
+    public async Task ThrowIfNull_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(test);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_InvalidParameter_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull([|Name|]);
+                }
+
+                public static string Name { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'Name' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNullOrEmpty(test);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNullOrEmpty([|Name|]);
+                }
+
+                public static string Name { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'Name' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNullOrWhiteSpace(test);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNullOrWhiteSpace([|Name|]);
+                }
+
+                public static string Name { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'Name' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentException_ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentException.ThrowIfNullOrEmpty(test);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentException_ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentException.ThrowIfNullOrEmpty([|Name|]);
+                }
+
+                public static string Name { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'Name' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentException_ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentException.ThrowIfNullOrWhiteSpace(test);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentException_ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentException.ThrowIfNullOrWhiteSpace([|Name|]);
+                }
+
+                public static string Name { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'Name' is not a valid parameter name")
+              .ValidateAsync();
+    }
 }

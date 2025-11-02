@@ -38,6 +38,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
+        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
     }
 
     private static void Analyze(OperationAnalysisContext context)
@@ -109,6 +110,65 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                 context.ReportDiagnostic(Diagnostic.Create(Rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));
                 return;
             }
+        }
+    }
+
+    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    {
+        var op = (IInvocationOperation)context.Operation;
+        if (op is null)
+            return;
+
+        var method = op.TargetMethod;
+        if (method is null || !method.IsStatic)
+            return;
+
+        // Check if this is a ThrowIfXxx method on ArgumentException or ArgumentNullException
+        var containingType = method.ContainingType;
+        if (containingType is null)
+            return;
+
+        var argumentExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
+        var argumentNullExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
+        
+        if (argumentExceptionType is null || argumentNullExceptionType is null)
+            return;
+
+        if (!containingType.IsEqualTo(argumentExceptionType) && !containingType.IsEqualTo(argumentNullExceptionType))
+            return;
+
+        // Check if the method name starts with "ThrowIf"
+        if (!method.Name.StartsWith("ThrowIf", StringComparison.Ordinal))
+            return;
+
+        // The first parameter is the argument being validated
+        if (op.Arguments.Length == 0)
+            return;
+
+        var firstArgument = op.Arguments[0];
+        if (firstArgument.Value is null)
+            return;
+
+        // Check if the argument is a parameter reference or a member access to a property/field
+        string? argumentName = null;
+        
+        if (firstArgument.Value is IParameterReferenceOperation parameterRef)
+        {
+            argumentName = parameterRef.Parameter.Name;
+        }
+        else if (firstArgument.Value is IMemberReferenceOperation memberRef)
+        {
+            argumentName = memberRef.Member.Name;
+        }
+
+        if (argumentName is null)
+            return;
+
+        // Check if this argument name corresponds to a valid parameter in the current scope
+        var parameterNames = GetParameterNames(op, context.CancellationToken);
+        if (!parameterNames.Contains(argumentName, StringComparer.Ordinal))
+        {
+            context.ReportDiagnostic(Rule, firstArgument, $"'{argumentName}' is not a valid parameter name");
         }
     }
 
