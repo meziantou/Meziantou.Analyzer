@@ -1,4 +1,4 @@
-using Meziantou.Analyzer.Rules;
+﻿using Meziantou.Analyzer.Rules;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
