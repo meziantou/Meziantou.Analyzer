@@ -159,14 +159,14 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
                 foreach (var attribute in parameter.GetAttributes())
                 {
-                    if (!attribute.AttributeClass.IsEqualTo(callerArgumentExpressionAttribute))
+                    if (attribute.AttributeClass is null || !attribute.AttributeClass.IsEqualTo(callerArgumentExpressionAttribute))
                         continue;
 
                     if (attribute.ConstructorArguments.Length == 0)
                         continue;
 
                     // Find the argument for this parameter
-                    var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter.IsEqualTo(parameter));
+                    var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
                     if (paramNameArgument is not null && paramNameArgument.Value is not null)
                     {
                         ValidateParamNameArgument(context, op, paramNameArgument);
