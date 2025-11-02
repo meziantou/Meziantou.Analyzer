@@ -48,7 +48,11 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                 return;
 
             context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
-            context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType, argumentOutOfRangeExceptionType, callerArgumentExpressionAttribute), OperationKind.Invocation);
+
+            if (callerArgumentExpressionAttribute is not null)
+            {
+                context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType, argumentOutOfRangeExceptionType, callerArgumentExpressionAttribute), OperationKind.Invocation);
+            }
         });
     }
 
@@ -124,7 +128,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         }
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType, INamedTypeSymbol? argumentOutOfRangeExceptionType, INamedTypeSymbol? callerArgumentExpressionAttribute)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType, INamedTypeSymbol? argumentOutOfRangeExceptionType, INamedTypeSymbol callerArgumentExpressionAttribute)
     {
         var op = (IInvocationOperation)context.Operation;
         if (op is null)
@@ -152,28 +156,25 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             return;
 
         // Find the parameter with CallerArgumentExpressionAttribute
-        if (callerArgumentExpressionAttribute is not null)
+        foreach (var parameter in method.Parameters)
         {
-            foreach (var parameter in method.Parameters)
+            if (!parameter.Type.IsString())
+                continue;
+
+            foreach (var attribute in parameter.GetAttributes())
             {
-                if (!parameter.Type.IsString())
+                if (attribute.AttributeClass is null || !attribute.AttributeClass.IsEqualTo(callerArgumentExpressionAttribute))
                     continue;
 
-                foreach (var attribute in parameter.GetAttributes())
+                if (attribute.ConstructorArguments.Length == 0)
+                    continue;
+
+                // Find the argument for this parameter
+                var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
+                if (paramNameArgument is not null && paramNameArgument.Value is not null)
                 {
-                    if (attribute.AttributeClass is null || !attribute.AttributeClass.IsEqualTo(callerArgumentExpressionAttribute))
-                        continue;
-
-                    if (attribute.ConstructorArguments.Length == 0)
-                        continue;
-
-                    // Find the argument for this parameter
-                    var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
-                    if (paramNameArgument is not null && paramNameArgument.Value is not null)
-                    {
-                        ValidateParamNameArgument(context, op, paramNameArgument);
-                        return;
-                    }
+                    ValidateParamNameArgument(context, op, paramNameArgument);
+                    return;
                 }
             }
         }
