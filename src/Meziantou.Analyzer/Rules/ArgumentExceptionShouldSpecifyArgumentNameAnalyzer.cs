@@ -37,10 +37,27 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var argumentExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
+            var argumentNullExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
+            var argumentOutOfRangeExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentOutOfRangeException");
+            var callerArgumentExpressionAttribute = context.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
+
+            if (argumentExceptionType is null || argumentNullExceptionType is null)
+                return;
+
+            context.RegisterOperationAction(AnalyzeObjectCreation, OperationKind.ObjectCreation);
+
+            if (callerArgumentExpressionAttribute is not null)
+            {
+                context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType, argumentOutOfRangeExceptionType, callerArgumentExpressionAttribute), OperationKind.Invocation);
+            }
+        });
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    // Validate throw new ArgumentException("message", "paramName");
+    private static void AnalyzeObjectCreation(OperationAnalysisContext context)
     {
         var op = (IObjectCreationOperation)context.Operation;
         if (op is null)
@@ -110,6 +127,109 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                 return;
             }
         }
+    }
+
+    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType, INamedTypeSymbol? argumentOutOfRangeExceptionType, INamedTypeSymbol callerArgumentExpressionAttribute)
+    {
+        var op = (IInvocationOperation)context.Operation;
+        if (op is null)
+            return;
+
+        var method = op.TargetMethod;
+        if (method is null || !method.IsStatic)
+            return;
+
+        // Check if the method name starts with "ThrowIf"
+        if (!method.Name.StartsWith("ThrowIf", StringComparison.Ordinal))
+            return;
+
+        // There must be at least one argument
+        if (op.Arguments.Length == 0)
+            return;
+
+        // Check if this is a ThrowIfXxx method on ArgumentException, ArgumentNullException, or ArgumentOutOfRangeException
+        var containingType = method.ContainingType;
+        if (containingType is null)
+            return;
+
+        if (!containingType.IsEqualToAny(argumentExceptionType, argumentNullExceptionType, argumentOutOfRangeExceptionType))
+            return;
+
+        // Find the parameter with CallerArgumentExpressionAttribute
+        foreach (var parameter in method.Parameters)
+        {
+            if (!parameter.Type.IsString())
+                continue;
+
+            var attribute = parameter.GetAttribute(callerArgumentExpressionAttribute);
+            if (attribute is null)
+                continue;
+
+            if (attribute.ConstructorArguments.Length == 0)
+                continue;
+
+            // Get the parameter name referenced by the CallerArgumentExpressionAttribute
+            var referencedParameterName = attribute.ConstructorArguments[0].Value as string;
+            if (string.IsNullOrEmpty(referencedParameterName))
+                continue;
+
+            // Find the parameter being referenced
+            var referencedParameter = method.Parameters.FirstOrDefault(p => p.Name == referencedParameterName);
+            if (referencedParameter is null)
+                continue;
+
+            // Find the argument for the paramName parameter
+            var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
+            if (paramNameArgument is not null && !paramNameArgument.IsImplicit && paramNameArgument.Value is not null)
+            {
+                ValidateParamNameArgument(context, paramNameArgument);
+                return;
+            }
+
+            // Find the argument for the referenced parameter (the one being validated)
+            var referencedArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(referencedParameter));
+            if (referencedArgument is not null)
+            {
+                ValidateExpression(context, referencedArgument);
+                return;
+            }
+        }
+    }
+
+    private static void ValidateParamNameArgument(OperationAnalysisContext context, IArgumentOperation paramNameArgument)
+    {
+        // Check if the argument is a constant string value
+        if (!paramNameArgument.Value.ConstantValue.HasValue || paramNameArgument.Value.ConstantValue.Value is not string paramNameValue)
+            return;
+
+        var availableParameterNames = GetParameterNames(paramNameArgument, context.CancellationToken);
+        if (availableParameterNames.Contains(paramNameValue, StringComparer.Ordinal))
+        {
+            if (paramNameArgument.Value is not INameOfOperation)
+            {
+                var properties = ImmutableDictionary<string, string?>.Empty.Add(ArgumentExceptionShouldSpecifyArgumentNameAnalyzerCommon.ArgumentNameKey, paramNameValue);
+                context.ReportDiagnostic(NameofRule, properties, paramNameArgument.Value);
+            }
+
+            return;
+        }
+
+        context.ReportDiagnostic(Rule, paramNameArgument, $"'{paramNameValue}' is not a valid parameter name");
+    }
+
+    private static void ValidateExpression(OperationAnalysisContext context, IArgumentOperation argument)
+    {
+        if (argument.Value is null)
+            return;
+
+        var unwrappedValue = argument.Value.UnwrapImplicitConversionOperations();
+        if (unwrappedValue is IParameterReferenceOperation)
+        {
+            // Parameter references are always valid - no need to validate the name
+            return;
+        }
+
+        context.ReportDiagnostic(Rule, argument, "The expression does not match a parameter");
     }
 
     private static IEnumerable<string> GetParameterNames(IOperation operation, CancellationToken cancellationToken)
