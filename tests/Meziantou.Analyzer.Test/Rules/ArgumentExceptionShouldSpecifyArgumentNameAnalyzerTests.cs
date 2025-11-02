@@ -835,6 +835,28 @@ class TestAttribute
     }
 
     [Fact]
+    public async Task ArgumentOutOfRangeException_ThrowIfGreaterThanOrEqual_InvalidParameter_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(int value)
+                {
+                    ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual([|MaxValue|], 100);
+                }
+
+                public static int MaxValue { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'MaxValue' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ThrowIfNull_WithNullExpression_ShouldReportError()
     {
         var sourceCode = """
