@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -130,7 +130,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
         var argumentExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
         var argumentNullExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
-        
+
         if (argumentExceptionType is null || argumentNullExceptionType is null)
             return;
 
@@ -151,7 +151,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
         // Check if the argument is a parameter reference or a member access to a property/field
         string? argumentName = null;
-        
+
         if (firstArgument.Value is IParameterReferenceOperation parameterRef)
         {
             argumentName = parameterRef.Parameter.Name;
