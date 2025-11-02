@@ -155,7 +155,7 @@ dotnet_diagnostic.MA0051.severity = warning
 # MA0052: Replace constant Enum.ToString with nameof
 dotnet_diagnostic.MA0052.severity = suggestion
 
-# MA0053: Make class sealed
+# MA0053: Make class or record sealed
 dotnet_diagnostic.MA0053.severity = suggestion
 
 # MA0054: Embed the caught exception as innerException

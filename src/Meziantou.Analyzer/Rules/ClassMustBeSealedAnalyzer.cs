@@ -11,8 +11,8 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ClassMustBeSealed,
-        title: "Make class sealed",
-        messageFormat: "Make class sealed",
+        title: "Make class or record sealed",
+        messageFormat: "Make class or record sealed",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
