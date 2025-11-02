@@ -138,17 +138,16 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         if (method is null || !method.IsStatic)
             return;
 
+        // Check if the method name starts with "ThrowIf"
+        if (!method.Name.StartsWith("ThrowIf", StringComparison.Ordinal))
+            return;
+
         // Check if this is a ThrowIfXxx method on ArgumentException, ArgumentNullException, or ArgumentOutOfRangeException
         var containingType = method.ContainingType;
         if (containingType is null)
             return;
 
-        if (!containingType.IsEqualTo(argumentExceptionType) && !containingType.IsEqualTo(argumentNullExceptionType) &&
-            (argumentOutOfRangeExceptionType is null || !containingType.IsEqualTo(argumentOutOfRangeExceptionType)))
-            return;
-
-        // Check if the method name starts with "ThrowIf"
-        if (!method.Name.StartsWith("ThrowIf", StringComparison.Ordinal))
+        if (!containingType.IsEqualToAny(argumentExceptionType, argumentNullExceptionType, argumentOutOfRangeExceptionType))
             return;
 
         // The first parameter is the argument being validated
@@ -161,25 +160,39 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             if (!parameter.Type.IsString())
                 continue;
 
-            foreach (var attribute in parameter.GetAttributes())
+            var attribute = parameter.GetAttribute(callerArgumentExpressionAttribute);
+            if (attribute is null)
+                continue;
+
+            if (attribute.ConstructorArguments.Length == 0)
+                continue;
+
+            // Get the parameter name referenced by the CallerArgumentExpressionAttribute
+            var referencedParameterName = attribute.ConstructorArguments[0].Value as string;
+            if (string.IsNullOrEmpty(referencedParameterName))
+                continue;
+
+            // Find the parameter being referenced
+            var referencedParameter = method.Parameters.FirstOrDefault(p => p.Name == referencedParameterName);
+            if (referencedParameter is null)
+                continue;
+
+            // Find the argument for the paramName parameter
+            var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
+            if (paramNameArgument is not null && paramNameArgument.Value is not null)
             {
-                if (attribute.AttributeClass is null || !attribute.AttributeClass.IsEqualTo(callerArgumentExpressionAttribute))
-                    continue;
+                ValidateParamNameArgument(context, op, paramNameArgument);
+                return;
+            }
 
-                if (attribute.ConstructorArguments.Length == 0)
-                    continue;
-
-                // Find the argument for this parameter
-                var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
-                if (paramNameArgument is not null && paramNameArgument.Value is not null)
-                {
-                    ValidateParamNameArgument(context, op, paramNameArgument);
-                    return;
-                }
+            // Find the argument for the referenced parameter (the one being validated)
+            var referencedArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(referencedParameter));
+            if (referencedArgument is not null)
+            {
+                ValidateExpression(context, op, referencedArgument);
+                return;
             }
         }
-
-        ValidateFirstArgument(context, op);
     }
 
     private static void ValidateParamNameArgument(OperationAnalysisContext context, IInvocationOperation op, IArgumentOperation paramNameArgument)
@@ -203,32 +216,35 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         context.ReportDiagnostic(Rule, paramNameArgument, $"'{paramNameValue}' is not a valid parameter name");
     }
 
-    private static void ValidateFirstArgument(OperationAnalysisContext context, IInvocationOperation op)
+    private static void ValidateExpression(OperationAnalysisContext context, IInvocationOperation op, IArgumentOperation argument)
     {
-        var firstArgument = op.Arguments[0];
-        if (firstArgument.Value is null)
+        if (argument.Value is null)
             return;
 
         // Check if the argument is a parameter reference or a member access to a property/field
-        string? argumentName = null;
+        string argumentName;
 
-        if (firstArgument.Value is IParameterReferenceOperation parameterRef)
+        if (argument.Value is IParameterReferenceOperation parameterRef)
         {
             argumentName = parameterRef.Parameter.Name;
         }
-        else if (firstArgument.Value is IMemberReferenceOperation memberRef)
+        else if (argument.Value is IMemberReferenceOperation memberRef)
         {
             argumentName = memberRef.Member.Name;
         }
-
-        if (argumentName is null)
+        else
+        {
+            // If the expression is not a parameter or member reference, report an error
+            // as it cannot be matched to a parameter name
+            context.ReportDiagnostic(Rule, argument, "The expression does not match a parameter");
             return;
+        }
 
         // Check if this argument name corresponds to a valid parameter in the current scope
         var availableParameterNames = GetParameterNames(op, context.CancellationToken);
         if (!availableParameterNames.Contains(argumentName, StringComparer.Ordinal))
         {
-            context.ReportDiagnostic(Rule, firstArgument, $"'{argumentName}' is not a valid parameter name");
+            context.ReportDiagnostic(Rule, argument, $"'{argumentName}' is not a valid parameter name");
         }
     }
 

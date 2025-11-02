@@ -835,7 +835,7 @@ class TestAttribute
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithNullExpression_ShouldNotReportError()
+    public async Task ThrowIfNull_WithNullExpression_ShouldReportError()
     {
         var sourceCode = """
             using System;
@@ -843,13 +843,14 @@ class TestAttribute
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull(null);
+                    ArgumentNullException.ThrowIfNull([|null|]);
                 }
             }
             """;
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("The expression does not match a parameter")
               .ValidateAsync();
     }
 
@@ -893,7 +894,7 @@ class TestAttribute
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithBooleanExpression_ShouldNotReportError()
+    public async Task ThrowIfNull_WithBooleanExpression_ShouldReportError()
     {
         var sourceCode = """
             using System;
@@ -901,13 +902,14 @@ class TestAttribute
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull(0 == 1);
+                    ArgumentNullException.ThrowIfNull([|0 == 1|]);
                 }
             }
             """;
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("The expression does not match a parameter")
               .ValidateAsync();
     }
 
