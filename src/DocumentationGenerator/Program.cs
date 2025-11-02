@@ -75,10 +75,8 @@ Console.WriteLine(sb.ToString());
     {
         foreach (var diagnostic in diagnosticAnalyzer.SupportedDiagnostics)
         {
-            if (!rules.Add(rulesTable))
-            {
+            if (!rules.Add(diagnostic.Id))
                 continue;
-            }
 
             var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
             var detailPath = outputFolder / "docs" / "Rules" / (diagnostic.Id + ".md");
@@ -213,7 +211,7 @@ void WriteFileIfChanged(FullPath path, string content)
         return;
     }
 
-    var existingContent = File.ReadAllText(path).ReplaceLineEndings();
+    var existingContent = File.ReadAllText(path).ReplaceLineEndings("\n");
     if (existingContent != content)
     {
         File.WriteAllText(path, content, encoding);
