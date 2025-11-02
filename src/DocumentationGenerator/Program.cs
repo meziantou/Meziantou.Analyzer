@@ -70,10 +70,16 @@ Console.WriteLine(sb.ToString());
 
 // Update title in rule pages and add links to source code
 {
+    var rules = new HashSet<string>(StringComparer.Ordinal);
     foreach (var diagnosticAnalyzer in diagnosticAnalyzers)
     {
         foreach (var diagnostic in diagnosticAnalyzer.SupportedDiagnostics)
         {
+            if (!rules.Add(rulesTable))
+            {
+                continue;
+            }
+
             var title = $"# {diagnostic.Id} - {EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture))}";
             var detailPath = outputFolder / "docs" / "Rules" / (diagnostic.Id + ".md");
             if (File.Exists(detailPath))
@@ -126,7 +132,13 @@ Console.WriteLine(sb.ToString());
                     sourceLinks.Add($"[{text}]({url})");
                 }
 
-                AddLink(diagnosticAnalyzer.GetType().Name);
+                foreach (var analyzer in diagnosticAnalyzers)
+                {
+                    if (analyzer.SupportedDiagnostics.Any(d => d.Id == diagnostic.Id))
+                    {
+                        AddLink(analyzer.GetType().Name);
+                    }
+                }
 
                 var fixers = codeFixProviders.Where(fixer => fixer.FixableDiagnosticIds.Contains(diagnostic.Id, StringComparer.Ordinal)).ToArray();
                 foreach (var fixer in fixers)
@@ -134,6 +146,7 @@ Console.WriteLine(sb.ToString());
                     AddLink(fixer.GetType().Name);
                 }
 
+                sourceLinks.Sort(StringComparer.Ordinal);
                 newContent = Regex.Replace(newContent, "(?<=<!-- sources -->\\r?\\n).*(?=<!-- sources -->)", (sourceLinks.Count == 1 ? "Source: " : "Sources: ") + string.Join(", ", sourceLinks) + "\n", RegexOptions.Singleline);
 
                 WriteFileIfChanged(detailPath, newContent);
