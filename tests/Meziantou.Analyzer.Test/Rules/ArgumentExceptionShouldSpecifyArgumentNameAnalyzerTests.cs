@@ -655,4 +655,103 @@ class TestAttribute
               .ShouldReportDiagnosticWithMessage("'Name' is not a valid parameter name")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ThrowIfNull_WithValidParamNameArgument_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(test, nameof(test));
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithInvalidParamNameArgument_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(test, [|"invalid"|]);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_WithValidParamNameArgumentNotNameof_ShouldSuggestNameof()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull(test, [|"test"|]);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0043")
+              .ShouldReportDiagnosticWithMessage("Use nameof operator")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentException_ThrowIfNullOrEmpty_WithValidParamNameArgument_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentException.ThrowIfNullOrEmpty(test, nameof(test));
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentException_ThrowIfNullOrEmpty_WithInvalidParamNameArgument_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentException.ThrowIfNullOrEmpty(test, [|"invalid"|]);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
+              .ValidateAsync();
+    }
 }

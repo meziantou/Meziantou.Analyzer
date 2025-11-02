@@ -37,8 +37,17 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var argumentExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
+            var argumentNullExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
+
+            if (argumentExceptionType is null || argumentNullExceptionType is null)
+                return;
+
+            context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
+            context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, argumentExceptionType, argumentNullExceptionType), OperationKind.Invocation);
+        });
     }
 
     private static void Analyze(OperationAnalysisContext context)
@@ -113,7 +122,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         }
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    private static void AnalyzeInvocation(OperationAnalysisContext context, INamedTypeSymbol argumentExceptionType, INamedTypeSymbol argumentNullExceptionType)
     {
         var op = (IInvocationOperation)context.Operation;
         if (op is null)
@@ -128,12 +137,6 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         if (containingType is null)
             return;
 
-        var argumentExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentException");
-        var argumentNullExceptionType = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
-
-        if (argumentExceptionType is null || argumentNullExceptionType is null)
-            return;
-
         if (!containingType.IsEqualTo(argumentExceptionType) && !containingType.IsEqualTo(argumentNullExceptionType))
             return;
 
@@ -144,6 +147,37 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         // The first parameter is the argument being validated
         if (op.Arguments.Length == 0)
             return;
+
+        var availableParameterNames = GetParameterNames(op, context.CancellationToken);
+
+        // If there's a second argument (paramName) and it's not null, check that instead
+        if (op.Arguments.Length >= 2)
+        {
+            var secondArgument = op.Arguments[1];
+            if (secondArgument.Parameter?.Type.IsString() == true && secondArgument.Value is not null)
+            {
+                // Check if the second argument is a constant string value
+                if (secondArgument.Value.ConstantValue.HasValue && secondArgument.Value.ConstantValue.Value is string paramNameValue)
+                {
+                    if (availableParameterNames.Contains(paramNameValue, StringComparer.Ordinal))
+                    {
+                        if (secondArgument.Value is not INameOfOperation)
+                        {
+                            var properties = ImmutableDictionary<string, string?>.Empty.Add(ArgumentExceptionShouldSpecifyArgumentNameAnalyzerCommon.ArgumentNameKey, paramNameValue);
+                            context.ReportDiagnostic(NameofRule, properties, secondArgument.Value);
+                        }
+
+                        return;
+                    }
+
+                    context.ReportDiagnostic(Rule, secondArgument, $"'{paramNameValue}' is not a valid parameter name");
+                    return;
+                }
+
+                // Cannot determine the value of the second argument, so we can't validate it
+                return;
+            }
+        }
 
         var firstArgument = op.Arguments[0];
         if (firstArgument.Value is null)
@@ -165,8 +199,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             return;
 
         // Check if this argument name corresponds to a valid parameter in the current scope
-        var parameterNames = GetParameterNames(op, context.CancellationToken);
-        if (!parameterNames.Contains(argumentName, StringComparer.Ordinal))
+        if (!availableParameterNames.Contains(argumentName, StringComparer.Ordinal))
         {
             context.ReportDiagnostic(Rule, firstArgument, $"'{argumentName}' is not a valid parameter name");
         }
