@@ -196,6 +196,7 @@ void WriteFileIfChanged(FullPath path, string content)
         path.CreateParentDirectory();
         File.WriteAllText(path, content, encoding);
         fileWritten++;
+        Console.WriteLine($"Created file: {path}");
         return;
     }
 
@@ -204,6 +205,7 @@ void WriteFileIfChanged(FullPath path, string content)
     {
         File.WriteAllText(path, content, encoding);
         fileWritten++;
+        Console.WriteLine($"Updated file: {path}");
     }
 }
 
