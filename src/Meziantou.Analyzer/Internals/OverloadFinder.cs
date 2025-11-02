@@ -26,7 +26,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (type.Symbol is not null)
                 continue;
 
-            var list = new List<OverloadParameterType>(types.Length - 1); // We know there are at least one null
+            var list = new List<OverloadParameterType>(types.Length - 1); // We know there is at least one null item
             foreach (var t in types)
             {
                 if (t.Symbol is not null)
