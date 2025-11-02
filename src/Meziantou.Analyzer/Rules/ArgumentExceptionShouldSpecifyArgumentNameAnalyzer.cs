@@ -230,18 +230,6 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             return;
         }
 
-        // Check if the argument is a member access to a property/field
-        if (unwrappedValue is IMemberReferenceOperation memberRef)
-        {
-            var memberName = memberRef.Member.Name;
-            var availableParameterNames = GetParameterNames(argument, context.CancellationToken);
-            if (!availableParameterNames.Contains(memberName, StringComparer.Ordinal))
-            {
-                context.ReportDiagnostic(Rule, argument, $"'{memberName}' is not a valid parameter name");
-            }
-            return;
-        }
-
         // If the expression is not a parameter or member reference, report an error
         // as it cannot be matched to a parameter name
         context.ReportDiagnostic(Rule, argument, "The expression does not match a parameter");
