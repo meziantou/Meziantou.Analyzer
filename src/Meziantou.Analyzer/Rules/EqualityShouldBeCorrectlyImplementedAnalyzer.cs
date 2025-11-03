@@ -136,7 +136,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             }
 
             // IEquatable<T> without Equals(object) - only report if directly implemented (not inherited via CRTP)
-            if (directlyImplementIEquatableOfT && !HasMethod(symbol, IsEqualsMethod))
+            if (directlyImplementIEquatableOfT && !HasMethodInHierarchy(symbol, IsEqualsMethodOverride))
             {
                 context.ReportDiagnostic(OverrideEqualsObjectRule, symbol);
             }
@@ -164,6 +164,17 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
     private static bool HasMethod(INamedTypeSymbol parentType, Func<IMethodSymbol, bool> predicate)
     {
         foreach (var member in parentType.GetMembers().OfType<IMethodSymbol>())
+        {
+            if (predicate(member))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasMethodInHierarchy(INamedTypeSymbol parentType, Func<IMethodSymbol, bool> predicate)
+    {
+        foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
         {
             if (predicate(member))
                 return true;
@@ -203,6 +214,18 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         symbol.Parameters[0].Type.IsObject() &&
         symbol.DeclaredAccessibility == Accessibility.Public &&
         !symbol.IsStatic;
+    }
+
+    private static bool IsEqualsMethodOverride(IMethodSymbol symbol)
+    {
+        // Check if it's an Equals(object) method AND it's overridden (not the base System.Object method)
+        return symbol.Name == nameof(object.Equals) &&
+        symbol.ReturnType.IsBoolean() &&
+        symbol.Parameters.Length == 1 &&
+        symbol.Parameters[0].Type.IsObject() &&
+        symbol.DeclaredAccessibility == Accessibility.Public &&
+        !symbol.IsStatic &&
+        symbol.IsOverride;
     }
 
     private static bool IsCompareToMethod(IMethodSymbol symbol)
