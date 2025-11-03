@@ -96,6 +96,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             var implementIComparable = false;
             var implementIComparableOfT = false;
             var implementIEquatableOfT = false;
+            var directlyImplementIEquatableOfT = false;
             foreach (var implementedInterface in symbol.AllInterfaces)
             {
                 if (implementedInterface.IsEqualTo(IComparableSymbol))
@@ -112,6 +113,16 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
                 }
             }
 
+            // Check if the type directly implements IEquatable<T> (not inherited from base class)
+            foreach (var implementedInterface in symbol.Interfaces)
+            {
+                if (IEquatableOfTSymbol is not null && implementedInterface.IsEqualTo(IEquatableOfTSymbol.Construct(symbol)))
+                {
+                    directlyImplementIEquatableOfT = true;
+                    break;
+                }
+            }
+
             // IComparable without IComparable<T>
             if (implementIComparable && !implementIComparableOfT)
             {
@@ -124,8 +135,8 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
                 context.ReportDiagnostic(ImplementIEquatableWhenIComparableRule, symbol);
             }
 
-            // IEquatable<T> without Equals(object)
-            if (implementIEquatableOfT && !HasMethod(symbol, IsEqualsMethod))
+            // IEquatable<T> without Equals(object) - only report if directly implemented (not inherited via CRTP)
+            if (directlyImplementIEquatableOfT && !HasMethod(symbol, IsEqualsMethod))
             {
                 context.ReportDiagnostic(OverrideEqualsObjectRule, symbol);
             }
