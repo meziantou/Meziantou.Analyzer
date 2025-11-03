@@ -52,7 +52,7 @@
 |[MA0050](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0050.md)|Design|Validate arguments correctly in iterator methods|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0051](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0051.md)|Design|Method is too long|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0052](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0052.md)|Performance|Replace constant Enum.ToString with nameof|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0053](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0053.md)|Design|Make class sealed|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0053](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0053.md)|Design|Make class or record sealed|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0054](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0054.md)|Design|Embed the caught exception as innerException|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0055](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0055.md)|Design|Do not use finalizer|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0056](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0056.md)|Design|Do not call overridable members in constructor|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -342,7 +342,7 @@ dotnet_diagnostic.MA0051.severity = warning
 # MA0052: Replace constant Enum.ToString with nameof
 dotnet_diagnostic.MA0052.severity = suggestion
 
-# MA0053: Make class sealed
+# MA0053: Make class or record sealed
 dotnet_diagnostic.MA0053.severity = suggestion
 
 # MA0054: Embed the caught exception as innerException
@@ -874,7 +874,7 @@ dotnet_diagnostic.MA0051.severity = none
 # MA0052: Replace constant Enum.ToString with nameof
 dotnet_diagnostic.MA0052.severity = none
 
-# MA0053: Make class sealed
+# MA0053: Make class or record sealed
 dotnet_diagnostic.MA0053.severity = none
 
 # MA0054: Embed the caught exception as innerException

@@ -254,6 +254,68 @@ internal class Test
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task Record_Inherited_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                record Base();
+
+                record [||]Derived() : Base();
+                """)
+              .ShouldFixCodeWith("""
+                record Base();
+
+                sealed record Derived() : Base();
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Record_ImplementInterface_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                interface ITest
+                {
+                }
+
+                record [||]Test() : ITest;
+                """)
+              .ShouldFixCodeWith("""
+                interface ITest
+                {
+                }
+
+                sealed record Test() : ITest;
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Record_Public_NotReported()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                public record Sample();
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Record_Public_WithEditorConfig_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0053.public_class_should_be_sealed", "true")
+              .WithSourceCode("""
+                public record [||]Sample();
+                """)
+              .ShouldFixCodeWith("""
+                public sealed record Sample();
+                """)
+              .ValidateAsync();
+    }
+
     [Theory]
     [InlineData("private")]
     [InlineData("internal")]

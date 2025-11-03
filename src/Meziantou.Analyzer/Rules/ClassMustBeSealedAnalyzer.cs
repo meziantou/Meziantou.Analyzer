@@ -11,8 +11,8 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.ClassMustBeSealed,
-        title: "Make class sealed",
-        messageFormat: "Make class sealed",
+        title: "Make class or record sealed",
+        messageFormat: "Make class or record sealed",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
@@ -107,13 +107,12 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
             if (symbol.IsTopLevelStatement(cancellationToken))
                 return false;
 
-            if (symbol.GetMembers().Any(member => member.IsVirtual) && !SealedClassWithVirtualMember(options, symbol))
+            if (symbol.GetMembers().Any(member => member.IsVirtual && member.CanBeReferencedByName && !member.IsImplicitlyDeclared) && !SealedClassWithVirtualMember(options, symbol))
                 return false;
 
             var canBeInheritedOutsideOfAssembly = symbol.IsVisibleOutsideOfAssembly() && symbol.GetMembers().OfType<IMethodSymbol>().Any(member => member.MethodKind is MethodKind.Constructor && member.IsVisibleOutsideOfAssembly());
             if (canBeInheritedOutsideOfAssembly && !PublicClassShouldBeSealed(options, symbol))
                 return false;
-
 
             return true;
         }
