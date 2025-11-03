@@ -39,9 +39,9 @@ public sealed partial class ProjectBuilder
     public string? DefaultAnalyzerId { get; set; }
     public string? DefaultAnalyzerMessage { get; set; }
 
-    private static async Task<string[]> GetNuGetReferences(string packageName, string version, params string[] paths)
+    private static async Task<string[]> GetNuGetReferences(string packageName, string version, string[] includedPaths)
     {
-        var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(',', paths));
+        var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(',', includedPaths));
         var hash = SHA256.HashData(bytes);
         var key = Convert.ToBase64String(hash).Replace('/', '_');
         var task = NuGetPackagesCache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
@@ -61,7 +61,7 @@ public sealed partial class ProjectBuilder
                 await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
                 var hasEntry = false;
-                foreach (var entry in zip.Entries.Where(file => paths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
+                foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                 {
                     await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
                     hasEntry = true;
@@ -69,7 +69,7 @@ public sealed partial class ProjectBuilder
 
                 if (!hasEntry)
                 {
-                    throw new InvalidOperationException("The NuGet package " + packageName + "@" + version + " does not contain any file matching the paths " + string.Join(", ", paths));
+                    throw new InvalidOperationException("The NuGet package " + packageName + "@" + version + " does not contain any file matching the paths " + string.Join(", ", includedPaths));
                 }
 
                 try
@@ -114,7 +114,7 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder AddNuGetReference(string packageName, string version, string pathPrefix)
     {
-        foreach (var reference in GetNuGetReferences(packageName, version, pathPrefix).Result)
+        foreach (var reference in GetNuGetReferences(packageName, version, [pathPrefix]).Result)
         {
             References.Add(MetadataReference.CreateFromFile(reference));
         }
@@ -149,22 +149,38 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
+#if ROSLYN5_0
+    public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds) =>
+        WithAnalyzerFromNuGet(
+            "Microsoft.CodeAnalysis.NetAnalyzers",
+            "10.0.100-rc.2.25502.107",
+            paths: ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft."],
+            ruleIds);
+#else
     public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds) =>
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.NetAnalyzers",
             "9.0.0",
             paths: ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"],
             ruleIds);
+#endif
 
     public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds)
     {
         AddNuGetReference("Microsoft.Bcl.AsyncInterfaces", "9.0.7", "lib/netstandard2.1/");
-
+#if ROSLYN5_0
+        return WithAnalyzerFromNuGet(
+            "Microsoft.CodeAnalysis.CSharp.CodeStyle",
+            "5.0.0-2.final",
+            paths: ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"],
+            ruleIds);
+#else
         return WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
             "4.14.0",
             paths: ["analyzers/dotnet/cs/"],
             ruleIds);
+#endif
     }
 
     public ProjectBuilder AddMSTestApi() => AddNuGetReference("MSTest.TestFramework", "2.1.1", "lib/netstandard1.0/");
