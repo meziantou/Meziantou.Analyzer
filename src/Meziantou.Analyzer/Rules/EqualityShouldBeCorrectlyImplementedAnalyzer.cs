@@ -135,7 +135,9 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
                 context.ReportDiagnostic(ImplementIEquatableWhenIComparableRule, symbol);
             }
 
-            // IEquatable<T> without Equals(object) - only report if directly implemented (not inherited via CRTP)
+            // IEquatable<T> without Equals(object)
+            // Only report if directly implemented (not inherited via CRTP - Curiously Recurring Template Pattern)
+            // Check the entire type hierarchy for an Equals(object) override
             if (directlyImplementIEquatableOfT && !HasMethodInHierarchy(symbol, IsEqualsMethodOverride))
             {
                 context.ReportDiagnostic(OverrideEqualsObjectRule, symbol);
