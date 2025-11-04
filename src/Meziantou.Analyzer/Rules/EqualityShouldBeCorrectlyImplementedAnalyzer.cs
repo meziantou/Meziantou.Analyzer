@@ -79,6 +79,9 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
+        public IMethodSymbol? ObjectEqualsSymbol { get; set; } = compilation.GetSpecialType(SpecialType.System_Object).GetMembers("Equals").FirstOrDefault() as IMethodSymbol;
+        public IMethodSymbol? ValueTypeEqualsSymbol { get; set; } = compilation.GetSpecialType(SpecialType.System_ValueType).GetMembers("Equals").FirstOrDefault() as IMethodSymbol;
+
         public INamedTypeSymbol? IComparableSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable");
         public INamedTypeSymbol? IComparableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable`1");
         public INamedTypeSymbol? IEquatableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IEquatable`1");
@@ -138,7 +141,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             // IEquatable<T> without Equals(object)
             // Only report if directly implemented (not inherited via CRTP - Curiously Recurring Template Pattern)
             // Check the entire type hierarchy for an Equals(object) override
-            if (directlyImplementIEquatableOfT && !HasMethodInHierarchy(symbol, IsEqualsMethodOverride))
+            if (directlyImplementIEquatableOfT && !symbol.GetMembers().OfType<IMethodSymbol>().Any(IsEqualsMethodOverride))
             {
                 context.ReportDiagnostic(OverrideEqualsObjectRule, symbol);
             }
@@ -161,33 +164,32 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
                 context.ReportDiagnostic(AddComparisonRule, symbol);
             }
         }
-    }
 
-    private static bool HasMethod(INamedTypeSymbol parentType, Func<IMethodSymbol, bool> predicate)
-    {
-        foreach (var member in parentType.GetMembers().OfType<IMethodSymbol>())
+        private static bool HasMethod(INamedTypeSymbol parentType, Func<IMethodSymbol, bool> predicate)
         {
-            if (predicate(member))
-                return true;
+            foreach (var member in parentType.GetMembers().OfType<IMethodSymbol>())
+            {
+                if (predicate(member))
+                    return true;
+            }
+
+            return false;
         }
 
-        return false;
-    }
-
-    private static bool HasMethodInHierarchy(INamedTypeSymbol parentType, Func<IMethodSymbol, bool> predicate)
-    {
-        foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
+        private static bool HasMethodInHierarchy(INamedTypeSymbol type, Func<IMethodSymbol, bool> predicate)
         {
-            if (predicate(member))
-                return true;
+            foreach (var member in type.GetAllMembers().OfType<IMethodSymbol>())
+            {
+                if (predicate(member))
+                    return true;
+            }
+
+            return false;
         }
 
-        return false;
-    }
-
-    private static bool HasComparisonOperator(INamedTypeSymbol parentType)
-    {
-        var operatorNames = new List<string>(6)
+        private static bool HasComparisonOperator(INamedTypeSymbol parentType)
+        {
+            var operatorNames = new List<string>(6)
         {
             "op_LessThan",
             "op_LessThanOrEqual",
@@ -197,56 +199,58 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             "op_Inequality",
         };
 
-        foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
-        {
-            if (member.MethodKind is MethodKind.UserDefinedOperator)
+            foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
             {
-                operatorNames.Remove(member.Name);
+                if (member.MethodKind is MethodKind.UserDefinedOperator)
+                {
+                    operatorNames.Remove(member.Name);
+                }
             }
+
+            return operatorNames.Count == 0;
         }
 
-        return operatorNames.Count == 0;
-    }
+        private static bool IsEqualsMethod(IMethodSymbol symbol)
+        {
+            return symbol.Name == nameof(object.Equals) &&
+            symbol.ReturnType.IsBoolean() &&
+            symbol.Parameters.Length == 1 &&
+            symbol.Parameters[0].Type.IsObject() &&
+            symbol.DeclaredAccessibility == Accessibility.Public &&
+            !symbol.IsStatic;
+        }
 
-    private static bool IsEqualsMethod(IMethodSymbol symbol)
-    {
-        return symbol.Name == nameof(object.Equals) &&
-        symbol.ReturnType.IsBoolean() &&
-        symbol.Parameters.Length == 1 &&
-        symbol.Parameters[0].Type.IsObject() &&
-        symbol.DeclaredAccessibility == Accessibility.Public &&
-        !symbol.IsStatic;
-    }
+        private bool IsEqualsMethodOverride(IMethodSymbol symbol)
+        {
+            // Check if it's an Equals(object) method AND it's overridden (not the base System.Object method)
+            return symbol.Name == nameof(object.Equals) &&
+                   symbol.ReturnType.IsBoolean() &&
+                   symbol.Parameters.Length == 1 &&
+                   symbol.Parameters[0].Type.IsObject() &&
+                   symbol.DeclaredAccessibility == Accessibility.Public &&
+                   !symbol.IsStatic &&
+                   !symbol.IsEqualTo(ObjectEqualsSymbol) &&
+                   !symbol.IsEqualTo(ValueTypeEqualsSymbol);
+        }
 
-    private static bool IsEqualsMethodOverride(IMethodSymbol symbol)
-    {
-        // Check if it's an Equals(object) method AND it's overridden (not the base System.Object method)
-        return symbol.Name == nameof(object.Equals) &&
-        symbol.ReturnType.IsBoolean() &&
-        symbol.Parameters.Length == 1 &&
-        symbol.Parameters[0].Type.IsObject() &&
-        symbol.DeclaredAccessibility == Accessibility.Public &&
-        !symbol.IsStatic &&
-        symbol.IsOverride;
-    }
+        private static bool IsCompareToMethod(IMethodSymbol symbol)
+        {
+            return symbol.Name == nameof(IComparable.CompareTo) &&
+            symbol.ReturnType.IsInt32() &&
+            symbol.Parameters.Length == 1 &&
+            symbol.Parameters[0].Type.IsObject() &&
+            symbol.DeclaredAccessibility == Accessibility.Public &&
+            !symbol.IsStatic;
+        }
 
-    private static bool IsCompareToMethod(IMethodSymbol symbol)
-    {
-        return symbol.Name == nameof(IComparable.CompareTo) &&
-        symbol.ReturnType.IsInt32() &&
-        symbol.Parameters.Length == 1 &&
-        symbol.Parameters[0].Type.IsObject() &&
-        symbol.DeclaredAccessibility == Accessibility.Public &&
-        !symbol.IsStatic;
-    }
-
-    private static bool IsCompareToOfTMethod(IMethodSymbol symbol)
-    {
-        return symbol.Name == nameof(IComparable.CompareTo) &&
-        symbol.ReturnType.IsInt32() &&
-        symbol.Parameters.Length == 1 &&
-        symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) &&
-        symbol.DeclaredAccessibility == Accessibility.Public &&
-        !symbol.IsStatic;
+        private static bool IsCompareToOfTMethod(IMethodSymbol symbol)
+        {
+            return symbol.Name == nameof(IComparable.CompareTo) &&
+            symbol.ReturnType.IsInt32() &&
+            symbol.Parameters.Length == 1 &&
+            symbol.Parameters[0].Type.IsEqualTo(symbol.ContainingType) &&
+            symbol.DeclaredAccessibility == Accessibility.Public &&
+            !symbol.IsStatic;
+        }
     }
 }
