@@ -139,11 +139,11 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             foreach (var argument in operation.Arguments)
             {
-                var parameterType = argument.Parameter?.Type;
-                if (parameterType is null)
+                var argumentType = argument.Value.Type;
+                if (argumentType is null)
                     continue;
 
-                if (IsInterpolatedStringParameter(parameterType))
+                if (IsInterpolatedStringType(argumentType))
                 {
                     hasInterpolatedStringParam = true;
 
@@ -155,7 +155,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             return hasInterpolatedStringParam;
         }
 
-        private bool IsInterpolatedStringParameter(ITypeSymbol typeSymbol)
+        private bool IsInterpolatedStringType(ITypeSymbol typeSymbol)
         {
             if (typeSymbol.IsEqualTo(_formattableStringSymbol))
                 return true;
