@@ -321,6 +321,7 @@ class Location
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InterpolatedStringHandler_CultureSensitiveFormat_ShouldReport()
     {
@@ -456,6 +457,26 @@ sealed class Bar : IFormattable
     }
 
     [Fact]
+    public async Task InterpolatedStringHandler_NoOverload_ShouldNotReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+A.Print($"{DateTime.Now:D}");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
     public async Task FormattableString_CultureSensitiveFormat_ShouldReport()
     {
         var sourceCode = """
@@ -486,25 +507,6 @@ class A
 {
     public static void Sample(FormattableString value) => throw null;
     public static void Sample(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task InterpolatedStringHandler_NoOverload_ShouldNotReport()
-    {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
-
-A.Print($"{DateTime.Now:D}");
-
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
 }
 """;
         await CreateProjectBuilder()
