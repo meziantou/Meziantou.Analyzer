@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
@@ -129,6 +129,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
                     return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
                 }
+                else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation collectionExpression)
+                {
+                    return collectionExpression.Elements.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                }
                 else
                 {
                     return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
@@ -180,6 +184,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             }
         }
 #endif
+
+        if (operation is IConversionOperation interpolatedConversion && interpolatedConversion.Type.IsEqualTo(FormattableStringSymbol))
+            return IsCultureSensitiveOperation(interpolatedConversion.Operand, options);
 
         if (operation is IInterpolatedStringOperation interpolatedString)
         {
