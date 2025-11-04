@@ -28,7 +28,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     public INamedTypeSymbol? NuGetVersioningSemanticVersionSymbol { get; } = compilation.GetBestTypeByMetadataName("NuGet.Versioning.SemanticVersion");
     public INamedTypeSymbol? FormattableStringSymbol { get; } = compilation.GetBestTypeByMetadataName("System.FormattableString");
     public INamedTypeSymbol? InterpolatedStringHandlerAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
-    public INamedTypeSymbol? DefaultInterpolatedStringHandlerSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 
     private static HashSet<ISymbol> CreateExcludedMethods(Compilation compilation)
     {
@@ -517,9 +516,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     private bool IsInterpolatedStringType(ITypeSymbol typeSymbol)
     {
         if (typeSymbol.IsEqualTo(FormattableStringSymbol))
-            return true;
-
-        if (typeSymbol.IsEqualTo(DefaultInterpolatedStringHandlerSymbol))
             return true;
 
         if (InterpolatedStringHandlerAttributeSymbol is not null && typeSymbol.HasAttribute(InterpolatedStringHandlerAttributeSymbol))
