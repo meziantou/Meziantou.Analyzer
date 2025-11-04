@@ -129,10 +129,12 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
                     return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
                 }
+#if ROSLYN_4_14_OR_GREATER
                 else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation collectionExpression)
                 {
                     return collectionExpression.Elements.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
                 }
+#endif
                 else
                 {
                     return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
