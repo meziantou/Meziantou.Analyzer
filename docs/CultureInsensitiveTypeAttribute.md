@@ -57,6 +57,12 @@ public struct MyType
     public override string ToString() => "..."; // Culture-insensitive
     public string ToString(string format, IFormatProvider provider) => "..."; // Still culture-sensitive
 }
+
+// Usage
+var value = new MyType();
+value.ToString(); // OK - Default format is marked as culture-insensitive
+value.ToString("G", CultureInfo.InvariantCulture); // OK - Explicitly provides IFormatProvider
+value.ToString("G", null); // Warning - Format with null provider is still culture-sensitive
 ```
 
 ### Marking a Specific Format
