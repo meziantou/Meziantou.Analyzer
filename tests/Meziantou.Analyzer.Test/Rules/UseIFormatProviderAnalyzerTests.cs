@@ -11,6 +11,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         return new ProjectBuilder()
             .WithAnalyzer<UseIFormatProviderAnalyzer>()
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithTargetFramework(TargetFramework.NetLatest)
             .AddMeziantouAttributes();
     }
 
@@ -313,6 +314,199 @@ class Location
 {
     public override string ToString() => throw null;
     public string ToString(System.IFormatProvider formatProvider) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task InterpolatedStringHandler_CultureSensitiveFormat_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+[||]A.Print($"{DateTime.Now:D}");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_CultureInvariantFormat_ShouldNotReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+A.Print($"{DateTime.Now:o}");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_NoFormattableTypes_ShouldNotReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+A.Print($"XXX");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_MixedFormats_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+[||]A.Print($"{DateTime.Now:o} | {DateTime.Now:D}");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_CustomTypeWithAttribute_CultureInvariantFormat_ShouldNotReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+using Meziantou.Analyzer.Annotations;
+
+A.Print($"{new Bar():o}");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+
+[CultureInsensitiveType(format: "o")]
+sealed class Bar : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_CustomTypeWithAttribute_CultureSensitiveFormat_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+using Meziantou.Analyzer.Annotations;
+
+[||]A.Print($"{new Bar():D}");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+
+[CultureInsensitiveType(format: "o")]
+sealed class Bar : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedStringHandler_NoOverload_ShouldNotReport()
+    {
+        var sourceCode = """
+using System;
+using System.Runtime.CompilerServices;
+
+A.Print($"{DateTime.Now:D}");
+
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task FormattableString_CultureSensitiveFormat_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+[||]A.Sample($"{DateTime.Now:D}");
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_CultureInvariantFormat_ShouldNotReport()
+    {
+        var sourceCode = """
+using System;
+
+A.Sample($"{DateTime.Now:o}");
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
 }
 """;
         await CreateProjectBuilder()

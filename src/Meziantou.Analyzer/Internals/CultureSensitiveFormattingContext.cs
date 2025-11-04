@@ -26,6 +26,8 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.FontStretch");
     public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush");
     public INamedTypeSymbol? NuGetVersioningSemanticVersionSymbol { get; } = compilation.GetBestTypeByMetadataName("NuGet.Versioning.SemanticVersion");
+    public INamedTypeSymbol? FormattableStringSymbol { get; } = compilation.GetBestTypeByMetadataName("System.FormattableString");
+    public INamedTypeSymbol? InterpolatedStringHandlerAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
 
     private static HashSet<ISymbol> CreateExcludedMethods(Compilation compilation)
     {
@@ -127,11 +129,21 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
                     return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
                 }
+#if ROSLYN_4_14_OR_GREATER
+                else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation collectionExpression)
+                {
+                    return collectionExpression.Elements.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                }
+#endif
                 else
                 {
                     return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
                 }
             }
+
+            // Check if all interpolated string arguments are culture-invariant
+            if (HasOnlyCultureInvariantInterpolatedStringArguments(invocation, options))
+                return false;
 
             if ((options & CultureSensitiveOptions.UseInvocationReturnType) == CultureSensitiveOptions.UseInvocationReturnType)
                 return IsCultureSensitiveType(invocation.Type, options);
@@ -174,6 +186,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             }
         }
 #endif
+
+        if (operation is IConversionOperation interpolatedConversion && interpolatedConversion.Type.IsEqualTo(FormattableStringSymbol))
+            return IsCultureSensitiveOperation(interpolatedConversion.Operand, options);
 
         if (operation is IInterpolatedStringOperation interpolatedString)
         {
@@ -479,6 +494,41 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (invocationOperation.TargetMethod.Name == "LongCount")
                 return true;
         }
+
+        return false;
+    }
+
+    private bool HasOnlyCultureInvariantInterpolatedStringArguments(IInvocationOperation invocation, CultureSensitiveOptions options)
+    {
+        var hasInterpolatedStringParam = false;
+
+        foreach (var argument in invocation.Arguments)
+        {
+            var argumentType = argument.Value.Type;
+            if (argumentType is null)
+                continue;
+
+            if (IsInterpolatedStringType(argumentType))
+            {
+                hasInterpolatedStringParam = true;
+
+                // If any interpolated string argument is culture-sensitive, return false
+                if (IsCultureSensitiveOperation(argument.Value, options))
+                    return false;
+            }
+        }
+
+        // Return true only if we found interpolated string parameters and all were culture-invariant
+        return hasInterpolatedStringParam;
+    }
+
+    private bool IsInterpolatedStringType(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol.IsEqualTo(FormattableStringSymbol))
+            return true;
+
+        if (InterpolatedStringHandlerAttributeSymbol is not null && typeSymbol.HasAttribute(InterpolatedStringHandlerAttributeSymbol))
+            return true;
 
         return false;
     }
