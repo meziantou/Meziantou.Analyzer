@@ -39,6 +39,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         private readonly OverloadFinder _overloadFinder = new(compilation);
         private readonly INamedTypeSymbol? _formattableStringSymbol = compilation.GetBestTypeByMetadataName("System.FormattableString");
         private readonly INamedTypeSymbol? _interpolatedStringHandlerAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
+        private readonly INamedTypeSymbol? _defaultInterpolatedStringHandlerSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -158,6 +159,9 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         private bool IsInterpolatedStringType(ITypeSymbol typeSymbol)
         {
             if (typeSymbol.IsEqualTo(_formattableStringSymbol))
+                return true;
+
+            if (typeSymbol.IsEqualTo(_defaultInterpolatedStringHandlerSymbol))
                 return true;
 
             if (_interpolatedStringHandlerAttributeSymbol is not null && typeSymbol.HasAttribute(_interpolatedStringHandlerAttributeSymbol))
