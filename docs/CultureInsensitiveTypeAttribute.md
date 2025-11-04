@@ -6,27 +6,7 @@ The `CultureInsensitiveTypeAttribute` is used to mark types whose `ToString()` m
 
 The attribute is available through the [`Meziantou.Analyzer.Annotations`](https://www.nuget.org/packages/Meziantou.Analyzer.Annotations/) NuGet package.
 
-Alternatively, you can define the attribute in your own assembly instead of using the package. The analyzer only looks for the attribute by name and namespace, so you can copy the attribute definition into your project:
-
-```csharp
-namespace Meziantou.Analyzer.Annotations;
-
-[System.Diagnostics.Conditional("MEZIANTOU_ANALYZER_ANNOTATIONS")]
-[System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.Struct | System.AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-internal sealed class CultureInsensitiveTypeAttribute : System.Attribute
-{
-    public CultureInsensitiveTypeAttribute() { }
-    public CultureInsensitiveTypeAttribute(string? format) => Format = format;
-    public CultureInsensitiveTypeAttribute(bool isDefaultFormatCultureInsensitive) => IsDefaultFormatCultureInsensitive = isDefaultFormatCultureInsensitive;
-    public CultureInsensitiveTypeAttribute(System.Type type) => Type = type;
-    public CultureInsensitiveTypeAttribute(System.Type type, string? format) => (Type, Format) = (type, format);
-    public CultureInsensitiveTypeAttribute(System.Type type, bool isDefaultFormatCultureInsensitive) => (Type, IsDefaultFormatCultureInsensitive) = (type, isDefaultFormatCultureInsensitive);
-
-    public System.Type? Type { get; }
-    public string? Format { get; }
-    public bool IsDefaultFormatCultureInsensitive { get; }
-}
-```
+Alternatively, you can define the attribute in your own assembly instead of using the package. The analyzer only looks for the attribute by name and namespace, so you can copy the [attribute definition](https://github.com/meziantou/Meziantou.Analyzer/blob/main/src/Meziantou.Analyzer.Annotations/CultureInsensitiveTypeAttribute.cs) into your project.
 
 ### Marking a Type as Culture-Insensitive
 
