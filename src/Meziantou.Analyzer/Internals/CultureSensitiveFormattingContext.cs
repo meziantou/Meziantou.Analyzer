@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
@@ -26,6 +26,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.FontStretch");
     public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush");
     public INamedTypeSymbol? NuGetVersioningSemanticVersionSymbol { get; } = compilation.GetBestTypeByMetadataName("NuGet.Versioning.SemanticVersion");
+    public INamedTypeSymbol? FormattableStringSymbol { get; } = compilation.GetBestTypeByMetadataName("System.FormattableString");
+    public INamedTypeSymbol? InterpolatedStringHandlerAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
+    public INamedTypeSymbol? DefaultInterpolatedStringHandlerSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 
     private static HashSet<ISymbol> CreateExcludedMethods(Compilation compilation)
     {
@@ -132,6 +135,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                     return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
                 }
             }
+
+            // Check if all interpolated string arguments are culture-invariant
+            if (HasOnlyCultureInvariantInterpolatedStringArguments(invocation, options))
+                return false;
 
             if ((options & CultureSensitiveOptions.UseInvocationReturnType) == CultureSensitiveOptions.UseInvocationReturnType)
                 return IsCultureSensitiveType(invocation.Type, options);
@@ -479,6 +486,44 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (invocationOperation.TargetMethod.Name == "LongCount")
                 return true;
         }
+
+        return false;
+    }
+
+    private bool HasOnlyCultureInvariantInterpolatedStringArguments(IInvocationOperation invocation, CultureSensitiveOptions options)
+    {
+        var hasInterpolatedStringParam = false;
+
+        foreach (var argument in invocation.Arguments)
+        {
+            var argumentType = argument.Value.Type;
+            if (argumentType is null)
+                continue;
+
+            if (IsInterpolatedStringType(argumentType))
+            {
+                hasInterpolatedStringParam = true;
+
+                // If any interpolated string argument is culture-sensitive, return false
+                if (IsCultureSensitiveOperation(argument.Value, options))
+                    return false;
+            }
+        }
+
+        // Return true only if we found interpolated string parameters and all were culture-invariant
+        return hasInterpolatedStringParam;
+    }
+
+    private bool IsInterpolatedStringType(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol.IsEqualTo(FormattableStringSymbol))
+            return true;
+
+        if (typeSymbol.IsEqualTo(DefaultInterpolatedStringHandlerSymbol))
+            return true;
+
+        if (InterpolatedStringHandlerAttributeSymbol is not null && typeSymbol.HasAttribute(InterpolatedStringHandlerAttributeSymbol))
+            return true;
 
         return false;
     }

@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -37,9 +37,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
     {
         private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new(compilation);
         private readonly OverloadFinder _overloadFinder = new(compilation);
-        private readonly INamedTypeSymbol? _formattableStringSymbol = compilation.GetBestTypeByMetadataName("System.FormattableString");
-        private readonly INamedTypeSymbol? _interpolatedStringHandlerAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
-        private readonly INamedTypeSymbol? _defaultInterpolatedStringHandlerSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -65,9 +62,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false), [_cultureSensitiveContext.FormatProviderSymbol]);
                 if (overload is not null)
                 {
-                    if (HasCultureInvariantInterpolatedStringArguments(operation))
-                        return;
-
                     if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
                     {
                         context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
@@ -105,9 +99,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false), [_cultureSensitiveContext.CultureInfoSymbol]);
                 if (overload is not null)
                 {
-                    if (HasCultureInvariantInterpolatedStringArguments(operation))
-                        return;
-
                     if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
                     {
                         context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.CultureInfoSymbol.ToDisplayString());
@@ -132,42 +123,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, IOperation operation)
         {
             return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.consider_nullable_types", defaultValue: true);
-        }
-
-        private bool HasCultureInvariantInterpolatedStringArguments(IInvocationOperation operation)
-        {
-            var hasInterpolatedStringParam = false;
-
-            foreach (var argument in operation.Arguments)
-            {
-                var argumentType = argument.Value.Type;
-                if (argumentType is null)
-                    continue;
-
-                if (IsInterpolatedStringType(argumentType))
-                {
-                    hasInterpolatedStringParam = true;
-
-                    if (_cultureSensitiveContext.IsCultureSensitiveOperation(argument.Value, CultureSensitiveOptions.None))
-                        return false;
-                }
-            }
-
-            return hasInterpolatedStringParam;
-        }
-
-        private bool IsInterpolatedStringType(ITypeSymbol typeSymbol)
-        {
-            if (typeSymbol.IsEqualTo(_formattableStringSymbol))
-                return true;
-
-            if (typeSymbol.IsEqualTo(_defaultInterpolatedStringHandlerSymbol))
-                return true;
-
-            if (_interpolatedStringHandlerAttributeSymbol is not null && typeSymbol.HasAttribute(_interpolatedStringHandlerAttributeSymbol))
-                return true;
-
-            return false;
         }
     }
 }
