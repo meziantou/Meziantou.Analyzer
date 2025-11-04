@@ -11,6 +11,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         return new ProjectBuilder()
             .WithAnalyzer<UseIFormatProviderAnalyzer>()
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithTargetFramework(TargetFramework.NetLatest)
             .AddMeziantouAttributes();
     }
 
@@ -327,10 +328,13 @@ class Location
 using System;
 using System.Runtime.CompilerServices;
 
-[||]Print($"{DateTime.Now:D}");
+[||]A.Print($"{DateTime.Now:D}");
 
-static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -344,10 +348,13 @@ static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler
 using System;
 using System.Runtime.CompilerServices;
 
-Print($"{DateTime.Now:o}");
+A.Print($"{DateTime.Now:o}");
 
-static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -361,10 +368,13 @@ static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler
 using System;
 using System.Runtime.CompilerServices;
 
-Print($"XXX");
+A.Print($"XXX");
 
-static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -378,10 +388,13 @@ static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler
 using System;
 using System.Runtime.CompilerServices;
 
-[||]Print($"{DateTime.Now:o} | {DateTime.Now:D}");
+[||]A.Print($"{DateTime.Now:o} | {DateTime.Now:D}");
 
-static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -396,10 +409,13 @@ using System;
 using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Annotations;
 
-Print($"{new Bar():o}");
+A.Print($"{new Bar():o}");
 
-static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
 
 [CultureInsensitiveType(format: "o")]
 sealed class Bar : IFormattable
@@ -420,10 +436,13 @@ using System;
 using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Annotations;
 
-[||]Print($"{new Bar():D}");
+[||]A.Print($"{new Bar():D}");
 
-static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
 
 [CultureInsensitiveType(format: "o")]
 sealed class Bar : IFormattable
@@ -442,10 +461,13 @@ sealed class Bar : IFormattable
         var sourceCode = """
 using System;
 
-[||]Sample($"{DateTime.Now:D}");
+[||]A.Sample($"{DateTime.Now:D}");
 
-static void Sample(FormattableString value) => throw null;
-static void Sample(IFormatProvider format, FormattableString value) => throw null;
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -458,10 +480,13 @@ static void Sample(IFormatProvider format, FormattableString value) => throw nul
         var sourceCode = """
 using System;
 
-Sample($"{DateTime.Now:o}");
+A.Sample($"{DateTime.Now:o}");
 
-static void Sample(FormattableString value) => throw null;
-static void Sample(IFormatProvider format, FormattableString value) => throw null;
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -475,9 +500,12 @@ static void Sample(IFormatProvider format, FormattableString value) => throw nul
 using System;
 using System.Runtime.CompilerServices;
 
-Print($"{DateTime.Now:D}");
+A.Print($"{DateTime.Now:D}");
 
-static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+class A
+{
+    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+}
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
