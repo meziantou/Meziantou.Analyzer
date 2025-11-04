@@ -48,6 +48,7 @@ public sealed class Test : IEquatable<Test>
               .ValidateAsync();
     }
 
+#if ROSLYN_4_8_OR_GREATER
     [Fact]
     public async Task CRTP_WithoutEqualsObject_ShouldNotTrigger()
     {
@@ -87,6 +88,7 @@ public sealed class DerivedClass : Crtp<DerivedClass>;
               .WithSourceCode(originalCode)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task InheritedIEquatable_WithDirectImplementationToo_ShouldTrigger()
