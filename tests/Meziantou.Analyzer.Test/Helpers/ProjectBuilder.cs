@@ -153,7 +153,7 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds) =>
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.NetAnalyzers",
-            "10.0.100-rc.2.25502.107",
+            "10.0.100",
             paths: ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft."],
             ruleIds);
 #else
