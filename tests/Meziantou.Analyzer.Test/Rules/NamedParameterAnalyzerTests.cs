@@ -597,47 +597,77 @@ class TypeName
     }
 
     [Fact]
-    public async Task Expression_ShouldNotReportDiagnostic()
+    public async Task Expression_IEnumerable_ShouldNotReportDiagnostic()
     {
-
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System.Linq;
-using System.Collections.Generic;
+              .WithSourceCode("""
+                 using System.Linq;
+                 using System.Collections.Generic;
 
-class Test
-{
-    public Test()
-    {
-        IEnumerable<string> query = null;
-        query.Where(x => M([||]false));
-    }
+                 class Test
+                 {
+                     public Test()
+                     {
+                         IEnumerable<string> query = null;
+                         query.Where(x => M([||]false));
+                     }
 
-    static bool M(bool a) => false;
-}
-")
-              .ValidateAsync();
+                     static bool M(bool a) => false;
+                 }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        IQueryable<string> query = null;
-        query.Where(x => M(false));
-    }
-
-    static bool M(bool a) => false;
-}
-")
+                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Expression_IQueryable_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+              .WithSourceCode("""
+                 using System.Linq;
+                 class Test
+                 {
+                     public Test()
+                     {
+                         IQueryable<string> query = null;
+                         query.Where(x => M(false));
+                     }
+
+                     static bool M(bool a) => false;
+                 }
+                 """)
+              .ValidateAsync();
+    }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public async Task Expression_ParamsInLambda_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+              .WithSourceCode("""
+                 using System.Linq;
+                 class Test
+                 {
+                     public Test()
+                     {
+                         IQueryable<string> query = null;
+                         query.Where(x => M([|false|]));
+                     }
+                 
+                     static bool M(bool a) => false;
+                 }
+                 """)
+              .ValidateAsync();
+    }
+#endif
 
     [Fact]
     public async Task Expression_ShouldNotReportDiagnostic2()
     {
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
               .WithSourceCode(@"
 using System;
 using System.Linq;
