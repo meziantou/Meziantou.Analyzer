@@ -258,7 +258,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
                             return;
 
-                        if (operation is not null && operationUtilities.IsInExpressionContext(operation))
+                        if (operation is not null && !operation.GetCSharpLanguageVersion().IsCSharp14OrAbove() && operationUtilities.IsInExpressionContext(operation))
                             return;
 
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))
