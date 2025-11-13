@@ -95,7 +95,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
         private bool IsPotentialSealed(AnalyzerOptions options, INamedTypeSymbol symbol, CancellationToken cancellationToken)
         {
-            if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType)
+            if (symbol.IsSealed || symbol.IsAbstract || symbol.IsStatic || symbol.IsValueType || symbol.IsImplicitlyDeclared)
                 return false;
 
             if (symbol.InheritsFrom(ExceptionSymbol) && !ExceptionClassShouldBeSealed(options, symbol))

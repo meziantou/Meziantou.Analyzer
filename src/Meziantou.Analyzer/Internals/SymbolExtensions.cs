@@ -1,3 +1,4 @@
+using System.Reflection.Metadata.Ecma335;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
@@ -116,9 +117,9 @@ internal static class SymbolExtensions
             foreach (var member in symbol.GetMembers(name))
                 yield return member;
 
-            if(symbol is INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol)
+            if (symbol is INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol)
             {
-                foreach(var iface in interfaceSymbol.AllInterfaces)
+                foreach (var iface in interfaceSymbol.AllInterfaces)
                 {
                     foreach (var member in iface.GetMembers(name))
                         yield return member;
@@ -145,7 +146,13 @@ internal static class SymbolExtensions
         {
             var syntax = syntaxReference.GetSyntax(cancellationToken);
             if (!syntax.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.CompilationUnit))
+            {
+                // ASP.NET Core generates a public partial class for top-level statements. We need to skip thoses.
+                if (syntax.SyntaxTree.FilePath?.EndsWith(".g.cs", StringComparison.Ordinal) is true)
+                    continue;
+
                 return false;
+            }
         }
 
         return true;

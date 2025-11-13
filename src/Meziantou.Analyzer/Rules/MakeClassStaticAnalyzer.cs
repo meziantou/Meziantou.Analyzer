@@ -42,6 +42,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
     {
         return !symbol.IsAbstract &&
             !symbol.IsStatic &&
+            !symbol.IsImplicitlyDeclared &&
             !symbol.Interfaces.Any() &&
             !HasBaseClass() &&
             !symbol.IsUnitTestClass() &&
