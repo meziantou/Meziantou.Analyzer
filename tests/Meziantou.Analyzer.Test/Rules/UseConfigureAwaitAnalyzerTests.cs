@@ -720,7 +720,7 @@ class ClassTest
             await using ((await A().ConfigureAwait(false)).ConfigureAwait(false))
             {
             }
-            
+
             Task<IAsyncDisposable> A() => throw null;
             """;
 
@@ -728,6 +728,135 @@ class ClassTest
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .WithOutputKind(@OutputKind.ConsoleApplication)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AspNetCoreProject_RegularClass_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
+class MyService
+{
+    async Task DoWork()
+    {
+        await Task.Delay(1);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AspNetCoreProject_ServiceWithDependencyInjection_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+class MyService
+{
+    private readonly ILogger<MyService> _logger;
+
+    public MyService(ILogger<MyService> logger)
+    {
+        _logger = logger;
+    }
+
+    async Task DoWork()
+    {
+        await Task.Delay(1);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AspNetCoreProject_Repository_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
+namespace MyApp.Repositories
+{
+    class UserRepository
+    {
+        async Task<string> GetUserAsync(int id)
+        {
+            await Task.Delay(1);
+            return ""user"";
+        }
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AspNetCoreProject_BlazorComponent_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components;
+
+class MyComponent : IComponent
+{
+    public void Attach(RenderHandle renderHandle) => throw null;
+    public Task SetParametersAsync(ParameterView parameters) => throw null;
+
+    async Task OnInitializedAsync()
+    {
+        await Task.Delay(1);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AspNetCoreProject_ConfigurationAlways_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
+class MyService
+{
+    async Task DoWork()
+    {
+        [||]await Task.Delay(1);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.AspNetCore6_0)
+              .AddAnalyzerConfiguration("MA0004.report", "always")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonAspNetCoreProject_RegularClass_ShouldReportDiagnostic()
+    {
+        const string SourceCode = @"using System.Threading.Tasks;
+class MyService
+{
+    async Task DoWork()
+    {
+        [||]await Task.Delay(1);
+    }
+}";
+        const string CodeFix = @"using System.Threading.Tasks;
+class MyService
+{
+    async Task DoWork()
+    {
+        await Task.Delay(1).ConfigureAwait(false);
+    }
+}";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
 }

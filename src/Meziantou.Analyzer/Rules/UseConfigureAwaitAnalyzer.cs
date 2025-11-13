@@ -59,6 +59,8 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         private INamedTypeSymbol? AspNetCore_IFilterMetadata { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata");
         private INamedTypeSymbol? AspNetCore_IComponent { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
 
+        private bool IsAspNetCoreProject { get; } = compilation.ReferencedAssemblyNames.Any(a => a.Name.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal));
+
         public void AnalyzeAwaitOperation(OperationAnalysisContext context)
         {
             // if expression is of type ConfiguredTaskAwaitable, do nothing
@@ -221,6 +223,8 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             if (HasPreviousConfigureAwait(semanticModel, node, cancellationToken))
                 return true;
 
+            // ASP.NET Core projects don't have a SynchronizationContext by default, so ConfigureAwait(false) is not needed
+            // Exception: Blazor has a synchronization context, see https://github.com/meziantou/Meziantou.Analyzer/issues/96
             var containingClass = GetParentSymbol<INamedTypeSymbol>(semanticModel, node, cancellationToken);
             if (containingClass is not null)
             {
@@ -233,7 +237,13 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                     containingClass.Implements(AspNetCore_ITagHelper) || // ASP.NET Core
                     containingClass.Implements(AspNetCore_ITagHelperComponent) || // ASP.NET Core
                     containingClass.Implements(AspNetCore_IFilterMetadata) ||
-                    containingClass.Implements(AspNetCore_IComponent))  // Blazor has a synchronization context, see https://github.com/meziantou/Meziantou.Analyzer/issues/96
+                    containingClass.Implements(AspNetCore_IComponent))  // Blazor has a synchronization context
+                {
+                    return false;
+                }
+
+                // If this is an ASP.NET Core project (but not Blazor), don't require ConfigureAwait
+                if (IsAspNetCoreProject && !containingClass.Implements(AspNetCore_IComponent))
                 {
                     return false;
                 }
