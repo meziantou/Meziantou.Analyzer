@@ -1,5 +1,6 @@
 using Meziantou.Analyzer.Rules;
 using TestHelper;
+using Xunit;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
