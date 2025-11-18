@@ -14,20 +14,20 @@ public sealed class UseTimeSpanZeroAnalyzerTests
     }
 
     [Theory]
-    [InlineData("TimeSpan.FromSeconds(0)")]
-    [InlineData("TimeSpan.FromSeconds(0.0)")]
-    [InlineData("TimeSpan.FromMinutes(0)")]
-    [InlineData("TimeSpan.FromMinutes(0.0)")]
-    [InlineData("TimeSpan.FromHours(0)")]
-    [InlineData("TimeSpan.FromHours(0.0)")]
-    [InlineData("TimeSpan.FromDays(0)")]
-    [InlineData("TimeSpan.FromDays(0.0)")]
-    [InlineData("TimeSpan.FromMilliseconds(0)")]
-    [InlineData("TimeSpan.FromMilliseconds(0.0)")]
-    [InlineData("TimeSpan.FromMicroseconds(0)")]
-    [InlineData("TimeSpan.FromMicroseconds(0.0)")]
-    [InlineData("TimeSpan.FromTicks(0)")]
-    [InlineData("TimeSpan.FromTicks(0L)")]
+    [InlineData("System.TimeSpan.FromSeconds(0)")]
+    [InlineData("System.TimeSpan.FromSeconds(0.0)")]
+    [InlineData("System.TimeSpan.FromMinutes(0)")]
+    [InlineData("System.TimeSpan.FromMinutes(0.0)")]
+    [InlineData("System.TimeSpan.FromHours(0)")]
+    [InlineData("System.TimeSpan.FromHours(0.0)")]
+    [InlineData("System.TimeSpan.FromDays(0)")]
+    [InlineData("System.TimeSpan.FromDays(0.0)")]
+    [InlineData("System.TimeSpan.FromMilliseconds(0)")]
+    [InlineData("System.TimeSpan.FromMilliseconds(0.0)")]
+    [InlineData("System.TimeSpan.FromMicroseconds(0)")]
+    [InlineData("System.TimeSpan.FromMicroseconds(0.0)")]
+    [InlineData("System.TimeSpan.FromTicks(0)")]
+    [InlineData("System.TimeSpan.FromTicks(0L)")]
     [InlineData("System.TimeSpan.FromSeconds(0)")]
     public async Task ShouldReportDiagnostic(string code)
     {
@@ -54,18 +54,18 @@ class TestClass
     }
 
     [Theory]
-    [InlineData("TimeSpan.FromSeconds(1)")]
-    [InlineData("TimeSpan.FromSeconds(0.5)")]
-    [InlineData("TimeSpan.FromMinutes(1)")]
-    [InlineData("TimeSpan.FromHours(1)")]
-    [InlineData("TimeSpan.FromDays(1)")]
-    [InlineData("TimeSpan.FromMilliseconds(100)")]
-    [InlineData("TimeSpan.FromMicroseconds(1)")]
-    [InlineData("TimeSpan.FromTicks(1)")]
-    [InlineData("TimeSpan.Zero")]
-    [InlineData("new TimeSpan()")]
-    [InlineData("new TimeSpan(0)")]
-    [InlineData("default(TimeSpan)")]
+    [InlineData("System.TimeSpan.FromSeconds(1)")]
+    [InlineData("System.TimeSpan.FromSeconds(0.5)")]
+    [InlineData("System.TimeSpan.FromMinutes(1)")]
+    [InlineData("System.TimeSpan.FromHours(1)")]
+    [InlineData("System.TimeSpan.FromDays(1)")]
+    [InlineData("System.TimeSpan.FromMilliseconds(100)")]
+    [InlineData("System.TimeSpan.FromMicroseconds(1)")]
+    [InlineData("System.TimeSpan.FromTicks(1)")]
+    [InlineData("System.TimeSpan.Zero")]
+    [InlineData("new System.TimeSpan()")]
+    [InlineData("new System.TimeSpan(0)")]
+    [InlineData("default(System.TimeSpan)")]
     public async Task ShouldNotReportDiagnostic(string code)
     {
         await CreateProjectBuilder()
@@ -90,9 +90,9 @@ class TestClass
 {
     void Test()
     {
-        _ = [||]TimeSpan.FromSeconds(0);
-        _ = [||]TimeSpan.FromMinutes(0);
-        _ = [||]TimeSpan.FromHours(0);
+        _ = [||]System.TimeSpan.FromSeconds(0);
+        _ = [||]System.TimeSpan.FromMinutes(0);
+        _ = [||]System.TimeSpan.FromHours(0);
     }
 }
 """)
