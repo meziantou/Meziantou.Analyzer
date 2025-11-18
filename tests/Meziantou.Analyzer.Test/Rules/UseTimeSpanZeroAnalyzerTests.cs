@@ -10,7 +10,8 @@ public sealed class UseTimeSpanZeroAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<UseTimeSpanZeroAnalyzer>()
-            .WithCodeFixProvider<UseTimeSpanZeroFixer>();
+            .WithCodeFixProvider<UseTimeSpanZeroFixer>()
+            .WithTargetFramework(Helpers.TargetFramework.NetLatest);
     }
 
     [Theory]
@@ -23,12 +24,14 @@ public sealed class UseTimeSpanZeroAnalyzerTests
     [InlineData("System.TimeSpan.FromDays(0)")]
     [InlineData("System.TimeSpan.FromDays(0.0)")]
     [InlineData("System.TimeSpan.FromMilliseconds(0)")]
+    [InlineData("System.TimeSpan.FromMilliseconds(0L)")]
+    [InlineData("System.TimeSpan.FromMilliseconds(0L, 0L)")]
     [InlineData("System.TimeSpan.FromMilliseconds(0.0)")]
+    [InlineData("System.TimeSpan.FromMilliseconds(0.0d)")]
     [InlineData("System.TimeSpan.FromMicroseconds(0)")]
     [InlineData("System.TimeSpan.FromMicroseconds(0.0)")]
     [InlineData("System.TimeSpan.FromTicks(0)")]
     [InlineData("System.TimeSpan.FromTicks(0L)")]
-    [InlineData("System.TimeSpan.FromSeconds(0)")]
     public async Task ShouldReportDiagnostic(string code)
     {
         await CreateProjectBuilder()
@@ -91,8 +94,6 @@ class TestClass
     void Test()
     {
         _ = [||]System.TimeSpan.FromSeconds(0);
-        _ = [||]System.TimeSpan.FromMinutes(0);
-        _ = [||]System.TimeSpan.FromHours(0);
     }
 }
 """)
@@ -101,8 +102,6 @@ class TestClass
 {
     void Test()
     {
-        _ = System.TimeSpan.Zero;
-        _ = System.TimeSpan.Zero;
         _ = System.TimeSpan.Zero;
     }
 }

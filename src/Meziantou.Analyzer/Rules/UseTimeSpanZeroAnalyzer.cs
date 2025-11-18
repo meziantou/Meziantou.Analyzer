@@ -39,7 +39,7 @@ public sealed class UseTimeSpanZeroAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocationOperation(OperationAnalysisContext context, INamedTypeSymbol timeSpanType)
     {
         var operation = (IInvocationOperation)context.Operation;
-        
+
         // Check if the method is a static method on System.TimeSpan
         if (!operation.TargetMethod.IsStatic)
             return;
@@ -53,17 +53,19 @@ public sealed class UseTimeSpanZeroAnalyzer : DiagnosticAnalyzer
             return;
 
         // Check if the method has exactly one argument
-        if (operation.Arguments.Length != 1)
+        if (operation.Arguments.Length == 0)
             return;
 
         // Check if the argument is a constant value of 0
-        var argument = operation.Arguments[0];
-        if (!argument.Value.ConstantValue.HasValue)
-            return;
+        foreach (var argument in operation.Arguments)
+        {
+            if (!argument.Value.ConstantValue.HasValue)
+                return;
 
-        var constantValue = argument.Value.ConstantValue.Value;
-        if (!NumericHelpers.IsZero(constantValue))
-            return;
+            var constantValue = argument.Value.ConstantValue.Value;
+            if (!NumericHelpers.IsZero(constantValue))
+                return;
+        }
 
         context.ReportDiagnostic(Rule, operation, methodName);
     }
