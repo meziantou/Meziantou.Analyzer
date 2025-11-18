@@ -44,7 +44,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
         var members = symbol.GetMembers()
             .OfType<IFieldSymbol>()
             .Where(member => member.ConstantValue is not null)
-            .Select(member => (member, IsSingleBitSet: IsSingleBitSet(member.ConstantValue), IsZero: IsZero(member.ConstantValue)))
+            .Select(member => (member, IsSingleBitSet: IsSingleBitSet(member.ConstantValue), IsZero: NumericHelpers.IsZero(member.ConstantValue)))
             .ToArray();
         foreach (var member in members)
         {
@@ -66,7 +66,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
                 }
             }
 
-            if (!IsZero(value))
+            if (!NumericHelpers.IsZero(value))
             {
                 context.ReportDiagnostic(Rule, symbol, member.member.Name);
                 return;
@@ -93,24 +93,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
         };
     }
 
-    private static bool IsZero(object? o)
-    {
-        // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum?WT.mc_id=DT-MVP-5003978
-        // The approved types for an enum are byte, sbyte, short, ushort, int, uint, long, or ulong.
-        return o switch
-        {
-            null => false,
-            byte x => x == 0,
-            sbyte x => x == 0,
-            short x => x == 0,
-            ushort x => x == 0,
-            int x => x == 0,
-            uint x => x == 0,
-            long x => x == 0,
-            ulong x => x == 0,
-            _ => throw new ArgumentOutOfRangeException(nameof(o), $"Type {o.GetType().FullName} is not supported"),
-        };
-    }
+
 
     private static bool IsAllBitsSet(object? o)
     {
