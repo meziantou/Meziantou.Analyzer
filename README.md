@@ -193,6 +193,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0175](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0175.md)|Style|Record should not use explicit 'class' keyword|ℹ️|❌|❌|
 |[MA0176](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0176.md)|Performance|Optimize guid creation|ℹ️|✔️|✔️|
 |[MA0177](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0177.md)|Style|Use single-line XML comment syntax when possible|ℹ️|❌|✔️|
+|[MA0178](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0178.md)|Design|Use TimeSpan.Zero instead of TimeSpan.FromXXX(0)|ℹ️|✔️|✔️|
 
 <!-- rules -->
 
