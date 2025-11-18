@@ -178,6 +178,7 @@ internal static class RuleIdentifiers
     public const string RecordClassDeclarationShouldBeImplicit = "MA0175";
     public const string OptimizeGuidCreation = "MA0176";
     public const string UseSingleLineXmlCommentSyntaxWhenPossible = "MA0177";
+    public const string UseTimeSpanZero = "MA0178";
 
     public static string GetHelpUri(string identifier)
     {
