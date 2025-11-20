@@ -1,9 +1,9 @@
-﻿<Project Sdk="Meziantou.NET.Sdk.Test">
+<Project Sdk="Meziantou.NET.Sdk.Test">
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
-    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -16,4 +16,7 @@
     <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
 </Project>
