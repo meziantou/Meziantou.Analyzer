@@ -275,7 +275,7 @@ dotnet_diagnostic.MA0091.severity = warning
 # MA0092: Sender should be 'null' for static events
 dotnet_diagnostic.MA0092.severity = warning
 
-# MA0093: EventArgs should not be null
+# MA0093: EventArgs should not be null when raising an event
 dotnet_diagnostic.MA0093.severity = warning
 
 # MA0094: A class that provides CompareTo(T) should implement IComparable<T>

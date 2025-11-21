@@ -31,7 +31,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor EventArgsRule = new(
         RuleIdentifiers.EventArgsSenderShouldNotBeNullForEvents,
-        title: "EventArgs should not be null",
+        title: "EventArgs should not be null when raising an event",
         messageFormat: "EventArgs should not be null, use 'EventArgs.Empty' instead",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
