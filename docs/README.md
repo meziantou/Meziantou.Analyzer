@@ -92,7 +92,7 @@
 |[MA0090](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0090.md)|Design|Remove empty else/finally block|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0091](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0092](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0092.md)|Usage|Sender should be 'null' for static events|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0093](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0093.md)|Usage|EventArgs should not be null|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0093](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0093.md)|Usage|EventArgs should not be null when raising an event|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0094](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0094.md)|Design|A class that provides CompareTo(T) should implement IComparable\<T\>|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0095](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0095.md)|Design|A class that implements IEquatable\<T\> should override Equals(object)|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0096](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0096.md)|Design|A class that implements IComparable\<T\> should also implement IEquatable\<T\>|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -463,7 +463,7 @@ dotnet_diagnostic.MA0091.severity = warning
 # MA0092: Sender should be 'null' for static events
 dotnet_diagnostic.MA0092.severity = warning
 
-# MA0093: EventArgs should not be null
+# MA0093: EventArgs should not be null when raising an event
 dotnet_diagnostic.MA0093.severity = warning
 
 # MA0094: A class that provides CompareTo(T) should implement IComparable<T>
@@ -998,7 +998,7 @@ dotnet_diagnostic.MA0091.severity = none
 # MA0092: Sender should be 'null' for static events
 dotnet_diagnostic.MA0092.severity = none
 
-# MA0093: EventArgs should not be null
+# MA0093: EventArgs should not be null when raising an event
 dotnet_diagnostic.MA0093.severity = none
 
 # MA0094: A class that provides CompareTo(T) should implement IComparable<T>
