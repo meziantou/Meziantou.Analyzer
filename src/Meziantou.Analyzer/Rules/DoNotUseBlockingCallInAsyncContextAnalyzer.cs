@@ -89,6 +89,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             ValueTaskAwaiterOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
 
             ThreadSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Thread");
+            SemaphoreSlimSymbol = compilation.GetBestTypeByMetadataName("System.Threading.SemaphoreSlim");
+            TimeSpanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
 
             DbContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
             DbSetSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
@@ -130,6 +132,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private INamedTypeSymbol? ValueTaskAwaiterOfTSymbol { get; }
 
         private INamedTypeSymbol? ThreadSymbol { get; }
+        private INamedTypeSymbol? SemaphoreSlimSymbol { get; }
+        private INamedTypeSymbol? TimeSpanSymbol { get; }
 
         private INamedTypeSymbol? DbContextSymbol { get; }
         private INamedTypeSymbol? DbSetSymbol { get; }
@@ -240,6 +244,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return false;
             }
 
+            // SemaphoreSlim.Wait(0) is a non-blocking try-acquire pattern, skip it
+            else if (SemaphoreSlimSymbol is not null && targetMethod.Name == "Wait" && targetMethod.ContainingType.IsEqualTo(SemaphoreSlimSymbol) && IsSemaphoreSlimWaitWithZeroTimeout(operation))
+            {
+                return false;
+            }
+
             // Search async equivalent: sample.Write() => sample.WriteAsync()
             if (!targetMethod.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
             {
@@ -299,6 +309,28 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     return true;
 
                 if (CancellationTokenSymbol is not null && OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false, [CancellationTokenSymbol]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsSemaphoreSlimWaitWithZeroTimeout(IInvocationOperation operation)
+        {
+            if (operation.Arguments.Length == 0)
+                return false;
+
+            var firstArgument = operation.Arguments[0];
+            var constantValue = firstArgument.Value.ConstantValue;
+
+            // Check for Wait(0) - integer literal 0
+            if (constantValue.HasValue && constantValue.Value is int intValue && intValue == 0)
+                return true;
+
+            // Check for Wait(TimeSpan.Zero)
+            if (TimeSpanSymbol is not null && firstArgument.Value is IMemberReferenceOperation memberRef)
+            {
+                if (memberRef.Member.Name == nameof(TimeSpan.Zero) && memberRef.Member.ContainingType.IsEqualTo(TimeSpanSymbol))
                     return true;
             }
 
