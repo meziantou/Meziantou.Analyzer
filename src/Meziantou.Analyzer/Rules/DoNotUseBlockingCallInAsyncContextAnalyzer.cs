@@ -179,20 +179,17 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             // Task.Wait()
             // Task`1.Wait()
-            else if (targetMethod.Name == nameof(Task.Wait))
+            else if (targetMethod.Name == nameof(Task.Wait) && targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
             {
-                if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
+                if (operation.Arguments.Length == 0)
                 {
-                    if (operation.Arguments.Length == 0)
-                    {
-                        data = new("Use await instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait);
-                        return true;
-                    }
-                    else
-                    {
-                        data = new("Use 'WaitAsync' instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait_Delay);
-                        return true;
-                    }
+                    data = new("Use await instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait);
+                    return true;
+                }
+                else
+                {
+                    data = new("Use 'WaitAsync' instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait_Delay);
+                    return true;
                 }
             }
 
