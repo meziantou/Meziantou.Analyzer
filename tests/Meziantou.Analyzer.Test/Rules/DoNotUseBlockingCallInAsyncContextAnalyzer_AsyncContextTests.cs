@@ -1091,4 +1091,23 @@ class Sample
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task SemaphoreSlim_Wait_ZeroWithCancellationToken_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var semaphore = new SemaphoreSlim(1);
+                        semaphore.Wait(0, CancellationToken.None);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
 }
