@@ -99,6 +99,10 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                     {
                         diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                     }
+                    else if (TypeContainsMembersWithDataClassification(parameter.Type, dataClassificationAttributeSymbol))
+                    {
+                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
+                    }
                 }
                 else if (operation is IPropertyReferenceOperation { Property: var property })
                 {
@@ -118,7 +122,43 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                 {
                     ValidateDataClassification(diagnosticReporter, arrayElementReferenceOperation.ArrayReference, reportOperation, dataClassificationAttributeSymbol);
                 }
+                else
+                {
+                    // Check if the operation's type contains members with DataClassificationAttribute
+                    var type = operation.Type;
+                    if (type is not null && TypeContainsMembersWithDataClassification(type, dataClassificationAttributeSymbol))
+                    {
+                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
+                    }
+                }
             }
+        }
+
+        private static bool TypeContainsMembersWithDataClassification(ITypeSymbol type, INamedTypeSymbol dataClassificationAttributeSymbol)
+        {
+            if (type is null)
+                return false;
+
+            // Don't check primitive types, strings, or common system types
+            if (type.SpecialType != SpecialType.None)
+                return false;
+
+            // Check all properties
+            foreach (var member in type.GetMembers())
+            {
+                if (member is IPropertySymbol property)
+                {
+                    if (property.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                        return true;
+                }
+                else if (member is IFieldSymbol field)
+                {
+                    if (field.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool FindLogParameters(IMethodSymbol methodSymbol, out IParameterSymbol? arguments)
