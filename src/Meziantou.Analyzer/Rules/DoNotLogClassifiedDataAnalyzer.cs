@@ -126,9 +126,22 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                 {
                     // Check if the operation's type contains members with DataClassificationAttribute
                     var type = operation.Type;
-                    if (type is not null && TypeContainsMembersWithDataClassification(type, dataClassificationAttributeSymbol))
+                    if (type is not null)
                     {
-                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
+                        // Early exit for value types (enums, structs) from well-known namespaces
+                        if (type.IsValueType && type is INamedTypeSymbol namedType)
+                        {
+                            var ns = namedType.ContainingNamespace?.ToDisplayString();
+                            if (ns is not null && (ns.StartsWith("System.", StringComparison.Ordinal) || ns == "System"))
+                            {
+                                return;
+                            }
+                        }
+
+                        if (TypeContainsMembersWithDataClassification(type, dataClassificationAttributeSymbol))
+                        {
+                            diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
+                        }
                     }
                 }
             }
@@ -143,7 +156,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
             if (type.SpecialType != SpecialType.None)
                 return false;
 
-            // Check all properties
+            // Check all members (properties and fields)
             foreach (var member in type.GetMembers())
             {
                 if (member is IPropertySymbol property)
