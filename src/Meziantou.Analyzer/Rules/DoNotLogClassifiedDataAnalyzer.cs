@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -61,8 +62,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
             var operation = (IInvocationOperation)context.Operation;
             if (operation.TargetMethod.ContainingType.IsEqualTo(LoggerExtensionsSymbol) && FindLogParameters(operation.TargetMethod, out var argumentsParameter))
             {
-                var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(operation.Syntax.SyntaxTree);
-                var reportTypesWithDataClassification = GetReportTypesWithDataClassificationConfiguration(options);
+                var reportTypesWithDataClassification = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", defaultValue: false);
 
                 foreach (var argument in operation.Arguments)
                 {
@@ -79,17 +79,6 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                     }
                 }
             }
-        }
-
-        private static bool GetReportTypesWithDataClassificationConfiguration(AnalyzerConfigOptions options)
-        {
-            if (options.TryGetValue(RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", out var value))
-            {
-                if (bool.TryParse(value, out var result))
-                    return result;
-            }
-
-            return false; // Default to false (disabled by default)
         }
 
         private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IEnumerable<IOperation> operations, bool reportTypesWithDataClassification)
