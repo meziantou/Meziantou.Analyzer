@@ -195,4 +195,231 @@ class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataCla
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Logger_LogInformation_DataClassification_TypeWithClassifiedProperty()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+PatientInfo p = new();
+logger.LogInformation("{Patient}", [|p|]);
+
+class PatientInfo
+{
+    [PiiData] public string PatientId { get; set; }
+    public ulong RecordId { get; set; }
+    [PiiData] public string FirstName { get; set; }
+}
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_DataClassification_TypeWithClassifiedField()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+PatientInfo p = new();
+logger.LogInformation("{Patient}", [|p|]);
+
+class PatientInfo
+{
+    [PiiData] public string PatientId;
+    public ulong RecordId;
+}
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_NoDataClassification_TypeWithNoClassifiedMembers()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+PatientInfo p = new();
+logger.LogInformation("{Patient}", p);
+
+class PatientInfo
+{
+    public string PatientId { get; set; }
+    public ulong RecordId { get; set; }
+}
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_DataClassification_ObjectCreationWithClassifiedProperty()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Patient}", [|new PatientInfo()|]);
+
+class PatientInfo
+{
+    [PiiData] public string PatientId { get; set; }
+    public ulong RecordId { get; set; }
+}
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_NoDataClassification_PrimitiveType()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+int value = 42;
+logger.LogInformation("{Value}", value);
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_NoDataClassification_StringType()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+string value = "test";
+logger.LogInformation("{Value}", value);
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_DataClassification_TypeWithClassifiedProperty_ConfigDisabled()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+PatientInfo p = new();
+logger.LogInformation("{Patient}", p);
+
+class PatientInfo
+{
+    [PiiData] public string PatientId { get; set; }
+    public ulong RecordId { get; set; }
+}
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "false")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_DataClassification_TypeWithClassifiedProperty_ConfigEnabled()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+PatientInfo p = new();
+logger.LogInformation("{Patient}", [|p|]);
+
+class PatientInfo
+{
+    [PiiData] public string PatientId { get; set; }
+    public ulong RecordId { get; set; }
+}
+
+class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "true")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Logger_LogInformation_DataClassification_DirectProperty_ConfigDisabled()
+    {
+        const string SourceCode = """
+using Microsoft.Extensions.Logging;
+
+ILogger logger = null;
+logger.LogInformation("{Prop}", [|new Dummy().Prop|]);
+
+class Dummy
+{
+    [TaxonomyAttribute()]
+    public string Prop { get; set; }
+}
+
+class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+{
+    public TaxonomyAttribute() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "false")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -61,6 +62,8 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
             var operation = (IInvocationOperation)context.Operation;
             if (operation.TargetMethod.ContainingType.IsEqualTo(LoggerExtensionsSymbol) && FindLogParameters(operation.TargetMethod, out var argumentsParameter))
             {
+                var reportTypesWithDataClassification = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", defaultValue: false);
+
                 foreach (var argument in operation.Arguments)
                 {
                     var parameter = argument.Parameter;
@@ -71,31 +74,35 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                     {
                         if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
                         {
-                            ValidateDataClassification(context, arrayCreation.Initializer.ElementValues);
+                            ValidateDataClassification(context, arrayCreation.Initializer.ElementValues, reportTypesWithDataClassification);
                         }
                     }
                 }
             }
         }
 
-        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IEnumerable<IOperation> operations)
+        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IEnumerable<IOperation> operations, bool reportTypesWithDataClassification)
         {
             foreach (var operation in operations)
             {
-                ValidateDataClassification(diagnosticReporter, operation);
+                ValidateDataClassification(diagnosticReporter, operation, reportTypesWithDataClassification);
             }
         }
 
-        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation)
+        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, bool reportTypesWithDataClassification)
         {
-            ValidateDataClassification(diagnosticReporter, operation, operation, DataClassificationAttributeSymbol!);
+            ValidateDataClassification(diagnosticReporter, operation, operation, DataClassificationAttributeSymbol!, reportTypesWithDataClassification);
 
-            static void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, IOperation reportOperation, INamedTypeSymbol dataClassificationAttributeSymbol)
+            static void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, IOperation reportOperation, INamedTypeSymbol dataClassificationAttributeSymbol, bool reportTypesWithDataClassification)
             {
                 operation = operation.UnwrapConversionOperations();
                 if (operation is IParameterReferenceOperation { Parameter: var parameter })
                 {
                     if (parameter.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || parameter.Type.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                    {
+                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
+                    }
+                    else if (reportTypesWithDataClassification && TypeContainsMembersWithDataClassification(parameter.Type, dataClassificationAttributeSymbol))
                     {
                         diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                     }
@@ -116,9 +123,58 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                 }
                 else if (operation is IArrayElementReferenceOperation arrayElementReferenceOperation)
                 {
-                    ValidateDataClassification(diagnosticReporter, arrayElementReferenceOperation.ArrayReference, reportOperation, dataClassificationAttributeSymbol);
+                    ValidateDataClassification(diagnosticReporter, arrayElementReferenceOperation.ArrayReference, reportOperation, dataClassificationAttributeSymbol, reportTypesWithDataClassification);
+                }
+                else if (reportTypesWithDataClassification)
+                {
+                    // Check if the operation's type contains members with DataClassificationAttribute
+                    var type = operation.Type;
+                    if (type is not null)
+                    {
+                        // Early exit for value types (enums, structs) from well-known namespaces
+                        if (type.IsValueType && type is INamedTypeSymbol namedType)
+                        {
+                            var ns = namedType.ContainingNamespace?.ToDisplayString();
+                            if (ns is not null && (ns.StartsWith("System.", StringComparison.Ordinal) || ns == "System"))
+                            {
+                                return;
+                            }
+                        }
+
+                        if (TypeContainsMembersWithDataClassification(type, dataClassificationAttributeSymbol))
+                        {
+                            diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
+                        }
+                    }
                 }
             }
+        }
+
+        private static bool TypeContainsMembersWithDataClassification(ITypeSymbol type, INamedTypeSymbol dataClassificationAttributeSymbol)
+        {
+            if (type is null)
+                return false;
+
+            // Don't check primitive types, strings, or common system types
+            if (type.SpecialType != SpecialType.None)
+                return false;
+
+            // Check all members (properties and fields) including inherited members
+            foreach (var member in type.GetAllMembers())
+            {
+                if (member is IPropertySymbol property)
+                {
+                    if (property.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                        return true;
+                }
+                else if (member is IFieldSymbol field)
+                {
+                    if (field.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool FindLogParameters(IMethodSymbol methodSymbol, out IParameterSymbol? arguments)
