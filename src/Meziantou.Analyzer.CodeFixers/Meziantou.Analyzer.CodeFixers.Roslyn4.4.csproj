@@ -1,0 +1,30 @@
+<Project Sdk="Meziantou.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Version>1.0.1</Version>
+    <RootNamespace>Meziantou.Analyzer</RootNamespace>
+    <AssemblyName>Meziantou.Analyzer.CodeFixers</AssemblyName>
+    
+    <DefineConstants>$(DefineConstants);ROSLYN_4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER</DefineConstants>
+    <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
+    <NoWarn>$(NoWarn);nullable;CA1812</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\Meziantou.Analyzer\BannedSymbols.txt" />
+    
+    <Compile Include="..\Meziantou.Analyzer\RuleIdentifiers.cs" Link="RuleIdentifiers.cs" />
+    <Compile Include="..\Meziantou.Analyzer\Internals\*.cs" Link="Internals\%(Filename)%(Extension)" />
+    <Compile Include="..\Meziantou.Analyzer\Rules\DoNotUseBlockingCallInAsyncContextData.cs" Link="Rules\DoNotUseBlockingCallInAsyncContextData.cs" />
+    <Compile Include="..\Meziantou.Analyzer\Rules\OptimizeLinqUsageData.cs" Link="Rules\OptimizeLinqUsageData.cs" />
+    <Compile Include="..\Meziantou.Analyzer\Rules\OptimizeStringBuilderUsageData.cs" Link="Rules\OptimizeStringBuilderUsageData.cs" />
+    <Compile Include="..\Meziantou.Analyzer\Rules\*Common.cs" Link="Rules\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.4.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

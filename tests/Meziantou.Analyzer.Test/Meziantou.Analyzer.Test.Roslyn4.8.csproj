@@ -1,12 +1,12 @@
-﻿<Project Sdk="Meziantou.NET.Sdk.Test">
+<Project Sdk="Meziantou.NET.Sdk.Test">
   <PropertyGroup>
     <RootNamespace>Meziantou.Analyzer.Test</RootNamespace>
     <AssemblyName>Meziantou.Analyzer.Test</AssemblyName>
+    
+    <DefineConstants>$(DefineConstants);ROSLYN_4_8;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER</DefineConstants>
+    <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER</DefineConstants>
+    <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Test\**\*.cs" LinkBase="" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.0" />
@@ -20,13 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Meziantou.Analyzer.Annotations\Meziantou.Analyzer.Annotations.csproj" />
-    <ProjectReference Include="..\..\src\Meziantou.Analyzer.CodeFixers.Roslyn4.8\Meziantou.Analyzer.CodeFixers.Roslyn4.8.csproj" />
-    <ProjectReference Include="..\..\src\Meziantou.Analyzer.Roslyn4.8\Meziantou.Analyzer.Roslyn4.8.csproj" />
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.Roslyn4.8.csproj" />
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.Roslyn4.8.csproj" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);ROSLYN_4_8;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER</DefineConstants>
-    <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER</DefineConstants>
-    <NoWarn>$(NoWarn);nullable</NoWarn>
-  </PropertyGroup>
 </Project>
