@@ -219,6 +219,7 @@ class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificatio
 }
 """;
         await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "true")
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
@@ -245,6 +246,7 @@ class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificatio
 }
 """;
         await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "true")
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
@@ -296,6 +298,7 @@ class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificatio
 }
 """;
         await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0153.report_types_with_data_classification_attributes", "true")
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }

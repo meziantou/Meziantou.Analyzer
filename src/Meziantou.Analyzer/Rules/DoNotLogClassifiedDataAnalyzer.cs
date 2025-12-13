@@ -89,7 +89,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                     return result;
             }
 
-            return true; // Default to true (enabled by default)
+            return false; // Default to false (disabled by default)
         }
 
         private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IEnumerable<IOperation> operations, bool reportTypesWithDataClassification)
