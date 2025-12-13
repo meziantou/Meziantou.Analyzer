@@ -61,6 +61,9 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
             var operation = (IInvocationOperation)context.Operation;
             if (operation.TargetMethod.ContainingType.IsEqualTo(LoggerExtensionsSymbol) && FindLogParameters(operation.TargetMethod, out var argumentsParameter))
             {
+                var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(operation.Syntax.SyntaxTree);
+                var reportTypesWithDataClassification = GetReportTypesWithDataClassificationConfiguration(options);
+
                 foreach (var argument in operation.Arguments)
                 {
                     var parameter = argument.Parameter;
@@ -71,26 +74,37 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                     {
                         if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
                         {
-                            ValidateDataClassification(context, arrayCreation.Initializer.ElementValues);
+                            ValidateDataClassification(context, arrayCreation.Initializer.ElementValues, reportTypesWithDataClassification);
                         }
                     }
                 }
             }
         }
 
-        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IEnumerable<IOperation> operations)
+        private static bool GetReportTypesWithDataClassificationConfiguration(AnalyzerConfigOptions options)
+        {
+            if (options.TryGetValue(RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", out var value))
+            {
+                if (bool.TryParse(value, out var result))
+                    return result;
+            }
+
+            return true; // Default to true (enabled by default)
+        }
+
+        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IEnumerable<IOperation> operations, bool reportTypesWithDataClassification)
         {
             foreach (var operation in operations)
             {
-                ValidateDataClassification(diagnosticReporter, operation);
+                ValidateDataClassification(diagnosticReporter, operation, reportTypesWithDataClassification);
             }
         }
 
-        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation)
+        private void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, bool reportTypesWithDataClassification)
         {
-            ValidateDataClassification(diagnosticReporter, operation, operation, DataClassificationAttributeSymbol!);
+            ValidateDataClassification(diagnosticReporter, operation, operation, DataClassificationAttributeSymbol!, reportTypesWithDataClassification);
 
-            static void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, IOperation reportOperation, INamedTypeSymbol dataClassificationAttributeSymbol)
+            static void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, IOperation reportOperation, INamedTypeSymbol dataClassificationAttributeSymbol, bool reportTypesWithDataClassification)
             {
                 operation = operation.UnwrapConversionOperations();
                 if (operation is IParameterReferenceOperation { Parameter: var parameter })
@@ -99,7 +113,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                     {
                         diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                     }
-                    else if (TypeContainsMembersWithDataClassification(parameter.Type, dataClassificationAttributeSymbol))
+                    else if (reportTypesWithDataClassification && TypeContainsMembersWithDataClassification(parameter.Type, dataClassificationAttributeSymbol))
                     {
                         diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                     }
@@ -120,9 +134,9 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                 }
                 else if (operation is IArrayElementReferenceOperation arrayElementReferenceOperation)
                 {
-                    ValidateDataClassification(diagnosticReporter, arrayElementReferenceOperation.ArrayReference, reportOperation, dataClassificationAttributeSymbol);
+                    ValidateDataClassification(diagnosticReporter, arrayElementReferenceOperation.ArrayReference, reportOperation, dataClassificationAttributeSymbol, reportTypesWithDataClassification);
                 }
-                else
+                else if (reportTypesWithDataClassification)
                 {
                     // Check if the operation's type contains members with DataClassificationAttribute
                     var type = operation.Type;
