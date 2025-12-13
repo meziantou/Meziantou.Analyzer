@@ -1,0 +1,38 @@
+﻿<Project Sdk="Meziantou.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Version>1.0.1</Version>
+    
+    <!-- Cannot use Meziantou.Analyzer, so the analyzer can be added to this project -->
+    <PackageId>Dummy</PackageId>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <developmentDependency>true</developmentDependency>
+    <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
+    <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <AssemblyName>Meziantou.Analyzer</AssemblyName>
+    <RootNamespace>Meziantou.Analyzer</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\**\*.cs" LinkBase="" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\**\*.txt" LinkBase="" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Resources\*.txt" LinkBase="Resources" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.6.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);ROSLYN_4_6;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER</DefineConstants>
+    <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
+    <NoWarn>$(NoWarn);nullable</NoWarn>
+  </PropertyGroup>
+</Project>

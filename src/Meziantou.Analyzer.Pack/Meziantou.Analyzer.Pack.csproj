@@ -23,22 +23,46 @@
     
     <None Include="configuration/*.editorconfig" Pack="true" PackagePath="configuration" />
 
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn3.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn3.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.2\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.2\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.4\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.4/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.4\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.4/cs/" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
+    <ProjectReference Include="..\Meziantou.Analyzer.Roslyn3.8\Meziantou.Analyzer.Roslyn3.8.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Roslyn3.8\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
     
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers.Roslyn3.8\Meziantou.Analyzer.CodeFixers.Roslyn3.8.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers.Roslyn3.8\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
 
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.14\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.14\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/" />
+    <ProjectReference Include="..\Meziantou.Analyzer.Roslyn4.2\Meziantou.Analyzer.Roslyn4.2.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Roslyn4.2\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
+    
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers.Roslyn4.2\Meziantou.Analyzer.CodeFixers.Roslyn4.2.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers.Roslyn4.2\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
+
+    <ProjectReference Include="..\Meziantou.Analyzer.Roslyn4.4\Meziantou.Analyzer.Roslyn4.4.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Roslyn4.4\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.4/cs/" />
+    
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers.Roslyn4.4\Meziantou.Analyzer.CodeFixers.Roslyn4.4.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers.Roslyn4.4\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.4/cs/" />
+
+    <ProjectReference Include="..\Meziantou.Analyzer.Roslyn4.6\Meziantou.Analyzer.Roslyn4.6.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Roslyn4.6\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
+    
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers.Roslyn4.6\Meziantou.Analyzer.CodeFixers.Roslyn4.6.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers.Roslyn4.6\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.6/cs/" />
+    
+    <ProjectReference Include="..\Meziantou.Analyzer.Roslyn4.8\Meziantou.Analyzer.Roslyn4.8.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Roslyn4.8\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
+    
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers.Roslyn4.8\Meziantou.Analyzer.CodeFixers.Roslyn4.8.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers.Roslyn4.8\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
+
+    <ProjectReference Include="..\Meziantou.Analyzer.Roslyn4.14\Meziantou.Analyzer.Roslyn4.14.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Roslyn4.14\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/" />
+    
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers.Roslyn4.14\Meziantou.Analyzer.CodeFixers.Roslyn4.14.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers.Roslyn4.14\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/" />
+
+    <ProjectReference Include="..\Meziantou.Analyzer.Roslyn5.0\Meziantou.Analyzer.Roslyn5.0.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Roslyn5.0\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs/" />
+    
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers.Roslyn5.0\Meziantou.Analyzer.CodeFixers.Roslyn5.0.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers.Roslyn5.0\bin\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs/" />
   </ItemGroup>
 </Project>

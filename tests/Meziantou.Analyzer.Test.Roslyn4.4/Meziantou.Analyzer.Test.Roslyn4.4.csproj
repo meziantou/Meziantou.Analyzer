@@ -1,0 +1,32 @@
+﻿<Project Sdk="Meziantou.NET.Sdk.Test">
+  <PropertyGroup>
+    <RootNamespace>Meziantou.Analyzer.Test</RootNamespace>
+    <AssemblyName>Meziantou.Analyzer.Test</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.Test\**\*.cs" LinkBase="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer.Annotations\Meziantou.Analyzer.Annotations.csproj" />
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer.CodeFixers.Roslyn4.4\Meziantou.Analyzer.CodeFixers.Roslyn4.4.csproj" />
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer.Roslyn4.4\Meziantou.Analyzer.Roslyn4.4.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);ROSLYN_4_4;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER</DefineConstants>
+    <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER</DefineConstants>
+    <NoWarn>$(NoWarn);nullable</NoWarn>
+  </PropertyGroup>
+</Project>
