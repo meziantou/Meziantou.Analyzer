@@ -159,8 +159,8 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
             if (type.SpecialType != SpecialType.None)
                 return false;
 
-            // Check all members (properties and fields)
-            foreach (var member in type.GetMembers())
+            // Check all members (properties and fields) including inherited members
+            foreach (var member in type.GetAllMembers())
             {
                 if (member is IPropertySymbol property)
                 {
