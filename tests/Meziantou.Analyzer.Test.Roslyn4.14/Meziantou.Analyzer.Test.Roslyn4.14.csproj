@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);ROSLYN_4_8;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_14_OR_GREATER</DefineConstants>
+    <DefineConstants>$(DefineConstants);ROSLYN_4_14;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_14_OR_GREATER</DefineConstants>
     <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER</DefineConstants>
     <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
