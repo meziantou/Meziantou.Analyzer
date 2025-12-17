@@ -107,17 +107,18 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             var operation = (IInvocationOperation)context.Operation;
 
             // Check if this is the specific Any<T>(IEnumerable<T>) method
-            if (!SymbolEqualityComparer.Default.Equals(operation.TargetMethod.OriginalDefinition, _enumerableAnyMethod))
-                return;
+            if (_enumerableAnyMethod is not null && 
+                SymbolEqualityComparer.Default.Equals(operation.TargetMethod.OriginalDefinition, _enumerableAnyMethod))
+            {
+                if (operation.Arguments.Length != 1)
+                    return;
 
-            if (operation.Arguments.Length != 1)
-                return;
+                var instance = operation.Arguments[0].Value;
+                if (!IsGetCustomAttributesInvocation(instance, out _))
+                    return;
 
-            var instance = operation.Arguments[0].Value;
-            if (!IsGetCustomAttributesInvocation(instance, out _))
-                return;
-
-            context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Any()");
+                context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Any()");
+            }
         }
 
         private bool IsGetCustomAttributeComparison(IOperation left, IOperation right, out IInvocationOperation? invocation)
@@ -192,7 +193,8 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
                 return false;
 
             // Check if this is the specific Count<T>(IEnumerable<T>) method
-            if (!SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, _enumerableCountMethod))
+            if (_enumerableCountMethod is null || 
+                !SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, _enumerableCountMethod))
                 return false;
 
             // Only detect Count() without predicate (1 argument = the collection itself)
@@ -220,7 +222,13 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (invocation.TargetMethod.Name != "GetCustomAttribute")
                 return false;
 
+            // For extension methods, the instance is in the first argument
             var instance = invocation.Instance;
+            if (instance is null && invocation.TargetMethod.IsExtensionMethod && invocation.Arguments.Length > 0)
+            {
+                instance = invocation.Arguments[0].Value;
+            }
+
             if (instance is null)
                 return false;
 
@@ -236,7 +244,13 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (invocation.TargetMethod.Name != "GetCustomAttributes")
                 return false;
 
+            // For extension methods, the instance is in the first argument
             var instance = invocation.Instance;
+            if (instance is null && invocation.TargetMethod.IsExtensionMethod && invocation.Arguments.Length > 0)
+            {
+                instance = invocation.Arguments[0].Value;
+            }
+
             if (instance is null)
                 return false;
 

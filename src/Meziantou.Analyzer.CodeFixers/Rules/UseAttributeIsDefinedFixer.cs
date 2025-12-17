@@ -110,7 +110,8 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         {
             // Check if this is the Any<T>(IEnumerable<T>) method
             var enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableAnyMethodDocId, semanticModel.Compilation) as IMethodSymbol;
-            if (SymbolEqualityComparer.Default.Equals(invocationOperation.TargetMethod.OriginalDefinition, enumerableAnyMethod) &&
+            if (enumerableAnyMethod is not null &&
+                SymbolEqualityComparer.Default.Equals(invocationOperation.TargetMethod.OriginalDefinition, enumerableAnyMethod) &&
                 invocationOperation.Arguments.Length == 1 &&
                 invocationOperation.Arguments[0].Value is IInvocationOperation getCustomAttributesInvocation)
             {
@@ -161,7 +162,8 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
 
         // Check if this is the specific Count<T>(IEnumerable<T>) method
         var enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableCountMethodDocId, semanticModel.Compilation) as IMethodSymbol;
-        if (!SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, enumerableCountMethod))
+        if (enumerableCountMethod is null || 
+            !SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, enumerableCountMethod))
             return null;
 
         if (countInvocation.Arguments.Length != 1)
@@ -227,14 +229,30 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         var instanceSyntax = instance?.Syntax;
 
         var arguments = new List<SyntaxNode>();
-        if (instanceSyntax is not null)
+        
+        // For extension methods, the instance is in the first argument
+        if (instanceSyntax is null && invocation.TargetMethod.IsExtensionMethod && invocation.Arguments.Length > 0)
         {
+            instanceSyntax = invocation.Arguments[0].Syntax;
+            // Add the instance (first argument)
             arguments.Add(instanceSyntax);
+            // Add remaining arguments (skip the first one which is the instance)
+            for (int i = 1; i < invocation.Arguments.Length; i++)
+            {
+                arguments.Add(invocation.Arguments[i].Syntax);
+            }
         }
-
-        foreach (var arg in invocation.Arguments)
+        else
         {
-            arguments.Add(arg.Syntax);
+            if (instanceSyntax is not null)
+            {
+                arguments.Add(instanceSyntax);
+            }
+
+            foreach (var arg in invocation.Arguments)
+            {
+                arguments.Add(arg.Syntax);
+            }
         }
 
         var isDefinedInvocation = generator.InvocationExpression(
