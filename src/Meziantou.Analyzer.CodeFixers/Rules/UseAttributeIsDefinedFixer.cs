@@ -109,12 +109,9 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
             arguments.Add(instanceSyntax);
         }
 
-        if (invocation.Arguments.Length > 0)
+        foreach (var arg in invocation.Arguments)
         {
-            foreach (var arg in invocation.Arguments)
-            {
-                arguments.Add(arg.Syntax);
-            }
+            arguments.Add(arg.Syntax);
         }
 
         var isDefinedInvocation = generator.InvocationExpression(

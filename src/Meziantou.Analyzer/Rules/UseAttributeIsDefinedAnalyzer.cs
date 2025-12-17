@@ -16,7 +16,7 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         RuleCategories.Performance,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "",
+        description: "Detects inefficient attribute existence checks that can be replaced with Attribute.IsDefined for better performance.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAttributeIsDefined));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
