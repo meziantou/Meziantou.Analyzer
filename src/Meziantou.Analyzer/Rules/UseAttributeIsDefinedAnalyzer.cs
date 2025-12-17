@@ -76,6 +76,13 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
                 IsGetCustomAttributesLengthComparison(operation, operation.RightOperand, operation.LeftOperand, out _))
             {
                 context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Length");
+                return;
+            }
+
+            if (IsGetCustomAttributesCountComparison(operation, operation.LeftOperand, operation.RightOperand, out _) ||
+                IsGetCustomAttributesCountComparison(operation, operation.RightOperand, operation.LeftOperand, out _))
+            {
+                context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Count()");
             }
         }
 
@@ -177,6 +184,38 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
                     _ => false,
                 };
             }
+        }
+
+        private bool IsGetCustomAttributesCountComparison(IBinaryOperation binaryOp, IOperation left, IOperation right, out IInvocationOperation? invocation)
+        {
+            invocation = null;
+
+            if (left is not IInvocationOperation countInvocation)
+                return false;
+
+            if (countInvocation.TargetMethod.Name != "Count")
+                return false;
+
+            if (!countInvocation.TargetMethod.IsExtensionMethod)
+                return false;
+
+            if (!SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.ContainingType, _enumerableSymbol))
+                return false;
+
+            // Only detect Count() without predicate (1 argument = the collection itself)
+            if (countInvocation.Arguments.Length != 1)
+                return false;
+
+            var instance = countInvocation.Arguments[0].Value;
+            if (!IsGetCustomAttributesInvocation(instance, out invocation))
+                return false;
+
+            // Only allow clear-cut patterns that unambiguously check for existence
+            if (right.ConstantValue is not { HasValue: true, Value: int value })
+                return false;
+
+            // Use the same validation as Length (Count and Length have the same semantics)
+            return IsValidLengthComparisonPattern(binaryOp.OperatorKind, value, lengthIsOnLeft: true);
         }
 
         private bool IsGetCustomAttributeInvocation(IOperation operation, out IInvocationOperation? invocation)

@@ -365,6 +365,79 @@ class TestClass
     }
 
     [Fact]
+    public async Task GetCustomAttributes_Any_WithTruePredicate_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+using System;
+using System.Linq;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = member.GetCustomAttributes<ObsoleteAttribute>().Any(attr => true);
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GetCustomAttributes_Count_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+using System;
+using System.Linq;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>().Count() > 0;
+    }
+}
+""")
+              .ShouldFixCodeWith("""
+using System;
+using System.Linq;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GetCustomAttributes_Count_WithPredicate_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+using System;
+using System.Linq;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = member.GetCustomAttributes<ObsoleteAttribute>().Count(a => a.Message != null) > 0;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task GetCustomAttribute_NullComparison_ReversedOrder()
     {
         await CreateProjectBuilder()

@@ -72,6 +72,22 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
                     var negateLength = ShouldNegateLengthComparison(binaryOperation, isLeftSide);
                     replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, lengthInvocation, negateLength);
                 }
+                else
+                {
+                    // Check for GetCustomAttributes().Count() comparisons
+                    var countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.LeftOperand, out isLeftSide);
+                    if (countInvocation is null)
+                    {
+                        countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.RightOperand, out isLeftSide);
+                        isLeftSide = !isLeftSide; // If found on right, flip the comparison perspective
+                    }
+
+                    if (countInvocation is not null)
+                    {
+                        var negateCount = ShouldNegateLengthComparison(binaryOperation, isLeftSide);
+                        replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, countInvocation, negateCount);
+                    }
+                }
             }
         }
         else if (operation is IIsPatternOperation isPatternOperation)
@@ -117,6 +133,23 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         if (operation is IPropertyReferenceOperation propertyReference &&
             propertyReference.Property.Name == "Length" &&
             propertyReference.Instance is IInvocationOperation invocation &&
+            invocation.TargetMethod.Name == "GetCustomAttributes")
+        {
+            isFound = true;
+            return invocation;
+        }
+
+        return null;
+    }
+
+    private static IInvocationOperation? GetGetCustomAttributesCountInvocation(IOperation operation, out bool isFound)
+    {
+        isFound = false;
+        if (operation is IInvocationOperation countInvocation &&
+            countInvocation.TargetMethod.Name == "Count" &&
+            countInvocation.TargetMethod.IsExtensionMethod &&
+            countInvocation.Arguments.Length == 1 &&
+            countInvocation.Arguments[0].Value is IInvocationOperation invocation &&
             invocation.TargetMethod.Name == "GetCustomAttributes")
         {
             isFound = true;
