@@ -24,7 +24,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttribute<ObsoleteAttribute>() != null;
+        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() != null|];
     }
 }
 """)
@@ -55,7 +55,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttribute<ObsoleteAttribute>() == null;
+        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() == null|];
     }
 }
 """)
@@ -86,7 +86,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttribute<ObsoleteAttribute>() is null;
+        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is null|];
     }
 }
 """)
@@ -117,7 +117,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttribute<ObsoleteAttribute>() is not null;
+        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is not null|];
     }
 }
 """)
@@ -149,7 +149,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>().Any();
+        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Any()|];
     }
 }
 """)
@@ -180,7 +180,7 @@ class TestClass
 {
     void Test(Type type)
     {
-        _ = [||]type.GetCustomAttribute<ObsoleteAttribute>() != null;
+        _ = [|type.GetCustomAttribute<ObsoleteAttribute>() != null|];
     }
 }
 """)
@@ -210,7 +210,7 @@ class TestClass
 {
     void Test(Assembly assembly)
     {
-        _ = [||]assembly.GetCustomAttribute<ObsoleteAttribute>() != null;
+        _ = [|assembly.GetCustomAttribute<ObsoleteAttribute>() != null|];
     }
 }
 """)
@@ -241,7 +241,7 @@ class TestClass
 {
     void Test(Module module)
     {
-        _ = [||]module.GetCustomAttribute<ObsoleteAttribute>() != null;
+        _ = [|module.GetCustomAttribute<ObsoleteAttribute>() != null|];
     }
 }
 """)
@@ -272,7 +272,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttribute<ObsoleteAttribute>(inherit: true) != null;
+        _ = [|member.GetCustomAttribute<ObsoleteAttribute>(inherit: true) != null|];
     }
 }
 """)
@@ -304,7 +304,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>(inherit: true).Any();
+        _ = [|member.GetCustomAttributes<ObsoleteAttribute>(inherit: true).Any()|];
     }
 }
 """)
@@ -397,7 +397,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>().Count() > 0;
+        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Count() > 0|];
     }
 }
 """)
@@ -449,7 +449,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]null != member.GetCustomAttribute<ObsoleteAttribute>();
+        _ = [|null != member.GetCustomAttribute<ObsoleteAttribute>()|];
     }
 }
 """)
@@ -480,7 +480,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>().Length > 0;
+        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length > 0|];
     }
 }
 """)
@@ -511,7 +511,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>().Length != 0;
+        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length != 0|];
     }
 }
 """)
@@ -542,7 +542,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>().Length == 0;
+        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length == 0|];
     }
 }
 """)
@@ -573,7 +573,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [||]member.GetCustomAttributes<ObsoleteAttribute>().Length >= 1;
+        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length >= 1|];
     }
 }
 """)
