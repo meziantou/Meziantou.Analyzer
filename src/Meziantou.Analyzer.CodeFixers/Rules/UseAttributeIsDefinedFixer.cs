@@ -133,10 +133,10 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
             return false;
 
         // Determine if we should negate based on operator and compared value
-        // When length means "has attributes" (true condition):
-        //   length > 0, length >= 1, length != 0 -> IsDefined (no negation)
-        // When length means "no attributes" (false condition):
-        //   length == 0, length <= 0, length < 1 -> !IsDefined (negate)
+        // Patterns that mean "has attributes" -> IsDefined (no negation):
+        //   length > 0, length >= 1, length != 0, 0 < length, 1 <= length, 0 != length
+        // Patterns that mean "no attributes" -> !IsDefined (negate):
+        //   length == 0, length <= 0, length < 1, 0 == length, 0 >= length, 1 > length
         
         if (lengthIsOnLeft)
         {
@@ -153,8 +153,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         }
         else
         {
-            // When length is on the right: value OP length becomes length reverse(OP) value
-            // So we flip the operator and treat it as if length were on the left
+            // When length is on the right: reverse the operator logic
             return operation.OperatorKind switch
             {
                 BinaryOperatorKind.Equals when value == 0 => true,                    // 0 == length -> !IsDefined
