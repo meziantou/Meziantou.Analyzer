@@ -60,7 +60,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         }
         else if (operation is IIsPatternOperation isPatternOperation)
         {
-            var negate = isPatternOperation.Pattern is INegatedPatternOperation;
+            var negate = isPatternOperation.Pattern is IConstantPatternOperation;
             var invocation = GetGetCustomAttributeInvocation(isPatternOperation.Value);
             if (invocation is not null)
             {

@@ -112,15 +112,10 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         {
             invocation = null;
 
-            if (!IsNull(right))
+            if (!right.IsNull())
                 return false;
 
             return IsGetCustomAttributeInvocation(left, out invocation);
-        }
-
-        private static bool IsNull(IOperation operation)
-        {
-            return operation.ConstantValue is { HasValue: true, Value: null };
         }
 
         private bool IsGetCustomAttributeInvocation(IOperation operation, out IInvocationOperation? invocation)
