@@ -14,6 +14,9 @@ namespace Meziantou.Analyzer.Rules;
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
 public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
 {
+    private const string EnumerableAnyMethodDocId = "M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0})";
+    private const string EnumerableCountMethodDocId = "M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0})";
+
     public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseAttributeIsDefined);
 
     public override FixAllProvider GetFixAllProvider()
@@ -106,7 +109,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         else if (operation is IInvocationOperation invocationOperation)
         {
             // Check if this is the Any<T>(IEnumerable<T>) method
-            var enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0})", semanticModel.Compilation) as IMethodSymbol;
+            var enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableAnyMethodDocId, semanticModel.Compilation) as IMethodSymbol;
             if (SymbolEqualityComparer.Default.Equals(invocationOperation.TargetMethod.OriginalDefinition, enumerableAnyMethod) &&
                 invocationOperation.Arguments.Length == 1 &&
                 invocationOperation.Arguments[0].Value is IInvocationOperation getCustomAttributesInvocation)
@@ -157,7 +160,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
             return null;
 
         // Check if this is the specific Count<T>(IEnumerable<T>) method
-        var enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0})", semanticModel.Compilation) as IMethodSymbol;
+        var enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableCountMethodDocId, semanticModel.Compilation) as IMethodSymbol;
         if (!SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, enumerableCountMethod))
             return null;
 

@@ -9,6 +9,9 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 {
+    private const string EnumerableAnyMethodDocId = "M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0})";
+    private const string EnumerableCountMethodDocId = "M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0})";
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseAttributeIsDefined,
         title: "Use Attribute.IsDefined instead of GetCustomAttribute(s)",
@@ -55,8 +58,8 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             _moduleSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Module");
             _memberInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.MemberInfo");
             _typeSymbol = compilation.GetBestTypeByMetadataName("System.Type");
-            _enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0})", compilation) as IMethodSymbol;
-            _enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0})", compilation) as IMethodSymbol;
+            _enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableAnyMethodDocId, compilation) as IMethodSymbol;
+            _enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableCountMethodDocId, compilation) as IMethodSymbol;
         }
 
         public bool IsValid => _attributeSymbol is not null;
