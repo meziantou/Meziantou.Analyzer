@@ -62,14 +62,21 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         public void AnalyzeBinary(OperationAnalysisContext context)
         {
             var operation = (IBinaryOperation)context.Operation;
-            if (operation.OperatorKind is not (BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals))
+            if (operation.OperatorKind is not (BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals or BinaryOperatorKind.GreaterThan or BinaryOperatorKind.LessThan or BinaryOperatorKind.GreaterThanOrEqual or BinaryOperatorKind.LessThanOrEqual))
                 return;
 
-            if (!IsGetCustomAttributeComparison(operation.LeftOperand, operation.RightOperand, out var invocation) &&
-                !IsGetCustomAttributeComparison(operation.RightOperand, operation.LeftOperand, out invocation))
+            if (IsGetCustomAttributeComparison(operation.LeftOperand, operation.RightOperand, out var invocation) ||
+                IsGetCustomAttributeComparison(operation.RightOperand, operation.LeftOperand, out invocation))
+            {
+                context.ReportDiagnostic(Rule, operation, invocation!.TargetMethod.Name);
                 return;
+            }
 
-            context.ReportDiagnostic(Rule, operation, invocation!.TargetMethod.Name);
+            if (IsGetCustomAttributesLengthComparison(operation.LeftOperand, operation.RightOperand, out _) ||
+                IsGetCustomAttributesLengthComparison(operation.RightOperand, operation.LeftOperand, out _))
+            {
+                context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Length");
+            }
         }
 
         public void AnalyzeIsPattern(OperationAnalysisContext context)
@@ -116,6 +123,29 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
                 return false;
 
             return IsGetCustomAttributeInvocation(left, out invocation);
+        }
+
+        private bool IsGetCustomAttributesLengthComparison(IOperation left, IOperation right, out IInvocationOperation? invocation)
+        {
+            invocation = null;
+
+            if (left is not IPropertyReferenceOperation propertyReference)
+                return false;
+
+            if (propertyReference.Property.Name != "Length")
+                return false;
+
+            if (propertyReference.Instance is null)
+                return false;
+
+            if (!IsGetCustomAttributesInvocation(propertyReference.Instance, out invocation))
+                return false;
+
+            // Check if comparing with a numeric constant (0, 1, etc.)
+            if (right.ConstantValue is { HasValue: true, Value: int })
+                return true;
+
+            return false;
         }
 
         private bool IsGetCustomAttributeInvocation(IOperation operation, out IInvocationOperation? invocation)

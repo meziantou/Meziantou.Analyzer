@@ -57,6 +57,22 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
             {
                 replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, invocation, negate);
             }
+            else
+            {
+                // Check for GetCustomAttributes().Length comparisons
+                var lengthInvocation = GetGetCustomAttributesLengthInvocation(binaryOperation.LeftOperand, out var isLeftSide);
+                if (lengthInvocation is null)
+                {
+                    lengthInvocation = GetGetCustomAttributesLengthInvocation(binaryOperation.RightOperand, out isLeftSide);
+                    isLeftSide = !isLeftSide; // If found on right, flip the comparison perspective
+                }
+
+                if (lengthInvocation is not null)
+                {
+                    var negateLength = ShouldNegateLengthComparison(binaryOperation, isLeftSide);
+                    replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, lengthInvocation, negateLength);
+                }
+            }
         }
         else if (operation is IIsPatternOperation isPatternOperation)
         {
@@ -93,6 +109,51 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         }
 
         return null;
+    }
+
+    private static IInvocationOperation? GetGetCustomAttributesLengthInvocation(IOperation operation, out bool isFound)
+    {
+        isFound = false;
+        if (operation is IPropertyReferenceOperation propertyReference &&
+            propertyReference.Property.Name == "Length" &&
+            propertyReference.Instance is IInvocationOperation invocation &&
+            invocation.TargetMethod.Name == "GetCustomAttributes")
+        {
+            isFound = true;
+            return invocation;
+        }
+
+        return null;
+    }
+
+    private static bool ShouldNegateLengthComparison(IBinaryOperation operation, bool lengthIsOnLeft)
+    {
+        var otherOperand = lengthIsOnLeft ? operation.RightOperand : operation.LeftOperand;
+        if (otherOperand.ConstantValue is not { HasValue: true, Value: int value })
+            return false;
+
+        // Determine if we should negate based on operator and compared value
+        // For .Length compared to 0:
+        //   > 0, >= 1, != 0 -> IsDefined (no negation)
+        //   == 0, <= 0, < 1 -> !IsDefined (negate)
+        // For .Length compared to 1:
+        //   >= 1, > 0 -> IsDefined (no negation)
+        //   < 1, <= 0 -> !IsDefined (negate)
+        
+        return operation.OperatorKind switch
+        {
+            BinaryOperatorKind.Equals when value == 0 => true,
+            BinaryOperatorKind.NotEquals when value == 0 => false,
+            BinaryOperatorKind.GreaterThan when lengthIsOnLeft && value == 0 => false,
+            BinaryOperatorKind.GreaterThan when !lengthIsOnLeft && value == 0 => true,
+            BinaryOperatorKind.GreaterThanOrEqual when lengthIsOnLeft && value == 1 => false,
+            BinaryOperatorKind.GreaterThanOrEqual when !lengthIsOnLeft && value == 1 => true,
+            BinaryOperatorKind.LessThan when lengthIsOnLeft && value == 1 => true,
+            BinaryOperatorKind.LessThan when !lengthIsOnLeft && value == 1 => false,
+            BinaryOperatorKind.LessThanOrEqual when lengthIsOnLeft && value == 0 => true,
+            BinaryOperatorKind.LessThanOrEqual when !lengthIsOnLeft && value == 0 => false,
+            _ => false,
+        };
     }
 
     private static SyntaxNode CreateAttributeIsDefinedInvocation(SyntaxGenerator generator, SemanticModel semanticModel, IInvocationOperation invocation, bool negate)
