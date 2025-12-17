@@ -133,27 +133,39 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
             return false;
 
         // Determine if we should negate based on operator and compared value
-        // For .Length compared to 0:
-        //   > 0, >= 1, != 0 -> IsDefined (no negation)
-        //   == 0, <= 0, < 1 -> !IsDefined (negate)
-        // For .Length compared to 1:
-        //   >= 1, > 0 -> IsDefined (no negation)
-        //   < 1, <= 0 -> !IsDefined (negate)
+        // When length means "has attributes" (true condition):
+        //   length > 0, length >= 1, length != 0 -> IsDefined (no negation)
+        // When length means "no attributes" (false condition):
+        //   length == 0, length <= 0, length < 1 -> !IsDefined (negate)
         
-        return operation.OperatorKind switch
+        if (lengthIsOnLeft)
         {
-            BinaryOperatorKind.Equals when value == 0 => true,
-            BinaryOperatorKind.NotEquals when value == 0 => false,
-            BinaryOperatorKind.GreaterThan when lengthIsOnLeft && value == 0 => false,
-            BinaryOperatorKind.GreaterThan when !lengthIsOnLeft && value == 0 => true,
-            BinaryOperatorKind.GreaterThanOrEqual when lengthIsOnLeft && value == 1 => false,
-            BinaryOperatorKind.GreaterThanOrEqual when !lengthIsOnLeft && value == 1 => true,
-            BinaryOperatorKind.LessThan when lengthIsOnLeft && value == 1 => true,
-            BinaryOperatorKind.LessThan when !lengthIsOnLeft && value == 1 => false,
-            BinaryOperatorKind.LessThanOrEqual when lengthIsOnLeft && value == 0 => true,
-            BinaryOperatorKind.LessThanOrEqual when !lengthIsOnLeft && value == 0 => false,
-            _ => false,
-        };
+            return operation.OperatorKind switch
+            {
+                BinaryOperatorKind.Equals when value == 0 => true,                    // length == 0 -> !IsDefined
+                BinaryOperatorKind.NotEquals when value == 0 => false,                // length != 0 -> IsDefined
+                BinaryOperatorKind.GreaterThan when value == 0 => false,              // length > 0 -> IsDefined
+                BinaryOperatorKind.GreaterThanOrEqual when value == 1 => false,       // length >= 1 -> IsDefined
+                BinaryOperatorKind.LessThan when value == 1 => true,                  // length < 1 -> !IsDefined
+                BinaryOperatorKind.LessThanOrEqual when value == 0 => true,           // length <= 0 -> !IsDefined
+                _ => false,
+            };
+        }
+        else
+        {
+            // When length is on the right: value OP length becomes length reverse(OP) value
+            // So we flip the operator and treat it as if length were on the left
+            return operation.OperatorKind switch
+            {
+                BinaryOperatorKind.Equals when value == 0 => true,                    // 0 == length -> !IsDefined
+                BinaryOperatorKind.NotEquals when value == 0 => false,                // 0 != length -> IsDefined
+                BinaryOperatorKind.LessThan when value == 0 => false,                 // 0 < length (length > 0) -> IsDefined
+                BinaryOperatorKind.LessThanOrEqual when value == 1 => false,          // 1 <= length (length >= 1) -> IsDefined
+                BinaryOperatorKind.GreaterThan when value == 1 => true,               // 1 > length (length < 1) -> !IsDefined
+                BinaryOperatorKind.GreaterThanOrEqual when value == 0 => true,        // 0 >= length (length <= 0) -> !IsDefined
+                _ => false,
+            };
+        }
     }
 
     private static SyntaxNode CreateAttributeIsDefinedInvocation(SyntaxGenerator generator, SemanticModel semanticModel, IInvocationOperation invocation, bool negate)
