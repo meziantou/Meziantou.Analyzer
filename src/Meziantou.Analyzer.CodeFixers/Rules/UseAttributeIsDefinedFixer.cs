@@ -75,11 +75,15 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
                 else
                 {
                     // Check for GetCustomAttributes().Count() comparisons
-                    var countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.LeftOperand, out var countIsOnLeft);
+                    var countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.LeftOperand, out var foundOnLeft);
+                    var countIsOnLeft = foundOnLeft;
                     if (countInvocation is null)
                     {
-                        countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.RightOperand, out var countIsOnRight);
-                        countIsOnLeft = !countIsOnRight; // If found on right, Count is not on left
+                        countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.RightOperand, out var foundOnRight);
+                        if (foundOnRight)
+                        {
+                            countIsOnLeft = false; // Count is on right side
+                        }
                     }
 
                     if (countInvocation is not null)
