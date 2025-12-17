@@ -480,7 +480,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length > 0|];
+        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length > 0|];
     }
 }
 """)
@@ -492,7 +492,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
     }
 }
 """)
@@ -511,7 +511,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length != 0|];
+        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length != 0|];
     }
 }
 """)
@@ -523,7 +523,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
     }
 }
 """)
@@ -542,7 +542,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length == 0|];
+        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length == 0|];
     }
 }
 """)
@@ -554,7 +554,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+        _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
     }
 }
 """)
@@ -573,7 +573,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Length >= 1|];
+        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length >= 1|];
     }
 }
 """)
@@ -585,7 +585,7 @@ class TestClass
 {
     void Test(MemberInfo member)
     {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
     }
 }
 """)
