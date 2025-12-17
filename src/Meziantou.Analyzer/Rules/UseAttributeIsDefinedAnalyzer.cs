@@ -45,7 +45,8 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _moduleSymbol;
         private readonly INamedTypeSymbol? _memberInfoSymbol;
         private readonly INamedTypeSymbol? _typeSymbol;
-        private readonly INamedTypeSymbol? _enumerableSymbol;
+        private readonly IMethodSymbol? _enumerableAnyMethod;
+        private readonly IMethodSymbol? _enumerableCountMethod;
 
         public AnalyzerContext(Compilation compilation)
         {
@@ -54,7 +55,8 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             _moduleSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Module");
             _memberInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.MemberInfo");
             _typeSymbol = compilation.GetBestTypeByMetadataName("System.Type");
-            _enumerableSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
+            _enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0})", compilation) as IMethodSymbol;
+            _enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0})", compilation) as IMethodSymbol;
         }
 
         public bool IsValid => _attributeSymbol is not null;
@@ -101,13 +103,8 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         {
             var operation = (IInvocationOperation)context.Operation;
 
-            if (operation.TargetMethod.Name != "Any")
-                return;
-
-            if (!operation.TargetMethod.IsExtensionMethod)
-                return;
-
-            if (!SymbolEqualityComparer.Default.Equals(operation.TargetMethod.ContainingType, _enumerableSymbol))
+            // Check if this is the specific Any<T>(IEnumerable<T>) method
+            if (!SymbolEqualityComparer.Default.Equals(operation.TargetMethod.OriginalDefinition, _enumerableAnyMethod))
                 return;
 
             if (operation.Arguments.Length != 1)
@@ -191,13 +188,8 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (left is not IInvocationOperation countInvocation)
                 return false;
 
-            if (countInvocation.TargetMethod.Name != "Count")
-                return false;
-
-            if (!countInvocation.TargetMethod.IsExtensionMethod)
-                return false;
-
-            if (!SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.ContainingType, _enumerableSymbol))
+            // Check if this is the specific Count<T>(IEnumerable<T>) method
+            if (!SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, _enumerableCountMethod))
                 return false;
 
             // Only detect Count() without predicate (1 argument = the collection itself)

@@ -75,11 +75,11 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
                 else
                 {
                     // Check for GetCustomAttributes().Count() comparisons
-                    var countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.LeftOperand, out var foundOnLeft);
+                    var countInvocation = GetGetCustomAttributesCountInvocation(semanticModel, binaryOperation.LeftOperand, out var foundOnLeft);
                     var countIsOnLeft = foundOnLeft;
                     if (countInvocation is null)
                     {
-                        countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.RightOperand, out var foundOnRight);
+                        countInvocation = GetGetCustomAttributesCountInvocation(semanticModel, binaryOperation.RightOperand, out var foundOnRight);
                         if (foundOnRight)
                         {
                             countIsOnLeft = false; // Count is on right side
@@ -103,9 +103,13 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
                 replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, invocation, negate);
             }
         }
-        else if (operation is IInvocationOperation invocationOperation && invocationOperation.TargetMethod.Name == "Any")
+        else if (operation is IInvocationOperation invocationOperation)
         {
-            if (invocationOperation.Arguments.Length == 1 && invocationOperation.Arguments[0].Value is IInvocationOperation getCustomAttributesInvocation)
+            // Check if this is the Any<T>(IEnumerable<T>) method
+            var enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0})", semanticModel.Compilation) as IMethodSymbol;
+            if (SymbolEqualityComparer.Default.Equals(invocationOperation.TargetMethod.OriginalDefinition, enumerableAnyMethod) &&
+                invocationOperation.Arguments.Length == 1 &&
+                invocationOperation.Arguments[0].Value is IInvocationOperation getCustomAttributesInvocation)
             {
                 replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, getCustomAttributesInvocation, negate: false);
             }
@@ -146,21 +150,28 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         return null;
     }
 
-    private static IInvocationOperation? GetGetCustomAttributesCountInvocation(IOperation operation, out bool isFound)
+    private static IInvocationOperation? GetGetCustomAttributesCountInvocation(SemanticModel semanticModel, IOperation operation, out bool isFound)
     {
         isFound = false;
-        if (operation is IInvocationOperation countInvocation &&
-            countInvocation.TargetMethod.Name == "Count" &&
-            countInvocation.TargetMethod.IsExtensionMethod &&
-            countInvocation.Arguments.Length == 1 &&
-            countInvocation.Arguments[0].Value is IInvocationOperation invocation &&
-            invocation.TargetMethod.Name == "GetCustomAttributes")
-        {
-            isFound = true;
-            return invocation;
-        }
+        if (operation is not IInvocationOperation countInvocation)
+            return null;
 
-        return null;
+        // Check if this is the specific Count<T>(IEnumerable<T>) method
+        var enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0})", semanticModel.Compilation) as IMethodSymbol;
+        if (!SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, enumerableCountMethod))
+            return null;
+
+        if (countInvocation.Arguments.Length != 1)
+            return null;
+
+        if (countInvocation.Arguments[0].Value is not IInvocationOperation invocation)
+            return null;
+
+        if (invocation.TargetMethod.Name != "GetCustomAttributes")
+            return null;
+
+        isFound = true;
+        return invocation;
     }
 
     private static bool ShouldNegateLengthComparison(IBinaryOperation operation, bool lengthIsOnLeft)
