@@ -75,16 +75,16 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
                 else
                 {
                     // Check for GetCustomAttributes().Count() comparisons
-                    var countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.LeftOperand, out isLeftSide);
+                    var countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.LeftOperand, out var countIsOnLeft);
                     if (countInvocation is null)
                     {
-                        countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.RightOperand, out isLeftSide);
-                        isLeftSide = !isLeftSide; // If found on right, flip the comparison perspective
+                        countInvocation = GetGetCustomAttributesCountInvocation(binaryOperation.RightOperand, out var countIsOnRight);
+                        countIsOnLeft = !countIsOnRight; // If found on right, Count is not on left
                     }
 
                     if (countInvocation is not null)
                     {
-                        var negateCount = ShouldNegateLengthComparison(binaryOperation, isLeftSide);
+                        var negateCount = ShouldNegateLengthComparison(binaryOperation, countIsOnLeft);
                         replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, countInvocation, negateCount);
                     }
                 }

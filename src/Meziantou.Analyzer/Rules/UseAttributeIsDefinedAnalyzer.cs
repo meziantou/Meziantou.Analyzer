@@ -76,11 +76,9 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
                 IsGetCustomAttributesLengthComparison(operation, operation.RightOperand, operation.LeftOperand, out _))
             {
                 context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Length");
-                return;
             }
-
-            if (IsGetCustomAttributesCountComparison(operation, operation.LeftOperand, operation.RightOperand, out _) ||
-                IsGetCustomAttributesCountComparison(operation, operation.RightOperand, operation.LeftOperand, out _))
+            else if (IsGetCustomAttributesCountComparison(operation, operation.LeftOperand, operation.RightOperand, out _) ||
+                     IsGetCustomAttributesCountComparison(operation, operation.RightOperand, operation.LeftOperand, out _))
             {
                 context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Count()");
             }
