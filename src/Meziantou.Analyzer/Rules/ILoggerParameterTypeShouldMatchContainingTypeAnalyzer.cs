@@ -62,24 +62,10 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzer : Diag
                     // Check if it matches the containing type
                     if (!typeArgument.IsEqualTo(namedType))
                     {
-                        // Get the location of the type syntax instead of the parameter
-                        Location? location = null;
-                        foreach (var syntaxReference in parameter.DeclaringSyntaxReferences)
-                        {
-                            var syntax = syntaxReference.GetSyntax(context.CancellationToken);
-                            if (syntax is Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax parameterSyntax && parameterSyntax.Type is not null)
-                            {
-                                location = parameterSyntax.Type.GetLocation();
-                                break;
-                            }
-                        }
-
-                        // Fall back to parameter location if type syntax is not available
-                        location ??= parameter.Locations[0];
-
                         context.ReportDiagnostic(
                             Rule,
-                            location,
+                            parameter,
+                            DiagnosticParameterReportOptions.ReportOnType,
                             namedType.Name,
                             typeArgument.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat));
                     }
