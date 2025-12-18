@@ -62,13 +62,8 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzer : Diag
                     // Check if it matches the containing type
                     if (!typeArgument.IsEqualTo(namedType))
                     {
-                        var properties = ImmutableDictionary<string, string?>.Empty
-                            .Add("ExpectedType", namedType.ToDisplayString())
-                            .Add("ActualType", typeArgument.ToDisplayString());
-
                         context.ReportDiagnostic(
                             Rule,
-                            properties,
                             parameter.Locations[0],
                             namedType.Name,
                             typeArgument.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat));
