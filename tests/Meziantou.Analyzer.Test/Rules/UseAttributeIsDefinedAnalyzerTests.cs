@@ -175,6 +175,7 @@ class TestClass
         await CreateProjectBuilder()
               .WithSourceCode("""
 using System;
+using System.Reflection;
 
 class TestClass
 {
@@ -186,6 +187,7 @@ class TestClass
 """)
               .ShouldFixCodeWith("""
 using System;
+using System.Reflection;
 
 class TestClass
 {
@@ -586,6 +588,68 @@ class TestClass
     void Test(MemberInfo member)
     {
         _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Attribute_GetCustomAttributes_Length_GreaterThanZero()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+using System;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = [|Attribute.GetCustomAttributes(member, typeof(ObsoleteAttribute)).Length > 0|];
+    }
+}
+""")
+              .ShouldFixCodeWith("""
+using System;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Attribute_GetCustomAttribute_NotEqualNull()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+using System;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = [|Attribute.GetCustomAttribute(member, typeof(ObsoleteAttribute)) != null|];
+    }
+}
+""")
+              .ShouldFixCodeWith("""
+using System;
+using System.Reflection;
+
+class TestClass
+{
+    void Test(MemberInfo member)
+    {
+        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
     }
 }
 """)

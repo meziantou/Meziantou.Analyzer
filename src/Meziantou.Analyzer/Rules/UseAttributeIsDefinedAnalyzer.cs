@@ -41,26 +41,17 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly INamedTypeSymbol? _attributeSymbol;
-        private readonly INamedTypeSymbol? _assemblySymbol;
-        private readonly INamedTypeSymbol? _moduleSymbol;
-        private readonly INamedTypeSymbol? _memberInfoSymbol;
-        private readonly INamedTypeSymbol? _typeSymbol;
-        private readonly IMethodSymbol? _enumerableAnyMethod;
-        private readonly IMethodSymbol? _enumerableCountMethod;
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            _attributeSymbol = compilation.GetBestTypeByMetadataName("System.Attribute");
-            _assemblySymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Assembly");
-            _moduleSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Module");
-            _memberInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.MemberInfo");
-            _typeSymbol = compilation.GetBestTypeByMetadataName("System.Type");
-            _enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableAnyMethodDocId, compilation) as IMethodSymbol;
-            _enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableCountMethodDocId, compilation) as IMethodSymbol;
-        }
+        private readonly INamedTypeSymbol? _attributeSymbol = compilation.GetBestTypeByMetadataName("System.Attribute");
+        private readonly INamedTypeSymbol? _assemblySymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Assembly");
+        private readonly INamedTypeSymbol? _moduleSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Module");
+        private readonly INamedTypeSymbol? _memberInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.MemberInfo");
+        private readonly INamedTypeSymbol? _parameterInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.ParameterInfo");
+        private readonly INamedTypeSymbol? _typeSymbol = compilation.GetBestTypeByMetadataName("System.Type");
+        private readonly INamedTypeSymbol? _customAttributeExtensionsSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.CustomAttributeExtensions");
+        private readonly IMethodSymbol? _enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableAnyMethodDocId, compilation) as IMethodSymbol;
+        private readonly IMethodSymbol? _enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableCountMethodDocId, compilation) as IMethodSymbol;
 
         public bool IsValid => _attributeSymbol is not null;
 
@@ -70,20 +61,17 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (operation.OperatorKind is not (BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals or BinaryOperatorKind.GreaterThan or BinaryOperatorKind.LessThan or BinaryOperatorKind.GreaterThanOrEqual or BinaryOperatorKind.LessThanOrEqual))
                 return;
 
-            if (IsGetCustomAttributeComparison(operation.LeftOperand, operation.RightOperand, out var invocation) ||
-                IsGetCustomAttributeComparison(operation.RightOperand, operation.LeftOperand, out invocation))
+            if (IsGetCustomAttributeComparison(operation.LeftOperand, operation.RightOperand, out var invocation))
             {
                 context.ReportDiagnostic(Rule, operation, invocation!.TargetMethod.Name);
                 return;
             }
 
-            if (IsGetCustomAttributesLengthComparison(operation, operation.LeftOperand, operation.RightOperand, out _) ||
-                IsGetCustomAttributesLengthComparison(operation, operation.RightOperand, operation.LeftOperand, out _))
+            if (IsGetCustomAttributesLengthComparison(operation, operation.LeftOperand, operation.RightOperand, out _))
             {
                 context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Length");
             }
-            else if (IsGetCustomAttributesCountComparison(operation, operation.LeftOperand, operation.RightOperand, out _) ||
-                     IsGetCustomAttributesCountComparison(operation, operation.RightOperand, operation.LeftOperand, out _))
+            else if (IsGetCustomAttributesCountComparison(operation, operation.LeftOperand, operation.RightOperand, out _))
             {
                 context.ReportDiagnostic(Rule, operation, "GetCustomAttributes().Count()");
             }
@@ -107,8 +95,7 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             var operation = (IInvocationOperation)context.Operation;
 
             // Check if this is the specific Any<T>(IEnumerable<T>) method
-            if (_enumerableAnyMethod is not null && 
-                SymbolEqualityComparer.Default.Equals(operation.TargetMethod.OriginalDefinition, _enumerableAnyMethod))
+            if (operation.TargetMethod.OriginalDefinition.IsEqualTo(_enumerableAnyMethod))
             {
                 if (operation.Arguments.Length != 1)
                     return;
@@ -123,12 +110,14 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 
         private bool IsGetCustomAttributeComparison(IOperation left, IOperation right, out IInvocationOperation? invocation)
         {
+            if (right.IsNull())
+                return IsGetCustomAttributeInvocation(left, out invocation);
+
+            if (left.IsNull())
+                return IsGetCustomAttributeInvocation(right, out invocation);
+
             invocation = null;
-
-            if (!right.IsNull())
-                return false;
-
-            return IsGetCustomAttributeInvocation(left, out invocation);
+            return false;
         }
 
         private bool IsGetCustomAttributesLengthComparison(IBinaryOperation binaryOp, IOperation left, IOperation right, out IInvocationOperation? invocation)
@@ -138,7 +127,7 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (left is not IPropertyReferenceOperation propertyReference)
                 return false;
 
-            if (propertyReference.Property.Name != "Length")
+            if (propertyReference.Property.Name is not "Length")
                 return false;
 
             if (propertyReference.Instance is null)
@@ -193,7 +182,7 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
                 return false;
 
             // Check if this is the specific Count<T>(IEnumerable<T>) method
-            if (_enumerableCountMethod is null || 
+            if (_enumerableCountMethod is null ||
                 !SymbolEqualityComparer.Default.Equals(countInvocation.TargetMethod.OriginalDefinition, _enumerableCountMethod))
                 return false;
 
@@ -215,7 +204,7 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 
         private bool IsGetCustomAttributeInvocation(IOperation operation, out IInvocationOperation? invocation)
         {
-            invocation = operation as IInvocationOperation;
+            invocation = operation.UnwrapConversionOperations() as IInvocationOperation;
             if (invocation is null)
                 return false;
 
@@ -227,6 +216,13 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (instance is null && invocation.TargetMethod.IsExtensionMethod && invocation.Arguments.Length > 0)
             {
                 instance = invocation.Arguments[0].Value;
+            }
+            else if (instance is null && invocation.TargetMethod.IsStatic && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType, _attributeSymbol))
+            {
+                if (invocation.Arguments.Length > 0)
+                {
+                    instance = invocation.Arguments[0].Value;
+                }
             }
 
             if (instance is null)
@@ -244,11 +240,21 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (invocation.TargetMethod.Name != "GetCustomAttributes")
                 return false;
 
+            if (!IsMethodFromReflectionTypes(invocation.TargetMethod))
+                return false;
+
             // For extension methods, the instance is in the first argument
             var instance = invocation.Instance;
             if (instance is null && invocation.TargetMethod.IsExtensionMethod && invocation.Arguments.Length > 0)
             {
                 instance = invocation.Arguments[0].Value;
+            }
+            else if (instance is null && invocation.TargetMethod.IsStatic && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType, _attributeSymbol))
+            {
+                if (invocation.Arguments.Length > 0)
+                {
+                    instance = invocation.Arguments[0].Value;
+                }
             }
 
             if (instance is null)
@@ -256,6 +262,31 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 
             return IsValidInstanceType(instance.Type);
         }
+
+        private bool IsMethodFromReflectionTypes(IMethodSymbol method)
+        {
+            if (SymbolEqualityComparer.Default.Equals(method.ContainingType, _customAttributeExtensionsSymbol))
+                return true;
+
+            if (SymbolEqualityComparer.Default.Equals(method.ContainingType, _attributeSymbol))
+                return true;
+
+            // Check for extension methods on reflection types
+            if (method.Name is "GetCustomAttribute" or "GetCustomAttributes")
+            {
+                if (method.Parameters.Length > 0)
+                {
+                    var firstParamType = method.Parameters[0].Type;
+                    if (IsReflectionType(firstParamType) || IsParameterInfo(firstParamType))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsParameterInfo(ITypeSymbol type) => type.IsEqualTo(_parameterInfoSymbol);
+        private bool IsReflectionType(ITypeSymbol type) => type.IsEqualToAny(_assemblySymbol, _moduleSymbol, _memberInfoSymbol, _typeSymbol);
 
         private bool IsValidInstanceType(ITypeSymbol? type)
         {

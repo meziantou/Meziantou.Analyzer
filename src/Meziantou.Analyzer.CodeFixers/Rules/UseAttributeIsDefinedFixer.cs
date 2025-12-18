@@ -130,7 +130,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
 
     private static IInvocationOperation? GetGetCustomAttributeInvocation(IOperation operation)
     {
-        if (operation is IInvocationOperation invocation &&
+        if (operation.UnwrapConversionOperations() is IInvocationOperation invocation &&
             (invocation.TargetMethod.Name == "GetCustomAttribute" || invocation.TargetMethod.Name == "GetCustomAttributes"))
         {
             return invocation;
@@ -222,37 +222,87 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
 
     private static SyntaxNode CreateAttributeIsDefinedInvocation(SyntaxGenerator generator, SemanticModel semanticModel, IInvocationOperation invocation, bool negate)
     {
-        var attributeType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Attribute");
-        var attributeTypeSyntax = generator.TypeExpression(attributeType!);
+        var attributeTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Attribute");
+        var systemTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Type");
+        var attributeTypeSyntax = generator.TypeExpression(attributeTypeSymbol!);
 
         var instance = invocation.Instance;
         var instanceSyntax = instance?.Syntax;
 
-        var arguments = new List<SyntaxNode>();
-        
         // For extension methods, the instance is in the first argument
         if (instanceSyntax is null && invocation.TargetMethod.IsExtensionMethod && invocation.Arguments.Length > 0)
         {
             instanceSyntax = invocation.Arguments[0].Syntax;
-            // Add the instance (first argument)
-            arguments.Add(instanceSyntax);
-            // Add remaining arguments (skip the first one which is the instance)
-            for (int i = 1; i < invocation.Arguments.Length; i++)
+        }
+        else if (instanceSyntax is null && invocation.TargetMethod.IsStatic && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType, attributeTypeSymbol))
+        {
+            if (invocation.Arguments.Length > 0)
             {
-                arguments.Add(invocation.Arguments[i].Syntax);
+                instanceSyntax = invocation.Arguments[0].Syntax;
             }
+        }
+
+        var arguments = new List<SyntaxNode>();
+        if (instanceSyntax is not null)
+        {
+            arguments.Add(instanceSyntax);
+        }
+
+        // Find Type argument
+        SyntaxNode? typeSyntax = null;
+        if (invocation.TargetMethod.IsGenericMethod)
+        {
+            var typeArg = invocation.TargetMethod.TypeArguments[0];
+            typeSyntax = generator.TypeOfExpression(generator.TypeExpression(typeArg));
         }
         else
         {
-            if (instanceSyntax is not null)
-            {
-                arguments.Add(instanceSyntax);
-            }
-
             foreach (var arg in invocation.Arguments)
             {
-                arguments.Add(arg.Syntax);
+                // Skip instance argument for extension methods
+                if (invocation.TargetMethod.IsExtensionMethod && arg == invocation.Arguments[0])
+                    continue;
+
+                // Skip instance argument for static Attribute methods
+                if (invocation.TargetMethod.IsStatic && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType, attributeTypeSymbol) && arg == invocation.Arguments[0])
+                    continue;
+
+                if (SymbolEqualityComparer.Default.Equals(arg.Parameter?.Type, systemTypeSymbol))
+                {
+                    typeSyntax = arg.Syntax;
+                    break;
+                }
             }
+        }
+
+        if (typeSyntax is null)
+        {
+            typeSyntax = generator.TypeOfExpression(attributeTypeSyntax);
+        }
+        arguments.Add(typeSyntax);
+
+        // Find inherit argument
+        SyntaxNode? inheritSyntax = null;
+        foreach (var arg in invocation.Arguments)
+        {
+            // Skip instance argument for extension methods
+            if (invocation.TargetMethod.IsExtensionMethod && arg == invocation.Arguments[0])
+                continue;
+
+            // Skip instance argument for static Attribute methods
+            if (invocation.TargetMethod.IsStatic && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType, attributeTypeSymbol) && arg == invocation.Arguments[0])
+                continue;
+
+            if (arg.Parameter?.Type.SpecialType == SpecialType.System_Boolean && arg.Parameter.Name == "inherit")
+            {
+                inheritSyntax = arg.Syntax;
+                break;
+            }
+        }
+
+        if (inheritSyntax is not null)
+        {
+            arguments.Add(inheritSyntax);
         }
 
         var isDefinedInvocation = generator.InvocationExpression(
