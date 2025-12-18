@@ -27,26 +27,16 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeFixer : CodeFix
         if (nodeToFix is null)
             return;
 
-        var diagnostic = context.Diagnostics[0];
-        if (!diagnostic.Properties.TryGetValue("ExpectedType", out var expectedType) || expectedType is null)
-            return;
-
-        var title = $"Use ILogger<{GetSimpleName(expectedType)}>";
+        var title = "Use ILogger with matching type parameter";
         var codeAction = CodeAction.Create(
             title,
-            ct => FixAsync(context.Document, nodeToFix, expectedType, ct),
+            ct => FixAsync(context.Document, nodeToFix, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static string GetSimpleName(string fullyQualifiedName)
-    {
-        var lastDot = fullyQualifiedName.LastIndexOf('.');
-        return lastDot >= 0 ? fullyQualifiedName[(lastDot + 1)..] : fullyQualifiedName;
-    }
-
-    private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, string expectedType, CancellationToken cancellationToken)
+    private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
@@ -61,14 +51,19 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeFixer : CodeFix
         if (parameterType is not GenericNameSyntax genericType)
             return document;
 
-        // Get the expected type symbol
-        var expectedTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName(expectedType);
-        if (expectedTypeSymbol is null)
+        // Find the containing type by traversing up the syntax tree
+        var containingTypeDeclaration = parameter.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+        if (containingTypeDeclaration is null)
+            return document;
+
+        // Get the symbol for the containing type
+        var containingTypeSymbol = semanticModel.GetDeclaredSymbol(containingTypeDeclaration, cancellationToken);
+        if (containingTypeSymbol is null)
             return document;
 
         // Create new type argument
         var generator = editor.Generator;
-        var newTypeArgument = generator.TypeExpression(expectedTypeSymbol);
+        var newTypeArgument = generator.TypeExpression(containingTypeSymbol);
 
         // Create new generic type
         var newGenericType = genericType.WithTypeArgumentList(
