@@ -178,6 +178,7 @@
 |[MA0176](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0176.md)|Performance|Optimize guid creation|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0177](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0177.md)|Style|Use single-line XML comment syntax when possible|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0178](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0178.md)|Design|Use TimeSpan.Zero instead of TimeSpan.FromXXX(0)|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0179](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0179.md)|Performance|Use Attribute.IsDefined instead of GetCustomAttribute(s)|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -720,6 +721,9 @@ dotnet_diagnostic.MA0177.severity = none
 
 # MA0178: Use TimeSpan.Zero instead of TimeSpan.FromXXX(0)
 dotnet_diagnostic.MA0178.severity = suggestion
+
+# MA0179: Use Attribute.IsDefined instead of GetCustomAttribute(s)
+dotnet_diagnostic.MA0179.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1255,4 +1259,7 @@ dotnet_diagnostic.MA0177.severity = none
 
 # MA0178: Use TimeSpan.Zero instead of TimeSpan.FromXXX(0)
 dotnet_diagnostic.MA0178.severity = none
+
+# MA0179: Use Attribute.IsDefined instead of GetCustomAttribute(s)
+dotnet_diagnostic.MA0179.severity = none
 ```

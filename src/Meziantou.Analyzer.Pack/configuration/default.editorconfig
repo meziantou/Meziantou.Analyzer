@@ -532,3 +532,6 @@ dotnet_diagnostic.MA0177.severity = none
 
 # MA0178: Use TimeSpan.Zero instead of TimeSpan.FromXXX(0)
 dotnet_diagnostic.MA0178.severity = suggestion
+
+# MA0179: Use Attribute.IsDefined instead of GetCustomAttribute(s)
+dotnet_diagnostic.MA0179.severity = suggestion
