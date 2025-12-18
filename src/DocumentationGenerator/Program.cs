@@ -212,7 +212,7 @@ void WriteFileIfChanged(FullPath path, string content)
     }
 
     var existingContent = File.ReadAllText(path).ReplaceLineEndings("\n");
-    if (existingContent != content)
+    if (existingContent.TrimEnd() != content.TrimEnd())
     {
         File.WriteAllText(path, content, encoding);
         fileWritten++;
