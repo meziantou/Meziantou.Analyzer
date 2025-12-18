@@ -15,6 +15,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             .AddNuGetReference("Microsoft.Extensions.Logging.Abstractions", "8.0.0", "lib/net8.0");
     }
 
+#if CSHARP12_OR_GREATER
     [Fact]
     public async Task PrimaryConstructor_Mismatch_ShouldReportDiagnostic()
     {
@@ -47,6 +48,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task RegularConstructor_Mismatch_ShouldReportDiagnostic()
@@ -87,6 +89,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP12_OR_GREATER
     [Fact]
     public async Task PrimaryConstructor_Match_ShouldNotReportDiagnostic()
     {
@@ -102,6 +105,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task RegularConstructor_Match_ShouldNotReportDiagnostic()
@@ -122,6 +126,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP12_OR_GREATER
     [Fact]
     public async Task NonGenericILogger_ShouldNotReportDiagnostic()
     {
@@ -137,7 +142,9 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP12_OR_GREATER
     [Fact]
     public async Task AbstractClass_ShouldNotReportDiagnostic()
     {
@@ -157,6 +164,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task Interface_ShouldNotReportDiagnostic()
@@ -205,6 +213,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP12_OR_GREATER
     [Fact]
     public async Task NestedClass_Mismatch_ShouldReportDiagnostic()
     {
@@ -235,7 +244,9 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP12_OR_GREATER
     [Fact]
     public async Task GenericClass_Mismatch_ShouldReportDiagnostic()
     {
@@ -268,4 +279,5 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
               .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
+#endif
 }
