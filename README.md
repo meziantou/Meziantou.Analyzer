@@ -212,6 +212,16 @@ If you are already using other analyzers, you can check [which rules are duplica
 
 <!-- suppressions -->
 
+# Refactorings
+
+<!-- refactorings -->
+
+|Name|
+|----|
+|`ConvertToStringFormat`|
+
+<!-- refactorings -->
+
 # Configuration
 
 You can set the `<MeziantouAnalysisMode>` MSBuild property to configure the default severity of the rules. The default value is `Default`. You can set it to `None` to disable all rules by default.
@@ -222,4 +232,3 @@ You can set the `<MeziantouAnalysisMode>` MSBuild property to configure the defa
     <MeziantouAnalysisMode>None</MeziantouAnalysisMode>
   </PropertyGroup>
 </Project>
-```

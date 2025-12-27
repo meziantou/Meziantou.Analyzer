@@ -188,6 +188,12 @@
 |`MAS0003`|[IDE0058](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0058?WT.mc_id=DT-MVP-5003978)|Suppress IDE0058 on well-known types|
 |`MAS0004`|[CA1507](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1507?WT.mc_id=DT-MVP-5003978)|Suppress CA1507 on methods decorated with a \[Newtonsoft.Json.JsonPropertyAttribute\].|
 
+# Refactorings
+
+|Name|
+|----|
+|`ConvertToStringFormat`|
+
 
 # .editorconfig - default values
 

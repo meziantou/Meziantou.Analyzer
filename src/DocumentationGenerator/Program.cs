@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Meziantou.Framework;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 if (!FullPath.CurrentDirectory().TryFindFirstAncestorOrSelf(p => Directory.Exists(p / ".git"), out var outputFolder))
@@ -28,6 +29,11 @@ var codeFixProviders = assemblies.SelectMany(assembly => assembly.GetExportedTyp
     .Select(type => (CodeFixProvider)Activator.CreateInstance(type)!)
     .ToList();
 
+var codeRefactoringProviders = assemblies.SelectMany(assembly => assembly.GetExportedTypes())
+    .Where(type => !type.IsAbstract && typeof(CodeRefactoringProvider).IsAssignableFrom(type))
+    .Select(type => (CodeRefactoringProvider)Activator.CreateInstance(type)!)
+    .ToList();
+
 var diagnosticSuppressors = assemblies.SelectMany(assembly => assembly.GetExportedTypes())
   .Where(type => !type.IsAbstract && typeof(DiagnosticSuppressor).IsAssignableFrom(type))
   .Select(type => (DiagnosticSuppressor)Activator.CreateInstance(type)!)
@@ -41,6 +47,10 @@ sb.Append(rulesTable);
 var suppressorsTable = GenerateSuppressorsTable(diagnosticSuppressors);
 sb.Append('\n');
 sb.Append(suppressorsTable);
+
+var refactoringsTable = GenerateRefactoringsTable(codeRefactoringProviders);
+sb.Append("\n# Refactorings\n\n");
+sb.Append(refactoringsTable);
 
 sb.Append("\n\n# .editorconfig - default values\n\n");
 GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: null);
@@ -58,6 +68,7 @@ Console.WriteLine(sb.ToString());
     var readmeContent = await File.ReadAllTextAsync(readmePath);
     var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + GenerateRulesTable(diagnosticAnalyzers, codeFixProviders, addTitle: false) + "\n", RegexOptions.Singleline);
     newContent = Regex.Replace(newContent, "(?<=<!-- suppressions -->\\r?\\n).*(?=<!-- suppressions -->)", "\n" + GenerateSuppressorsTable(diagnosticSuppressors) + "\n", RegexOptions.Singleline);
+    newContent = Regex.Replace(newContent, "(?<=<!-- refactorings -->\\r?\\n).*(?=<!-- refactorings -->)", "\n" + GenerateRefactoringsTable(codeRefactoringProviders) + "\n", RegexOptions.Singleline);
     WriteFileIfChanged(readmePath, newContent);
 }
 
@@ -305,6 +316,27 @@ static string GenerateSuppressorsTable(List<DiagnosticSuppressor> diagnosticSupp
           .Append(EscapeMarkdown(suppression.Justification.ToString(CultureInfo.InvariantCulture)))
           .Append('|')
           .Append('\n');
+    }
+
+    return sb.ToString();
+}
+
+static string GenerateRefactoringsTable(List<CodeRefactoringProvider> codeRefactoringProviders)
+{
+    var sb = new StringBuilder();
+    sb.Append("|Name|\n");
+    sb.Append("|----|\n");
+
+    foreach (var refactoring in codeRefactoringProviders.OrderBy(r => r.GetType().Name, StringComparer.Ordinal))
+    {
+        var typeName = refactoring.GetType().Name;
+        var displayName = typeName.EndsWith("Refactoring", StringComparison.Ordinal)
+            ? typeName.Substring(0, typeName.Length - "Refactoring".Length)
+            : typeName;
+
+        sb.Append("|`")
+          .Append(displayName)
+          .Append("`|\n");
     }
 
     return sb.ToString();
