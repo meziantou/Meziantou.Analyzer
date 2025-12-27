@@ -179,6 +179,7 @@
 |[MA0177](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0177.md)|Style|Use single-line XML comment syntax when possible|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0178](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0178.md)|Design|Use TimeSpan.Zero instead of TimeSpan.FromXXX(0)|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0179](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0179.md)|Performance|Use Attribute.IsDefined instead of GetCustomAttribute(s)|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0180](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0180.md)|Design|ILogger type parameter should match containing type|<span title='Warning'>⚠️</span>|❌|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -724,6 +725,9 @@ dotnet_diagnostic.MA0178.severity = suggestion
 
 # MA0179: Use Attribute.IsDefined instead of GetCustomAttribute(s)
 dotnet_diagnostic.MA0179.severity = suggestion
+
+# MA0180: ILogger type parameter should match containing type
+dotnet_diagnostic.MA0180.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1262,4 +1266,7 @@ dotnet_diagnostic.MA0178.severity = none
 
 # MA0179: Use Attribute.IsDefined instead of GetCustomAttribute(s)
 dotnet_diagnostic.MA0179.severity = none
+
+# MA0180: ILogger type parameter should match containing type
+dotnet_diagnostic.MA0180.severity = none
 ```
