@@ -164,7 +164,6 @@
 |[MA0162](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0162.md)|Usage|Use Process.Start overload with ProcessStartInfo|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0163](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0163.md)|Usage|UseShellExecute must be false when redirecting standard input or output|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0164](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0164.md)|Style|Use parentheses to make not pattern clearer|<span title='Warning'>⚠️</span>|✔️|✔️|
-|[MA0165](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0165.md)|Usage|Make interpolated string|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0166](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0166.md)|Usage|Forward the TimeProvider to methods that take one|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0167](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0167.md)|Usage|Use an overload with a TimeProvider argument|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0168](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0168.md)|Performance|Use readonly struct for in or ref readonly parameter|<span title='Info'>ℹ️</span>|❌|❌|
@@ -193,6 +192,7 @@
 |Name|
 |----|
 |`ConvertToStringFormat`|
+|`MakeInterpolatedString`|
 
 
 # .editorconfig - default values
@@ -686,9 +686,6 @@ dotnet_diagnostic.MA0163.severity = warning
 
 # MA0164: Use parentheses to make not pattern clearer
 dotnet_diagnostic.MA0164.severity = warning
-
-# MA0165: Make interpolated string
-dotnet_diagnostic.MA0165.severity = silent
 
 # MA0166: Forward the TimeProvider to methods that take one
 dotnet_diagnostic.MA0166.severity = suggestion
@@ -1227,9 +1224,6 @@ dotnet_diagnostic.MA0163.severity = none
 
 # MA0164: Use parentheses to make not pattern clearer
 dotnet_diagnostic.MA0164.severity = none
-
-# MA0165: Make interpolated string
-dotnet_diagnostic.MA0165.severity = none
 
 # MA0166: Forward the TimeProvider to methods that take one
 dotnet_diagnostic.MA0166.severity = none

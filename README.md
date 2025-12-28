@@ -180,7 +180,6 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0162](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0162.md)|Usage|Use Process.Start overload with ProcessStartInfo|ℹ️|❌|❌|
 |[MA0163](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0163.md)|Usage|UseShellExecute must be false when redirecting standard input or output|⚠️|✔️|❌|
 |[MA0164](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0164.md)|Style|Use parentheses to make not pattern clearer|⚠️|✔️|✔️|
-|[MA0165](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0165.md)|Usage|Make interpolated string|👻|✔️|✔️|
 |[MA0166](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0166.md)|Usage|Forward the TimeProvider to methods that take one|ℹ️|✔️|✔️|
 |[MA0167](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0167.md)|Usage|Use an overload with a TimeProvider argument|ℹ️|❌|❌|
 |[MA0168](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0168.md)|Performance|Use readonly struct for in or ref readonly parameter|ℹ️|❌|❌|
@@ -219,6 +218,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |Name|
 |----|
 |`ConvertToStringFormat`|
+|`MakeInterpolatedString`|
 
 <!-- refactorings -->
 

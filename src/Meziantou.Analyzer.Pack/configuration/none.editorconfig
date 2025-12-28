@@ -491,9 +491,6 @@ dotnet_diagnostic.MA0163.severity = none
 # MA0164: Use parentheses to make not pattern clearer
 dotnet_diagnostic.MA0164.severity = none
 
-# MA0165: Make interpolated string
-dotnet_diagnostic.MA0165.severity = none
-
 # MA0166: Forward the TimeProvider to methods that take one
 dotnet_diagnostic.MA0166.severity = none
 

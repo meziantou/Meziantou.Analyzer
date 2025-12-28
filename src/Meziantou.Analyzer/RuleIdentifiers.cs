@@ -165,7 +165,6 @@ internal static class RuleIdentifiers
     public const string UseProcessStartOverload = "MA0162";
     public const string UseShellExecuteMustBeFalse = "MA0163";
     public const string NotPatternShouldBeParenthesized = "MA0164";
-    public const string MakeInterpolatedString = "MA0165";
     public const string UseAnOverloadThatHasTimeProviderWhenAvailable = "MA0166";
     public const string UseAnOverloadThatHasTimeProvider = "MA0167";
     public const string UseReadOnlyStructForRefReadOnlyParameters = "MA0168";
