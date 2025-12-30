@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -34,8 +33,12 @@ public sealed class DoNotUseCastAnalyzer : DiagnosticAnalyzer
     {
         var operation = (IConversionOperation)context.Operation;
 
-        // Only report cast expressions (explicit cast syntax like (int)value)
-        if (operation.Syntax is not CastExpressionSyntax)
+        // Only report explicit conversions (not implicit)
+        if (operation.Conversion.IsImplicit)
+            return;
+
+        // Do not report try-cast (as operator)
+        if (operation.IsTryCast)
             return;
 
         // Do not report if it's a user-defined conversion
