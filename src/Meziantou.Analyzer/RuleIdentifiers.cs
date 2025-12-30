@@ -180,6 +180,7 @@ internal static class RuleIdentifiers
     public const string UseTimeSpanZero = "MA0178";
     public const string UseAttributeIsDefined = "MA0179";
     public const string ILoggerParameterTypeShouldMatchContainingType = "MA0180";
+    public const string DoNotUseCast = "MA0181";
 
     public static string GetHelpUri(string identifier)
     {
