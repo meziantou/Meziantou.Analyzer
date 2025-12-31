@@ -535,3 +535,6 @@ dotnet_diagnostic.MA0179.severity = none
 
 # MA0180: ILogger type parameter should match containing type
 dotnet_diagnostic.MA0180.severity = none
+
+# MA0181: Do not use cast
+dotnet_diagnostic.MA0181.severity = none

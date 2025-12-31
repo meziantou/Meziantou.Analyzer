@@ -195,6 +195,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0178](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0178.md)|Design|Use TimeSpan.Zero instead of TimeSpan.FromXXX(0)|ℹ️|✔️|✔️|
 |[MA0179](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0179.md)|Performance|Use Attribute.IsDefined instead of GetCustomAttribute(s)|ℹ️|✔️|✔️|
 |[MA0180](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0180.md)|Design|ILogger type parameter should match containing type|⚠️|❌|✔️|
+|[MA0181](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0181.md)|Style|Do not use cast|ℹ️|❌|❌|
 
 <!-- rules -->
 
