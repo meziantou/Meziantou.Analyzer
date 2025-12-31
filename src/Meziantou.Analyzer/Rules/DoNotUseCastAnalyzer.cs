@@ -33,8 +33,8 @@ public sealed class DoNotUseCastAnalyzer : DiagnosticAnalyzer
     {
         var operation = (IConversionOperation)context.Operation;
 
-        // Only report explicit conversions (not implicit)
-        if (operation.Conversion.IsImplicit)
+        // Only report explicit conversions in source code (not compiler-generated)
+        if (operation.IsImplicit)
             return;
 
         // Do not report try-cast (as operator)
