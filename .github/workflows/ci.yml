@@ -156,6 +156,9 @@ jobs:
   deploy:
     runs-on: 'ubuntu-latest'
     needs: [ check_documentation, validate_nuget, build_and_test ]
+    permissions:
+      contents: read
+      id-token: write
     steps:
     - uses: actions/checkout@v4
       with:
@@ -166,6 +169,11 @@ jobs:
         path: ${{ env.NuGetDirectory }}
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: meziantou
     - run: |
         Write-Host "Current ref: $env:GITHUB_REF"
         Write-Host "Searching nupkg in folder: ${{ env.NuGetDirectory }}"
@@ -184,7 +192,7 @@ jobs:
       name: Publish NuGet packages
       if: always()
       env:
-        NuGetApiKey: ${{ secrets.NUGETAPIKEY }}
+        NuGetApiKey: ${{steps.login.outputs.NUGET_API_KEY}}
         FeedzApiKey: ${{ secrets.FEEDZ_APIKEY }}
 
   create_release:
