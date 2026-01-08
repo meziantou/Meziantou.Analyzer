@@ -14,11 +14,11 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
         title: "Avoid uninstantiated internal classes",
         messageFormat: "Internal class '{0}' is apparently never instantiated. If so, remove the code from the assembly. If this class is intended to contain only static members, make it 'static'.",
         RuleCategories.Design,
-        DiagnosticSeverity.Warning,
+        DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidUninstantiatedInternalClasses),
-        customTags: WellKnownDiagnosticTags.CompilationEnd);
+        customTags: ["CompilationEnd"]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 

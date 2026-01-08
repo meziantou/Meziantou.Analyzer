@@ -180,7 +180,7 @@
 |[MA0179](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0179.md)|Performance|Use Attribute.IsDefined instead of GetCustomAttribute(s)|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0180](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0180.md)|Design|ILogger type parameter should match containing type|<span title='Warning'>⚠️</span>|❌|✔️|
 |[MA0181](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0181.md)|Style|Do not use cast|<span title='Info'>ℹ️</span>|❌|❌|
-|[MA0182](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0182.md)|Design|Avoid uninstantiated internal classes|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0182](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0182.md)|Design|Avoid uninstantiated internal classes|<span title='Info'>ℹ️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -738,7 +738,7 @@ dotnet_diagnostic.MA0180.severity = none
 dotnet_diagnostic.MA0181.severity = none
 
 # MA0182: Avoid uninstantiated internal classes
-dotnet_diagnostic.MA0182.severity = warning
+dotnet_diagnostic.MA0182.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
