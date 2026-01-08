@@ -1,4 +1,5 @@
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
@@ -142,6 +143,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.Net9_0)
               .ValidateAsync();
     }
 
@@ -493,8 +495,9 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
             }
             """;
         await CreateProjectBuilder()
-              .AddNuGetReference("YamlDotNet", "13.7.1", "lib/netstandard2.1/")
+              .AddNuGetReference("YamlDotNet", "16.3.0", "lib/netstandard2.0/")
               .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .ValidateAsync();
     }
 }
