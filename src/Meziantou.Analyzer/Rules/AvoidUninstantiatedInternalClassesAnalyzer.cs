@@ -83,6 +83,15 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
                     _potentialUninstantiatedClasses.Add(symbol);
                 }
             }
+
+            // Track types used in generic constraints
+            foreach (var typeParameter in symbol.TypeParameters)
+            {
+                foreach (var constraintType in typeParameter.ConstraintTypes)
+                {
+                    AddUsedType(constraintType);
+                }
+            }
         }
 
         public void AnalyzePropertyOrFieldSymbol(SymbolAnalysisContext context)
@@ -117,6 +126,15 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
                 if (parameter.Type is not null)
                 {
                     AddUsedType(parameter.Type);
+                }
+            }
+
+            // Track types used in generic constraints
+            foreach (var typeParameter in method.TypeParameters)
+            {
+                foreach (var constraintType in typeParameter.ConstraintTypes)
+                {
+                    AddUsedType(constraintType);
                 }
             }
         }

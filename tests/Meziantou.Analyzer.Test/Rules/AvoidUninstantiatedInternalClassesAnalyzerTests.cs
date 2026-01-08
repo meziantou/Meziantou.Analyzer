@@ -543,4 +543,71 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
               .WithTargetFramework(TargetFramework.NetStandard2_0)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InternalClassUsedInMethodGenericConstraint_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class BaseConfig
+            {
+                public string Value { get; set; }
+            }
+
+            public class Service
+            {
+                public T Create<T>() where T : BaseConfig, new()
+                {
+                    return new T();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInTypeGenericConstraint_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class BaseEntity
+            {
+                public int Id { get; set; }
+            }
+
+            public class Repository<T> where T : BaseEntity
+            {
+                public T Get(int id) => null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInMultipleGenericConstraints_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal interface IValidator
+            {
+                bool Validate();
+            }
+
+            internal class BaseModel
+            {
+                public string Name { get; set; }
+            }
+
+            public class Processor<T> where T : BaseModel, IValidator, new()
+            {
+                public void Process(T item)
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
