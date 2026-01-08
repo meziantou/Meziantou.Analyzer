@@ -32,6 +32,8 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
             var analyzerContext = new AnalyzerContext();
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
+            ctx.RegisterSymbolAction(analyzerContext.AnalyzePropertyOrFieldSymbol, SymbolKind.Property, SymbolKind.Field);
+            ctx.RegisterSymbolAction(analyzerContext.AnalyzeMethodSymbol, SymbolKind.Method);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeArrayCreation, OperationKind.ArrayCreation);
@@ -79,6 +81,42 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
                 lock (_potentialUninstantiatedClasses)
                 {
                     _potentialUninstantiatedClasses.Add(symbol);
+                }
+            }
+        }
+
+        public void AnalyzePropertyOrFieldSymbol(SymbolAnalysisContext context)
+        {
+            var symbol = context.Symbol;
+            ITypeSymbol? type = symbol switch
+            {
+                IPropertySymbol property => property.Type,
+                IFieldSymbol field => field.Type,
+                _ => null,
+            };
+
+            if (type is not null)
+            {
+                AddUsedType(type);
+            }
+        }
+
+        public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
+        {
+            var method = (IMethodSymbol)context.Symbol;
+            
+            // Track return type
+            if (method.ReturnType is not null)
+            {
+                AddUsedType(method.ReturnType);
+            }
+            
+            // Track parameter types
+            foreach (var parameter in method.Parameters)
+            {
+                if (parameter.Type is not null)
+                {
+                    AddUsedType(parameter.Type);
                 }
             }
         }

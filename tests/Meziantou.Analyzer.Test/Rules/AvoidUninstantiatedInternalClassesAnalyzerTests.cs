@@ -247,6 +247,49 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
     }
 
     [Fact]
+    public async Task InternalClassUsedInMethodParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class Config
+            {
+                public string Value { get; set; }
+            }
+
+            public class Service
+            {
+                internal void ProcessConfig(Config config)
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedAsMethodReturnType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class Result
+            {
+                public bool Success { get; set; }
+            }
+
+            public class Service
+            {
+                internal Result GetResult()
+                {
+                    return new Result();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task MultipleInternalClasses_SomeUsedSomeNot()
     {
         const string SourceCode = """
