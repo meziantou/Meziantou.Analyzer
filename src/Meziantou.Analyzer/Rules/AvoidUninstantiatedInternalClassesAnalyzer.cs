@@ -29,7 +29,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var analyzerContext = new AnalyzerContext(ctx.Compilation);
+            var analyzerContext = new AnalyzerContext();
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
@@ -69,11 +69,6 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
     {
         private readonly List<ITypeSymbol> _potentialUninstantiatedClasses = [];
         private readonly HashSet<ITypeSymbol> _usedClasses = new(SymbolEqualityComparer.Default);
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            _ = compilation;
-        }
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
@@ -141,8 +136,10 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
         {
             lock (_usedClasses)
             {
-                _usedClasses.Add(typeSymbol);
-                
+                // Prevent re-processing already seen types
+                if (!_usedClasses.Add(typeSymbol))
+                    return;
+
                 // Also mark the original definition as used (in case of generic instantiations)
                 if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
                 {
