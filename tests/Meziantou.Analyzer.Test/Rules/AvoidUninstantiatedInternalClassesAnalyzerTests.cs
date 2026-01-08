@@ -215,7 +215,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
 
             public class Container
             {
-                public List<Item> Items { get; set; }
+                internal List<Item> Items { get; set; }
             }
             """;
         await CreateProjectBuilder()
@@ -236,7 +236,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
 
             public class Outer
             {
-                public Dictionary<string, List<InnerData>> Data { get; set; }
+                internal Dictionary<string, List<InnerData>> Data { get; set; }
             }
             """;
         await CreateProjectBuilder()
