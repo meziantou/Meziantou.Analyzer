@@ -555,7 +555,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
 
             public class Service
             {
-                public T Create<T>() where T : BaseConfig, new()
+                internal T Create<T>() where T : BaseConfig, new()
                 {
                     return new T();
                 }
@@ -575,7 +575,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
                 public int Id { get; set; }
             }
 
-            public class Repository<T> where T : BaseEntity
+            internal class [|Repository|]<T> where T : BaseEntity
             {
                 public T Get(int id) => null;
             }
@@ -599,7 +599,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
                 public string Name { get; set; }
             }
 
-            public class Processor<T> where T : BaseModel, IValidator, new()
+            internal class [|Processor|]<T> where T : BaseModel, IValidator, new()
             {
                 public void Process(T item)
                 {
@@ -610,4 +610,129 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public async Task InternalClassUsedInImplicitExtensionType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class DataStore
+            {
+                public string Value { get; set; }
+            }
+
+            internal static class DataStoreExtensions
+            {
+                extension (DataStore datastore)
+                {
+                    public void Save()
+                    {
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInExplicitExtensionType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class Settings
+            {
+                public string Key { get; set; }
+            }
+
+            internal static class DataStoreExtensions
+            {
+                extension (Settings settings)
+                {
+                    public string GetValue() => settings.Key;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInGenericExtensionType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class Entity
+            {
+                public int Id { get; set; }
+            }
+
+            internal static class EntityExtension
+            {
+                extension<T>(T entity) where T : Entity
+                {
+                    public void Delete()
+                    {
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInExtensionTypeWithMultipleConstraints_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal interface IIdentifiable
+            {
+                int Id { get; }
+            }
+
+            internal class BaseEntity
+            {
+                public string Name { get; set; }
+            }
+
+            internal static class RepositoryExtension
+            {
+                extension<T>(T entity) where T : BaseEntity, IIdentifiable, new()
+                {
+                    public void Save()
+                    {
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedAsExtensionTypeParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+
+            internal class Item
+            {
+                public string Name { get; set; }
+            }
+
+            public static class ListExtensions
+            {
+                extension (List<Item> items)
+                {
+                    internal Item GetFirst() => items[0];
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
 }
