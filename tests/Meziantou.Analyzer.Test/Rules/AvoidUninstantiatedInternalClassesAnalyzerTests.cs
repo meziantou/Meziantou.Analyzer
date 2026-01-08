@@ -415,4 +415,86 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InternalClassUsedByXmlSerializer_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.IO;
+            using System.Xml.Serialization;
+
+            internal class InternalData
+            {
+                public string Name { get; set; }
+                public int Value { get; set; }
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var serializer = new XmlSerializer(typeof(InternalData));
+                    using var writer = new StringWriter();
+                    serializer.Serialize(writer, new InternalData());
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedByNewtonsoftJsonSerializer_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using Newtonsoft.Json;
+
+            internal class InternalData
+            {
+                public string Name { get; set; }
+                public int Value { get; set; }
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    string json = "{}";
+                    var data = JsonConvert.DeserializeObject<InternalData>(json);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .AddNuGetReference("Newtonsoft.Json", "13.0.3", "lib/netstandard2.0/")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedByYamlDotNetSerializer_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using YamlDotNet.Serialization;
+
+            internal class InternalData
+            {
+                public string Name { get; set; }
+                public int Value { get; set; }
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var deserializer = new DeserializerBuilder().Build();
+                    var data = deserializer.Deserialize<InternalData>("name: test");
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .AddNuGetReference("YamlDotNet", "13.7.1", "lib/netstandard2.1/")
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
