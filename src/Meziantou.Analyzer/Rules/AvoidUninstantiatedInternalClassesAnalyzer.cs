@@ -92,6 +92,13 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
                     AddUsedType(constraintType);
                 }
             }
+
+#if CSHARP14_OR_GREATER
+            if(symbol.ExtensionParameter is not null)
+            {
+                AddUsedType(symbol.ExtensionParameter.Type);
+            }
+#endif
         }
 
         public void AnalyzePropertyOrFieldSymbol(SymbolAnalysisContext context)
