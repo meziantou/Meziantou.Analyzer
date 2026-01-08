@@ -36,6 +36,7 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeArrayCreation, OperationKind.ArrayCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeTypeOf, OperationKind.TypeOf);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeMemberReference, OperationKind.PropertyReference, OperationKind.FieldReference, OperationKind.MethodReference, OperationKind.EventReference);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
     }
@@ -117,6 +118,18 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
             if (operation.TypeOperand is not null)
             {
                 AddUsedType(operation.TypeOperand);
+            }
+        }
+
+        public void AnalyzeMemberReference(OperationAnalysisContext context)
+        {
+            var operation = (IMemberReferenceOperation)context.Operation;
+            
+            // Track type arguments in the containing type of the member being accessed
+            // For example: Sample<InternalClass>.Empty
+            if (operation.Member.ContainingType is not null)
+            {
+                AddUsedType(operation.Member.ContainingType);
             }
         }
 

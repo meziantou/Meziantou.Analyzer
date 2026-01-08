@@ -389,4 +389,30 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InternalClassUsedAsGenericTypeArgumentForStaticMemberAccess_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class Sample<T>
+            {
+                public static int Empty { get; } = 0;
+            }
+
+            internal class InternalClass
+            {
+            }
+
+            public class Consumer
+            {
+                public void A()
+                {
+                    _ = Sample<InternalClass>.Empty;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
