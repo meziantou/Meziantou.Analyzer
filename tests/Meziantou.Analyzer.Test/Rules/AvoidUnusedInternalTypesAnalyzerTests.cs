@@ -126,6 +126,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task UnusedInternalRecordStruct_Diagnostic()
     {
@@ -140,6 +141,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task InternalClassUsedInObjectCreation_NoDiagnostic()
@@ -205,6 +207,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InternalRecordStructUsedInObjectCreation_NoDiagnostic()
     {
@@ -224,6 +227,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task InternalClassUsedAsFieldType_NoDiagnostic()
@@ -280,6 +284,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InternalRecordStructUsedAsParameterType_NoDiagnostic()
     {
@@ -298,6 +303,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task InternalStructUsedAsGenericTypeArgument_NoDiagnostic()
@@ -345,6 +351,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InternalRecordStructUsedInArrayCreation_NoDiagnostic()
     {
@@ -366,7 +373,9 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task MultipleInternalTypes_SomeUsedSomeNot()
     {
@@ -403,6 +412,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task InternalClassUsedInTypeOfInAttribute_NoDiagnostic()
