@@ -53,10 +53,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         if (symbol.IsAbstract || symbol.IsStatic || symbol.IsImplicitlyDeclared)
             return false;
 
-        // Only analyze classes, structs, and records
-        if (symbol.TypeKind is not (TypeKind.Class or TypeKind.Struct))
-            return false;
-
         // Exclude unit test classes
         if (symbol.IsUnitTestClass())
             return false;
