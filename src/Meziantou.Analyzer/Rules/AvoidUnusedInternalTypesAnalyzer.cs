@@ -7,17 +7,17 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnalyzer
+public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
-        RuleIdentifiers.AvoidUninstantiatedInternalClasses,
-        title: "Avoid uninstantiated internal classes",
-        messageFormat: "Internal class '{0}' is apparently never instantiated. If so, remove the code from the assembly. If this class is intended to contain only static members, make it 'static'.",
+        RuleIdentifiers.AvoidUnusedInternalTypes,
+        title: "Avoid unused internal types",
+        messageFormat: "Internal type '{0}' is apparently never used. If so, remove it from the assembly. If this type is intended to contain only static members, make it 'static'.",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidUninstantiatedInternalClasses),
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidUnusedInternalTypes),
         customTags: ["CompilationEnd"]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
@@ -43,18 +43,18 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
         });
     }
 
-    private static bool IsPotentialUninstantiatedClass(INamedTypeSymbol symbol, CancellationToken cancellationToken)
+    private static bool IsPotentialUnusedType(INamedTypeSymbol symbol, CancellationToken cancellationToken)
     {
-        // Only analyze internal classes
+        // Only analyze internal types
         if (symbol.DeclaredAccessibility != Accessibility.Internal)
             return false;
 
-        // Exclude abstract classes, static classes, and implicitly declared classes
+        // Exclude abstract types, static types, and implicitly declared types
         if (symbol.IsAbstract || symbol.IsStatic || symbol.IsImplicitlyDeclared)
             return false;
 
-        // Exclude interfaces, enums, delegates, and records
-        if (symbol.TypeKind is not TypeKind.Class)
+        // Only analyze classes, structs, and records
+        if (symbol.TypeKind is not (TypeKind.Class or TypeKind.Struct))
             return false;
 
         // Exclude unit test classes
@@ -70,17 +70,17 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
 
     private sealed class AnalyzerContext
     {
-        private readonly List<ITypeSymbol> _potentialUninstantiatedClasses = [];
-        private readonly HashSet<ITypeSymbol> _usedClasses = new(SymbolEqualityComparer.Default);
+        private readonly List<ITypeSymbol> _potentialUnusedTypes = [];
+        private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (IsPotentialUninstantiatedClass(symbol, context.CancellationToken))
+            if (IsPotentialUnusedType(symbol, context.CancellationToken))
             {
-                lock (_potentialUninstantiatedClasses)
+                lock (_potentialUnusedTypes)
                 {
-                    _potentialUninstantiatedClasses.Add(symbol);
+                    _potentialUnusedTypes.Add(symbol);
                 }
             }
 
@@ -198,22 +198,22 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzer : DiagnosticAnaly
 
         public void AnalyzeCompilationEnd(CompilationAnalysisContext context)
         {
-            foreach (var @class in _potentialUninstantiatedClasses)
+            foreach (var type in _potentialUnusedTypes)
             {
-                if (_usedClasses.Contains(@class))
+                if (_usedTypes.Contains(type))
                     continue;
 
                 var properties = ImmutableDictionary<string, string?>.Empty;
-                context.ReportDiagnostic(Diagnostic.Create(Rule, @class.Locations.FirstOrDefault(), properties, @class.Name));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, type.Locations.FirstOrDefault(), properties, type.Name));
             }
         }
 
         private void AddUsedType(ITypeSymbol typeSymbol)
         {
-            lock (_usedClasses)
+            lock (_usedTypes)
             {
                 // Prevent re-processing already seen types
-                if (!_usedClasses.Add(typeSymbol))
+                if (!_usedTypes.Add(typeSymbol))
                     return;
 
                 // Also mark the original definition as used (in case of generic instantiations)

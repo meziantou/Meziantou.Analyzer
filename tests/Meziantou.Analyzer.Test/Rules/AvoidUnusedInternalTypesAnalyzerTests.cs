@@ -4,12 +4,12 @@ using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
+public sealed class AvoidUnusedInternalTypesAnalyzerTests
 {
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<AvoidUninstantiatedInternalClassesAnalyzer>();
+            .WithAnalyzer<AvoidUnusedInternalTypesAnalyzer>();
     }
 
     [Fact]
@@ -98,6 +98,50 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
     }
 
     [Fact]
+    public async Task UnusedInternalStruct_Diagnostic()
+    {
+        const string SourceCode = """
+            internal struct [|UnusedStruct|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedInternalRecord_Diagnostic()
+    {
+        const string SourceCode = """
+            internal record [|UnusedRecord|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedInternalRecordStruct_Diagnostic()
+    {
+        const string SourceCode = """
+            internal record struct [|UnusedRecordStruct|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task InternalClassUsedInObjectCreation_NoDiagnostic()
     {
         const string SourceCode = """
@@ -120,15 +164,229 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
     }
 
     [Fact]
-    public async Task InternalClassUsedAsGenericTypeArgument_NoDiagnostic()
+    public async Task InternalStructUsedInObjectCreation_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal struct UsedStruct
+            {
+                public string Name { get; set; }
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var obj = new UsedStruct();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordUsedInObjectCreation_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record UsedRecord(string Name);
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var obj = new UsedRecord("Test");
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordStructUsedInObjectCreation_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record struct UsedRecordStruct(string Name);
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var obj = new UsedRecordStruct("Test");
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedAsFieldType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class Data
+            {
+                public int Value;
+            }
+
+            public class Container
+            {
+                internal Data _data;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalStructUsedAsFieldType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal struct Data
+            {
+                public int Value;
+            }
+
+            public class Container
+            {
+                internal Data _data;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordUsedAsPropertyType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record Settings(string Key, string Value);
+
+            public class Configuration
+            {
+                internal Settings AppSettings { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordStructUsedAsParameterType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record struct Point(int X, int Y);
+
+            public class Graphics
+            {
+                internal void DrawAt(Point location)
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalStructUsedAsGenericTypeArgument_NoDiagnostic()
     {
         const string SourceCode = """
             using System.Collections.Generic;
-            using System.Text.Json;
 
-            internal class InternalData
+            internal struct ItemData
+            {
+                public int Id { get; set; }
+            }
+
+            public class Service
+            {
+                internal List<ItemData> GetData()
+                {
+                    return new List<ItemData>();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordUsedInTypeOf_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal record Config(string Key);
+
+            public class Registry
+            {
+                public void Register()
+                {
+                    var type = typeof(Config);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordStructUsedInArrayCreation_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal record struct Vector(double X, double Y);
+
+            public class Math
+            {
+                public void Process()
+                {
+                    var vectors = Array.Empty<Vector>();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MultipleInternalTypes_SomeUsedSomeNot()
+    {
+        const string SourceCode = """
+            internal class [|UnusedClass|]
             {
                 public string Name { get; set; }
+            }
+
+            internal struct [|UnusedStruct|]
+            {
+                public int Value;
+            }
+
+            internal record [|UnusedRecord|](string Data);
+
+            internal record struct [|UnusedRecordStruct|](int Id);
+
+            internal class UsedClass
+            {
                 public string Value { get; set; }
             }
 
@@ -136,14 +394,13 @@ public sealed class AvoidUninstantiatedInternalClassesAnalyzerTests
             {
                 public void Method()
                 {
-                    string json = "{}";
-                    var data = JsonSerializer.Deserialize<InternalData>(json);
+                    var obj = new UsedClass();
                 }
             }
             """;
         await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
               .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
 
