@@ -30,7 +30,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public async Task AbstractClass_NoDiagnostic()
     {
         const string SourceCode = """
-            internal abstract class AbstractClass
+            internal abstract class [|AbstractClass|]
             {
                 public abstract void Method();
             }
@@ -58,7 +58,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public async Task Interface_NoDiagnostic()
     {
         const string SourceCode = """
-            internal interface ITest
+            internal interface [|ITest|]
             {
                 void Method();
             }
@@ -98,12 +98,192 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    public async Task UnusedPrivateNestedClass_Diagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private class [|UnusedNestedClass|]
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedInternalNestedClass_Diagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                internal class [|UnusedNestedClass|]
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedProtectedNestedClass_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                protected class UnusedNestedClass
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedProtectedInternalNestedClass_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                protected internal class UnusedNestedClass
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedPrivateProtectedNestedClass_Diagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private protected class [|UnusedNestedClass|]
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsedPrivateNestedClass_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private class UsedNestedClass
+                {
+                    public string Name { get; set; }
+                }
+
+                public void Method()
+                {
+                    var obj = new UsedNestedClass();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PublicNestedClass_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                public class NestedClass
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PrivateNestedClassInInternalClass_Diagnostic()
+    {
+        const string SourceCode = """
+            internal class [|OuterClass|]
+            {
+                private class [|UnusedNestedClass|]
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task UnusedInternalStruct_Diagnostic()
     {
         const string SourceCode = """
             internal struct [|UnusedStruct|]
             {
                 public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedPrivateNestedStruct_Diagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private struct [|UnusedNestedStruct|]
+                {
+                    public int Value;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsedPrivateNestedStruct_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private struct UsedNestedStruct
+                {
+                    public int Value;
+                }
+
+                public void Method()
+                {
+                    var obj = new UsedNestedStruct();
+                }
             }
             """;
         await CreateProjectBuilder()
@@ -126,6 +306,41 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task UnusedPrivateNestedRecord_Diagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private record [|UnusedNestedRecord|](string Name);
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsedPrivateNestedRecord_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private record UsedNestedRecord(string Name);
+
+                public void Method()
+                {
+                    var obj = new UsedNestedRecord("Test");
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
 #if CSHARP10_OR_GREATER
     [Fact]
     public async Task UnusedInternalRecordStruct_Diagnostic()
@@ -134,6 +349,41 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             internal record struct [|UnusedRecordStruct|]
             {
                 public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedPrivateNestedRecordStruct_Diagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private record struct [|UnusedNestedRecordStruct|](int Id);
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsedPrivateNestedRecordStruct_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private record struct UsedNestedRecordStruct(int Id);
+
+                public void Method()
+                {
+                    var obj = new UsedNestedRecordStruct(42);
+                }
             }
             """;
         await CreateProjectBuilder()
@@ -1002,4 +1252,122 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 #endif
+
+    [Fact]
+    public async Task DeeplyNestedPrivateClass_Diagnostic()
+    {
+        const string SourceCode = """
+            public class Level1
+            {
+                public class Level2
+                {
+                    private class [|Level3|]
+                    {
+                        public string Name { get; set; }
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PrivateNestedClassUsedInSameType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private class NestedClass
+                {
+                    public string Name { get; set; }
+                }
+
+                private NestedClass _field;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PrivateNestedClassUsedAsMethodParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                private class NestedClass
+                {
+                    public string Name { get; set; }
+                }
+
+                private void Method(NestedClass parameter)
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SelfReferencingInterface_Diagnostic()
+    {
+        const string SourceCode = """
+            internal interface [|INumber|]<TSelf> where TSelf : INumber<TSelf>
+            {
+                TSelf Add(TSelf other);
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SelfReferencingInterfaceUsedByType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal interface INumber<TSelf> where TSelf : INumber<TSelf>
+            {
+                TSelf Add(TSelf other);
+            }
+
+            internal class MyNumber : INumber<MyNumber>
+            {
+                public MyNumber Add(MyNumber other) => this;
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var num = new MyNumber();
+                    num.Add(num);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SelfReferencingInterfaceWithMultipleConstraints_Diagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal interface [|IComparable|]<TSelf> where TSelf : IComparable<TSelf>, IEquatable<TSelf>
+            {
+                int CompareTo(TSelf other);
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

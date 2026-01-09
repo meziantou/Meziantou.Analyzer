@@ -45,12 +45,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
     private static bool IsPotentialUnusedType(INamedTypeSymbol symbol, CancellationToken cancellationToken)
     {
-        // Only analyze internal types
-        if (symbol.DeclaredAccessibility != Accessibility.Internal)
+        // Only analyze types not visible outside of assembly
+        if (symbol.IsVisibleOutsideOfAssembly())
             return false;
 
-        // Exclude abstract types, static types, and implicitly declared types
-        if (symbol.IsAbstract || symbol.IsStatic || symbol.IsImplicitlyDeclared)
+        // Exclude compiler-generated types (e.g., extension types, anonymous types)
+        if (!symbol.CanBeReferencedByName)
+            return false;
+
+        if (symbol.IsStatic || symbol.IsImplicitlyDeclared)
             return false;
 
         // Exclude unit test classes
@@ -80,21 +83,54 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 }
             }
 
+            // Track base type (skip system types)
+            if (symbol.BaseType is not null && !symbol.BaseType.IsVisibleOutsideOfAssembly())
+            {
+                AddUsedType(symbol.BaseType);
+            }
+
+            // Track implemented interfaces (skip system interfaces)
+            foreach (var @interface in symbol.Interfaces)
+            {
+                if (!@interface.IsVisibleOutsideOfAssembly())
+                {
+                    AddUsedType(@interface);
+                }
+            }
+
             // Track types used in generic constraints
             foreach (var typeParameter in symbol.TypeParameters)
             {
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    AddUsedType(constraintType);
+                    // Skip self-referencing constraints (e.g., INumber<TSelf> where TSelf : INumber<TSelf>)
+                    if (!IsSelfReferencingConstraint(symbol, constraintType))
+                    {
+                        AddUsedType(constraintType);
+                    }
                 }
             }
 
 #if CSHARP14_OR_GREATER
-            if(symbol.ExtensionParameter is not null)
+            if (symbol.ExtensionParameter is not null)
             {
                 AddUsedType(symbol.ExtensionParameter.Type);
             }
 #endif
+        }
+
+        private static bool IsSelfReferencingConstraint(INamedTypeSymbol declaringType, ITypeSymbol constraintType)
+        {
+            // Check if the constraint type is a generic instantiation of the declaring type
+            // For example: INumber<TSelf> where TSelf : INumber<TSelf>
+            if (constraintType is INamedTypeSymbol namedConstraint)
+            {
+                // Check if the original definitions match
+                if (SymbolEqualityComparer.Default.Equals(namedConstraint.OriginalDefinition, declaringType))
+                    return true;
+            }
+
+            return false;
         }
 
         public void AnalyzePropertyOrFieldSymbol(SymbolAnalysisContext context)
@@ -116,13 +152,13 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
         {
             var method = (IMethodSymbol)context.Symbol;
-            
+
             // Track return type
             if (method.ReturnType is not null)
             {
                 AddUsedType(method.ReturnType);
             }
-            
+
             // Track parameter types
             foreach (var parameter in method.Parameters)
             {
@@ -163,7 +199,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
-            
+
             // Track type arguments used in method invocations (e.g., JsonSerializer.Deserialize<T>())
             foreach (var typeArgument in operation.TargetMethod.TypeArguments)
             {
@@ -183,7 +219,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         public void AnalyzeMemberReference(OperationAnalysisContext context)
         {
             var operation = (IMemberReferenceOperation)context.Operation;
-            
+
             // Track type arguments in the containing type of the member being accessed
             // For example: Sample<InternalClass>.Empty
             if (operation.Member.ContainingType is not null)
