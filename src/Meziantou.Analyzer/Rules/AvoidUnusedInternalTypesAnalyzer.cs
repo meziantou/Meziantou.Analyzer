@@ -45,12 +45,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
     private static bool IsPotentialUnusedType(INamedTypeSymbol symbol, CancellationToken cancellationToken)
     {
-        // Only analyze internal types
-        if (symbol.DeclaredAccessibility != Accessibility.Internal)
+        // Only analyze types not visible outside of assembly
+        if (symbol.IsVisibleOutsideOfAssembly())
             return false;
 
-        // Exclude abstract types, static types, and implicitly declared types
-        if (symbol.IsAbstract || symbol.IsStatic || symbol.IsImplicitlyDeclared)
+        // Exclude compiler-generated types (e.g., extension types, anonymous types)
+        if (!symbol.CanBeReferencedByName)
+            return false;
+
+        if (symbol.IsStatic || symbol.IsImplicitlyDeclared)
             return false;
 
         // Exclude unit test classes
@@ -90,7 +93,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             }
 
 #if CSHARP14_OR_GREATER
-            if(symbol.ExtensionParameter is not null)
+            if (symbol.ExtensionParameter is not null)
             {
                 AddUsedType(symbol.ExtensionParameter.Type);
             }
@@ -116,13 +119,13 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
         {
             var method = (IMethodSymbol)context.Symbol;
-            
+
             // Track return type
             if (method.ReturnType is not null)
             {
                 AddUsedType(method.ReturnType);
             }
-            
+
             // Track parameter types
             foreach (var parameter in method.Parameters)
             {
@@ -163,7 +166,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
-            
+
             // Track type arguments used in method invocations (e.g., JsonSerializer.Deserialize<T>())
             foreach (var typeArgument in operation.TargetMethod.TypeArguments)
             {
@@ -183,7 +186,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         public void AnalyzeMemberReference(OperationAnalysisContext context)
         {
             var operation = (IMemberReferenceOperation)context.Operation;
-            
+
             // Track type arguments in the containing type of the member being accessed
             // For example: Sample<InternalClass>.Empty
             if (operation.Member.ContainingType is not null)
