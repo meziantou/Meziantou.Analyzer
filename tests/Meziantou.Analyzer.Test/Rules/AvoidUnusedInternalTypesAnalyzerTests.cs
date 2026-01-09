@@ -1312,4 +1312,62 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task SelfReferencingInterface_Diagnostic()
+    {
+        const string SourceCode = """
+            internal interface [|INumber|]<TSelf> where TSelf : INumber<TSelf>
+            {
+                TSelf Add(TSelf other);
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SelfReferencingInterfaceUsedByType_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal interface INumber<TSelf> where TSelf : INumber<TSelf>
+            {
+                TSelf Add(TSelf other);
+            }
+
+            internal class MyNumber : INumber<MyNumber>
+            {
+                public MyNumber Add(MyNumber other) => this;
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var num = new MyNumber();
+                    num.Add(num);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SelfReferencingInterfaceWithMultipleConstraints_Diagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal interface [|IComparable|]<TSelf> where TSelf : IComparable<TSelf>, IEquatable<TSelf>
+            {
+                int CompareTo(TSelf other);
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

@@ -83,12 +83,31 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 }
             }
 
+            // Track base type (skip system types)
+            if (symbol.BaseType is not null && !symbol.BaseType.IsVisibleOutsideOfAssembly())
+            {
+                AddUsedType(symbol.BaseType);
+            }
+
+            // Track implemented interfaces (skip system interfaces)
+            foreach (var @interface in symbol.Interfaces)
+            {
+                if (!@interface.IsVisibleOutsideOfAssembly())
+                {
+                    AddUsedType(@interface);
+                }
+            }
+
             // Track types used in generic constraints
             foreach (var typeParameter in symbol.TypeParameters)
             {
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    AddUsedType(constraintType);
+                    // Skip self-referencing constraints (e.g., INumber<TSelf> where TSelf : INumber<TSelf>)
+                    if (!IsSelfReferencingConstraint(symbol, constraintType))
+                    {
+                        AddUsedType(constraintType);
+                    }
                 }
             }
 
@@ -98,6 +117,20 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 AddUsedType(symbol.ExtensionParameter.Type);
             }
 #endif
+        }
+
+        private static bool IsSelfReferencingConstraint(INamedTypeSymbol declaringType, ITypeSymbol constraintType)
+        {
+            // Check if the constraint type is a generic instantiation of the declaring type
+            // For example: INumber<TSelf> where TSelf : INumber<TSelf>
+            if (constraintType is INamedTypeSymbol namedConstraint)
+            {
+                // Check if the original definitions match
+                if (SymbolEqualityComparer.Default.Equals(namedConstraint.OriginalDefinition, declaringType))
+                    return true;
+            }
+
+            return false;
         }
 
         public void AnalyzePropertyOrFieldSymbol(SymbolAnalysisContext context)
