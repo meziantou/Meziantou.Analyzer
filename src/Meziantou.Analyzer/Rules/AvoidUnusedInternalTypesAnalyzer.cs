@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -29,7 +30,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var analyzerContext = new AnalyzerContext(ctx.Compilation);
+            var analyzerContext = new AnalyzerContext();
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
             ctx.RegisterSymbolAction(analyzerContext.AnalyzePropertyOrFieldSymbol, SymbolKind.Property, SymbolKind.Field);
@@ -39,6 +40,9 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             ctx.RegisterOperationAction(analyzerContext.AnalyzeArrayCreation, OperationKind.ArrayCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeTypeOf, OperationKind.TypeOf);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeMemberReference, OperationKind.PropertyReference, OperationKind.FieldReference, OperationKind.MethodReference, OperationKind.EventReference);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeVariableDeclarator, OperationKind.VariableDeclarator);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeConversion, OperationKind.Conversion);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeIsPattern, OperationKind.IsPattern);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
     }
@@ -67,12 +71,10 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private sealed class AnalyzerContext(Compilation compilation)
+    private sealed class AnalyzerContext
     {
         private readonly List<ITypeSymbol> _potentialUnusedTypes = [];
         private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
-
-        private INamedTypeSymbol? CoClassAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
@@ -97,24 +99,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 if (!@interface.IsVisibleOutsideOfAssembly())
                 {
                     AddUsedType(@interface);
-                }
-            }
-
-            // Track CoClass attribute on interfaces - the interface and CoClass implementation form a COM interop pair
-            if (symbol.TypeKind == TypeKind.Interface && CoClassAttributeSymbol is not null)
-            {
-                foreach (var attribute in symbol.GetAttributes())
-                {
-                    if (attribute.AttributeClass.IsEqualTo(CoClassAttributeSymbol))
-                    {
-                        var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
-                        if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol coClassType)
-                        {
-                            // Mark both the interface and the CoClass implementation as used
-                            AddUsedType(symbol);
-                            AddUsedType(coClassType);
-                        }
-                    }
                 }
             }
 
@@ -245,6 +229,56 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             if (operation.Member.ContainingType is not null)
             {
                 AddUsedType(operation.Member.ContainingType);
+            }
+        }
+
+        public void AnalyzeVariableDeclarator(OperationAnalysisContext context)
+        {
+            var operation = (IVariableDeclaratorOperation)context.Operation;
+
+            // Track the type of the variable being declared
+            if (operation.Symbol is ILocalSymbol localSymbol && localSymbol.Type is not null)
+            {
+                AddUsedType(localSymbol.Type);
+            }
+        }
+
+        public void AnalyzeConversion(OperationAnalysisContext context)
+        {
+            var operation = (IConversionOperation)context.Operation;
+
+            // Track the target type of the conversion
+            if (operation.Type is not null)
+            {
+                AddUsedType(operation.Type);
+            }
+        }
+
+        public void AnalyzeIsPattern(OperationAnalysisContext context)
+        {
+            var operation = (IIsPatternOperation)context.Operation;
+
+            // Track types used in pattern matching
+            if (operation.Pattern is IDeclarationPatternOperation declarationPattern)
+            {
+                if (declarationPattern.MatchedType is not null)
+                {
+                    AddUsedType(declarationPattern.MatchedType);
+                }
+            }
+            else if (operation.Pattern is ITypePatternOperation typePattern)
+            {
+                if (typePattern.MatchedType is not null)
+                {
+                    AddUsedType(typePattern.MatchedType);
+                }
+            }
+            else if (operation.Pattern is IRecursivePatternOperation recursivePattern)
+            {
+                if (recursivePattern.MatchedType is not null)
+                {
+                    AddUsedType(recursivePattern.MatchedType);
+                }
             }
         }
 

@@ -1372,7 +1372,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
-    public async Task InterfaceWithCoClassAttribute_NoDiagnostic()
+    public async Task InterfaceWithCoClassAttribute_NoUsage_Diagnostic()
     {
         const string SourceCode = """
             using System.Runtime.InteropServices;
@@ -1380,7 +1380,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             [ComImport]
             [Guid("00000000-0000-0000-0000-000000000001")]
             [CoClass(typeof(FileSaveDialogRCW))]
-            internal interface NativeFileSaveDialog
+            internal interface [|NativeFileSaveDialog|]
             {
             }
 
@@ -1396,7 +1396,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-  
+
     [Fact]
     public async Task InternalStructUsedAsPointerInMethodParameter_NoDiagnostic()
     {
@@ -1418,6 +1418,305 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                     int dwShareMode,
                     SECURITY_ATTRIBUTES* lpSecurityAttributes)
                 {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInVariableDeclaration_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class Data
+            {
+                public string Value { get; set; }
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    Data sample;
+                    sample = null;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalStructUsedInVariableDeclaration_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal struct Point
+            {
+                public int X;
+                public int Y;
+            }
+
+            public class Graphics
+            {
+                public void Draw()
+                {
+                    Point location;
+                    location = default;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordUsedInVariableDeclaration_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record Config(string Key);
+
+            public class Service
+            {
+                public void Process()
+                {
+                    Config config;
+                    config = null;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task InternalRecordStructUsedInVariableDeclaration_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record struct Vector(double X, double Y);
+
+            public class Math
+            {
+                public void Calculate()
+                {
+                    Vector v;
+                    v = default;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task InternalClassUsedInExplicitCast_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class BaseData
+            {
+                public string Value { get; set; }
+            }
+
+            internal class DerivedData : BaseData
+            {
+            }
+
+            public class Consumer
+            {
+                internal void Method(BaseData data)
+                {
+                    var derived = (DerivedData)data;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalStructUsedInExplicitCast_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal struct CustomValue
+            {
+                public int Value;
+
+                public static explicit operator CustomValue(int value)
+                {
+                    return new CustomValue { Value = value };
+                }
+            }
+
+            public class Service
+            {
+                public void Method()
+                {
+                    var custom = (CustomValue)42;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInAsOperator_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class SpecialData
+            {
+                public string Value { get; set; }
+            }
+
+            public class Consumer
+            {
+                public void Method(object obj)
+                {
+                    var special = obj as SpecialData;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalStructUsedInImplicitCast_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal struct Wrapper
+            {
+                public int Value;
+
+                public static implicit operator Wrapper(int value)
+                {
+                    return new Wrapper { Value = value };
+                }
+            }
+
+            public class Service
+            {
+                public void Method()
+                {
+                    Wrapper wrapper = 10;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalRecordUsedInPatternMatching_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record Message(string Text);
+
+            public class Handler
+            {
+                public void Handle(object obj)
+                {
+                    if (obj is Message message)
+                    {
+                        System.Console.WriteLine(message.Text);
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task InternalRecordStructUsedInPatternMatching_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal record struct Coordinate(int X, int Y);
+
+            public class Mapper
+            {
+                public void Map(object obj)
+                {
+                    if (obj is Coordinate { X: > 0 } coord)
+                    {
+                        System.Console.WriteLine(coord.Y);
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task InternalClassUsedInCastExpression_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal interface IData
+            {
+            }
+
+            internal class ConcreteData : IData
+            {
+                public string Value { get; set; }
+            }
+
+            public class Service
+            {
+                internal void Process(IData data)
+                {
+                    var concrete = (ConcreteData)data;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MultipleInternalTypesUsedInCastsAndDeclarations_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal class BaseType
+            {
+            }
+
+            internal class DerivedType : BaseType
+            {
+            }
+
+            internal struct ValueType
+            {
+                public int Value;
+            }
+
+            public class Consumer
+            {
+                public void Method(object obj)
+                {
+                    BaseType baseVar;
+                    var derived = obj as DerivedType;
+                    ValueType valueVar = default;
                 }
             }
             """;
