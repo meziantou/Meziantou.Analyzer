@@ -29,7 +29,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var analyzerContext = new AnalyzerContext();
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
             ctx.RegisterSymbolAction(analyzerContext.AnalyzePropertyOrFieldSymbol, SymbolKind.Property, SymbolKind.Field);
@@ -67,10 +67,12 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly List<ITypeSymbol> _potentialUnusedTypes = [];
         private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
+
+        private INamedTypeSymbol? CoClassAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
@@ -95,6 +97,24 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 if (!@interface.IsVisibleOutsideOfAssembly())
                 {
                     AddUsedType(@interface);
+                }
+            }
+
+            // Track CoClass attribute on interfaces - the interface and CoClass implementation form a COM interop pair
+            if (symbol.TypeKind == TypeKind.Interface && CoClassAttributeSymbol is not null)
+            {
+                foreach (var attribute in symbol.GetAttributes())
+                {
+                    if (attribute.AttributeClass.IsEqualTo(CoClassAttributeSymbol))
+                    {
+                        var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
+                        if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol coClassType)
+                        {
+                            // Mark both the interface and the CoClass implementation as used
+                            AddUsedType(symbol);
+                            AddUsedType(coClassType);
+                        }
+                    }
                 }
             }
 
