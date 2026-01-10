@@ -1370,4 +1370,29 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InterfaceWithCoClassAttribute_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Runtime.InteropServices;
+
+            [ComImport]
+            [Guid("00000000-0000-0000-0000-000000000001")]
+            [CoClass(typeof(FileSaveDialogRCW))]
+            internal interface NativeFileSaveDialog
+            {
+            }
+
+            [ComImport]
+            [ClassInterface(ClassInterfaceType.None)]
+            [Guid("00000000-0000-0000-0000-000000000002")]
+            internal sealed class FileSaveDialogRCW
+            {
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
