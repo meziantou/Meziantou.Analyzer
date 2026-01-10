@@ -260,6 +260,12 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                     AddUsedType(arrayTypeSymbol.ElementType);
                 }
 
+                // Handle pointer types
+                if (typeSymbol is IPointerTypeSymbol pointerTypeSymbol)
+                {
+                    AddUsedType(pointerTypeSymbol.PointedAtType);
+                }
+
                 // Handle generic type arguments
                 if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
                 {
