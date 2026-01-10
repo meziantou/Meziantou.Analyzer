@@ -73,17 +73,12 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
 
         private INamedTypeSymbol? CoClassAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
-        private INamedTypeSymbol? ComImportAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
             if (IsPotentialUnusedType(symbol, context.CancellationToken))
             {
-                // Exclude COM types (types marked with ComImportAttribute)
-                if (symbol.HasAttribute(ComImportAttributeSymbol))
-                    return;
-
                 lock (_potentialUnusedTypes)
                 {
                     _potentialUnusedTypes.Add(symbol);
@@ -105,7 +100,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            // Track CoClass attribute on interfaces - the CoClass type implements the interface
+            // Track CoClass attribute on interfaces - the interface and CoClass implementation form a COM interop pair
             if (symbol.TypeKind == TypeKind.Interface && CoClassAttributeSymbol is not null)
             {
                 foreach (var attribute in symbol.GetAttributes())
@@ -115,7 +110,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                         var attributeValue = attribute.ConstructorArguments.FirstOrDefault();
                         if (!attributeValue.IsNull && attributeValue.Kind == TypedConstantKind.Type && attributeValue.Value is ITypeSymbol coClassType)
                         {
-                            // Mark the CoClass implementation as used
+                            // Mark both the interface and the CoClass implementation as used
+                            AddUsedType(symbol);
                             AddUsedType(coClassType);
                         }
                     }
