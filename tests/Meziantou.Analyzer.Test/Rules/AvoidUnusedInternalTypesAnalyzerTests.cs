@@ -1397,6 +1397,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
   
+    [Fact]
     public async Task InternalStructUsedAsPointerInMethodParameter_NoDiagnostic()
     {
         const string SourceCode = """
