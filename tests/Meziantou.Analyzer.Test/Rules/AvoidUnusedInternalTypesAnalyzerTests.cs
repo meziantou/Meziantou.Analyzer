@@ -1391,6 +1391,35 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             {
             }
             """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+  
+    public async Task InternalStructUsedAsPointerInMethodParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal struct SECURITY_ATTRIBUTES
+            {
+                internal uint nLength;
+                internal IntPtr lpSecurityDescriptor;
+                internal bool bInheritHandle;
+            }
+
+            public class FileOperations
+            {
+                private static unsafe void CreateFilePrivate(
+                    string lpFileName,
+                    int dwDesiredAccess,
+                    int dwShareMode,
+                    SECURITY_ATTRIBUTES* lpSecurityAttributes)
+                {
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
