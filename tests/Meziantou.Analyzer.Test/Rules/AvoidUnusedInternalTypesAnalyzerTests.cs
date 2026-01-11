@@ -1724,4 +1724,58 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InternalClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Diagnostics.CodeAnalysis;
+
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            internal sealed class FakeTaskHandler
+            {
+                public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PrivateClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Diagnostics.CodeAnalysis;
+
+            public class OuterClass
+            {
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+                private sealed class InternalHandler
+                {
+                    public void Method() { }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalStructWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Diagnostics.CodeAnalysis;
+
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+            internal struct DataStruct
+            {
+                public int Value;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

@@ -30,7 +30,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var analyzerContext = new AnalyzerContext();
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
             ctx.RegisterSymbolAction(analyzerContext.AnalyzePropertyOrFieldSymbol, SymbolKind.Property, SymbolKind.Field);
@@ -47,7 +47,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private static bool IsPotentialUnusedType(INamedTypeSymbol symbol, CancellationToken cancellationToken)
+    private static bool IsPotentialUnusedType(INamedTypeSymbol symbol, INamedTypeSymbol? dynamicallyAccessedMembersAttribute, CancellationToken cancellationToken)
     {
         // Only analyze types not visible outside of assembly
         if (symbol.IsVisibleOutsideOfAssembly())
@@ -68,6 +68,10 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         if (symbol.IsTopLevelStatement(cancellationToken))
             return false;
 
+        // Exclude types with DynamicallyAccessedMembers attribute (accessed via reflection)
+        if (dynamicallyAccessedMembersAttribute is not null && symbol.HasAttribute(dynamicallyAccessedMembersAttribute))
+            return false;
+
         return true;
     }
 
@@ -75,11 +79,17 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
     {
         private readonly List<ITypeSymbol> _potentialUnusedTypes = [];
         private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
+        private readonly INamedTypeSymbol? _dynamicallyAccessedMembersAttribute;
+
+        public AnalyzerContext(Compilation compilation)
+        {
+            _dynamicallyAccessedMembersAttribute = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
+        }
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
-            if (IsPotentialUnusedType(symbol, context.CancellationToken))
+            if (IsPotentialUnusedType(symbol, _dynamicallyAccessedMembersAttribute, context.CancellationToken))
             {
                 lock (_potentialUnusedTypes)
                 {
