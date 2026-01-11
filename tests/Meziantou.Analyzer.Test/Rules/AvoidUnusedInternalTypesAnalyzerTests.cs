@@ -1739,6 +1739,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.Net9_0)
               .ValidateAsync();
     }
 
@@ -1759,6 +1760,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.Net9_0)
               .ValidateAsync();
     }
 
@@ -1776,6 +1778,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.Net9_0)
               .ValidateAsync();
     }
 }
