@@ -238,7 +238,14 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             // For example: Sample<InternalClass>.Empty
             if (operation.Member.ContainingType is not null)
             {
-                AddUsedType(operation.Member.ContainingType);
+                // Don't mark a type as used if it's only accessing its own members
+                // For example: internal class NotUsed { private string _field; void M() { _field = "x"; } }
+                // In this case, NotUsed.Member.ContainingType is NotUsed, and operation.Instance?.Type is also NotUsed
+                var instanceType = operation.Instance?.Type;
+                if (instanceType is null || !SymbolEqualityComparer.Default.Equals(instanceType.OriginalDefinition, operation.Member.ContainingType.OriginalDefinition))
+                {
+                    AddUsedType(operation.Member.ContainingType);
+                }
             }
         }
 

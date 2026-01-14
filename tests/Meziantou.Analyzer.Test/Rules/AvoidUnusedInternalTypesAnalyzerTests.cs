@@ -1781,4 +1781,55 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithTargetFramework(TargetFramework.Net9_0)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InternalClassAccessingOwnField_Diagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class [|NotUsed|]
+            {
+                private readonly string _name;
+
+                public NotUsed(string name)
+                {
+                    _name = name;
+                }
+
+                public string X { get; } = "X";
+
+                public string? Whatever()
+                {
+                    return _name;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassNotAccessingField_Diagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class [|NotUsed|]
+            {
+                private readonly string _name;
+
+                public NotUsed(string name)
+                {
+                }
+
+                public string X { get; } = "X";
+
+                public string? Whatever()
+                {
+                    return null;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
