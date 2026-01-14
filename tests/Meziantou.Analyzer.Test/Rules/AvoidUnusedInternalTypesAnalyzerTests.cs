@@ -1816,10 +1816,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             {
                 private readonly string _name;
 
-                public NotUsed(string name)
-                {
-                }
-
                 public string X { get; } = "X";
 
                 public string? Whatever()
