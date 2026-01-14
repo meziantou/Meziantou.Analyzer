@@ -75,16 +75,11 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly List<ITypeSymbol> _potentialUnusedTypes = [];
         private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
-        private readonly INamedTypeSymbol? _dynamicallyAccessedMembersAttribute;
-
-        public AnalyzerContext(Compilation compilation)
-        {
-            _dynamicallyAccessedMembersAttribute = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
-        }
+        private readonly INamedTypeSymbol? _dynamicallyAccessedMembersAttribute = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
@@ -100,7 +95,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             // Track base type (skip system types)
             if (symbol.BaseType is not null && !symbol.BaseType.IsVisibleOutsideOfAssembly())
             {
-                AddUsedType(symbol.BaseType);
+                AddUsedType(symbol, symbol.BaseType);
             }
 
             // Track implemented interfaces (skip system interfaces)
@@ -108,7 +103,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             {
                 if (!@interface.IsVisibleOutsideOfAssembly())
                 {
-                    AddUsedType(@interface);
+                    AddUsedType(symbol, @interface);
                 }
             }
 
@@ -117,34 +112,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             {
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    // Skip self-referencing constraints (e.g., INumber<TSelf> where TSelf : INumber<TSelf>)
-                    if (!IsSelfReferencingConstraint(symbol, constraintType))
-                    {
-                        AddUsedType(constraintType);
-                    }
+                    AddUsedType(symbol, constraintType);
                 }
             }
 
 #if CSHARP14_OR_GREATER
             if (symbol.ExtensionParameter is not null)
             {
-                AddUsedType(symbol.ExtensionParameter.Type);
+                AddUsedType(symbol, symbol.ExtensionParameter.Type);
             }
 #endif
-        }
-
-        private static bool IsSelfReferencingConstraint(INamedTypeSymbol declaringType, ITypeSymbol constraintType)
-        {
-            // Check if the constraint type is a generic instantiation of the declaring type
-            // For example: INumber<TSelf> where TSelf : INumber<TSelf>
-            if (constraintType is INamedTypeSymbol namedConstraint)
-            {
-                // Check if the original definitions match
-                if (SymbolEqualityComparer.Default.Equals(namedConstraint.OriginalDefinition, declaringType))
-                    return true;
-            }
-
-            return false;
         }
 
         public void AnalyzePropertyOrFieldSymbol(SymbolAnalysisContext context)
@@ -159,18 +136,19 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
             if (type is not null)
             {
-                AddUsedType(type);
+                AddUsedType(symbol, type);
             }
         }
 
         public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
         {
             var method = (IMethodSymbol)context.Symbol;
+            var parentType = method.ContainingType;
 
             // Track return type
             if (method.ReturnType is not null)
             {
-                AddUsedType(method.ReturnType);
+                AddUsedType(parentType, method.ReturnType);
             }
 
             // Track parameter types
@@ -178,7 +156,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             {
                 if (parameter.Type is not null)
                 {
-                    AddUsedType(parameter.Type);
+                    AddUsedType(parentType, parameter.Type);
                 }
             }
 
@@ -187,7 +165,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             {
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    AddUsedType(constraintType);
+                    AddUsedType(parentType, constraintType);
                 }
             }
         }
@@ -197,7 +175,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             var operation = (IObjectCreationOperation)context.Operation;
             if (operation.Type is not null)
             {
-                AddUsedType(operation.Type);
+                AddUsedType(operation, operation.Type);
             }
         }
 
@@ -206,7 +184,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             var operation = (IArrayCreationOperation)context.Operation;
             if (operation.Type is IArrayTypeSymbol arrayType)
             {
-                AddUsedType(arrayType.ElementType);
+                AddUsedType(operation, arrayType.ElementType);
             }
         }
 
@@ -217,7 +195,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             // Track type arguments used in method invocations (e.g., JsonSerializer.Deserialize<T>())
             foreach (var typeArgument in operation.TargetMethod.TypeArguments)
             {
-                AddUsedType(typeArgument);
+                AddUsedType(operation, typeArgument);
             }
         }
 
@@ -226,7 +204,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             var operation = (ITypeOfOperation)context.Operation;
             if (operation.TypeOperand is not null)
             {
-                AddUsedType(operation.TypeOperand);
+                AddUsedType(operation, operation.TypeOperand);
             }
         }
 
@@ -238,7 +216,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             // For example: Sample<InternalClass>.Empty
             if (operation.Member.ContainingType is not null)
             {
-                AddUsedType(operation.Member.ContainingType);
+                AddUsedType(operation, operation.Member.ContainingType);
             }
         }
 
@@ -249,7 +227,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             // Track the type of the variable being declared
             if (operation.Symbol is ILocalSymbol localSymbol && localSymbol.Type is not null)
             {
-                AddUsedType(localSymbol.Type);
+                AddUsedType(operation, localSymbol.Type);
             }
         }
 
@@ -260,7 +238,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             // Track the target type of the conversion
             if (operation.Type is not null)
             {
-                AddUsedType(operation.Type);
+                AddUsedType(operation, operation.Type);
             }
         }
 
@@ -273,21 +251,21 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             {
                 if (declarationPattern.MatchedType is not null)
                 {
-                    AddUsedType(declarationPattern.MatchedType);
+                    AddUsedType(declarationPattern, declarationPattern.MatchedType);
                 }
             }
             else if (operation.Pattern is ITypePatternOperation typePattern)
             {
                 if (typePattern.MatchedType is not null)
                 {
-                    AddUsedType(typePattern.MatchedType);
+                    AddUsedType(typePattern, typePattern.MatchedType);
                 }
             }
             else if (operation.Pattern is IRecursivePatternOperation recursivePattern)
             {
                 if (recursivePattern.MatchedType is not null)
                 {
-                    AddUsedType(recursivePattern.MatchedType);
+                    AddUsedType(recursivePattern, recursivePattern.MatchedType);
                 }
             }
         }
@@ -304,30 +282,62 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private void AddUsedType(ITypeSymbol typeSymbol)
+        private void AddUsedType(IOperation? referenceLocation, ITypeSymbol typeSymbol)
         {
+            if (referenceLocation?.SemanticModel is null)
+            {
+                AddUsedType((ITypeSymbol?)null, typeSymbol);
+                return;
+            }
+
+            var semanticModel = referenceLocation.SemanticModel;
+            var containingType = semanticModel.GetEnclosingSymbol(referenceLocation.Syntax.SpanStart);
+            AddUsedType(containingType, typeSymbol);
+        }
+
+        private void AddUsedType(ISymbol? containingSymbol, ITypeSymbol typeSymbol)
+        {
+            if (containingSymbol is null)
+            {
+                AddUsedType((ITypeSymbol?)null, typeSymbol);
+                return;
+            }
+
+            if (containingSymbol is not ITypeSymbol)
+            {
+                containingSymbol = containingSymbol.ContainingType;
+            }
+
+            AddUsedType(containingSymbol as ITypeSymbol, typeSymbol);
+        }
+
+        private void AddUsedType(ITypeSymbol? referenceLocation, ITypeSymbol typeSymbol)
+        {
+            if (referenceLocation is not null && referenceLocation.IsEqualTo(typeSymbol))
+                return;
+
             lock (_usedTypes)
             {
                 // Prevent re-processing already seen types
-                if (!_usedTypes.Add(typeSymbol))
+                if (ShouldConsiderType(typeSymbol) && !_usedTypes.Add(typeSymbol))
                     return;
 
                 // Also mark the original definition as used (in case of generic instantiations)
                 if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
                 {
-                    AddUsedType(typeSymbol.OriginalDefinition);
+                    AddUsedType(referenceLocation, typeSymbol.OriginalDefinition);
                 }
 
                 // Handle array element types
                 if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
                 {
-                    AddUsedType(arrayTypeSymbol.ElementType);
+                    AddUsedType(referenceLocation, arrayTypeSymbol.ElementType);
                 }
 
                 // Handle pointer types
                 if (typeSymbol is IPointerTypeSymbol pointerTypeSymbol)
                 {
-                    AddUsedType(pointerTypeSymbol.PointedAtType);
+                    AddUsedType(referenceLocation, pointerTypeSymbol.PointedAtType);
                 }
 
                 // Handle generic type arguments
@@ -335,10 +345,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 {
                     foreach (var typeArgument in namedTypeSymbol.TypeArguments)
                     {
-                        AddUsedType(typeArgument);
+                        AddUsedType(referenceLocation, typeArgument);
                     }
                 }
             }
+        }
+
+        private bool ShouldConsiderType(ITypeSymbol typeSymbol)
+        {
+            return typeSymbol.ContainingAssembly.IsEqualTo(compilation.Assembly);
         }
     }
 }

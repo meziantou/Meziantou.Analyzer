@@ -72,7 +72,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public async Task Enum_NoDiagnostic()
     {
         const string SourceCode = """
-            internal enum TestEnum
+            internal enum [|TestEnum|]
             {
                 Value1,
                 Value2
@@ -1779,6 +1779,102 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .WithTargetFramework(TargetFramework.Net9_0)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassAccessingOwnField_Diagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class [|NotUsed|]
+            {
+                private readonly string _name;
+
+                public NotUsed(string name)
+                {
+                    _name = name;
+                }
+
+                public string X { get; } = "X";
+
+                public string? Whatever()
+                {
+                    return _name;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassAttributeTypeOfOwnClass_Diagnostic()
+    {
+        const string SourceCode = """
+            [Sample(typeof(NotUsed))]
+            internal sealed class [|NotUsed|]
+            {
+            }
+
+            public sealed class SampleAttribute : System.Attribute
+            {
+                public SampleAttribute(System.Type type) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassAttributeOwnClass_Diagnostic()
+    {
+        const string SourceCode = """
+            [NotUsed]
+            internal sealed class [|NotUsedAttribute|] : System.Attribute
+            {
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassNotAccessingField_Diagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class [|NotUsed|]
+            {
+                private readonly string _name;
+
+                public string X { get; } = "X";
+
+                public string? Whatever()
+                {
+                    return null;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassInsidePublicClass_Diagnostic()
+    {
+        const string SourceCode = """
+            public class PublicClass
+            {
+                internal sealed class [|NotUsed|]
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
 }
