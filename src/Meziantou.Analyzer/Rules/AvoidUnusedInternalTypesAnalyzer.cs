@@ -176,7 +176,9 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             var operation = (IObjectCreationOperation)context.Operation;
             if (operation.Type is not null)
             {
-                AddUsedType(operation, operation.Type);
+                // Object creation always marks the type as used, even if it occurs within the same type.
+                // This allows factory methods (where a type creates instances of itself) to be recognized as valid usage.
+                AddUsedType((ITypeSymbol?)null, operation.Type);
             }
         }
 

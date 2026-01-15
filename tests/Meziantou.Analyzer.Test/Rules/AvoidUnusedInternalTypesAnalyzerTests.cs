@@ -1945,4 +1945,77 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InternalClassWithFactoryMethod_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class BugDemo
+            {
+                private BugDemo()
+                {
+                }
+
+                public static BugDemo Create() => new();
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var x = BugDemo.Create();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassWithFactoryMethodNotUsed_Diagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class [|UnusedFactory|]
+            {
+                private UnusedFactory()
+                {
+                }
+
+                public static UnusedFactory Create() => new();
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassWithFactoryMethodInternalUsage_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class ConfigurableCertificateValidatingHttpClientHandler
+            {
+                private ConfigurableCertificateValidatingHttpClientHandler()
+                {
+                }
+
+                public static ConfigurableCertificateValidatingHttpClientHandler CreateClient()
+                {
+                    return new ConfigurableCertificateValidatingHttpClientHandler();
+                }
+            }
+
+            public class ApiClient
+            {
+                public void Setup()
+                {
+                    var handler = ConfigurableCertificateValidatingHttpClientHandler.CreateClient();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
