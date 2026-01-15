@@ -42,6 +42,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             ctx.RegisterOperationAction(analyzerContext.AnalyzeVariableDeclarator, OperationKind.VariableDeclarator);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeConversion, OperationKind.Conversion);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeIsPattern, OperationKind.IsPattern);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeDelegateCreation, OperationKind.DelegateCreation);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
     }
@@ -267,6 +268,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 {
                     AddUsedType(recursivePattern, recursivePattern.MatchedType);
                 }
+            }
+        }
+
+        public void AnalyzeDelegateCreation(OperationAnalysisContext context)
+        {
+            var operation = (IDelegateCreationOperation)context.Operation;
+            if (operation.Type is not null)
+            {
+                AddUsedType(operation, operation.Type);
             }
         }
 

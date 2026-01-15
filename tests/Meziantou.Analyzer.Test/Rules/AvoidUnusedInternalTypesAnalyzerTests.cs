@@ -1935,6 +1935,74 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task InternalDelegateUsedInNewExpression_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal delegate void MyDelegate(string key, string comment, TimeSpan timeout, out string lockToken);
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var callback = new MyDelegate((string key, string comment, TimeSpan timeout, out string lockToken) =>
+                    {
+                        lockToken = "42";
+                    });
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PrivateDelegateUsedInNewExpression_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            public class OuterClass
+            {
+                private delegate void TryAcquireLockDelegate(string key, string comment, TimeSpan timeout, out string lockToken);
+
+                public void Method()
+                {
+                    var callback = new TryAcquireLockDelegate((string key, string comment, TimeSpan timeout, out string lockToken) =>
+                    {
+                        lockToken = "test";
+                    });
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnusedInternalDelegate_Diagnostic()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal delegate void [|UnusedDelegate|](string message);
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
 
     [Fact]
     public async Task InternalClassWithFactoryMethod_NoDiagnostic()
