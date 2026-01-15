@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -13,7 +12,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AvoidUnusedInternalTypes,
         title: "Avoid unused internal types",
-        messageFormat: "Internal type '{0}' is apparently never used. If so, remove it from the assembly. If this type is intended to contain only static members, make it 'static'.",
+        messageFormat: "Internal type '{0}' is apparently never used. If so, remove it from the assembly.",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
@@ -58,7 +57,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         if (!symbol.CanBeReferencedByName)
             return false;
 
-        if (symbol.IsStatic || symbol.IsImplicitlyDeclared)
+        if (symbol.IsImplicitlyDeclared)
             return false;
 
         // Exclude unit test classes
@@ -192,6 +191,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
+            AddUsedType(operation, operation.TargetMethod.ContainingType);
 
             // Track type arguments used in method invocations (e.g., JsonSerializer.Deserialize<T>())
             foreach (var typeArgument in operation.TargetMethod.TypeArguments)
@@ -282,6 +282,12 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
         public void AnalyzeCompilationEnd(CompilationAnalysisContext context)
         {
+            var entryPoint = compilation.GetEntryPoint(context.CancellationToken);
+            if (entryPoint is not null)
+            {
+                AddUsedType(entryPoint.ContainingType);
+            }
+
             foreach (var type in _potentialUnusedTypes)
             {
                 if (_usedTypes.Contains(type))
@@ -321,6 +327,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             AddUsedType(containingSymbol as ITypeSymbol, typeSymbol);
         }
 
+        private void AddUsedType(ITypeSymbol typeSymbol) => AddUsedType((ITypeSymbol?)null, typeSymbol);
+
         private void AddUsedType(ITypeSymbol? referenceLocation, ITypeSymbol typeSymbol)
         {
             if (referenceLocation is not null && referenceLocation.IsEqualTo(typeSymbol))
@@ -357,6 +365,18 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                     {
                         AddUsedType(referenceLocation, typeArgument);
                     }
+
+#if CSHARP14_OR_GREATER
+                    // If extension (C# 14), also mark containing type as used
+                    if (namedTypeSymbol.IsExtension)
+                    {
+                        var containingType = namedTypeSymbol.ContainingType;
+                        if (containingType is not null)
+                        {
+                            AddUsedType(referenceLocation, containingType);
+                        }
+                    }
+#endif
                 }
             }
         }

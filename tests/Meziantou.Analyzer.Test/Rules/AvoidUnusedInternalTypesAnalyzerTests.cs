@@ -1,5 +1,6 @@
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
+using Microsoft.CodeAnalysis;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
@@ -41,10 +42,10 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
-    public async Task StaticClass_NoDiagnostic()
+    public async Task StaticClass_Diagnostic()
     {
         const string SourceCode = """
-            internal static class StaticClass
+            internal static class [|StaticClass|]
             {
                 public static void Method() { }
             }
@@ -695,11 +696,12 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithOutputKind(OutputKind.ConsoleApplication)
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInArrayCreation_NoDiagnostic()
+    public async Task EntryPointClass_NoDiagnostic()
     {
         const string SourceCode = """
             using System;
@@ -709,6 +711,30 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
 
             internal static class Program
+            {
+                private static void Main(string[] args)
+                {
+                    var list = Array.Empty<Config>();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithOutputKind(OutputKind.ConsoleApplication)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EntryPointInClassLibrary_Reported()
+    {
+        const string SourceCode = """
+            using System;
+
+            internal sealed class Config
+            {
+            }
+
+            internal static class [|Program|]
             {
                 private static void Main(string[] args)
                 {
@@ -1138,13 +1164,35 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Value { get; set; }
             }
 
-            internal static class DataStoreExtensions
+            internal static class [|DataStoreExtensions|]
             {
                 extension (DataStore datastore)
                 {
                     public void Save()
                     {
                     }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassUsedInExplicitExtensionType_Diagnostic()
+    {
+        const string SourceCode = """
+            internal class Settings
+            {
+                public string Key { get; set; }
+            }
+
+            internal static class [|DataStoreExtensions|]
+            {
+                extension (Settings settings)
+                {
+                    public string GetValue() => settings.Key;
                 }
             }
             """;
@@ -1169,6 +1217,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                     public string GetValue() => settings.Key;
                 }
             }
+
+            public class Sample
+            {
+                public void Test()
+                {
+                    var settings = new Settings { Key = "Test" };
+                    var value = settings.GetValue();
+                }
+            }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -1184,7 +1241,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public int Id { get; set; }
             }
 
-            internal static class EntityExtension
+            internal static class [|EntityExtension|]
             {
                 extension<T>(T entity) where T : Entity
                 {
@@ -1213,7 +1270,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
 
-            internal static class RepositoryExtension
+            internal static class [|RepositoryExtension|]
             {
                 extension<T>(T entity) where T : BaseEntity, IIdentifiable, new()
                 {
@@ -1938,6 +1995,80 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             {
                 public void Method()
                 {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+
+    [Fact]
+    public async Task InternalClassWithFactoryMethod_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class BugDemo
+            {
+                private BugDemo()
+                {
+                }
+
+                public static BugDemo Create() => new();
+            }
+
+            public class Consumer
+            {
+                public void Method()
+                {
+                    var x = BugDemo.Create();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassWithFactoryMethodNotUsed_Diagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class [|UnusedFactory|]
+            {
+                private UnusedFactory()
+                {
+                }
+
+                public static UnusedFactory Create() => new();
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InternalClassWithFactoryMethodInternalUsage_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class ConfigurableCertificateValidatingHttpClientHandler
+            {
+                private ConfigurableCertificateValidatingHttpClientHandler()
+                {
+                }
+
+                public static ConfigurableCertificateValidatingHttpClientHandler CreateClient()
+                {
+                    return new ConfigurableCertificateValidatingHttpClientHandler();
+                }
+            }
+
+            public class ApiClient
+            {
+                public void Setup()
+                {
+                    var handler = ConfigurableCertificateValidatingHttpClientHandler.CreateClient();
                 }
             }
             """;
