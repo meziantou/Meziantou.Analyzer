@@ -358,25 +358,20 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                     AddUsedType(referenceLocation, pointerTypeSymbol.PointedAtType);
                 }
 
-                // Handle generic type arguments
                 if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
                 {
+                    // Handle generic type arguments
                     foreach (var typeArgument in namedTypeSymbol.TypeArguments)
                     {
                         AddUsedType(referenceLocation, typeArgument);
                     }
 
-#if CSHARP14_OR_GREATER
-                    // If extension (C# 14), also mark containing type as used
-                    if (namedTypeSymbol.IsExtension)
+                    // Iterate containing types (e.g. Interop.Kernel32.CreateFile)
+                    var containingType = namedTypeSymbol.ContainingType;
+                    if (containingType is not null)
                     {
-                        var containingType = namedTypeSymbol.ContainingType;
-                        if (containingType is not null)
-                        {
-                            AddUsedType(referenceLocation, containingType);
-                        }
+                        AddUsedType(referenceLocation, containingType);
                     }
-#endif
                 }
             }
         }

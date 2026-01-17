@@ -2076,4 +2076,29 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task NestedClass_NoDiagnostic()
+    {
+        const string SourceCode = """
+            internal sealed class Interop
+            {
+                internal static class Kernel32
+                {
+                    public const int ERROR_SUCCESS = 0;
+                }
+            }
+
+            public class Sample
+            {
+                public void Setup()
+                {
+                    _ = Interop.Kernel32.ERROR_SUCCESS;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
