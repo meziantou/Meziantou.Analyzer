@@ -122,15 +122,9 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             // For using declarations (using var x = ...), we need to drill down through the declaration structure
             if (operation is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
             {
-                foreach (var declaration in variableDeclarationGroupOperation.Declarations)
-                {
-                    foreach (var declarator in declaration.Declarators)
-                    {
-                        if (declarator.Initializer?.Value?.Type?.IsEqualTo(AsyncFlowControlSymbol) == true)
-                            return true;
-                    }
-                }
-                return false;
+                return variableDeclarationGroupOperation.Declarations
+                    .SelectMany(d => d.Declarators)
+                    .Any(declarator => declarator.Initializer?.Value?.Type?.IsEqualTo(AsyncFlowControlSymbol) == true);
             }
 
             var type = operation.Type;
