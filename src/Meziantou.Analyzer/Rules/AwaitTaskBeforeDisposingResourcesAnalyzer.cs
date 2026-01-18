@@ -119,6 +119,20 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             if (operation is null || AsyncFlowControlSymbol is null)
                 return false;
 
+            // For using declarations (using var x = ...), we need to drill down through the declaration structure
+            if (operation is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
+            {
+                foreach (var declaration in variableDeclarationGroupOperation.Declarations)
+                {
+                    foreach (var declarator in declaration.Declarators)
+                    {
+                        if (declarator.Initializer?.Value?.Type?.IsEqualTo(AsyncFlowControlSymbol) == true)
+                            return true;
+                    }
+                }
+                return false;
+            }
+
             var type = operation.Type;
             if (type is null)
                 return false;
