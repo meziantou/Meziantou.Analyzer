@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -41,6 +42,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? TaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
         public INamedTypeSymbol? ValueTaskSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
         public INamedTypeSymbol? ValueTaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        public INamedTypeSymbol? AsyncFlowControlSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.AsyncFlowControl");
 
         public void AnalyzeReturn(OperationAnalysisContext context)
         {
@@ -63,15 +65,27 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Rule, op);
         }
 
-        private static bool IsInUsingOperation(IOperation operation)
+        /// <summary>
+        /// Checks if the operation is within a using block that requires awaiting tasks.
+        /// Returns false if the disposable is AsyncFlowControl (from ExecutionContext.SuppressFlow()),
+        /// as it's safe to return tasks without awaiting in that case.
+        /// </summary>
+        private bool IsInUsingOperation(IOperation operation)
         {
             foreach (var parent in operation.Ancestors().Select(operation => operation.UnwrapLabelOperations()))
             {
                 if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
                     return false;
 
-                if (parent is IUsingOperation)
+                if (parent is IUsingOperation usingOp)
+                {
+                    // Exception: ExecutionContext.SuppressFlow() returns AsyncFlowControl
+                    // The task doesn't need to be awaited before the using block ends
+                    if (IsAsyncFlowControl(usingOp.Resources))
+                        return false;
+
                     return true;
+                }
 
                 if (parent is IBlockOperation block)
                 {
@@ -80,13 +94,45 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                         if (blockOperation == operation)
                             break;
 
-                        if (blockOperation is IUsingDeclarationOperation)
+                        if (blockOperation is IUsingDeclarationOperation usingDecl)
+                        {
+                            // Exception: ExecutionContext.SuppressFlow() returns AsyncFlowControl
+                            // The task doesn't need to be awaited before the using block ends
+                            if (IsAsyncFlowControl(usingDecl.DeclarationGroup))
+                                return false;
+
                             return true;
+                        }
                     }
                 }
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Determines if the operation is an AsyncFlowControl (from ExecutionContext.SuppressFlow()).
+        /// AsyncFlowControl is exempt from MA0100 because the execution context is captured at task creation time,
+        /// making it safe to return tasks without awaiting before the using block ends.
+        /// </summary>
+        private bool IsAsyncFlowControl(IOperation? operation)
+        {
+            if (operation is null || AsyncFlowControlSymbol is null)
+                return false;
+
+            // For using declarations (using var x = ...), we need to drill down through the declaration structure
+            if (operation is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
+            {
+                return variableDeclarationGroupOperation.Declarations
+                    .SelectMany(d => d.Declarators)
+                    .Any(declarator => declarator.Initializer?.Value?.Type?.IsEqualTo(AsyncFlowControlSymbol) == true);
+            }
+
+            var type = operation.Type;
+            if (type is null)
+                return false;
+
+            return type.IsEqualTo(AsyncFlowControlSymbol);
         }
 
         private bool NeedAwait(IOperation operation)
