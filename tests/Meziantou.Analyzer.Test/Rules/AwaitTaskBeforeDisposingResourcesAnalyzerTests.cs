@@ -524,4 +524,48 @@ class TestClass
                     """)
                 .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
                 .ValidateAsync();
+
+    [Fact]
+    public Task ExecutionContext_SuppressFlow_NoAlert()
+        => CreateProjectBuilder()
+                .WithSourceCode("""
+                    using System;
+                    using System.Threading;
+                    using System.Threading.Tasks;
+
+                    class TestClass
+                    {
+                        protected Task RunInNewContextAsync(Func<Task> func, CancellationToken ct)
+                        {
+                            using (ExecutionContext.SuppressFlow())
+                            {
+                                // This is safe because ExecutionContext is captured at task creation
+                                // No need to await before the using block ends
+                                return Task.Run(func, ct);
+                            }
+                        }
+                    }
+                    """)
+                .ValidateAsync();
+
+    [Fact]
+    public Task ExecutionContext_SuppressFlow_UsingDeclaration_NoAlert()
+        => CreateProjectBuilder()
+                .WithSourceCode("""
+                    using System;
+                    using System.Threading;
+                    using System.Threading.Tasks;
+
+                    class TestClass
+                    {
+                        protected Task RunInNewContextAsync(Func<Task> func, CancellationToken ct)
+                        {
+                            using var flowControl = ExecutionContext.SuppressFlow();
+                            // This is safe because ExecutionContext is captured at task creation
+                            // No need to await before the using block ends
+                            return Task.Run(func, ct);
+                        }
+                    }
+                    """)
+                .ValidateAsync();
 }

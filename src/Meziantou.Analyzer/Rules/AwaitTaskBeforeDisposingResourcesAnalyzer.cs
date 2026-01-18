@@ -41,6 +41,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? TaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
         public INamedTypeSymbol? ValueTaskSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
         public INamedTypeSymbol? ValueTaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        public INamedTypeSymbol? AsyncFlowControlSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.AsyncFlowControl");
 
         public void AnalyzeReturn(OperationAnalysisContext context)
         {
@@ -63,15 +64,22 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Rule, op);
         }
 
-        private static bool IsInUsingOperation(IOperation operation)
+        private bool IsInUsingOperation(IOperation operation)
         {
             foreach (var parent in operation.Ancestors().Select(operation => operation.UnwrapLabelOperations()))
             {
                 if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
                     return false;
 
-                if (parent is IUsingOperation)
+                if (parent is IUsingOperation usingOp)
+                {
+                    // Exception: ExecutionContext.SuppressFlow() returns AsyncFlowControl
+                    // The task doesn't need to be awaited before the using block ends
+                    if (IsAsyncFlowControl(usingOp.Resources))
+                        return false;
+
                     return true;
+                }
 
                 if (parent is IBlockOperation block)
                 {
@@ -80,13 +88,32 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                         if (blockOperation == operation)
                             break;
 
-                        if (blockOperation is IUsingDeclarationOperation)
+                        if (blockOperation is IUsingDeclarationOperation usingDecl)
+                        {
+                            // Exception: ExecutionContext.SuppressFlow() returns AsyncFlowControl
+                            // The task doesn't need to be awaited before the using block ends
+                            if (IsAsyncFlowControl(usingDecl.DeclarationGroup))
+                                return false;
+
                             return true;
+                        }
                     }
                 }
             }
 
             return false;
+        }
+
+        private bool IsAsyncFlowControl(IOperation? operation)
+        {
+            if (operation is null || AsyncFlowControlSymbol is null)
+                return false;
+
+            var type = operation.Type;
+            if (type is null)
+                return false;
+
+            return type.IsEqualTo(AsyncFlowControlSymbol);
         }
 
         private bool NeedAwait(IOperation operation)
