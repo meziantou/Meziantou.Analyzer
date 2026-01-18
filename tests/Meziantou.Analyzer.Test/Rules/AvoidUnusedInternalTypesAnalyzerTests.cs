@@ -2101,4 +2101,49 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ClassWithModuleInitializerMethod_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+
+            internal class ModuleInit
+            {
+                [ModuleInitializer]
+                internal static void Initialize()
+                {
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net5_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClassWithModuleInitializerMethodAndOtherMembers_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+
+            internal sealed class Startup
+            {
+                private static bool _initialized;
+
+                [ModuleInitializer]
+                internal static void Init()
+                {
+                    _initialized = true;
+                }
+
+                internal static bool IsInitialized => _initialized;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net5_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

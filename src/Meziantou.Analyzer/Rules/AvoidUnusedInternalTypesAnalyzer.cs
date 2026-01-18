@@ -80,6 +80,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         private readonly List<ITypeSymbol> _potentialUnusedTypes = [];
         private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
         private readonly INamedTypeSymbol? _dynamicallyAccessedMembersAttribute = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
+        private readonly INamedTypeSymbol? _moduleInitializerAttribute = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ModuleInitializerAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
@@ -144,6 +145,12 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         {
             var method = (IMethodSymbol)context.Symbol;
             var parentType = method.ContainingType;
+
+            // Mark types containing ModuleInitializer methods as used
+            if (_moduleInitializerAttribute is not null && method.HasAttribute(_moduleInitializerAttribute))
+            {
+                AddUsedType(parentType);
+            }
 
             // Track return type
             if (method.ReturnType is not null)
