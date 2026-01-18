@@ -64,6 +64,11 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Rule, op);
         }
 
+        /// <summary>
+        /// Checks if the operation is within a using block that requires awaiting tasks.
+        /// Returns false if the disposable is AsyncFlowControl (from ExecutionContext.SuppressFlow()),
+        /// as it's safe to return tasks without awaiting in that case.
+        /// </summary>
         private bool IsInUsingOperation(IOperation operation)
         {
             foreach (var parent in operation.Ancestors().Select(operation => operation.UnwrapLabelOperations()))
@@ -104,6 +109,11 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        /// <summary>
+        /// Determines if the operation is an AsyncFlowControl (from ExecutionContext.SuppressFlow()).
+        /// AsyncFlowControl is exempt from MA0100 because the execution context is captured at task creation time,
+        /// making it safe to return tasks without awaiting before the using block ends.
+        /// </summary>
         private bool IsAsyncFlowControl(IOperation? operation)
         {
             if (operation is null || AsyncFlowControlSymbol is null)
