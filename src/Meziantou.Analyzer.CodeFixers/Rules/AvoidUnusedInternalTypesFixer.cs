@@ -4,6 +4,7 @@ using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
@@ -79,11 +80,11 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> RemoveTypeDeclaration(Document document, TypeDeclarationSyntax typeDeclarationSyntax, CancellationToken cancellationToken)
+    private static async Task<Solution> RemoveTypeDeclaration(Document document, TypeDeclarationSyntax typeDeclarationSyntax, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root is null)
-            return document;
+            return document.Project.Solution;
 
         // Check if the type is the only type in the file
         var compilationUnit = root as CompilationUnitSyntax;
@@ -91,24 +92,19 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         {
             var allTypes = GetAllTypeDeclarations(compilationUnit);
             
-            // If this is the only type in the file, return a document that deletes the file
+            // If this is the only type in the file, remove all content
             if (allTypes.Count == 1 && allTypes.Contains(typeDeclarationSyntax))
             {
-                // Return an empty document to signal file deletion
-                var newRoot = compilationUnit
-                    .WithMembers(default)
-                    .WithUsings(default)
-                    .WithExterns(default)
-                    .WithAttributeLists(default);
-                
-                return document.WithSyntaxRoot(newRoot);
+                var newRoot = SyntaxFactory.CompilationUnit();
+                var newDocument = document.WithSyntaxRoot(newRoot);
+                return newDocument.Project.Solution;
             }
         }
 
         // Otherwise, just remove the type declaration
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.RemoveNode(typeDeclarationSyntax);
-        return editor.GetChangedDocument();
+        return editor.GetChangedDocument().Project.Solution;
     }
 
     private static List<TypeDeclarationSyntax> GetAllTypeDeclarations(SyntaxNode node)
