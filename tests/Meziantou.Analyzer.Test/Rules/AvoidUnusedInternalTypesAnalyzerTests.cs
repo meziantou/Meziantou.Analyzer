@@ -2158,15 +2158,14 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         const string CodeFix = """
-            using System.Diagnostics.CodeAnalysis;
-
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
             internal class UnusedClass
             {
                 public string Name { get; set; }
             }
             """;
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
@@ -2182,15 +2181,14 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         const string CodeFix = """
-            using System.Diagnostics.CodeAnalysis;
-
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
             internal struct UnusedStruct
             {
                 public int Value { get; set; }
             }
             """;
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
@@ -2203,12 +2201,11 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             internal record [|UnusedRecord|](string Name);
             """;
         const string CodeFix = """
-            using System.Diagnostics.CodeAnalysis;
-
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
             internal record UnusedRecord(string Name);
             """;
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
@@ -2247,6 +2244,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         const string CodeFix = """
+
             public class UsedClass
             {
                 public void Method() { }
@@ -2331,16 +2329,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         const string CodeFix = """
             using System;
-            using System.Diagnostics.CodeAnalysis;
 
             [Obsolete]
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
             internal class UnusedClass
             {
                 public string Name { get; set; }
             }
             """;
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
@@ -2382,6 +2380,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         const string CodeFix = """
+
             internal class UnusedClass2
             {
                 public int Value { get; set; }
