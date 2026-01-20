@@ -4,7 +4,6 @@ using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
@@ -92,12 +91,10 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         {
             var allTypes = GetAllTypeDeclarations(compilationUnit);
             
-            // If this is the only type in the file, remove all content
+            // If this is the only type in the file, remove the document from the solution
             if (allTypes.Count == 1 && allTypes.Contains(typeDeclarationSyntax))
             {
-                var newRoot = SyntaxFactory.CompilationUnit();
-                var newDocument = document.WithSyntaxRoot(newRoot);
-                return newDocument.Project.Solution;
+                return document.Project.Solution.RemoveDocument(document.Id);
             }
         }
 
