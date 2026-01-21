@@ -2300,6 +2300,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task CodeFix_RemoveType_RecordStruct()
     {
@@ -2314,6 +2315,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ShouldFixCodeWith(1, CodeFix)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_WithExistingAttributes()
