@@ -91,8 +91,8 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         {
             var allTypes = GetAllTypeDeclarations(compilationUnit);
             
-            // If this is the only type in the file, remove the document from the solution
-            if (allTypes.Count == 1 && allTypes.Contains(typeDeclarationSyntax))
+            // If this is the only type in the file and there are no assembly attributes, remove the document from the solution
+            if (allTypes.Count == 1 && allTypes.Contains(typeDeclarationSyntax) && compilationUnit.AttributeLists.Count == 0)
             {
                 return document.Project.Solution.RemoveDocument(document.Id);
             }

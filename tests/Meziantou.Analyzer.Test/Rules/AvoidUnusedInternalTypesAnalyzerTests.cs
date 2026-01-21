@@ -2391,4 +2391,25 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
               .ShouldFixCodeWith(1, CodeFix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_WithAssemblyAttribute()
+    {
+        const string SourceCode = """
+            [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
+
+            internal class [|UnusedClass|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        const string CodeFix = """
+            [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
+
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
 }
