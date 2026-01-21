@@ -10,7 +10,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<AvoidUnusedInternalTypesAnalyzer>();
+            .WithAnalyzer<AvoidUnusedInternalTypesAnalyzer>()
+            .WithCodeFixProvider<AvoidUnusedInternalTypesFixer>();
     }
 
     [Fact]
@@ -2144,6 +2145,273 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net5_0)
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_Class()
+    {
+        const string SourceCode = """
+            internal class [|UnusedClass|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        const string CodeFix = """
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
+            internal class UnusedClass
+            {
+                public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_Struct()
+    {
+        const string SourceCode = """
+            internal struct [|UnusedStruct|]
+            {
+                public int Value { get; set; }
+            }
+            """;
+        const string CodeFix = """
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
+            internal struct UnusedStruct
+            {
+                public int Value { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_Record()
+    {
+        const string SourceCode = """
+            internal record [|UnusedRecord|](string Name);
+            """;
+        const string CodeFix = """
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
+            internal record UnusedRecord(string Name);
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_SingleTypeInFile()
+    {
+        const string SourceCode = """
+            internal class [|UnusedClass|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        const string CodeFix = """
+
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_MultipleTypesInFile()
+    {
+        const string SourceCode = """
+            internal class [|UnusedClass|]
+            {
+                public string Name { get; set; }
+            }
+
+            public class UsedClass
+            {
+                public void Method() { }
+            }
+            """;
+        const string CodeFix = """
+
+            public class UsedClass
+            {
+                public void Method() { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_NestedType()
+    {
+        const string SourceCode = """
+            public class OuterClass
+            {
+                internal class [|UnusedNestedClass|]
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        const string CodeFix = """
+            public class OuterClass
+            {
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_WithUsings()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Collections.Generic;
+
+            internal class [|UnusedClass|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        const string CodeFix = """
+
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task CodeFix_RemoveType_RecordStruct()
+    {
+        const string SourceCode = """
+            internal record struct [|UnusedRecordStruct|](int Value);
+            """;
+        const string CodeFix = """
+
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_WithExistingAttributes()
+    {
+        const string SourceCode = """
+            using System;
+
+            [Obsolete]
+            internal class [|UnusedClass|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        const string CodeFix = """
+            using System;
+
+            [Obsolete]
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
+            internal class UnusedClass
+            {
+                public string Name { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_WithNamespace()
+    {
+        const string SourceCode = """
+            namespace MyNamespace
+            {
+                internal class [|UnusedClass|]
+                {
+                    public string Name { get; set; }
+                }
+            }
+            """;
+        const string CodeFix = """
+
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_TwoUnusedTypesInFile()
+    {
+        const string SourceCode = """
+            internal class [|UnusedClass1|]
+            {
+                public string Name { get; set; }
+            }
+
+            internal class [|UnusedClass2|]
+            {
+                public int Value { get; set; }
+            }
+            """;
+        const string CodeFix = """
+
+            internal class UnusedClass2
+            {
+                public int Value { get; set; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_RemoveType_WithAssemblyAttribute()
+    {
+        const string SourceCode = """
+            [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
+
+            internal class [|UnusedClass|]
+            {
+                public string Name { get; set; }
+            }
+            """;
+        const string CodeFix = """
+            [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
+
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(1, CodeFix)
               .ValidateAsync();
     }
 }

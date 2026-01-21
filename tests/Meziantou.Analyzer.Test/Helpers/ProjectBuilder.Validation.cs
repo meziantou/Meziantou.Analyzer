@@ -514,16 +514,18 @@ public sealed partial class ProjectBuilder
                 }
 
                 document = await ApplyFix(document, actions[0], mustCompile: IsValidFixCode).ConfigureAwait(false);
+                if (document is null)
+                    break;
                 analyzerDiagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, [document], compileSolution: false).ConfigureAwait(false);
             }
         }
 
         // after applying all of the code fixes, compare the resulting string to the inputted one
-        var actual = await GetStringFromDocument(document).ConfigureAwait(false);
+        var actual = document is not null ? await GetStringFromDocument(document).ConfigureAwait(false) : string.Empty;
         Assert.Equal(newSource, actual, ignoreLineEndingDifferences: true);
     }
 
-    private async Task<Document> ApplyFix(Document document, CodeAction codeAction, bool mustCompile)
+    private async Task<Document?> ApplyFix(Document document, CodeAction codeAction, bool mustCompile)
     {
         var operations = await codeAction.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
         var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
@@ -549,7 +551,7 @@ public sealed partial class ProjectBuilder
             }
         }
 
-        return solution.GetDocument(document.Id)!;
+        return solution.GetDocument(document.Id);
     }
 
     private static async Task<string> GetStringFromDocument(Document document)

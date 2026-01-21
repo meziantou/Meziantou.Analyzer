@@ -180,7 +180,7 @@
 |[MA0179](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0179.md)|Performance|Use Attribute.IsDefined instead of GetCustomAttribute(s)|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0180](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0180.md)|Design|ILogger type parameter should match containing type|<span title='Warning'>⚠️</span>|❌|✔️|
 |[MA0181](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0181.md)|Style|Do not use cast|<span title='Info'>ℹ️</span>|❌|❌|
-|[MA0182](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0182.md)|Design|Avoid unused internal types|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0182](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0182.md)|Design|Avoid unused internal types|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
