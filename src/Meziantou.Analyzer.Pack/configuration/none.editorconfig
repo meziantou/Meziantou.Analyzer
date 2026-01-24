@@ -541,3 +541,6 @@ dotnet_diagnostic.MA0181.severity = none
 
 # MA0182: Avoid unused internal types
 dotnet_diagnostic.MA0182.severity = none
+
+# MA0183: Avoid unused non-public members
+dotnet_diagnostic.MA0183.severity = none

@@ -1,4 +1,4 @@
-﻿namespace Meziantou.Analyzer.Test.Helpers;
+namespace Meziantou.Analyzer.Test.Helpers;
 
 [SuppressMessage("Design", "CA1027:Mark enums with FlagsAttribute")]
 public enum TargetFramework
@@ -11,7 +11,8 @@ public enum TargetFramework
     Net7_0,
     Net8_0,
     Net9_0,
-    NetLatest = Net9_0,
+    Net10_0,
+    NetLatest = Net10_0,
     AspNetCore5_0,
     AspNetCore6_0,
     AspNetCore7_0,
