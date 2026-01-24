@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using Meziantou.Analyzer.Internals;
 using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -67,7 +68,15 @@ public sealed partial class ProjectBuilder
         {
             var diagnosticsOutput = actualResults.Any() ? FormatDiagnostics(analyzers, [.. actualResults]) : "    NONE.";
 
-            Assert.Fail($"Mismatch between number of diagnostics returned, expected \"{expectedCount.ToString(CultureInfo.InvariantCulture)}\" actual \"{actualCount.ToString(CultureInfo.InvariantCulture)}\"\r\n\r\nDiagnostics:\r\n{diagnosticsOutput}\r\n");
+            var annotatedSource = string.Empty;
+            var firstDiagnostic = actualResults.FirstOrDefault();
+            if (firstDiagnostic?.Location.SourceTree is not null)
+            {
+                var sourceCode = firstDiagnostic.Location.SourceTree.GetText().ToString();
+                annotatedSource = AnnotateSourceCodeWithDiagnostics(sourceCode, actualResults);
+            }
+
+            Assert.Fail($"Mismatch between number of diagnostics returned, expected \"{expectedCount.ToString(CultureInfo.InvariantCulture)}\" actual \"{actualCount.ToString(CultureInfo.InvariantCulture)}\"\r\n\r\nDiagnostics:\r\n{diagnosticsOutput}\r\n\r\nSource:\r\n{annotatedSource}");
         }
 
         for (var i = 0; i < expectedResults.Count; i++)
@@ -79,8 +88,9 @@ public sealed partial class ProjectBuilder
             {
                 if (actual.Location != Location.None)
                 {
-                    Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected:\nA project diagnostic with No location\nActual:\n{0}",
-                        FormatDiagnostics(analyzers, actual)));
+                    var annotatedSource = GetAnnotatedSource(actual.Location, actual);
+                    Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected:\nA project diagnostic with No location\nActual:\n{0}\r\n\r\nSource:\r\n{1}",
+                        FormatDiagnostics(analyzers, actual), annotatedSource));
                 }
             }
             else
@@ -90,10 +100,11 @@ public sealed partial class ProjectBuilder
 
                 if (additionalLocations.Length != expected.Locations.Count - 1)
                 {
+                    var annotatedSource = GetAnnotatedSource(actual.Location, actual);
                     Assert.Fail(string.Format(CultureInfo.InvariantCulture,
-                            "Expected {0} additional locations but got {1} for Diagnostic:\r\n    {2}\r\n",
+                            "Expected {0} additional locations but got {1} for Diagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
                             expected.Locations.Count - 1, additionalLocations.Length,
-                            FormatDiagnostics(analyzers, actual)));
+                            FormatDiagnostics(analyzers, actual), annotatedSource));
                 }
 
                 for (var j = 0; j < additionalLocations.Length; ++j)
@@ -104,20 +115,23 @@ public sealed partial class ProjectBuilder
 
             if (expected.Id is not null && !string.Equals(actual.Id, expected.Id, StringComparison.Ordinal))
             {
-                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.Id, actual.Id, FormatDiagnostics(analyzers, actual)));
+                var annotatedSource = GetAnnotatedSource(actual.Location, actual);
+                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
+                        expected.Id, actual.Id, FormatDiagnostics(analyzers, actual), annotatedSource));
             }
 
             if (expected.Severity is not null && actual.Severity != expected.Severity)
             {
-                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic severity to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.Severity, actual.Severity, FormatDiagnostics(analyzers, actual)));
+                var annotatedSource = GetAnnotatedSource(actual.Location, actual);
+                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic severity to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
+                        expected.Severity, actual.Severity, FormatDiagnostics(analyzers, actual), annotatedSource));
             }
 
             if (expected.Message is not null && !string.Equals(actual.GetMessage(CultureInfo.InvariantCulture), expected.Message, StringComparison.Ordinal))
             {
-                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzers, actual)));
+                var annotatedSource = GetAnnotatedSource(actual.Location, actual);
+                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
+                        expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzers, actual), annotatedSource));
             }
         }
     }
@@ -185,6 +199,10 @@ public sealed partial class ProjectBuilder
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "9.0.0", "ref/net9.0/");
                 break;
 
+            case TargetFramework.Net10_0:
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "10.0.0", "ref/net10.0/");
+                break;
+
             case TargetFramework.AspNetCore5_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "5.0.0", "ref/net5.0/");
@@ -211,7 +229,7 @@ public sealed partial class ProjectBuilder
         }
 
 
-        if (TargetFramework is not TargetFramework.Net7_0 and not TargetFramework.Net8_0 and not TargetFramework.Net9_0)
+        if (TargetFramework is not TargetFramework.Net7_0 and not TargetFramework.Net8_0 and not TargetFramework.Net9_0 and not TargetFramework.Net10_0)
         {
             AddNuGetReference("System.Collections.Immutable", "1.5.0", "lib/netstandard2.0/");
             AddNuGetReference("System.Numerics.Vectors", "4.5.0", "ref/netstandard2.0/");
@@ -285,10 +303,11 @@ public sealed partial class ProjectBuilder
                     var document = project.Documents.FirstOrDefault();
                     if (document is not null)
                     {
-                        sourceCode = (await document.GetSyntaxRootAsync().ConfigureAwait(false))!.ToFullString();
+                        var syntaxRoot = await document.GetSyntaxRootAsync().ConfigureAwait(false);
+                        sourceCode = AnnotateSourceCodeWithDiagnostics(syntaxRoot!.ToFullString(), result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
                     }
 
-                    Assert.Fail("The code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
+                    Assert.Fail("The code doesn't compile.\n\n" + sourceCode);
                 }
             }
 
@@ -415,8 +434,9 @@ public sealed partial class ProjectBuilder
         {
             if (actualLinePosition.Line + 1 != expected.LineStart)
             {
-                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to be on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzers, diagnostic)));
+                var annotatedSource = GetAnnotatedSource(actual, diagnostic);
+                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to be on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
+                        expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzers, diagnostic), annotatedSource));
             }
         }
 
@@ -425,8 +445,9 @@ public sealed partial class ProjectBuilder
         {
             if (actualLinePosition.Character + 1 != expected.ColumnStart)
             {
-                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to start at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                        expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzers, diagnostic)));
+                var annotatedSource = GetAnnotatedSource(actual, diagnostic);
+                Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to start at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
+                        expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzers, diagnostic), annotatedSource));
             }
         }
 
@@ -439,8 +460,9 @@ public sealed partial class ProjectBuilder
             {
                 if (actualLinePosition.Line + 1 != expected.LineEnd)
                 {
-                    Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to end on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.LineStart, actualLinePosition.Line + 1, FormatDiagnostics(analyzers, diagnostic)));
+                    var annotatedSource = GetAnnotatedSource(actual, diagnostic);
+                    Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to end on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
+                            expected.LineEnd, actualLinePosition.Line + 1, FormatDiagnostics(analyzers, diagnostic), annotatedSource));
                 }
             }
 
@@ -449,11 +471,21 @@ public sealed partial class ProjectBuilder
             {
                 if (actualLinePosition.Character + 1 != expected.ColumnEnd)
                 {
-                    Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to end at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.ColumnStart, actualLinePosition.Character + 1, FormatDiagnostics(analyzers, diagnostic)));
+                    var annotatedSource = GetAnnotatedSource(actual, diagnostic);
+                    Assert.Fail(string.Format(CultureInfo.InvariantCulture, "Expected diagnostic to end at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n\r\nSource:\r\n{3}",
+                            expected.ColumnEnd, actualLinePosition.Character + 1, FormatDiagnostics(analyzers, diagnostic), annotatedSource));
                 }
             }
         }
+    }
+
+    private static string GetAnnotatedSource(Location location, Diagnostic diagnostic)
+    {
+        if (location.SourceTree is null)
+            return string.Empty;
+
+        var sourceCode = location.SourceTree.GetText().ToString();
+        return AnnotateSourceCodeWithDiagnostics(sourceCode, [diagnostic]);
     }
 
     private static async Task<IEnumerable<Diagnostic>> GetCompilerDiagnostics(Document document)
@@ -560,6 +592,42 @@ public sealed partial class ProjectBuilder
         var root = await simplifiedDoc.GetSyntaxRootAsync().ConfigureAwait(false);
         root = Formatter.Format(root!, Formatter.Annotation, simplifiedDoc.Project.Solution.Workspace);
         return root.GetText().ToString();
+    }
+
+    private static string AnnotateSourceCodeWithDiagnostics(string sourceCode, IEnumerable<Diagnostic> diagnostics)
+    {
+        var lines = sourceCode.SplitLines();
+        var result = new StringBuilder();
+        var diagnosticsByLine = diagnostics
+            .Where(d => d.Location.IsInSource)
+            .GroupBy(d => d.Location.GetLineSpan().StartLinePosition.Line)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var lineIndex = 0;
+        foreach (var (line, separator) in lines)
+        {
+            result.Append(line).Append(separator);
+
+            if (diagnosticsByLine.TryGetValue(lineIndex, out var lineDiagnostics))
+            {
+                foreach (var diagnostic in lineDiagnostics.OrderBy(d => d.Location.GetLineSpan().StartLinePosition.Character))
+                {
+                    var lineSpan = diagnostic.Location.GetLineSpan();
+                    var startColumn = lineSpan.StartLinePosition.Character;
+                    var endColumn = lineSpan.StartLinePosition.Line == lineSpan.EndLinePosition.Line
+                        ? lineSpan.EndLinePosition.Character
+                        : line.TrimEnd('\r').Length;
+
+                    var underlineLength = Math.Max(1, endColumn - startColumn);
+                    var annotation = new string(' ', startColumn) + new string('^', underlineLength) + " " + diagnostic.Id + ": " + diagnostic.GetMessage(CultureInfo.InvariantCulture);
+                    result.AppendLine(annotation);
+                }
+            }
+
+            lineIndex++;
+        }
+
+        return result.ToString();
     }
 
     private sealed class CustomDiagnosticProvider(Diagnostic[] diagnostics) : FixAllContext.DiagnosticProvider
