@@ -901,6 +901,10 @@ public sealed class AvoidUnusedNonPublicMembersAnalyzer : DiagnosticAnalyzer
         {
             var operation = (INameOfOperation)context.Operation;
 
+            // Skip nameof inside CollectionBuilderAttribute - the method is only used if a collection expression actually invokes it
+            if (IsInsideCollectionBuilderAttribute(operation.Syntax))
+                return;
+
             // Mark the referenced symbol as used since nameof() is often used for reflection-safe member access
             // ReadWrite as you don't know how the symbol is used
             switch (operation.Argument)
@@ -927,6 +931,25 @@ public sealed class AvoidUnusedNonPublicMembersAnalyzer : DiagnosticAnalyzer
                     }
                     break;
             }
+        }
+
+        private bool IsInsideCollectionBuilderAttribute(SyntaxNode syntax)
+        {
+            if (_collectionBuilderAttribute is null)
+                return false;
+
+            var attributeSyntax = syntax.Ancestors().OfType<AttributeSyntax>().FirstOrDefault();
+            if (attributeSyntax is null)
+                return false;
+
+            var semanticModel = compilation.GetSemanticModel(attributeSyntax.SyntaxTree);
+            var symbolInfo = semanticModel.GetSymbolInfo(attributeSyntax);
+            if (symbolInfo.Symbol is IMethodSymbol constructor)
+            {
+                return constructor.ContainingType.IsEqualTo(_collectionBuilderAttribute);
+            }
+
+            return false;
         }
 
         private void MarkSymbolsInExpression(SyntaxNode expression, SemanticModel semanticModel, CancellationToken cancellationToken)
