@@ -627,6 +627,46 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 #endif
 
+#if CSHARP12_OR_GREATER
+    [Fact]
+    public async Task InternalCollectionUsedInCollectionExpression_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+
+            internal class SampleCollectionBuilder
+            {
+                public static SampleCollection<T> Create<T>(ReadOnlySpan<T> items)
+                {
+                    throw null;
+                }
+            }
+
+            [CollectionBuilder(typeof(SampleCollectionBuilder), "Create")]
+            internal class SampleCollection<T> : IEnumerable<T>
+            {
+                public IEnumerator<T> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            public class Usage
+            {
+                public void Method()
+                {
+                    SampleCollection<int> a = [1, 2, 3];
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
+
 #if CSHARP10_OR_GREATER
     [Fact]
     public async Task MultipleInternalTypes_SomeUsedSomeNot()

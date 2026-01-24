@@ -488,20 +488,6 @@ public sealed partial class ProjectBuilder
         return AnnotateSourceCodeWithDiagnostics(sourceCode, [diagnostic]);
     }
 
-    private static string GetTextSpanContent(Location location)
-    {
-        if (location.SourceTree is null)
-            return string.Empty;
-
-        var sourceText = location.SourceTree.GetText();
-        var span = location.SourceSpan;
-
-        if (span.Start < 0 || span.End > sourceText.Length)
-            return string.Empty;
-
-        return sourceText.ToString(span);
-    }
-
     private static async Task<IEnumerable<Diagnostic>> GetCompilerDiagnostics(Document document)
     {
         var semanticModel = await document.GetSemanticModelAsync().ConfigureAwait(false);
