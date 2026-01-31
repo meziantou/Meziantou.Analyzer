@@ -128,10 +128,10 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
             }
 
             // Check if it looks like a placeholder
-            // A valid placeholder is {digit...}
+            // A valid placeholder is {digit...} where digit is 0-9 (ASCII digits only)
             var j = i + 1;
             var hasDigit = false;
-            while (j < formatString.Length && char.IsDigit(formatString[j]))
+            while (j < formatString.Length && formatString[j] >= '0' && formatString[j] <= '9')
             {
                 hasDigit = true;
                 j++;

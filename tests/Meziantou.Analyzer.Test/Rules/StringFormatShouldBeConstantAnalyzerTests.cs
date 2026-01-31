@@ -400,4 +400,23 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringFormat_WithUnicodeDigit_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        // Using Arabic-Indic digit ٠ (U+0660) instead of ASCII 0
+                        var result = [|string.Format("{٠}", 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 }
