@@ -317,4 +317,49 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Theory]
+    [InlineData("abc{{")]  // Valid: escaped opening brace
+    [InlineData("abc}}")]  // Valid: escaped closing brace
+    public async Task StringFormat_ValidEscapedBraces_ShouldReportDiagnostic(string formatString)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var result = [|string.Format("{{formatString}}", 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("abc{")]    // Invalid: unclosed brace
+    [InlineData("abc{0")]   // Invalid: unclosed placeholder
+    [InlineData("abc{abc")] // Invalid: non-numeric placeholder without closing
+    [InlineData("abc}")]    // Invalid: unmatched closing brace
+    [InlineData("abc{a{")]  // Invalid: non-numeric with nested opening brace
+    [InlineData("abc{0{")]  // Invalid: numeric with nested opening brace
+    [InlineData("abc{0:")]  // Invalid: incomplete format specifier
+    public async Task StringFormat_MalformedFormatString_ShouldNotCrash(string formatString)
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode($$"""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var result = [|string.Format("{{formatString}}", 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 }
