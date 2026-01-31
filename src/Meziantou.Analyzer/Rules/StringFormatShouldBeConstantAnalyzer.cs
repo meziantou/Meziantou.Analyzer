@@ -46,6 +46,7 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
 
         // Find the format string argument (either first or second parameter depending on overload)
         IArgumentOperation? formatArgument = null;
+        var formatArgumentIndex = -1;
 
         if (operation.Arguments.Length > 0)
         {
@@ -56,28 +57,25 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments.Length > 1)
                 {
                     formatArgument = operation.Arguments[1];
+                    formatArgumentIndex = 1;
                 }
             }
             else
             {
                 // First argument is the format string
                 formatArgument = firstArg;
+                formatArgumentIndex = 0;
             }
         }
 
         if (formatArgument is null)
             return;
 
-        // Check if there are any formatting arguments (beyond the format string and optional IFormatProvider)
+        // Check if there are any formatting arguments after the format string
         var hasFormattingArguments = false;
-        foreach (var arg in operation.Arguments)
+        for (var i = formatArgumentIndex + 1; i < operation.Arguments.Length; i++)
         {
-            if (arg == formatArgument)
-                continue;
-
-            // Skip IFormatProvider parameter
-            if (formatProviderType is not null && arg.Parameter?.Type.IsEqualTo(formatProviderType) == true)
-                continue;
+            var arg = operation.Arguments[i];
 
             // Skip implicit arguments (e.g., empty params array)
             if (arg.IsImplicit)

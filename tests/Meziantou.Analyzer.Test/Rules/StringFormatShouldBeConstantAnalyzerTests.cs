@@ -362,4 +362,42 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringFormat_WithIFormatProviderAndValidPlaceholder_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var result = string.Format(CultureInfo.InvariantCulture, "{0}", CultureInfo.InvariantCulture);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithIFormatProviderAndNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var result = [|string.Format(CultureInfo.InvariantCulture, "", CultureInfo.InvariantCulture)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 }
