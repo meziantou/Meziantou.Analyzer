@@ -1110,4 +1110,123 @@ class Sample
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task TemporaryDirectory_InTestProject_WithXunit_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .AddXUnitApi()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Meziantou.Framework;
+
+                namespace Meziantou.Framework
+                {
+                    public class TemporaryDirectory
+                    {
+                        public void CreateTextFile(string path, string content) { }
+                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
+                    }
+                }
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var dir = new TemporaryDirectory();
+                        dir.CreateTextFile("test.txt", "content");
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TemporaryDirectory_InTestProject_WithNUnit_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .AddNUnitApi()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Meziantou.Framework;
+
+                namespace Meziantou.Framework
+                {
+                    public class TemporaryDirectory
+                    {
+                        public void CreateTextFile(string path, string content) { }
+                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
+                    }
+                }
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var dir = new TemporaryDirectory();
+                        dir.CreateTextFile("test.txt", "content");
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TemporaryDirectory_InTestProject_WithMSTest_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .AddMSTestApi()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Meziantou.Framework;
+
+                namespace Meziantou.Framework
+                {
+                    public class TemporaryDirectory
+                    {
+                        public void CreateTextFile(string path, string content) { }
+                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
+                    }
+                }
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var dir = new TemporaryDirectory();
+                        dir.CreateTextFile("test.txt", "content");
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TemporaryDirectory_InNonTestProject_Diagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Meziantou.Framework;
+
+                namespace Meziantou.Framework
+                {
+                    public class TemporaryDirectory
+                    {
+                        public void CreateTextFile(string path, string content) { }
+                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
+                    }
+                }
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var dir = new TemporaryDirectory();
+                        [||]dir.CreateTextFile("test.txt", "content");
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 }
