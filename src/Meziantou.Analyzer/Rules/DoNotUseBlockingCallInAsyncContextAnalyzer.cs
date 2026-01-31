@@ -104,6 +104,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             Moq_MockSymbol = compilation.GetBestTypeByMetadataName("Moq.Mock`1");
 
+            // Detect test frameworks
+            var xunitAssertSymbol = compilation.GetBestTypeByMetadataName("Xunit.Assert");
+            var nunitAssertSymbol = compilation.GetBestTypeByMetadataName("NUnit.Framework.Assert");
+            var msTestAssertSymbol = compilation.GetBestTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+            IsTestProject = xunitAssertSymbol is not null || nunitAssertSymbol is not null || msTestAssertSymbol is not null;
+
+            TemporaryDirectorySymbol = compilation.GetBestTypeByMetadataName("Meziantou.Framework.TemporaryDirectory");
+
             var taskAwaiterLikeSymbols = new List<INamedTypeSymbol>(4);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterOfTSymbol);
@@ -139,6 +147,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private INamedTypeSymbol? DbSetSymbol { get; }
 
         public INamedTypeSymbol? Moq_MockSymbol { get; }
+
+        private bool IsTestProject { get; }
+        private INamedTypeSymbol? TemporaryDirectorySymbol { get; }
 
         public bool IsValid => TaskSymbol is not null && TaskOfTSymbol is not null && TaskAwaiterSymbol is not null;
 
@@ -300,6 +311,10 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     return false;
 
                 if (methodSymbol.HasAttribute(ObsoleteAttributeSymbol))
+                    return false;
+
+                // In test projects, exclude async methods from Meziantou.Framework.TemporaryDirectory
+                if (IsTestProject && TemporaryDirectorySymbol is not null && methodSymbol.ContainingType.IsEqualTo(TemporaryDirectorySymbol))
                     return false;
 
                 if (OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false, default(ReadOnlySpan<OverloadParameterType>)))
