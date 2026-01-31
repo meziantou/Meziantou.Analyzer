@@ -22,7 +22,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format("value without argument");
+                        var result = [|string.Format("value without argument")|];
                     }
                 }
                 """)
@@ -40,7 +40,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format("value with argument", 123);
+                        var result = [|string.Format("value with argument", 123)|];
                     }
                 }
                 """)
@@ -58,7 +58,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format("value with argument {{0}}", 123);
+                        var result = [|string.Format("value with argument {{0}}", 123)|];
                     }
                 }
                 """)
@@ -113,7 +113,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format(System.Globalization.CultureInfo.InvariantCulture, "no placeholder", 123);
+                        var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no placeholder", 123)|];
                     }
                 }
                 """)
@@ -149,7 +149,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format(System.Globalization.CultureInfo.InvariantCulture, "no parameters");
+                        var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no parameters")|];
                     }
                 }
                 """)
@@ -239,7 +239,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format("value {{escaped}}", 123);
+                        var result = [|string.Format("value {{escaped}}", 123)|];
                     }
                 }
                 """)
@@ -257,7 +257,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format("no placeholder", 123, 456, 789);
+                        var result = [|string.Format("no placeholder", 123, 456, 789)|];
                     }
                 }
                 """)
@@ -275,7 +275,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format("");
+                        var result = [|string.Format("")|];
                     }
                 }
                 """)
@@ -293,7 +293,25 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     void Method()
                     {
-                        var result = [||]string.Format("", 123);
+                        var result = [|string.Format("", 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_NonConstantFormat_NoArguments_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method(string format)
+                    {
+                        var result = [|string.Format(format)|];
                     }
                 }
                 """)
