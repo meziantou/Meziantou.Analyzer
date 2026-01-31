@@ -71,30 +71,7 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         // We only analyze constant format strings
         if (formatArgument.Value.ConstantValue.HasValue && formatArgument.Value.ConstantValue.Value is string formatString)
         {
-            // Check if there are any parameters passed (beyond the format string and optional IFormatProvider)
-            var hasParameters = false;
-
-            foreach (var arg in operation.Arguments)
-            {
-                if (arg == formatArgument)
-                    continue;
-
-                // Skip IFormatProvider parameter
-                if (formatProviderType is not null && arg.Parameter?.Type.Equals(formatProviderType, SymbolEqualityComparer.Default) == true)
-                    continue;
-
-                hasParameters = true;
-                break;
-            }
-
-            // Case 1: No parameters at all (e.g., string.Format("value without argument"))
-            if (!hasParameters)
-            {
-                context.ReportDiagnostic(Rule, operation);
-                return;
-            }
-
-            // Case 2: Has parameters but format string has no placeholders
+            // Only report if format string has no placeholders
             if (!HasPlaceholders(formatString))
             {
                 context.ReportDiagnostic(Rule, operation);
