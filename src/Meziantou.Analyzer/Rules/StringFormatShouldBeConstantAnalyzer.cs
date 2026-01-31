@@ -109,64 +109,55 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         var i = 0;
         while (i < formatString.Length)
         {
-            var c = formatString[i];
-            if (c == '{')
+            // Use IndexOf to find the next '{' - this can be vectorized for better performance
+            var braceIndex = formatString.IndexOf('{', i);
+            if (braceIndex == -1)
             {
-                // Check if it's an escaped brace
-                if (i + 1 < formatString.Length && formatString[i + 1] == '{')
-                {
-                    // Escaped opening brace, skip both
-                    i += 2;
-                    continue;
-                }
+                // No more opening braces
+                return false;
+            }
 
-                // Check if it looks like a placeholder
-                // A valid placeholder is {digit...}
-                var j = i + 1;
-                var hasDigit = false;
-                while (j < formatString.Length && char.IsDigit(formatString[j]))
+            i = braceIndex;
+
+            // Check if it's an escaped brace
+            if (i + 1 < formatString.Length && formatString[i + 1] == '{')
+            {
+                // Escaped opening brace, skip both
+                i += 2;
+                continue;
+            }
+
+            // Check if it looks like a placeholder
+            // A valid placeholder is {digit...}
+            var j = i + 1;
+            var hasDigit = false;
+            while (j < formatString.Length && char.IsDigit(formatString[j]))
+            {
+                hasDigit = true;
+                j++;
+            }
+
+            // After the digits, we can have optional alignment (,number) or format (:format)
+            // For simplicity, just check if we found a digit and there's a closing brace eventually
+            if (hasDigit)
+            {
+                // Look for the closing brace (allowing for alignment and format specifiers)
+                while (j < formatString.Length)
                 {
-                    hasDigit = true;
+                    if (formatString[j] == '}')
+                    {
+                        // Found a valid placeholder
+                        return true;
+                    }
+                    if (formatString[j] == '{')
+                    {
+                        // Found another opening brace before closing, not a valid placeholder
+                        break;
+                    }
                     j++;
                 }
-
-                // After the digits, we can have optional alignment (,number) or format (:format)
-                // For simplicity, just check if we found a digit and there's a closing brace eventually
-                if (hasDigit)
-                {
-                    // Look for the closing brace (allowing for alignment and format specifiers)
-                    while (j < formatString.Length)
-                    {
-                        if (formatString[j] == '}')
-                        {
-                            // Found a valid placeholder
-                            return true;
-                        }
-                        if (formatString[j] == '{')
-                        {
-                            // Found another opening brace before closing, not a valid placeholder
-                            break;
-                        }
-                        j++;
-                    }
-                }
-                i++;
             }
-            else if (c == '}')
-            {
-                // Check if it's an escaped brace
-                if (i + 1 < formatString.Length && formatString[i + 1] == '}')
-                {
-                    // Escaped closing brace, skip both
-                    i += 2;
-                    continue;
-                }
-                i++;
-            }
-            else
-            {
-                i++;
-            }
+            i++;
         }
 
         return false;
