@@ -50,7 +50,7 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length > 0)
         {
             var firstArg = operation.Arguments[0];
-            if (formatProviderType is not null && firstArg.Parameter?.Type.Equals(formatProviderType, SymbolEqualityComparer.Default) == true)
+            if (firstArg.Parameter?.Type.IsEqualTo(formatProviderType) == true)
             {
                 // First argument is IFormatProvider, so format string is the second argument
                 if (operation.Arguments.Length > 1)
