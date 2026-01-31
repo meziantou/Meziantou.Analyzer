@@ -182,6 +182,7 @@ internal static class RuleIdentifiers
     public const string ILoggerParameterTypeShouldMatchContainingType = "MA0180";
     public const string DoNotUseCast = "MA0181";
     public const string AvoidUnusedInternalTypes = "MA0182";
+    public const string StringFormatShouldBeConstant = "MA0183";
 
     public static string GetHelpUri(string identifier)
     {
