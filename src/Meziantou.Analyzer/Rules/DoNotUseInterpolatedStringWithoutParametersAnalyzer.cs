@@ -29,12 +29,13 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
         context.RegisterCompilationStartAction(ctx =>
         {
             var formattableStringSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.FormattableString");
+            var interpolatedStringHandlerAttributeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
 
-            ctx.RegisterOperationAction(context => AnalyzeInterpolatedString(context, formattableStringSymbol), OperationKind.InterpolatedString);
+            ctx.RegisterOperationAction(context => AnalyzeInterpolatedString(context, formattableStringSymbol, interpolatedStringHandlerAttributeSymbol), OperationKind.InterpolatedString);
         });
     }
 
-    private static void AnalyzeInterpolatedString(OperationAnalysisContext context, INamedTypeSymbol? formattableStringSymbol)
+    private static void AnalyzeInterpolatedString(OperationAnalysisContext context, INamedTypeSymbol? formattableStringSymbol, INamedTypeSymbol? interpolatedStringHandlerAttributeSymbol)
     {
         var operation = (IInterpolatedStringOperation)context.Operation;
 
@@ -57,11 +58,8 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
                 return;
 
             // If converting to a custom InterpolatedStringHandler, don't report
-            if (conversionOperation.Type is INamedTypeSymbol namedType)
-            {
-                if (namedType.Name.EndsWith("InterpolatedStringHandler", StringComparison.Ordinal))
-                    return;
-            }
+            if (IsInterpolatedStringHandler(conversionOperation.Type, interpolatedStringHandlerAttributeSymbol))
+                return;
         }
 
         // If assigned to FormattableString, don't report
@@ -72,16 +70,21 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
                 if (declarator.Symbol?.Type?.IsEqualTo(formattableStringSymbol) == true)
                     return;
 
-                if (declarator.Symbol?.Type is INamedTypeSymbol namedType)
-                {
-                    if (namedType.Name.EndsWith("InterpolatedStringHandler", StringComparison.Ordinal))
-                        return;
-                }
+                if (IsInterpolatedStringHandler(declarator.Symbol?.Type, interpolatedStringHandlerAttributeSymbol))
+                    return;
             }
         }
 
         // Report diagnostic as a suggestion (Hidden severity with unnecessary tag)
         var diagnostic = Diagnostic.Create(Rule, operation.Syntax.GetLocation());
         context.ReportDiagnostic(diagnostic);
+    }
+
+    private static bool IsInterpolatedStringHandler(ITypeSymbol? typeSymbol, INamedTypeSymbol? interpolatedStringHandlerAttributeSymbol)
+    {
+        if (typeSymbol is null || interpolatedStringHandlerAttributeSymbol is null)
+            return false;
+
+        return typeSymbol.HasAttribute(interpolatedStringHandlerAttributeSymbol);
     }
 }
