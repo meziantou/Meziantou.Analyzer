@@ -544,3 +544,6 @@ dotnet_diagnostic.MA0182.severity = none
 
 # MA0183: string.Format should use a format string with placeholders
 dotnet_diagnostic.MA0183.severity = none
+
+# MA0184: Simplify string.Create when all parameters are culture invariant
+dotnet_diagnostic.MA0184.severity = none
