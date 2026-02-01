@@ -255,6 +255,7 @@ class TypeName
               .ValidateAsync();
     }
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RawInterpolatedStringWithoutParameters_ShouldReportDiagnostic()
     {
@@ -284,7 +285,9 @@ class TypeName
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
+#endif
 }
