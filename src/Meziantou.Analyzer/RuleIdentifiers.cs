@@ -183,6 +183,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseCast = "MA0181";
     public const string AvoidUnusedInternalTypes = "MA0182";
     public const string StringFormatShouldBeConstant = "MA0183";
+    public const string SimplifyStringCreateWhenAllParametersAreCultureInvariant = "MA0184";
 
     public static string GetHelpUri(string identifier)
     {
