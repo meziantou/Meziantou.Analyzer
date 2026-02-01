@@ -14,8 +14,8 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
         title: "Do not use interpolated string without parameters",
         messageFormat: "Do not use interpolated string without parameters",
         RuleCategories.Style,
-        DiagnosticSeverity.Info,
-        isEnabledByDefault: false,
+        DiagnosticSeverity.Hidden,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseInterpolatedStringWithoutParameters));
 
