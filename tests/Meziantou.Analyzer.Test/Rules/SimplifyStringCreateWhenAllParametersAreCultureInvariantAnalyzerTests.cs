@@ -290,5 +290,77 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_EmptyString_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        var x = [|string.Create(CultureInfo.InvariantCulture, $"")|];
+    }
+}
+""";
+
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        var x = $"";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_MultipleWords_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        var x = [|string.Create(CultureInfo.InvariantCulture, $"This is a test message without any interpolations")|];
+    }
+}
+""";
+
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        var x = $"This is a test message without any interpolations";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
 #endif
 }
