@@ -107,6 +107,7 @@ class TypeName
               .ValidateAsync();
     }
 
+#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InterpolatedStringWithoutParameters_CustomInterpolatedStringHandler_ShouldNotReportDiagnostic()
     {
@@ -140,6 +141,7 @@ public struct CustomInterpolatedStringHandler
               .WithTargetFramework(TargetFramework.Net6_0)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task InterpolatedStringWithoutParameters_InReturnStatement_ShouldReportDiagnostic()
