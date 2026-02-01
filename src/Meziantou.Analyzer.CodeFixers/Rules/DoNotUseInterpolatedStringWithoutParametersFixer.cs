@@ -38,23 +38,50 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        // Extract the string content from the interpolated string
-        var stringContent = string.Empty;
-        foreach (var content in interpolatedString.Contents)
+        // Check if this is a raw string literal (C# 11+)
+#if CSHARP10_OR_GREATER
+        var isRawString = interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken) ||
+                          interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedSingleLineRawStringStartToken);
+#else
+        var isRawString = false;
+#endif
+
+        if (isRawString)
         {
-            if (content is InterpolatedStringTextSyntax textSyntax)
+            // For raw strings, simply remove the $ prefix from the start token
+            // $""" text """ -> """ text """
+            var originalText = interpolatedString.ToFullString();
+            
+            // Find the position of $ in the start token and remove it
+            var dollarIndex = originalText.IndexOf('$', StringComparison.Ordinal);
+            if (dollarIndex >= 0)
             {
-                // Use the ValueText which contains the actual string value (not escaped)
-                stringContent += textSyntax.TextToken.ValueText;
+                var newText = originalText.Remove(dollarIndex, 1);
+                var newNode = SyntaxFactory.ParseExpression(newText);
+                
+                editor.ReplaceNode(interpolatedString, newNode.WithTriviaFrom(interpolatedString));
             }
         }
+        else
+        {
+            // Extract the string content from the interpolated string
+            var stringContent = string.Empty;
+            foreach (var content in interpolatedString.Contents)
+            {
+                if (content is InterpolatedStringTextSyntax textSyntax)
+                {
+                    // Use the ValueText which contains the actual string value (not escaped)
+                    stringContent += textSyntax.TextToken.ValueText;
+                }
+            }
 
-        // Create a regular string literal with the same content
-        var regularString = SyntaxFactory.LiteralExpression(
-            SyntaxKind.StringLiteralExpression,
-            SyntaxFactory.Literal(stringContent));
+            // Create a regular string literal with the same content
+            var regularString = SyntaxFactory.LiteralExpression(
+                SyntaxKind.StringLiteralExpression,
+                SyntaxFactory.Literal(stringContent));
 
-        editor.ReplaceNode(interpolatedString, regularString.WithTriviaFrom(interpolatedString));
+            editor.ReplaceNode(interpolatedString, regularString.WithTriviaFrom(interpolatedString));
+        }
 
         return editor.GetChangedDocument();
     }

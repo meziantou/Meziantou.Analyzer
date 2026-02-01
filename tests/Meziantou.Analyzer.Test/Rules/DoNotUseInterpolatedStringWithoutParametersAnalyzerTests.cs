@@ -254,4 +254,37 @@ class TypeName
               .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task RawInterpolatedStringWithoutParameters_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """"
+class TypeName
+{
+    public void Test()
+    {
+        _ = [|$"""
+            Sample
+            """|];
+    }
+}
+"""";
+
+        const string FixedCode = """"
+class TypeName
+{
+    public void Test()
+    {
+        _ = """
+            Sample
+            """;
+    }
+}
+"""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
 }
