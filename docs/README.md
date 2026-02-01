@@ -182,7 +182,7 @@
 |[MA0181](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0181.md)|Style|Do not use cast|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0182](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0182.md)|Design|Avoid unused internal types|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0183](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0183.md)|Usage|string.Format should use a format string with placeholders|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0184](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0184.md)|Performance|Simplify string.Create when all parameters are culture invariant|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -745,8 +745,8 @@ dotnet_diagnostic.MA0182.severity = suggestion
 # MA0183: string.Format should use a format string with placeholders
 dotnet_diagnostic.MA0183.severity = warning
 
-# MA0184: Simplify string.Create when all parameters are culture invariant
-dotnet_diagnostic.MA0184.severity = suggestion
+# MA0185: Simplify string.Create when all parameters are culture invariant
+dotnet_diagnostic.MA0185.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1295,6 +1295,6 @@ dotnet_diagnostic.MA0182.severity = none
 # MA0183: string.Format should use a format string with placeholders
 dotnet_diagnostic.MA0183.severity = none
 
-# MA0184: Simplify string.Create when all parameters are culture invariant
-dotnet_diagnostic.MA0184.severity = none
+# MA0185: Simplify string.Create when all parameters are culture invariant
+dotnet_diagnostic.MA0185.severity = none
 ```

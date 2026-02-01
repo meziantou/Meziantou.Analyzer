@@ -198,7 +198,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0181](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0181.md)|Style|Do not use cast|ℹ️|❌|❌|
 |[MA0182](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0182.md)|Design|Avoid unused internal types|ℹ️|✔️|✔️|
 |[MA0183](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0183.md)|Usage|string.Format should use a format string with placeholders|⚠️|✔️|❌|
-|[MA0184](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0184.md)|Performance|Simplify string.Create when all parameters are culture invariant|ℹ️|✔️|✔️|
+|[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|ℹ️|✔️|✔️|
 
 <!-- rules -->
 
