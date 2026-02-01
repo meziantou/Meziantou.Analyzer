@@ -72,27 +72,34 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
 
     private static LiteralExpressionSyntax ConvertToStringLiteral(InterpolatedStringExpressionSyntax interpolatedString)
     {
-        // Extract the string content
+        // Extract the string content from the interpolated string parts
         var contents = string.Concat(interpolatedString.Contents.Select(c => c.ToString()));
 
-        // Check if it's a verbatim or raw string
+        // Check the string format
         var stringStart = interpolatedString.StringStartToken.Text;
-        var isVerbatim = stringStart.Contains('@', StringComparison.Ordinal);
         var isRawString = stringStart.Contains("\"\"\"", StringComparison.Ordinal);
+        var isVerbatim = stringStart.Contains('@', StringComparison.Ordinal);
 
         string literalText;
+        string valueText;
+
         if (isRawString)
         {
-            // Raw string literal - keep the format but remove the $
+            // Raw string literal - preserve the raw format but remove the $
             literalText = stringStart.Replace("$", "", StringComparison.Ordinal) + contents + interpolatedString.StringEndToken.Text;
+            valueText = contents; // Raw strings have no escape sequences
         }
         else if (isVerbatim)
         {
+            // Verbatim string - preserve the content as-is
             literalText = $"@\"{contents}\"";
+            valueText = contents; // Verbatim strings preserve content literally (except "" for ")
         }
         else
         {
+            // Regular string - need to preserve any escape sequences from the original
             literalText = $"\"{contents}\"";
+            valueText = contents; // Interpolated strings already have parsed content
         }
 
         return SyntaxFactory.LiteralExpression(
@@ -101,7 +108,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
                 interpolatedString.StringStartToken.LeadingTrivia,
                 SyntaxKind.StringLiteralToken,
                 literalText,
-                contents,
+                valueText,
                 interpolatedString.StringEndToken.TrailingTrivia));
     }
 }
