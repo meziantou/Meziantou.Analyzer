@@ -544,3 +544,6 @@ dotnet_diagnostic.MA0182.severity = suggestion
 
 # MA0183: string.Format should use a format string with placeholders
 dotnet_diagnostic.MA0183.severity = warning
+
+# MA0184: Do not use interpolated string without parameters
+dotnet_diagnostic.MA0184.severity = none
