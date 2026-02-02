@@ -77,7 +77,20 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         {
             var arg = operation.Arguments[i];
 
-            // Skip implicit arguments (e.g., empty params array)
+            // Check if this is a params array argument
+            if (arg.ArgumentKind == ArgumentKind.ParamArray && arg.Value is IArrayCreationOperation arrayCreation)
+            {
+                // Check if the array has any elements
+                if (arrayCreation.Initializer is not null && arrayCreation.Initializer.ElementValues.Length > 0)
+                {
+                    hasFormattingArguments = true;
+                    break;
+                }
+                // Skip empty params arrays
+                continue;
+            }
+
+            // Skip other implicit arguments
             if (arg.IsImplicit)
                 continue;
 
