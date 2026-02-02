@@ -440,4 +440,23 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringFormat_WithExplicitEmptyParamsArray_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var result = [|string.Format(CultureInfo.InvariantCulture, "no placeholders", new object[0])|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 }
