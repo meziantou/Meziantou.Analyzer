@@ -35,6 +35,52 @@ class TypeName
     }
 
     [Fact]
+    public async Task IssueExample_NOK_ShouldReport()
+    {
+        // This is the exact example from the issue that should be flagged
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        var x = [|$"{DateTime.Now.ToString("D", CultureInfo.InvariantCulture)}{DateTime.Now.ToString("D", CultureInfo.InvariantCulture)}"|];
+    }
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IssueExample_OK_NoDiagnostic()
+    {
+        // This is the example from the issue that should NOT be flagged (different cultures)
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        var y = $"{DateTime.Now.ToString("D", CultureInfo.InvariantCulture)}{DateTime.Now.ToString("D", CultureInfo.CurrentCulture)}";
+    }
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task MultipleToStringWithDifferentCultures_NoDiagnostic()
     {
         const string SourceCode = """

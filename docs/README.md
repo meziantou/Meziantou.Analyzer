@@ -184,6 +184,7 @@
 |[MA0183](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0183.md)|Usage|string.Format should use a format string with placeholders|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0184](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0184.md)|Style|Do not use interpolated string without parameters|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Performance|Use String.Create with IFormatProvider when all interpolated string parameters use the same format provider|<span title='Info'>ℹ️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -751,6 +752,9 @@ dotnet_diagnostic.MA0184.severity = silent
 
 # MA0185: Simplify string.Create when all parameters are culture invariant
 dotnet_diagnostic.MA0185.severity = suggestion
+
+# MA0186: Use String.Create with IFormatProvider when all interpolated string parameters use the same format provider
+dotnet_diagnostic.MA0186.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1304,4 +1308,7 @@ dotnet_diagnostic.MA0184.severity = none
 
 # MA0185: Simplify string.Create when all parameters are culture invariant
 dotnet_diagnostic.MA0185.severity = none
+
+# MA0186: Use String.Create with IFormatProvider when all interpolated string parameters use the same format provider
+dotnet_diagnostic.MA0186.severity = none
 ```

@@ -200,6 +200,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0183](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0183.md)|Usage|string.Format should use a format string with placeholders|⚠️|✔️|❌|
 |[MA0184](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0184.md)|Style|Do not use interpolated string without parameters|👻|✔️|✔️|
 |[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|ℹ️|✔️|✔️|
+|[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Performance|Use String.Create with IFormatProvider when all interpolated string parameters use the same format provider|ℹ️|✔️|❌|
 
 <!-- rules -->
 
