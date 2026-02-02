@@ -419,4 +419,44 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringFormat_WithIFormatProviderAndMultiplePlaceholders_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+
+                class Program
+                {
+                    private static string DebuggerDisplay => string.Format(CultureInfo.InvariantCulture, "Column: {0}, Value: {1}, Invalid: {2}, Blank: {3}", "Column", "Value", true, false);
+
+                    static void Main(string[] args)
+                    {
+                        Console.WriteLine(DebuggerDisplay);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithExplicitEmptyParamsArray_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var result = [|string.Format(CultureInfo.InvariantCulture, "no placeholders", new object[0])|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 }
