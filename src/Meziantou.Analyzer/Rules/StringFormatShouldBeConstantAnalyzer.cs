@@ -90,6 +90,19 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
+#if ROSLYN_4_14_OR_GREATER
+            if (arg.ArgumentKind is ArgumentKind.ParamCollection && arg.Value is ICollectionExpressionOperation collectionExpression)
+            {
+                if (collectionExpression.Elements.Length > 0)
+                {
+                    hasFormattingArguments = true;
+                    break;
+                }
+
+                continue;
+            }
+#endif
+
             // Skip other implicit arguments
             if (arg.IsImplicit)
                 continue;

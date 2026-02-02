@@ -1,4 +1,5 @@
 using Meziantou.Analyzer.Rules;
+using Microsoft.CodeAnalysis;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
@@ -457,6 +458,19 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                     }
                 }
                 """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithMultiplePlaceholdersAndArguments_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                string.Format("Zero: {0}, One: {1}, Two: {2}, Four: {3}", "Answer is", 42, true, false);
+                string.Format("{0} x {1} [{2} x {3}{4}{5}]", 0, 1, 2, 3, 4, args.Length);
+                """)
+            .WithTargetFramework(Helpers.TargetFramework.Net10_0)
+            .WithOutputKind(OutputKind.ConsoleApplication)
             .ValidateAsync();
     }
 }
