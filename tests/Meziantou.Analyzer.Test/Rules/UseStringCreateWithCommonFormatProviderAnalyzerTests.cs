@@ -35,7 +35,7 @@ class TypeName
     }
 
     [Fact]
-    public async Task IssueExample_NOK_ShouldReport()
+    public async Task IssueExample_SameCulture_ShouldReport()
     {
         // This is the exact example from the issue that should be flagged
         const string SourceCode = """
@@ -58,7 +58,7 @@ class TypeName
     }
 
     [Fact]
-    public async Task IssueExample_OK_NoDiagnostic()
+    public async Task IssueExample_DifferentCultures_NoDiagnostic()
     {
         // This is the example from the issue that should NOT be flagged (different cultures)
         const string SourceCode = """

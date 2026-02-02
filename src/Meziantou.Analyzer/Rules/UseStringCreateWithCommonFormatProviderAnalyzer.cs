@@ -16,7 +16,7 @@ public sealed class UseStringCreateWithCommonFormatProviderAnalyzer : Diagnostic
         RuleCategories.Performance,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "",
+        description: "Improves performance by using String.Create with a common IFormatProvider instead of multiple ToString calls with the same format provider.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringCreateWithCommonFormatProvider));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
