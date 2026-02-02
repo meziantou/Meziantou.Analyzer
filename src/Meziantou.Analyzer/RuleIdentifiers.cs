@@ -185,6 +185,7 @@ internal static class RuleIdentifiers
     public const string StringFormatShouldBeConstant = "MA0183";
     public const string DoNotUseInterpolatedStringWithoutParameters = "MA0184";
     public const string SimplifyStringCreateWhenAllParametersAreCultureInvariant = "MA0185";
+    public const string UseStringCreateWithCommonFormatProvider = "MA0186";
 
     public static string GetHelpUri(string identifier)
     {
