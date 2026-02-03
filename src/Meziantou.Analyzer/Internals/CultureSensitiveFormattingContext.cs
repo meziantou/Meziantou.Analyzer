@@ -306,14 +306,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         bool IsFormattableType(ITypeSymbol type)
         {
-            // Check the underlying type for nullable types
-            var typeToCheck = type.GetUnderlyingNullableTypeOrSelf();
-
-            if (typeToCheck.Implements(SystemIFormattableSymbol))
+            if (type.Implements(SystemIFormattableSymbol))
                 return true;
 
             // May have ToString(IFormatProvider) even if IFormattable is not implemented directly
-            if (typeToCheck.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public))
+            if (type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public))
                 return true;
 
             return false;

@@ -75,7 +75,8 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
         if (interpolatedStringArgument is IInterpolatedStringHandlerCreationOperation handlerCreation)
         {
             var interpolatedStringContent = handlerCreation.Content;
-            if (!cultureSensitiveContext.IsCultureSensitiveOperation(interpolatedStringContent, CultureSensitiveOptions.None))
+            // Use UnwrapNullableOfT to check the underlying type of nullable types
+            if (!cultureSensitiveContext.IsCultureSensitiveOperation(interpolatedStringContent, CultureSensitiveOptions.UnwrapNullableOfT))
             {
                 context.ReportDiagnostic(Rule, operation);
             }
