@@ -257,7 +257,6 @@ class TypeName
 }";
 
         await CreateProjectBuilder()
-              .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();

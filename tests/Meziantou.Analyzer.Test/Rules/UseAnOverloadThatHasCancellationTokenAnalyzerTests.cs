@@ -725,7 +725,6 @@ class Test
 ";
 
         await CreateProjectBuilder()
-              .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
               .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_Argument>()
               .ShouldFixCodeWith(Fix)
@@ -770,7 +769,6 @@ class Test
 ";
 
         await CreateProjectBuilder()
-              .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
               .WithCodeFixProvider<UseAnOverloadThatHasCancellationTokenFixer_AwaitForEach>()
               .ShouldFixCodeWith(Fix)
@@ -798,7 +796,6 @@ class Test
 ";
 
         await CreateProjectBuilder()
-              .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
@@ -824,7 +821,6 @@ class Test
 ";
 
         await CreateProjectBuilder()
-              .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
@@ -855,7 +851,6 @@ class Test
 ";
 
         await CreateProjectBuilder()
-              .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
@@ -884,7 +879,6 @@ class Test : System.IAsyncDisposable
 ";
 
         await CreateProjectBuilder()
-              .AddAsyncInterfaceApi()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }

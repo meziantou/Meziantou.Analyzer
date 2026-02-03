@@ -27,7 +27,7 @@ public sealed partial class ProjectBuilder
     public bool IsValidCode { get; private set; } = true;
     public bool IsValidFixCode { get; private set; } = true;
     public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
-    public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetStandard2_0;
+    public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetLatest;
     public IList<MetadataReference> References { get; } = [];
     public IList<string> ApiReferences { get; } = [];
     public IList<DiagnosticAnalyzer> DiagnosticAnalyzer { get; } = [];

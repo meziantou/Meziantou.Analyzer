@@ -67,6 +67,7 @@ class Test
 ";
 
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
               .ShouldFixCodeWith(CodeFix)
@@ -119,6 +120,7 @@ class Test
 ";
 
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(SourceCode)
               .AddAnalyzerConfiguration("MA0020.report_when_conversion_needed", "true")
               .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
