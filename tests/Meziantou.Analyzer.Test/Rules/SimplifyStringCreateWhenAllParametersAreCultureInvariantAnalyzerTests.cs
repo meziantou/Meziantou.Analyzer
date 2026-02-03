@@ -292,6 +292,29 @@ class TypeName
     }
 
     [Fact]
+    public async Task StringCreateWithInvariantCulture_WithNullableInteger_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        int? n = 42;
+        var s = string.Create(CultureInfo.InvariantCulture, $"/v{n}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task StringCreateWithInvariantCulture_EmptyString_ShouldReport()
     {
         const string SourceCode = """
