@@ -61,6 +61,7 @@ class Test
     public async Task Append_ReportDiagnostic(string text)
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(@"using System.Text;
 class Test
 {
@@ -122,6 +123,7 @@ class Test
     public async Task AppendLine_ReportDiagnostic(string text)
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(@"using System.Text;
 class Test
 {
@@ -309,6 +311,7 @@ class Test
     public async Task Append_InterpolatedString()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(@"using System.Text;
 class Test
 {
@@ -332,6 +335,7 @@ class Test
     public async Task AppendLine_InterpolatedString_FinishWithString()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(@"using System.Text;
 class Test
 {
@@ -355,6 +359,7 @@ class Test
     public async Task AppendLine_InterpolatedString_FinishWithChar()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(@"using System.Text;
 class Test
 {
@@ -378,6 +383,7 @@ class Test
     public async Task AppendLine_InterpolatedString_FinishWithObject()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(@"using System.Text;
 class Test
 {
@@ -573,6 +579,7 @@ class Test
     public async Task Append_StringJoin_AppendJoin_OldTargetFramework()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.NetStandard2_0)
               .WithSourceCode(@"using System.Text;
 class Test
 {
