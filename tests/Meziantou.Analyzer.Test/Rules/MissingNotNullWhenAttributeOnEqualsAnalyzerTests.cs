@@ -206,4 +206,29 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Equals_IEquatable_ValueType_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                struct Sample : IEquatable<Sample>
+                {
+                    public bool Equals(Sample other)
+                    {
+                        return false;
+                    }
+
+                    public override bool Equals(object? [|obj|])
+                    {
+                        return obj is Sample other && Equals(other);
+                    }
+
+                    public override int GetHashCode() => 0;
+                }
+                """)
+            .ValidateAsync();
+    }
 }
