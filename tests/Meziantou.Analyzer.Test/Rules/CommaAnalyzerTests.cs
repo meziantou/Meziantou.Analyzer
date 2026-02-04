@@ -421,4 +421,86 @@ class TypeName
                 record Sample(int A, int B);
                 """)
             .ValidateAsync();
+
+    [Fact]
+    public Task PropertyPatternWithoutTrailingComma()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public int A { get; set; }
+                    public int B { get; set; }
+
+                    public void Test()
+                    {
+                        var obj = new TypeName();
+                        _ = obj is
+                        {
+                            A: 1,
+                            [||]B: 2
+                        };
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    public int A { get; set; }
+                    public int B { get; set; }
+
+                    public void Test()
+                    {
+                        var obj = new TypeName();
+                        _ = obj is
+                        {
+                            A: 1,
+                            B: 2,
+                        };
+                    }
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public Task PropertyPatternWithTrailingComma()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public int A { get; set; }
+                    public int B { get; set; }
+
+                    public void Test()
+                    {
+                        var obj = new TypeName();
+                        _ = obj is
+                        {
+                            A: 1,
+                            B: 2,
+                        };
+                    }
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public Task PropertyPatternSingleLine()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public int A { get; set; }
+                    public int B { get; set; }
+
+                    public void Test()
+                    {
+                        var obj = new TypeName();
+                        _ = obj is { A: 1, B: 2 };
+                    }
+                }
+                """)
+            .ValidateAsync();
 }

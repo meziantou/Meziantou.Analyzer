@@ -36,6 +36,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(HandleEnumDeclaration, SyntaxKind.EnumDeclaration);
         context.RegisterSyntaxNodeAction(HandleWithExpression, SyntaxKind.WithExpression);
         context.RegisterSyntaxNodeAction(HandleSwitchExpression, SyntaxKind.SwitchExpression);
+        context.RegisterSyntaxNodeAction(HandleRecursivePattern, SyntaxKind.RecursivePattern);
 #if CSHARP12_OR_GREATER
         context.RegisterSyntaxNodeAction(HandleCollectionExpression, SyntaxKind.CollectionExpression);
 #endif
@@ -100,5 +101,14 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
     {
         var node = (AnonymousObjectCreationExpressionSyntax)context.Node;
         HandleSeparatedList(context, node, node.Initializers);
+    }
+
+    private static void HandleRecursivePattern(SyntaxNodeAnalysisContext context)
+    {
+        var node = (RecursivePatternSyntax)context.Node;
+        if (node.PropertyPatternClause is null)
+            return;
+
+        HandleSeparatedList(context, node, node.PropertyPatternClause.Subpatterns);
     }
 }
