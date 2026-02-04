@@ -423,7 +423,7 @@ class TypeName
             .ValidateAsync();
 
     [Fact]
-    public Task PropertyPatternWithoutLeadingComma()
+    public Task PropertyPatternWithoutTrailingComma()
         => CreateProjectBuilder()
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
             .WithSourceCode("""
@@ -463,7 +463,7 @@ class TypeName
             .ValidateAsync();
 
     [Fact]
-    public Task PropertyPatternWithLeadingComma()
+    public Task PropertyPatternWithTrailingComma()
         => CreateProjectBuilder()
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
             .WithSourceCode("""
