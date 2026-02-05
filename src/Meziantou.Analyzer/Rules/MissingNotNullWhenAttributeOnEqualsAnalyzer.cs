@@ -50,29 +50,38 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
         if (method.Parameters.Length != 1)
             return;
 
-        // Support both public and explicit interface implementations
-        if (method.DeclaredAccessibility != Accessibility.Public && method.MethodKind != MethodKind.ExplicitInterfaceImplementation)
-            return;
-
         if (method.IsStatic)
             return;
 
         var parameter = method.Parameters[0];
 
-        // Check if it's Equals(object?) override
-        var isObjectEqualsOverride = parameter.Type.IsObject();
+        // Check if it's Equals(object?) override using helper
+        var isObjectEqualsOverride = false;
+        if (method.IsOverride && parameter.Type.IsObject())
+        {
+            // Verify it's overriding object.Equals by checking the base member
+            var currentMethod = method.OverriddenMethod;
+            while (currentMethod is not null)
+            {
+                if (currentMethod.ContainingType.IsObject())
+                {
+                    isObjectEqualsOverride = true;
+                    break;
+                }
+                currentMethod = currentMethod.OverriddenMethod;
+            }
+        }
 
-        // Check if it's IEquatable<T>.Equals(T?) implementation (public or explicit)
+        // Check if it's IEquatable<T>.Equals(T?) implementation using helper
         var isIEquatableEquals = false;
         if (iequatableOfTSymbol is not null && method.ContainingType is not null && !method.ContainingType.IsValueType)
         {
-            // Check if parameter type matches containing type (IEquatable<T>.Equals(T other))
-            if (parameter.Type.IsEqualTo(method.ContainingType))
+            if (method.IsInterfaceImplementation())
             {
-                var constructedIEquatable = iequatableOfTSymbol.Construct(method.ContainingType);
-                
-                // Check if the type implements IEquatable<T>
-                if (method.ContainingType.AllInterfaces.Any(i => i.IsEqualTo(constructedIEquatable)))
+                var interfaceMethod = method.GetImplementingInterfaceSymbol();
+                if (interfaceMethod is not null && 
+                    interfaceMethod.ContainingType is INamedTypeSymbol interfaceType &&
+                    interfaceType.ConstructedFrom.IsEqualTo(iequatableOfTSymbol))
                 {
                     isIEquatableEquals = true;
                 }
@@ -83,6 +92,7 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
             return;
 
         // Check if the parameter is nullable
+        // This also ensures nullable annotations are enabled for the parameter
         if (parameter.NullableAnnotation != NullableAnnotation.Annotated)
             return;
 

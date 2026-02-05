@@ -231,4 +231,72 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Equals_NullableDisabled_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                #nullable disable
+                class Sample
+                {
+                    public override bool Equals(object obj)
+                    {
+                        return false;
+                    }
+
+                    public override int GetHashCode() => 0;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Equals_NullableEnabled_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                #nullable enable
+                class Sample
+                {
+                    public override bool Equals(object? [|obj|])
+                    {
+                        return false;
+                    }
+
+                    public override int GetHashCode() => 0;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Equals_NullableEnabledThenDisabled_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                #nullable enable
+                class Sample1
+                {
+                    public override bool Equals(object? [|obj|])
+                    {
+                        return false;
+                    }
+
+                    public override int GetHashCode() => 0;
+                }
+
+                #nullable disable
+                class Sample2
+                {
+                    public override bool Equals(object obj)
+                    {
+                        return false;
+                    }
+
+                    public override int GetHashCode() => 0;
+                }
+                """)
+            .ValidateAsync();
+    }
 }
