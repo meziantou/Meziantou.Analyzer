@@ -299,4 +299,130 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task TryGetValue_IDictionary_WithoutAttribute_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+
+                class MyDictionary : IDictionary<string, string?>
+                {
+                    public bool TryGetValue(string key, out string? [|value|])
+                    {
+                        value = null;
+                        return false;
+                    }
+
+                    // Other IDictionary members...
+                    public string? this[string key] { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+                    public ICollection<string> Keys => throw new System.NotImplementedException();
+                    public ICollection<string?> Values => throw new System.NotImplementedException();
+                    public int Count => throw new System.NotImplementedException();
+                    public bool IsReadOnly => throw new System.NotImplementedException();
+                    public void Add(string key, string? value) => throw new System.NotImplementedException();
+                    public void Add(KeyValuePair<string, string?> item) => throw new System.NotImplementedException();
+                    public void Clear() => throw new System.NotImplementedException();
+                    public bool Contains(KeyValuePair<string, string?> item) => throw new System.NotImplementedException();
+                    public bool ContainsKey(string key) => throw new System.NotImplementedException();
+                    public void CopyTo(KeyValuePair<string, string?>[] array, int arrayIndex) => throw new System.NotImplementedException();
+                    public IEnumerator<KeyValuePair<string, string?>> GetEnumerator() => throw new System.NotImplementedException();
+                    public bool Remove(string key) => throw new System.NotImplementedException();
+                    public bool Remove(KeyValuePair<string, string?> item) => throw new System.NotImplementedException();
+                    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => throw new System.NotImplementedException();
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TryGetValue_IDictionary_WithAttribute_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Diagnostics.CodeAnalysis;
+
+                class MyDictionary : IDictionary<string, string?>
+                {
+                    public bool TryGetValue(string key, [MaybeNullWhen(false)] out string? value)
+                    {
+                        value = null;
+                        return false;
+                    }
+
+                    // Other IDictionary members...
+                    public string? this[string key] { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+                    public ICollection<string> Keys => throw new System.NotImplementedException();
+                    public ICollection<string?> Values => throw new System.NotImplementedException();
+                    public int Count => throw new System.NotImplementedException();
+                    public bool IsReadOnly => throw new System.NotImplementedException();
+                    public void Add(string key, string? value) => throw new System.NotImplementedException();
+                    public void Add(KeyValuePair<string, string?> item) => throw new System.NotImplementedException();
+                    public void Clear() => throw new System.NotImplementedException();
+                    public bool Contains(KeyValuePair<string, string?> item) => throw new System.NotImplementedException();
+                    public bool ContainsKey(string key) => throw new System.NotImplementedException();
+                    public void CopyTo(KeyValuePair<string, string?>[] array, int arrayIndex) => throw new System.NotImplementedException();
+                    public IEnumerator<KeyValuePair<string, string?>> GetEnumerator() => throw new System.NotImplementedException();
+                    public bool Remove(string key) => throw new System.NotImplementedException();
+                    public bool Remove(KeyValuePair<string, string?> item) => throw new System.NotImplementedException();
+                    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => throw new System.NotImplementedException();
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TryGetValue_NotIDictionary_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                class MyClass
+                {
+                    public bool TryGetValue(string key, out string? value)
+                    {
+                        value = null;
+                        return false;
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TryGetValue_NonNullableValue_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+
+                class MyDictionary : IDictionary<string, string>
+                {
+                    public bool TryGetValue(string key, out string value)
+                    {
+                        value = "";
+                        return false;
+                    }
+
+                    // Other IDictionary members...
+                    public string this[string key] { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+                    public ICollection<string> Keys => throw new System.NotImplementedException();
+                    public ICollection<string> Values => throw new System.NotImplementedException();
+                    public int Count => throw new System.NotImplementedException();
+                    public bool IsReadOnly => throw new System.NotImplementedException();
+                    public void Add(string key, string value) => throw new System.NotImplementedException();
+                    public void Add(KeyValuePair<string, string> item) => throw new System.NotImplementedException();
+                    public void Clear() => throw new System.NotImplementedException();
+                    public bool Contains(KeyValuePair<string, string> item) => throw new System.NotImplementedException();
+                    public bool ContainsKey(string key) => throw new System.NotImplementedException();
+                    public void CopyTo(KeyValuePair<string, string>[] array, int arrayIndex) => throw new System.NotImplementedException();
+                    public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => throw new System.NotImplementedException();
+                    public bool Remove(string key) => throw new System.NotImplementedException();
+                    public bool Remove(KeyValuePair<string, string> item) => throw new System.NotImplementedException();
+                    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => throw new System.NotImplementedException();
+                }
+                """)
+            .ValidateAsync();
+    }
 }

@@ -8,7 +8,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor Rule = new(
+    private static readonly DiagnosticDescriptor EqualsRule = new(
         RuleIdentifiers.MissingNotNullWhenAttributeOnEquals,
         title: "Equals method should use [NotNullWhen(true)] on the parameter",
         messageFormat: "Equals method should use [NotNullWhen(true)] on parameter '{0}'",
@@ -18,7 +18,17 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingNotNullWhenAttributeOnEquals));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    private static readonly DiagnosticDescriptor TryGetValueRule = new(
+        RuleIdentifiers.MissingNotNullWhenAttributeOnEquals,
+        title: "TryGetValue method should use [MaybeNullWhen(false)] on the value parameter",
+        messageFormat: "TryGetValue method should use [MaybeNullWhen(false)] on parameter '{0}'",
+        RuleCategories.Design,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: false,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingNotNullWhenAttributeOnEquals));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(EqualsRule, TryGetValueRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -28,20 +38,36 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
         context.RegisterCompilationStartAction(ctx =>
         {
             var notNullWhenAttributeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.NotNullWhenAttribute");
-            if (notNullWhenAttributeSymbol is null)
+            var maybeNullWhenAttributeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute");
+            if (notNullWhenAttributeSymbol is null && maybeNullWhenAttributeSymbol is null)
                 return;
 
             var iequatableOfTSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+            var idictionaryOfTSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IDictionary`2");
 
-            ctx.RegisterSymbolAction(symbolContext => AnalyzeMethod(symbolContext, notNullWhenAttributeSymbol, iequatableOfTSymbol), SymbolKind.Method);
+            ctx.RegisterSymbolAction(symbolContext => AnalyzeMethod(symbolContext, notNullWhenAttributeSymbol, maybeNullWhenAttributeSymbol, iequatableOfTSymbol, idictionaryOfTSymbol), SymbolKind.Method);
         });
     }
 
-    private static void AnalyzeMethod(SymbolAnalysisContext context, INamedTypeSymbol notNullWhenAttributeSymbol, INamedTypeSymbol? iequatableOfTSymbol)
+    private static void AnalyzeMethod(SymbolAnalysisContext context, INamedTypeSymbol? notNullWhenAttributeSymbol, INamedTypeSymbol? maybeNullWhenAttributeSymbol, INamedTypeSymbol? iequatableOfTSymbol, INamedTypeSymbol? idictionaryOfTSymbol)
     {
         var method = (IMethodSymbol)context.Symbol;
 
-        if (method.Name != nameof(object.Equals))
+        // Check for Equals methods
+        if (method.Name == nameof(object.Equals))
+        {
+            AnalyzeEqualsMethod(context, method, notNullWhenAttributeSymbol, iequatableOfTSymbol);
+        }
+        // Check for TryGetValue methods
+        else if (method.Name == "TryGetValue")
+        {
+            AnalyzeTryGetValueMethod(context, method, maybeNullWhenAttributeSymbol, idictionaryOfTSymbol);
+        }
+    }
+
+    private static void AnalyzeEqualsMethod(SymbolAnalysisContext context, IMethodSymbol method, INamedTypeSymbol? notNullWhenAttributeSymbol, INamedTypeSymbol? iequatableOfTSymbol)
+    {
+        if (notNullWhenAttributeSymbol is null)
             return;
 
         if (!method.ReturnType.IsBoolean())
@@ -97,19 +123,87 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
             return;
 
         // Check if the parameter already has [NotNullWhen(true)] attribute
+        if (HasNotNullWhenAttribute(parameter, notNullWhenAttributeSymbol, expectedValue: true))
+            return;
+
+        // Report diagnostic
+        context.ReportDiagnostic(EqualsRule, parameter, parameter.Name);
+    }
+
+    private static void AnalyzeTryGetValueMethod(SymbolAnalysisContext context, IMethodSymbol method, INamedTypeSymbol? maybeNullWhenAttributeSymbol, INamedTypeSymbol? idictionaryOfTSymbol)
+    {
+        if (maybeNullWhenAttributeSymbol is null || idictionaryOfTSymbol is null)
+            return;
+
+        if (!method.ReturnType.IsBoolean())
+            return;
+
+        if (method.Parameters.Length != 2)
+            return;
+
+        if (method.IsStatic)
+            return;
+
+        // Check if it's implementing IDictionary<TKey, TValue>.TryGetValue
+        if (!method.IsInterfaceImplementation())
+            return;
+
+        var interfaceMethod = method.GetImplementingInterfaceSymbol();
+        if (interfaceMethod is null)
+            return;
+
+        if (interfaceMethod.ContainingType is not INamedTypeSymbol interfaceType)
+            return;
+
+        if (!interfaceType.ConstructedFrom.IsEqualTo(idictionaryOfTSymbol))
+            return;
+
+        // Check the value parameter (second parameter, typically named "value")
+        var valueParameter = method.Parameters[1];
+
+        // Check if the parameter is an out parameter
+        if (valueParameter.RefKind != RefKind.Out)
+            return;
+
+        // Check if the parameter is nullable
+        if (valueParameter.NullableAnnotation != NullableAnnotation.Annotated)
+            return;
+
+        // Check if the parameter already has [MaybeNullWhen(false)] attribute
+        if (HasMaybeNullWhenAttribute(valueParameter, maybeNullWhenAttributeSymbol, expectedValue: false))
+            return;
+
+        // Report diagnostic
+        context.ReportDiagnostic(TryGetValueRule, valueParameter, valueParameter.Name);
+    }
+
+    private static bool HasNotNullWhenAttribute(IParameterSymbol parameter, INamedTypeSymbol notNullWhenAttributeSymbol, bool expectedValue)
+    {
         foreach (var attribute in parameter.GetAttributes())
         {
             if (attribute.AttributeClass.IsEqualTo(notNullWhenAttributeSymbol))
             {
-                if (attribute.ConstructorArguments.Length == 1 && attribute.ConstructorArguments[0].Value is true)
+                if (attribute.ConstructorArguments.Length == 1 && attribute.ConstructorArguments[0].Value is bool value && value == expectedValue)
                 {
-                    // Already has the attribute with the correct value
-                    return;
+                    return true;
                 }
             }
         }
+        return false;
+    }
 
-        // Report diagnostic
-        context.ReportDiagnostic(Rule, parameter, parameter.Name);
+    private static bool HasMaybeNullWhenAttribute(IParameterSymbol parameter, INamedTypeSymbol maybeNullWhenAttributeSymbol, bool expectedValue)
+    {
+        foreach (var attribute in parameter.GetAttributes())
+        {
+            if (attribute.AttributeClass.IsEqualTo(maybeNullWhenAttributeSymbol))
+            {
+                if (attribute.ConstructorArguments.Length == 1 && attribute.ConstructorArguments[0].Value is bool value && value == expectedValue)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
