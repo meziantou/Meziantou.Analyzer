@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -39,142 +40,126 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
         {
             var notNullWhenAttributeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.NotNullWhenAttribute");
             var maybeNullWhenAttributeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute");
-            if (notNullWhenAttributeSymbol is null && maybeNullWhenAttributeSymbol is null)
-                return;
-
             var iequatableOfTSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
             var idictionaryOfTSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IDictionary`2");
 
-            ctx.RegisterSymbolAction(symbolContext => AnalyzeMethod(symbolContext, notNullWhenAttributeSymbol, maybeNullWhenAttributeSymbol, iequatableOfTSymbol, idictionaryOfTSymbol), SymbolKind.Method);
+            if (idictionaryOfTSymbol != null && maybeNullWhenAttributeSymbol is not null)
+            {
+                var tryGetValueSymbols = idictionaryOfTSymbol.GetMembers("TryGetValue");
+                if (tryGetValueSymbols.Length == 1)
+                {
+                    var tryGetValueSymbol = tryGetValueSymbols[0];
+                    ctx.RegisterSymbolAction(context =>
+                    {
+                        var namedType = (INamedTypeSymbol)context.Symbol;
+                        foreach (var interfaceType in namedType.AllInterfaces)
+                        {
+                            if (!interfaceType.ConstructedFrom.IsEqualTo(idictionaryOfTSymbol))
+                                continue;
+
+                            var dictionaryTryGetValueSymbols = interfaceType.GetMembers("TryGetValue");
+                            if (dictionaryTryGetValueSymbols.Length != 1)
+                                continue;
+
+                            var implementation = namedType.FindImplementationForInterfaceMember(dictionaryTryGetValueSymbols[0]) as IMethodSymbol;
+                            if (implementation is null)
+                                continue;
+
+                            if (implementation.Parameters.Length != 2)
+                                continue;
+
+                            var valueParameter = implementation.Parameters[1];
+
+                            // Check if the parameter is an out parameter
+                            if (valueParameter.RefKind != RefKind.Out)
+                                continue;
+
+                            // Check if the parameter is nullable
+                            if (valueParameter.NullableAnnotation != NullableAnnotation.Annotated)
+                                continue;
+
+                            // Check if the parameter already has [MaybeNullWhen(false)] attribute
+                            if (HasMaybeNullWhenAttribute(valueParameter, maybeNullWhenAttributeSymbol, expectedValue: false))
+                                continue;
+
+                            // Report diagnostic
+                            context.ReportDiagnostic(TryGetValueRule, valueParameter, valueParameter.Name);
+                        }
+                    }, SymbolKind.NamedType);
+                }
+
+
+            }
+
+            if (notNullWhenAttributeSymbol is not null)
+            {
+                context.RegisterSymbolAction(context =>
+                {
+                    var method = (IMethodSymbol)context.Symbol;
+                    if (method.Name is nameof(object.Equals))
+                    {
+                        if (!method.ReturnType.IsBoolean())
+                            return;
+
+                        if (method.Parameters.Length != 1)
+                            return;
+
+                        if (method.IsStatic)
+                            return;
+
+                        var parameter = method.Parameters[0];
+
+                        // Check if the parameter is nullable, this also ensures nullable annotations are enabled for the parameter
+                        if (parameter.NullableAnnotation != NullableAnnotation.Annotated)
+                            return;
+
+
+                        // Check if it's Equals(object?) override using helper
+                        var isObjectEqualsOverride = false;
+                        if (method.IsOverride && parameter.Type.IsObject())
+                        {
+                            // Verify it's overriding object.Equals by checking the base member
+                            var currentMethod = method.OverriddenMethod;
+                            while (currentMethod is not null)
+                            {
+                                if (currentMethod.ContainingType.IsObject())
+                                {
+                                    isObjectEqualsOverride = true;
+                                    break;
+                                }
+                                currentMethod = currentMethod.OverriddenMethod;
+                            }
+                        }
+
+                        // Check if it's IEquatable<T>.Equals(T?) implementation using helper
+                        var isIEquatableEquals = false;
+                        if (iequatableOfTSymbol is not null && method.ContainingType is not null && !method.ContainingType.IsValueType)
+                        {
+                            if (method.IsInterfaceImplementation())
+                            {
+                                var interfaceMethod = method.GetImplementingInterfaceSymbol();
+                                if (interfaceMethod is not null &&
+                                    interfaceMethod.ContainingType is INamedTypeSymbol interfaceType &&
+                                    interfaceType.ConstructedFrom.IsEqualTo(iequatableOfTSymbol))
+                                {
+                                    isIEquatableEquals = true;
+                                }
+                            }
+                        }
+
+                        if (!isObjectEqualsOverride && !isIEquatableEquals)
+                            return;
+
+                        // Check if the parameter already has [NotNullWhen(true)] attribute
+                        if (HasNotNullWhenAttribute(parameter, notNullWhenAttributeSymbol, expectedValue: true))
+                            return;
+
+                        // Report diagnostic
+                        context.ReportDiagnostic(EqualsRule, parameter, parameter.Name);
+                    }
+                }, SymbolKind.Method);
+            }
         });
-    }
-
-    private static void AnalyzeMethod(SymbolAnalysisContext context, INamedTypeSymbol? notNullWhenAttributeSymbol, INamedTypeSymbol? maybeNullWhenAttributeSymbol, INamedTypeSymbol? iequatableOfTSymbol, INamedTypeSymbol? idictionaryOfTSymbol)
-    {
-        var method = (IMethodSymbol)context.Symbol;
-
-        // Check for Equals methods
-        if (method.Name == nameof(object.Equals))
-        {
-            AnalyzeEqualsMethod(context, method, notNullWhenAttributeSymbol, iequatableOfTSymbol);
-        }
-        // Check for TryGetValue methods
-        else if (method.Name == "TryGetValue")
-        {
-            AnalyzeTryGetValueMethod(context, method, maybeNullWhenAttributeSymbol, idictionaryOfTSymbol);
-        }
-    }
-
-    private static void AnalyzeEqualsMethod(SymbolAnalysisContext context, IMethodSymbol method, INamedTypeSymbol? notNullWhenAttributeSymbol, INamedTypeSymbol? iequatableOfTSymbol)
-    {
-        if (notNullWhenAttributeSymbol is null)
-            return;
-
-        if (!method.ReturnType.IsBoolean())
-            return;
-
-        if (method.Parameters.Length != 1)
-            return;
-
-        if (method.IsStatic)
-            return;
-
-        var parameter = method.Parameters[0];
-
-        // Check if it's Equals(object?) override using helper
-        var isObjectEqualsOverride = false;
-        if (method.IsOverride && parameter.Type.IsObject())
-        {
-            // Verify it's overriding object.Equals by checking the base member
-            var currentMethod = method.OverriddenMethod;
-            while (currentMethod is not null)
-            {
-                if (currentMethod.ContainingType.IsObject())
-                {
-                    isObjectEqualsOverride = true;
-                    break;
-                }
-                currentMethod = currentMethod.OverriddenMethod;
-            }
-        }
-
-        // Check if it's IEquatable<T>.Equals(T?) implementation using helper
-        var isIEquatableEquals = false;
-        if (iequatableOfTSymbol is not null && method.ContainingType is not null && !method.ContainingType.IsValueType)
-        {
-            if (method.IsInterfaceImplementation())
-            {
-                var interfaceMethod = method.GetImplementingInterfaceSymbol();
-                if (interfaceMethod is not null && 
-                    interfaceMethod.ContainingType is INamedTypeSymbol interfaceType &&
-                    interfaceType.ConstructedFrom.IsEqualTo(iequatableOfTSymbol))
-                {
-                    isIEquatableEquals = true;
-                }
-            }
-        }
-
-        if (!isObjectEqualsOverride && !isIEquatableEquals)
-            return;
-
-        // Check if the parameter is nullable
-        // This also ensures nullable annotations are enabled for the parameter
-        if (parameter.NullableAnnotation != NullableAnnotation.Annotated)
-            return;
-
-        // Check if the parameter already has [NotNullWhen(true)] attribute
-        if (HasNotNullWhenAttribute(parameter, notNullWhenAttributeSymbol, expectedValue: true))
-            return;
-
-        // Report diagnostic
-        context.ReportDiagnostic(EqualsRule, parameter, parameter.Name);
-    }
-
-    private static void AnalyzeTryGetValueMethod(SymbolAnalysisContext context, IMethodSymbol method, INamedTypeSymbol? maybeNullWhenAttributeSymbol, INamedTypeSymbol? idictionaryOfTSymbol)
-    {
-        if (maybeNullWhenAttributeSymbol is null || idictionaryOfTSymbol is null)
-            return;
-
-        if (!method.ReturnType.IsBoolean())
-            return;
-
-        if (method.Parameters.Length != 2)
-            return;
-
-        if (method.IsStatic)
-            return;
-
-        // Check if it's implementing IDictionary<TKey, TValue>.TryGetValue
-        if (!method.IsInterfaceImplementation())
-            return;
-
-        var interfaceMethod = method.GetImplementingInterfaceSymbol();
-        if (interfaceMethod is null)
-            return;
-
-        if (interfaceMethod.ContainingType is not INamedTypeSymbol interfaceType)
-            return;
-
-        if (!interfaceType.ConstructedFrom.IsEqualTo(idictionaryOfTSymbol))
-            return;
-
-        // Check the value parameter (second parameter, typically named "value")
-        var valueParameter = method.Parameters[1];
-
-        // Check if the parameter is an out parameter
-        if (valueParameter.RefKind != RefKind.Out)
-            return;
-
-        // Check if the parameter is nullable
-        if (valueParameter.NullableAnnotation != NullableAnnotation.Annotated)
-            return;
-
-        // Check if the parameter already has [MaybeNullWhen(false)] attribute
-        if (HasMaybeNullWhenAttribute(valueParameter, maybeNullWhenAttributeSymbol, expectedValue: false))
-            return;
-
-        // Report diagnostic
-        context.ReportDiagnostic(TryGetValueRule, valueParameter, valueParameter.Name);
     }
 
     private static bool HasNotNullWhenAttribute(IParameterSymbol parameter, INamedTypeSymbol notNullWhenAttributeSymbol, bool expectedValue)
