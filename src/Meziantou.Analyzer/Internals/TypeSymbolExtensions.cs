@@ -48,6 +48,14 @@ internal static class TypeSymbolExtensions
         return classSymbol.AllInterfaces.Any(interfaceType.IsEqualTo);
     }
 
+    public static bool ImplementsGenericInterface(this ITypeSymbol classSymbol, ITypeSymbol? interfaceType)
+    {
+        if (interfaceType is null)
+            return false;
+
+        return classSymbol.AllInterfaces.Any(iface => iface.OriginalDefinition.IsEqualTo(interfaceType.OriginalDefinition));
+    }
+
     public static bool IsOrImplements(this ITypeSymbol symbol, ITypeSymbol? interfaceType)
     {
         if (interfaceType is null)

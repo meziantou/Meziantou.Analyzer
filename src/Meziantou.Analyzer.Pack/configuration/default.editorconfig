@@ -550,3 +550,6 @@ dotnet_diagnostic.MA0184.severity = silent
 
 # MA0185: Simplify string.Create when all parameters are culture invariant
 dotnet_diagnostic.MA0185.severity = suggestion
+
+# MA0186: Equals method should use [NotNullWhen(true)] on the parameter
+dotnet_diagnostic.MA0186.severity = none
