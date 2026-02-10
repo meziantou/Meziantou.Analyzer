@@ -49,30 +49,50 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
             return;
 #endif
 
-        // Check if the target type is FormattableString
-        var parent = operation.Parent;
-        if (parent is IConversionOperation conversionOperation)
-        {
-            // If converting to FormattableString, don't report
-            if (conversionOperation.Type?.IsEqualTo(formattableStringSymbol) == true)
-                return;
+        // Check if the operation itself is typed as a custom handler (for empty strings)
+        if (IsInterpolatedStringHandler(operation.Type, interpolatedStringHandlerAttributeSymbol))
+            return;
 
-            // If converting to a custom InterpolatedStringHandler, don't report
-            if (IsInterpolatedStringHandler(conversionOperation.Type, interpolatedStringHandlerAttributeSymbol))
-                return;
-        }
-
-        // If assigned to FormattableString, don't report
-        if (parent is IVariableInitializerOperation variableInitializer)
+        // Walk up the parent chain to find the target type
+        var current = operation.Parent;
+        while (current is not null)
         {
-            if (variableInitializer.Parent is IVariableDeclaratorOperation declarator)
+            // Check for conversion to FormattableString or custom handler
+            if (current is IConversionOperation conversionOperation)
             {
-                if (declarator.Symbol?.Type?.IsEqualTo(formattableStringSymbol) == true)
+                // If converting to FormattableString, don't report
+                if (conversionOperation.Type?.IsEqualTo(formattableStringSymbol) == true)
                     return;
 
-                if (IsInterpolatedStringHandler(declarator.Symbol?.Type, interpolatedStringHandlerAttributeSymbol))
+                // If converting to a custom InterpolatedStringHandler, don't report
+                if (IsInterpolatedStringHandler(conversionOperation.Type, interpolatedStringHandlerAttributeSymbol))
                     return;
             }
+
+            // Check if used as method argument with custom InterpolatedStringHandler parameter
+            if (current is IArgumentOperation argumentOperation)
+            {
+                if (argumentOperation.Parameter?.Type is not null)
+                {
+                    if (IsInterpolatedStringHandler(argumentOperation.Parameter.Type, interpolatedStringHandlerAttributeSymbol))
+                        return;
+                }
+            }
+
+            // If assigned to FormattableString or custom handler, don't report
+            if (current is IVariableInitializerOperation variableInitializer)
+            {
+                if (variableInitializer.Parent is IVariableDeclaratorOperation declarator)
+                {
+                    if (declarator.Symbol?.Type?.IsEqualTo(formattableStringSymbol) == true)
+                        return;
+
+                    if (IsInterpolatedStringHandler(declarator.Symbol?.Type, interpolatedStringHandlerAttributeSymbol))
+                        return;
+                }
+            }
+
+            current = current.Parent;
         }
 
         // Report diagnostic as a suggestion (Hidden severity with unnecessary tag)
