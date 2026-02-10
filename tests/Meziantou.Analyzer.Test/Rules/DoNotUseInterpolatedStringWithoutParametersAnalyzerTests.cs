@@ -141,6 +141,40 @@ public struct CustomInterpolatedStringHandler
               .WithTargetFramework(TargetFramework.Net6_0)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task EmptyInterpolatedString_CustomInterpolatedStringHandler_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+class TypeName
+{
+    public void Test(CustomInterpolatedStringHandler handler)
+    {
+    }
+
+    public void Run()
+    {
+        Test($"");
+    }
+}
+
+[System.Runtime.CompilerServices.InterpolatedStringHandler]
+public struct CustomInterpolatedStringHandler
+{
+    public CustomInterpolatedStringHandler(int literalLength, int formattedCount)
+    {
+    }
+
+    public void AppendLiteral(string s)
+    {
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .ValidateAsync();
+    }
 #endif
 
     [Fact]
