@@ -114,6 +114,7 @@ class Test0<T>
               .ValidateAsync();
     }
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task DoesMatchFileName_RecordStructWithArityGreaterThan1UsingOfT_WithConfiguration()
     {
@@ -121,9 +122,11 @@ class Test0<T>
               .WithSourceCode(fileName: "FooOfT.cs", """
                   public record struct Foo<T1, T2>(T1 Key, T2 Value);
                   """)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .AddAnalyzerConfiguration("MA0048.allow_oft_for_all_generic_types", "true")
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task NestedTypeDoesMatchFileName_Ok()
