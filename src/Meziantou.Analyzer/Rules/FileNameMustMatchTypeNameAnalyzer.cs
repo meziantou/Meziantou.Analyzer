@@ -114,14 +114,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
             }
 
-            if (symbol.Arity == 1)
-            {
-                // TypeOfT
-                if (fileName.Equals((symbolName + "OfT").AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    continue;
-            }
-
-            if (symbol.Arity > 1 && context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".allow_oft_for_all_generic_types", defaultValue: false))
+            if (symbol.Arity == 1 || (symbol.Arity > 1 && context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".allow_oft_for_all_generic_types", defaultValue: false)))
             {
                 // TypeOfT
                 if (fileName.Equals((symbolName + "OfT").AsSpan(), StringComparison.OrdinalIgnoreCase))
