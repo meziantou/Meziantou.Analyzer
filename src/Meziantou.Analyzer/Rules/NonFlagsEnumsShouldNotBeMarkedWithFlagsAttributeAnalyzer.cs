@@ -12,7 +12,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute,
         title: "Non-flags enums should not be marked with \"FlagsAttribute\"",
-        messageFormat: "Non-flags enums should not be marked with \"FlagsAttribute\" ({0} is not a power of two or a combinaison of other values)",
+        messageFormat: "Non-flags enums should not be marked with \"FlagsAttribute\" ({0} is not a power of two or a combination of other values)",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
