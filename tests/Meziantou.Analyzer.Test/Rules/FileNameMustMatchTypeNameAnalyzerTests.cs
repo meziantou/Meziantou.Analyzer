@@ -90,6 +90,42 @@ class Test0<T>
     }
 
     [Fact]
+    public async Task DoesNotMatchFileName_GenericWithArityGreaterThan1UsingOfT_WithoutConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0OfT.cs", """
+                  class [||]Test0<T1, T2>
+                  {
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DoesMatchFileName_GenericWithArityGreaterThan1UsingOfT_WithConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Test0OfT.cs", """
+                  class Test0<T1, T2>
+                  {
+                  }
+                  """)
+              .AddAnalyzerConfiguration("MA0048.allow_oft_for_all_generic_types", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DoesMatchFileName_RecordStructWithArityGreaterThan1UsingOfT_WithConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "FooOfT.cs", """
+                  public record struct Foo<T1, T2>(T1 Key, T2 Value);
+                  """)
+              .AddAnalyzerConfiguration("MA0048.allow_oft_for_all_generic_types", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NestedTypeDoesMatchFileName_Ok()
     {
         await CreateProjectBuilder()
