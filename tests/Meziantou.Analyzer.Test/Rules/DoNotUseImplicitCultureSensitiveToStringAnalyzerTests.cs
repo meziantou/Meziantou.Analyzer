@@ -207,6 +207,37 @@ class Test
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InterpolatedStringDiagnostic_NoCodeFix_WhenStringCreateIsUnavailable()
+    {
+        const string SourceCode = """
+class Test
+{
+    void A(int value)
+    {
+        _ = $"abc[|{value}|]";
+    }
+}
+""";
+
+        const string Fix = """
+class Test
+{
+    void A(int value)
+    {
+        _ = $"abc{value}";
+    }
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net5_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
 #endif
 
     [Theory]
