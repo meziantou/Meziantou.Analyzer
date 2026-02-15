@@ -46,8 +46,8 @@ jobs:
     - id: compute-version
       name: Compute version
       run: |
-        $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.2\.0\.([0-9]+).nupkg"
-        $NewVersion = "2.0.$([int]$Matches.1 + 1)"
+        $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.3\.0\.([0-9]+).nupkg"
+        $NewVersion = "3.0.$([int]$Matches.1 + 1)"
         if ($env:GITHUB_REF -ne 'refs/heads/main') {
           $NewVersion = $NewVersion + '-build.${{ github.run_id }}'
         }
