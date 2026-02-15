@@ -325,11 +325,6 @@ public sealed partial class ProjectBuilder
             var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(CancellationToken.None).ConfigureAwait(false);
             foreach (var diag in diags)
             {
-#if ROSLYN_3_8
-                if (diag.IsSuppressed)
-                    continue;
-#endif
-
                 if (diag.Location == Location.None || diag.Location.IsInMetadata || !diag.Location.IsInSource)
                 {
                     diagnostics.Add(diag);

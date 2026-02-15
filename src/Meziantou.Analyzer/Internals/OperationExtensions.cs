@@ -12,11 +12,6 @@ internal static class OperationExtensions
     {
         return operation.ChildOperations;
     }
-#elif ROSLYN_3_8
-    public static IEnumerable<IOperation> GetChildOperations(this IOperation operation)
-    {
-        return operation.Children;
-    }
 #endif
 
     public static LanguageVersion GetCSharpLanguageVersion(this IOperation operation)

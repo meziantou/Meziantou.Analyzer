@@ -23,9 +23,6 @@
     
     <None Include="configuration/*.editorconfig" Pack="true" PackagePath="configuration" />
 
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn3.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn3.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn3.8/cs/" />
-
     <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.2\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
     <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.2\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.2/cs/" />
 

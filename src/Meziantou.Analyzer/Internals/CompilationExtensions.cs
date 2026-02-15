@@ -1,7 +1,4 @@
-﻿#if ROSLYN_3_8
-using System.Collections.Immutable;
-#endif
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
@@ -14,33 +11,6 @@ internal static class CompilationExtensions
         var version = type.ContainingAssembly.Identity.Version;
         return version.Major >= 9;
     }
-
-#if ROSLYN_3_8
-    public static ImmutableArray<INamedTypeSymbol> GetTypesByMetadataName(this Compilation compilation, string typeMetadataName)
-    {
-        var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
-        var symbol = compilation.Assembly.GetTypeByMetadataName(typeMetadataName);
-        if (symbol != null)
-        {
-            result.Add(symbol);
-        }
-
-        foreach (var reference in compilation.References)
-        {
-            var assemblySymbol = compilation.GetAssemblyOrModuleSymbol(reference) as IAssemblySymbol;
-            if (assemblySymbol == null)
-                continue;
-
-            symbol = assemblySymbol.GetTypeByMetadataName(typeMetadataName);
-            if (symbol != null)
-            {
-                result.Add(symbol);
-            }
-        }
-
-        return result.ToImmutable();
-    }
-#endif
 
     // Copy from https://github.com/dotnet/roslyn/blob/d2ff1d83e8fde6165531ad83f0e5b1ae95908289/src/Workspaces/SharedUtilitiesAndExtensions/Compiler/Core/Extensions/CompilationExtensions.cs#L11-L68
     /// <summary>
