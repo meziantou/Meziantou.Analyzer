@@ -10,6 +10,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<DoNotUseImplicitCultureSensitiveToStringAnalyzer>()
+            .WithCodeFixProvider<DoNotUseImplicitCultureSensitiveToStringInterpolationFixer>()
             .AddMeziantouAttributes()
             .WithTargetFramework(TargetFramework.NetLatest);
     }
@@ -172,6 +173,41 @@ class Test
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+#if CSHARP10_OR_GREATER
+    [Fact]
+    public async Task InterpolatedStringDiagnostic_CodeFix()
+    {
+        const string SourceCode = """
+class Test
+{
+    void A(int value)
+    {
+        _ = $"abc[|{value}|]";
+    }
+}
+""";
+
+        const string Fix = """
+using System.Globalization;
+
+class Test
+{
+    void A(int value)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"abc{value}");
+    }
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+#endif
 
     [Theory]
     [InlineData("abc")]
