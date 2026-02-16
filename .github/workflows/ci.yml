@@ -46,8 +46,8 @@ jobs:
     - id: compute-version
       name: Compute version
       run: |
-        $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.2\.0\.([0-9]+).nupkg"
-        $NewVersion = "2.0.$([int]$Matches.1 + 1)"
+        $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.3\.0\.([0-9]+).nupkg"
+        $NewVersion = "3.0.$([int]$Matches.1 + 1)"
         if ($env:GITHUB_REF -ne 'refs/heads/main') {
           $NewVersion = $NewVersion + '-build.${{ github.run_id }}'
         }
@@ -65,9 +65,6 @@ jobs:
       uses: actions/setup-dotnet@v4
 
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
-
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn3.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn3.8.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn3.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn3.8.binlog
 
     - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.2 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn4.2.binlog
     - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.2 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn4.2.binlog
@@ -137,7 +134,7 @@ jobs:
       matrix:
         runs-on: [ ubuntu-latest ]
         configuration: [ Release ]
-        roslyn-version: [ 'roslyn3.8', 'roslyn4.2', 'roslyn4.4', 'roslyn4.6', 'roslyn4.8', 'roslyn4.14', 'default' ]
+        roslyn-version: [ 'roslyn4.2', 'roslyn4.4', 'roslyn4.6', 'roslyn4.8', 'roslyn4.14', 'default' ]
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
