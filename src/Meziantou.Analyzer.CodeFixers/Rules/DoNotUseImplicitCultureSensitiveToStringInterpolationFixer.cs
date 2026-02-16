@@ -20,7 +20,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        if (context.Document.Project.ParseOptions is not CSharpParseOptions { LanguageVersion: >= LanguageVersion.CSharp10 })
+        if (context.Document.Project.ParseOptions is not CSharpParseOptions parseOptions || !parseOptions.LanguageVersion.IsCSharp10OrAbove())
             return;
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);

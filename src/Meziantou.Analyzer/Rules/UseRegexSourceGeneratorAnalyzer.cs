@@ -42,7 +42,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             return false;
 
         // https://github.com/dotnet/runtime/pull/66111
-        if (operation.GetCSharpLanguageVersion().IsCSharp10OrBelow())
+        if (!operation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
             return false;
 
         return true;

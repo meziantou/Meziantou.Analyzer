@@ -8,10 +8,11 @@
   </PropertyGroup>
   <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\BannedSymbols.txt" />
-    
+
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\RuleIdentifiers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\CompilationExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\EnumerableExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LanguageVersionExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LocationExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\MethodSymbolExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\NamespaceSymbolExtensions.cs" LinkBase="Internals" />
