@@ -29,15 +29,34 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        // Check if C# 14 or later is available
+        var isCSharp14OrAbove = false;
+        if (context.Document.Project.ParseOptions is CSharpParseOptions parseOptions)
+        {
+            isCSharp14OrAbove = parseOptions.LanguageVersion.IsCSharp14OrAbove();
+        }
+
+        // Always offer partial method
         context.RegisterCodeFix(
             CodeAction.Create(
-                "Use Regex Source Generator",
-                cancellationToken => ConvertToSourceGenerator(context.Document, context.Diagnostics[0], cancellationToken),
-                equivalenceKey: "Use Regex Source Generator"),
+                "Use Regex Source Generator (partial method)",
+                cancellationToken => ConvertToSourceGenerator(context.Document, context.Diagnostics[0], usePartialProperty: false, cancellationToken),
+                equivalenceKey: "Use Regex Source Generator (partial method)"),
             context.Diagnostics);
+
+        // Offer partial property if C# 14 or later
+        if (isCSharp14OrAbove)
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    "Use Regex Source Generator (partial property)",
+                    cancellationToken => ConvertToSourceGenerator(context.Document, context.Diagnostics[0], usePartialProperty: true, cancellationToken),
+                    equivalenceKey: "Use Regex Source Generator (partial property)"),
+                context.Diagnostics);
+        }
     }
 
-    private static async Task<Document> ConvertToSourceGenerator(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> ConvertToSourceGenerator(Document document, Diagnostic diagnostic, bool usePartialProperty, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
@@ -97,11 +116,19 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         var newTypeDeclaration = typeDeclaration;
 
-        // Use new method
+        // Use new method or property
         if (operation is IObjectCreationOperation)
         {
-            var invokeMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
-            newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, invokeMethod);
+            if (usePartialProperty)
+            {
+                var accessProperty = generator.IdentifierName(methodName);
+                newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, accessProperty);
+            }
+            else
+            {
+                var invokeMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
+                newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, invokeMethod);
+            }
         }
         else if (operation is IInvocationOperation invocationOperation)
         {
@@ -117,10 +144,18 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 arguments = arguments.RemoveAt(index.GetValueOrDefault());
             }
 
-            var createRegexMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
-            var method = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
-
-            newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, method);
+            if (usePartialProperty)
+            {
+                var accessProperty = generator.IdentifierName(methodName);
+                var method = generator.InvocationExpression(generator.MemberAccessExpression(accessProperty, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+                newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, method);
+            }
+            else
+            {
+                var createRegexMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
+                var method = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+                newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, method);
+            }
         }
 
         // Generate method
@@ -150,25 +185,62 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
         }
 
-        var newMethod = (MethodDeclarationSyntax)generator.MethodDeclaration(
-            name: methodName,
-            returnType: generator.TypeExpression(regexSymbol),
-            modifiers: DeclarationModifiers.Static | DeclarationModifiers.Partial,
-            accessibility: Accessibility.Private);
+        SyntaxNode newMember;
 
-        newMethod = newMethod.ReplaceToken(newMethod.Identifier, Identifier(methodName).WithAdditionalAnnotations(RenameAnnotation.Create()));
-
-        // Extract arguments (pattern,options,timeout)
-        var attributes = generator.Attribute(generator.TypeExpression(regexGeneratorAttributeSymbol), attributeArguments: (patternValue, regexOptionsValue, timeoutValue) switch
+        if (usePartialProperty)
         {
-            ({ }, null, null) => [patternValue],
-            ({ }, { }, null) => [patternValue, regexOptionsValue],
-            ({ }, { }, { }) => [patternValue, regexOptionsValue, AttributeArgument((ExpressionSyntax)timeoutValue).WithNameColon(NameColon(IdentifierName("matchTimeoutMilliseconds")))],
-            _ => Array.Empty<SyntaxNode>(),
-        });
+            // Generate partial property manually to ensure proper syntax
+            var propertyType = (TypeSyntax)generator.TypeExpression(regexSymbol);
+            var accessorList = AccessorList(
+                List([
+                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                ]));
 
-        newMethod = (MethodDeclarationSyntax)generator.AddAttributes(newMethod, attributes);
-        newTypeDeclaration = newTypeDeclaration.AddMembers(newMethod);
+            var newProperty = PropertyDeclaration(propertyType, methodName)
+                .WithModifiers(TokenList(
+                    Token(SyntaxKind.PrivateKeyword),
+                    Token(SyntaxKind.StaticKeyword),
+                    Token(SyntaxKind.PartialKeyword)))
+                .WithAccessorList(accessorList);
+
+            newProperty = newProperty.ReplaceToken(newProperty.Identifier, Identifier(methodName).WithAdditionalAnnotations(RenameAnnotation.Create()));
+
+            // Extract arguments (pattern,options,timeout)
+            var attributes = generator.Attribute(generator.TypeExpression(regexGeneratorAttributeSymbol), attributeArguments: (patternValue, regexOptionsValue, timeoutValue) switch
+            {
+                ({ }, null, null) => [patternValue],
+                ({ }, { }, null) => [patternValue, regexOptionsValue],
+                ({ }, { }, { }) => [patternValue, regexOptionsValue, AttributeArgument((ExpressionSyntax)timeoutValue).WithNameColon(NameColon(IdentifierName("matchTimeoutMilliseconds")))],
+                _ => Array.Empty<SyntaxNode>(),
+            });
+
+            newMember = (PropertyDeclarationSyntax)generator.AddAttributes(newProperty, attributes);
+        }
+        else
+        {
+            // Generate partial method
+            var newMethod = (MethodDeclarationSyntax)generator.MethodDeclaration(
+                name: methodName,
+                returnType: generator.TypeExpression(regexSymbol),
+                modifiers: DeclarationModifiers.Static | DeclarationModifiers.Partial,
+                accessibility: Accessibility.Private);
+
+            newMethod = newMethod.ReplaceToken(newMethod.Identifier, Identifier(methodName).WithAdditionalAnnotations(RenameAnnotation.Create()));
+
+            // Extract arguments (pattern,options,timeout)
+            var attributes = generator.Attribute(generator.TypeExpression(regexGeneratorAttributeSymbol), attributeArguments: (patternValue, regexOptionsValue, timeoutValue) switch
+            {
+                ({ }, null, null) => [patternValue],
+                ({ }, { }, null) => [patternValue, regexOptionsValue],
+                ({ }, { }, { }) => [patternValue, regexOptionsValue, AttributeArgument((ExpressionSyntax)timeoutValue).WithNameColon(NameColon(IdentifierName("matchTimeoutMilliseconds")))],
+                _ => Array.Empty<SyntaxNode>(),
+            });
+
+            newMember = (MethodDeclarationSyntax)generator.AddAttributes(newMethod, attributes);
+        }
+
+        newTypeDeclaration = newTypeDeclaration.AddMembers((MemberDeclarationSyntax)newMember);
         return document.WithSyntaxRoot(root.ReplaceNode(typeDeclaration, newTypeDeclaration));
     }
 

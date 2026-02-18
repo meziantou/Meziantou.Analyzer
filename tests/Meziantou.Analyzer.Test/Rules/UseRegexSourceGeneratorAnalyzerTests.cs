@@ -542,4 +542,277 @@ partial class Sample
               .ShouldFixCodeWith(codeFix)
               .ValidateAsync();
     }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public async Task NewRegex_PartialProperty()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test
+{
+    Regex a = [||]new Regex("testpattern");
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test
+{
+    Regex a = MyRegex;
+
+    [GeneratedRegex("testpattern")]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NewRegex_Options_PartialProperty()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test
+{
+    Regex a = [||]new Regex("testpattern", RegexOptions.ExplicitCapture);
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test
+{
+    Regex a = MyRegex;
+
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NewRegex_Options_Timeout_PartialProperty()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test
+{
+    Regex a = [||]new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test
+{
+    Regex a = MyRegex;
+
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task RegexIsMatch_PartialProperty()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test
+{
+    bool a = [||]Regex.IsMatch("test", "testpattern");
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test
+{
+    bool a = MyRegex.IsMatch("test");
+
+    [GeneratedRegex("testpattern")]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task RegexIsMatch_Options_PartialProperty()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test
+{
+    bool a = [||]Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture);
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test
+{
+    bool a = MyRegex.IsMatch("test");
+
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task RegexReplace_PartialProperty()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test
+{
+    string a = [||]Regex.Replace("test", "testpattern", "newValue");
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test
+{
+    string a = MyRegex.Replace("test", "newValue");
+
+    [GeneratedRegex("testpattern")]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NestedTypeShouldAddPartialToAllAncestorTypes_PartialProperty()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    private partial class Inner1
+    {
+        class Inner
+        {
+            bool a = [||]Regex.IsMatch("input", "testpattern");
+        }
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    private partial class Inner1
+    {
+        partial class Inner
+        {
+            bool a = MyRegex.IsMatch("input");
+
+            [GeneratedRegex("testpattern")]
+            private static partial Regex MyRegex { get; }
+        }
+    }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+#endif
 }
