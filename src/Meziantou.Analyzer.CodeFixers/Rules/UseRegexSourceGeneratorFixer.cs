@@ -189,13 +189,20 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (usePartialProperty)
         {
-            // Generate partial property
-            var newProperty = (PropertyDeclarationSyntax)generator.PropertyDeclaration(
-                name: methodName,
-                type: generator.TypeExpression(regexSymbol),
-                modifiers: DeclarationModifiers.Static | DeclarationModifiers.Partial,
-                accessibility: Accessibility.Private,
-                getAccessorStatements: null);
+            // Generate partial property manually to ensure proper syntax
+            var propertyType = (TypeSyntax)generator.TypeExpression(regexSymbol);
+            var accessorList = AccessorList(
+                List([
+                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                ]));
+
+            var newProperty = PropertyDeclaration(propertyType, methodName)
+                .WithModifiers(TokenList(
+                    Token(SyntaxKind.PrivateKeyword),
+                    Token(SyntaxKind.StaticKeyword),
+                    Token(SyntaxKind.PartialKeyword)))
+                .WithAccessorList(accessorList);
 
             newProperty = newProperty.ReplaceToken(newProperty.Identifier, Identifier(methodName).WithAdditionalAnnotations(RenameAnnotation.Create()));
 
