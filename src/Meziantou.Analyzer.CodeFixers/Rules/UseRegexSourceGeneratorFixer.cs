@@ -7,7 +7,9 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Rename;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
@@ -80,6 +82,10 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (operation is null)
             return document;
 
+        // Check if we're in a field or variable initializer context that should be removed
+        var (fieldOrVariableToRemove, fieldOrVariableSymbol) = GetFieldOrVariableToRemove(operation, cancellationToken);
+        var shouldRemoveFieldOrVariable = usePartialProperty && fieldOrVariableToRemove is not null && fieldOrVariableSymbol is not null;
+
         // Compute suggested name from context
         var methodName = GetSuggestedNameFromContext(operation) ?? "MyRegex";
 
@@ -88,10 +94,79 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (typeSymbol is not null)
         {
             var members = typeSymbol.GetAllMembers().ToArray();
+            // If we're going to remove a field/variable, exclude it from the uniqueness check
+            if (shouldRemoveFieldOrVariable)
+            {
+                members = members.Where(m => !SymbolEqualityComparer.Default.Equals(m, fieldOrVariableSymbol)).ToArray();
+            }
             while (members.Any(m => m.Name == methodName))
             {
                 methodName += "_";
             }
+        }
+
+        // If we need to rename the field/variable to match the property name, do it first
+        // But only if there are references beyond the declaration
+        if (shouldRemoveFieldOrVariable && fieldOrVariableSymbol!.Name != methodName)
+        {
+            // Check if there are any references to this symbol beyond the declaration
+            var solution = document.Project.Solution;
+            var references = await SymbolFinder.FindReferencesAsync(fieldOrVariableSymbol, solution, cancellationToken).ConfigureAwait(false);
+            var referenceLocations = references
+                .SelectMany(r => r.Locations)
+                .Where(loc => loc.Location.IsInSource && loc.Document.Id == document.Id)
+                .ToList();
+                
+            // Check if any reference is outside the declarator (not just the field declaration itself)
+            var hasExternalReferences = false;
+            if (fieldOrVariableToRemove is not null)
+            {
+                foreach (var refLoc in referenceLocations)
+                {
+                    var refNode = root.FindNode(refLoc.Location.SourceSpan);
+                    if (refNode is not null && !refNode.Ancestors().Contains(fieldOrVariableToRemove))
+                    {
+                        hasExternalReferences = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Only rename if there are actual references outside the declaration
+            if (hasExternalReferences)
+            {
+                var renamedSolution = await Renamer.RenameSymbolAsync(solution, fieldOrVariableSymbol, new SymbolRenameOptions(), methodName, cancellationToken).ConfigureAwait(false);
+                document = renamedSolution.GetDocument(document.Id)!;
+                
+                // Refresh our context after renaming
+                root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+                semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+                if (root is null || semanticModel is null)
+                    return document;
+                    
+                nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
+                typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+                if (nodeToFix is null || typeDeclaration is null)
+                    return document;
+                    
+                operation = semanticModel.GetOperation(nodeToFix, cancellationToken);
+                if (operation is null)
+                    return document;
+                    
+                // Re-get the field/variable after renaming
+                (fieldOrVariableToRemove, fieldOrVariableSymbol) = GetFieldOrVariableToRemove(operation, cancellationToken);
+            }
+        }
+        
+        // Add an annotation to track the field/variable through transformations
+        var fieldOrVariableAnnotation = new SyntaxAnnotation();
+        if (shouldRemoveFieldOrVariable && fieldOrVariableToRemove is not null)
+        {
+            root = root.ReplaceNode(fieldOrVariableToRemove, fieldOrVariableToRemove.WithAdditionalAnnotations(fieldOrVariableAnnotation));
+            nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
+            typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+            if (nodeToFix is null || typeDeclaration is null)
+                return document;
         }
 
         // Add partial to the type hierarchy
@@ -243,7 +318,25 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
 
         newTypeDeclaration = newTypeDeclaration.AddMembers((MemberDeclarationSyntax)newMember);
-        return document.WithSyntaxRoot(root.ReplaceNode(typeDeclaration, newTypeDeclaration));
+        root = root.ReplaceNode(typeDeclaration, newTypeDeclaration);
+        
+        // Remove the field or variable declaration if we're using partial property
+        if (shouldRemoveFieldOrVariable)
+        {
+            // Find the field/variable using the annotation
+            var fieldOrVariableInUpdatedRoot = root.GetAnnotatedNodes(fieldOrVariableAnnotation).FirstOrDefault();
+                
+            if (fieldOrVariableInUpdatedRoot is not null)
+            {
+                var newRoot = RemoveFieldOrVariable(root, fieldOrVariableInUpdatedRoot);
+                if (newRoot is not null)
+                {
+                    root = newRoot;
+                }
+            }
+        }
+        
+        return document.WithSyntaxRoot(root);
     }
 
     private static SyntaxNode? GetNode(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
@@ -315,5 +408,84 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             return char.ToUpperInvariant(name[0]).ToString();
 
         return char.ToUpperInvariant(name[0]) + name[1..];
+    }
+
+    private static (SyntaxNode? fieldOrVariable, ISymbol? symbol) GetFieldOrVariableToRemove(IOperation operation, CancellationToken cancellationToken)
+    {
+        // Only remove fields/variables if they're initialized with new Regex(), not static method calls
+        // Check the operation kind
+        var isObjectCreation = operation is IObjectCreationOperation;
+        
+        // Walk up the operation tree to find if we're in a field or variable initializer
+        foreach (var ancestor in operation.Ancestors())
+        {
+            // Check for field initializer
+            if (ancestor is IFieldInitializerOperation fieldInitializer)
+            {
+                // Only return the field if it's initialized with new Regex()
+                if (!isObjectCreation)
+                    return (null, null);
+                    
+                var field = fieldInitializer.InitializedFields.FirstOrDefault();
+                if (field is not null)
+                {
+                    // Find the field declaration syntax
+                    var fieldSyntax = field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken);
+                    if (fieldSyntax is VariableDeclaratorSyntax fieldDeclarator)
+                    {
+                        return (fieldDeclarator, field);
+                    }
+                }
+            }
+
+            // Check for variable declarator (local variable)
+            if (ancestor is IVariableDeclaratorOperation variableDeclaratorOp)
+            {
+                // Only return the variable if it's initialized with new Regex()
+                if (!isObjectCreation)
+                    return (null, null);
+                    
+                var variable = variableDeclaratorOp.Symbol;
+                var variableSyntax = variable.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken);
+                if (variableSyntax is VariableDeclaratorSyntax varDeclarator)
+                {
+                    return (varDeclarator, variable);
+                }
+            }
+        }
+
+        return (null, null);
+    }
+
+    private static SyntaxNode? RemoveFieldOrVariable(SyntaxNode root, SyntaxNode fieldOrVariableDeclarator)
+    {
+        if (fieldOrVariableDeclarator is not VariableDeclaratorSyntax declarator)
+            return root;
+
+        // Check if this is part of a VariableDeclaration (multiple variables in one statement)
+        if (declarator.Parent is VariableDeclarationSyntax variableDeclaration)
+        {
+            // If it's the only variable, remove the entire declaration
+            if (variableDeclaration.Variables.Count == 1)
+            {
+                // Check if it's part of a field declaration
+                if (variableDeclaration.Parent is FieldDeclarationSyntax fieldDeclaration)
+                {
+                    return root.RemoveNode(fieldDeclaration, SyntaxRemoveOptions.KeepNoTrivia);
+                }
+                // Check if it's part of a local declaration statement
+                else if (variableDeclaration.Parent is LocalDeclarationStatementSyntax localDeclaration)
+                {
+                    return root.RemoveNode(localDeclaration, SyntaxRemoveOptions.KeepNoTrivia);
+                }
+            }
+            else
+            {
+                // Multiple variables, just remove this one
+                return root.RemoveNode(declarator, SyntaxRemoveOptions.KeepNoTrivia);
+            }
+        }
+
+        return root;
     }
 }
