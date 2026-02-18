@@ -859,6 +859,48 @@ partial class Sample
     }
 
     [Fact]
+    public async Task Field_SuggestFieldNameWithoutRegexSuffix()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    private static readonly Regex EmailPattern = [||]new Regex("pattern");
+
+    void M()
+    {
+        _ = EmailPattern.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    private static readonly Regex EmailPattern = EmailPattern_();
+
+    void M()
+    {
+        _ = EmailPattern.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex EmailPattern_();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Variable_SuggestPascalCaseName()
     {
         const string SourceCode = """

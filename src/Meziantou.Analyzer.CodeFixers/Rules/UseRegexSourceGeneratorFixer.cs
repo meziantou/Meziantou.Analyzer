@@ -278,8 +278,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 if (field is not null)
                 {
                     var fieldName = field.Name;
-                    // Only use the field name if it's meaningful (more than 1 character and ends with "Regex")
-                    if (fieldName.Length > 1 && fieldName.EndsWith("Regex", StringComparison.Ordinal))
+                    // Only use the field name if it's meaningful (more than 1 character)
+                    if (fieldName.Length > 1)
                     {
                         return fieldName;
                     }
