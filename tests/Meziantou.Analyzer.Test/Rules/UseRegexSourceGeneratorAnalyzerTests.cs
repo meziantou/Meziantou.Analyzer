@@ -815,4 +815,200 @@ partial class Sample
             .ValidateAsync();
     }
 #endif
+
+    [Fact]
+    public async Task Field_SuggestFieldName()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    private static readonly Regex SampleRegex = [||]new Regex("pattern");
+
+    void M()
+    {
+        _ = SampleRegex.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    private static readonly Regex SampleRegex = SampleRegex_();
+
+    void M()
+    {
+        _ = SampleRegex.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex SampleRegex_();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Field_SuggestFieldNameWithoutRegexSuffix()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    private static readonly Regex EmailPattern = [||]new Regex("pattern");
+
+    void M()
+    {
+        _ = EmailPattern.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    private static readonly Regex EmailPattern = EmailPattern_();
+
+    void M()
+    {
+        _ = EmailPattern.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex EmailPattern_();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Variable_SuggestPascalCaseName()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Foo
+{
+    void A()
+    {
+        Regex sampleRegex = [||]new Regex("pattern");
+        _ = sampleRegex.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Foo
+{
+    void A()
+    {
+        Regex sampleRegex = SampleRegex();
+        _ = sampleRegex.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex SampleRegex();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Variable_AlreadyPascalCase()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Foo
+{
+    void A()
+    {
+        Regex EmailRegex = [||]new Regex("pattern");
+        _ = EmailRegex.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Foo
+{
+    void A()
+    {
+        Regex EmailRegex = EmailRegex();
+        _ = EmailRegex.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex EmailRegex();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StaticMethod_UseDefaultName()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test
+{
+    bool a = [||]Regex.IsMatch("test", "testpattern");
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test
+{
+    bool a = MyRegex().IsMatch("test");
+
+    [GeneratedRegex("testpattern")]
+    private static partial Regex MyRegex();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 }
