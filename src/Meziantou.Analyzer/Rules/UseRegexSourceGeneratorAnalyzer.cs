@@ -187,7 +187,12 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                 var field = fieldInitializer.InitializedFields.FirstOrDefault();
                 if (field is not null)
                 {
-                    return (field.Name, field.Name);
+                    var fieldName = field.Name;
+                    // Only use the field name if it's meaningful (more than 1 character and ends with "Regex")
+                    if (fieldName.Length > 1 && fieldName.EndsWith("Regex", StringComparison.Ordinal))
+                    {
+                        return (fieldName, fieldName);
+                    }
                 }
             }
 
@@ -195,8 +200,12 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             if (ancestor is IVariableDeclaratorOperation variableDeclarator)
             {
                 var variableName = variableDeclarator.Symbol.Name;
-                var suggestedName = ConvertToPascalCase(variableName);
-                return (suggestedName, variableName);
+                // Only use the variable name if it's meaningful (more than 1 character)
+                if (variableName.Length > 1)
+                {
+                    var suggestedName = ConvertToPascalCase(variableName);
+                    return (suggestedName, variableName);
+                }
             }
         }
 
