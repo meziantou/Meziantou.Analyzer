@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
-using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Rename;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
@@ -81,64 +81,9 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (operation is null)
             return document;
 
-        // Check if we're in a field or variable initializer context
+        // Check if we're in a field or variable initializer context that should be removed
         var (fieldOrVariableToRemove, fieldOrVariableSymbol) = GetFieldOrVariableToRemove(operation, cancellationToken);
-        
-        // Find all references to field/variable if we'll be removing it
-        var nodesToReplace = new List<SyntaxNode>();
-        if (usePartialProperty && fieldOrVariableToRemove is not null && fieldOrVariableSymbol is not null)
-        {
-            // For local variables, search manually in the containing method
-            if (fieldOrVariableSymbol.Kind == SymbolKind.Local)
-            {
-                // Find the containing method/accessor
-                var containingMethod = fieldOrVariableToRemove.Ancestors().FirstOrDefault(n => 
-                    n is MethodDeclarationSyntax or AccessorDeclarationSyntax or PropertyDeclarationSyntax);
-                
-                if (containingMethod is not null)
-                {
-                    // Find all IdentifierNameSyntax nodes with the same name
-                    var identifiers = containingMethod.DescendantNodes()
-                        .OfType<IdentifierNameSyntax>()
-                        .Where(id => id.Identifier.Text == fieldOrVariableSymbol.Name);
-                    
-                    foreach (var identifier in identifiers)
-                    {
-                        var symbolInfo = semanticModel.GetSymbolInfo(identifier, cancellationToken);
-                        if (SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, fieldOrVariableSymbol))
-                        {
-                            // Don't include the identifier if it's part of the variable declarator itself
-                            if (!identifier.Ancestors().Contains(fieldOrVariableToRemove))
-                            {
-                                nodesToReplace.Add(identifier);
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // For fields, use SymbolFinder
-                var references = await SymbolFinder.FindReferencesAsync(fieldOrVariableSymbol, document.Project.Solution, cancellationToken).ConfigureAwait(false);
-                var referenceLocations = references
-                    .SelectMany(r => r.Locations)
-                    .Where(loc => loc.Location.IsInSource && loc.Document.Id == document.Id)
-                    .ToList();
-                
-                foreach (var refLocation in referenceLocations)
-                {
-                    var refNode = root.FindNode(refLocation.Location.SourceSpan);
-                    if (refNode is IdentifierNameSyntax identifier)
-                    {
-                        // Don't include the identifier if it's part of the field declarator itself
-                        if (!identifier.Ancestors().Contains(fieldOrVariableToRemove))
-                        {
-                            nodesToReplace.Add(identifier);
-                        }
-                    }
-                }
-            }
-        }
+        var shouldRemoveFieldOrVariable = usePartialProperty && fieldOrVariableToRemove is not null && fieldOrVariableSymbol is not null;
 
         // Compute suggested name from context
         var methodName = GetSuggestedNameFromContext(operation) ?? "MyRegex";
@@ -149,7 +94,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         {
             var members = typeSymbol.GetAllMembers().ToArray();
             // If we're going to remove a field/variable, exclude it from the uniqueness check
-            if (usePartialProperty && fieldOrVariableSymbol is not null)
+            if (shouldRemoveFieldOrVariable)
             {
                 members = members.Where(m => !SymbolEqualityComparer.Default.Equals(m, fieldOrVariableSymbol)).ToArray();
             }
@@ -159,9 +104,35 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             }
         }
 
-        // Add an annotation to track the field/variable if we need to remove it later
+        // If we need to rename the field/variable to match the property name, do it first
+        if (shouldRemoveFieldOrVariable && fieldOrVariableSymbol!.Name != methodName)
+        {
+            var solution = document.Project.Solution;
+            var renamedSolution = await Renamer.RenameSymbolAsync(solution, fieldOrVariableSymbol, new SymbolRenameOptions(), methodName, cancellationToken).ConfigureAwait(false);
+            document = renamedSolution.GetDocument(document.Id)!;
+            
+            // Refresh our context after renaming
+            root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            if (root is null || semanticModel is null)
+                return document;
+                
+            nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
+            typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+            if (nodeToFix is null || typeDeclaration is null)
+                return document;
+                
+            operation = semanticModel.GetOperation(nodeToFix, cancellationToken);
+            if (operation is null)
+                return document;
+                
+            // Re-get the field/variable after renaming
+            (fieldOrVariableToRemove, fieldOrVariableSymbol) = GetFieldOrVariableToRemove(operation, cancellationToken);
+        }
+        
+        // Add an annotation to track the field/variable through transformations
         var fieldOrVariableAnnotation = new SyntaxAnnotation();
-        if (usePartialProperty && fieldOrVariableToRemove is not null)
+        if (shouldRemoveFieldOrVariable && fieldOrVariableToRemove is not null)
         {
             root = root.ReplaceNode(fieldOrVariableToRemove, fieldOrVariableToRemove.WithAdditionalAnnotations(fieldOrVariableAnnotation));
             nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
@@ -319,93 +290,25 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
 
         newTypeDeclaration = newTypeDeclaration.AddMembers((MemberDeclarationSyntax)newMember);
+        root = root.ReplaceNode(typeDeclaration, newTypeDeclaration);
         
-        // When using partial property and we're in a field or variable initializer,
-        // remove the field/variable and replace all usages with the new property
-        if (usePartialProperty && fieldOrVariableToRemove is not null && fieldOrVariableSymbol is not null)
+        // Remove the field or variable declaration if we're using partial property
+        if (shouldRemoveFieldOrVariable)
         {
-            // Add tracking annotations to all nodes that need to be replaced
-            var replacementAnnotation = new SyntaxAnnotation();
-            if (nodesToReplace.Count > 0)
-            {
-                root = root.ReplaceNodes(nodesToReplace, (original, _) => original.WithAdditionalAnnotations(replacementAnnotation));
+            // Find the field/variable using the annotation
+            var fieldOrVariableInUpdatedRoot = root.GetAnnotatedNodes(fieldOrVariableAnnotation).FirstOrDefault();
                 
-                // Re-find the nodes after annotation
-                nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
-                typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-                newTypeDeclaration = typeDeclaration;
-                if (nodeToFix is null || typeDeclaration is null)
-                    return document;
-                
-                // Re-create the property in the new tree
-                newTypeDeclaration = typeDeclaration;
-                
-                // Re-apply the replacement for nodeToFix
-                if (operation is IObjectCreationOperation)
-                {
-                    if (usePartialProperty)
-                    {
-                        var accessProperty = generator.IdentifierName(methodName);
-                        newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, accessProperty);
-                    }
-                }
-                else if (operation is IInvocationOperation invocationOperation)
-                {
-                    var arguments = invocationOperation.Arguments;
-                    var indices = new[]
-                    {
-                        TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName),
-                        TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
-                        TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
-                    };
-                    foreach (var index in indices.Where(value => value is not null).OrderDescending())
-                    {
-                        arguments = arguments.RemoveAt(index.GetValueOrDefault());
-                    }
-
-                    if (usePartialProperty)
-                    {
-                        var accessProperty = generator.IdentifierName(methodName);
-                        var method = generator.InvocationExpression(generator.MemberAccessExpression(accessProperty, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
-                        newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, method);
-                    }
-                }
-                
-                newTypeDeclaration = newTypeDeclaration.AddMembers((MemberDeclarationSyntax)newMember);
-            }
-
-            // Now apply the type declaration changes
-            var updatedRoot = root.ReplaceNode(typeDeclaration, newTypeDeclaration);
-            
-            // Replace all annotated references with the property name
-            var annotatedNodes = updatedRoot.GetAnnotatedNodes(replacementAnnotation).ToList();
-            if (annotatedNodes.Count > 0)
-            {
-                var replacements = new Dictionary<SyntaxNode, SyntaxNode>();
-                foreach (var annotatedNode in annotatedNodes)
-                {
-                    var newIdentifier = IdentifierName(methodName);
-                    replacements[annotatedNode] = newIdentifier;
-                }
-                
-                updatedRoot = updatedRoot.ReplaceNodes(replacements.Keys, (original, _) => replacements[original]);
-            }
-
-            // Remove the field or variable declaration
-            var fieldOrVariableInUpdatedRoot = updatedRoot.GetAnnotatedNodes(fieldOrVariableAnnotation).FirstOrDefault();
             if (fieldOrVariableInUpdatedRoot is not null)
             {
-                var newRoot = RemoveFieldOrVariable(updatedRoot, fieldOrVariableInUpdatedRoot);
+                var newRoot = RemoveFieldOrVariable(root, fieldOrVariableInUpdatedRoot);
                 if (newRoot is not null)
                 {
-                    updatedRoot = newRoot;
+                    root = newRoot;
                 }
             }
-
-            return document.WithSyntaxRoot(updatedRoot);
         }
-
-        return document.WithSyntaxRoot(root.ReplaceNode(typeDeclaration, newTypeDeclaration));
+        
+        return document.WithSyntaxRoot(root);
     }
 
     private static SyntaxNode? GetNode(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
@@ -481,12 +384,20 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
     private static (SyntaxNode? fieldOrVariable, ISymbol? symbol) GetFieldOrVariableToRemove(IOperation operation, CancellationToken cancellationToken)
     {
+        // Only remove fields/variables if they're initialized with new Regex(), not static method calls
+        // Check the operation kind
+        var isObjectCreation = operation is IObjectCreationOperation;
+        
         // Walk up the operation tree to find if we're in a field or variable initializer
         foreach (var ancestor in operation.Ancestors())
         {
             // Check for field initializer
             if (ancestor is IFieldInitializerOperation fieldInitializer)
             {
+                // Only return the field if it's initialized with new Regex()
+                if (!isObjectCreation)
+                    return (null, null);
+                    
                 var field = fieldInitializer.InitializedFields.FirstOrDefault();
                 if (field is not null)
                 {
@@ -502,6 +413,10 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             // Check for variable declarator (local variable)
             if (ancestor is IVariableDeclaratorOperation variableDeclaratorOp)
             {
+                // Only return the variable if it's initialized with new Regex()
+                if (!isObjectCreation)
+                    return (null, null);
+                    
                 var variable = variableDeclaratorOp.Symbol;
                 var variableSyntax = variable.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken);
                 if (variableSyntax is VariableDeclaratorSyntax varDeclarator)
