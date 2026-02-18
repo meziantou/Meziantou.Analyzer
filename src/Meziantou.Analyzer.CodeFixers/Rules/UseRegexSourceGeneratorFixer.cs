@@ -80,8 +80,12 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (operation is null)
             return document;
 
-        // Generate unique method name
-        var methodName = "MyRegex";
+        // Get suggested name from analyzer
+        var methodName = properties.TryGetValue(UseRegexSourceGeneratorAnalyzerCommon.SuggestedNameName, out var suggestedName) && !string.IsNullOrEmpty(suggestedName)
+            ? suggestedName
+            : "MyRegex";
+
+        // Ensure the name is unique in the containing type
         var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration, cancellationToken);
         if (typeSymbol is not null)
         {

@@ -6,4 +6,6 @@ internal static class UseRegexSourceGeneratorAnalyzerCommon
     internal const string RegexOptionsIndexName = "RegexOptionsIndex";
     internal const string RegexTimeoutIndexName = "RegexTimeoutIndex";
     internal const string RegexTimeoutName = "RegexTimeout";
+    internal const string SuggestedNameName = "SuggestedName";
+    internal const string OriginalSymbolName = "OriginalSymbol";
 }
