@@ -80,10 +80,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (operation is null)
             return document;
 
-        // Get suggested name from analyzer
-        var methodName = properties.TryGetValue(UseRegexSourceGeneratorAnalyzerCommon.SuggestedNameName, out var suggestedName) && !string.IsNullOrEmpty(suggestedName)
-            ? suggestedName
-            : "MyRegex";
+        // Compute suggested name from context
+        var methodName = GetSuggestedNameFromContext(operation) ?? "MyRegex";
 
         // Ensure the name is unique in the containing type
         var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration, cancellationToken);
@@ -266,5 +264,56 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             return null;
 
         return result;
+    }
+
+    private static string? GetSuggestedNameFromContext(IOperation operation)
+    {
+        // Walk up the operation tree to find if we're in a field or variable initializer
+        foreach (var ancestor in operation.Ancestors())
+        {
+            // Check for field initializer
+            if (ancestor is IFieldInitializerOperation fieldInitializer)
+            {
+                var field = fieldInitializer.InitializedFields.FirstOrDefault();
+                if (field is not null)
+                {
+                    var fieldName = field.Name;
+                    // Only use the field name if it's meaningful (more than 1 character and ends with "Regex")
+                    if (fieldName.Length > 1 && fieldName.EndsWith("Regex", StringComparison.Ordinal))
+                    {
+                        return fieldName;
+                    }
+                }
+            }
+
+            // Check for variable declarator (local variable)
+            if (ancestor is IVariableDeclaratorOperation variableDeclarator)
+            {
+                var variableName = variableDeclarator.Symbol.Name;
+                // Only use the variable name if it's meaningful (more than 1 character)
+                if (variableName.Length > 1)
+                {
+                    return ConvertToPascalCase(variableName);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string ConvertToPascalCase(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return "MyRegex";
+
+        // If already starts with uppercase, return as-is
+        if (char.IsUpper(name[0]))
+            return name;
+
+        // Convert first letter to uppercase
+        if (name.Length == 1)
+            return char.ToUpperInvariant(name[0]).ToString();
+
+        return char.ToUpperInvariant(name[0]) + name[1..];
     }
 }
