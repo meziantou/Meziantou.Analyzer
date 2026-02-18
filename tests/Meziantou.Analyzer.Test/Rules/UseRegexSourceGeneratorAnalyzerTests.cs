@@ -1153,4 +1153,170 @@ partial class Sample
             .ValidateAsync();
     }
 #endif
+
+    [Fact]
+    public async Task TopLevelStatement_NewRegex_PartialMethod()
+    {
+        const string SourceCode = """
+using System.Text.RegularExpressions;
+
+var emailRegex = [||]new Regex("pattern");
+emailRegex.Match("value");
+""";
+
+        const string CodeFix = """
+using System.Text.RegularExpressions;
+
+var emailRegex = EmailRegex();
+emailRegex.Match("value");
+
+partial class Program
+{
+    [GeneratedRegex("pattern")]
+    private static partial Regex EmailRegex();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public async Task TopLevelStatement_NewRegex_PartialProperty()
+    {
+        const string SourceCode = """
+using System.Text.RegularExpressions;
+
+var emailRegex = [||]new Regex("pattern");
+emailRegex.Match("value");
+""";
+
+        const string CodeFix = """
+using System.Text.RegularExpressions;
+EmailRegex.Match("value");
+
+partial class Program
+{
+    [GeneratedRegex("pattern")]
+    private static partial Regex EmailRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TopLevelStatement_StaticMethod_PartialProperty()
+    {
+        const string SourceCode = """
+using System.Text.RegularExpressions;
+
+var result = [||]Regex.IsMatch("test", "pattern");
+""";
+
+        const string CodeFix = """
+using System.Text.RegularExpressions;
+
+var result = MyRegex.IsMatch("test");
+
+partial class Program
+{
+    [GeneratedRegex("pattern")]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TopLevelStatement_WithExistingProgramClass_PartialProperty()
+    {
+        const string SourceCode = """
+using System.Text.RegularExpressions;
+
+var result = [||]Regex.IsMatch("test", "pattern");
+
+partial class Program
+{
+    private static void Helper() { }
+}
+""";
+
+        const string CodeFix = """
+using System.Text.RegularExpressions;
+
+var result = MyRegex.IsMatch("test");
+
+partial class Program
+{
+    private static void Helper() { }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex MyRegex { get; }
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task TopLevelStatement_StaticMethod_PartialMethod()
+    {
+        const string SourceCode = """
+using System.Text.RegularExpressions;
+
+var result = [||]Regex.IsMatch("test", "pattern");
+""";
+
+        const string CodeFix = """
+using System.Text.RegularExpressions;
+
+var result = MyRegex().IsMatch("test");
+
+partial class Program
+{
+    [GeneratedRegex("pattern")]
+    private static partial Regex MyRegex();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 }
