@@ -563,7 +563,6 @@ using System.Text.RegularExpressions;
 
 partial class Test
 {
-
     [GeneratedRegex("testpattern")]
     private static partial Regex MyRegex { get; }
 }
@@ -599,7 +598,6 @@ using System.Text.RegularExpressions;
 
 partial class Test
 {
-
     [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
     private static partial Regex MyRegex { get; }
 }
@@ -635,7 +633,6 @@ using System.Text.RegularExpressions;
 
 partial class Test
 {
-
     [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyRegex { get; }
 }

@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Rename;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -105,29 +106,56 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
 
         // If we need to rename the field/variable to match the property name, do it first
+        // But only if there are references beyond the declaration
         if (shouldRemoveFieldOrVariable && fieldOrVariableSymbol!.Name != methodName)
         {
+            // Check if there are any references to this symbol beyond the declaration
             var solution = document.Project.Solution;
-            var renamedSolution = await Renamer.RenameSymbolAsync(solution, fieldOrVariableSymbol, new SymbolRenameOptions(), methodName, cancellationToken).ConfigureAwait(false);
-            document = renamedSolution.GetDocument(document.Id)!;
+            var references = await SymbolFinder.FindReferencesAsync(fieldOrVariableSymbol, solution, cancellationToken).ConfigureAwait(false);
+            var referenceLocations = references
+                .SelectMany(r => r.Locations)
+                .Where(loc => loc.Location.IsInSource && loc.Document.Id == document.Id)
+                .ToList();
+                
+            // Check if any reference is outside the declarator (not just the field declaration itself)
+            var hasExternalReferences = false;
+            if (fieldOrVariableToRemove is not null)
+            {
+                foreach (var refLoc in referenceLocations)
+                {
+                    var refNode = root.FindNode(refLoc.Location.SourceSpan);
+                    if (refNode is not null && !refNode.Ancestors().Contains(fieldOrVariableToRemove))
+                    {
+                        hasExternalReferences = true;
+                        break;
+                    }
+                }
+            }
             
-            // Refresh our context after renaming
-            root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-            if (root is null || semanticModel is null)
-                return document;
+            // Only rename if there are actual references outside the declaration
+            if (hasExternalReferences)
+            {
+                var renamedSolution = await Renamer.RenameSymbolAsync(solution, fieldOrVariableSymbol, new SymbolRenameOptions(), methodName, cancellationToken).ConfigureAwait(false);
+                document = renamedSolution.GetDocument(document.Id)!;
                 
-            nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
-            typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-            if (nodeToFix is null || typeDeclaration is null)
-                return document;
-                
-            operation = semanticModel.GetOperation(nodeToFix, cancellationToken);
-            if (operation is null)
-                return document;
-                
-            // Re-get the field/variable after renaming
-            (fieldOrVariableToRemove, fieldOrVariableSymbol) = GetFieldOrVariableToRemove(operation, cancellationToken);
+                // Refresh our context after renaming
+                root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+                semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+                if (root is null || semanticModel is null)
+                    return document;
+                    
+                nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
+                typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+                if (nodeToFix is null || typeDeclaration is null)
+                    return document;
+                    
+                operation = semanticModel.GetOperation(nodeToFix, cancellationToken);
+                if (operation is null)
+                    return document;
+                    
+                // Re-get the field/variable after renaming
+                (fieldOrVariableToRemove, fieldOrVariableSymbol) = GetFieldOrVariableToRemove(operation, cancellationToken);
+            }
         }
         
         // Add an annotation to track the field/variable through transformations
