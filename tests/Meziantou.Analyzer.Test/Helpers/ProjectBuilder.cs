@@ -31,6 +31,7 @@ public sealed partial class ProjectBuilder
     public IList<MetadataReference> References { get; } = [];
     public IList<string> ApiReferences { get; } = [];
     public IList<DiagnosticAnalyzer> DiagnosticAnalyzer { get; } = [];
+    public IList<AnalyzerReference> AnalyzerReferences { get; } = [];
     public CodeFixProvider? CodeFixProvider { get; private set; }
     public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = [];
     public string? ExpectedFixedCode { get; private set; }
@@ -343,6 +344,37 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithNoFixCompilation()
     {
         IsValidFixCode = false;
+        return this;
+    }
+
+    public ProjectBuilder WithSourceGeneratorFromAssembly(string assemblyPath)
+    {
+        AnalyzerReferences.Add(new AnalyzerFileReference(assemblyPath, AnalyzerAssemblyLoader.Instance));
+        return this;
+    }
+
+    public ProjectBuilder WithRegexSourceGenerator()
+    {
+        // The Regex source generator is part of the .NET runtime starting from .NET 7
+        // Find the generator DLL from the appropriate .NET SDK pack
+        var version = TargetFramework switch
+        {
+            TargetFramework.Net7_0 => "7.0.0",
+            TargetFramework.Net8_0 => "8.0.0",
+            TargetFramework.Net9_0 => "9.0.0",
+            TargetFramework.Net10_0 or TargetFramework.NetLatest => "10.0.2",
+            _ => null,
+        };
+
+        if (version is not null)
+        {
+            var generatorPath = $"/usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/{version}/analyzers/dotnet/cs/System.Text.RegularExpressions.Generator.dll";
+            if (File.Exists(generatorPath))
+            {
+                WithSourceGeneratorFromAssembly(generatorPath);
+            }
+        }
+
         return this;
     }
 

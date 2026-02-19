@@ -243,6 +243,14 @@ public sealed partial class ProjectBuilder
             .WithProjectParseOptions(projectId, CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion))
             .AddMetadataReferences(projectId, References);
 
+        // Add analyzer references (source generators)
+        var project = solution.GetProject(projectId)!;
+        foreach (var analyzerReference in AnalyzerReferences)
+        {
+            project = project.AddAnalyzerReference(analyzerReference);
+        }
+        solution = project.Solution;
+
         var count = 0;
         AppendFile(FileName, SourceCode);
 
