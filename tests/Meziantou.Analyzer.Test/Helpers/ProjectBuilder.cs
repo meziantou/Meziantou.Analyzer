@@ -353,26 +353,12 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-    public ProjectBuilder WithRegexSourceGenerator()
+    public ProjectBuilder WithSourceGeneratorsFromNuGet(string packageName, string version, string pathPrefix)
     {
-        // The Regex source generator is part of the .NET runtime starting from .NET 7
-        // Find the generator DLL from the appropriate .NET SDK pack
-        var version = TargetFramework switch
+        var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
+        foreach (var reference in references)
         {
-            TargetFramework.Net7_0 => "7.0.0",
-            TargetFramework.Net8_0 => "8.0.0",
-            TargetFramework.Net9_0 => "9.0.0",
-            TargetFramework.Net10_0 or TargetFramework.NetLatest => "10.0.2",
-            _ => null,
-        };
-
-        if (version is not null)
-        {
-            var generatorPath = $"/usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/{version}/analyzers/dotnet/cs/System.Text.RegularExpressions.Generator.dll";
-            if (File.Exists(generatorPath))
-            {
-                WithSourceGeneratorFromAssembly(generatorPath);
-            }
+            AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
         }
 
         return this;
