@@ -415,6 +415,21 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 }
             }
 
+            // Check for property initializer
+            if (ancestor is IPropertyInitializerOperation propertyInitializer)
+            {
+                var property = propertyInitializer.InitializedProperties.FirstOrDefault();
+                if (property is not null)
+                {
+                    var propertyName = property.Name;
+                    // Only use the property name if it's meaningful (more than 1 character)
+                    if (propertyName.Length > 1)
+                    {
+                        return propertyName;
+                    }
+                }
+            }
+
             // Check for variable declarator (local variable)
             // Only use variable name if we're creating a Regex object, not calling a static method
             if (isObjectCreation && ancestor is IVariableDeclaratorOperation variableDeclarator)
@@ -475,6 +490,25 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 }
             }
 
+            // Check for property initializer
+            if (ancestor is IPropertyInitializerOperation propertyInitializer)
+            {
+                // Only return the property if it's initialized with new Regex()
+                if (!isObjectCreation)
+                    return (null, null);
+
+                var property = propertyInitializer.InitializedProperties.FirstOrDefault();
+                if (property is not null)
+                {
+                    // Find the property declaration syntax
+                    var propertySyntax = property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken);
+                    if (propertySyntax is PropertyDeclarationSyntax propertyDeclaration)
+                    {
+                        return (propertyDeclaration, property);
+                    }
+                }
+            }
+
             // Check for variable declarator (local variable)
             if (ancestor is IVariableDeclaratorOperation variableDeclaratorOp)
             {
@@ -496,6 +530,12 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
     private static SyntaxNode? RemoveFieldOrVariable(SyntaxNode root, SyntaxNode fieldOrVariableDeclarator)
     {
+        // Handle property declaration
+        if (fieldOrVariableDeclarator is PropertyDeclarationSyntax propertyDeclaration)
+        {
+            return root.RemoveNode(propertyDeclaration, SyntaxRemoveOptions.KeepNoTrivia);
+        }
+
         if (fieldOrVariableDeclarator is not VariableDeclaratorSyntax declarator)
             return root;
 
