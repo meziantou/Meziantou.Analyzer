@@ -43,11 +43,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -79,11 +77,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -115,11 +111,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -151,11 +145,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -187,11 +179,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -223,11 +213,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -259,11 +247,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -295,11 +281,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -331,11 +315,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -367,11 +349,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -413,11 +393,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   codeFix)
               .ValidateAsync();
     }
@@ -451,11 +429,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   codeFix)
               .ValidateAsync();
     }
@@ -489,11 +465,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   codeFix)
               .ValidateAsync();
     }
@@ -528,11 +502,9 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   codeFix)
               .ValidateAsync();
     }
@@ -594,11 +566,9 @@ partial class Sample
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   codeFix)
               .ValidateAsync();
     }
@@ -907,11 +877,9 @@ partial class Sample
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -953,11 +921,9 @@ partial class Sample
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -997,11 +963,9 @@ partial class Foo
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -1041,11 +1005,9 @@ partial class Foo
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -1077,11 +1039,9 @@ partial class Test
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -1258,12 +1218,10 @@ partial class Program
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
@@ -1398,12 +1356,10 @@ partial class Program
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
-#if CSHARP14_OR_GREATER
-                  index: 1,
-#endif
                   CodeFix)
               .ValidateAsync();
     }
