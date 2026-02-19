@@ -1305,6 +1305,53 @@ partial class Sample
     }
 
     [Fact]
+    public async Task PropertyInitializer_PartialMethod()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    public Regex Pattern { get; } = [||]new Regex("pattern");
+
+    void M()
+    {
+        _ = Pattern.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    public Regex Pattern { get; } = Pattern_();
+
+    void M()
+    {
+        _ = Pattern.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex Pattern_();
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithNoFixCompilation()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Field_MultipleReferences_RemoveAndReplaceWithProperty_PartialProperty()
     {
         const string SourceCode = """
