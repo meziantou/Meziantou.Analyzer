@@ -1177,8 +1177,9 @@ partial class Foo
             .ValidateAsync();
     }
 
+#if CSHARP14_OR_GREATER
     [Fact]
-    public async Task PropertyInitializer_RemoveAndReplaceWithProperty_PartialProperty()
+    public async Task PropertyInitializer_RemoveAndReplaceWithProperty_PartialMethod()
     {
         const string SourceCode = """
 using System;
@@ -1201,6 +1202,7 @@ using System.Text.RegularExpressions;
 
 partial class Sample
 {
+    public Regex SampleRegex { get; } = SampleRegex_();
 
     void M()
     {
@@ -1208,23 +1210,22 @@ partial class Sample
     }
 
     [GeneratedRegex("pattern")]
-    private static partial Regex SampleRegex { get; }
+    private static partial Regex SampleRegex_();
 }
 """;
 
         await new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
+            .ShouldFixCodeWith(1, CodeFix)
             .ValidateAsync();
     }
 
     [Fact]
-    public async Task PropertyInitializer_NoReferences_RemoveAndReplaceWithProperty_PartialProperty()
+    public async Task PropertyInitializer_NoReferences_RemoveAndReplaceWithProperty_PartialMethod()
     {
         const string SourceCode = """
 using System;
@@ -1242,24 +1243,25 @@ using System.Text.RegularExpressions;
 
 partial class Sample
 {
+    public Regex EmailRegex { get; } = EmailRegex_();
+
     [GeneratedRegex("pattern")]
-    private static partial Regex EmailRegex { get; }
+    private static partial Regex EmailRegex_();
 }
 """;
 
         await new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
+            .ShouldFixCodeWith(1, CodeFix)
             .ValidateAsync();
     }
 
     [Fact]
-    public async Task PropertyInitializer_WithOptions_RemoveAndReplaceWithProperty_PartialProperty()
+    public async Task PropertyInitializer_WithOptions_RemoveAndReplaceWithProperty_PartialMethod()
     {
         const string SourceCode = """
 using System;
@@ -1282,6 +1284,7 @@ using System.Text.RegularExpressions;
 
 partial class Sample
 {
+    public Regex Pattern { get; } = Pattern_();
 
     void M()
     {
@@ -1289,18 +1292,17 @@ partial class Sample
     }
 
     [GeneratedRegex("pattern", RegexOptions.IgnoreCase)]
-    private static partial Regex Pattern { get; }
+    private static partial Regex Pattern_();
 }
 """;
 
         await new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
+            .ShouldFixCodeWith(1, CodeFix)
             .ValidateAsync();
     }
 
@@ -1341,15 +1343,15 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net7_0)
+            .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
             .ShouldFixCodeWith(1, CodeFix)
             .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task Field_MultipleReferences_RemoveAndReplaceWithProperty_PartialProperty()
