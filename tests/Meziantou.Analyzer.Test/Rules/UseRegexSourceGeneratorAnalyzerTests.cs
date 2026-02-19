@@ -44,7 +44,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -76,7 +80,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -108,7 +116,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -140,7 +152,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -172,7 +188,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -204,7 +224,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -236,7 +260,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -268,7 +296,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -300,7 +332,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -332,7 +368,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -374,7 +414,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  codeFix)
               .ValidateAsync();
     }
 
@@ -408,7 +452,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  codeFix)
               .ValidateAsync();
     }
 
@@ -442,7 +490,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  codeFix)
               .ValidateAsync();
     }
 
@@ -477,7 +529,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  codeFix)
               .ValidateAsync();
     }
 
@@ -539,7 +595,11 @@ partial class Sample
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  codeFix)
               .ValidateAsync();
     }
 
@@ -848,7 +908,11 @@ partial class Sample
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -890,7 +954,11 @@ partial class Sample
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -930,7 +998,11 @@ partial class Foo
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -970,7 +1042,11 @@ partial class Foo
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -1002,7 +1078,11 @@ partial class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -1180,7 +1260,11 @@ partial class Program
         await CreateProjectBuilder()
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 
@@ -1316,7 +1400,11 @@ partial class Program
         await CreateProjectBuilder()
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+#if CSHARP14_OR_GREATER
+                  index: 1,
+#endif
+                  CodeFix)
               .ValidateAsync();
     }
 }
