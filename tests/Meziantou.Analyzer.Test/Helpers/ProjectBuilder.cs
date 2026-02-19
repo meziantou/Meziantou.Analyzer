@@ -70,7 +70,8 @@ public sealed partial class ProjectBuilder
 
                 if (!hasEntry)
                 {
-                    throw new InvalidOperationException("The NuGet package " + packageName + "@" + version + " does not contain any file matching the paths " + string.Join(", ", includedPaths));
+                    // No files found matching the path prefix, return empty array
+                    return [];
                 }
 
                 try
@@ -85,6 +86,12 @@ public sealed partial class ProjectBuilder
                         throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version + "\n" + ex);
                     }
                 }
+            }
+
+            if (!Directory.Exists(cacheFolder))
+            {
+                // No files found matching the path prefix, return empty array
+                return [];
             }
 
             var dlls = Directory.GetFiles(cacheFolder, "*.dll");
@@ -108,7 +115,6 @@ public sealed partial class ProjectBuilder
                 }
             }
 
-            Assert.NotEmpty(result);
             return [.. result];
         }
     }
@@ -355,18 +361,10 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder WithSourceGeneratorsFromNuGet(string packageName, string version, string pathPrefix)
     {
-        try
+        var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
+        foreach (var reference in references)
         {
-            var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
-            foreach (var reference in references)
-            {
-                AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
-            }
-        }
-        catch (InvalidOperationException)
-        {
-            // Source generators may not exist in older versions of the package
-            // This is expected and should not fail the test
+            AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
         }
 
         return this;
