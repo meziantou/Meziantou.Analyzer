@@ -575,7 +575,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -610,7 +610,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -645,7 +645,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -682,7 +682,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -719,7 +719,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -756,7 +756,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -805,7 +805,7 @@ partial class Sample
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 #endif
@@ -1049,7 +1049,7 @@ partial class Sample
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1093,7 +1093,7 @@ partial class Foo
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1149,7 +1149,7 @@ partial class Sample
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 #endif
@@ -1214,7 +1214,7 @@ partial class Program
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1247,7 +1247,7 @@ partial class Program
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1287,7 +1287,7 @@ partial class Program
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 #endif
