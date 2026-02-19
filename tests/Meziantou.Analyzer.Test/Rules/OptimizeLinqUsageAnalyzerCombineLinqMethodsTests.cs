@@ -103,27 +103,17 @@ class Test
     public async Task CombineWhereWithTheFollowingWhereMethod_IQueryable()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        System.Linq.IQueryable<int> enumerable = null;
-        [||]enumerable.Where(x => x == 0).Where(y => true);
-    }
-}
-")
-              .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Where'")
-              .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        System.Linq.IQueryable<int> enumerable = null;
-        enumerable.Where(x => x == 0 && true);
-    }
-}
-")
+              .WithSourceCode("""
+                    using System.Linq;
+                    class Test
+                    {
+                        public Test()
+                        {
+                            System.Linq.IQueryable<int> enumerable = null;
+                            enumerable.Where(x => x == 0).Where(y => true);
+                        }
+                    }
+                    """)
               .ValidateAsync();
     }
 

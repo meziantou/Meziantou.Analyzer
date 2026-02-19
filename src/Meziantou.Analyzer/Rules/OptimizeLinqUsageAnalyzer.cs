@@ -441,6 +441,11 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (CombinableLinqMethods.Contains(parent.TargetMethod.Name))
                     {
+                        // Do not report Where().Where() on IQueryable<T> since the generated query is identical
+                        // and splitting Where clauses can improve readability
+                        if (parent.TargetMethod.Name == nameof(Enumerable.Where) && QueryableSymbol is not null && operation.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol) && parent.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol))
+                            return;
+
                         var properties = CreateProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod)
                            .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
                            .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
