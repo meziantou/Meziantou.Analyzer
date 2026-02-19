@@ -355,10 +355,18 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder WithSourceGeneratorsFromNuGet(string packageName, string version, string pathPrefix)
     {
-        var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
-        foreach (var reference in references)
+        try
         {
-            AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
+            var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
+            foreach (var reference in references)
+            {
+                AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Source generators may not exist in older versions of the package
+            // This is expected and should not fail the test
         }
 
         return this;
