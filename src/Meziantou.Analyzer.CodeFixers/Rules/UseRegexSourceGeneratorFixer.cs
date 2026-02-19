@@ -38,15 +38,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             isCSharp14OrAbove = parseOptions.LanguageVersion.IsCSharp14OrAbove();
         }
 
-        // Always offer partial method
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use Regex Source Generator (partial method)",
-                cancellationToken => ConvertToSourceGenerator(context.Document, context.Diagnostics[0], usePartialProperty: false, cancellationToken),
-                equivalenceKey: "Use Regex Source Generator (partial method)"),
-            context.Diagnostics);
-
-        // Offer partial property if C# 14 or later
+        // Offer partial property first if C# 14 or later
         if (isCSharp14OrAbove)
         {
             context.RegisterCodeFix(
@@ -56,6 +48,14 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                     equivalenceKey: "Use Regex Source Generator (partial property)"),
                 context.Diagnostics);
         }
+
+        // Always offer partial method
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                "Use Regex Source Generator (partial method)",
+                cancellationToken => ConvertToSourceGenerator(context.Document, context.Diagnostics[0], usePartialProperty: false, cancellationToken),
+                equivalenceKey: "Use Regex Source Generator (partial method)"),
+            context.Diagnostics);
     }
 
     private static async Task<Document> ConvertToSourceGenerator(Document document, Diagnostic diagnostic, bool usePartialProperty, CancellationToken cancellationToken)

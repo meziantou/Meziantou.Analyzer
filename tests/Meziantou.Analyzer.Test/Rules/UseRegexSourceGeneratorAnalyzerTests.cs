@@ -16,6 +16,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
             .WithNoFixCompilation(); // requires the regex source generator
     }
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NewRegex_Options_Timeout()
     {
@@ -43,11 +44,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NewRegex_Options()
     {
@@ -75,11 +80,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NewRegex()
     {
@@ -107,11 +116,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexIsMatch_Options_Timeout()
     {
@@ -139,11 +152,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexIsMatch_Options()
     {
@@ -171,11 +188,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexIsMatch()
     {
@@ -203,11 +224,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace_Options_Timeout()
     {
@@ -235,11 +260,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace_Options()
     {
@@ -267,11 +296,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace()
     {
@@ -299,11 +332,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace_MatchEvaluator()
     {
@@ -331,11 +368,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Theory]
     [InlineData("TimeSpan.FromMilliseconds(10)", "10")]
     [InlineData("TimeSpan.FromSeconds(10.5)", "10500")]
@@ -373,11 +414,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+                  codeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Theory]
     [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
     [InlineData("Regex.InfiniteMatchTimeout")]
@@ -407,11 +452,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+                  codeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Theory]
     [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
     [InlineData("Regex.InfiniteMatchTimeout")]
@@ -441,11 +490,15 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+                  codeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task GenerateUniqueMethodName()
     {
@@ -476,10 +529,13 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+                  codeFix)
               .ValidateAsync();
     }
+#endif
 
     [Fact]
     public async Task NonConstantPattern()
@@ -499,6 +555,7 @@ class Test
               .ValidateAsync();
     }
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NestedTypeShouldAddPartialToAllAncestorTypes()
     {
@@ -538,10 +595,13 @@ partial class Sample
 ";
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(codeFix)
+              .ShouldFixCodeWith(
+                  codeFix)
               .ValidateAsync();
     }
+#endif
 
 #if CSHARP14_OR_GREATER
     [Fact]
@@ -575,7 +635,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -610,7 +670,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -645,7 +705,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -682,7 +742,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -719,7 +779,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -756,7 +816,7 @@ partial class Test
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -805,11 +865,12 @@ partial class Sample
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 #endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Field_SuggestFieldName()
     {
@@ -847,11 +908,15 @@ partial class Sample
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Field_SuggestFieldNameWithoutRegexSuffix()
     {
@@ -889,11 +954,15 @@ partial class Sample
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Variable_SuggestPascalCaseName()
     {
@@ -929,11 +998,15 @@ partial class Foo
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Variable_AlreadyPascalCase()
     {
@@ -969,11 +1042,15 @@ partial class Foo
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task StaticMethod_UseDefaultName()
     {
@@ -1001,10 +1078,13 @@ partial class Test
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
 #if CSHARP14_OR_GREATER
     [Fact]
@@ -1049,7 +1129,7 @@ partial class Sample
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1093,7 +1173,7 @@ partial class Foo
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1149,11 +1229,12 @@ partial class Sample
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 #endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_NewRegex_PartialMethod()
     {
@@ -1178,11 +1259,14 @@ partial class Program
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 
 #if CSHARP14_OR_GREATER
     [Fact]
@@ -1214,7 +1298,7 @@ partial class Program
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1247,7 +1331,7 @@ partial class Program
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 
@@ -1287,11 +1371,12 @@ partial class Program
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
             .WithNoFixCompilation()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
 #endif
 
+#if CSHARP11_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_StaticMethod_PartialMethod()
     {
@@ -1314,9 +1399,12 @@ partial class Program
 """;
 
         await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(
+                  CodeFix)
               .ValidateAsync();
     }
+#endif
 }
