@@ -31,6 +31,7 @@ public sealed partial class ProjectBuilder
     public IList<MetadataReference> References { get; } = [];
     public IList<string> ApiReferences { get; } = [];
     public IList<DiagnosticAnalyzer> DiagnosticAnalyzer { get; } = [];
+    public IList<AnalyzerReference> AnalyzerReferences { get; } = [];
     public CodeFixProvider? CodeFixProvider { get; private set; }
     public IList<DiagnosticResult> ExpectedDiagnosticResults { get; } = [];
     public string? ExpectedFixedCode { get; private set; }
@@ -343,6 +344,31 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithNoFixCompilation()
     {
         IsValidFixCode = false;
+        return this;
+    }
+
+    public ProjectBuilder WithSourceGeneratorFromAssembly(string assemblyPath)
+    {
+        AnalyzerReferences.Add(new AnalyzerFileReference(assemblyPath, AnalyzerAssemblyLoader.Instance));
+        return this;
+    }
+
+    public ProjectBuilder WithSourceGeneratorsFromNuGet(string packageName, string version, string pathPrefix)
+    {
+        try
+        {
+            var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
+            foreach (var reference in references)
+            {
+                AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Source generators may not exist in older versions of the package
+            // This is expected and should not fail the test
+        }
+
         return this;
     }
 

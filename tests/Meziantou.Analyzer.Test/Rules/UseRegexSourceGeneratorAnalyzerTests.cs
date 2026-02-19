@@ -1177,6 +1177,182 @@ partial class Foo
             .ValidateAsync();
     }
 
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public async Task PropertyInitializer_RemoveAndReplaceWithProperty_PartialMethod()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    public Regex SampleRegex { get; } = [||]new Regex("pattern");
+
+    void M()
+    {
+        _ = SampleRegex.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    public Regex SampleRegex { get; } = SampleRegex_();
+
+    void M()
+    {
+        _ = SampleRegex.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex SampleRegex_();
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetLatest)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PropertyInitializer_NoReferences_RemoveAndReplaceWithProperty_PartialMethod()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    public Regex EmailRegex { get; } = [||]new Regex("pattern");
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    public Regex EmailRegex { get; } = EmailRegex_();
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex EmailRegex_();
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetLatest)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PropertyInitializer_WithOptions_RemoveAndReplaceWithProperty_PartialMethod()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    public Regex Pattern { get; } = [||]new Regex("pattern", RegexOptions.IgnoreCase);
+
+    void M()
+    {
+        _ = Pattern.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    public Regex Pattern { get; } = Pattern_();
+
+    void M()
+    {
+        _ = Pattern.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern", RegexOptions.IgnoreCase)]
+    private static partial Regex Pattern_();
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetLatest)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PropertyInitializer_PartialMethod()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Sample
+{
+    public Regex Pattern { get; } = [||]new Regex("pattern");
+
+    void M()
+    {
+        _ = Pattern.IsMatch("value");
+    }
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Sample
+{
+    public Regex Pattern { get; } = Pattern_();
+
+    void M()
+    {
+        _ = Pattern.IsMatch("value");
+    }
+
+    [GeneratedRegex("pattern")]
+    private static partial Regex Pattern_();
+}
+""";
+
+        await new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.NetLatest)
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
+            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
+            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(1, CodeFix)
+            .ValidateAsync();
+    }
+#endif
+
     [Fact]
     public async Task Field_MultipleReferences_RemoveAndReplaceWithProperty_PartialProperty()
     {

@@ -189,18 +189,22 @@ public sealed partial class ProjectBuilder
 
             case TargetFramework.Net7_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0", "ref/net7.0/");
+                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "7.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.Net8_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0", "ref/net8.0/");
+                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "8.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.Net9_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "9.0.0", "ref/net9.0/");
+                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "9.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.Net10_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "10.0.0", "ref/net10.0/");
+                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "10.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.AspNetCore5_0:
@@ -216,11 +220,13 @@ public sealed partial class ProjectBuilder
             case TargetFramework.AspNetCore7_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0", "ref/net7.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "7.0.0", "ref/net7.0/");
+                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "7.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.AspNetCore8_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0", "ref/net8.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "8.0.0", "ref/net8.0/");
+                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "8.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.WindowsDesktop5_0:
@@ -242,6 +248,18 @@ public sealed partial class ProjectBuilder
             .AddProject(projectId, testProjectName, testProjectName, LanguageNames.CSharp)
             .WithProjectParseOptions(projectId, CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion))
             .AddMetadataReferences(projectId, References);
+
+        // Add analyzer references (source generators)
+        var project = solution.GetProject(projectId)!;
+        foreach (var analyzerReference in AnalyzerReferences.Distinct())
+        {
+            // Check if the analyzer reference is already added
+            if (!project.AnalyzerReferences.Any(ar => ar.FullPath == analyzerReference.FullPath))
+            {
+                project = project.AddAnalyzerReference(analyzerReference);
+            }
+        }
+        solution = project.Solution;
 
         var count = 0;
         AppendFile(FileName, SourceCode);
