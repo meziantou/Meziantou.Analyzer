@@ -43,7 +43,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -77,7 +77,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -111,7 +111,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -145,7 +145,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -179,7 +179,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -213,7 +213,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -247,7 +247,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -281,7 +281,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -315,7 +315,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -349,7 +349,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -393,7 +393,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
                   codeFix)
@@ -429,7 +429,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
                   codeFix)
@@ -465,7 +465,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
                   codeFix)
@@ -502,7 +502,7 @@ partial class Test
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
                   codeFix)
@@ -566,7 +566,7 @@ partial class Sample
 ";
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(sourceCode)
               .ShouldFixCodeWith(
                   codeFix)
@@ -877,7 +877,7 @@ partial class Sample
 """;
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -921,7 +921,7 @@ partial class Sample
 """;
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -963,7 +963,7 @@ partial class Foo
 """;
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -1005,7 +1005,7 @@ partial class Foo
 """;
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -1039,7 +1039,7 @@ partial class Test
 """;
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
                   CodeFix)
@@ -1218,7 +1218,7 @@ partial class Program
 """;
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
@@ -1356,7 +1356,7 @@ partial class Program
 """;
 
         await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.(Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
+              .WithLanguageVersion((Microsoft.CodeAnalysis.CSharp.LanguageVersion)1100)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(
