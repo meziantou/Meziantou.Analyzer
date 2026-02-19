@@ -61,17 +61,9 @@ public sealed partial class ProjectBuilder
                 await using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
                 await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
-                var hasEntry = false;
                 foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                 {
                     await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
-                    hasEntry = true;
-                }
-
-                if (!hasEntry)
-                {
-                    // No files found matching the path prefix, return empty array
-                    return [];
                 }
 
                 try
@@ -86,12 +78,6 @@ public sealed partial class ProjectBuilder
                         throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version + "\n" + ex);
                     }
                 }
-            }
-
-            if (!Directory.Exists(cacheFolder))
-            {
-                // No files found matching the path prefix, return empty array
-                return [];
             }
 
             var dlls = Directory.GetFiles(cacheFolder, "*.dll");
