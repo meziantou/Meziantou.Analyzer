@@ -73,8 +73,11 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
         var typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-        if (root is null || nodeToFix is null || typeDeclaration is null)
+        if (root is null || nodeToFix is null)
             return document;
+
+        // Check if we're in a top-level statement (no type declaration)
+        var isTopLevelStatement = typeDeclaration is null;
 
         // Get type info before changing the root
         var properties = diagnostic.Properties;
@@ -90,7 +93,17 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var methodName = GetSuggestedNameFromContext(operation) ?? "MyRegex";
 
         // Ensure the name is unique in the containing type
-        var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration, cancellationToken);
+        ITypeSymbol? typeSymbol = null;
+        if (isTopLevelStatement)
+        {
+            // For top-level statements, we need to find or assume the Program type
+            typeSymbol = compilation.GetBestTypeByMetadataName("Program");
+        }
+        else if (typeDeclaration is not null)
+        {
+            typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration, cancellationToken);
+        }
+
         if (typeSymbol is not null)
         {
             var members = typeSymbol.GetAllMembers().ToArray();
@@ -145,9 +158,15 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                     return document;
                     
                 nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
-                typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-                if (nodeToFix is null || typeDeclaration is null)
+                if (nodeToFix is null)
                     return document;
+                    
+                if (!isTopLevelStatement)
+                {
+                    typeDeclaration = nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+                    if (typeDeclaration is null)
+                        return document;
+                }
                     
                 operation = semanticModel.GetOperation(nodeToFix, cancellationToken);
                 if (operation is null)
@@ -164,11 +183,24 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         {
             root = root.ReplaceNode(fieldOrVariableToRemove, fieldOrVariableToRemove.WithAdditionalAnnotations(fieldOrVariableAnnotation));
             nodeToFix = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: false);
-            typeDeclaration = nodeToFix?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-            if (nodeToFix is null || typeDeclaration is null)
+            if (nodeToFix is null)
                 return document;
+
+            if (!isTopLevelStatement)
+            {
+                typeDeclaration = nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+                if (typeDeclaration is null)
+                    return document;
+            }
         }
 
+        // For top-level statements, handle differently
+        if (isTopLevelStatement)
+        {
+            return await ConvertTopLevelStatementToSourceGenerator(document, root, nodeToFix, operation, properties, compilation, regexSymbol, regexGeneratorAttributeSymbol, methodName, fieldOrVariableAnnotation, shouldRemoveFieldOrVariable, usePartialProperty).ConfigureAwait(false);
+        }
+
+        // Regular class handling
         // Add partial to the type hierarchy
         var count = 0;
         root = root.ReplaceNodes(nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>(), (_, r) =>
@@ -361,6 +393,10 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
     private static string? GetSuggestedNameFromContext(IOperation operation)
     {
+        // Only suggest names from context for object creation (new Regex(...))
+        // For static method calls like Regex.IsMatch, don't use the variable name
+        var isObjectCreation = operation is IObjectCreationOperation;
+
         // Walk up the operation tree to find if we're in a field or variable initializer
         foreach (var ancestor in operation.Ancestors())
         {
@@ -380,7 +416,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             }
 
             // Check for variable declarator (local variable)
-            if (ancestor is IVariableDeclaratorOperation variableDeclarator)
+            // Only use variable name if we're creating a Regex object, not calling a static method
+            if (isObjectCreation && ancestor is IVariableDeclaratorOperation variableDeclarator)
             {
                 var variableName = variableDeclarator.Symbol.Name;
                 // Only use the variable name if it's meaningful (more than 1 character)
@@ -476,6 +513,12 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 // Check if it's part of a local declaration statement
                 else if (variableDeclaration.Parent is LocalDeclarationStatementSyntax localDeclaration)
                 {
+                    // In top-level statements, local declarations are wrapped in GlobalStatementSyntax
+                    if (localDeclaration.Parent is GlobalStatementSyntax globalStatement)
+                    {
+                        return root.RemoveNode(globalStatement, SyntaxRemoveOptions.KeepNoTrivia);
+                    }
+
                     return root.RemoveNode(localDeclaration, SyntaxRemoveOptions.KeepNoTrivia);
                 }
             }
@@ -487,5 +530,200 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
 
         return root;
+    }
+
+    private static Task<Document> ConvertTopLevelStatementToSourceGenerator(
+        Document document,
+        SyntaxNode root,
+        SyntaxNode nodeToFix,
+        IOperation operation,
+        ImmutableDictionary<string, string?> properties,
+        Compilation compilation,
+        INamedTypeSymbol regexSymbol,
+        INamedTypeSymbol regexGeneratorAttributeSymbol,
+        string methodName,
+        SyntaxAnnotation fieldOrVariableAnnotation,
+        bool shouldRemoveFieldOrVariable,
+        bool usePartialProperty)
+    {
+        var generator = SyntaxGenerator.GetGenerator(document);
+
+        // Get the compilation unit
+        var compilationUnit = root as CompilationUnitSyntax;
+        if (compilationUnit is null)
+            return Task.FromResult(document);
+
+        // Replace the usage with the new regex member access
+        SyntaxNode replacementNode;
+        if (operation is IObjectCreationOperation)
+        {
+            if (usePartialProperty)
+            {
+                replacementNode = generator.IdentifierName(methodName);
+            }
+            else
+            {
+                replacementNode = generator.InvocationExpression(generator.IdentifierName(methodName));
+            }
+        }
+        else if (operation is IInvocationOperation invocationOperation)
+        {
+            var arguments = invocationOperation.Arguments;
+            var indices = new[]
+            {
+                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName),
+                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
+                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
+            };
+            foreach (var index in indices.Where(value => value is not null).OrderDescending())
+            {
+                arguments = arguments.RemoveAt(index.GetValueOrDefault());
+            }
+
+            if (usePartialProperty)
+            {
+                var accessProperty = generator.IdentifierName(methodName);
+                replacementNode = generator.InvocationExpression(generator.MemberAccessExpression(accessProperty, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+            }
+            else
+            {
+                var createRegexMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
+                replacementNode = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+            }
+        }
+        else
+        {
+            return Task.FromResult(document);
+        }
+
+        root = root.ReplaceNode(nodeToFix, replacementNode);
+
+        // Remove the field or variable declaration if we're using partial property
+        if (shouldRemoveFieldOrVariable)
+        {
+            // Find the field/variable using the annotation
+            var fieldOrVariableInUpdatedRoot = root.GetAnnotatedNodes(fieldOrVariableAnnotation).FirstOrDefault();
+
+            if (fieldOrVariableInUpdatedRoot is not null)
+            {
+                var newRoot = RemoveFieldOrVariable(root, fieldOrVariableInUpdatedRoot);
+                if (newRoot is not null)
+                {
+                    root = newRoot;
+                }
+            }
+        }
+
+        // Generate method or property
+        SyntaxNode? patternValue = null;
+        SyntaxNode? regexOptionsValue = null;
+        SyntaxNode? timeoutValue = null;
+
+        var timeout = TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName);
+        if (timeout is not null)
+        {
+            timeoutValue = generator.LiteralExpression(timeout.Value);
+        }
+
+        if (operation is IObjectCreationOperation objectCreationOperation)
+        {
+            patternValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
+        }
+        else if (operation is IInvocationOperation invocationOperation2)
+        {
+            patternValue = GetNode(invocationOperation2.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetNode(invocationOperation2.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
+        }
+
+        if (timeoutValue is not null && regexOptionsValue is null)
+        {
+            regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
+        }
+
+        // Generate the member
+        SyntaxNode newMember;
+
+        if (usePartialProperty)
+        {
+            // Generate partial property manually to ensure proper syntax
+            var propertyType = (TypeSyntax)generator.TypeExpression(regexSymbol);
+            var accessorList = AccessorList(
+                List([
+                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                ]));
+
+            var newProperty = PropertyDeclaration(propertyType, methodName)
+                .WithModifiers(TokenList(
+                    Token(SyntaxKind.PrivateKeyword),
+                    Token(SyntaxKind.StaticKeyword),
+                    Token(SyntaxKind.PartialKeyword)))
+                .WithAccessorList(accessorList);
+
+            newProperty = newProperty.ReplaceToken(newProperty.Identifier, Identifier(methodName).WithAdditionalAnnotations(RenameAnnotation.Create()));
+
+            // Extract arguments (pattern,options,timeout)
+            var attributes = generator.Attribute(generator.TypeExpression(regexGeneratorAttributeSymbol), attributeArguments: (patternValue, regexOptionsValue, timeoutValue) switch
+            {
+                ({ }, null, null) => [patternValue],
+                ({ }, { }, null) => [patternValue, regexOptionsValue],
+                ({ }, { }, { }) => [patternValue, regexOptionsValue, AttributeArgument((ExpressionSyntax)timeoutValue).WithNameColon(NameColon(IdentifierName("matchTimeoutMilliseconds")))],
+                _ => Array.Empty<SyntaxNode>(),
+            });
+
+            newMember = (PropertyDeclarationSyntax)generator.AddAttributes(newProperty, attributes);
+        }
+        else
+        {
+            // Generate partial method
+            var newMethod = (MethodDeclarationSyntax)generator.MethodDeclaration(
+                name: methodName,
+                returnType: generator.TypeExpression(regexSymbol),
+                modifiers: DeclarationModifiers.Static | DeclarationModifiers.Partial,
+                accessibility: Accessibility.Private);
+
+            newMethod = newMethod.ReplaceToken(newMethod.Identifier, Identifier(methodName).WithAdditionalAnnotations(RenameAnnotation.Create()));
+
+            // Extract arguments (pattern,options,timeout)
+            var attributes = generator.Attribute(generator.TypeExpression(regexGeneratorAttributeSymbol), attributeArguments: (patternValue, regexOptionsValue, timeoutValue) switch
+            {
+                ({ }, null, null) => [patternValue],
+                ({ }, { }, null) => [patternValue, regexOptionsValue],
+                ({ }, { }, { }) => [patternValue, regexOptionsValue, AttributeArgument((ExpressionSyntax)timeoutValue).WithNameColon(NameColon(IdentifierName("matchTimeoutMilliseconds")))],
+                _ => Array.Empty<SyntaxNode>(),
+            });
+
+            newMember = (MethodDeclarationSyntax)generator.AddAttributes(newMethod, attributes);
+        }
+
+        // Check if a partial Program class already exists in the file
+        compilationUnit = root as CompilationUnitSyntax;
+        if (compilationUnit is null)
+            return Task.FromResult(document);
+
+        var existingProgramClass = compilationUnit.Members
+            .OfType<ClassDeclarationSyntax>()
+            .FirstOrDefault(c => c.Identifier.Text == "Program" && c.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)));
+
+        if (existingProgramClass is not null)
+        {
+            // Add the member to the existing Program class
+            var newProgramClass = existingProgramClass.AddMembers((MemberDeclarationSyntax)newMember);
+            root = root.ReplaceNode(existingProgramClass, newProgramClass);
+        }
+        else
+        {
+            // Create a new partial Program class
+            var programClass = ClassDeclaration("Program")
+                .WithModifiers(TokenList(Token(SyntaxKind.PartialKeyword)))
+                .WithMembers(SingletonList((MemberDeclarationSyntax)newMember));
+
+            // Add the Program class to the compilation unit
+            compilationUnit = compilationUnit.AddMembers(programClass);
+            root = compilationUnit;
+        }
+
+        return Task.FromResult(document.WithSyntaxRoot(root));
     }
 }
