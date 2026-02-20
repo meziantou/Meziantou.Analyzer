@@ -99,8 +99,17 @@ class Test
               .ValidateAsync();
     }
 
-    [Fact]
-    public async Task CombineWhereWithTheFollowingWhereMethod_IQueryable()
+    [Theory]
+    [InlineData("Any")]
+    [InlineData("First")]
+    [InlineData("FirstOrDefault")]
+    [InlineData("Last")]
+    [InlineData("LastOrDefault")]
+    [InlineData("Single")]
+    [InlineData("SingleOrDefault")]
+    [InlineData("Count")]
+    [InlineData("LongCount")]
+    public async Task CombineWhereWithTheFollowingMethod_IQueryable(string methodName)
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"using System.Linq;
@@ -109,21 +118,28 @@ class Test
     public Test()
     {
         System.Linq.IQueryable<int> enumerable = null;
-        [||]enumerable.Where(x => x == 0).Where(y => true);
+        enumerable.Where(x => x == 0)." + methodName + @"();
     }
 }
 ")
-              .ShouldReportDiagnosticWithMessage($"Combine 'Where' with 'Where'")
-              .ShouldFixCodeWith(@"using System.Linq;
-class Test
-{
-    public Test()
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CombineWhereWithTheFollowingWhereMethod_IQueryable()
     {
-        System.Linq.IQueryable<int> enumerable = null;
-        enumerable.Where(x => x == 0 && true);
-    }
-}
-")
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                    using System.Linq;
+                    class Test
+                    {
+                        public Test()
+                        {
+                            System.Linq.IQueryable<int> enumerable = null;
+                            enumerable.Where(x => x == 0).Where(y => true);
+                        }
+                    }
+                    """)
               .ValidateAsync();
     }
 
