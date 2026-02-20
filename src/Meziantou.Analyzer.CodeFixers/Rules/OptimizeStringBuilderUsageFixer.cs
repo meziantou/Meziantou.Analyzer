@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -253,8 +254,13 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
 
         var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
 
+        var stringFormatSyntax = (InvocationExpressionSyntax)stringFormatOperation.Syntax;
+        var arguments = stringFormatSyntax.ArgumentList.Arguments
+            .Select(static argument => (SyntaxNode)argument.WithAdditionalAnnotations(Simplifier.Annotation))
+            .ToArray();
+
         var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendFormat"),
-            [.. stringFormatOperation.Arguments.Select(a => a.Syntax)]);
+            [.. arguments]);
 
         if (isAppendLine)
         {
