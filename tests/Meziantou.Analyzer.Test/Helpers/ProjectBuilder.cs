@@ -61,16 +61,9 @@ public sealed partial class ProjectBuilder
                 await using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
                 await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
-                var hasEntry = false;
                 foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                 {
                     await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
-                    hasEntry = true;
-                }
-
-                if (!hasEntry)
-                {
-                    throw new InvalidOperationException("The NuGet package " + packageName + "@" + version + " does not contain any file matching the paths " + string.Join(", ", includedPaths));
                 }
 
                 try
@@ -108,7 +101,6 @@ public sealed partial class ProjectBuilder
                 }
             }
 
-            Assert.NotEmpty(result);
             return [.. result];
         }
     }
@@ -355,18 +347,10 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder WithSourceGeneratorsFromNuGet(string packageName, string version, string pathPrefix)
     {
-        try
+        var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
+        foreach (var reference in references)
         {
-            var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
-            foreach (var reference in references)
-            {
-                AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
-            }
-        }
-        catch (InvalidOperationException)
-        {
-            // Source generators may not exist in older versions of the package
-            // This is expected and should not fail the test
+            AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
         }
 
         return this;

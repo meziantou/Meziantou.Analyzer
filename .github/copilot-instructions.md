@@ -37,3 +37,68 @@ The analyzer must use `IOperation` or `ISymbol` to analyze the content. Only fal
 
 Code snippets in tests must use raw string literals (`"""`) and must be minimized to only include the necessary code to reproduce the issue. Avoid including unnecessary code that does not contribute to the test case.
 When reporting a diagnostic, the snippet must use the `[|code|]` syntax or `{|id:code|}` syntax. Do not explicitly indicates lines or columns.
+
+## Testing with different Roslyn versions
+
+This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are configured in `Directory.Build.targets`:
+
+- `roslyn4.2` - Roslyn 4.2.0 (C# 9, C# 10)
+- `roslyn4.4` - Roslyn 4.4.0 (C# 9, C# 10, C# 11)
+- `roslyn4.6` - Roslyn 4.6.0 (C# 9, C# 10, C# 11)
+- `roslyn4.8` - Roslyn 4.8.0 (C# 9, C# 10, C# 11, C# 12)
+- `roslyn4.14` - Roslyn 4.14.0 (C# 9, C# 10, C# 11, C# 12, C# 13)
+- `default` - Roslyn 5.0.0 (latest, C# 9, C# 10, C# 11, C# 12, C# 13, C# 14)
+
+### Building with a specific Roslyn version
+
+To build the project with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild property:
+
+```bash
+dotnet build --configuration Release /p:RoslynVersion=roslyn4.2
+dotnet build --configuration Release /p:RoslynVersion=roslyn4.14
+dotnet build --configuration Release  # Uses default (latest) version
+```
+
+### Running tests with a specific Roslyn version
+
+To run tests with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild property:
+
+```bash
+# Test with a specific Roslyn version
+dotnet test --configuration Release /p:RoslynVersion=roslyn4.2
+dotnet test --configuration Release /p:RoslynVersion=roslyn4.4
+dotnet test --configuration Release /p:RoslynVersion=roslyn4.6
+dotnet test --configuration Release /p:RoslynVersion=roslyn4.8
+dotnet test --configuration Release /p:RoslynVersion=roslyn4.14
+
+# Test with default (latest) Roslyn version
+dotnet test --configuration Release
+```
+
+You can also filter tests to run only specific test classes or methods:
+
+```bash
+# Run only tests from a specific test class
+dotnet test --configuration Release /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
+
+# Run a specific test method
+dotnet test --configuration Release /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
+```
+
+### When to test with multiple Roslyn versions
+
+You SHOULD test with multiple Roslyn versions when:
+
+- Making changes that affect analyzer or code fixer functionality
+- Making changes to the test infrastructure (e.g., `ProjectBuilder` helpers)
+- Making changes that use Roslyn APIs or language features that may behave differently across versions
+- Making changes that involve conditional compilation based on Roslyn version (e.g., `#if CSHARP11_OR_GREATER`)
+
+You do NOT need to test with multiple Roslyn versions when:
+
+- Making documentation-only changes
+- Making changes to build scripts or CI configuration (unless they affect version-specific builds)
+
+### CI and Roslyn versions
+
+The CI pipeline (`.github/workflows/ci.yml`) automatically tests with all supported Roslyn versions as part of the `build_and_test` job. All Roslyn versions must pass before a PR can be merged.
