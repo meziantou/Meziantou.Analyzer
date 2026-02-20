@@ -576,6 +576,39 @@ class Test
     }
 
     [Fact]
+    public async Task AppendLine_AppendFormat_ImplicitParamsArray()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(
+                """
+                using System.Globalization;
+                using System.Text;
+
+                class Test
+                {
+                    void A()
+                    {
+                        [||]new StringBuilder().AppendLine(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment"));
+                    }
+                }
+                """)
+              .ShouldFixCodeWith(
+                """
+                using System.Globalization;
+                using System.Text;
+
+                class Test
+                {
+                    void A()
+                    {
+                        new StringBuilder().AppendFormat(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment").AppendLine();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Append_StringJoin_AppendJoin_OldTargetFramework()
     {
         await CreateProjectBuilder()
