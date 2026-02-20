@@ -46,36 +46,65 @@ public sealed partial class ProjectBuilder
         var hash = SHA256.HashData(bytes);
         var key = Convert.ToBase64String(hash).Replace('/', '_');
         var task = NuGetPackagesCache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
-        return await task.Value.ConfigureAwait(false);
+        try
+        {
+            return await task.Value.ConfigureAwait(false);
+        }
+        catch
+        {
+            _ = NuGetPackagesCache.TryRemove(key, out _);
+            throw;
+        }
 
         async Task<string[]> Download()
         {
             var cacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Meziantou.AnalyzerTests", "ref", key);
-            bool IsCacheValid() => Directory.Exists(cacheFolder) && Directory.EnumerateFileSystemEntries(cacheFolder).Any();
+            var completionFile = Path.Combine(cacheFolder, ".complete");
+            bool IsCacheValid()
+            {
+                if (!Directory.Exists(cacheFolder))
+                    return false;
+
+                if (File.Exists(completionFile))
+                    return true;
+
+                return Directory.EnumerateFileSystemEntries(cacheFolder).Any();
+            }
 
             if (!IsCacheValid())
             {
                 var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-
-                Directory.CreateDirectory(tempFolder);
-                await using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
-                await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
-
-                foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
-                {
-                    await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
-                }
-
                 try
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(cacheFolder)!);
-                    Directory.Move(tempFolder, cacheFolder);
-                }
-                catch (Exception ex)
-                {
-                    if (!IsCacheValid())
+                    Directory.CreateDirectory(tempFolder);
+                    await using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
+                    await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+
+                    foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                     {
-                        throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version + "\n" + ex);
+                        await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
+                    }
+
+                    await File.WriteAllTextAsync(Path.Combine(tempFolder, ".complete"), string.Empty).ConfigureAwait(false);
+
+                    try
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(cacheFolder)!);
+                        Directory.Move(tempFolder, cacheFolder);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!IsCacheValid())
+                        {
+                            throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version + "\n" + ex);
+                        }
+                    }
+                }
+                finally
+                {
+                    if (Directory.Exists(tempFolder))
+                    {
+                        Directory.Delete(tempFolder, recursive: true);
                     }
                 }
             }
