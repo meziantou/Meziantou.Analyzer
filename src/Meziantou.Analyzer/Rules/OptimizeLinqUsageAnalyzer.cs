@@ -441,9 +441,9 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (CombinableLinqMethods.Contains(parent.TargetMethod.Name))
                     {
-                        // Do not report Where().Where() on IQueryable<T> since the generated query is identical
-                        // and splitting Where clauses can improve readability
-                        if (parent.TargetMethod.Name == nameof(Enumerable.Where) && QueryableSymbol is not null && operation.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol) && parent.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol))
+                        // Do not report on IQueryable<T> since combining Where clauses has no performance benefit
+                        // (the generated query is identical) and splitting them can improve readability
+                        if (QueryableSymbol is not null && operation.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol) && parent.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol))
                             return;
 
                         var properties = CreateProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod)

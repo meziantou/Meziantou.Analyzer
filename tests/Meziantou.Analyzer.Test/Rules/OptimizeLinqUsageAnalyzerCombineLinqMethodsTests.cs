@@ -99,6 +99,32 @@ class Test
               .ValidateAsync();
     }
 
+    [Theory]
+    [InlineData("Any")]
+    [InlineData("First")]
+    [InlineData("FirstOrDefault")]
+    [InlineData("Last")]
+    [InlineData("LastOrDefault")]
+    [InlineData("Single")]
+    [InlineData("SingleOrDefault")]
+    [InlineData("Count")]
+    [InlineData("LongCount")]
+    public async Task CombineWhereWithTheFollowingMethod_IQueryable(string methodName)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        System.Linq.IQueryable<int> enumerable = null;
+        enumerable.Where(x => x == 0)." + methodName + @"();
+    }
+}
+")
+              .ValidateAsync();
+    }
+
     [Fact]
     public async Task CombineWhereWithTheFollowingWhereMethod_IQueryable()
     {
