@@ -189,22 +189,18 @@ public sealed partial class ProjectBuilder
 
             case TargetFramework.Net7_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0", "ref/net7.0/");
-                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "7.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.Net8_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0", "ref/net8.0/");
-                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "8.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.Net9_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "9.0.0", "ref/net9.0/");
-                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "9.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.Net10_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "10.0.0", "ref/net10.0/");
-                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "10.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.AspNetCore5_0:
@@ -220,18 +216,40 @@ public sealed partial class ProjectBuilder
             case TargetFramework.AspNetCore7_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "7.0.0", "ref/net7.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "7.0.0", "ref/net7.0/");
-                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "7.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.AspNetCore8_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "8.0.0", "ref/net8.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "8.0.0", "ref/net8.0/");
-                WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "8.0.0", "analyzers/dotnet/cs/");
                 break;
 
             case TargetFramework.WindowsDesktop5_0:
                 AddNuGetReference("Microsoft.WindowsDesktop.App.Ref", "5.0.0", "ref/net5.0/");
                 break;
+        }
+
+        if (UseFrameworkSourceGenerators)
+        {
+            switch (TargetFramework)
+            {
+                case TargetFramework.Net7_0:
+                case TargetFramework.AspNetCore7_0:
+                    WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "7.0.0", "analyzers/dotnet/cs/");
+                    break;
+
+                case TargetFramework.Net8_0:
+                case TargetFramework.AspNetCore8_0:
+                    WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "8.0.0", "analyzers/dotnet/cs/");
+                    break;
+
+                case TargetFramework.Net9_0:
+                    WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "9.0.0", "analyzers/dotnet/cs/");
+                    break;
+
+                case TargetFramework.Net10_0:
+                    WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "10.0.0", "analyzers/dotnet/cs/");
+                    break;
+            }
         }
 
 

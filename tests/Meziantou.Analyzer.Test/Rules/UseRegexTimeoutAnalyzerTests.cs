@@ -9,6 +9,7 @@ public sealed class UseRegexTimeoutAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithAnalyzer<RegexMethodUsageAnalyzer>()
             .WithAnalyzer<GeneratedRegexAttributeUsageAnalyzer>();
     }

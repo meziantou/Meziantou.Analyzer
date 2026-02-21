@@ -27,6 +27,7 @@ public sealed partial class ProjectBuilder
     public Dictionary<string, string>? AdditionalFiles { get; private set; }
     public bool IsValidCode { get; private set; } = true;
     public bool IsValidFixCode { get; private set; } = true;
+    public bool UseFrameworkSourceGenerators { get; private set; }
     public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
     public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetLatest;
     public IList<MetadataReference> References { get; } = [];
@@ -374,6 +375,12 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithNoFixCompilation()
     {
         IsValidFixCode = false;
+        return this;
+    }
+
+    public ProjectBuilder WithFrameworkSourceGenerators()
+    {
+        UseFrameworkSourceGenerators = true;
         return this;
     }
 

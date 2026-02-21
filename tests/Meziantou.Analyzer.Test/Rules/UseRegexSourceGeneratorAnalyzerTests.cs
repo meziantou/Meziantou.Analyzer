@@ -10,6 +10,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     {
         return new ProjectBuilder()
             .WithTargetFramework(TargetFramework.Net7_0)
+            .WithFrameworkSourceGenerators()
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
             .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
@@ -629,6 +630,7 @@ partial class Test
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -664,6 +666,7 @@ partial class Test
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -699,6 +702,7 @@ partial class Test
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -736,6 +740,7 @@ partial class Test
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -773,6 +778,7 @@ partial class Test
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -810,6 +816,7 @@ partial class Test
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -859,6 +866,7 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1123,6 +1131,7 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1167,6 +1176,7 @@ partial class Foo
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1215,6 +1225,7 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1251,6 +1262,7 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1297,6 +1309,7 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1343,6 +1356,7 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.NetLatest)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1399,6 +1413,7 @@ partial class Sample
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
@@ -1467,6 +1482,7 @@ partial class Program
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
@@ -1500,6 +1516,7 @@ partial class Program
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
@@ -1540,6 +1557,7 @@ partial class Program
 """;
 
         await new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithTargetFramework(TargetFramework.Net7_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
