@@ -325,7 +325,7 @@ public sealed partial class ProjectBuilder
                         sourceCode = AnnotateSourceCodeWithDiagnostics(syntaxRoot!.ToFullString(), result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
                     }
 
-                    Assert.Fail("The code doesn't compile.\n\n" + sourceCode);
+                    Assert.Fail("The code doesn't compile.\n\n" + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + "\n\n" + sourceCode);
                 }
             }
 
