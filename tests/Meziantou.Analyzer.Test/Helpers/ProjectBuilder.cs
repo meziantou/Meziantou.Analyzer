@@ -16,6 +16,7 @@ namespace TestHelper;
 public sealed partial class ProjectBuilder
 {
     private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> NuGetPackagesCache = new(StringComparer.Ordinal);
+    private readonly AnalyzerAssemblyLoader _analyzerAssemblyLoader = new();
 
     private int _diagnosticMessageIndex;
 
@@ -378,7 +379,7 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder WithSourceGeneratorFromAssembly(string assemblyPath)
     {
-        AnalyzerReferences.Add(new AnalyzerFileReference(assemblyPath, AnalyzerAssemblyLoader.Instance));
+        AnalyzerReferences.Add(new AnalyzerFileReference(assemblyPath, _analyzerAssemblyLoader));
         return this;
     }
 
@@ -387,7 +388,7 @@ public sealed partial class ProjectBuilder
         var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
         foreach (var reference in references)
         {
-            AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
+            AnalyzerReferences.Add(new AnalyzerFileReference(reference, _analyzerAssemblyLoader));
         }
 
         return this;
