@@ -42,7 +42,7 @@ public sealed partial class ProjectBuilder
 
     private static async Task<string[]> GetNuGetReferences(string packageName, string version, string[] includedPaths)
     {
-        var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(',', includedPaths));
+        var bytes = Encoding.UTF8.GetBytes("v2:" + packageName + '@' + version + ':' + string.Join(',', includedPaths));
         var hash = SHA256.HashData(bytes);
         var key = Convert.ToBase64String(hash).Replace('/', '_');
         var task = NuGetPackagesCache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
@@ -82,7 +82,12 @@ public sealed partial class ProjectBuilder
 
                     foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                     {
-                        await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
+                        if (string.IsNullOrEmpty(entry.Name))
+                            continue;
+
+                        var destinationPath = Path.Combine(tempFolder, entry.FullName.Replace('/', Path.DirectorySeparatorChar));
+                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                        await entry.ExtractToFileAsync(destinationPath, overwrite: true);
                     }
 
                     await File.WriteAllTextAsync(Path.Combine(tempFolder, ".complete"), string.Empty).ConfigureAwait(false);
@@ -109,13 +114,16 @@ public sealed partial class ProjectBuilder
                 }
             }
 
-            var dlls = Directory.GetFiles(cacheFolder, "*.dll");
+            var dlls = Directory.GetFiles(cacheFolder, "*.dll", SearchOption.AllDirectories);
 
             // Filter invalid .NET assembly
             var result = new List<string>();
             foreach (var dll in dlls)
             {
                 if (Path.GetFileName(dll) == "System.EnterpriseServices.Wrapper.dll")
+                    continue;
+
+                if (Path.GetFileName(dll).EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 try
