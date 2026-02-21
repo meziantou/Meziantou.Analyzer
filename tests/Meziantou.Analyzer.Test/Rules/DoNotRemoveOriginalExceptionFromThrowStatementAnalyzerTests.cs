@@ -39,6 +39,45 @@ class Test
     }
 
     [Fact]
+    public async Task ShouldReportDiagnostic_DerivedException()
+    {
+        const string SourceCode = """
+class Test
+{
+    internal void Sample()
+    {
+        try
+        {
+        }
+        catch (System.InvalidOperationException ex)
+        {
+            [||]throw ex;
+        }
+    }
+}
+""";
+        const string CodeFix = """
+class Test
+{
+    internal void Sample()
+    {
+        try
+        {
+        }
+        catch (System.InvalidOperationException ex)
+        {
+            throw;
+        }
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ShouldReportDiagnostic()
     {
         const string SourceCode = @"
