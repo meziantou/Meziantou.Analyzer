@@ -35,7 +35,7 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
         if (operation.Exception is null)
             return;
 
-        if (operation.Exception is not ILocalReferenceOperation localReferenceOperation)
+        if (operation.Exception.UnwrapImplicitConversionOperations() is not ILocalReferenceOperation localReferenceOperation)
             return;
 
         var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();
