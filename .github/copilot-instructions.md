@@ -54,9 +54,9 @@ This project supports multiple versions of Roslyn to ensure compatibility with d
 To build the project with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild property:
 
 ```bash
-dotnet build --configuration Release /p:RoslynVersion=roslyn4.2
-dotnet build --configuration Release /p:RoslynVersion=roslyn4.14
-dotnet build --configuration Release  # Uses default (latest) version
+dotnet build /p:RoslynVersion=roslyn4.2
+dotnet build /p:RoslynVersion=roslyn4.14
+dotnet build # Uses default (latest) version
 ```
 
 ### Running tests with a specific Roslyn version
@@ -65,24 +65,24 @@ To run tests with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild 
 
 ```bash
 # Test with a specific Roslyn version
-dotnet test --configuration Release /p:RoslynVersion=roslyn4.2
-dotnet test --configuration Release /p:RoslynVersion=roslyn4.4
-dotnet test --configuration Release /p:RoslynVersion=roslyn4.6
-dotnet test --configuration Release /p:RoslynVersion=roslyn4.8
-dotnet test --configuration Release /p:RoslynVersion=roslyn4.14
+dotnet test /p:RoslynVersion=roslyn4.2
+dotnet test /p:RoslynVersion=roslyn4.4
+dotnet test /p:RoslynVersion=roslyn4.6
+dotnet test /p:RoslynVersion=roslyn4.8
+dotnet test /p:RoslynVersion=roslyn4.14
 
 # Test with default (latest) Roslyn version
-dotnet test --configuration Release
+dotnet test
 ```
 
 You can also filter tests to run only specific test classes or methods:
 
 ```bash
 # Run only tests from a specific test class
-dotnet test --configuration Release /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
+dotnet test /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
 
 # Run a specific test method
-dotnet test --configuration Release /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
+dotnet test /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
 ```
 
 ### When to test with multiple Roslyn versions

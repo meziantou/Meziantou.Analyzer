@@ -16,6 +16,7 @@ namespace TestHelper;
 public sealed partial class ProjectBuilder
 {
     private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> NuGetPackagesCache = new(StringComparer.Ordinal);
+    private readonly AnalyzerAssemblyLoader _analyzerAssemblyLoader = new();
 
     private int _diagnosticMessageIndex;
 
@@ -26,6 +27,7 @@ public sealed partial class ProjectBuilder
     public Dictionary<string, string>? AdditionalFiles { get; private set; }
     public bool IsValidCode { get; private set; } = true;
     public bool IsValidFixCode { get; private set; } = true;
+    public bool UseFrameworkSourceGenerators { get; private set; }
     public LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
     public TargetFramework TargetFramework { get; private set; } = TargetFramework.NetLatest;
     public IList<MetadataReference> References { get; } = [];
@@ -42,7 +44,7 @@ public sealed partial class ProjectBuilder
 
     private static async Task<string[]> GetNuGetReferences(string packageName, string version, string[] includedPaths)
     {
-        var bytes = Encoding.UTF8.GetBytes(packageName + '@' + version + ':' + string.Join(',', includedPaths));
+        var bytes = Encoding.UTF8.GetBytes("v2:" + packageName + '@' + version + ':' + string.Join(',', includedPaths));
         var hash = SHA256.HashData(bytes);
         var key = Convert.ToBase64String(hash).Replace('/', '_');
         var task = NuGetPackagesCache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
@@ -82,7 +84,12 @@ public sealed partial class ProjectBuilder
 
                     foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                     {
-                        await entry.ExtractToFileAsync(Path.Combine(tempFolder, entry.Name), overwrite: true);
+                        if (string.IsNullOrEmpty(entry.Name))
+                            continue;
+
+                        var destinationPath = Path.Combine(tempFolder, entry.FullName.Replace('/', Path.DirectorySeparatorChar));
+                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                        await entry.ExtractToFileAsync(destinationPath, overwrite: true);
                     }
 
                     await File.WriteAllTextAsync(Path.Combine(tempFolder, ".complete"), string.Empty).ConfigureAwait(false);
@@ -109,13 +116,16 @@ public sealed partial class ProjectBuilder
                 }
             }
 
-            var dlls = Directory.GetFiles(cacheFolder, "*.dll");
+            var dlls = Directory.GetFiles(cacheFolder, "*.dll", SearchOption.AllDirectories);
 
             // Filter invalid .NET assembly
             var result = new List<string>();
             foreach (var dll in dlls)
             {
                 if (Path.GetFileName(dll) == "System.EnterpriseServices.Wrapper.dll")
+                    continue;
+
+                if (Path.GetFileName(dll).EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 try
@@ -368,9 +378,15 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
+    public ProjectBuilder WithFrameworkSourceGenerators()
+    {
+        UseFrameworkSourceGenerators = true;
+        return this;
+    }
+
     public ProjectBuilder WithSourceGeneratorFromAssembly(string assemblyPath)
     {
-        AnalyzerReferences.Add(new AnalyzerFileReference(assemblyPath, AnalyzerAssemblyLoader.Instance));
+        AnalyzerReferences.Add(new AnalyzerFileReference(assemblyPath, _analyzerAssemblyLoader));
         return this;
     }
 
@@ -379,7 +395,7 @@ public sealed partial class ProjectBuilder
         var references = GetNuGetReferences(packageName, version, [pathPrefix]).Result;
         foreach (var reference in references)
         {
-            AnalyzerReferences.Add(new AnalyzerFileReference(reference, AnalyzerAssemblyLoader.Instance));
+            AnalyzerReferences.Add(new AnalyzerFileReference(reference, _analyzerAssemblyLoader));
         }
 
         return this;

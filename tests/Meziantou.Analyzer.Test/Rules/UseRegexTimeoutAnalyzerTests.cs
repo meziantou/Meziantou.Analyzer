@@ -9,6 +9,7 @@ public sealed class UseRegexTimeoutAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
+            .WithFrameworkSourceGenerators()
             .WithAnalyzer<RegexMethodUsageAnalyzer>()
             .WithAnalyzer<GeneratedRegexAttributeUsageAnalyzer>();
     }
@@ -130,10 +131,17 @@ class TestClass
     [Fact]
     public async Task GeneratedRegex_WithoutTimeout()
     {
-        var project = CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode("""
+#if ROSLYN_4_4_OR_GREATER
+        const string SourceCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [[||][||]GeneratedRegex("pattern", RegexOptions.None)]
+                private static partial Regex Test();
+            }
+            """;
+#else
+        const string SourceCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
             {
@@ -142,10 +150,15 @@ class TestClass
             }
             partial class TestClass
             {
-                [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "7.0.8.6910")]
                 private static partial Regex Test() => throw null;
             }
-            """);
+            """;
+#endif
+
+        var project = CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode);
 
         await project.ValidateAsync();
     }
@@ -153,10 +166,15 @@ class TestClass
     [Fact]
     public async Task GeneratedRegex_WithTimeout()
     {
-        var project = CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(@"using System.Text.RegularExpressions;
+#if ROSLYN_4_4_OR_GREATER
+        const string SourceCode = @"using System.Text.RegularExpressions;
+partial class TestClass
+{
+    [GeneratedRegex(""pattern"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Test();
+}";
+#else
+        const string SourceCode = @"using System.Text.RegularExpressions;
 partial class TestClass
 {
     [GeneratedRegex(""pattern"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
@@ -165,7 +183,13 @@ partial class TestClass
 partial class TestClass
 {
     private static partial Regex Test() => throw null;
-}");
+}";
+#endif
+
+        var project = CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode);
 
         await project.ValidateAsync();
     }
@@ -173,10 +197,15 @@ partial class TestClass
     [Fact]
     public async Task GeneratedRegex_WithoutTimeout_NonBacktracking()
     {
-        var project = CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(@"using System.Text.RegularExpressions;
+#if ROSLYN_4_4_OR_GREATER
+        const string SourceCode = @"using System.Text.RegularExpressions;
+partial class TestClass
+{
+    [GeneratedRegex(""pattern"", RegexOptions.NonBacktracking)]
+    private static partial Regex Test();
+}";
+#else
+        const string SourceCode = @"using System.Text.RegularExpressions;
 partial class TestClass
 {
     [GeneratedRegex(""pattern"", RegexOptions.NonBacktracking)]
@@ -185,7 +214,13 @@ partial class TestClass
 partial class TestClass
 {
     private static partial Regex Test() => throw null;
-}");
+}";
+#endif
+
+        var project = CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode(SourceCode);
 
         await project.ValidateAsync();
     }
