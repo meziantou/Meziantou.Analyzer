@@ -99,6 +99,10 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
             if (!IsPotentialSymbol(symbol))
                 return;
 
+            // Assignment targets (e.g., initializations in constructors) are not usages
+            if (operation.Parent is IAssignmentOperation { Target: var assignTarget } && assignTarget == operation)
+                return;
+
             if (operation.Parent is not ILockOperation)
             {
                 ExcludeSymbol(symbol);

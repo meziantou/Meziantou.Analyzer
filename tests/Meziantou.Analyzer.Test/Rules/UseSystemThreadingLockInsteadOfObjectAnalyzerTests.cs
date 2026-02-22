@@ -260,5 +260,99 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Field_InitializedInConstructor_OnlyLockUsage()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                public sealed class A
+                {
+                    private readonly object [||]_lock;
+
+                    public A()
+                    {
+                        _lock = new object();
+                    }
+
+                    public void Run()
+                    {
+                        lock (_lock) { }
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Field_InitializedInConstructor_LockAndOtherUsages()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                public sealed class A
+                {
+                    private readonly object _lock;
+
+                    public A()
+                    {
+                        _lock = new object();
+                    }
+
+                    public void Run()
+                    {
+                        lock (_lock) { }
+                        _lock.ToString();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StaticField_InitializedInStaticConstructor_OnlyLockUsage()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                public sealed class B
+                {
+                    private static readonly object [||]Lock;
+
+                    static B()
+                    {
+                        Lock = new object();
+                    }
+
+                    public void Run()
+                    {
+                        lock (Lock) { }
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StaticField_InitializedInStaticConstructor_LockAndOtherUsages()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                public sealed class B
+                {
+                    private static readonly object Lock;
+
+                    static B()
+                    {
+                        Lock = new object();
+                    }
+
+                    public void Run()
+                    {
+                        lock (Lock) { }
+                        Lock.ToString();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 #endif
 }
