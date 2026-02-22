@@ -78,6 +78,10 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
             case OptimizeStringBuilderUsageData.ReplaceSubstring:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceSubstring(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
+
+            case OptimizeStringBuilderUsageData.ReplaceAppendFormatWithAppend:
+                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceAppendFormatWithAppend(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                break;
         }
     }
 
@@ -364,6 +368,27 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
             editor.ReplaceNode(nodeToFix, expression.Expression);
         }
 
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> ReplaceAppendFormatWithAppend(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var generator = editor.Generator;
+        var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
+        if (operation is null)
+            return document;
+
+        var formatProviderType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+        var parameters = operation.TargetMethod.Parameters;
+        var formatArgIndex = parameters.Length > 0 && parameters[0].Type.IsEqualTo(formatProviderType) ? 1 : 0;
+
+        var formatArg = operation.Arguments[formatArgIndex];
+        var newExpression = generator.InvocationExpression(
+            generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "Append"),
+            formatArg.Value.Syntax);
+
+        editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
     }
 }

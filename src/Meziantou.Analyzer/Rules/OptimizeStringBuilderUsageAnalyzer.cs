@@ -39,12 +39,14 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private readonly ITypeSymbol? _stringBuilderSymbol;
+        private readonly ITypeSymbol? _formatProviderSymbol;
         private readonly HashSet<ISymbol> _appendOverloadTypes = new(SymbolEqualityComparer.Default);
         private readonly bool _hasAppendJoin;
 
         public AnalyzerContext(Compilation compilation)
         {
             _stringBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+            _formatProviderSymbol = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
             if (_stringBuilderSymbol is null)
                 return;
 
@@ -106,11 +108,36 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                         return;
                 }
             }
+            else if (string.Equals(method.Name, nameof(StringBuilder.AppendFormat), System.StringComparison.Ordinal))
+            {
+                AnalyzeAppendFormat(context, operation);
+            }
         }
 
         private static ImmutableDictionary<string, string?> CreateProperties(OptimizeStringBuilderUsageData data)
         {
             return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
+        }
+
+        private void AnalyzeAppendFormat(OperationAnalysisContext context, IInvocationOperation operation)
+        {
+            var parameters = operation.TargetMethod.Parameters;
+            if (parameters.Length == 0)
+                return;
+
+            var formatArgIndex = parameters[0].Type.IsEqualTo(_formatProviderSymbol) ? 1 : 0;
+            if (formatArgIndex >= operation.Arguments.Length)
+                return;
+
+            var formatArg = operation.Arguments[formatArgIndex];
+            if (!TryGetConstStringValue(formatArg.Value, out var formatString))
+                return;
+
+            if (!OptimizeStringBuilderUsageAnalyzerCommon.HasFormatPlaceholders(formatString))
+            {
+                var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceAppendFormatWithAppend);
+                context.ReportDiagnostic(Rule, properties, operation, "Replace AppendFormat with Append as the format string has no placeholders");
+            }
         }
 
         private bool IsOptimizable(OperationAnalysisContext context, IOperation operation, string methodName, IArgumentOperation argument)
