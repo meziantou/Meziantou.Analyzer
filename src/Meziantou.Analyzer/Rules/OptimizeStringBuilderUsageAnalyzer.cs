@@ -39,6 +39,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext
     {
         private readonly ITypeSymbol? _stringBuilderSymbol;
+        private readonly ITypeSymbol? _formatProviderSymbol;
         private readonly HashSet<ISymbol> _appendOverloadTypes = new(SymbolEqualityComparer.Default);
         private readonly bool _hasAppendJoin;
 
@@ -48,6 +49,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             if (_stringBuilderSymbol is null)
                 return;
 
+            _formatProviderSymbol = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
             _hasAppendJoin = _stringBuilderSymbol.GetMembers("AppendJoin").Length > 0;
 
             _appendOverloadTypes.AddIfNotNull(_stringBuilderSymbol);
@@ -221,6 +223,26 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             context.ReportDiagnostic(Rule, properties, operation, "Remove the ToString call");
+                        }
+
+                        return true;
+                    }
+                    else if (methodName != "Insert"
+                        && targetMethod.Parameters.Length == 2
+                        && targetMethod.ReturnType.IsString()
+                        && targetMethod.Parameters[0].Type.IsString()
+                        && targetMethod.Parameters[1].Type.IsEqualTo(_formatProviderSymbol)
+                        && invocationOperation.Arguments[0].Value.ConstantValue.HasValue
+                        && invocationOperation.Instance is not null)
+                    {
+                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceToStringWithAppendFormat);
+                        if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
+                        {
+                            context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat().AppendLine()");
+                        }
+                        else
+                        {
+                            context.ReportDiagnostic(Rule, properties, operation, "Replace with AppendFormat()");
                         }
 
                         return true;

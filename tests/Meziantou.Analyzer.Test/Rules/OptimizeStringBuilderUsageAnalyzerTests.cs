@@ -503,14 +503,82 @@ class Test
     public async Task Append_ToStringWithFormatAndCulture()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append(1.ToString(""N"", null));
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        [||]new StringBuilder().Append(1.ToString("N", null));
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        new StringBuilder().AppendFormat(null, "{0:N}", 1);
+                    }
+                }
+                """)
+              .ValidateAsync();
     }
-}")
+
+    [Fact]
+    public async Task Append_ToStringWithFormatAndCulture_CurrentCulture()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Globalization;
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        [||]new StringBuilder().Append(10.ToString("n1", CultureInfo.CurrentCulture));
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Globalization;
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        new StringBuilder().AppendFormat(CultureInfo.CurrentCulture, "{0:n1}", 10);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AppendLine_ToStringWithFormatAndCulture()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        [||]new StringBuilder().AppendLine(1.ToString("N", null));
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        new StringBuilder().AppendFormat(null, "{0:N}", 1).AppendLine();
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
