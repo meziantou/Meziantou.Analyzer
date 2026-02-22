@@ -26,6 +26,15 @@ In addition to the rules enforced by `.editorconfig`, you SHOULD:
 - There should be no trailing whitespace in any lines.
 - Add a blank line before XML documentation comments (`///`) when they follow other code (methods, properties, fields, etc.).
 
+## Documenting equivalent or similar rules
+
+When a rule in this analyzer is equivalent to or similar to a rule in another analyzer (e.g., Roslyn IDE rules, CA rules, SonarQube rules), document the relationship in [`docs/comparison-with-other-analyzers.md`](/docs/comparison-with-other-analyzers.md):
+
+- **Equivalent rules**: Add an entry to the "Equivalent rules" table (two columns: external rule | MA rule). Do not add a note to the individual rule's documentation file.
+- **Similar rules**: Add an entry to the "Similar rules" table (three columns: external rule | MA rule | explanation of differences).
+
+Do NOT add equivalence/similarity notes directly to individual rule documentation files (e.g., `docs/Rules/MA0158.md`).
+
 ## Implementing Roslyn analyzers
 
 - When creating a new rule, create a new constant in `src/Meziantou.Analyzer/RuleIdentifiers.cs` using the name of the new rule. The value must be unique and incremented from the last rule.
