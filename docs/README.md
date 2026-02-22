@@ -181,7 +181,7 @@
 |[MA0180](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0180.md)|Design|ILogger type parameter should match containing type|<span title='Warning'>⚠️</span>|❌|✔️|
 |[MA0181](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0181.md)|Style|Do not use cast|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0182](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0182.md)|Design|Avoid unused internal types|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0183](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0183.md)|Usage|string.Format should use a format string with placeholders|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0183](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0183.md)|Usage|The format string should use placeholders|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0184](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0184.md)|Style|Do not use interpolated string without parameters|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Design|Equals method should use \[NotNullWhen(true)\] on the parameter|<span title='Info'>ℹ️</span>|❌|❌|
@@ -744,7 +744,7 @@ dotnet_diagnostic.MA0181.severity = none
 # MA0182: Avoid unused internal types
 dotnet_diagnostic.MA0182.severity = suggestion
 
-# MA0183: string.Format should use a format string with placeholders
+# MA0183: The format string should use placeholders
 dotnet_diagnostic.MA0183.severity = warning
 
 # MA0184: Do not use interpolated string without parameters
@@ -1300,7 +1300,7 @@ dotnet_diagnostic.MA0181.severity = none
 # MA0182: Avoid unused internal types
 dotnet_diagnostic.MA0182.severity = none
 
-# MA0183: string.Format should use a format string with placeholders
+# MA0183: The format string should use placeholders
 dotnet_diagnostic.MA0183.severity = none
 
 # MA0184: Do not use interpolated string without parameters

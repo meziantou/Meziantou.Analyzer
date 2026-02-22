@@ -11,8 +11,8 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.StringFormatShouldBeConstant,
-        title: "string.Format should use a format string with placeholders",
-        messageFormat: "Use string literal instead of string.Format when the format string has no placeholders",
+        title: "The format string should use placeholders",
+        messageFormat: "Use a string literal instead of a format method when the format string has no placeholders",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -25,96 +25,76 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
     {
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-        context.RegisterOperationAction(Analyze, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(compilationStartContext =>
+        {
+            var formatProviderType = compilationStartContext.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+            var consoleType = compilationStartContext.Compilation.GetBestTypeByMetadataName("System.Console");
+            var stringBuilderType = compilationStartContext.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+
+            compilationStartContext.RegisterOperationAction(
+                context => Analyze(context, formatProviderType, consoleType, stringBuilderType),
+                OperationKind.Invocation);
+        });
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    private static void Analyze(OperationAnalysisContext context, ITypeSymbol? formatProviderType, ITypeSymbol? consoleType, ITypeSymbol? stringBuilderType)
     {
         var operation = (IInvocationOperation)context.Operation;
-
-        // Check if it's a string.Format call
-        if (operation.TargetMethod.Name != "Format")
-            return;
-
-        if (operation.TargetMethod.ContainingType.SpecialType != SpecialType.System_String)
-            return;
+        var method = operation.TargetMethod;
 
         if (operation.Arguments.Length == 0)
             return;
 
-        var formatProviderType = context.Compilation.GetTypeByMetadataName("System.IFormatProvider");
+        // Determine if this is a known format method, what the format arg index is,
+        // and whether to report when there are no formatting arguments.
+        int formatArgumentIndex;
+        bool reportWhenNoFormattingArgs;
 
-        // Find the format string argument (either first or second parameter depending on overload)
-        IArgumentOperation? formatArgument = null;
-        var formatArgumentIndex = -1;
-
-        if (operation.Arguments.Length > 0)
+        if (method.ContainingType.SpecialType == SpecialType.System_String && method.Name == "Format")
         {
-            var firstArg = operation.Arguments[0];
-            if (firstArg.Parameter?.Type.IsEqualTo(formatProviderType) == true)
-            {
-                // First argument is IFormatProvider, so format string is the second argument
-                if (operation.Arguments.Length > 1)
-                {
-                    formatArgument = operation.Arguments[1];
-                    formatArgumentIndex = 1;
-                }
-            }
-            else
-            {
-                // First argument is the format string
-                formatArgument = firstArg;
-                formatArgumentIndex = 0;
-            }
+            // string.Format - report even when called with no args (e.g. string.Format("abc"))
+            reportWhenNoFormattingArgs = true;
+            formatArgumentIndex = GetFormatArgIndex(operation, formatProviderType);
+        }
+        else if (consoleType is not null && method.ContainingType.IsEqualTo(consoleType) &&
+                 (method.Name == "Write" || method.Name == "WriteLine"))
+        {
+            // Console.Write / Console.WriteLine - only report when formatting arguments are supplied
+            // (Console.Write("abc") is a valid non-format call)
+            if (method.Parameters.Length <= 1)
+                return;
+
+            reportWhenNoFormattingArgs = false;
+            formatArgumentIndex = 0;
+        }
+        else if (stringBuilderType is not null && method.ContainingType.IsEqualTo(stringBuilderType) &&
+                 method.Name == "AppendFormat")
+        {
+            // StringBuilder.AppendFormat - report even when called with no args
+            reportWhenNoFormattingArgs = true;
+            formatArgumentIndex = GetFormatArgIndex(operation, formatProviderType);
+        }
+        else
+        {
+            return;
         }
 
-        if (formatArgument is null)
+        if (formatArgumentIndex < 0 || formatArgumentIndex >= operation.Arguments.Length)
             return;
 
+        var formatArgument = operation.Arguments[formatArgumentIndex];
+
         // Check if there are any formatting arguments after the format string
-        var hasFormattingArguments = false;
-        for (var i = formatArgumentIndex + 1; i < operation.Arguments.Length; i++)
-        {
-            var arg = operation.Arguments[i];
+        var hasFormattingArguments = HasFormattingArguments(operation, formatArgumentIndex);
 
-            // Check if this is a params array argument
-            if (arg.ArgumentKind == ArgumentKind.ParamArray && arg.Value is IArrayCreationOperation arrayCreation)
-            {
-                // Check if the array has any elements
-                if (arrayCreation.Initializer is not null && arrayCreation.Initializer.ElementValues.Length > 0)
-                {
-                    hasFormattingArguments = true;
-                    break;
-                }
-                // Skip empty params arrays
-                continue;
-            }
-
-#if ROSLYN_4_14_OR_GREATER
-            if (arg.ArgumentKind is ArgumentKind.ParamCollection && arg.Value is ICollectionExpressionOperation collectionExpression)
-            {
-                if (collectionExpression.Elements.Length > 0)
-                {
-                    hasFormattingArguments = true;
-                    break;
-                }
-
-                continue;
-            }
-#endif
-
-            // Skip other implicit arguments
-            if (arg.IsImplicit)
-                continue;
-
-            hasFormattingArguments = true;
-            break;
-        }
-
-        // Case 1: No formatting arguments at all - report regardless of format string
+        // Case 1: No formatting arguments at all
         if (!hasFormattingArguments)
         {
-            context.ReportDiagnostic(Rule, operation);
+            if (reportWhenNoFormattingArgs)
+            {
+                context.ReportDiagnostic(Rule, operation);
+            }
+
             return;
         }
 
@@ -126,6 +106,51 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(Rule, operation);
             }
         }
+    }
+
+    private static int GetFormatArgIndex(IInvocationOperation operation, ITypeSymbol? formatProviderType)
+    {
+        if (operation.Arguments.Length > 0 && operation.Arguments[0].Parameter?.Type.IsEqualTo(formatProviderType) == true)
+            return 1;
+
+        return 0;
+    }
+
+    private static bool HasFormattingArguments(IInvocationOperation operation, int formatArgumentIndex)
+    {
+        for (var i = formatArgumentIndex + 1; i < operation.Arguments.Length; i++)
+        {
+            var arg = operation.Arguments[i];
+
+            // Check if this is a params array argument
+            if (arg.ArgumentKind == ArgumentKind.ParamArray && arg.Value is IArrayCreationOperation arrayCreation)
+            {
+                // Check if the array has any elements
+                if (arrayCreation.Initializer is not null && arrayCreation.Initializer.ElementValues.Length > 0)
+                    return true;
+
+                // Skip empty params arrays
+                continue;
+            }
+
+#if ROSLYN_4_14_OR_GREATER
+            if (arg.ArgumentKind is ArgumentKind.ParamCollection && arg.Value is ICollectionExpressionOperation collectionExpression)
+            {
+                if (collectionExpression.Elements.Length > 0)
+                    return true;
+
+                continue;
+            }
+#endif
+
+            // Skip other implicit arguments
+            if (arg.IsImplicit)
+                continue;
+
+            return true;
+        }
+
+        return false;
     }
 
     private static bool HasPlaceholders(string formatString)

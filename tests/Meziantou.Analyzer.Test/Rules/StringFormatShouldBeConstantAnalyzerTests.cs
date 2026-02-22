@@ -473,4 +473,265 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             .WithOutputKind(OutputKind.ConsoleApplication)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ConsoleWrite_NoArgs_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        Console.Write("NO PLACEHOLDERS");
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWrite_WithArgButNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        [|Console.Write("NO PLACEHOLDERS", true)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWrite_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        Console.Write("Value: {0}", true);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWrite_MultipleArgsNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        [|Console.Write("NO PLACEHOLDERS", true, true)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWriteLine_NoArgs_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        Console.WriteLine("NO PLACEHOLDERS");
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWriteLine_WithArgButNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        [|Console.WriteLine("NO PLACEHOLDERS", true)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWriteLine_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        Console.WriteLine("Value: {0}", true);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWriteLine_MultipleArgsNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        [|Console.WriteLine("NO PLACEHOLDERS", true, true)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ConsoleWriteLine_ThreeArgsNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        [|Console.WriteLine("NO PLACEHOLDERS", true, true, true)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringBuilderAppendFormat_NoFormattingArgs_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Text;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var sb = new StringBuilder();
+                        [|sb.AppendFormat("NO PLACEHOLDERS")|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringBuilderAppendFormat_WithArgButNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Text;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var sb = new StringBuilder();
+                        [|sb.AppendFormat("NO PLACEHOLDERS", true)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringBuilderAppendFormat_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Text;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendFormat("Value: {0}", true);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringBuilderAppendFormat_WithIFormatProviderAndNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+                using System.Text;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var sb = new StringBuilder();
+                        [|sb.AppendFormat(CultureInfo.InvariantCulture, "NO PLACEHOLDERS", true)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringBuilderAppendFormat_WithIFormatProviderAndPlaceholder_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+                using System.Text;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendFormat(CultureInfo.InvariantCulture, "Value: {0}", true);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
 }

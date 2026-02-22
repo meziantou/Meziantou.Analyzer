@@ -542,7 +542,7 @@ dotnet_diagnostic.MA0181.severity = none
 # MA0182: Avoid unused internal types
 dotnet_diagnostic.MA0182.severity = none
 
-# MA0183: string.Format should use a format string with placeholders
+# MA0183: The format string should use placeholders
 dotnet_diagnostic.MA0183.severity = none
 
 # MA0184: Do not use interpolated string without parameters
