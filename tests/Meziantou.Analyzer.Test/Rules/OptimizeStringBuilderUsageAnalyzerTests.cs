@@ -30,6 +30,101 @@ class Test
     }
 
     [Theory]
+    [InlineData(@"new StringBuilder().AppendFormat(""NO PLACEHOLDERS"")")]
+    [InlineData(@"new StringBuilder().AppendFormat(""NO PLACEHOLDERS"", true)")]
+    [InlineData(@"new StringBuilder().AppendFormat(""NO PLACEHOLDERS"", true, false)")]
+    [InlineData(@"new StringBuilder().AppendFormat(""NO PLACEHOLDERS"", true, false, 42)")]
+    [InlineData(@"new StringBuilder().AppendFormat(null, ""NO PLACEHOLDERS"", true)")]
+    public async Task AppendFormat_NoPlaceholders_ReportDiagnostic(string expression)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        [|{{expression}}|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData(@"new StringBuilder().AppendFormat(""{0} {1}"", true, false)")]
+    [InlineData(@"new StringBuilder().AppendFormat(null, ""{0} {1}"", true, false)")]
+    public async Task AppendFormat_WithPlaceholders_NoDiagnostic(string expression)
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode($$"""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        {{expression}};
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AppendFormat_NoPlaceholders_FixReplacesWithAppend()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        [|new StringBuilder().AppendFormat("NO PLACEHOLDERS", true)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        new StringBuilder().Append("NO PLACEHOLDERS");
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AppendFormat_NoPlaceholders_WithProvider_FixReplacesWithAppend()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        [|new StringBuilder().AppendFormat(null, "NO PLACEHOLDERS", true)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A()
+                    {
+                        new StringBuilder().Append("NO PLACEHOLDERS");
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Theory]
     [InlineData("10")]
     [InlineData("10 + 20")]
     [InlineData(@"""abc""")]

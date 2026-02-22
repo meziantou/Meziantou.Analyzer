@@ -13,4 +13,5 @@ internal enum OptimizeStringBuilderUsageData
     ReplaceStringFormatWithAppendFormat,
     ReplaceSubstring,
     ReplaceStringJoinWithAppendJoin,
+    ReplaceAppendFormatWithAppend,
 }

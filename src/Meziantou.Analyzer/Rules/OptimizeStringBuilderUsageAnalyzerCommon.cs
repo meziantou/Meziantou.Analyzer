@@ -68,4 +68,51 @@ internal static class OptimizeStringBuilderUsageAnalyzerCommon
 
         return false;
     }
+
+    public static bool HasFormatPlaceholders(string formatString)
+    {
+        var i = 0;
+        while (i < formatString.Length)
+        {
+            var braceIndex = formatString.IndexOf('{', i);
+            if (braceIndex == -1)
+                return false;
+
+            i = braceIndex;
+
+            // Escaped opening brace
+            if (i + 1 < formatString.Length && formatString[i + 1] == '{')
+            {
+                i += 2;
+                continue;
+            }
+
+            // Check for {digit...}
+            var j = i + 1;
+            var hasDigit = false;
+            while (j < formatString.Length && formatString[j] is >= '0' and <= '9')
+            {
+                hasDigit = true;
+                j++;
+            }
+
+            if (hasDigit)
+            {
+                while (j < formatString.Length)
+                {
+                    if (formatString[j] == '}')
+                        return true;
+
+                    if (formatString[j] == '{')
+                        break;
+
+                    j++;
+                }
+            }
+
+            i++;
+        }
+
+        return false;
+    }
 }
