@@ -143,8 +143,8 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
             }
 #endif
 
-            // Skip other implicit arguments
-            if (arg.IsImplicit)
+            // Skip arguments that were not explicitly provided (e.g. default values)
+            if (arg.ArgumentKind is ArgumentKind.DefaultValue)
                 continue;
 
             return true;
