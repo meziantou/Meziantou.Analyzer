@@ -734,4 +734,44 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringFormat_WithParenthesizedArgAndPlaceholder_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+
+                class Test
+                {
+                    void Method(object obj)
+                    {
+                        _ = string.Format(CultureInfo.InvariantCulture, "Format string with placeholder: '{0}'.", (obj is null ? string.Empty : "X"));
+                    }
+                }
+                """)
+            .WithTargetFramework(Helpers.TargetFramework.Net10_0)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithParenthesizedArgAndNoPlaceholder_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Globalization;
+
+                class Test
+                {
+                    void Method(object obj)
+                    {
+                        _ = [|string.Format(CultureInfo.InvariantCulture, "Format string without placeholder.", (obj is null ? string.Empty : "X"))|];
+                    }
+                }
+                """)
+            .WithTargetFramework(Helpers.TargetFramework.Net10_0)
+            .ValidateAsync();
+    }
 }
