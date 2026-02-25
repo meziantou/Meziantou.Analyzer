@@ -126,10 +126,84 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 {
                     System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, foo.A);
                 }
-            
+
                 class Sample { public System.TimeProvider A {get;} }
             }
             """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task OptionalParameter_WhenAvailable()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                static void Delay(System.TimeProvider timeProvider = null)
+                {
+                }
+
+                void A(System.TimeProvider foo)
+                {
+                    [|Delay()|];
+                }
+            }
+            """;
+
+        const string Fix = """
+            class Test
+            {
+                static void Delay(System.TimeProvider timeProvider = null)
+                {
+                }
+
+                void A(System.TimeProvider foo)
+                {
+                    Delay(foo);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task OptionalParameter_WithOptionalParameterBeforeTimeProvider()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                static void Delay(bool dummy = false, System.TimeProvider timeProvider = null)
+                {
+                }
+
+                void A(System.TimeProvider foo)
+                {
+                    [|Delay()|];
+                }
+            }
+            """;
+
+        const string Fix = """
+            class Test
+            {
+                static void Delay(bool dummy = false, System.TimeProvider timeProvider = null)
+                {
+                }
+
+                void A(System.TimeProvider foo)
+                {
+                    Delay(timeProvider: foo);
+                }
+            }
+            """;
+
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(Fix)

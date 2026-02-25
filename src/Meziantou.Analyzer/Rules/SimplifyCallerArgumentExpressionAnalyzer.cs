@@ -46,7 +46,7 @@ public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyze
         if (!argument.Value.ConstantValue.HasValue)
             return;
 
-        if (argument.IsImplicit || argument.ArgumentKind != ArgumentKind.Explicit)
+        if (argument.ArgumentKind != ArgumentKind.Explicit)
             return;
 
         if (argument.Parameter is null)

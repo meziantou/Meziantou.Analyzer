@@ -97,7 +97,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             {
                 foreach (var arg in invocationOperation.Arguments)
                 {
-                    if (arg.IsImplicit && arg.Parameter is not null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
+                    if (arg.ArgumentKind is ArgumentKind.DefaultValue && arg.Parameter is not null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
                     {
                         parameterInfo = new AdditionalParameterInfo(invocationOperation.TargetMethod.Parameters.IndexOf(arg.Parameter), arg.Parameter.Name);
                         return true;

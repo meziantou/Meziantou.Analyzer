@@ -180,7 +180,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
             // Find the argument for the paramName parameter
             var paramNameArgument = op.Arguments.FirstOrDefault(arg => arg.Parameter is not null && arg.Parameter.IsEqualTo(parameter));
-            if (paramNameArgument is not null && !paramNameArgument.IsImplicit && paramNameArgument.Value is not null)
+            if (paramNameArgument is not null && paramNameArgument.ArgumentKind is ArgumentKind.Explicit && paramNameArgument.Value is not null)
             {
                 ValidateParamNameArgument(context, paramNameArgument);
                 return;

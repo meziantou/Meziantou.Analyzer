@@ -41,7 +41,7 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         if (operation.Operand is IDefaultValueOperation)
             return;
 
-        if (operation.Parent is IArgumentOperation { IsImplicit: true })
+        if (operation.Parent is IArgumentOperation { ArgumentKind: ArgumentKind.DefaultValue })
             return;
 
 #if !ROSLYN4_5_OR_GREATER
