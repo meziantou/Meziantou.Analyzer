@@ -553,3 +553,6 @@ dotnet_diagnostic.MA0185.severity = none
 
 # MA0186: Equals method should use [NotNullWhen(true)] on the parameter
 dotnet_diagnostic.MA0186.severity = none
+
+# MA0187: Use constructor injection instead of [Inject] attribute
+dotnet_diagnostic.MA0187.severity = none
