@@ -17,5 +17,6 @@ public enum TargetFramework
     AspNetCore6_0,
     AspNetCore7_0,
     AspNetCore8_0,
+    AspNetCore9_0,
     WindowsDesktop5_0,
 }

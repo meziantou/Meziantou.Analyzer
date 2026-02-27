@@ -186,6 +186,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseInterpolatedStringWithoutParameters = "MA0184";
     public const string SimplifyStringCreateWhenAllParametersAreCultureInvariant = "MA0185";
     public const string MissingNotNullWhenAttributeOnEquals = "MA0186";
+    public const string BlazorPropertyInjectionShouldUseConstructorInjection = "MA0187";
 
     public static string GetHelpUri(string identifier)
     {
