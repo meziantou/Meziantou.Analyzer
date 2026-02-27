@@ -55,7 +55,7 @@ internal sealed class BlazorPropertyInjectionFixAllProvider : FixAllProvider
 
             solution = await BlazorPropertyInjectionShouldUseConstructorInjectionFixer.FixDocumentAsync(
                 document,
-                [.. documentDiagnostics],
+                ImmutableArray.CreateRange(documentDiagnostics),
                 cancellationToken).ConfigureAwait(false);
         }
 
