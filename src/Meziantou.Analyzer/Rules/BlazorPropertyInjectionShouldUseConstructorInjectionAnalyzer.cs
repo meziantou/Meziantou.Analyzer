@@ -16,7 +16,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
         messageFormat: "Use constructor injection instead of [Inject] attribute",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.BlazorPropertyInjectionShouldUseConstructorInjection));
 
@@ -57,7 +57,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
 
         public void AnalyzeProperty(SymbolAnalysisContext context)
         {
-            if (context.Compilation.GetCSharpLanguageVersion() < LanguageVersion.CSharp12)
+            if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp12OrAbove())
                 return;
 
             var property = (IPropertySymbol)context.Symbol;

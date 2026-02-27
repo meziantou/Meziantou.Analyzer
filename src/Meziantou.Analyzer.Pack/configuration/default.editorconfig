@@ -555,4 +555,4 @@ dotnet_diagnostic.MA0185.severity = suggestion
 dotnet_diagnostic.MA0186.severity = none
 
 # MA0187: Use constructor injection instead of [Inject] attribute
-dotnet_diagnostic.MA0187.severity = suggestion
+dotnet_diagnostic.MA0187.severity = none

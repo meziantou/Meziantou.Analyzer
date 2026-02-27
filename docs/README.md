@@ -185,7 +185,7 @@
 |[MA0184](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0184.md)|Style|Do not use interpolated string without parameters|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Design|Equals method should use \[NotNullWhen(true)\] on the parameter|<span title='Info'>ℹ️</span>|❌|❌|
-|[MA0187](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0187.md)|Design|Use constructor injection instead of \[Inject\] attribute|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0187](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0187.md)|Design|Use constructor injection instead of \[Inject\] attribute|<span title='Info'>ℹ️</span>|❌|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -758,7 +758,7 @@ dotnet_diagnostic.MA0185.severity = suggestion
 dotnet_diagnostic.MA0186.severity = none
 
 # MA0187: Use constructor injection instead of [Inject] attribute
-dotnet_diagnostic.MA0187.severity = suggestion
+dotnet_diagnostic.MA0187.severity = none
 ```
 
 # .editorconfig - all rules disabled
