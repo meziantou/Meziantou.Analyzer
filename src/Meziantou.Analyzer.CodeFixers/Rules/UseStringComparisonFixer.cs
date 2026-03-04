@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -59,7 +60,73 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
                 generator.TypeExpression(stringComparison, addImport: true),
                 stringComparisonMode));
 
-        editor.ReplaceNode(invocationExpression, invocationExpression.AddArgumentListArguments(newArgument));
+        var insertionIndex = FindStringComparisonParameterIndex(semanticModel, invocationExpression, stringComparison, cancellationToken);
+        SyntaxNode newInvocation;
+        if (insertionIndex >= 0 && insertionIndex < invocationExpression.ArgumentList.Arguments.Count)
+        {
+            var newArgList = invocationExpression.ArgumentList.Arguments.Insert(insertionIndex, newArgument);
+            newInvocation = invocationExpression.WithArgumentList(invocationExpression.ArgumentList.WithArguments(newArgList));
+        }
+        else
+        {
+            newInvocation = invocationExpression.AddArgumentListArguments(newArgument);
+        }
+
+        editor.ReplaceNode(invocationExpression, newInvocation);
         return editor.GetChangedDocument();
+    }
+
+    private static int FindStringComparisonParameterIndex(SemanticModel semanticModel, SyntaxNode node, INamedTypeSymbol stringComparison, CancellationToken cancellationToken)
+    {
+        if (semanticModel.GetOperation(node, cancellationToken) is not IInvocationOperation operation)
+            return -1;
+
+        var targetMethod = operation.TargetMethod;
+        foreach (var member in targetMethod.ContainingType.GetMembers(targetMethod.Name))
+        {
+            if (member is not IMethodSymbol overload)
+                continue;
+
+            if (SymbolEqualityComparer.Default.Equals(overload, targetMethod))
+                continue;
+
+            // The overload must have exactly one more parameter (the StringComparison)
+            if (overload.Parameters.Length != targetMethod.Parameters.Length + 1)
+                continue;
+
+            // Find the StringComparison parameter index in the overload
+            var stringComparisonIndex = -1;
+            for (var i = 0; i < overload.Parameters.Length; i++)
+            {
+                if (overload.Parameters[i].Type.IsEqualTo(stringComparison))
+                {
+                    stringComparisonIndex = i;
+                    break;
+                }
+            }
+
+            if (stringComparisonIndex == -1)
+                continue;
+
+            // Check that the remaining parameters match the current method's parameters in order
+            var allMatch = true;
+            for (var i = 0; i < overload.Parameters.Length; i++)
+            {
+                if (i == stringComparisonIndex)
+                    continue;
+
+                var currentIndex = i < stringComparisonIndex ? i : i - 1;
+                if (!overload.Parameters[i].Type.IsEqualTo(targetMethod.Parameters[currentIndex].Type))
+                {
+                    allMatch = false;
+                    break;
+                }
+            }
+
+            if (allMatch)
+                return stringComparisonIndex;
+        }
+
+        return -1;
     }
 }
