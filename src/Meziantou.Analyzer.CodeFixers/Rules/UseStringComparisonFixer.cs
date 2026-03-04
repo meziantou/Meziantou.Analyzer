@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -59,7 +60,38 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
                 generator.TypeExpression(stringComparison, addImport: true),
                 stringComparisonMode));
 
-        editor.ReplaceNode(invocationExpression, invocationExpression.AddArgumentListArguments(newArgument));
+        var insertionIndex = FindStringComparisonParameterIndex(semanticModel, invocationExpression, stringComparison, cancellationToken);
+        SyntaxNode newInvocation;
+        if (insertionIndex >= 0 && insertionIndex < invocationExpression.ArgumentList.Arguments.Count)
+        {
+            var newArgList = invocationExpression.ArgumentList.Arguments.Insert(insertionIndex, newArgument);
+            newInvocation = invocationExpression.WithArgumentList(invocationExpression.ArgumentList.WithArguments(newArgList));
+        }
+        else
+        {
+            newInvocation = invocationExpression.AddArgumentListArguments(newArgument);
+        }
+
+        editor.ReplaceNode(invocationExpression, newInvocation);
         return editor.GetChangedDocument();
+    }
+
+    private static int FindStringComparisonParameterIndex(SemanticModel semanticModel, SyntaxNode node, INamedTypeSymbol stringComparison, CancellationToken cancellationToken)
+    {
+        if (semanticModel.GetOperation(node, cancellationToken) is not IInvocationOperation operation)
+            return -1;
+
+        var overloadFinder = new OverloadFinder(semanticModel.Compilation);
+        var overload = overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, options: default, [stringComparison]);
+        if (overload is null)
+            return -1;
+
+        for (var i = 0; i < overload.Parameters.Length; i++)
+        {
+            if (overload.Parameters[i].Type.IsEqualTo(stringComparison))
+                return i;
+        }
+
+        return -1;
     }
 }

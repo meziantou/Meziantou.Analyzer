@@ -248,4 +248,43 @@ public sealed class UseStringComparisonAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Contains_WithTrailingMessageParameter_ShouldInsertStringComparisonBeforeMessage()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [||]MyAssert.Contains("a", "b", "message");
+                }
+            }
+
+            static class MyAssert
+            {
+                public static void Contains(string value, string substring, string message) { }
+                public static void Contains(string value, string substring, System.StringComparison comparison, string message) { }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    MyAssert.Contains("a", "b", System.StringComparison.Ordinal, "message");
+                }
+            }
+
+            static class MyAssert
+            {
+                public static void Contains(string value, string substring, string message) { }
+                public static void Contains(string value, string substring, System.StringComparison comparison, string message) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 }
