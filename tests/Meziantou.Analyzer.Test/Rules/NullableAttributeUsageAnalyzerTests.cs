@@ -60,4 +60,46 @@ namespace System.Diagnostics.CodeAnalysis
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public async Task ExtensionBlock_ParameterExists_NoDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Diagnostics.CodeAnalysis;
+
+            static class Extensions
+            {
+                extension(object? obj)
+                {
+                    [return: NotNullIfNotNull(nameof(obj))]
+                    public object? DoSomething() => obj;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExtensionBlock_ParameterDoesNotExist_Diagnostic()
+    {
+        const string SourceCode = """
+            using System.Diagnostics.CodeAnalysis;
+
+            static class Extensions
+            {
+                extension(object? obj)
+                {
+                    [return: [|NotNullIfNotNull("unknown")|]]
+                    public object? DoSomething() => obj;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+#endif
 }

@@ -45,7 +45,12 @@ public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
 
             if (attribute.ConstructorArguments.Length == 1 && attribute.ConstructorArguments[0].Value is string parameterName)
             {
-                if (!method.Parameters.Any(p => p.Name == parameterName))
+                var parameterExists = method.Parameters.Any(p => p.Name == parameterName)
+#if CSHARP14_OR_GREATER
+                    || method.ContainingType?.ExtensionParameter?.Name == parameterName
+#endif
+                    ;
+                if (!parameterExists)
                 {
                     var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation();
                     if (location != null)
