@@ -202,7 +202,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|ℹ️|✔️|✔️|
 |[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Design|Equals method should use \[NotNullWhen(true)\] on the parameter|ℹ️|❌|❌|
 |[MA0187](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0187.md)|Design|Use constructor injection instead of \[Inject\] attribute|ℹ️|❌|✔️|
-|[MA0188](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0188.md)|Design|Use System.TimeProvider instead of a custom time abstraction|ℹ️|❌|❌|
+|[MA0188](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0188.md)|Design|Use System.TimeProvider instead of a custom time abstraction|ℹ️|✔️|❌|
 
 <!-- rules -->
 

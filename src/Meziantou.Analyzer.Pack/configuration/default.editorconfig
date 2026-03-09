@@ -558,4 +558,4 @@ dotnet_diagnostic.MA0186.severity = none
 dotnet_diagnostic.MA0187.severity = none
 
 # MA0188: Use System.TimeProvider instead of a custom time abstraction
-dotnet_diagnostic.MA0188.severity = none
+dotnet_diagnostic.MA0188.severity = suggestion

@@ -14,7 +14,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
         messageFormat: "Use System.TimeProvider instead of defining a custom time abstraction",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseTimeProviderInsteadOfInterface));
 
