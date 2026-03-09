@@ -144,13 +144,26 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     }
 
     [Fact]
+    public async Task Interface_CurrentTimeProperty_ReportsDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  interface [|ITimeProvider|]
+                  {
+                      System.DateTime CurrentTime { get; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Interface_WrongName_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
                   interface ITimeProvider
                   {
-                      System.DateTime CurrentTime { get; }
+                      System.DateTime GetCurrentTime();
                   }
                   """)
               .ValidateAsync();

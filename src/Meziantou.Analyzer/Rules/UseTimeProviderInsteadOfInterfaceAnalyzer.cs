@@ -49,7 +49,6 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
             return;
 
         // All members must be time-provider-like (skip property accessor methods as they're covered by property symbols)
-        var hasAtLeastOneTimeMember = false;
         foreach (var member in members)
         {
             // Skip property accessor methods - they are represented by the IPropertySymbol
@@ -58,12 +57,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
 
             if (!IsTimeProviderLikeMember(member, dateTimeSymbol, dateTimeOffsetSymbol))
                 return;
-
-            hasAtLeastOneTimeMember = true;
         }
-
-        if (!hasAtLeastOneTimeMember)
-            return;
 
         context.ReportDiagnostic(Rule, type);
     }
@@ -72,7 +66,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
     {
         if (member is IPropertySymbol property)
         {
-            if (property.Name is not ("Now" or "UtcNow"))
+            if (property.Name is not ("Now" or "UtcNow" or "GetNow" or "GetUtcNow" or "CurrentTime"))
                 return false;
 
             return IsDateTimeOrDateTimeOffset(property.Type, dateTimeSymbol, dateTimeOffsetSymbol);
@@ -84,7 +78,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
             if (method.MethodKind is not MethodKind.Ordinary)
                 return false;
 
-            if (method.Name is not ("GetNow" or "GetUtcNow"))
+            if (method.Name is not ("Now" or "UtcNow" or "GetNow" or "GetUtcNow" or "CurrentTime"))
                 return false;
 
             if (!method.Parameters.IsEmpty)
