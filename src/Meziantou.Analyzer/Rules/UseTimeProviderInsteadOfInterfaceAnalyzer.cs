@@ -64,6 +64,9 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
 
     private static bool IsTimeProviderLikeMember(ISymbol member, INamedTypeSymbol? dateTimeSymbol, INamedTypeSymbol? dateTimeOffsetSymbol)
     {
+        if (member.IsStatic)
+            return false;
+
         if (member is IPropertySymbol property)
         {
             if (property.Name is not ("Now" or "UtcNow" or "GetNow" or "GetUtcNow" or "CurrentTime"))
@@ -92,7 +95,6 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
 
     private static bool IsDateTimeOrDateTimeOffset(ITypeSymbol type, INamedTypeSymbol? dateTimeSymbol, INamedTypeSymbol? dateTimeOffsetSymbol)
     {
-        return (dateTimeSymbol is not null && type.IsEqualTo(dateTimeSymbol)) ||
-               (dateTimeOffsetSymbol is not null && type.IsEqualTo(dateTimeOffsetSymbol));
+        return type.IsEqualTo(dateTimeSymbol) || type.IsEqualTo(dateTimeOffsetSymbol);
     }
 }

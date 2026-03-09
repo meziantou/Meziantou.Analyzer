@@ -181,4 +181,17 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
                   """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Interface_StaticMember_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  interface ITimeProvider
+                  {
+                      static System.DateTime UtcNow { get; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
 }
