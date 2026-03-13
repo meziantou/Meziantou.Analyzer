@@ -187,6 +187,7 @@
 |[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Design|Equals method should use \[NotNullWhen(true)\] on the parameter|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0187](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0187.md)|Design|Use constructor injection instead of \[Inject\] attribute|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0188](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0188.md)|Design|Use System.TimeProvider instead of a custom time abstraction|<span title='Info'>ℹ️</span>|✔️|❌|
+|[MA0189](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0189.md)|Design|Use InlineArray instead of fixed-size buffers|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -763,6 +764,9 @@ dotnet_diagnostic.MA0187.severity = none
 
 # MA0188: Use System.TimeProvider instead of a custom time abstraction
 dotnet_diagnostic.MA0188.severity = suggestion
+
+# MA0189: Use InlineArray instead of fixed-size buffers
+dotnet_diagnostic.MA0189.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1325,4 +1329,7 @@ dotnet_diagnostic.MA0187.severity = none
 
 # MA0188: Use System.TimeProvider instead of a custom time abstraction
 dotnet_diagnostic.MA0188.severity = none
+
+# MA0189: Use InlineArray instead of fixed-size buffers
+dotnet_diagnostic.MA0189.severity = none
 ```
