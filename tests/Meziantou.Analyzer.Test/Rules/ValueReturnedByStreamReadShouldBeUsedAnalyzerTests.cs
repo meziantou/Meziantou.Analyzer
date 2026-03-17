@@ -20,7 +20,7 @@ class Test
     void A()
     {
         var stream = File.OpenRead("""");
-        [||]stream.Read(null, 0, 0);
+        [|stream.Read(null, 0, 0)|];
     }
 }
 ";
@@ -38,7 +38,7 @@ class Test
     async void A()
     {
         var stream = File.OpenRead("""");
-        await [||]stream.ReadAsync(null, 0, 0);
+        await [|stream.ReadAsync(null, 0, 0)|];
     }
 }
 ";

@@ -23,7 +23,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
             .WithSourceCode("""
                 unsafe struct IpAddressBuffer
                 {
-                    public fixed byte [||]IpAddress[16];
+                    public fixed byte [|IpAddress|][16];
                 }
                 """)
             .ShouldFixCodeWith("""
@@ -42,7 +42,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
             .WithSourceCode("""
                 unsafe struct IpAddressBuffer
                 {
-                    public fixed byte [||]IpAddress[2];
+                    public fixed byte [|IpAddress|][2];
                 }
                 """)
             .ShouldFixCodeWith("""
@@ -61,7 +61,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
             .WithSourceCode("""
                 unsafe struct IpAddressBuffer
                 {
-                    public fixed byte [||]IpAddress[16];
+                    public fixed byte [|IpAddress|][16];
                 }
                 """)
             .ValidateAsync();
@@ -74,7 +74,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
             .WithSourceCode("""
                 unsafe struct Buffer
                 {
-                    private fixed int [||]Values[8];
+                    private fixed int [|Values|][8];
                 }
                 """)
             .ValidateAsync();
@@ -87,7 +87,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
             .WithSourceCode("""
                 unsafe struct IpAddressBuffer
                 {
-                    public fixed byte [||]IpAddress[17];
+                    public fixed byte [|IpAddress|][17];
                 }
                 """)
             .ShouldFixCodeWith("""

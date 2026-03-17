@@ -20,7 +20,7 @@ class TypeName
 {
     public void Test()
     {
-        _ = [||]new System.EventArgs();
+        _ = [|new System.EventArgs()|];
     }
 }
 """;

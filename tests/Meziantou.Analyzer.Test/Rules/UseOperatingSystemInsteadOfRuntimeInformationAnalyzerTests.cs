@@ -18,7 +18,7 @@ public class UseOperatingSystemInsteadOfRuntimeInformationAnalyzerTests
     {
         await CreateProjectBuilder()
             .WithSourceCode("""
-                [||]System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+                [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)|];
                 """)
             .ValidateAsync();
     }

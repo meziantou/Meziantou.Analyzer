@@ -24,7 +24,7 @@ class Test : ComponentBase
 
     void A()
     {
-        [||]Param1 = "";            
+        [|Param1 = ""|];
     }
 }
 """;

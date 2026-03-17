@@ -68,7 +68,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
             .WithSourceCode("""
                 class TypeName
                 {
-                    object [||]_lock = new();
+                    object [|_lock|] = new();
 
                     void A() { lock(_lock) { } }
                 }
@@ -139,7 +139,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
             .WithSourceCode("""
                 class BaseClass
                 {
-                    private protected object [||]_lock = new();
+                    private protected object [|_lock|] = new();
                 }
 
                 class ChildClass : BaseClass
@@ -178,7 +178,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
             .WithSourceCode($$"""
                 {{classVisibility}} class BaseClass
                 {
-                    {{fieldVisibility}} object [||]_lock = new();
+                    {{fieldVisibility}} object [|_lock|] = new();
 
                     void A() { lock(_lock) { } }
                 }
@@ -196,7 +196,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
                 {
                     void A()
                     {
-                        var [||]o = new object();
+                        var [|o|] = new object();
                         lock(o) { }
                     }
                 }
@@ -233,7 +233,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
                 {
                     void A()
                     {
-                        var [||]o = new object();
+                        var [|o|] = new object();
                         System.Threading.Tasks.Task.Run(() => { lock(o) { } });
                         lock(o) { }
                     }
@@ -268,7 +268,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
             .WithSourceCode("""
                 public sealed class A
                 {
-                    private readonly object [||]_lock;
+                    private readonly object [|_lock|];
 
                     public A()
                     {
@@ -315,7 +315,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
             .WithSourceCode("""
                 public sealed class B
                 {
-                    private static readonly object [||]Lock;
+                    private static readonly object [|Lock|];
 
                     static B()
                     {

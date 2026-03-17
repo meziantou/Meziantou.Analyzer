@@ -19,7 +19,7 @@ class Test
 {
     Test()
     {
-        [||]A();
+        [|A()|];
     }
 
     public virtual void A() { }
@@ -37,7 +37,7 @@ abstract class Test
 {
     Test()
     {
-        [||]A();
+        [|A()|];
     }
 
     public abstract void A();
@@ -92,7 +92,7 @@ class Test
 {
     Test()
     {
-        [||]A = 10;
+        [|A|] = 10;
     }
 
     public virtual int A { get; set; }
@@ -129,7 +129,7 @@ class Test
 {
     Test()
     {
-        _ = [||]A;
+        _ = [|A|];
     }
 
     public virtual int A => 10;
@@ -152,7 +152,7 @@ class Test : Base
 {
     Test()
     {
-        [||]A();
+        [|A()|];
     }
 
     public override void A() { }
@@ -187,10 +187,10 @@ class Test
 class Test
 {
     protected virtual event System.Action SampleEvent;
-    
+
     Test()
     {
-        [||]SampleEvent += A;
+        [|SampleEvent += A|];
     }
 
     public void A() { }
@@ -207,7 +207,7 @@ class Test
 class Test
 {
     protected event System.Action SampleEvent;
-    
+
     Test()
     {
         SampleEvent += A;

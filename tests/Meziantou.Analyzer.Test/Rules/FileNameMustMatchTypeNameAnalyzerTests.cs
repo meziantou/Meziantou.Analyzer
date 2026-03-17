@@ -16,7 +16,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     {
         await CreateProjectBuilder()
               .WithSourceCode(@"
-class [||]Sample
+class [|Sample|]
 {
 }")
               .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
@@ -94,7 +94,7 @@ class Test0<T>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0OfT.cs", """
-                  class [||]Test0<T1, T2>
+                  class [|Test0|]<T1, T2>
                   {
                   }
                   """)
@@ -169,7 +169,7 @@ class Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0{TKey}.cs", @"
-class [||]Test0<TKey, TValue>
+class [|Test0|]<TKey, TValue>
 {
 }")
               .ValidateAsync();
@@ -180,7 +180,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0{TKey,TNotSame}.cs", @"
-class [||]Test0<TKey, TValue>
+class [|Test0|]<TKey, TValue>
 {
 }")
               .ValidateAsync();
@@ -191,7 +191,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  class [||]Foo {}
+                  class [|Foo|] {}
                   class Bar {}
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
@@ -215,7 +215,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  class [||]Sample {}
+                  class [|Sample|] {}
                   class Test0 {}
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
@@ -227,7 +227,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  enum [||]Foo {}
+                  enum [|Foo|] {}
                   enum Bar {}
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
@@ -239,7 +239,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  interface [||]Foo {}
+                  interface [|Foo|] {}
                   interface Bar {}
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
@@ -251,7 +251,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  record [||]Foo {}
+                  record [|Foo|] {}
                   record Bar {}
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
@@ -264,7 +264,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  record struct [||]Foo {}
+                  record struct [|Foo|] {}
                   record struct Bar {}
                   """)
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -278,7 +278,7 @@ class [||]Test0<TKey, TValue>
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
-                  struct [||]Foo {}
+                  struct [|Foo|] {}
                   struct Bar {}
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
@@ -292,7 +292,7 @@ class [||]Test0<TKey, TValue>
               .WithSourceCode(fileName: "Test0.cs", """
                   namespace Sample
                   {
-                      struct [||]Foo {}
+                      struct [|Foo|] {}
                       struct Bar {}
                   }
                   """)
@@ -307,7 +307,7 @@ class [||]Test0<TKey, TValue>
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test0.cs", """
                   namespace Sample;
-                  struct [||]Foo {}
+                  struct [|Foo|] {}
                   struct Bar {}
                   """)
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
@@ -413,7 +413,7 @@ class Dummy
 {
 }
 
-file class [||]Sample
+file class [|Sample|]
 {
 }
 ")
@@ -427,7 +427,7 @@ file class [||]Sample
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test.cs", @"
-class [||]Sample
+class [|Sample|]
 {
 }")
               .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
@@ -439,7 +439,7 @@ class [||]Sample
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test.cs", @"
-struct [||]Sample
+struct [|Sample|]
 {
 }")
               .ShouldReportDiagnosticWithMessage("File name must match type name (struct Sample)")
@@ -451,7 +451,7 @@ struct [||]Sample
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test.cs", @"
-interface [||]ISample
+interface [|ISample|]
 {
 }")
               .ShouldReportDiagnosticWithMessage("File name must match type name (interface ISample)")
@@ -463,7 +463,7 @@ interface [||]ISample
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test.cs", @"
-enum [||]Sample
+enum [|Sample|]
 {
     Value1
 }")
@@ -476,7 +476,7 @@ enum [||]Sample
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test.cs", @"
-record [||]Sample;")
+record [|Sample|];")
               .ShouldReportDiagnosticWithMessage("File name must match type name (record Sample)")
               .ValidateAsync();
     }
@@ -487,7 +487,7 @@ record [||]Sample;")
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test.cs", @"
-record struct [||]Sample;")
+record struct [|Sample|];")
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .ShouldReportDiagnosticWithMessage("File name must match type name (record struct Sample)")
               .ValidateAsync();
@@ -499,7 +499,7 @@ record struct [||]Sample;")
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Test.cs", @"
-delegate void [||]Sample();")
+delegate void [|Sample|]();")
               .ShouldReportDiagnosticWithMessage("File name must match type name (delegate Sample)")
               .ValidateAsync();
     }

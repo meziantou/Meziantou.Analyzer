@@ -55,7 +55,7 @@ class MyComponent : ComponentBase
     
     protected override void OnInitialized()
     {
-        _ = [||]JS.InvokeVoidAsync("""");
+        _ = [|JS.InvokeVoidAsync("""")|];
     }
 }
 ")
@@ -76,7 +76,7 @@ class MyComponent : ComponentBase
     
     protected override async Task OnInitializedAsync()
     {
-        await [||]JS.InvokeVoidAsync("""");
+        await [|JS.InvokeVoidAsync("""")|];
         await base.OnInitializedAsync();
     }
 }
@@ -98,7 +98,7 @@ class MyComponent : ComponentBase
     
     protected override async Task OnInitializedAsync()
     {
-        await [||]JS.InvokeAsync<object>(identifier: """", args: new object[0]);
+        await [|JS.InvokeAsync<object>(identifier: """", args: new object[0])|];
         await base.OnInitializedAsync();
     }
 }
@@ -121,7 +121,7 @@ class MyComponent : ComponentBase
     
     protected override async Task OnInitializedAsync()
     {
-        await [||]Storage.GetAsync<string>("""");
+        await [|Storage.GetAsync<string>("""")|];
     }
 }
 ")

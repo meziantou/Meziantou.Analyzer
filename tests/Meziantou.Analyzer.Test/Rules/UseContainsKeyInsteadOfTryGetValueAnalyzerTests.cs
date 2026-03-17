@@ -35,7 +35,7 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzerTests
                 {
                     void Test(System.Collections.Generic.IDictionary<string, string> dict)
                     {
-                        [||]dict.TryGetValue("", out _);
+                        [|dict.TryGetValue("", out _)|];
                     }
                 }
                 """)
@@ -51,7 +51,7 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzerTests
                 {
                     void Test(System.Collections.Generic.IReadOnlyDictionary<string, string> dict)
                     {
-                        [||]dict.TryGetValue("", out _);
+                        [|dict.TryGetValue("", out _)|];
                     }
                 }
                 """)
@@ -67,7 +67,7 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzerTests
                 {
                     void Test(System.Collections.Generic.Dictionary<string, string> dict)
                     {
-                        [||]dict.TryGetValue("", out _);
+                        [|dict.TryGetValue("", out _)|];
                     }
                 }
                 """)
@@ -83,7 +83,7 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzerTests
                 {
                     void Test(SampleDictionary dict)
                     {
-                        [||]dict.TryGetValue("", out _);
+                        [|dict.TryGetValue("", out _)|];
                     }
                 }
 

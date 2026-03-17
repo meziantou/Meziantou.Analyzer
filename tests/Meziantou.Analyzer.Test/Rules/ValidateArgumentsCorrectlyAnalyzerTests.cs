@@ -88,7 +88,7 @@ class TypeName
         {
             throw new System.ArgumentNullException(nameof(a));
             yield return 0;
-        }        
+        }
     }
 }";
         await CreateProjectBuilder()
@@ -124,7 +124,7 @@ class TypeName
         const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
-    IEnumerable<int> [||]A(string a)
+    IEnumerable<int> [|A|](string a)
     {
         if (a == null)
             throw new System.ArgumentNullException(nameof(a));
@@ -227,14 +227,14 @@ class TypeName
         const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
-    async IAsyncEnumerable<int> [||]A(string a)
+    async IAsyncEnumerable<int> [|A|](string a)
     {
         if (a == null)
             throw new System.ArgumentNullException(nameof(a));
 
         await System.Threading.Tasks.Task.Delay(1);
         yield return 0;
-        
+
     }
 }";
 
@@ -268,13 +268,13 @@ class TypeName
         const string SourceCode = @"using System.Collections.Generic;
 class TypeName
 {
-    async IAsyncEnumerable<int> [||]A(string a)
+    async IAsyncEnumerable<int> [|A|](string a)
     {
         System.ArgumentNullException.ThrowIfNull(a);
 
         await System.Threading.Tasks.Task.Delay(1);
         yield return 0;
-        
+
     }
 }";
 
@@ -312,13 +312,13 @@ class TypeName
             using System.Threading.Tasks;
             class TypeName
             {
-                async IAsyncEnumerable<int> [||]A(string a, [EnumeratorCancellation] CancellationToken ct = default)
+                async IAsyncEnumerable<int> [|A|](string a, [EnumeratorCancellation] CancellationToken ct = default)
                 {
                     System.ArgumentNullException.ThrowIfNull(a);
 
                     await System.Threading.Tasks.Task.Delay(1);
                     yield return 0;
-                    
+
                 }
             }
             """;

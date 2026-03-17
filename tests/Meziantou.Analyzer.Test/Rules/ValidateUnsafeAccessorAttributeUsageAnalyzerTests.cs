@@ -21,7 +21,7 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                   class Sample
                   {
                       [System.Runtime.CompilerServices.UnsafeAccessor(System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod)]
-                      void [||]A() { }
+                      void [|A|]() { }
                   }
                   """)
               .ValidateAsync();
@@ -39,7 +39,7 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                       {
                           // Local function name are mangle by the compiler, so the Name property is required
                           [UnsafeAccessor(UnsafeAccessorKind.Field)]
-                          extern static ref int [||]B(System.Version a);
+                          extern static ref int [|B|](System.Version a);
                       }
                   }
                   """)
@@ -75,7 +75,7 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                       void A()
                       {
                           [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                          extern static ref int [||]B(System.Version a, int b);
+                          extern static ref int [|B|](System.Version a, int b);
                       }
                   }
                   """)
@@ -93,7 +93,7 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                       void A()
                       {
                           [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                          extern static void [||]B(System.Version a);
+                          extern static void [|B|](System.Version a);
                       }
                   }
                   """)
@@ -111,7 +111,7 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                       void A()
                       {
                           [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                          extern static int [||]B(System.Version a);
+                          extern static int [|B|](System.Version a);
                       }
                   }
                   """)
@@ -129,7 +129,7 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                       void A()
                       {
                           [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                          extern static ref int [||]B(System.Int32 a);
+                          extern static ref int [|B|](System.Int32 a);
                       }
                   }
                   """)

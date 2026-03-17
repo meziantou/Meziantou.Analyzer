@@ -108,7 +108,7 @@ _ = "foo".AsSpan().SequenceEqual(value, default(System.Collections.Generic.IEqua
         await CreateProjectBuilder()
               .WithSourceCode("""
 using System;
-_ = [||]"foo".AsSpan().Equals("bar", StringComparison.Ordinal);
+_ = [|"foo".AsSpan().Equals("bar", StringComparison.Ordinal)|];
 """)
               .ShouldFixCodeWith("""
 using System;
@@ -134,7 +134,7 @@ _ = "foo".AsSpan().Equals("bar", StringComparison.OrdinalIgnoreCase);
         await CreateProjectBuilder()
               .WithSourceCode("""
 using System;
-_ = [||]"foo".AsSpan().SequenceEqual("bar");
+_ = [|"foo".AsSpan().SequenceEqual("bar")|];
 """)
               .ShouldFixCodeWith("""
 using System;
@@ -150,7 +150,7 @@ _ = "foo".AsSpan() is "bar";
               .WithSourceCode("""
 using System;
 Span<char> str = default;
-_ = [||]str.SequenceEqual("bar");
+_ = [|str.SequenceEqual("bar")|];
 """)
               .ShouldFixCodeWith("""
 using System;

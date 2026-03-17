@@ -30,7 +30,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     [Fact]
     public async Task MissingAttribute_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"struct [||]TypeName
+        const string SourceCode = @"struct [|TypeName|]
 {
     int a;
     int b;
@@ -54,7 +54,7 @@ struct TypeName
     public async Task AddAttributeShouldUseShortname()
     {
         const string SourceCode = @"using System.Runtime.InteropServices;
-struct [||]TypeName
+struct [|TypeName|]
 {
     int a;
     int b;
@@ -130,7 +130,7 @@ struct TypeName
     [Fact]
     public async Task RecordStruct()
     {
-        const string SourceCode = @"record struct [||]TypeName(int A, int B);";
+        const string SourceCode = @"record struct [|TypeName|](int A, int B);";
 
         const string CodeFix = @"using System.Runtime.InteropServices;
 

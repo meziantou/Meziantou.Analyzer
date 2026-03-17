@@ -24,7 +24,7 @@ public class Test
 {
     public void A()
     {
-        [||]" + text + @";
+        [|" + text + @"|];
     }
 }")
               .ValidateAsync();

@@ -15,7 +15,7 @@ public sealed class MarkAttributesWithAttributeUsageAttributeTests
     [Fact]
     public async Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
     {
-        const string SourceCode = "class [||]TestAttribute : System.Attribute { }";
+        const string SourceCode = "class [|TestAttribute|] : System.Attribute { }";
 
         const string CodeFix = @"[System.AttributeUsage(System.AttributeTargets.All)]
 class TestAttribute : System.Attribute { }";

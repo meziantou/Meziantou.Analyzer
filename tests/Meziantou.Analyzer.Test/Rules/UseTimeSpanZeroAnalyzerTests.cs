@@ -40,7 +40,7 @@ class TestClass
 {
     void Test()
     {
-        _ = [||]{{code}};
+        _ = [|{{code}}|];
     }
 }
 """)
@@ -93,7 +93,7 @@ class TestClass
 {
     void Test()
     {
-        _ = [||]System.TimeSpan.FromSeconds(0);
+        _ = [|System.TimeSpan.FromSeconds(0)|];
     }
 }
 """)

@@ -19,7 +19,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
 using System.Threading.Tasks;
 class Test
 {
-    Task A() { [||]return null; }
+    Task A() { [|return null;|] }
 }
 """;
         var fix = """
@@ -42,7 +42,7 @@ class Test
 using System.Threading.Tasks;
 class Test
 {
-    Task A() => [||]null;
+    Task A() => [|null|];
 }
 """;
         var fix = """
@@ -65,7 +65,7 @@ class Test
 using System.Threading.Tasks;
 class Test
 {
-    Task<int> A() { [||]return null; }
+    Task<int> A() { [|return null;|] }
 }
 """;
         var fix = """
@@ -88,7 +88,7 @@ class Test
 using System.Threading.Tasks;
 class Test
 {
-    Task<string> A() => [||]null;
+    Task<string> A() => [|null|];
 }
 """;
         var fix = """
@@ -105,18 +105,18 @@ class Test
     }
 
     [Theory]
-    [InlineData("Task A() { [||]return null; }")]
-    [InlineData("Task A() { [||]return default; }")]
-    [InlineData("Task A() => [||]null;")]
-    [InlineData("Task A() => [||]default;")]
-    [InlineData("Task A() { [||]return ((Test)null)?.A(); }")]
-    [InlineData("Task A() { [||]return 1 switch { _ => null }; }")]
-    [InlineData("Task A(int value) { [||]return value switch { 1 => A(0), _ => null }; }")]
-    [InlineData("Task A(bool a) { [||]return a ? null : A(a); }")]
-    [InlineData("Task<object> A() { [||]return null; }")]
-    [InlineData("Task<object> A() { [||]return default; }")]
-    [InlineData("Task<object> A() => [||]null;")]
-    [InlineData("Task<object> A() => [||]default;")]
+    [InlineData("Task A() { [|return null;|] }")]
+    [InlineData("Task A() { [|return default;|] }")]
+    [InlineData("Task A() => [|null|];")]
+    [InlineData("Task A() => [|default|];")]
+    [InlineData("Task A() { [|return ((Test)null)?.A();|] }")]
+    [InlineData("Task A() { [|return 1 switch { _ => null };|] }")]
+    [InlineData("Task A(int value) { [|return value switch { 1 => A(0), _ => null };|] }")]
+    [InlineData("Task A(bool a) { [|return a ? null : A(a);|] }")]
+    [InlineData("Task<object> A() { [|return null;|] }")]
+    [InlineData("Task<object> A() { [|return default;|] }")]
+    [InlineData("Task<object> A() => [|null|];")]
+    [InlineData("Task<object> A() => [|default|];")]
     [InlineData("async Task<object> Valid() { return null; }")]
     [InlineData("object Valid() { return null; }")]
     public async Task Method(string code)
@@ -143,9 +143,9 @@ class Test
     {
         Task<object> Valid1() { return Task.FromResult<object>(null); }
         async Task<object> Valid2() { return null; }
-        Task A() { [||]return null; }
-        Task<object> B() { [||]return null; }
-        Task<object> C() => [||]null;
+        Task A() { [|return null;|] }
+        Task<object> B() { [|return null;|] }
+        Task<object> C() => [|null|];
         object       D() => null;
     }
 }";
@@ -163,9 +163,9 @@ class Test
 {
     void A()
     {
-        System.Func<Task>         a = () => [||]null;
-        System.Func<Task<object>> b = () => [||]null;
-        System.Func<Task<object>> c = () => { [||]return null; };
+        System.Func<Task>         a = () => [|null|];
+        System.Func<Task<object>> b = () => [|null|];
+        System.Func<Task<object>> c = () => { [|return null;|] };
         System.Func<Task>         valid1 = async () => { };
         System.Func<Task<object>> valid2 = async () => null;
         System.Func<object>       valid3 = () => null;
@@ -186,8 +186,8 @@ class Test
 {
     void A()
     {
-        System.Func<Task> a = delegate () { [||]return null; };
-        System.Func<Task<object>> b = delegate () { [||]return null; };
+        System.Func<Task> a = delegate () { [|return null;|] };
+        System.Func<Task<object>> b = delegate () { [|return null;|] };
         System.Func<Task> c = async delegate () { };
         System.Func<Task<object>> d = async delegate () { return null; };
         System.Func<object> e = delegate () { return null; };
@@ -207,7 +207,7 @@ class Test
 class Test
 {
     Task A()
-    {   
+    {
         System.Func<Task<object>> valid4 = async () => { return null; };
         return Task.CompletedTask;
     }

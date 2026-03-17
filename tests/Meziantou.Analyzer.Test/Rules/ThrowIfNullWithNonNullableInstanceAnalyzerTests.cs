@@ -44,7 +44,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
     {
         var sourceCode = $$"""
             {{type}} obj = default;
-            [||]System.ArgumentNullException.ThrowIfNull(obj);
+            [|System.ArgumentNullException.ThrowIfNull(obj)|];
             """;
 
         await CreateProjectBuilder()

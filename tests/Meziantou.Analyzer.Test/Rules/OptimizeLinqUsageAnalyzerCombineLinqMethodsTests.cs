@@ -31,7 +31,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        [||]enumerable.Where(x => x == 0)." + methodName + @"();
+        [|enumerable.Where(x => x == 0)." + methodName + @"()|];
     }
 }
 ")
@@ -59,7 +59,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        [||]enumerable.Where(x => x == 0).Where(y => true);
+        [|enumerable.Where(x => x == 0).Where(y => true)|];
     }
 }
 ")
@@ -153,7 +153,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        [||]enumerable.Where(x => x == 0 || x == 1).Any();
+        [|enumerable.Where(x => x == 0 || x == 1).Any()|];
     }
 }
 ")
@@ -181,7 +181,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        [||]enumerable.Where(x => x == 0 || x == 1).Any(y => y == 2);
+        [|enumerable.Where(x => x == 0 || x == 1).Any(y => y == 2)|];
     }
 }
 ")
@@ -209,7 +209,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        [||]enumerable.Where(Filter).Any();
+        [|enumerable.Where(Filter).Any()|];
     }
 
     bool Filter(int x) => true;
@@ -241,7 +241,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        [||]enumerable.Where(Filter).Any(Filter);
+        [|enumerable.Where(Filter).Any(Filter)|];
     }
 
     bool Filter(int x) => true;
@@ -273,7 +273,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        [||]enumerable.Where(Filter).Any(x => true);
+        [|enumerable.Where(Filter).Any(x => true)|];
     }
 
     bool Filter(int x) => true;

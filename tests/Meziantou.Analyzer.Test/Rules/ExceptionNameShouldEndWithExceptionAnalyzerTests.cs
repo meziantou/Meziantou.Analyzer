@@ -28,7 +28,7 @@ class CustomException : System.Exception
     public async Task NameDoesNotEndWithAttribute()
     {
         const string SourceCode = @"
-class [||]CustomEx : System.Exception
+class [|CustomEx|] : System.Exception
 {
 }
 ";

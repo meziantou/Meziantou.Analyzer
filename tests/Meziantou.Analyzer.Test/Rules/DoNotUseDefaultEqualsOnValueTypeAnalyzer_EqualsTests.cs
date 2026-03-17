@@ -23,7 +23,7 @@ class Sample
 {
     public void A()
     {
-        _ = [||]new Test().Equals(new Test());
+        _ = [|new Test().Equals(new Test())|];
     }
 }
 ";
@@ -40,7 +40,7 @@ struct Test
 {
     public void A()
     {
-        _ = [||]Equals(new Test());
+        _ = [|Equals(new Test())|];
     }
 }
 ";
@@ -84,7 +84,7 @@ class Sample
 {
     public void A()
     {
-        _ = [||]new Test().GetHashCode();
+        _ = [|new Test().GetHashCode()|];
     }
 }
 ";

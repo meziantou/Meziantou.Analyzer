@@ -27,7 +27,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     public async Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("[||](-1).ToString();")
+              .WithSourceCode("[|(-1).ToString()|];")
               .ShouldReportDiagnosticWithMessage("Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter")
               .ValidateAsync();
     }
@@ -52,12 +52,12 @@ public sealed class UseIFormatProviderAnalyzerTests
     [InlineData(""" System.TimeSpan.Zero.ToString() """)]
     [InlineData(""" System.TimeSpan.Zero.ToString("c") """)]
     [InlineData(""" System.TimeSpan.Zero.ToString("T") """)]
-    [InlineData(""" [||]System.TimeSpan.Zero.ToString("G") """)]
+    [InlineData(""" [|System.TimeSpan.Zero.ToString("G")|] """)]
     [InlineData(""" ' '.ToString(); """)]
-    [InlineData(""" [||]System.DateTime.TryParse("", out _) """)]
-    [InlineData(""" [||]System.DateTimeOffset.TryParse("", out _) """)]
-    [InlineData(""" [||]"".ToLower() """)]
-    [InlineData(""" [||]new System.Text.StringBuilder().AppendFormat("{0}", 10) """)]
+    [InlineData(""" [|System.DateTime.TryParse("", out _)|] """)]
+    [InlineData(""" [|System.DateTimeOffset.TryParse("", out _)|] """)]
+    [InlineData(""" [|"".ToLower()|] """)]
+    [InlineData(""" [|new System.Text.StringBuilder().AppendFormat("{0}", 10)|] """)]
     [InlineData(""" System.DayOfWeek.Monday.ToString() """)]
     [InlineData(""" default(System.DateTime).ToString("o") """)]
     [InlineData(""" default(System.DateTime).ToString("O") """)]
@@ -71,15 +71,15 @@ public sealed class UseIFormatProviderAnalyzerTests
     [InlineData(""" default(System.DateTimeOffset).ToString("R") """)]
     [InlineData(""" default(System.DateTimeOffset).ToString("s") """)]
     [InlineData(""" default(System.DateTimeOffset).ToString("u") """)]
-    [InlineData(""" [||]default(System.DateTime).ToString("yyyy") """)]
+    [InlineData(""" [|default(System.DateTime).ToString("yyyy")|] """)]
     [InlineData(""" System.Guid.Parse("o") """)]
     [InlineData(""" System.Guid.TryParse("o", out _) """)]
     [InlineData(""" ((int?)1)?.ToString(System.Globalization.CultureInfo.InvariantCulture) """)]
     [InlineData(""" string.Format("", "test", 1, 'c') """)]
     [InlineData(""" string.Format(default(System.IFormatProvider), "", -1) """)]
     [InlineData(""" string.Format("") """)]
-    [InlineData(""" [||]string.Format("", -1) """)]
-    [InlineData(""" [||]string.Format("", 0, 0, 0, 0, 0, 0, -1, 0 ,0 ,0, 0) """)]
+    [InlineData(""" [|string.Format("", -1)|] """)]
+    [InlineData(""" [|string.Format("", 0, 0, 0, 0, 0, 0, -1, 0 ,0 ,0, 0)|] """)]
     [InlineData(""" System.Convert.ToChar((object)null) """)]
     [InlineData(""" System.Convert.ToChar("") """)]
     [InlineData(""" System.Convert.ToBoolean((object)null) """)]
@@ -107,8 +107,8 @@ public sealed class UseIFormatProviderAnalyzerTests
     public async Task Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
     {
         const string SourceCode = """
-            [||]int.Parse("");
-            [||]int.Parse("", System.Globalization.NumberStyles.Any);
+            [|int.Parse("")|];
+            [|int.Parse("", System.Globalization.NumberStyles.Any)|];
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -121,7 +121,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     public async Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
     {
         const string SourceCode = """
-            [||]float.TryParse("", out _);
+            [|float.TryParse("", out _)|];
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -176,7 +176,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         const string SourceCode = """
             var sb = new System.Text.StringBuilder();
             int value = 0;
-            [||]sb.AppendLine($"foo{value}");
+            [|sb.AppendLine($"foo{value}")|];
             """;
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net7_0)
@@ -212,7 +212,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         var sourceCode = """
             var sb = new System.Text.StringBuilder();
             System.DateTime value = default;
-            [||]sb.AppendLine($"foo{value:yyyy}");
+            [|sb.AppendLine($"foo{value:yyyy}")|];
             """;
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net7_0)
@@ -226,7 +226,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         const string SourceCode = """
             int? i = -1;
-            [||]i.ToString();
+            [|i.ToString()|];
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -329,7 +329,7 @@ class Location
 using System;
 using System.Runtime.CompilerServices;
 
-[||]A.Print($"{DateTime.Now:D}");
+[|A.Print($"{DateTime.Now:D}")|];
 
 class A
 {
@@ -389,7 +389,7 @@ class A
 using System;
 using System.Runtime.CompilerServices;
 
-[||]A.Print($"{DateTime.Now:o} | {DateTime.Now:D}");
+[|A.Print($"{DateTime.Now:o} | {DateTime.Now:D}")|];
 
 class A
 {
@@ -437,7 +437,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Annotations;
 
-[||]A.Print($"{new Bar():D}");
+[|A.Print($"{new Bar():D}")|];
 
 class A
 {
@@ -482,7 +482,7 @@ class A
         var sourceCode = """
 using System;
 
-[||]A.Sample($"{DateTime.Now:D}");
+[|A.Sample($"{DateTime.Now:D}")|];
 
 class A
 {

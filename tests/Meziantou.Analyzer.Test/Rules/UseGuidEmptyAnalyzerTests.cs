@@ -22,7 +22,7 @@ class TestClass
 {
     void Test()
     {
-        _ = [||]{{code}};
+        _ = [|{{code}}|];
     }
 }
 """)

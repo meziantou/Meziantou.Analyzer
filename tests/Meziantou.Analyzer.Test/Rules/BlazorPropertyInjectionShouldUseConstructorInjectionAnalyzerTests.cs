@@ -27,7 +27,7 @@ using Microsoft.AspNetCore.Components;
 class MyComponent : IComponent
 {
     [Inject]
-    protected NavigationManager [||]Navigation { get; set; } = default!;
+    protected NavigationManager [|Navigation|] { get; set; } = default!;
 
     public void Attach(RenderHandle renderHandle) { }
     public System.Threading.Tasks.Task SetParametersAsync(ParameterView parameters) => System.Threading.Tasks.Task.CompletedTask;
@@ -56,7 +56,7 @@ using Microsoft.AspNetCore.Components;
 class MyComponent : ComponentBase
 {
     [Inject]
-    protected NavigationManager [||]Navigation { get; set; } = default!;
+    protected NavigationManager [|Navigation|] { get; set; } = default!;
 }
 """)
               .ShouldFixCodeWith("""
@@ -80,7 +80,7 @@ using Microsoft.Extensions.Logging;
 class MyComponent(ILogger<MyComponent> logger) : ComponentBase
 {
     [Inject]
-    protected NavigationManager [||]Navigation { get; set; } = default!;
+    protected NavigationManager [|Navigation|] { get; set; } = default!;
 }
 """)
               .ShouldFixCodeWith("""
@@ -107,7 +107,7 @@ class MyComponent : ComponentBase
     public MyComponent() { }
 
     [Inject]
-    protected NavigationManager [||]Navigation { get; set; } = default!;
+    protected NavigationManager [|Navigation|] { get; set; } = default!;
 }
 """)
               .ValidateAsync();
@@ -192,7 +192,7 @@ using Microsoft.AspNetCore.Components;
 class MyComponent : ComponentBase
 {
     [Inject]
-    protected NavigationManager [||]Navigation { get; set; } = default!;
+    protected NavigationManager [|Navigation|] { get; set; } = default!;
 
     private void HandleClick()
     {
@@ -226,10 +226,10 @@ using Microsoft.Extensions.Logging;
 class MyComponent : ComponentBase
 {
     [Inject]
-    protected NavigationManager [||]Navigation { get; set; } = default!;
+    protected NavigationManager [|Navigation|] { get; set; } = default!;
 
     [Inject]
-    protected ILogger<MyComponent> [||]Logger { get; set; } = default!;
+    protected ILogger<MyComponent> [|Logger|] { get; set; } = default!;
 
     private void HandleClick()
     {

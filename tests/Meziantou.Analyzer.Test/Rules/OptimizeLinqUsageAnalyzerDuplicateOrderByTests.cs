@@ -26,7 +26,7 @@ class Test
     public Test()
     {
         IQueryable<string> query = null;
-        [||]query." + a + @"(x => x)." + b + @"(x => x);
+        [|query." + a + @"(x => x)." + b + @"(x => x)|];
     }
 }
 ")
@@ -58,7 +58,7 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        [||]enumerable." + a + @"(x => x)." + b + @"(x => x);
+        [|enumerable." + a + @"(x => x)." + b + @"(x => x)|];
     }
 }
 ")
@@ -90,7 +90,7 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        [||]enumerable." + a + @"(x => x)." + b + @"(x => x);
+        [|enumerable." + a + @"(x => x)." + b + @"(x => x)|];
     }
 }
 ")
@@ -122,7 +122,7 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        [||]enumerable.OrderBy(x => x)." + a + @"(x => x)." + b + @"(x => x);
+        [|enumerable.OrderBy(x => x)." + a + @"(x => x)." + b + @"(x => x)|];
     }
 }
 ")

@@ -28,7 +28,7 @@ struct Test
 {
     void A()
     {
-        var collection = [||]" + text + @";
+        var collection = [|" + text + @"|];
     }
 }
 ";

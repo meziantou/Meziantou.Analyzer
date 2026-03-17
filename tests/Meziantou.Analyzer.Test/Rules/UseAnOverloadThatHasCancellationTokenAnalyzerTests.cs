@@ -20,7 +20,7 @@ class Test
 {
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -39,7 +39,7 @@ class Test
 {
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -76,7 +76,7 @@ class Test
 {
     public void A(System.Threading.Tasks.Task task)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -97,7 +97,7 @@ class Test
 {
     public void A(System.Threading.Tasks.Task<int> task)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -116,7 +116,7 @@ class Test
 {
     public void A(System.Threading.CancellationToken cancellationToken)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public void MethodWithCancellationToken() => throw null;
@@ -136,7 +136,7 @@ class Test
 {
     public static void A(HttpRequest request)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static string Value { get; }
@@ -162,7 +162,7 @@ class Test
 {
     public static void A(HttpRequest request)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static string Value { get; }
@@ -188,7 +188,7 @@ class Test
 {
     public static void A(HttpRequest request)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static string Value { get; }
@@ -215,7 +215,7 @@ class Test
 {
     public static void A(HttpRequest request)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static string Value { get; }
@@ -241,7 +241,7 @@ class Test
 {
     public static void A(HttpRequest request)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static string Value { get; }
@@ -268,7 +268,7 @@ class Test
 {
     public static void A(HttpRequest request)
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static string Value { get; }
@@ -297,7 +297,7 @@ class Test : ControllerBase
 {
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public System.Threading.CancellationToken MyCancellationToken { get; }
@@ -355,7 +355,7 @@ class Test : ControllerBase
 {
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public System.Threading.CancellationToken MyCancellationToken { get; }
@@ -413,7 +413,7 @@ class Test
 {
     public static void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static System.Threading.CancellationToken MyCancellationToken { get; }
@@ -446,7 +446,7 @@ class Test
         }
 
         System.Threading.CancellationToken a = default;
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
         System.Threading.CancellationToken unaccessible2 = default;
     }
 
@@ -487,7 +487,7 @@ class Test
     public static void A()
     {
         System.Threading.CancellationToken a = default;
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static void MethodWithCancellationToken(int a = 0, System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -523,7 +523,7 @@ record Test
 
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -543,7 +543,7 @@ record Test(System.Threading.CancellationToken CancellationToken)
 {
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -580,7 +580,7 @@ record struct Test
 
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -602,7 +602,7 @@ record struct Test(System.Threading.CancellationToken a)
 {
     public void A()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -625,7 +625,7 @@ interface ITest
 
     void Sample()
     {
-        [||]MethodWithCancellationToken();
+        [|MethodWithCancellationToken()|];
     }
 
     void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken = default) => throw null;
@@ -918,7 +918,7 @@ class Test
 {
     public static void A(CancellationToken cancellationToken = default)
     {
-        _ = new System.Action<CancellationToken>(static ct => [||]A());
+        _ = new System.Action<CancellationToken>(static ct => [|A()|]);
     }
 }";
         await CreateProjectBuilder()
@@ -938,7 +938,7 @@ class Test
     {
         _ = new System.Action<CancellationToken>(static ct1 =>
         {
-            _ = new System.Action<CancellationToken>(ct2 => [||]A());
+            _ = new System.Action<CancellationToken>(ct2 => [|A()|]);
         });
     }
 }";
@@ -957,7 +957,7 @@ class Test
 {
     public static void A(CancellationToken cancellationToken = default)
     {
-        _ = new System.Action<CancellationToken>(static delegate(CancellationToken ct) { [||]A(); });
+        _ = new System.Action<CancellationToken>(static delegate(CancellationToken ct) { [|A()|]; });
     }
 }";
         await CreateProjectBuilder()
@@ -976,7 +976,7 @@ class Test
     public static void A(CancellationToken cancellationToken = default)
     {
         B(cancellationToken);
-        static void B(CancellationToken ct) => [||]A();
+        static void B(CancellationToken ct) => [|A()|];
     }
 }";
         await CreateProjectBuilder()
@@ -1000,9 +1000,9 @@ class Test
             CancellationToken ct2 = default;
             void C()
             {
-                [||]A();
+                [|A()|];
             }
-        }            
+        }
     }
 }";
         await CreateProjectBuilder()
@@ -1022,7 +1022,7 @@ class Test
     {
         CancellationToken Foo(CancellationToken cancellationToken = default) => cancellationToken;
 
-        var token = [||]Foo();
+        var token = [|Foo()|];
     }
 }";
         await CreateProjectBuilder()
@@ -1044,7 +1044,7 @@ class Test
                 public static void Test()
                 {
                     CancellationToken ct = default;
-                    [||]A().WithCancellation(ct);
+                    [|A()|].WithCancellation(ct);
 
                     async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
                     {
@@ -1094,7 +1094,7 @@ class Test
                 {
                     CancellationToken ct1 = default;
                     CancellationToken ct2 = default;
-                    [||]A().WithCancellation(ct2);
+                    [|A()|].WithCancellation(ct2);
 
                     async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
                     {
@@ -1144,7 +1144,7 @@ class Test
                 public static void Test()
                 {
                     CancellationToken ct = default;
-                    [||]A().WithCancellation(ct);
+                    [|A()|].WithCancellation(ct);
 
                     async IAsyncEnumerable<int> A([EnumeratorCancellation]CancellationToken cancellationToken = default)
                     {

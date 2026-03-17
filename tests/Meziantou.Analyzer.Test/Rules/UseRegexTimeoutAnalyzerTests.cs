@@ -22,7 +22,7 @@ class TestClass
 {
     void Test()
     {
-        [||]Regex.IsMatch(""test"", ""[a-z]+"");
+        [|Regex.IsMatch(""test"", ""[a-z]+"")|];
     }
 }";
         await CreateProjectBuilder()
@@ -71,7 +71,7 @@ class TestClass
 {
     void Test()
     {
-        [||]new Regex(""[a-z]+"");
+        [|new Regex(""[a-z]+"")|];
     }
 }";
         await CreateProjectBuilder()
@@ -136,7 +136,7 @@ class TestClass
             using System.Text.RegularExpressions;
             partial class TestClass
             {
-                [[||][||]GeneratedRegex("pattern", RegexOptions.None)]
+                [[|GeneratedRegex("pattern", RegexOptions.None)|]]
                 private static partial Regex Test();
             }
             """;
@@ -145,7 +145,7 @@ class TestClass
             using System.Text.RegularExpressions;
             partial class TestClass
             {
-                [[||][||]GeneratedRegex("pattern", RegexOptions.None)]
+                [[|GeneratedRegex("pattern", RegexOptions.None)|]]
                 private static partial Regex Test();
             }
             partial class TestClass
@@ -158,7 +158,12 @@ class TestClass
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
               .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode);
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnostic(new DiagnosticResult
+              {
+                  Id = RuleIdentifiers.MissingTimeoutParameterForRegex,
+                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 6, 4, 50)],
+              });
 
         await project.ValidateAsync();
     }

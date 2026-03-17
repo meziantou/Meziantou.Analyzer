@@ -18,7 +18,7 @@ public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzerTests
               .WithSourceCode(@"
 public class Sample
 {
-    public static int [||]a = 0;
+    public static int [|a|] = 0;
 }")
               .ValidateAsync();
     }

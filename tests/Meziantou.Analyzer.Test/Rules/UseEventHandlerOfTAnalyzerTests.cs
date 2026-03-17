@@ -66,7 +66,7 @@ class Test
               .WithSourceCode(@"
 class Test
 {
-    event " + signature + @" [||]myevent;
+    event " + signature + @" [|myevent|];
 }")
               .ValidateAsync();
     }

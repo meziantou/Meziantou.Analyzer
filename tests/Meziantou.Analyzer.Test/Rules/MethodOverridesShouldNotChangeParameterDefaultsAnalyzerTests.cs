@@ -77,7 +77,7 @@ class Test
 
 class TestDerived : Test
 {
-    public override void A(int [||]a = 1, int [||]b = 2) { }
+    public override void A(int [|a|] = 1, int [|b|] = 2) { }
 }";
 
         const string Fix = @"
@@ -127,7 +127,7 @@ class Test
 
 class TestDerived : Test
 {
-    public override void A(int [||]a = 1) { }
+    public override void A(int [|a|] = 1) { }
 }";
         const string Fix = @"
 class Test
@@ -157,7 +157,7 @@ class Test
 
 class TestDerived : Test
 {
-    public override void A(int [||]a) { }
+    public override void A(int [|a|]) { }
 }";
         const string Fix = @"
 class Test

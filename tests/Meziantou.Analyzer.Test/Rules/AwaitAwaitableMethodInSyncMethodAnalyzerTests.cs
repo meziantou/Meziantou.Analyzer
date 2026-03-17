@@ -148,7 +148,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     Task A()
                     {
-                        [||]Task.Delay(0);
+                        [|Task.Delay(0)|];
                         return Task.CompletedTask;
                     }
                 }
@@ -166,7 +166,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     void A()
                     {
-                        [||]Task.Delay(0);
+                        [|Task.Delay(0)|];
                     }
                 }
                 """)
@@ -183,7 +183,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     void A()
                     {
-                        [||]Task.Yield();
+                        [|Task.Yield()|];
                     }
                 }
                 """)
@@ -202,7 +202,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     {
                         _ = new System.Action(() =>
                         {
-                            [||]Task.Delay(0);
+                            [|Task.Delay(0)|];
                         });
                     }
                 }
@@ -220,7 +220,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     void A()
                     {
-                        _ = new System.Action(() => [||]Task.Delay(0));
+                        _ = new System.Action(() => [|Task.Delay(0)|]);
                     }
                 }
                 """)
@@ -239,7 +239,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     {
                         _ = new System.Action(delegate
                         {
-                            [||]Task.Delay(0);
+                            [|Task.Delay(0)|];
                         });
                     }
                 }
@@ -259,7 +259,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     {
                         _ = new System.Action(delegate()
                         {
-                            [||]Task.Delay(0);
+                            [|Task.Delay(0)|];
                         });
                     }
                 }
@@ -279,7 +279,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     {
                         get
                         {
-                            [||]Task.Delay(0);
+                            [|Task.Delay(0)|];
                             return 0;
                         }
                     }
@@ -301,7 +301,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                         B();
                         void B()
                         {
-                            [||]Task.Delay(0);
+                            [|Task.Delay(0)|];
                         }
                     }
                 }
@@ -323,7 +323,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
 
                         Task B()
                         {
-                            [||]Task.Delay(0);
+                            [|Task.Delay(0)|];
                             return Task.CompletedTask;
                         }
                     }
@@ -342,7 +342,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     void A()
                     {
-                        [||]Task.Delay(0).ConfigureAwait(false);
+                        [|Task.Delay(0).ConfigureAwait(false)|];
                     }
                 }
                 """)

@@ -18,9 +18,14 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     [InlineData("String")]
     public async Task ReportDiagnostic(string typeName)
     {
+                var genericStart = typeName.IndexOf('<');
+                var markedTypeName = genericStart >= 0
+                        ? "[|" + typeName[..genericStart] + "|]" + typeName[genericStart..]
+                        : "[|" + typeName + "|]";
+
         await CreateProjectBuilder()
               .AddAnalyzerConfiguration("MA0104.use_preview_types", "true")
-              .WithSourceCode("public class [||]" + typeName + " { }")
+                            .WithSourceCode("public class " + markedTypeName + " { }")
               .ValidateAsync();
     }
 
@@ -31,8 +36,13 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     [InlineData("String")]
     public async Task ReportDiagnostic_UsePreviewTypes(string typeName)
     {
+                var genericStart = typeName.IndexOf('<');
+                var markedTypeName = genericStart >= 0
+                        ? "[|" + typeName[..genericStart] + "|]" + typeName[genericStart..]
+                        : "[|" + typeName + "|]";
+
         await CreateProjectBuilder()
-              .WithSourceCode("public class [||]" + typeName + " { }")
+                            .WithSourceCode("public class " + markedTypeName + " { }")
               .ValidateAsync();
     }
 

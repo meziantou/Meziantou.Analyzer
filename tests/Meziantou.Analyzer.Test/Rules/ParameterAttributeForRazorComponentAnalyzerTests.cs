@@ -23,7 +23,7 @@ using Microsoft.AspNetCore.Components;
 class Test
 {
     [SupplyParameterFromQuery]
-    public int [||]A { get; set; }
+    public int [|A|] { get; set; }
 }
 """;
         const string Fix = """
@@ -93,7 +93,7 @@ class Test
 {
     [CascadingParameter]
     [SupplyParameterFromQuery]
-    public int [||]A { get; set; }
+    public int [|A|] { get; set; }
 }
 """;
         await CreateProjectBuilder()
@@ -110,7 +110,7 @@ using Microsoft.AspNetCore.Components;
 class Test
 {
     [Parameter, SupplyParameterFromQuery]
-    public int [||]A { get; set; }
+    public int [|A|] { get; set; }
 }
 """;
         await CreateProjectBuilder()
@@ -127,7 +127,7 @@ using Microsoft.AspNetCore.Components;
 class Test
 {
     [EditorRequired]
-    public int [||]A { get; set; }
+    public int [|A|] { get; set; }
 }";
         const string Fix = @"
 using Microsoft.AspNetCore.Components;
@@ -173,7 +173,7 @@ class Test
 {
     [CascadingParameter]
     [EditorRequired]
-    public int [||]A { get; set; }
+    public int [|A|] { get; set; }
 
     public int B { get; set; }
 }";

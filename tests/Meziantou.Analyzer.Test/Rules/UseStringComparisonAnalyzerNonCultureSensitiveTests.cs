@@ -38,7 +38,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]System.String.Equals(""a"", ""v"");
+        [|System.String.Equals(""a"", ""v"")|];
     }
 }";
         const string CodeFix = @"
@@ -64,7 +64,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]""a"".Equals(""v"");
+        [|""a"".Equals(""v"")|];
     }
 }";
         const string CodeFix = @"
@@ -90,7 +90,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]""a"".GetHashCode();
+        [|""a"".GetHashCode()|];
     }
 }";
         const string CodeFix = @"
@@ -182,7 +182,7 @@ class TypeName
     public void Test()
     {
         var obj = new Newtonsoft.Json.Linq.JObject();
-        [||]obj.Property("""");
+        [|obj.Property("""")|];
     }
 }
 

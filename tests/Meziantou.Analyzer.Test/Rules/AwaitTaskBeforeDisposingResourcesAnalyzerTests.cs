@@ -25,7 +25,7 @@ class TestClass
     {
         using ((IDisposable)null)
         {
-            [||]return Task.Delay(1);
+            [|return Task.Delay(1);|]
         }
     }
 }";
@@ -47,7 +47,7 @@ class TestClass
     {
         using ((IDisposable)null)
         {
-            [||]return TestAsync().AsTask();
+            [|return TestAsync().AsTask();|]
         }
     }
 
@@ -72,7 +72,7 @@ class TestClass
         using ((IDisposable)null)
         {
             // Custom awaitable type (not Task/ValueTask)
-            [||]return Task.Yield();
+            [|return Task.Yield();|]
         }
     }
 }";
@@ -95,7 +95,7 @@ static class TestClass
         using ((IDisposable)null)
         {
             // It should detect the extension method
-            [||]return 1;
+            [|return 1;|]
         }
     }
 
@@ -120,7 +120,7 @@ static class TestClass
         using ((IDisposable)null)
         {
             // It should detect the extension method
-            [||]return (default(Task<int>), default(Task<string>));
+            [|return (default(Task<int>), default(Task<string>));|]
         }
     }
 
@@ -144,7 +144,7 @@ class TestClass
     {
         using ((IDisposable)null)
         {
-            [||]return new ValueTask(Task.Delay(1));
+            [|return new ValueTask(Task.Delay(1));|]
         }
     }
 }";
@@ -271,7 +271,7 @@ class TestClass
     {
         using ((IDisposable)null)
         {
-            [||]return new ValueTask<int>(Task.FromResult(1));
+            [|return new ValueTask<int>(Task.FromResult(1));|]
         }
     }
 }";
@@ -474,7 +474,7 @@ class TestClass
                 System.Threading.Tasks.Task Test()
                 {
                     using var disposable = (System.IDisposable)null;
-                    [||]return System.Threading.Tasks.Task.Delay(1);
+                    [|return System.Threading.Tasks.Task.Delay(1);|]
                 }
             }
             """;
@@ -517,7 +517,7 @@ class TestClass
 
                             a:
                             using var disposable = (System.IDisposable) null;
-                            [||]return System.Threading.Tasks.Task.Delay(1);
+                            [|return System.Threading.Tasks.Task.Delay(1);|]
                         }
 
                     }

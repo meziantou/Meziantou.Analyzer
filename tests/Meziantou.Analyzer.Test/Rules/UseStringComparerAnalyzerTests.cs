@@ -38,7 +38,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]new System.Collections.Generic.SortedList<string, int>();
+        [|new System.Collections.Generic.SortedList<string, int>()|];
     }
 }";
 
@@ -64,7 +64,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]new System.Collections.Generic.HashSet<string>();
+        [|new System.Collections.Generic.HashSet<string>()|];
     }
 }";
         const string CodeFix = @"
@@ -89,7 +89,7 @@ class TypeName
 {
     public void Test()
     {
-        System.Collections.Generic.HashSet<string> a = [||]new();
+        System.Collections.Generic.HashSet<string> a = [|new()|];
     }
 }";
         const string CodeFix = @"
@@ -130,7 +130,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]new System.Collections.Generic.Dictionary<string, int>();
+        [|new System.Collections.Generic.Dictionary<string, int>()|];
     }
 }";
         const string CodeFix = @"
@@ -155,7 +155,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
+        [|new System.Collections.Concurrent.ConcurrentDictionary<string, int>()|];
     }
 }";
         const string CodeFix = @"
@@ -508,7 +508,7 @@ class TypeName
     {
         var collection = new string[0];
         _ = from item in collection
-            [||]group item by item into g
+            [|group item by item|] into g
             select g;
     }
 }";
@@ -549,7 +549,7 @@ class TypeName
     {
         var collection = new string[0];
         _ = from item in collection
-            orderby [||]item
+            orderby [|item|]
             select item;
     }
 }";
@@ -592,7 +592,7 @@ class TypeName
     {
         var collection = new string[0];
         _ = from item in collection
-            orderby [||]item descending
+            orderby [|item descending|]
             select item;
     }
 }";
@@ -635,7 +635,7 @@ class TypeName
     {
         var collection = new string[0];
         _ = from item1 in collection
-            [||]join item2 in collection on item1 equals item2
+            [|join item2 in collection on item1 equals item2|]
             select (item1, item2);
     }
 }";
@@ -678,7 +678,7 @@ class TypeName
     {
         var collection = new string[0];
         _ = from item1 in collection
-            [||]join item2 in collection on item1 equals item2 into joinGroup
+            [|join item2 in collection on item1 equals item2 into joinGroup|]
             select (item1, joinGroup);
     }
 }";

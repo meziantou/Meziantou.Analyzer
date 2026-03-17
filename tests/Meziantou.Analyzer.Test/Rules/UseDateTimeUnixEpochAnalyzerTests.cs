@@ -27,7 +27,7 @@ class ClassTest
 {
    void Test()
    {
-       _ = [||]{{code}};
+       _ = [|{{code}}|];
    }
 }
 """;
@@ -63,7 +63,7 @@ class ClassTest
 {
    void Test()
    {
-       _ = [||]{{code}};
+       _ = [|{{code}}|];
    }
 }
 """;

@@ -20,7 +20,7 @@ class Test
 {
     public void A()
     {
-        [||];
+        [|;|]
     }
 }";
         const string Fix = @"
@@ -46,7 +46,7 @@ class Test
     {
         while(true)
         {
-            [||];
+            [|;|]
         }
     }
 }";
@@ -75,7 +75,7 @@ class Test
     public void A()
     {
         while(true)
-            [||];
+            [|;|]
     }
 }";
         const string Fix = @"
@@ -103,7 +103,7 @@ class Test
     public void A()
     {
         for(;;)
-            [||];
+            [|;|]
     }
 }";
         const string Fix = @"
@@ -131,7 +131,7 @@ class Test
     public void A()
     {
         foreach(var a in new []{0})
-            [||];
+            [|;|]
     }
 }";
         const string Fix = @"

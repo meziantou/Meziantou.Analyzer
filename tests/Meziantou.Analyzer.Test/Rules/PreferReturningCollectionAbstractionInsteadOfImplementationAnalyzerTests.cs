@@ -359,9 +359,9 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                 using System.Threading.Tasks;
                 public interface ITest
                 {
-                    [||]List<int> A();
+                    [|List<int>|] A();
                 }
-                
+
                 public class Test : ITest
                 {
                     public List<int> A() => throw null;
@@ -374,7 +374,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
     public async Task ConversionOperator()
     {
         await CreateProjectBuilder()
-            .WithSourceCode("""                
+            .WithSourceCode("""
                 public class Sample
                 {
                     public static implicit operator Sample(System.Collections.Generic.List<string> _) => throw null;
@@ -388,7 +388,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
     public async Task AddOperator()
     {
         await CreateProjectBuilder()
-            .WithSourceCode("""                                
+            .WithSourceCode("""
                 public class Sample
                 {
                     public static Sample operator+(Sample instance, [|System.Collections.Generic.List<int>|] value) => throw null;
@@ -401,7 +401,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
     public async Task AddOperator_Instance()
     {
         await CreateProjectBuilder()
-            .WithSourceCode("""                                
+            .WithSourceCode("""
                 public class Sample : System.Collections.Generic.List<int>
                 {
                     public static Sample operator+(Sample instance, int value) => throw null;

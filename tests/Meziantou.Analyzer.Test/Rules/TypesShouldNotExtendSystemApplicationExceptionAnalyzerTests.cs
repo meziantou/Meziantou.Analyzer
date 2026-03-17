@@ -23,7 +23,7 @@ public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests
     public async Task InheritFromApplicationException_ShouldReportError()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("class [||]Test : System.ApplicationException { }")
+              .WithSourceCode("class [|Test|] : System.ApplicationException { }")
               .ValidateAsync();
     }
 }

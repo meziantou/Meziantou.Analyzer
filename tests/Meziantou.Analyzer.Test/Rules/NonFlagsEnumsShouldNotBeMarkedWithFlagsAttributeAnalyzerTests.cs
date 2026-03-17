@@ -16,7 +16,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTest
     {
         const string SourceCode = @"
 [System.Flags]
-enum [||]Test : byte
+enum [|Test|] : byte
 {
     A = 1,
     B = 2,
@@ -120,7 +120,7 @@ enum Test : sbyte
     {
         var sourceCode = $$"""
 [System.Flags]
-enum [||]Test
+enum [|Test|]
 {
     None     = 0,
     Option1  = 1,

@@ -64,7 +64,7 @@ public class Test
         const string SourceCode = @"
 public class Test
 {
-    public void [||]A(string[] a)
+    public void [|A|](string[] a)
     {
     }
 }
@@ -80,7 +80,7 @@ public class Test
         const string SourceCode = @"
 public class Test
 {
-    public void [||]A(string[] a, int b) { }
+    public void [|A|](string[] a, int b) { }
     public void A(System.ReadOnlySpan<string> a, string b) { } // Not same type for b
     public void A(System.ReadOnlySpan<string> a, int b, int c) { } // not same number of parameters
     public void A(System.ReadOnlySpan<string> a, System.ReadOnlySpan<int> b) { } // Not same type for b

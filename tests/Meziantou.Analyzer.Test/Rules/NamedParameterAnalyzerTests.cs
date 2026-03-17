@@ -94,7 +94,7 @@ class TypeName
 {
     public void Test()
     {
-        var a = string.Compare("""", """", [||]true);
+        var a = string.Compare("""", """", [|true|]);
     }
 }";
         const string CodeFix = @"
@@ -137,9 +137,9 @@ class TypeName
     public void Test()
     {
         var a = string.Compare(
-                        [||]"""",
-                        [||]"""",
-                        [||]true);
+                        [|""""|],
+                        [|""""|],
+                        [|true|]);
     }
 }";
         await CreateProjectBuilder()
@@ -158,9 +158,9 @@ class TypeName
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [||]"""test""",
-                                    [||]"""test""",
-                                    [||]true);
+                                    [|"""test"""|],
+                                    [|"""test"""|],
+                                    [|true|]);
                 }
             }
             """""";
@@ -179,9 +179,9 @@ class TypeName
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [||]$"""test{0}""",
-                                    [||]"""test""",
-                                    [||]true);
+                                    [|$"""test{0}"""|],
+                                    [|"""test"""|],
+                                    [|true|]);
                 }
             }
             """""";
@@ -200,13 +200,13 @@ class TypeName
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [||]"""
+                                    [|"""
                                         test
-                                        """,
-                                    [||]"""
+                                        """|],
+                                    [|"""
                                         test
-                                        """,
-                                    [||]true);
+                                        """|],
+                                    [|true|]);
                 }
             }
             """""";
@@ -225,13 +225,13 @@ class TypeName
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [||]$"""
+                                    [|$"""
                                         test{0}
-                                        """,
-                                    [||]"""
+                                        """|],
+                                    [|"""
                                     test
-                                    """,
-                                    [||]true);
+                                    """|],
+                                    [|true|]);
                 }
             }
             """""";
@@ -250,7 +250,7 @@ class TypeName
 {
     public void Test()
     {
-        A([||]1, [||]1L, [||]3);
+        A([|1|], [|1L|], [|3|]);
         void A(int a, long b, short c) { }
     }
 }";
@@ -357,7 +357,7 @@ class TypeName
 {
     public void Test()
     {
-        typeof(TypeName).GetMethod("""").Invoke(null, [||]null);
+        typeof(TypeName).GetMethod("""").Invoke(null, [|null|]);
     }
 }";
         const string CodeFix = @"
@@ -424,7 +424,7 @@ class TypeName
 {
     public void Test()
     {
-        new TypeName([||]null);
+        new TypeName([|null|]);
     }
 
     TypeName(string a) { }
@@ -453,7 +453,7 @@ class TypeName
 {
     public void Test()
     {
-        TypeName a = new([||]null);
+        TypeName a = new([|null|]);
     }
 
     TypeName(string a) { }
@@ -481,7 +481,7 @@ class TypeName
 class TypeName
 {
     public TypeName()
-        : this([||]null)
+        : this([|null|])
     {
     }
 
@@ -514,7 +514,7 @@ class BaseType
 class TypeName: BaseType
 {
     public TypeName()
-        : base([||]null)
+        : base([|null|])
     {
     }
 }";
@@ -609,7 +609,7 @@ class TypeName
                      public Test()
                      {
                          IEnumerable<string> query = null;
-                         query.Where(x => M([||]false));
+                         query.Where(x => M([|false|]));
                      }
 
                      static bool M(bool a) => false;
@@ -655,7 +655,7 @@ class TypeName
                          IQueryable<string> query = null;
                          query.Where(x => M([|false|]));
                      }
-                 
+
                      static bool M(bool a) => false;
                  }
                  """)
@@ -864,7 +864,7 @@ class Test
 {
     void A()
     {
-        B([||]null);
+        B([|null|]);
     }
 
     void B(params int[] a) {}
@@ -957,7 +957,7 @@ class Test
 
     void A()
     {
-        _ = this[[||]0, [||]0];
+        _ = this[[|0|], [|0|]];
     }
 }
 ")
@@ -976,7 +976,7 @@ class Test
 
     void A()
     {
-        _ = (false, new Test([||]null));
+        _ = (false, new Test([|null|]));
     }
 }
 ")
@@ -994,7 +994,7 @@ class Test
 
     void A()
     {
-        _ = new Test([||]new object());
+        _ = new Test([|new object()|]);
     }
 }
 
@@ -1046,7 +1046,7 @@ class Test
 
     void A()
     {
-        _ = new Test([||]new object());
+        _ = new Test([|new object()|]);
     }
 }
 
@@ -1075,7 +1075,7 @@ class Test
 
     void A()
     {
-        _ = new Test([||]new object());
+        _ = new Test([|new object()|]);
     }
 }
 

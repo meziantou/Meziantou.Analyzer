@@ -23,7 +23,7 @@ class ClassTest
 {
     async Task Test()
     {
-        [||]await Task.Delay(1);
+        [|await Task.Delay(1)|];
     }
 }";
         const string CodeFix = @"using System.Threading.Tasks;
@@ -52,7 +52,7 @@ class ClassTest
     {
         IAsyncEnumerable<int> Enumerable() => throw null;
 
-        await foreach(var item in [||]Enumerable())
+        await foreach(var item in [|Enumerable()|])
         {
         }
     }
@@ -90,7 +90,7 @@ class ClassTest
     {
         Task<IAsyncEnumerable<int>> Enumerable() => throw null;
 
-        await foreach(var item in [||]await Enumerable().ConfigureAwait(false))
+        await foreach(var item in [|await Enumerable().ConfigureAwait(false)|])
         {
         }
     }
@@ -130,7 +130,7 @@ class ClassTest
         IAsyncEnumerable<int> Enumerable() => throw null;
 
         CancellationToken ct = default;
-        await foreach(var item in [||]Enumerable().WithCancellation(ct))
+        await foreach(var item in [|Enumerable().WithCancellation(ct)|])
         {
         }
     }
@@ -192,7 +192,7 @@ class ClassTest
 {
     async Task Test()
     {
-        await using var [||]a = new AsyncDisposable();
+        await using var [|a = new AsyncDisposable()|];
         Console.WriteLine();
     }
 }
@@ -235,7 +235,7 @@ class ClassTest
 {
     async Task Test()
     {
-        await using (var [||]a = new AsyncDisposable())
+        await using (var [|a = new AsyncDisposable()|])
         {
         }
     }
@@ -275,7 +275,7 @@ class AsyncDisposable : IAsyncDisposable
             using System;
             using System.Threading.Tasks;
 
-            await using var [||]a = new AsyncDisposable();
+            await using var [|a = new AsyncDisposable()|];
             Console.WriteLine();
 
             class AsyncDisposable : IAsyncDisposable
@@ -314,7 +314,7 @@ class AsyncDisposable : IAsyncDisposable
         const string SourceCode = """
             using System;
             using System.Threading.Tasks;
-            await using (var [||]a = new AsyncDisposable())
+            await using (var [|a = new AsyncDisposable()|])
             {
             }
 
@@ -355,7 +355,7 @@ class ClassTest
 {
     async Task Test()
     {
-        await using ([||]new AsyncDisposable())
+        await using ([|new AsyncDisposable()|])
         {
         }
     }
@@ -467,7 +467,7 @@ class MyClass : System.Windows.Window
     {
         await Task.Delay(1);
         await Task.Delay(1).ConfigureAwait(false);
-        [||]await Task.Delay(1);
+        [|await Task.Delay(1)|];
     }
 }";
         const string CodeFix = @"using System.Threading.Tasks;
@@ -526,7 +526,7 @@ class MyClass : System.Windows.Window
         }
         else
         {
-            [||]await Task.Delay(1);
+            [|await Task.Delay(1)|];
         }
     }
 }";
@@ -608,7 +608,7 @@ class ClassTest : Microsoft.AspNetCore.Components.IComponent
 {
     async Task Test()
     {
-        [||]await Task.Delay(1);
+        [|await Task.Delay(1)|];
     }
 }";
         await CreateProjectBuilder()
@@ -675,7 +675,7 @@ class ClassTest
 {
     async Task Test()
     {
-        await using var [||]a = await CreateDisposableAsync().ConfigureAwait(false);
+        await using var [|a = await CreateDisposableAsync().ConfigureAwait(false)|];
     }
 
     async Task<IAsyncDisposable> CreateDisposableAsync() => throw null;
@@ -707,7 +707,7 @@ class ClassTest
         const string SourceCode = """
             using System;
             using System.Threading.Tasks;
-            await using ([||]await A().ConfigureAwait(false))
+            await using ([|await A().ConfigureAwait(false)|])
             {
             }
 
@@ -720,7 +720,7 @@ class ClassTest
             await using ((await A().ConfigureAwait(false)).ConfigureAwait(false))
             {
             }
-            
+
             Task<IAsyncDisposable> A() => throw null;
             """;
 

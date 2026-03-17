@@ -20,7 +20,7 @@ class TypeName
 {
     public void Test()
     {
-        [||]""a"".GetHashCode();
+        [|""a"".GetHashCode()|];
         System.StringComparer.Ordinal.GetHashCode(""a"");
         new object().GetHashCode();
     }

@@ -19,7 +19,7 @@ public sealed class LoggerParameterTypeAnalyzerTests
 using Microsoft.Extensions.Logging;
 
 ILogger logger = null;
-logger.BeginScope("{Prop} {Name}", [||]1, 2);
+logger.BeginScope("{Prop} {Name}", [|1|], 2);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -37,7 +37,7 @@ Name;System.Int32
 using Microsoft.Extensions.Logging;
 
 ILogger logger = null;
-logger.BeginScope([||][||]"{Prop} {Name} {Name}", [||]1, 2, (int?)null);
+logger.BeginScope([|"{Prop} {Name} {Name}"|], 1, 2, (int?)null);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -45,6 +45,16 @@ logger.BeginScope([||][||]"{Prop} {Name} {Name}", [||]1, 2, (int?)null);
 Prop;System.String
 Count;T:System.Nullable{System.Int32}
 """)
+                          .ShouldReportDiagnostic(new DiagnosticResult
+                          {
+                                  Id = RuleIdentifiers.LoggerParameterType_MissingConfiguration,
+                                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 19, 4, 19)],
+                          })
+                          .ShouldReportDiagnostic(new DiagnosticResult
+                          {
+                                  Id = RuleIdentifiers.LoggerParameterType,
+                                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 43, 4, 43)],
+                          })
               .ValidateAsync();
     }
 
@@ -55,7 +65,7 @@ Count;T:System.Nullable{System.Int32}
 using Microsoft.Extensions.Logging;
 
 ILogger logger = null;
-logger.LogInformation("{Prop} {Name}", [||]1, 2);
+logger.LogInformation("{Prop} {Name}", [|1|], 2);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -363,7 +373,7 @@ using Microsoft.Extensions.Logging;
 
 ILogger logger = null;
 logger.LogInformation("{Prop}", 1);
-logger.LogInformation("{Prop}", [||](int?)1);
+logger.LogInformation("{Prop}", [|(int?)1|]);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -668,7 +678,7 @@ partial class LoggerExtensions
 {
     [LoggerMessage(10_004, LogLevel.Trace, "Test with {Value}")]
     static partial void LogTestMessage(ILogger logger, int Value);
-    
+
     [LoggerMessage(10_005, LogLevel.Trace, "Test with {Value}")]
     static partial void LogTestMessage2(ILogger logger, int? Value);
 }

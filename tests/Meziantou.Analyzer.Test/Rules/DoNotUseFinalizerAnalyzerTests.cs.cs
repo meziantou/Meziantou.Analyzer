@@ -20,7 +20,7 @@ class Test
     public Test() { }
     internal void A() { }
 
-    ~[||]Test()
+    ~[|Test|]()
     {
     }
 }";

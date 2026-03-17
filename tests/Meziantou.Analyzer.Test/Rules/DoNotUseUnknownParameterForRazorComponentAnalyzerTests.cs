@@ -105,7 +105,7 @@ class TypeName : ComponentBase
     protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder)
     {
         __builder.OpenComponent<SampleComponent>(0);
-        [||]__builder.AddAttribute(1, "{{parameterName}}", "test");
+        [|__builder.AddAttribute(1, "{{parameterName}}", "test")|];
         __builder.CloseComponent();
     }
 }
@@ -147,7 +147,7 @@ class TypeName : ComponentBase
     protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder)
     {
         __builder.OpenComponent<SampleComponent>(0);
-        [||]__builder.AddAttribute(1, "{{parameterName}}", "test");
+        [|__builder.AddAttribute(1, "{{parameterName}}", "test")|];
         __builder.CloseComponent();
     }
 }
@@ -215,7 +215,7 @@ class TypeName : ComponentBase
     protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder)
     {
         __builder.OpenComponent<SampleComponent>(0);
-        [||]__builder.AddAttribute(1, "{{parameterName}}", "test");
+        [|__builder.AddAttribute(1, "{{parameterName}}", "test")|];
         __builder.CloseComponent();
     }
 }
@@ -241,12 +241,12 @@ class TypeName : ComponentBase
         __builder.CloseComponent();
         __builder.AddMarkupContent(3, "\r\n\r\n");
         __builder.OpenComponent<CustomComponentBase>(5);
-        [||]__builder.AddAttribute(6, "Title", "How is Blazor working for you?");
-        [||]__builder.AddAttribute(7, "OtherAttribute", "Test");
+        [|__builder.AddAttribute(6, "Title", "How is Blazor working for you?")|];
+        [|__builder.AddAttribute(7, "OtherAttribute", "Test")|];
         __builder.AddAttribute(8, "ChildContent", (global::Microsoft.AspNetCore.Components.RenderFragment)((__builder2) => {
             __builder2.OpenComponent<SampleComponent>(9);
             __builder2.AddAttribute(10, "Param1", "How is Blazor working for you?");
-            [||]__builder2.AddAttribute(11, "NestedAttribute", "Dummy");
+            [|__builder2.AddAttribute(11, "NestedAttribute", "Dummy")|];
             __builder2.CloseComponent();
         }
         ));
@@ -268,8 +268,8 @@ class TypeName : ComponentBase
     protected override void BuildRenderTree(global::Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder)
     {
         __builder.OpenComponent<CustomComponentBase>(1);
-        [||]__builder.AddComponentParameter(2, "Text", "DummyDisplayText");
-        [||]__builder.AddComponentParameter(3, "OtherAttribute", "Test");
+        [|__builder.AddComponentParameter(2, "Text", "DummyDisplayText")|];
+        [|__builder.AddComponentParameter(3, "OtherAttribute", "Test")|];
         __builder.CloseComponent();
     }
 }

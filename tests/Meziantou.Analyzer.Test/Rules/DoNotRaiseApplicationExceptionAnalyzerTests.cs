@@ -45,7 +45,7 @@ class TestAttribute
 {
     void Test()
     {
-        [||]throw new ApplicationException();
+        [|throw new ApplicationException();|]
     }
 }";
         await CreateProjectBuilder()

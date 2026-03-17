@@ -178,7 +178,7 @@ class TestAttribute
     string Prop
     {
         get { throw null; }
-        set { throw new System.ArgumentNullException([||]""unknown""); }
+        set { throw new System.ArgumentNullException([|""unknown""|]); }
     }
 }";
         await CreateProjectBuilder()
@@ -195,7 +195,7 @@ class TestAttribute
 {
     void Test(string test)
     {
-        throw new System.ArgumentException(""message"", [||]""unknown"");
+        throw new System.ArgumentException(""message"", [|""unknown""|]);
     }  
 }";
         await CreateProjectBuilder()
@@ -213,7 +213,7 @@ class TestAttribute
     string Prop
     {
         get { throw null; }
-        set { throw [||]new System.ArgumentNullException(); }
+        set { throw [|new System.ArgumentNullException()|]; }
     }
 }";
         await CreateProjectBuilder()
@@ -229,7 +229,7 @@ class TestAttribute
 {
     void Test(string test)
     {
-        throw [||]new System.ArgumentException(""message"");
+        throw [|new System.ArgumentException(""message"")|];
     }    
 }";
         await CreateProjectBuilder()

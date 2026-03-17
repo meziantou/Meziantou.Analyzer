@@ -59,7 +59,7 @@ public sealed class IDE0058SuppressorTests
                 static void A()
                 {
                     Stream stream = null;
-                    [||]stream.Seek(0, SeekOrigin.End);
+                    [|stream.Seek(0, SeekOrigin.End)|];
                 }
                 """)
             .ValidateAsync();

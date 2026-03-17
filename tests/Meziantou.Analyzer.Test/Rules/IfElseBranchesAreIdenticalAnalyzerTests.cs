@@ -12,17 +12,17 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     [Fact]
     public Task IfElse_SameCode() => CreateProjectBuilder()
         .WithSourceCode("""
-            [||]if(true)
+            [|if(true)
                 _ = "";
             else
-                _ = "";
+                _ = "";|]
             """)
         .ValidateAsync();
 
     [Fact]
     public Task IfElse_SameCode_WithComments() => CreateProjectBuilder()
         .WithSourceCode("""
-            [||]if(true)
+            [|if(true)
             {
                 _ = "";
             }
@@ -30,7 +30,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 // test
                 _ = "";
-            }
+            }|]
             """)
         .ValidateAsync();
 
@@ -61,7 +61,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
 
     [Fact]
     public Task Ternary_SameCode() => CreateProjectBuilder()
-        .WithSourceCode("""_ = [||]true ? 0 : 0;""")
+        .WithSourceCode("""_ = [|true ? 0 : 0|];""")
         .ValidateAsync();
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     [Fact]
     public Task IfElse_WithLocalFunction() => CreateProjectBuilder()
         .WithSourceCode("""
-            [||]if(true)
+            [|if(true)
             {
                 _ = "";
                 void A() => A();
@@ -81,7 +81,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 _ = "";
                 void A() => A();
-            }
+            }|]
             """)
         .ValidateAsync();
 
@@ -104,8 +104,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     [Fact]
     public Task IfWithoutElse_ButSingleStatement() => CreateProjectBuilder()
         .WithSourceCode("""
-            [||]if(true)
-                return 0;
+            [|if(true)
+                return 0;|]
             return 0;
             """)
         .ValidateAsync();
@@ -116,8 +116,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             A();
             int A()
             {
-                [||]if(true)
-                    return 0;
+                [|if(true)
+                    return 0;|]
                 return 0;
             }
             """)
@@ -129,8 +129,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             A();
             int A()
             {
-                [||]if(true)
-                    return 0;
+                [|if(true)
+                    return 0;|]
                 return 0;
                 System.Console.WriteLine();
             }
@@ -144,8 +144,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             void A()
             {
                 while (true){
-                    [||]if (true)
-                        break;
+                    [|if (true)
+                        break;|]
                     break;
                 }
             }
@@ -159,8 +159,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             void A()
             {
                 while (true){
-                    [||]if (true)
-                        continue;
+                    [|if (true)
+                        continue;|]
                     continue;
                 }
             }
@@ -175,8 +175,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 sample:
                 while (true){
-                    [||]if (true)
-                        goto sample;
+                    [|if (true)
+                        goto sample;|]
                     goto sample;
                 }
             }

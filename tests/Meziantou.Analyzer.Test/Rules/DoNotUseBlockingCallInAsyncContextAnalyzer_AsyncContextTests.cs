@@ -23,7 +23,7 @@ class Test
 {
     public async Task A()
     {
-        [||]Task.Delay(1).Wait();
+        [|Task.Delay(1).Wait()|];
     }
 }")
               .ShouldFixCodeWith(@"using System.Threading.Tasks;
@@ -36,7 +36,7 @@ class Test
 }")
               .ValidateAsync();
     }
-    
+
     [Fact]
     public async Task FixerShouldAddParentheses()
     {
@@ -47,7 +47,7 @@ class Test
                 {
                     public async Task A()
                     {
-                        _ = [||]Write().Length;
+                        _ = [|Write()|].Length;
                     }
 
                     public string Write() => throw null;
@@ -62,7 +62,7 @@ class Test
                     {
                         _ = (await WriteAsync()).Length;
                     }
-                
+
                     public string Write() => throw null;
                     public Task<string> WriteAsync() => throw null;
                 }
@@ -80,7 +80,7 @@ class Buz
 {
     private static async Task Do()
     {
-        [||]Bar.Foo<int>();
+        [|Bar.Foo<int>()|];
     }
 }
 
@@ -123,7 +123,7 @@ class Test
 {
     public async Task A()
     {
-        [||]Task.Delay(1).Wait(10);
+        [|Task.Delay(1).Wait(10)|];
     }
 }")
               .ValidateAsync();
@@ -141,7 +141,7 @@ class Test
 {
     public async Task A()
     {
-        [||]Task.Delay(1).Wait(CancellationToken.None);
+        [|Task.Delay(1).Wait(CancellationToken.None)|];
     }
 }")
               .ValidateAsync();
@@ -159,7 +159,7 @@ class Test
 {
     public async Task A()
     {
-        [||]Task.Delay(1).Wait(TimeSpan.FromSeconds(1));
+        [|Task.Delay(1).Wait(TimeSpan.FromSeconds(1))|];
     }
 }")
               .ValidateAsync();
@@ -177,7 +177,7 @@ class Test
 {
     public async Task A()
     {
-        [||]Task.Delay(1).Wait(10, CancellationToken.None);
+        [|Task.Delay(1).Wait(10, CancellationToken.None)|];
     }
 }")
               .ValidateAsync();
@@ -192,7 +192,7 @@ class Test
 {
     public async Task A()
     {
-        _ = [||]Task.FromResult(1).Result;
+        _ = [|Task.FromResult(1).Result|];
     }
 }")
               .ShouldFixCodeWith(@"using System.Threading.Tasks;
@@ -215,7 +215,7 @@ class Test
 {
     public async Task A()
     {
-        _ = [||]new ValueTask<int>(10).Result;
+        _ = [|new ValueTask<int>(10).Result|];
     }
 }")
               .ValidateAsync();
@@ -230,7 +230,7 @@ class Test
 {
     public async Task A()
     {
-        _ = [||]new ValueTask<int>(10).GetAwaiter().GetResult();
+        _ = [|new ValueTask<int>(10).GetAwaiter().GetResult()|];
     }
 }")
               .ValidateAsync();
@@ -245,7 +245,7 @@ class Test
 {
     public async Task A()
     {
-        [||]System.Threading.Thread.Sleep(1);
+        [|System.Threading.Thread.Sleep(1)|];
     }
 }")
               .ShouldFixCodeWith(@"using System.Threading.Tasks;
@@ -270,7 +270,7 @@ class Test
 {
     public async Task A()
     {
-        [||]System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1));
+        [|System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1))|];
     }
 }")
               .ShouldFixCodeWith(@"
@@ -295,7 +295,7 @@ class Test
 {
     public async Task A()
     {
-        [||]Write();
+        [|Write()|];
     }
 
     public void Write() => throw null;
@@ -313,7 +313,7 @@ class Test
 {
     public async Task A()
     {
-        [||]Write();
+        [|Write()|];
     }
 
     public void Write() => throw null;
@@ -349,7 +349,7 @@ class Test
 {
     public async Task A()
     {
-        System.Func<Task> a = async () => [||]Write();
+        System.Func<Task> a = async () => [|Write()|];
     }
 
     public void Write() => throw null;
@@ -369,7 +369,7 @@ class Test
     {
         Local();
 
-        async Task Local() => [||]Write();
+        async Task Local() => [|Write()|];
     }
 
     public void Write() => throw null;
@@ -389,7 +389,7 @@ class Test
     {
         Local();
 
-        async Task Local() => [||]Write();
+        async Task Local() => [|Write()|];
     }
 
     public void Write() => throw null;
@@ -516,7 +516,7 @@ class Test
     public async Task A()
     {
         var process = new Process();
-        [||]process.WaitForExit();
+        [|process.WaitForExit()|];
     }
 }")
               .ShouldFixCodeWith(@"
@@ -549,7 +549,7 @@ class Test
     public async Task A()
     {
         using var a = new Sample();
-        using (var b = new Sample()) { }        
+        using (var b = new Sample()) { }
     }
 
     private class Sample : IDisposable
@@ -573,7 +573,7 @@ class Test
 {
     public async Task A()
     {
-        [||]using var a = new Sample();
+        [|using var a = new Sample();|]
     }
 
     private class Sample : IDisposable
@@ -616,7 +616,7 @@ class Test
 {
     public async Task A()
     {
-        [||]using (var b = new Sample()) { }
+        [|using (var b = new Sample()) { }|]
     }
 
     private class Sample : IDisposable
@@ -660,7 +660,7 @@ class Test
     public async Task A()
     {
         var sample = new Sample();
-        [||]using (sample) { }
+        [|using (sample) { }|]
     }
 
     private class Sample : IDisposable
@@ -746,7 +746,7 @@ class demo
 {
     public async Task a()
     {
-        [||]new Test().A();
+        [|new Test().A()|];
     }
 }
 ")
@@ -797,7 +797,7 @@ class demo
     {
         IServiceProvider provider = null;
         await using var scope1 = provider.CreateAsyncScope();
-        using var scope2 = [||]provider.CreateScope();
+        using var scope2 = [|provider.CreateScope()|];
     }
 }
 ")
@@ -871,7 +871,7 @@ class demo
 {
     public IAsyncEnumerable<int> A()
     {
-        [||]Thread.Sleep(1);
+        [|Thread.Sleep(1)|];
         throw null;
     }
 }
@@ -894,7 +894,7 @@ class demo
 {
     public IAsyncEnumerator<int> A()
     {
-        [||]Thread.Sleep(1);
+        [|Thread.Sleep(1)|];
         throw null;
     }
 }
@@ -918,7 +918,7 @@ class Sample
 {
     public Sample A()
     {
-        [||]Thread.Sleep(1);
+        [|Thread.Sleep(1)|];
         throw null;
     }
 }
@@ -954,7 +954,7 @@ class Sample
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.WindowsApplication)
               .WithSourceCode("""
-[||]System.Threading.Thread.Sleep(1);
+[|System.Threading.Thread.Sleep(1)|];
 """)
               .ValidateAsync();
     }
@@ -974,7 +974,7 @@ class Sample
 {
     public void A()
     {
-        _ = Task.Run(() => [||]Thread.Sleep(1));
+        _ = Task.Run(() => [|Thread.Sleep(1)|]);
     }
 }
 """)
@@ -1066,7 +1066,7 @@ class Sample
                     public async Task A()
                     {
                         var semaphore = new SemaphoreSlim(1);
-                        [||]semaphore.Wait(100);
+                        [|semaphore.Wait(100)|];
                     }
                 }
                 """)
@@ -1085,7 +1085,7 @@ class Sample
                     public async Task A()
                     {
                         var semaphore = new SemaphoreSlim(1);
-                        [||]semaphore.Wait();
+                        [|semaphore.Wait()|];
                     }
                 }
                 """)
@@ -1223,7 +1223,7 @@ class Sample
                     public async Task A()
                     {
                         var dir = new TemporaryDirectory();
-                        [||]dir.CreateTextFile("test.txt", "content");
+                        [|dir.CreateTextFile("test.txt", "content")|];
                     }
                 }
                 """)

@@ -27,7 +27,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex(""testpattern"", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+    Regex a = [|new Regex(""testpattern"", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
 }
 ";
 
@@ -63,7 +63,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex(""testpattern"", RegexOptions.ExplicitCapture);
+    Regex a = [|new Regex(""testpattern"", RegexOptions.ExplicitCapture)|];
 }
 ";
 
@@ -99,7 +99,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex(""testpattern"");
+    Regex a = [|new Regex(""testpattern"")|];
 }
 ";
 
@@ -135,7 +135,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch(""test"", ""testpattern"", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
+    bool a = [|Regex.IsMatch(""test"", ""testpattern"", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
 }
 ";
 
@@ -171,7 +171,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch(""test"", ""testpattern"", RegexOptions.ExplicitCapture);
+    bool a = [|Regex.IsMatch(""test"", ""testpattern"", RegexOptions.ExplicitCapture)|];
 }
 ";
 
@@ -207,7 +207,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch(""test"", ""testpattern"");
+    bool a = [|Regex.IsMatch(""test"", ""testpattern"")|];
 }
 ";
 
@@ -243,7 +243,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [||]Regex.Replace(""test"", ""testpattern"", ""newValue"", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
+    string a = [|Regex.Replace(""test"", ""testpattern"", ""newValue"", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
 }
 ";
 
@@ -279,7 +279,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [||]Regex.Replace(""test"", ""testpattern"", ""newValue"", RegexOptions.ExplicitCapture);
+    string a = [|Regex.Replace(""test"", ""testpattern"", ""newValue"", RegexOptions.ExplicitCapture)|];
 }
 ";
 
@@ -315,7 +315,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [||]Regex.Replace(""test"", ""testpattern"", ""newValue"");
+    string a = [|Regex.Replace(""test"", ""testpattern"", ""newValue"")|];
 }
 ";
 
@@ -351,7 +351,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [||]Regex.Replace(""test"", ""testpattern"", evaluator: match => """");
+    string a = [|Regex.Replace(""test"", ""testpattern"", evaluator: match => """")|];
 }
 ";
 
@@ -397,7 +397,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex(""testpattern"", RegexOptions.None, " + timeout + @");
+    Regex a = [|new Regex(""testpattern"", RegexOptions.None, " + timeout + @")|];
 }
 ";
 
@@ -435,7 +435,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex(""testpattern"", RegexOptions.None, " + timeout + @");
+    Regex a = [|new Regex(""testpattern"", RegexOptions.None, " + timeout + @")|];
 }
 ";
 
@@ -473,7 +473,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch(""input"", ""testpattern"", RegexOptions.None, " + timeout + @");
+    bool a = [|Regex.IsMatch(""input"", ""testpattern"", RegexOptions.None, " + timeout + @")|];
 }
 ";
 
@@ -509,7 +509,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch(""input"", ""testpattern"");
+    bool a = [|Regex.IsMatch(""input"", ""testpattern"")|];
 
     private static Regex MyRegex() => throw null;
 }
@@ -570,7 +570,7 @@ class Sample
     {
         class Inner
         {
-            bool a = [||]Regex.IsMatch(""input"", ""testpattern"");
+            bool a = [|Regex.IsMatch(""input"", ""testpattern"")|];
         }
     }
 }
@@ -614,7 +614,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex("testpattern");
+    Regex a = [|new Regex("testpattern")|];
 }
 """;
 
@@ -650,7 +650,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex("testpattern", RegexOptions.ExplicitCapture);
+    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture)|];
 }
 """;
 
@@ -686,7 +686,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [||]new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
 }
 """;
 
@@ -722,7 +722,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch("test", "testpattern");
+    bool a = [|Regex.IsMatch("test", "testpattern")|];
 }
 """;
 
@@ -760,7 +760,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture);
+    bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|];
 }
 """;
 
@@ -798,7 +798,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [||]Regex.Replace("test", "testpattern", "newValue");
+    string a = [|Regex.Replace("test", "testpattern", "newValue")|];
 }
 """;
 
@@ -840,7 +840,7 @@ class Sample
     {
         class Inner
         {
-            bool a = [||]Regex.IsMatch("input", "testpattern");
+            bool a = [|Regex.IsMatch("input", "testpattern")|];
         }
     }
 }
@@ -888,7 +888,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    private static readonly Regex SampleRegex = [||]new Regex("pattern");
+    private static readonly Regex SampleRegex = [|new Regex("pattern")|];
 
     void M()
     {
@@ -934,7 +934,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    private static readonly Regex EmailPattern = [||]new Regex("pattern");
+    private static readonly Regex EmailPattern = [|new Regex("pattern")|];
 
     void M()
     {
@@ -982,7 +982,7 @@ class Foo
 {
     void A()
     {
-        Regex sampleRegex = [||]new Regex("pattern");
+        Regex sampleRegex = [|new Regex("pattern")|];
         _ = sampleRegex.IsMatch("value");
     }
 }
@@ -1026,7 +1026,7 @@ class Foo
 {
     void A()
     {
-        Regex EmailRegex = [||]new Regex("pattern");
+        Regex EmailRegex = [|new Regex("pattern")|];
         _ = EmailRegex.IsMatch("value");
     }
 }
@@ -1068,7 +1068,7 @@ using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [||]Regex.IsMatch("test", "testpattern");
+    bool a = [|Regex.IsMatch("test", "testpattern")|];
 }
 """;
 
@@ -1104,7 +1104,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    private static readonly Regex SampleRegex = [||]new Regex("pattern");
+    private static readonly Regex SampleRegex = [|new Regex("pattern")|];
 
     void M()
     {
@@ -1153,7 +1153,7 @@ class Foo
 {
     void A()
     {
-        Regex sampleRegex = [||]new Regex("pattern");
+        Regex sampleRegex = [|new Regex("pattern")|];
         _ = sampleRegex.IsMatch("value");
     }
 }
@@ -1197,7 +1197,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    public Regex SampleRegex { get; } = [||]new Regex("pattern");
+    public Regex SampleRegex { get; } = [|new Regex("pattern")|];
 
     void M()
     {
@@ -1244,7 +1244,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    public Regex EmailRegex { get; } = [||]new Regex("pattern");
+    public Regex EmailRegex { get; } = [|new Regex("pattern")|];
 }
 """;
 
@@ -1281,7 +1281,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    public Regex Pattern { get; } = [||]new Regex("pattern", RegexOptions.IgnoreCase);
+    public Regex Pattern { get; } = [|new Regex("pattern", RegexOptions.IgnoreCase)|];
 
     void M()
     {
@@ -1328,7 +1328,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    public Regex Pattern { get; } = [||]new Regex("pattern");
+    public Regex Pattern { get; } = [|new Regex("pattern")|];
 
     void M()
     {
@@ -1376,7 +1376,7 @@ using System.Text.RegularExpressions;
 
 class Sample
 {
-    private static readonly Regex EmailPattern = [||]new Regex("pattern");
+    private static readonly Regex EmailPattern = [|new Regex("pattern")|];
 
     void M1()
     {
@@ -1432,7 +1432,7 @@ partial class Sample
         const string SourceCode = """
 using System.Text.RegularExpressions;
 
-var emailRegex = [||]new Regex("pattern");
+var emailRegex = [|new Regex("pattern")|];
 emailRegex.Match("value");
 """;
 
@@ -1466,7 +1466,7 @@ partial class Program
         const string SourceCode = """
 using System.Text.RegularExpressions;
 
-var emailRegex = [||]new Regex("pattern");
+var emailRegex = [|new Regex("pattern")|];
 emailRegex.Match("value");
 """;
 
@@ -1500,7 +1500,7 @@ partial class Program
         const string SourceCode = """
 using System.Text.RegularExpressions;
 
-var result = [||]Regex.IsMatch("test", "pattern");
+var result = [|Regex.IsMatch("test", "pattern")|];
 """;
 
         const string CodeFix = """
@@ -1534,7 +1534,7 @@ partial class Program
         const string SourceCode = """
 using System.Text.RegularExpressions;
 
-var result = [||]Regex.IsMatch("test", "pattern");
+var result = [|Regex.IsMatch("test", "pattern")|];
 
 partial class Program
 {
@@ -1577,7 +1577,7 @@ partial class Program
         const string SourceCode = """
 using System.Text.RegularExpressions;
 
-var result = [||]Regex.IsMatch("test", "pattern");
+var result = [|Regex.IsMatch("test", "pattern")|];
 """;
 
         const string CodeFix = """

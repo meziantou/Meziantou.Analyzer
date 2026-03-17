@@ -53,7 +53,7 @@ public class Test
 {
     private void A()
     {
-        [||]Task.Delay(1).Wait();
+        [|Task.Delay(1).Wait()|];
     }
 }")
               .ValidateAsync();
@@ -68,7 +68,7 @@ public class Test
 {
     private void A()
     {
-        [||]Write();
+        [|Write()|];
     }
 
     public void Write() => throw null;

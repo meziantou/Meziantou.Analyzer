@@ -26,7 +26,7 @@ class TestClass
 {
     void Test()
     {
-        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[||]") + options + @", default);
+        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[|") + options + (isValid ? "" : "|]") + @", default);
     }
 }");
         await project.ValidateAsync();
@@ -47,7 +47,7 @@ class TestClass
 {
     void Test()
     {
-        new Regex(""" + regex + @""", " + (isValid ? "" : "[||]") + options + @", default);
+        new Regex(""" + regex + @""", " + (isValid ? "" : "[|") + options + (isValid ? "" : "|]") + @", default);
     }
 }");
 
@@ -87,13 +87,18 @@ partial class TestClass
               .WithSourceCode(@"using System.Text.RegularExpressions;
 partial class TestClass
 {
-    [[||][||]GeneratedRegex(""" + regex + @""", " + options + @", 0)]
+    [[|GeneratedRegex(""" + regex + @""", " + options + @", 0)|]]
     private static partial Regex Test();
 }
 partial class TestClass
 {
     private static partial Regex Test() => throw null;
-}");
+}")
+              .ShouldReportDiagnostic(new DiagnosticResult
+              {
+                  Id = "MA0023",
+                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 6, 4, 92)],
+              });
 
         await project.ValidateAsync();
     }

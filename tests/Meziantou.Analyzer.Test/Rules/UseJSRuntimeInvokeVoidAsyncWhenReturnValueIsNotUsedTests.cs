@@ -26,7 +26,7 @@ class Sample
     async Task A()
     {
         IJSRuntime js = null;
-        await [||]js.InvokeAsync<string>(""dummy"");
+        await [|js.InvokeAsync<string>(""dummy"")|];
     }
 }
 ")
@@ -59,7 +59,7 @@ class Sample
     async Task A()
     {
         IJSRuntime js = null;
-        await [||]JSRuntimeExtensions.InvokeAsync<string>(js, """", System.Array.Empty<object>());
+        await [|JSRuntimeExtensions.InvokeAsync<string>(js, """", System.Array.Empty<object>())|];
     }
 }
 ")
@@ -93,7 +93,7 @@ class Sample
     async Task A()
     {
         IJSRuntime js = null;
-        await [||]js.InvokeAsync<string>(""dummy"", CancellationToken.None, new object?[1] { null });
+        await [|js.InvokeAsync<string>(""dummy"", CancellationToken.None, new object?[1] { null })|];
     }
 }
 ")
@@ -227,7 +227,7 @@ class Sample
     async Task A()
     {
         IJSInProcessRuntime js = null;
-        await [||]js.InvokeAsync<string>(""dummy"");
+        await [|js.InvokeAsync<string>(""dummy"")|];
     }
 }
 ")
@@ -260,7 +260,7 @@ class Sample
     void A()
     {
         IJSInProcessRuntime js = null;
-        [||]js.Invoke<string>(""dummy"");
+        [|js.Invoke<string>(""dummy"")|];
     }
 }
 ")

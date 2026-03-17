@@ -304,7 +304,7 @@ struct Test
 {
     int a;
 
-    int [||]A() => a;
+    int [|A|]() => a;
 }
 ";
         const string CodeFix = @"
@@ -330,7 +330,7 @@ struct Test
 {
     int a;
 
-    int [||]A => a;
+    int [|A|] => a;
 }
 ";
         const string CodeFix = @"
@@ -357,8 +357,8 @@ struct Test
 
     int A
     {
-        [||]get => a;
-        [||]set { }
+        [|get|] => a;
+        [|set|] { }
     }
 }
 ";
@@ -392,7 +392,7 @@ struct Test
     int A
     {
         readonly get => a;
-        [||]set { }
+        [|set|] { }
     }
 }
 ";
@@ -424,7 +424,7 @@ struct Test
     int a;
     int A
     {
-        [||]get => a;
+        [|get|] => a;
         set => a = value;
     }
 }
@@ -456,7 +456,7 @@ struct Test
 
     int A
     {
-        [||]set => a[0] = value;
+        [|set|] => a[0] = value;
     }
 }
 ";
@@ -486,7 +486,7 @@ struct Test
     int a;
     readonly void A() { }
 
-    void [||]B() => A();
+    void [|B|]() => A();
 }
 ";
         const string CodeFix = @"
@@ -513,8 +513,8 @@ struct Test
 {
     public event System.Action<System.EventArgs> Event1
     {
-        [||]add { }
-        [||]remove { }
+        [|add|] { }
+        [|remove|] { }
     }
 }
 ";

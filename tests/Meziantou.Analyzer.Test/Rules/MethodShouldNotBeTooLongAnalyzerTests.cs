@@ -19,7 +19,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
         const string SourceCode = @"
 public class Test
 {
-    void [||]Method()
+    void [|Method|]()
     {
         var a = 0;var b = 0;
         void A(){var c = 0;}
@@ -54,7 +54,7 @@ public class Test
         const string SourceCode = @"
 public class Test
 {
-    void [||]Method()
+    void [|Method|]()
     {
         var a = 0;var d = 0;
         var b = 0;var e = 0;
@@ -92,7 +92,7 @@ public class Test
         const string SourceCode = @"
 public class Test
 {
-    void [||]Method()
+    void [|Method|]()
     {
         var a = 0;
         var b = 0;

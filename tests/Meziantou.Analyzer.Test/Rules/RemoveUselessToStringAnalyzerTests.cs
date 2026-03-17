@@ -32,7 +32,7 @@ class Test
               .WithSourceCode(@"
 class Test
 {
-    public string A() => [||]"""".ToString();
+    public string A() => [|"""".ToString()|];
 }")
               .ShouldFixCodeWith(@"
 class Test

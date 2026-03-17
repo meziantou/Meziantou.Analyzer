@@ -24,10 +24,10 @@ class Test
     public void A() => throw null;
 
     [JSInvokable]
-    internal void [||]B() => throw null;
+    internal void [|B|]() => throw null;
 
     [JSInvokable]
-    static void [||]C() => throw null;
+    static void [|C|]() => throw null;
 }";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)

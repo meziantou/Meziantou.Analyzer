@@ -69,7 +69,7 @@ class TypeName
         new TypeName()
         {
             A = 1,
-            [||]B = 2
+            [|B = 2|]
         };
     }
 }";
@@ -116,7 +116,7 @@ enum TypeName
 enum TypeName
 {
     A = 1,
-    [||]B = 2
+    [|B = 2|]
 }";
         const string CodeFix = @"
 enum TypeName
@@ -162,7 +162,7 @@ class TypeName
         _ = new
         {
             A = 1,
-            [||]B = 2
+            [|B = 2|]
         };
     }
 }";
@@ -198,7 +198,7 @@ class TypeName
         TypeName a = new()
         {
             A = 1,
-            [||]B = 2
+            [|B = 2|]
         };
     }
 }";
@@ -235,7 +235,7 @@ class TypeName
         int[] a =
         [
             1,
-            [||]2
+            [|2|]
         ];
     }
 }";
@@ -271,7 +271,7 @@ class TypeName
                         _ = 0 switch
                         {
                             1 => 1,
-                            [||]_ => 2
+                            [|_ => 2|]
                         };
                     }
                 }
@@ -323,7 +323,7 @@ class TypeName
                         _ = 0 switch
                         {
                             1 => 1,
-                            [||]2 => 2
+                            [|2 => 2|]
                         };
                     }
                 }
@@ -373,7 +373,7 @@ class TypeName
                 _ = a with
                 {
                     A = 3,
-                    [||]B = 4
+                    [|B = 4|]
                 };
 
                 record Sample(int A, int B);
@@ -385,7 +385,7 @@ class TypeName
                     A = 3,
                     B = 4,
                 };
-                
+
                 record Sample(int A, int B);
                 """)
             .ValidateAsync();
@@ -438,7 +438,7 @@ class TypeName
                         _ = obj is
                         {
                             A: 1,
-                            [||]B: 2
+                            [|B: 2|]
                         };
                     }
                 }

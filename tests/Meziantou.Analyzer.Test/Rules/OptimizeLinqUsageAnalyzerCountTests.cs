@@ -27,7 +27,7 @@ class Test
     public Test()
     {
         var enumerable = Enumerable.Empty<int>();
-        _ = [||]" + text + @";
+        _ = [|" + text + @"|];
     }
 }
 ")
@@ -60,7 +60,7 @@ class Test
     {
         int n = 10;
         var enumerable = Enumerable.Empty<int>();
-        _ = [||]" + text + @";
+        _ = [|" + text + @"|];
     }
 }
 ")
@@ -92,7 +92,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
+        _ = [|enumerable." + text + @"|];
     }
 }
 ")
@@ -123,7 +123,7 @@ class Test
     public Test()
     {
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
+        _ = [|enumerable." + text + @"|];
     }
 }
 ")
@@ -156,7 +156,7 @@ class Test
     {
         int n = 10;
         var enumerable = System.Linq.Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
+        _ = [|enumerable." + text + @"|];
     }
 }
 ")
@@ -191,7 +191,7 @@ class Test
     {
         int n = 10;
         var enumerable = Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
+        _ = [|enumerable." + text + @"|];
     }
 }
 ")
@@ -227,7 +227,7 @@ class Test
     {
         int n = 10;
         var enumerable = Enumerable.Empty<int>();
-        _ = [||]enumerable." + text + @";
+        _ = [|enumerable." + text + @"|];
     }
 }
 ")

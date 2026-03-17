@@ -53,7 +53,7 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo();
+                                          var processStartInfo = [|new ProcessStartInfo()|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -75,11 +75,11 @@ public sealed class ProcessStartAnalyzerTests
                                       public void Test()
                                       {
                                           const bool useShellExecute = true;
-                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          var processStartInfo = [|new ProcessStartInfo()
                                           {
                                               RedirectStandardOutput = true,
                                               UseShellExecute = useShellExecute,
-                                          };
+                                          }|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -100,10 +100,10 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          var processStartInfo = [|new ProcessStartInfo()
                                           {
                                               RedirectStandardOutput = true,
-                                          };
+                                          }|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -124,10 +124,10 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          var processStartInfo = [|new ProcessStartInfo()
                                           {
                                               RedirectStandardError = true,
-                                          };
+                                          }|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -148,11 +148,11 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          var processStartInfo = [|new ProcessStartInfo()
                                           {
                                               RedirectStandardInput = true,
                                               UseShellExecute = true,
-                                          };
+                                          }|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -173,7 +173,7 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo();
+                                          var processStartInfo = [|new ProcessStartInfo()|];
                                           processStartInfo.UseShellExecute = false;
                                           Process.Start(processStartInfo);
                                       }
@@ -195,10 +195,10 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo()
+                                          var processStartInfo = [|new ProcessStartInfo()
                                           {
                                               FileName = "notepad",
-                                          };
+                                          }|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -219,7 +219,7 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo("notepad");
+                                          var processStartInfo = [|new ProcessStartInfo("notepad")|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -240,7 +240,7 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          var processStartInfo = [||]new ProcessStartInfo("notepad", string.Empty);
+                                          var processStartInfo = [|new ProcessStartInfo("notepad", string.Empty)|];
                                           Process.Start(processStartInfo);
                                       }
                                   }
@@ -261,7 +261,7 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          [||]Process.Start("notepad");
+                                          [|Process.Start("notepad")|];
                                       }
                                   }
                                   """;
@@ -281,7 +281,7 @@ public sealed class ProcessStartAnalyzerTests
                                   {
                                       public void Test()
                                       {
-                                          [||]Process.Start("notepad", "file.txt");
+                                          [|Process.Start("notepad", "file.txt")|];
                                       }
                                   }
                                   """;

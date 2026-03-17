@@ -34,7 +34,7 @@ class Test
 {
 }
 
-class [||]Test2 : Test
+class [|Test2|] : Test
 {
 }
 ";
@@ -63,7 +63,7 @@ interface ITest
 {
 }
 
-class [||]Test : ITest
+class [|Test|] : ITest
 {
 }
 ";
@@ -100,7 +100,7 @@ public class Test
     public async Task StaticMethodAndConstFieldWithEditorConfigTrue_Diagnostic()
     {
         const string SourceCode = @"
-public class [||]Test
+public class [|Test|]
 {
     const int a = 10;
     static void A() { }
@@ -152,7 +152,7 @@ internal class SampleException : System.Exception
     public async Task Exception_ConfigEnabled()
     {
         const string SourceCode = @"
-internal class [||]SampleException : System.Exception
+internal class [|SampleException|] : System.Exception
 {
 }";
 
@@ -180,7 +180,7 @@ internal class SampleException
     public async Task VirtualMember_EditorConfig()
     {
         const string SourceCode = @"
-internal class [||]SampleException
+internal class [|SampleException|]
 {
     protected virtual void A() => throw null;
 }";
@@ -246,7 +246,7 @@ internal class Test
         await CreateProjectBuilder()
               .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true")
               .WithSourceCode("""
-                internal record [||]Sample();
+                internal record [|Sample|]();
                 """)
               .ShouldFixCodeWith("""
                 internal sealed record Sample();
@@ -261,7 +261,7 @@ internal class Test
               .WithSourceCode("""
                 record Base();
 
-                record [||]Derived() : Base();
+                record [|Derived|]() : Base();
                 """)
               .ShouldFixCodeWith("""
                 record Base();
@@ -280,7 +280,7 @@ internal class Test
                 {
                 }
 
-                record [||]Test() : ITest;
+                record [|Test|]() : ITest;
                 """)
               .ShouldFixCodeWith("""
                 interface ITest
@@ -308,7 +308,7 @@ internal class Test
         await CreateProjectBuilder()
               .AddAnalyzerConfiguration("MA0053.public_class_should_be_sealed", "true")
               .WithSourceCode("""
-                public record [||]Sample();
+                public record [|Sample|]();
                 """)
               .ShouldFixCodeWith("""
                 public sealed record Sample();
@@ -324,7 +324,7 @@ internal class Test
     {
         await CreateProjectBuilder()
               .WithSourceCode($$"""
-                public class [||]Sample
+                public class [|Sample|]
                 {
                     {{visibility}} Sample() { }
                 }
@@ -340,7 +340,7 @@ internal class Test
     {
         await CreateProjectBuilder()
               .WithSourceCode($$"""
-                public class [||]Sample
+                public class [|Sample|]
                 {
                     private Sample(int a) { }
                     {{visibility}} Sample() { }

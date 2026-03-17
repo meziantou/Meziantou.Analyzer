@@ -55,7 +55,7 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    [||]"a".IndexOf("v");
+                    [|"a".IndexOf("v")|];
                 }
             }
             """;
@@ -100,7 +100,7 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    [||]"a".StartsWith("v");
+                    [|"a".StartsWith("v")|];
                 }
             }
             """;
@@ -128,7 +128,7 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    [||]string.Compare("a", "v");
+                    [|string.Compare("a", "v")|];
                 }
             }
             """;
@@ -257,7 +257,7 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    [||]MyAssert.Contains("a", "b", "message");
+                    [|MyAssert.Contains("a", "b", "message")|];
                 }
             }
 
