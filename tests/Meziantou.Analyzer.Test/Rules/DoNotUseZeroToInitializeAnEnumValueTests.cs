@@ -115,17 +115,17 @@ class Test
     public async Task Assignation_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-enum MyEnum { A = 0, B = 1 }
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum a = MyEnum.A;
-    }
-}
-")
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum a = MyEnum.A;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -133,18 +133,18 @@ class Test
     public async Task Reassignation()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-enum MyEnum { A = 0, B = 1 }
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum a = default;
-        a = [|0|];
-    }
-}
-")
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum a = default;
+                        a = [|0|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -152,18 +152,18 @@ class Test
     public async Task Assignation_ExplicitCast()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-enum MyEnum { A = 0, B = 1 }
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum b = (MyEnum)0;
-        b = (MyEnum)0;
-    }
-}
-")
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum b = (MyEnum)0;
+                        b = (MyEnum)0;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -171,17 +171,17 @@ class Test
     public async Task Assignation_EnumValue_Zero()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-enum MyEnum { A = 0, B = 1 }
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum c = MyEnum.A;
-    }
-}
-")
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum c = MyEnum.A;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -189,17 +189,17 @@ class Test
     public async Task Assignation_EnumValue_NonZero()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-enum MyEnum { A = 0, B = 1 }
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum d = MyEnum.B;
-    }
-}
-")
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum d = MyEnum.B;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -207,17 +207,17 @@ class Test
     public async Task Assignation_Default()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-enum MyEnum { A = 0, B = 1 }
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum e = default;
-    }
-}
-")
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum e = default;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -225,18 +225,18 @@ class Test
     public async Task Assignation_NonEnumType()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-enum MyEnum { A = 0, B = 1 }
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        long f = 0;
-        long g = (long)0;
-    }
-}
-")
+                class Test
+                {
+                    void A()
+                    {
+                        long f = 0;
+                        long g = (long)0;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -250,16 +250,16 @@ class Test
     {
         await CreateProjectBuilder()
               .WithSourceCode($$"""
-                    enum MyEnum { A = 0, B = 1 }
+                enum MyEnum { A = 0, B = 1 }
 
-                    class Test
+                class Test
+                {
+                    void A(MyEnum a)
                     {
-                        void A(MyEnum a)
-                        {
-                            A({{code}});
-                        }
+                        A({{code}});
                     }
-                    """)
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -270,16 +270,16 @@ class Test
     {
         await CreateProjectBuilder()
               .WithSourceCode($$"""
-                    enum MyEnum { A = 0, B = 1 }
+                enum MyEnum { A = 0, B = 1 }
 
-                    class Test
+                class Test
+                {
+                    void A(MyEnum a)
                     {
-                        void A(MyEnum a)
-                        {
-                            A([|{{code}}|]);
-                        }
+                        A([|{{code}}|]);
                     }
-                    """)
+                }
+                """)
               .ValidateAsync();
     }
 

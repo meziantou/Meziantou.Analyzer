@@ -15,41 +15,43 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzerTests
     [Fact]
     public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
     {
-        const string SourceCode = @"using System;
-class TestAttribute
-{
-    void Test()
-    {
-        throw new Exception();
-        throw new ArgumentException();
-
-        try
-        {
-        }
-        catch (ApplicationException)
-        {
-            throw;
-        }
-    }
-}";
         await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+              .WithSourceCode("""
+                  using System;
+                  class TestAttribute
+                  {
+                      void Test()
+                      {
+                          throw new Exception();
+                          throw new ArgumentException();
+
+                          try
+                          {
+                          }
+                          catch (ApplicationException)
+                          {
+                              throw;
+                          }
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
     [Fact]
     public async Task RaiseReservedException_ShouldReportErrorAsync()
     {
-        const string SourceCode = @"using System;
-class TestAttribute
-{
-    void Test()
-    {
-        [|throw new ApplicationException();|]
-    }
-}";
         await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
+              .WithSourceCode("""
+                using System;
+                class TestAttribute
+                {
+                    void Test()
+                    {
+                        [|throw new ApplicationException();|]
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 }

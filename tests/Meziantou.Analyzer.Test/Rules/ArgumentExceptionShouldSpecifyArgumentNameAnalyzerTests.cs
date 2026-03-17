@@ -172,15 +172,16 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public async Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    string Prop
-    {
-        get { throw null; }
-        set { throw new System.ArgumentNullException([|""unknown""|]); }
-    }
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                string Prop
+                {
+                    get { throw null; }
+                    set { throw new System.ArgumentNullException([|"unknown"|]); }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
@@ -190,14 +191,15 @@ class TestAttribute
     [Fact]
     public async Task ArgumentNameDoesNotMatchAParameter_Methods_ShouldReportError()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        throw new System.ArgumentException(""message"", [|""unknown""|]);
-    }  
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    throw new System.ArgumentException("message", [|"unknown"|]);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
@@ -207,15 +209,16 @@ class TestAttribute
     [Fact]
     public async Task OverloadWithoutParameterName_Properties_ShouldReportError()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    string Prop
-    {
-        get { throw null; }
-        set { throw [|new System.ArgumentNullException()|]; }
-    }
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                string Prop
+                {
+                    get { throw null; }
+                    set { throw [|new System.ArgumentNullException()|]; }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -224,14 +227,15 @@ class TestAttribute
     [Fact]
     public async Task OverloadWithoutParameterName_Methods_ShouldReportError()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        throw [|new System.ArgumentException(""message"")|];
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    throw [|new System.ArgumentException("message")|];
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -240,18 +244,19 @@ class TestAttribute
     [Fact]
     public async Task ValidParameterName_Lambda()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action<int>((int a) =>
-        {
-            throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: ""address out of range"");
-            throw new System.ArgumentOutOfRangeException(paramName: nameof(test), a, message: ""address out of range"");
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>((int a) =>
+                    {
+                        throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: "address out of range");
+                        throw new System.ArgumentOutOfRangeException(paramName: nameof(test), a, message: "address out of range");
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -260,18 +265,19 @@ class TestAttribute
     [Fact]
     public async Task InvalidParameterName_Lambda()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action<int>((int a) =>
-        {
-		    if (a < 0)
-                throw new System.ArgumentOutOfRangeException(paramName: [|""dummy""|], a, message: ""address out of range"");
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>((int a) =>
+                    {
+                        if (a < 0)
+                            throw new System.ArgumentOutOfRangeException(paramName: [|"dummy"|], a, message: "address out of range");
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -280,18 +286,19 @@ class TestAttribute
     [Fact]
     public async Task InvalidParameterName_StaticLambda()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action<int>(static (int a) =>
-        {
-		    if (a < 0)
-                throw new System.ArgumentOutOfRangeException(paramName: [|""test""|], a, message: ""address out of range"");
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>(static (int a) =>
+                    {
+                        if (a < 0)
+                            throw new System.ArgumentOutOfRangeException(paramName: [|"test"|], a, message: "address out of range");
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -300,17 +307,18 @@ class TestAttribute
     [Fact]
     public async Task ValidParameterName_LambdaWithoutParentheses()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action<int>(a =>
-        {
-            throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: ""address out of range"");
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>(a =>
+                    {
+                        throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: "address out of range");
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -319,17 +327,18 @@ class TestAttribute
     [Fact]
     public async Task ValidParameterName_StaticLambdaWithoutParameter()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action(static () =>
-        {
-            throw new System.ArgumentNullException([|""test""|]);
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action(static () =>
+                    {
+                        throw new System.ArgumentNullException([|"test"|]);
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -338,18 +347,19 @@ class TestAttribute
     [Fact]
     public async Task InvalidParameterName_Delegate()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action<int>(delegate (int a)
-        {
-		    if (a < 0)
-                throw new System.ArgumentOutOfRangeException(paramName: [|""dummy""|], a, message: ""address out of range"");
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>(delegate (int a)
+                    {
+                        if (a < 0)
+                            throw new System.ArgumentOutOfRangeException(paramName: [|"dummy"|], a, message: "address out of range");
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -358,18 +368,19 @@ class TestAttribute
     [Fact]
     public async Task ValidParameterName_Delegate()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action<int>(delegate (int a)
-        {
-		    if (a < 0)
-                throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: ""address out of range"");
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>(delegate (int a)
+                    {
+                        if (a < 0)
+                            throw new System.ArgumentOutOfRangeException(paramName: nameof(a), a, message: "address out of range");
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -378,17 +389,18 @@ class TestAttribute
     [Fact]
     public async Task InvalidParameterName_StaticDelegate()
     {
-        const string SourceCode = @"
-class TestAttribute
-{
-    void Test(string test)
-    {
-        _ = new System.Action<int>(static delegate (int a)
-        {
-            throw new System.ArgumentOutOfRangeException(paramName: [|""test""|], a, message: ""address out of range"");
-	    });
-    }    
-}";
+        const string SourceCode = """
+            class TestAttribute
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>(static delegate (int a)
+                    {
+                        throw new System.ArgumentOutOfRangeException(paramName: [|"test"|], a, message: "address out of range");
+                    });
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

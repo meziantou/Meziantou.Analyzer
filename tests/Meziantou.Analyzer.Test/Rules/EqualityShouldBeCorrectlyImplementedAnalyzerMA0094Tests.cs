@@ -14,20 +14,21 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
     [Fact]
     public async Task ClassImplementsNoInterfaceAndProvidesCompatibleCompareToMethod_DiagnosticIsReported()
     {
-        var originalCode = @"
-using System;
+        var originalCode = """
+            using System;
 
-class [|Test|] : IComparable<string>
-{
-    public int CompareTo(string other) => throw null;
-    public int CompareTo(Test other) => throw null;
-    public static bool operator <(Test a, Test b) => throw null;
-    public static bool operator <=(Test a, Test b) => throw null;
-    public static bool operator >(Test a, Test b) => throw null;
-    public static bool operator >=(Test a, Test b) => throw null;
-    public static bool operator ==(Test a, Test b) => throw null;
-    public static bool operator !=(Test a, Test b) => throw null;
-}";
+            class [|Test|] : IComparable<string>
+            {
+                public int CompareTo(string other) => throw null;
+                public int CompareTo(Test other) => throw null;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
@@ -37,22 +38,23 @@ class [|Test|] : IComparable<string>
     [Fact]
     public async Task AlreadyImplemented()
     {
-        var originalCode = @"
-using System;
+        var originalCode = """
+            using System;
 
-class Test : IComparable<Test>, IEquatable<Test>
-{
-    public int CompareTo(string other) => throw null;
-    public int CompareTo(Test other) => throw null;
-    public bool Equals(Test other) => throw null;
-    public override bool Equals(object other) => throw null;
-    public static bool operator <(Test a, Test b) => throw null;
-    public static bool operator <=(Test a, Test b) => throw null;
-    public static bool operator >(Test a, Test b) => throw null;
-    public static bool operator >=(Test a, Test b) => throw null;
-    public static bool operator ==(Test a, Test b) => throw null;
-    public static bool operator !=(Test a, Test b) => throw null;
-}";
+            class Test : IComparable<Test>, IEquatable<Test>
+            {
+                public int CompareTo(string other) => throw null;
+                public int CompareTo(Test other) => throw null;
+                public bool Equals(Test other) => throw null;
+                public override bool Equals(object other) => throw null;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
@@ -62,20 +64,21 @@ class Test : IComparable<Test>, IEquatable<Test>
     [Fact]
     public async Task MissingIEquatable()
     {
-        var originalCode = @"
-using System;
+        var originalCode = """
+            using System;
 
-class [|Test|] : IComparable<Test>
-{
-    public int CompareTo(string other) => throw null;
-    public int CompareTo(Test other) => throw null;
-    public static bool operator <(Test a, Test b) => throw null;
-    public static bool operator <=(Test a, Test b) => throw null;
-    public static bool operator >(Test a, Test b) => throw null;
-    public static bool operator >=(Test a, Test b) => throw null;
-    public static bool operator ==(Test a, Test b) => throw null;
-    public static bool operator !=(Test a, Test b) => throw null;
-}";
+            class [|Test|] : IComparable<Test>
+            {
+                public int CompareTo(string other) => throw null;
+                public int CompareTo(Test other) => throw null;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
@@ -91,11 +94,12 @@ class [|Test|] : IComparable<Test>
     [InlineData("public bool CompareTo(Test other)")]
     public async Task ClassImplementsNoInterfaceAndProvidesIncompatibleCompareToMethod_NoDiagnosticReported(string methodSignature)
     {
-        var originalCode = $@"
-class Test
-{{
-    {methodSignature} => throw null;
-}}";
+        var originalCode = $$"""
+            class Test
+            {
+                {{methodSignature}} => throw null;
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
               .ValidateAsync();
@@ -104,14 +108,15 @@ class Test
     [Fact]
     public async Task MissingOperators()
     {
-        var originalCode = @"
-using System;
+        var originalCode = """
+            using System;
 
-class [|Test|] : IComparable<string>
-{
-    public int CompareTo(string other) => throw null;
-    public int CompareTo(Test other) => throw null;
-}";
+            class [|Test|] : IComparable<string>
+            {
+                public int CompareTo(string other) => throw null;
+                public int CompareTo(Test other) => throw null;
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)

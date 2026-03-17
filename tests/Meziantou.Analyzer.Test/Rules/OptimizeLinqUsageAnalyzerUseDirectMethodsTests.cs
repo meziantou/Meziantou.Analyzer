@@ -359,33 +359,33 @@ class Test
     [Fact]
     public async Task Count_ICollectionExplicitImplementationAsync()
     {
-        const string SourceCode = @"
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new Collection<int>();
-        list.Count();
-        list.Count(x => x == 0);
-    }
+        const string SourceCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new Collection<int>();
+                    list.Count();
+                    list.Count(x => x == 0);
+                }
 
-    private class Collection<T> : ICollection<T>
-    {
-        int ICollection<T>.Count => throw null;
-        bool ICollection<T>.IsReadOnly => throw null;
-        void ICollection<T>.Add(T item) => throw null;
-        void ICollection<T>.Clear() => throw null;
-        bool ICollection<T>.Contains(T item) => throw null;
-        void ICollection<T>.CopyTo(T[] array, int arrayIndex) => throw null;
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => throw null;
-        IEnumerator IEnumerable.GetEnumerator() => throw null;
-        bool ICollection<T>.Remove(T item) => throw null;
-    }
-}
-";
+                private class Collection<T> : ICollection<T>
+                {
+                    int ICollection<T>.Count => throw null;
+                    bool ICollection<T>.IsReadOnly => throw null;
+                    void ICollection<T>.Add(T item) => throw null;
+                    void ICollection<T>.Clear() => throw null;
+                    bool ICollection<T>.Contains(T item) => throw null;
+                    void ICollection<T>.CopyTo(T[] array, int arrayIndex) => throw null;
+                    IEnumerator<T> IEnumerable<T>.GetEnumerator() => throw null;
+                    IEnumerator IEnumerable.GetEnumerator() => throw null;
+                    bool ICollection<T>.Remove(T item) => throw null;
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

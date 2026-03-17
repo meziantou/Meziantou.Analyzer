@@ -18,22 +18,26 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public async Task Async_Wait_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|Task.Delay(1).Wait()|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        await Task.Delay(1);
-    }
-}")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Task.Delay(1).Wait()|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await Task.Delay(1);
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -74,42 +78,44 @@ class Test
     public async Task FixerKeepsGenericArgument()
     {
         await CreateProjectBuilder()
-            .WithSourceCode(
-                @"using System.Threading.Tasks;
-class Buz
-{
-    private static async Task Do()
-    {
-        [|Bar.Foo<int>()|];
-    }
-}
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Buz
+                {
+                    private static async Task Do()
+                    {
+                        [|Bar.Foo<int>()|];
+                    }
+                }
 
-class Bar
-{
-    public static T Foo<T>()
-        => default;
+                class Bar
+                {
+                    public static T Foo<T>()
+                        => default;
 
-    public static Task<T> FooAsync<T>()
-        => Task.FromResult(default(T));
-}")
-            .ShouldFixCodeWith(
-                @"using System.Threading.Tasks;
-class Buz
-{
-    private static async Task Do()
-    {
-        await Bar.FooAsync<int>();
-    }
-}
+                    public static Task<T> FooAsync<T>()
+                        => Task.FromResult(default(T));
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Buz
+                {
+                    private static async Task Do()
+                    {
+                        await Bar.FooAsync<int>();
+                    }
+                }
 
-class Bar
-{
-    public static T Foo<T>()
-        => default;
+                class Bar
+                {
+                    public static T Foo<T>()
+                        => default;
 
-    public static Task<T> FooAsync<T>()
-        => Task.FromResult(default(T));
-}")
+                    public static Task<T> FooAsync<T>()
+                        => Task.FromResult(default(T));
+                }
+                """)
             .ValidateAsync();
     }
 
@@ -118,14 +124,16 @@ class Bar
     public async Task Async_Wait_Int32_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|Task.Delay(1).Wait(10)|];
-    }
-}")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Task.Delay(1).Wait(10)|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -133,17 +141,18 @@ class Test
     public async Task Async_Wait_CancellationToken_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|Task.Delay(1).Wait(CancellationToken.None)|];
-    }
-}")
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Task.Delay(1).Wait(CancellationToken.None)|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -151,17 +160,18 @@ class Test
     public async Task Async_Wait_TimeSpan_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|Task.Delay(1).Wait(TimeSpan.FromSeconds(1))|];
-    }
-}")
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Task.Delay(1).Wait(TimeSpan.FromSeconds(1))|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -169,17 +179,18 @@ class Test
     public async Task Async_Wait_Int32_CancellationToken_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|Task.Delay(1).Wait(10, CancellationToken.None)|];
-    }
-}")
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Task.Delay(1).Wait(10, CancellationToken.None)|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -187,22 +198,26 @@ class Test
     public async Task Async_Result_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        _ = [|Task.FromResult(1).Result|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        _ = await Task.FromResult(1);
-    }
-}")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        _ = [|Task.FromResult(1).Result|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        _ = await Task.FromResult(1);
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -210,14 +225,16 @@ class Test
     public async Task Async_ValueTask_Result_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        _ = [|new ValueTask<int>(10).Result|];
-    }
-}")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        _ = [|new ValueTask<int>(10).Result|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -225,14 +242,16 @@ class Test
     public async Task Async_ValueTask_GetAwaiter_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        _ = [|new ValueTask<int>(10).GetAwaiter().GetResult()|];
-    }
-}")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        _ = [|new ValueTask<int>(10).GetAwaiter().GetResult()|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -240,22 +259,26 @@ class Test
     public async Task Async_ThreadSleep_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|System.Threading.Thread.Sleep(1)|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        await Task.Delay(1);
-    }
-}")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|System.Threading.Thread.Sleep(1)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await Task.Delay(1);
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -263,26 +286,28 @@ class Test
     public async Task Async_ThreadSleep_TimeSpan_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1))|];
-    }
-}")
-              .ShouldFixCodeWith(@"
-using System;
-using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        await Task.Delay(TimeSpan.FromMinutes(1));
-    }
-}")
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1))|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(1));
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -290,17 +315,19 @@ class Test
     public async Task Async_SuggestOverload_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|Write()|];
-    }
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Write()|];
+                    }
 
-    public void Write() => throw null;
-    public Task Write(System.Threading.CancellationToken cancellationToken) => throw null;
-}")
+                    public void Write() => throw null;
+                    public Task Write(System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -308,17 +335,19 @@ class Test
     public async Task Async_AsyncSuffix_Diagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        [|Write()|];
-    }
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Write()|];
+                    }
 
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
+                    public void Write() => throw null;
+                    public Task WriteAsync() => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -326,17 +355,19 @@ class Test
     public async Task Async_NoOverload_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        Write();
-    }
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        Write();
+                    }
 
-    public void Write() => throw null;
-    public void WriteAsync() => throw null;
-}")
+                    public void Write() => throw null;
+                    public void WriteAsync() => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -344,17 +375,19 @@ class Test
     public async Task AsyncLambda_Overload_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        System.Func<Task> a = async () => [|Write()|];
-    }
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        System.Func<Task> a = async () => [|Write()|];
+                    }
 
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
+                    public void Write() => throw null;
+                    public Task WriteAsync() => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -362,19 +395,21 @@ class Test
     public async Task AsyncLocalFunction_Overload_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public void A()
-    {
-        Local();
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public void A()
+                    {
+                        Local();
 
-        async Task Local() => [|Write()|];
-    }
+                        async Task Local() => [|Write()|];
+                    }
 
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
+                    public void Write() => throw null;
+                    public Task WriteAsync() => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -382,19 +417,21 @@ class Test
     public async Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public void A()
-    {
-        Local();
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public void A()
+                    {
+                        Local();
 
-        async Task Local() => [|Write()|];
-    }
+                        async Task Local() => [|Write()|];
+                    }
 
-    public void Write() => throw null;
-    public ValueTask WriteAsync() => throw null;
-}")
+                    public void Write() => throw null;
+                    public ValueTask WriteAsync() => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -404,24 +441,24 @@ class Test
     {
         await CreateProjectBuilder()
                 .AddSystemTextJson()
-                .WithSourceCode(@"
-using System;
-using System.IO;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+                .WithSourceCode("""
+                  using System;
+                  using System.IO;
+                  using System.Text.Json;
+                  using System.Threading;
+                  using System.Threading.Tasks;
 
-class Program
-{
-    static async Task Main()
-    {
-        var responseStream = new MemoryStream();
-        var SerializerOptions = new JsonSerializerOptions();
-        var ct = CancellationToken.None;
-        await JsonSerializer.DeserializeAsync<Program>(responseStream, SerializerOptions, ct).ConfigureAwait(false);
-    }
-}
-")
+                  class Program
+                  {
+                      static async Task Main()
+                      {
+                          var responseStream = new MemoryStream();
+                          var SerializerOptions = new JsonSerializerOptions();
+                          var ct = CancellationToken.None;
+                          await JsonSerializer.DeserializeAsync<Program>(responseStream, SerializerOptions, ct).ConfigureAwait(false);
+                      }
+                  }
+                  """)
               .ValidateAsync();
     }
 
@@ -429,17 +466,19 @@ class Program
     public async Task Method_NoOverload_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        Write();
-    }
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        Write();
+                    }
 
-    public void Write() => throw null;
-    public void Write(System.Threading.CancellationToken cancellationToken) => throw null;
-}")
+                    public void Write() => throw null;
+                    public void Write(System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -447,17 +486,19 @@ class Test
     public async Task Method_NoOverloadWithSameParameters_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        Write();
-    }
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        Write();
+                    }
 
-    public void Write() => throw null;
-    public Task Write(int a) => throw null;
-}")
+                    public void Write() => throw null;
+                    public Task Write(int a) => throw null;
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -465,20 +506,22 @@ class Test
     public async Task Console_NoDiagnostic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-class Test
-{
-    public async Task A()
-    {
-        System.Console.Out.WriteLine();
-        System.Console.Out.Write(' ');
-        System.Console.Out.Flush();
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        System.Console.Out.WriteLine();
+                        System.Console.Out.Write(' ');
+                        System.Console.Out.Flush();
 
-        System.Console.Error.WriteLine();
-        System.Console.Error.Write(' ');
-        System.Console.Error.Flush();
-    }
-}")
+                        System.Console.Error.WriteLine();
+                        System.Console.Error.Write(' ');
+                        System.Console.Error.Flush();
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -487,18 +530,19 @@ class Test
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        var process = new Process();
-        process.WaitForExit();
-    }
-}")
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var process = new Process();
+                        process.WaitForExit();
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -507,30 +551,32 @@ class Test
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        var process = new Process();
-        [|process.WaitForExit()|];
-    }
-}")
-              .ShouldFixCodeWith(@"
-using System.Threading.Tasks;
-using System.Diagnostics;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var process = new Process();
+                        [|process.WaitForExit()|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        var process = new Process();
-        await process.WaitForExitAsync();
-    }
-}")
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var process = new Process();
+                        await process.WaitForExitAsync();
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -539,24 +585,25 @@ class Test
     {
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        using var a = new Sample();
-        using (var b = new Sample()) { }
-    }
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var a = new Sample();
+                        using (var b = new Sample()) { }
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-    }
-}")
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -564,42 +611,44 @@ class Test
     public async Task Using_Diagnostic1()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        [|using var a = new Sample();|]
-    }
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var a = new Sample();|]
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-        public ValueTask DisposeAsync() => throw null;
-    }
-}")
-              .ShouldBatchFixCodeWith(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
+              .ShouldBatchFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        await using var a = new Sample();
-    }
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await using var a = new Sample();
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-        public ValueTask DisposeAsync() => throw null;
-    }
-}")
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -607,42 +656,44 @@ class Test
     public async Task Using_Diagnostic2()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        [|using (var b = new Sample()) { }|]
-    }
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using (var b = new Sample()) { }|]
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-        public ValueTask DisposeAsync() => throw null;
-    }
-}")
-              .ShouldBatchFixCodeWith(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
+              .ShouldBatchFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        await using (var b = new Sample()) { }
-    }
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await using (var b = new Sample()) { }
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-        public ValueTask DisposeAsync() => throw null;
-    }
-}")
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -650,44 +701,46 @@ class Test
     public async Task Using_Diagnostic3()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        var sample = new Sample();
-        [|using (sample) { }|]
-    }
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var sample = new Sample();
+                        [|using (sample) { }|]
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-        public ValueTask DisposeAsync() => throw null;
-    }
-}")
-              .ShouldBatchFixCodeWith(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
+              .ShouldBatchFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        var sample = new Sample();
-        await using (sample) { }
-    }
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var sample = new Sample();
+                        await using (sample) { }
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-        public ValueTask DisposeAsync() => throw null;
-    }
-}")
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -695,26 +748,27 @@ class Test
     public async Task Using_Diagnostic4()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public async Task A()
-    {
-        await using var c = new Sample();
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await using var c = new Sample();
 
-        await using (var d = new Sample()) { }
-    }
+                        await using (var d = new Sample()) { }
+                    }
 
-    private class Sample : IDisposable
-    {
-        public void Dispose() => throw null;
-        public ValueTask DisposeAsync() => throw null;
-    }
-}")
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -722,62 +776,62 @@ class Test
     public async Task ExtensionMethod()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Diagnostics;
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public void A()
-    {
-    }
-}
+                class Test
+                {
+                    public void A()
+                    {
+                    }
+                }
 
-static class TestExtensions
-{
-    public static async Task AAsync(this Test test, CancellationToken token = default)
-    {
-    }
-}
+                static class TestExtensions
+                {
+                    public static async Task AAsync(this Test test, CancellationToken token = default)
+                    {
+                    }
+                }
 
-class demo
-{
-    public async Task a()
-    {
-        [|new Test().A()|];
-    }
-}
-")
-              .ShouldFixCodeWith(@"
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Diagnostics;
+                class demo
+                {
+                    public async Task a()
+                    {
+                        [|new Test().A()|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
 
-class Test
-{
-    public void A()
-    {
-    }
-}
+                class Test
+                {
+                    public void A()
+                    {
+                    }
+                }
 
-static class TestExtensions
-{
-    public static async Task AAsync(this Test test, CancellationToken token = default)
-    {
-    }
-}
+                static class TestExtensions
+                {
+                    public static async Task AAsync(this Test test, CancellationToken token = default)
+                    {
+                    }
+                }
 
-class demo
-{
-    public async Task a()
-    {
-        await new Test().AAsync();
-    }
-}
-")
+                class demo
+                {
+                    public async Task a()
+                    {
+                        await new Test().AAsync();
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -786,21 +840,21 @@ class demo
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.AspNetCore6_0)
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                using Microsoft.Extensions.DependencyInjection;
 
-class demo
-{
-    public async Task a()
-    {
-        IServiceProvider provider = null;
-        await using var scope1 = provider.CreateAsyncScope();
-        using var scope2 = [|provider.CreateScope()|];
-    }
-}
-")
+                class demo
+                {
+                    public async Task a()
+                    {
+                        IServiceProvider provider = null;
+                        await using var scope1 = provider.CreateAsyncScope();
+                        using var scope2 = [|provider.CreateScope()|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -809,20 +863,20 @@ class demo
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.AspNetCore5_0)
-              .WithSourceCode(@"
-using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                using Microsoft.Extensions.DependencyInjection;
 
-class demo
-{
-    public async Task a()
-    {
-        IServiceProvider provider = null;
-        using var scope = provider.CreateScope();
-    }
-}
-")
+                class demo
+                {
+                    public async Task a()
+                    {
+                        IServiceProvider provider = null;
+                        using var scope = provider.CreateScope();
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -833,26 +887,26 @@ class demo
               .WithTargetFramework(TargetFramework.Net6_0)
               .AddNuGetReference("Microsoft.EntityFrameworkCore", "6.0.8", "lib/net6.0/")
               .AddNuGetReference("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8", "lib/net6.0/")
-              .WithSourceCode(@"
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.EntityFrameworkCore;
 
-class BloggingContext : DbContext
-{
-    public DbSet<object> Blogs { get; set; }
-}
+                class BloggingContext : DbContext
+                {
+                    public DbSet<object> Blogs { get; set; }
+                }
 
-class Sample
-{
-    async Task A()
-    {
-        var context = new BloggingContext();
-        context.Add(new());
-        context.Blogs.Add(new());
-        await context.Blogs.AddAsync(new());
-    }
-}
-")
+                class Sample
+                {
+                    async Task A()
+                    {
+                        var context = new BloggingContext();
+                        context.Add(new());
+                        context.Blogs.Add(new());
+                        await context.Blogs.AddAsync(new());
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 

@@ -2260,9 +2260,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
             """;
-        const string CodeFix = """
-
-            """;
+        const string CodeFix = "";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(1, CodeFix)
@@ -2331,9 +2329,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
             """;
-        const string CodeFix = """
-
-            """;
+        const string CodeFix = "";
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(1, CodeFix)
@@ -2347,9 +2343,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         const string SourceCode = """
             internal record struct [|UnusedRecordStruct|](int Value);
             """;
-        const string CodeFix = """
+        const string CodeFix = "";
 
-            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(1, CodeFix)

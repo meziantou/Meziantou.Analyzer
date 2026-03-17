@@ -21,17 +21,17 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public async Task NewRegex_Options_Timeout()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [|new Regex(""testpattern"", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
+    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
@@ -39,10 +39,10 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -57,17 +57,17 @@ partial class Test
     [Fact]
     public async Task NewRegex_Options()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [|new Regex(""testpattern"", RegexOptions.ExplicitCapture)|];
+    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture)|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
@@ -75,10 +75,10 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture)]
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -93,17 +93,17 @@ partial class Test
     [Fact]
     public async Task NewRegex()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [|new Regex(""testpattern"")|];
+    Regex a = [|new Regex("testpattern")|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
@@ -111,10 +111,10 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [GeneratedRegex(""testpattern"")]
+    [GeneratedRegex("testpattern")]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -129,28 +129,28 @@ partial class Test
     [Fact]
     public async Task RegexIsMatch_Options_Timeout()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [|Regex.IsMatch(""test"", ""testpattern"", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
+    bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    bool a = MyRegex().IsMatch(""test"");
+    bool a = MyRegex().IsMatch("test");
 
-    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -165,28 +165,28 @@ partial class Test
     [Fact]
     public async Task RegexIsMatch_Options()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [|Regex.IsMatch(""test"", ""testpattern"", RegexOptions.ExplicitCapture)|];
+    bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    bool a = MyRegex().IsMatch(""test"");
+    bool a = MyRegex().IsMatch("test");
 
-    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture)]
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -201,28 +201,28 @@ partial class Test
     [Fact]
     public async Task RegexIsMatch()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [|Regex.IsMatch(""test"", ""testpattern"")|];
+    bool a = [|Regex.IsMatch("test", "testpattern")|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    bool a = MyRegex().IsMatch(""test"");
+    bool a = MyRegex().IsMatch("test");
 
-    [GeneratedRegex(""testpattern"")]
+    [GeneratedRegex("testpattern")]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -237,28 +237,28 @@ partial class Test
     [Fact]
     public async Task RegexReplace_Options_Timeout()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [|Regex.Replace(""test"", ""testpattern"", ""newValue"", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
+    string a = [|Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    string a = MyRegex().Replace(""test"", ""newValue"");
+    string a = MyRegex().Replace("test", "newValue");
 
-    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -273,28 +273,28 @@ partial class Test
     [Fact]
     public async Task RegexReplace_Options()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [|Regex.Replace(""test"", ""testpattern"", ""newValue"", RegexOptions.ExplicitCapture)|];
+    string a = [|Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture)|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    string a = MyRegex().Replace(""test"", ""newValue"");
+    string a = MyRegex().Replace("test", "newValue");
 
-    [GeneratedRegex(""testpattern"", RegexOptions.ExplicitCapture)]
+    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -309,28 +309,28 @@ partial class Test
     [Fact]
     public async Task RegexReplace()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [|Regex.Replace(""test"", ""testpattern"", ""newValue"")|];
+    string a = [|Regex.Replace("test", "testpattern", "newValue")|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    string a = MyRegex().Replace(""test"", ""newValue"");
+    string a = MyRegex().Replace("test", "newValue");
 
-    [GeneratedRegex(""testpattern"")]
+    [GeneratedRegex("testpattern")]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -345,28 +345,28 @@ partial class Test
     [Fact]
     public async Task RegexReplace_MatchEvaluator()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    string a = [|Regex.Replace(""test"", ""testpattern"", evaluator: match => """")|];
+    string a = [|Regex.Replace("test", "testpattern", evaluator: match => "")|];
 }
-";
+""";
 
-        const string CodeFix = @"
+        const string CodeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    string a = MyRegex().Replace(""test"", evaluator: match => """");
+    string a = MyRegex().Replace("test", evaluator: match => "");
 
-    [GeneratedRegex(""testpattern"")]
+    [GeneratedRegex("testpattern")]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -391,17 +391,17 @@ partial class Test
     [InlineData("new TimeSpan(1, 2, 3, 4, 5)", "93784005")]
     public async Task Timeout(string timeout, string milliseconds)
     {
-        var sourceCode = @"
+        var sourceCode = $$"""
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [|new Regex(""testpattern"", RegexOptions.None, " + timeout + @")|];
+    Regex a = [|new Regex("testpattern", RegexOptions.None, {{timeout}})|];
 }
-";
+""";
 
-        var codeFix = @"
+        var codeFix = $$"""
 using System;
 using System.Text.RegularExpressions;
 
@@ -409,10 +409,10 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [GeneratedRegex(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: " + milliseconds + @")]
+    [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: {{milliseconds}})]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -429,17 +429,17 @@ partial class Test
     [InlineData("Regex.InfiniteMatchTimeout")]
     public async Task New_Timeout_Infinite(string timeout)
     {
-        var sourceCode = @"
+        var sourceCode = $$"""
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    Regex a = [|new Regex(""testpattern"", RegexOptions.None, " + timeout + @")|];
+    Regex a = [|new Regex("testpattern", RegexOptions.None, {{timeout}})|];
 }
-";
+""";
 
-        var codeFix = @"
+        var codeFix = """
 using System;
 using System.Text.RegularExpressions;
 
@@ -447,10 +447,10 @@ partial class Test
 {
     Regex a = MyRegex();
 
-    [GeneratedRegex(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
+    [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: -1)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -467,28 +467,28 @@ partial class Test
     [InlineData("Regex.InfiniteMatchTimeout")]
     public async Task Static_Timeout_Infinite(string timeout)
     {
-        var sourceCode = @"
+        var sourceCode = $$"""
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [|Regex.IsMatch(""input"", ""testpattern"", RegexOptions.None, " + timeout + @")|];
+    bool a = [|Regex.IsMatch("input", "testpattern", RegexOptions.None, {{timeout}})|];
 }
-";
+""";
 
-        var codeFix = @"
+        var codeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    bool a = MyRegex().IsMatch(""input"");
+    bool a = MyRegex().IsMatch("input");
 
-    [GeneratedRegex(""testpattern"", RegexOptions.None, matchTimeoutMilliseconds: -1)]
+    [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: -1)]
     private static partial Regex MyRegex();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -503,31 +503,31 @@ partial class Test
     [Fact]
     public async Task GenerateUniqueMethodName()
     {
-        var sourceCode = @"
+        var sourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
 class Test
 {
-    bool a = [|Regex.IsMatch(""input"", ""testpattern"")|];
+    bool a = [|Regex.IsMatch("input", "testpattern")|];
 
     private static Regex MyRegex() => throw null;
 }
-";
+""";
 
-        var codeFix = @"
+        var codeFix = """
 using System;
 using System.Text.RegularExpressions;
 
 partial class Test
 {
-    bool a = MyRegex_().IsMatch(""input"");
+    bool a = MyRegex_().IsMatch("input");
 
     private static Regex MyRegex() => throw null;
-    [GeneratedRegex(""testpattern"")]
+    [GeneratedRegex("testpattern")]
     private static partial Regex MyRegex_();
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
@@ -541,15 +541,15 @@ partial class Test
     [Fact]
     public async Task NonConstantPattern()
     {
-        var sourceCode = @"
-using System;
-using System.Text.RegularExpressions;
+        var sourceCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    void A(string pattern) => Regex.IsMatch(""input"", pattern);
-}
-";
+            class Test
+            {
+                void A(string pattern) => Regex.IsMatch("input", pattern);
+            }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -560,7 +560,7 @@ class Test
     [Fact]
     public async Task NestedTypeShouldAddPartialToAllAncestorTypes()
     {
-        var sourceCode = @"
+        var sourceCode = """
 using System;
 using System.Text.RegularExpressions;
 
@@ -570,13 +570,13 @@ class Sample
     {
         class Inner
         {
-            bool a = [|Regex.IsMatch(""input"", ""testpattern"")|];
+            bool a = [|Regex.IsMatch("input", "testpattern")|];
         }
     }
 }
-";
+""";
 
-        var codeFix = @"
+        var codeFix = """
 using System;
 using System.Text.RegularExpressions;
 
@@ -586,14 +586,14 @@ partial class Sample
     {
         partial class Inner
         {
-            bool a = MyRegex().IsMatch(""input"");
+            bool a = MyRegex().IsMatch("input");
 
-            [GeneratedRegex(""testpattern"")]
+            [GeneratedRegex("testpattern")]
             private static partial Regex MyRegex();
         }
     }
 }
-";
+""";
 
         await CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)

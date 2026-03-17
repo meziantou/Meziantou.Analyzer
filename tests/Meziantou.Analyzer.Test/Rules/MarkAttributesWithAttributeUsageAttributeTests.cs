@@ -37,9 +37,10 @@ class TestAttribute : System.Attribute { }";
     [Fact]
     public async Task ClassHasAttribute_ShouldNotReportError()
     {
-        const string SourceCode = @"
-[System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
-class TestAttribute : System.Attribute { }";
+        const string SourceCode = """
+            [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
+            class TestAttribute : System.Attribute { }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -49,9 +50,9 @@ class TestAttribute : System.Attribute { }";
     [Fact]
     public async Task AbstractClass_ShouldNotReportError()
     {
-        const string SourceCode = @"
-abstract class TestAttribute : System.Attribute { }
-";
+        const string SourceCode = """
+            abstract class TestAttribute : System.Attribute { }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -61,12 +62,12 @@ abstract class TestAttribute : System.Attribute { }
     [Fact]
     public async Task ParentClassHasAttribute_ShouldNotReportError()
     {
-        const string SourceCode = @"
-[System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
-class TestAttribute : System.Attribute { }
-class ChildTestAttribute : TestAttribute { }
-class GrandChildTestAttribute : ChildTestAttribute { }
-";
+        const string SourceCode = """
+            [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
+            class TestAttribute : System.Attribute { }
+            class ChildTestAttribute : TestAttribute { }
+            class GrandChildTestAttribute : ChildTestAttribute { }
+            """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)

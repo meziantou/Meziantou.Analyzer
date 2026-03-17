@@ -20,7 +20,7 @@ public sealed class CA1822DecoratedMethodSuppressorTests
             .WithSourceCode("""
 internal class A
 {
-    internal void [|Sample()|]
+    internal void [|Sample|]()
     {
     }
 
@@ -60,7 +60,6 @@ internal sealed class Sample
 
     public string? Id { get; set; }
 }
-
 """)
             .ValidateAsync();
     }

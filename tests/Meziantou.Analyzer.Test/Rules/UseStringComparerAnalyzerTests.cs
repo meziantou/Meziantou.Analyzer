@@ -17,14 +17,15 @@ public sealed class UseStringComparerAnalyzerTests
     [Fact]
     public async Task HashSet_Int32_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        new System.Collections.Generic.HashSet<int>();
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.HashSet<int>();
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -33,23 +34,25 @@ class TypeName
     [Fact]
     public async Task SortedList_string_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        [|new System.Collections.Generic.SortedList<string, int>()|];
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|new System.Collections.Generic.SortedList<string, int>()|];
+                }
+            }
+            """;
 
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        new System.Collections.Generic.SortedList<string, int>(System.StringComparer.Ordinal);
-    }
-}";
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.SortedList<string, int>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -59,22 +62,24 @@ class TypeName
     [Fact]
     public async Task HashSet_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        [|new System.Collections.Generic.HashSet<string>()|];
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|new System.Collections.Generic.HashSet<string>()|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -84,22 +89,24 @@ class TypeName
     [Fact]
     public async Task HashSet_String__ShortNew_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.HashSet<string> a = [|new()|];
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.HashSet<string> a = new(System.StringComparer.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [|new()|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = new(System.StringComparer.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -109,14 +116,15 @@ class TypeName
     [Fact]
     public async Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
@@ -125,22 +133,24 @@ class TypeName
     [Fact]
     public async Task Dictionary_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        [|new System.Collections.Generic.Dictionary<string, int>()|];
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|new System.Collections.Generic.Dictionary<string, int>()|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -150,22 +160,24 @@ class TypeName
     [Fact]
     public async Task ConcurrentDictionary_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-        [|new System.Collections.Concurrent.ConcurrentDictionary<string, int>()|];
-    }
-}";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-        new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
-    }
-}";
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|new System.Collections.Concurrent.ConcurrentDictionary<string, int>()|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Concurrent.ConcurrentDictionary<string, int>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -365,54 +377,54 @@ class TypeName
     [Fact]
     public async Task FindExtensionMethods()
     {
-        const string SourceCode = @"
-class TypeName
-{
-    public void Test()
-    {
-    }
-}
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                }
+            }
 
-static class Extensions
-{
-    public static void Test(this TypeName type, System.Collections.Generic.IEqualityComparer<string> comparer)
-    {
-    }
-}
+            static class Extensions
+            {
+                public static void Test(this TypeName type, System.Collections.Generic.IEqualityComparer<string> comparer)
+                {
+                }
+            }
 
-class Usage
-{
-    void A()
-    {
-        var a = new TypeName();
-        a.[|Test()|];
-    }
-}
-";
-        const string CodeFix = @"
-class TypeName
-{
-    public void Test()
-    {
-    }
-}
+            class Usage
+            {
+                void A()
+                {
+                    var a = new TypeName();
+                    a.[|Test()|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                }
+            }
 
-static class Extensions
-{
-    public static void Test(this TypeName type, System.Collections.Generic.IEqualityComparer<string> comparer)
-    {
-    }
-}
+            static class Extensions
+            {
+                public static void Test(this TypeName type, System.Collections.Generic.IEqualityComparer<string> comparer)
+                {
+                }
+            }
 
-class Usage
-{
-    void A()
-    {
-        var a = new TypeName();
-        a.Test(System.StringComparer.Ordinal);
-    }
-}
-";
+            class Usage
+            {
+                void A()
+                {
+                    var a = new TypeName();
+                    a.Test(System.StringComparer.Ordinal);
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
@@ -714,23 +726,24 @@ class TypeName
     [Fact]
     public async Task ExcludeWhenInAnExpressionContext()
     {
-        const string SourceCode = @"
-using System;
-using System.Linq;
-using System.Linq.Expressions;
-class TypeName
-{
-    void WithSomething()
-    {
-        var op = new string[0];
-        _ = (Expression<Func<Something, bool>>)(s => op.ToList().Contains(s.SomeField));
-    }
+        const string SourceCode = """
+            using System;
+            using System.Linq;
+            using System.Linq.Expressions;
+            class TypeName
+            {
+                void WithSomething()
+                {
+                    var op = new string[0];
+                    _ = (Expression<Func<Something, bool>>)(s => op.ToList().Contains(s.SomeField));
+                }
 
-    public class Something
-    {
-        public string SomeField { get; set; }
-    }
-}";
+                public class Something
+                {
+                    public string SomeField { get; set; }
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();

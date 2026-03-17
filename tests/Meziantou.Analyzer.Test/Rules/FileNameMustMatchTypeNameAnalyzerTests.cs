@@ -15,10 +15,11 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     public async Task DoesNotMatchFileName()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class [|Sample|]
-{
-}")
+              .WithSourceCode("""
+                class [|Sample|]
+                {
+                }
+                """)
               .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
               .ValidateAsync();
     }
@@ -27,10 +28,11 @@ class [|Sample|]
     public async Task DoesMatchFileNameBeforeDot()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("Sample.xaml.cs", @"
-class Sample
-{
-}")
+              .WithSourceCode("Sample.xaml.cs", """
+                class Sample
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -38,10 +40,11 @@ class Sample
     public async Task MatchFileName()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("Root\\Foo/Bar.cs", @"
-class Bar
-{
-}")
+              .WithSourceCode("Root\\Foo/Bar.cs", """
+                class Bar
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -49,10 +52,11 @@ class Bar
     public async Task DoesMatchFileName()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test0
-{
-}")
+              .WithSourceCode("""
+                class Test0
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -60,10 +64,11 @@ class Test0
     public async Task DoesMatchFileName_Generic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(@"
-class Test0<T>
-{
-}")
+              .WithSourceCode("""
+                class Test0<T>
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -71,10 +76,11 @@ class Test0<T>
     public async Task DoesMatchFileName_GenericUsingArity()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test0`1.cs", @"
-class Test0<T>
-{
-}")
+              .WithSourceCode(fileName: "Test0`1.cs", """
+                class Test0<T>
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -82,10 +88,11 @@ class Test0<T>
     public async Task DoesMatchFileName_GenericUsingOfT()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test0OfT.cs", @"
-class Test0<T>
-{
-}")
+              .WithSourceCode(fileName: "Test0OfT.cs", """
+                class Test0<T>
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -132,13 +139,14 @@ class Test0<T>
     public async Task NestedTypeDoesMatchFileName_Ok()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test0.cs", @"
-class Test0
-{
-    class Test1
-    {
-    }
-}")
+              .WithSourceCode(fileName: "Test0.cs", """
+                class Test0
+                {
+                    class Test1
+                    {
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -146,10 +154,11 @@ class Test0
     public async Task Brackets_MatchType()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test0{T}.cs", @"
-class Test0<T>
-{
-}")
+              .WithSourceCode(fileName: "Test0{T}.cs", """
+                class Test0<T>
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -157,10 +166,11 @@ class Test0<T>
     public async Task Brackets_MatchTypes()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test0{TKey,TValue}.cs", @"
-class Test0<TKey, TValue>
-{
-}")
+              .WithSourceCode(fileName: "Test0{TKey,TValue}.cs", """
+                class Test0<TKey, TValue>
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -168,10 +178,11 @@ class Test0<TKey, TValue>
     public async Task Brackets_DoesNotMatchTypeCount()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test0{TKey}.cs", @"
-class [|Test0|]<TKey, TValue>
-{
-}")
+              .WithSourceCode(fileName: "Test0{TKey}.cs", """
+                class [|Test0|]<TKey, TValue>
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -179,10 +190,11 @@ class [|Test0|]<TKey, TValue>
     public async Task Brackets_DoesNotMatchTypeName()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test0{TKey,TNotSame}.cs", @"
-class [|Test0|]<TKey, TValue>
-{
-}")
+              .WithSourceCode(fileName: "Test0{TKey,TNotSame}.cs", """
+                class [|Test0|]<TKey, TValue>
+                {
+                }
+                """)
               .ValidateAsync();
     }
 
@@ -392,7 +404,7 @@ class [|Test0|]<TKey, TValue>
     public async Task FileLocalTypes()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Dummy.cs", @"
+              .WithSourceCode(fileName: "Dummy.cs", """
 class Dummy
 {
 }
@@ -400,7 +412,7 @@ class Dummy
 file class Sample
 {
 }
-")
+""")
               .ValidateAsync();
     }
 
@@ -408,7 +420,7 @@ file class Sample
     public async Task FileLocalTypes_Configuration()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Dummy.cs", @"
+              .WithSourceCode(fileName: "Dummy.cs", """
 class Dummy
 {
 }
@@ -416,7 +428,7 @@ class Dummy
 file class [|Sample|]
 {
 }
-")
+""")
               .AddAnalyzerConfiguration("MA0048.exclude_file_local_types", "false")
               .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
               .ValidateAsync();
@@ -426,10 +438,11 @@ file class [|Sample|]
     public async Task TypeKindIncludedInMessage_Class()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test.cs", @"
+              .WithSourceCode(fileName: "Test.cs", """
 class [|Sample|]
 {
-}")
+}
+""")
               .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
               .ValidateAsync();
     }
@@ -438,10 +451,11 @@ class [|Sample|]
     public async Task TypeKindIncludedInMessage_Struct()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test.cs", @"
+              .WithSourceCode(fileName: "Test.cs", """
 struct [|Sample|]
 {
-}")
+}
+""")
               .ShouldReportDiagnosticWithMessage("File name must match type name (struct Sample)")
               .ValidateAsync();
     }
@@ -450,10 +464,11 @@ struct [|Sample|]
     public async Task TypeKindIncludedInMessage_Interface()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test.cs", @"
+              .WithSourceCode(fileName: "Test.cs", """
 interface [|ISample|]
 {
-}")
+}
+""")
               .ShouldReportDiagnosticWithMessage("File name must match type name (interface ISample)")
               .ValidateAsync();
     }
@@ -462,11 +477,12 @@ interface [|ISample|]
     public async Task TypeKindIncludedInMessage_Enum()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test.cs", @"
+              .WithSourceCode(fileName: "Test.cs", """
 enum [|Sample|]
 {
     Value1
-}")
+}
+""")
               .ShouldReportDiagnosticWithMessage("File name must match type name (enum Sample)")
               .ValidateAsync();
     }
@@ -475,8 +491,9 @@ enum [|Sample|]
     public async Task TypeKindIncludedInMessage_Record()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test.cs", @"
-record [|Sample|];")
+              .WithSourceCode(fileName: "Test.cs", """
+record [|Sample|];
+""")
               .ShouldReportDiagnosticWithMessage("File name must match type name (record Sample)")
               .ValidateAsync();
     }
@@ -486,8 +503,9 @@ record [|Sample|];")
     public async Task TypeKindIncludedInMessage_RecordStruct()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test.cs", @"
-record struct [|Sample|];")
+              .WithSourceCode(fileName: "Test.cs", """
+record struct [|Sample|];
+""")
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .ShouldReportDiagnosticWithMessage("File name must match type name (record struct Sample)")
               .ValidateAsync();
@@ -498,8 +516,9 @@ record struct [|Sample|];")
     public async Task TypeKindIncludedInMessage_Delegate()
     {
         await CreateProjectBuilder()
-              .WithSourceCode(fileName: "Test.cs", @"
-delegate void [|Sample|]();")
+              .WithSourceCode(fileName: "Test.cs", """
+delegate void [|Sample|]();
+""")
               .ShouldReportDiagnosticWithMessage("File name must match type name (delegate Sample)")
               .ValidateAsync();
     }

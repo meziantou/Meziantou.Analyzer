@@ -115,14 +115,15 @@ class TestClass
     [Fact]
     public async Task NonRegexCtor_ShouldNotReportError()
     {
-        const string SourceCode = @"
-class TestClass
-{
-    void Test()
-    {
-        new System.Exception("""");
-    }
-}";
+        const string SourceCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    new System.Exception("");
+                }
+            }
+            """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ValidateAsync();
