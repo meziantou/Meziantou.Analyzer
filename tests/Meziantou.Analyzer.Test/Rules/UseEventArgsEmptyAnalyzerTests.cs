@@ -15,22 +15,24 @@ public sealed class UseEventArgsEmptyAnalyzerTests
     [Fact]
     public async Task ShouldReport()
     {
-        const string SourceCode = @"
+        const string SourceCode = """
 class TypeName
 {
     public void Test()
     {
         _ = [||]new System.EventArgs();
     }
-}";
-        const string Fixed = @"
+}
+""";
+        const string Fixed = """
 class TypeName
 {
     public void Test()
     {
         _ = System.EventArgs.Empty;
     }
-}";
+}
+""";
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ShouldFixCodeWith(Fixed)
