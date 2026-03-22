@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -101,6 +102,14 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                         return;
                     }
 
+                    var considerMemberAccessAsParameter = ConsiderMemberAccessAsParameter(context, argument.Value);
+                    if (considerMemberAccessAsParameter)
+                    {
+                        var dotIndex = value.IndexOf('.', StringComparison.Ordinal);
+                        if (dotIndex > 0 && parameterNames.Contains(value[..dotIndex], StringComparer.Ordinal))
+                            return;
+                    }
+
                     if (argument.Syntax is ArgumentSyntax argumentSyntax)
                     {
                         context.ReportDiagnostic(Rule, argumentSyntax.Expression, $"'{value}' is not a valid parameter name");
@@ -196,6 +205,9 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         }
     }
 
+    private static bool ConsiderMemberAccessAsParameter(OperationAnalysisContext context, IOperation operation)
+        => context.Options.GetConfigurationValue(operation, RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName + ".consider_member_access_as_parameter", defaultValue: false);
+
     private static void ValidateParamNameArgument(OperationAnalysisContext context, IArgumentOperation paramNameArgument)
     {
         // Check if the argument is a constant string value
@@ -214,6 +226,14 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             return;
         }
 
+        var considerMemberAccessAsParameter = ConsiderMemberAccessAsParameter(context, paramNameArgument.Value);
+        if (considerMemberAccessAsParameter)
+        {
+            var dotIndex = paramNameValue.IndexOf('.', StringComparison.Ordinal);
+            if (dotIndex > 0 && availableParameterNames.Contains(paramNameValue[..dotIndex], StringComparer.Ordinal))
+                return;
+        }
+
         context.ReportDiagnostic(Rule, paramNameArgument, $"'{paramNameValue}' is not a valid parameter name");
     }
 
@@ -229,7 +249,27 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             return;
         }
 
+        var considerMemberAccessAsParameter = ConsiderMemberAccessAsParameter(context, argument.Value);
+        if (considerMemberAccessAsParameter && IsRootParameterReference(unwrappedValue))
+            return;
+
         context.ReportDiagnostic(Rule, argument, "The expression does not match a parameter");
+    }
+
+    private static bool IsRootParameterReference(IOperation operation)
+    {
+        var current = operation;
+        while (current is IMemberReferenceOperation memberRef)
+        {
+            // A null instance means this is a static member access (no receiver),
+            // which cannot be rooted in a parameter reference.
+            if (memberRef.Instance is null)
+                return false;
+
+            current = memberRef.Instance.UnwrapImplicitConversionOperations();
+        }
+
+        return current is IParameterReferenceOperation;
     }
 
     private static IEnumerable<string> GetParameterNames(IOperation operation, CancellationToken cancellationToken)

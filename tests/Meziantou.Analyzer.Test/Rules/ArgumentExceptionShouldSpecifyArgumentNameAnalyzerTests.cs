@@ -957,4 +957,173 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
               .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ThrowIfNull_MemberAccess_OptionDisabled_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(Request request)
+                {
+                    ArgumentNullException.ThrowIfNull([|request.Definition|]);
+                }
+            }
+            class Request { public string? Definition { get; set; } }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_MemberAccess_OptionEnabled_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(Request request)
+                {
+                    ArgumentNullException.ThrowIfNull(request.Definition);
+                }
+            }
+            class Request { public string? Definition { get; set; } }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_DeepMemberAccess_OptionEnabled_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(Request request)
+                {
+                    ArgumentNullException.ThrowIfNull(request.Inner.Definition);
+                }
+            }
+            class Inner { public string? Definition { get; set; } }
+            class Request { public Inner? Inner { get; set; } }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_MemberAccess_NonParameterRoot_OptionEnabled_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    ArgumentNullException.ThrowIfNull([|Name.Length|]);
+                }
+
+                public static string Name { get; } = "";
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_ExplicitDottedParamName_OptionEnabled_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(Request request)
+                {
+                    ArgumentNullException.ThrowIfNull(request.Definition, "request.Definition");
+                }
+            }
+            class Request { public string? Definition { get; set; } }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_ExplicitDottedParamName_OptionDisabled_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(Request request)
+                {
+                    ArgumentNullException.ThrowIfNull(request.Definition, [|"request.Definition"|]);
+                }
+            }
+            class Request { public string? Definition { get; set; } }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentNullException_Constructor_DottedParamName_OptionEnabled_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(Request request)
+                {
+                    if (request.Definition is null)
+                        throw new ArgumentNullException("request.Definition");
+                }
+            }
+            class Request { public string? Definition { get; set; } }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ArgumentNullException_Constructor_DottedParamName_OptionDisabled_ShouldReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                void Test(Request request)
+                {
+                    if (request.Definition is null)
+                        throw new ArgumentNullException([|"request.Definition"|]);
+                }
+            }
+            class Request { public string? Definition { get; set; } }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
