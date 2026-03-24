@@ -18,6 +18,17 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
     }
 
     [Fact]
+    public async Task NoGeneratedRegexAttribute_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                class Sample { }
+                """)
+            .ValidateAsync();
+    }
+
+#if CSHARP12_OR_GREATER
+    [Fact]
     public async Task CSharp12_NoDiagnostic()
     {
         await CreateProjectBuilder()
@@ -33,6 +44,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
                 """)
             .ValidateAsync();
     }
+#endif
 
 #if CSHARP13_OR_GREATER
     [Fact]
@@ -208,3 +220,4 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
     }
 #endif
 }
+
