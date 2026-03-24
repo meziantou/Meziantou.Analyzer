@@ -31,11 +31,15 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             if (generatedRegexAttributeSymbol is null)
                 return;
 
-            ctx.RegisterSymbolAction(symbolCtx => AnalyzeMethod(symbolCtx, generatedRegexAttributeSymbol), SymbolKind.Method);
+            var regexSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
+            if (regexSymbol is null)
+                return;
+
+            ctx.RegisterSymbolAction(symbolCtx => AnalyzeMethod(symbolCtx, generatedRegexAttributeSymbol, regexSymbol), SymbolKind.Method);
         });
     }
 
-    private static void AnalyzeMethod(SymbolAnalysisContext context, INamedTypeSymbol generatedRegexAttributeSymbol)
+    private static void AnalyzeMethod(SymbolAnalysisContext context, INamedTypeSymbol generatedRegexAttributeSymbol, INamedTypeSymbol regexSymbol)
     {
         var method = (IMethodSymbol)context.Symbol;
 
@@ -53,18 +57,13 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             return;
 
         // Must return Regex
-        var regexSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
-        if (regexSymbol is null || !method.ReturnType.IsEqualTo(regexSymbol))
+        if (!method.ReturnType.IsEqualTo(regexSymbol))
             return;
 
         // Must have GeneratedRegex attribute
-        foreach (var attribute in method.GetAttributes())
+        if (method.HasAttribute(generatedRegexAttributeSymbol))
         {
-            if (attribute.AttributeClass.IsEqualTo(generatedRegexAttributeSymbol))
-            {
-                context.ReportDiagnostic(Rule, method);
-                return;
-            }
+            context.ReportDiagnostic(Rule, method);
         }
     }
 }
