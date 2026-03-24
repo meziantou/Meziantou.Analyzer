@@ -189,6 +189,7 @@ internal static class RuleIdentifiers
     public const string BlazorPropertyInjectionShouldUseConstructorInjection = "MA0187";
     public const string UseTimeProviderInsteadOfInterface = "MA0188";
     public const string UseInlineArrayInsteadOfFixedBuffer = "MA0189";
+    public const string UsePartialPropertyInsteadOfPartialMethodForGeneratedRegex = "MA0190";
 
     public static string GetHelpUri(string identifier)
     {

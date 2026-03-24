@@ -562,3 +562,6 @@ dotnet_diagnostic.MA0188.severity = suggestion
 
 # MA0189: Use InlineArray instead of fixed-size buffers
 dotnet_diagnostic.MA0189.severity = suggestion
+
+# MA0190: Use partial property instead of partial method for GeneratedRegex
+dotnet_diagnostic.MA0190.severity = suggestion
