@@ -54,8 +54,8 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
             if (member.IsConst || member.IsStatic)
                 continue;
 
-            if (member.Type.IsReferenceType)
-                return; // When a struct contains a reference type field, the layout is automatically changed to Auto
+            if (!member.Type.IsBlittableType())
+                return;
 
             memberCount++;
         }

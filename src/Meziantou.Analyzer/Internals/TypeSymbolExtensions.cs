@@ -244,6 +244,66 @@ internal static class TypeSymbolExtensions
         }
     }
 
+    /// <summary>
+    /// Determines whether the type is a blittable type.
+    /// Blittable types: byte, sbyte, short, ushort, int, uint, long, ulong,
+    /// float, double, IntPtr, UIntPtr, pointers, enums, and structs
+    /// containing only blittable fields.
+    /// </summary>
+    public static bool IsBlittableType(this ITypeSymbol? symbol)
+    {
+        if (symbol is null)
+            return false;
+
+        switch (symbol.SpecialType)
+        {
+            case SpecialType.System_Byte:
+            case SpecialType.System_SByte:
+            case SpecialType.System_Int16:
+            case SpecialType.System_UInt16:
+            case SpecialType.System_Int32:
+            case SpecialType.System_UInt32:
+            case SpecialType.System_Int64:
+            case SpecialType.System_UInt64:
+            case SpecialType.System_Single:
+            case SpecialType.System_Double:
+            case SpecialType.System_IntPtr:
+            case SpecialType.System_UIntPtr:
+                return true;
+
+            case SpecialType.None:
+                break;
+
+            default:
+                return false;
+        }
+
+        if (symbol.TypeKind is TypeKind.Pointer)
+            return true;
+
+        if (symbol is INamedTypeSymbol namedType)
+        {
+            if (namedType.EnumUnderlyingType is not null)
+                return true;
+
+            if (namedType.IsValueType)
+            {
+                foreach (var member in namedType.GetMembers())
+                {
+                    if (member is not IFieldSymbol field || field.IsConst || field.IsStatic)
+                        continue;
+
+                    if (!field.Type.IsBlittableType())
+                        return false;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static bool IsUnitTestClass(this ITypeSymbol typeSymbol)
     {
         var attributes = typeSymbol.GetAttributes();
