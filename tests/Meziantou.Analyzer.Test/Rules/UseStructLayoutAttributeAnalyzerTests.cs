@@ -129,6 +129,165 @@ struct TypeName
             .ValidateAsync();
     }
 
+    [Fact]
+    public async Task WithBoolFields_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct TypeName
+            {
+                bool a;
+                bool b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithCharFields_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct TypeName
+            {
+                char a;
+                char b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithDecimalFields_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct TypeName
+            {
+                decimal a;
+                decimal b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithIntPtrFields_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct [|TypeName|]
+            {
+                nint a;
+                nint b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithUIntPtrFields_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct [|TypeName|]
+            {
+                nuint a;
+                nuint b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithFloatAndDoubleFields_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct [|TypeName|]
+            {
+                float a;
+                double b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithEnumFields_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            enum MyEnum { A, B }
+            struct [|TypeName|]
+            {
+                MyEnum a;
+                MyEnum b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithBlittableNestedStruct_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct Inner
+            {
+                int x;
+            }
+            struct [|TypeName|]
+            {
+                Inner a;
+                int b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithNonBlittableNestedStruct_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct Inner
+            {
+                bool x;
+            }
+            struct TypeName
+            {
+                Inner a;
+                int b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task WithMixedBlittableAndNonBlittable_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            struct TypeName
+            {
+                int a;
+                bool b;
+            }
+            """;
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
 #if CSHARP10_OR_GREATER
     [Fact]
     public async Task RecordStruct()
