@@ -123,7 +123,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 if (!options.IncludeObsoleteMembers && IsObsolete(method))
                     continue;
 
-                if (HasSimilarParameters(methodSymbol, method, options.AllowOptionalParameters, additionalParameterTypes))
+                if (OverloadFinder.HasSimilarParameters(methodSymbol, method, options.AllowOptionalParameters, additionalParameterTypes))
                     return method;
             }
         }
@@ -150,12 +150,18 @@ internal sealed class OverloadFinder(Compilation compilation)
         if (method.IsEqualTo(otherMethod))
             return false;
 
-        // The new method must have at least the same number of parameters as the old method, plus the number of additional parameters        
+        // The new method must have at least the same number of parameters as the old method, plus the number of additional parameters
         if (otherMethod.Parameters.Length - method.Parameters.Length < additionalParameterTypes.Length)
             return false;
 
         // If allowOptionalParameters is false, the new method must have exactly the same number of parameters as the old method
         if (!allowOptionalParameters && otherMethod.Parameters.Length - method.Parameters.Length != additionalParameterTypes.Length)
+            return false;
+
+        if (method.IsGenericMethod != otherMethod.IsGenericMethod)
+            return false;
+
+        if (method.IsGenericMethod && !HasSimilarGenericParametersInOrder(method, otherMethod))
             return false;
 
         // Most of the time, an overload has the same order for the parameters. Try to match them in order first (faster)
@@ -167,7 +173,8 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var methodParameter = method.Parameters[i];
                 var otherMethodParameter = otherMethod.Parameters[j];
 
-                if (methodParameter.IsEqualTo(otherMethodParameter))
+                if (methodParameter.Type.IsEqualTo(otherMethodParameter.Type) ||
+                    ParametersWithGenericAreEqual(methodParameter, otherMethodParameter))
                 {
                     i++;
                     j++;
@@ -207,7 +214,8 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var found = false;
                 for (var i = 0; i < otherMethodParameters.Length; i++)
                 {
-                    if (otherMethodParameters[i].Type.IsEqualTo(param.Type))
+                    if (otherMethodParameters[i].Type.IsEqualTo(param.Type) ||
+                        ParametersWithGenericAreEqual(param, otherMethodParameters[i]))
                     {
                         otherMethodParameters = otherMethodParameters.RemoveAt(i);
                         found = true;
@@ -254,6 +262,57 @@ internal sealed class OverloadFinder(Compilation compilation)
                 ? left.IsOrInheritFrom(right.Symbol)
                 : left.IsEqualTo(right.Symbol);
         }
+
+        bool ParametersWithGenericAreEqual(IParameterSymbol parameter, IParameterSymbol otherParameter)
+        {
+            if (!method.IsGenericMethod)
+                return false;
+
+            var parameterType = parameter.Type as INamedTypeSymbol;
+            var otherParameterType = otherParameter.Type as INamedTypeSymbol;
+            // has same number of type parameters
+            if (parameterType?.Arity is 0 or null || parameterType.Arity != otherParameterType?.Arity)
+                return false;
+
+            // are same base type, List<> for example
+            if (!parameterType.ConstructedFrom.IsEqualTo(otherParameterType.ConstructedFrom))
+                return false;
+
+            // should reference same type parameter in order
+            for (var j = 0; j < parameterType.TypeParameters.Length; j++)
+                if (parameterType.TypeParameters[j].Ordinal != otherParameterType.TypeParameters[j].Ordinal)
+                    return false;
+
+            return true;
+        }
+    }
+
+    private static bool HasSimilarGenericParametersInOrder(IMethodSymbol method, IMethodSymbol otherMethod)
+    {
+        if (method.Arity != otherMethod.Arity)
+            return false;
+
+        for (var i = 0; i < method.Arity; i++)
+        {
+            var methodParameter = method.TypeParameters[i];
+            var otherMethodParameter = otherMethod.TypeParameters[i];
+
+            if (methodParameter.HasReferenceTypeConstraint != otherMethodParameter.HasReferenceTypeConstraint ||
+                methodParameter.HasValueTypeConstraint != otherMethodParameter.HasValueTypeConstraint ||
+                methodParameter.HasNotNullConstraint != otherMethodParameter.HasNotNullConstraint ||
+                methodParameter.HasUnmanagedTypeConstraint != otherMethodParameter.HasUnmanagedTypeConstraint ||
+                methodParameter.HasConstructorConstraint != otherMethodParameter.HasConstructorConstraint ||
+                methodParameter.Variance != otherMethodParameter.Variance ||
+                methodParameter.ConstraintTypes.Length != otherMethodParameter.ConstraintTypes.Length)
+                return false;
+
+            // implies that generic constrains declared in same order
+            for (var j = 0; j < methodParameter.ConstraintTypes.Length; j++)
+                if (!methodParameter.ConstraintTypes[j].IsEqualTo(otherMethodParameter.ConstraintTypes[j]))
+                    return false;
+        }
+
+        return true;
     }
 
     private bool IsObsolete(IMethodSymbol methodSymbol)
