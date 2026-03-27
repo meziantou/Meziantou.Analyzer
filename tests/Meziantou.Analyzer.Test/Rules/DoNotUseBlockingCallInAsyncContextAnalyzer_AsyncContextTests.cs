@@ -972,11 +972,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
                 class Test
                 {
-                    public void A<T>(List<T> test)
+                    public void A<T>(int i, List<T> test)
                     {
                     }
 
-                    public async Task AAsync<T>(List<T> test, CancellationToken token = default)
+                    public async Task AAsync<T>(int i, List<T> test, CancellationToken token = default)
                     {
                     }
                 }
@@ -985,7 +985,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                 {
                     public async Task a()
                     {
-                        [|new Test().A<int>(new List<int> { 1 })|];
+                        [|new Test().A<int>(1, new List<int> { 1 })|];
                     }
                 }
                 """)
@@ -998,11 +998,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
                 class Test
                 {
-                    public void A<T>(List<T> test)
+                    public void A<T>(int i, List<T> test)
                     {
                     }
 
-                    public async Task AAsync<T>(List<T> test, CancellationToken token = default)
+                    public async Task AAsync<T>(int i, List<T> test, CancellationToken token = default)
                     {
                     }
                 }
@@ -1011,7 +1011,190 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                 {
                     public async Task a()
                     {
-                        await new Test().AAsync<int>(new List<int> { 1 });
+                        await new Test().AAsync<int>(1, new List<int> { 1 });
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericMethod_DifferentReferenceTypeConstraint_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test) where T : class
+                    {
+                    }
+
+                    public async Task AAsync<T>(int i, List<T> test, CancellationToken token = default)
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        new Test().A<string>(1, new List<string>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericMethod_DifferentValueTypeConstraint_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test) where T : struct
+                    {
+                    }
+
+                    public async Task AAsync<T>(int i, List<T> test, CancellationToken token = default)
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        new Test().A<int>(1, new List<int>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericMethod_DifferentTypeConstraint_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                interface IMark {}
+
+                class Mark : IMark {}
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test) where T : IMark
+                    {
+                    }
+
+                    public async Task AAsync<T>(int i, List<T> test, CancellationToken token = default)
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        new Test().A<Mark>(1, new List<Mark>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericMethod_DifferentTypeConstraintsOrder_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                interface IMark1 {}
+                interface IMark2 {}
+
+                class Mark : IMark1, IMark2 {}
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test)
+                        where T : IMark1, IMark2
+                    {
+                    }
+
+                    public async Task AAsync<T>(int i, List<T> test, CancellationToken token = default)
+                        where T : IMark2, IMark1
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        new Test().A<Mark>(1, new List<Mark>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericMethod_SameConstraints_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                interface IMark1 {}
+                interface IMark2 {}
+
+                class Mark : IMark1, IMark2 {}
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test)
+                        where T : class, IMark1, IMark2
+                    {
+                    }
+
+                    public async Task AAsync<T>(int i, List<T> test, CancellationToken token = default)
+                        where T : class, IMark1, IMark2
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        [|new Test().A<Mark>(1, new List<Mark>())|];
                     }
                 }
                 """)
@@ -1461,6 +1644,170 @@ class Sample
                     {
                         var dir = new TemporaryDirectory();
                         [|dir.CreateTextFile("test.txt", "content")|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_MultipleIncompatibleGenericArguments_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(List<int> a, List<string> b)
+                    {
+                    }
+
+                    public Task AAsync<T>(List<T> a, List<T> b, CancellationToken token = default)
+                    {
+                        return Task.CompletedTask;
+                    }
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<int>(), new List<string>());
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExtensionMethod_GenericArgumentsIncompatible_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                }
+
+                static class TestExtensions
+                {
+                    public static void A(this Test test, List<int> a, List<string> b)
+                    {
+                    }
+
+                    public static Task AAsync<T>(this Test test, List<T> a, List<T> b, CancellationToken token = default)
+                    {
+                        return Task.CompletedTask;
+                    }
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<int>(), new List<string>());
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_DifferentGenericTypeDefinitions_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(List<int> value)
+                    {
+                    }
+
+                    public Task AAsync<T>(IEnumerable<T> value, CancellationToken token = default)
+                    {
+                        return Task.CompletedTask;
+                    }
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<int>());
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_NestedGenericIncompatibility_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(List<List<int>> value)
+                    {
+                    }
+
+                    public Task AAsync(List<List<string>> value, CancellationToken token = default)
+                    {
+                        return Task.CompletedTask;
+                    }
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<List<int>>());
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_SameOriginalDefinitionButDifferentTypeParameterMapping_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A<T1, T2>(Dictionary<T1, T2> value)
+                    {
+                    }
+
+                    public Task AAsync<T>(Dictionary<T, T> value, CancellationToken token = default)
+                    {
+                        return Task.CompletedTask;
+                    }
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A<int, string>(new Dictionary<int, string>());
                     }
                 }
                 """)
