@@ -773,7 +773,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
-    public async Task ExtensionMethod()
+    public async Task RegularMethodToExtensionMethod()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
@@ -829,6 +829,189 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                     public async Task a()
                     {
                         await new Test().AAsync();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SimpleArgument()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+              using System;
+              using System.Collections.Generic;
+              using System.Threading;
+              using System.Threading.Tasks;
+              using System.Diagnostics;
+
+              class Test
+              {
+                  public void A(int i)
+                  {
+                  }
+
+                  public async Task AAsync(int i)
+                  {
+                  }
+              }
+
+              class demo
+              {
+                  public async Task a()
+                  {
+                      [|new Test().A(1)|];
+                  }
+              }
+              """)
+            .ShouldFixCodeWith("""
+               using System;
+               using System.Collections.Generic;
+               using System.Threading;
+               using System.Threading.Tasks;
+               using System.Diagnostics;
+
+               class Test
+               {
+                   public void A(int i)
+                   {
+                   }
+
+                   public async Task AAsync(int i)
+                   {
+                   }
+               }
+
+               class demo
+               {
+                   public async Task a()
+                   {
+                       await new Test().AAsync(1);
+                   }
+               }
+               """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExtensionMethodToExtensionMethod()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                class Test<T>
+                {
+                }
+
+                static class TestExtensions
+                {
+                    public static void A<T>(this Test<T> test)
+                    {
+                    }
+
+                    public static async Task AAsync<T>(this Test<T> test, CancellationToken token = default)
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        [|new Test<int>().A()|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                class Test<T>
+                {
+                }
+
+                static class TestExtensions
+                {
+                    public static void A<T>(this Test<T> test)
+                    {
+                    }
+
+                    public static async Task AAsync<T>(this Test<T> test, CancellationToken token = default)
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        await new Test<int>().AAsync();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                class Test
+                {
+                    public void A<T>(List<T> test)
+                    {
+                    }
+
+                    public async Task AAsync<T>(List<T> test, CancellationToken token = default)
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        [|new Test().A<int>(new List<int> { 1 })|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System;
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using System.Diagnostics;
+
+                class Test
+                {
+                    public void A<T>(List<T> test)
+                    {
+                    }
+
+                    public async Task AAsync<T>(List<T> test, CancellationToken token = default)
+                    {
+                    }
+                }
+
+                class demo
+                {
+                    public async Task a()
+                    {
+                        await new Test().AAsync<int>(new List<int> { 1 });
                     }
                 }
                 """)

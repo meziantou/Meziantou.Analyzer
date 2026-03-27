@@ -167,7 +167,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var methodParameter = method.Parameters[i];
                 var otherMethodParameter = otherMethod.Parameters[j];
 
-                if (methodParameter.IsEqualTo(otherMethodParameter))
+                if (methodParameter.Type.IsEqualTo(otherMethodParameter.Type))
                 {
                     i++;
                     j++;
