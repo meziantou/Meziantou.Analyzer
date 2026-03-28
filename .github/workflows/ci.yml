@@ -170,6 +170,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
     - name: NuGet login (OIDC → temp API key)
+      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
       uses: NuGet/login@v1
       id: login
       with:
@@ -190,7 +191,7 @@ jobs:
             }
         }
       name: Publish NuGet packages
-      if: always()
+      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
       env:
         NuGetApiKey: ${{steps.login.outputs.NUGET_API_KEY}}
         FeedzApiKey: ${{ secrets.FEEDZ_APIKEY }}
