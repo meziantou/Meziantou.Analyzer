@@ -2,6 +2,7 @@
 
 [![Meziantou.Analyzer on NuGet](https://img.shields.io/nuget/v/Meziantou.Analyzer.svg)](https://www.nuget.org/packages/Meziantou.Analyzer/)
 [![Meziantou.Analyzer on NuGet](https://img.shields.io/nuget/dt/Meziantou.Analyzer)](https://www.nuget.org/packages/Meziantou.Analyzer/)
+[![gitcgr](https://gitcgr.com/badge/meziantou/meziantou.analyzer.svg)](https://gitcgr.com/meziantou/meziantou.analyzer)
 
 A Roslyn analyzer to enforce some good practices in C# in terms of design, usage, security, performance, and style.
 
