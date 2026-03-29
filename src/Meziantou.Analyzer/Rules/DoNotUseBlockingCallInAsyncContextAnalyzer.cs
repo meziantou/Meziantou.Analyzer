@@ -320,7 +320,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                         AddSymbols(semanticModel.LookupSymbols(position, receiverNamespace, name: methodName, includeReducedExtensionMethods: true));
                     }
 
-                    return [.. result];
+                    return ImmutableArray.CreateRange(result);
                 }
 
                 DiagnosticData? ProcessSymbols(ImmutableArray<ISymbol> potentialMethods)

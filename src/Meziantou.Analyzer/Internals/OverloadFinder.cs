@@ -541,7 +541,7 @@ internal sealed class OverloadFinder(Compilation compilation)
     private ImmutableArray<ISymbol> GetCandidateMethods(IMethodSymbol methodSymbol, OverloadOptions options)
     {
         if (methodSymbol.ContainingType is null)
-            return [];
+            return ImmutableArray<ISymbol>.Empty;
 
         var results = new List<ISymbol>();
         var knownSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -578,7 +578,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             }
         }
 
-        return [.. results];
+        return ImmutableArray.CreateRange(results);
     }
 
     private static ITypeSymbol? GetReducedReceiverType(IMethodSymbol methodSymbol)
