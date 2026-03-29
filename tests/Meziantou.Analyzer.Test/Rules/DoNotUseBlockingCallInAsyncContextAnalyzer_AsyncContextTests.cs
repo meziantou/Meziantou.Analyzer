@@ -1689,6 +1689,68 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    public async Task GenericArgument_DifferentTypeConstraintsOrder_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                interface IMark1 { }
+                interface IMark2 { }
+
+                class Mark : IMark1, IMark2 { }
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test) where T : IMark1, IMark2 => throw null;
+                    public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : IMark2, IMark1 => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A<Mark>(1, new List<Mark>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericMethod_SameConstraints_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                interface IMark1 { }
+                interface IMark2 { }
+
+                class Mark : IMark1, IMark2 { }
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test) where T : class, IMark1, IMark2 => throw null;
+                    public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : class, IMark1, IMark2 => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A<Mark>(1, new List<Mark>())|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Argument_ImplicitUserDefinedConversion_ShouldReport()
     {
         await CreateProjectBuilder()
