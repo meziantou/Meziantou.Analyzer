@@ -10,12 +10,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-if (!FullPath.CurrentDirectory().TryFindFirstAncestorOrSelf(p => Directory.Exists(p / ".git"), out var outputFolder))
-{
-    Console.WriteLine("Cannot find the current git folder");
-    return 1;
-}
-
+var outputFolder = FullPath.CurrentDirectory().FindRequiredGitRepositoryRoot();
 var fileWritten = 0;
 
 var assemblies = new[] { typeof(Meziantou.Analyzer.Rules.CommaAnalyzer).Assembly, typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly };

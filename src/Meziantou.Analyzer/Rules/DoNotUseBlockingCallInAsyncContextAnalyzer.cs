@@ -262,8 +262,20 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (!targetMethod.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
             {
                 var position = operation.Syntax.GetLocation().SourceSpan.End;
+                var semanticModel = operation.SemanticModel!;
+                var receiverType = operation.Instance?.Type ?? (targetMethod is
+                {
+                    MethodKind: MethodKind.ReducedExtension,
+                    ReducedFrom: { Parameters.Length: > 0 } reducedFrom,
+                }
+                    ? reducedFrom.Parameters[0].Type
+                    : null)
+                    ?? (targetMethod.IsExtensionMethod && operation.Arguments.Length > 0
+                        ? operation.Arguments[0].Value.Type
+                        : null);
+                var receiverNamespace = receiverType?.ContainingNamespace;
 
-                var result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
+                var result = ProcessSymbols(LookupSymbols(targetMethod.Name));
                 if (result is not null)
                 {
                     data = result;
@@ -272,12 +284,43 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
                 if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
                 {
-                    result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
+                    result = ProcessSymbols(LookupSymbols(targetMethod.Name + "Async"));
                     if (result is not null)
                     {
                         data = result;
                         return true;
                     }
+                }
+
+                ImmutableArray<ISymbol> LookupSymbols(string methodName)
+                {
+                    var result = new List<ISymbol>();
+                    var knownSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+
+                    void AddSymbols(ImmutableArray<ISymbol> symbols)
+                    {
+                        foreach (var symbol in symbols)
+                        {
+                            if (knownSymbols.Add(symbol))
+                            {
+                                result.Add(symbol);
+                            }
+                        }
+                    }
+
+                    AddSymbols(semanticModel.LookupSymbols(position, targetMethod.ContainingType, name: methodName, includeReducedExtensionMethods: true));
+                    if (receiverType is not null)
+                    {
+                        AddSymbols(semanticModel.LookupSymbols(position, receiverType, name: methodName, includeReducedExtensionMethods: true));
+                        AddSymbols(receiverType.GetMembers(methodName));
+                    }
+
+                    if (receiverNamespace is not null)
+                    {
+                        AddSymbols(semanticModel.LookupSymbols(position, receiverNamespace, name: methodName, includeReducedExtensionMethods: true));
+                    }
+
+                    return [.. result];
                 }
 
                 DiagnosticData? ProcessSymbols(ImmutableArray<ISymbol> potentialMethods)
@@ -304,9 +347,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             if (potentialAsyncSymbol is IMethodSymbol methodSymbol)
             {
-                if (method.IsStatic && !methodSymbol.IsStatic)
-                    return false;
-
                 if (!_awaitableTypes.IsAwaitable(methodSymbol.ReturnType, operation.SemanticModel!, operation.Syntax.SpanStart))
                     return false;
 
