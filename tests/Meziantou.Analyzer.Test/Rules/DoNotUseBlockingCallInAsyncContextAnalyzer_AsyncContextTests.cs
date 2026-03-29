@@ -884,7 +884,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
-    public async Task GenericArgument_DifferentGenericTypeDefinitions_ShouldReport()
+    public async Task GenericArgument_ListToIEnumerable_ShouldNotReport()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
@@ -902,26 +902,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                 {
                     public async Task M()
                     {
-                        [|new Test().A(new List<int>())|];
-                    }
-                }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
-
-                class Test
-                {
-                    public void A(List<int> value) => throw null;
-                    public Task AAsync<T>(IEnumerable<T> value, CancellationToken token = default) => throw null;
-                }
-
-                class Demo
-                {
-                    public async Task M()
-                    {
-                        await new Test().AAsync(new List<int>());
+                        new Test().A(new List<int>());
                     }
                 }
                 """)
@@ -931,6 +912,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public async Task GenericArgument_NestedGenericIncompatibility_ShouldNotReport()
     {
+        // For simplicity, we skik checking compatibility of nested generics
         await CreateProjectBuilder()
               .WithSourceCode("""
                 using System.Collections.Generic;

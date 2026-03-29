@@ -357,6 +357,9 @@ internal sealed class OverloadFinder(Compilation compilation)
                 return true;
             }
 
+            if (IsIEnumerableType(otherMethodNamedType.OriginalDefinition))
+                return false;
+
             foreach (var candidate in methodNamedType.GetAllInterfacesIncludingThis().OfType<INamedTypeSymbol>())
             {
                 if (!candidate.OriginalDefinition.IsEqualTo(otherMethodNamedType.OriginalDefinition))
@@ -401,6 +404,12 @@ internal sealed class OverloadFinder(Compilation compilation)
             }
 
             return false;
+        }
+
+        static bool IsIEnumerableType(INamedTypeSymbol typeSymbol)
+        {
+            return typeSymbol.MetadataName is "IEnumerable`1" &&
+                   typeSymbol.ContainingNamespace.ToDisplayString() is "System.Collections.Generic";
         }
 
         static bool AreGenericTypeArgumentsCompatible(ITypeSymbol sourceTypeArgument, ITypeSymbol targetTypeArgument, IMethodSymbol method, IMethodSymbol otherMethod, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
