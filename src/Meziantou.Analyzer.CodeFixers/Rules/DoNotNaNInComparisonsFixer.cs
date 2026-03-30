@@ -73,6 +73,12 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
 
     private static bool TryGetReplacementExpression(SyntaxGenerator generator, IBinaryOperation binaryOperation, IOperation nanOperand, out ExpressionSyntax replacement)
     {
+        if (binaryOperation.OperatorKind is not (BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals))
+        {
+            replacement = null!;
+            return false;
+        }
+
         var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, out var leftType, out _);
         var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, out var rightType, out _);
         if (!leftIsNaN && !rightIsNaN)
@@ -81,13 +87,14 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
             return false;
         }
 
+        IOperation otherOperand;
         if (nanOperand.Syntax.IsEquivalentTo(binaryOperation.LeftOperand.Syntax))
         {
-            rightIsNaN = false;
+            otherOperand = binaryOperation.RightOperand;
         }
         else if (nanOperand.Syntax.IsEquivalentTo(binaryOperation.RightOperand.Syntax))
         {
-            leftIsNaN = false;
+            otherOperand = binaryOperation.LeftOperand;
         }
         else
         {
@@ -101,8 +108,6 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
             replacement = null!;
             return false;
         }
-
-        var otherOperand = leftIsNaN ? binaryOperation.RightOperand : binaryOperation.LeftOperand;
 
         var isNaNInvocation = (ExpressionSyntax)generator.InvocationExpression(
             generator.MemberAccessExpression(generator.TypeExpression(nanType, addImport: true), "IsNaN"),
@@ -143,10 +148,5 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         typeSymbol = null;
         expression = null;
         return false;
-    }
-
-    private static bool IsSupportedOperator(IBinaryOperation operation)
-    {
-        return operation.OperatorKind is BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals;
     }
 }
