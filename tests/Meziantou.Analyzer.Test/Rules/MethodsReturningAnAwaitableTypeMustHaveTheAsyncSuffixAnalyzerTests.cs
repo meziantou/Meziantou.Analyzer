@@ -170,4 +170,32 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                  """)
               .AddXUnitApi()
               .ValidateAsync();
+
+    [Fact]
+    public Task IgnoreTestMethods_ExcludeTestMethodsTrue()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                 class TypeName
+                 {
+                     [Xunit.Fact]
+                     System.Threading.Tasks.Task Foo() => throw null;
+                 }
+                 """)
+              .AddXUnitApi()
+              .AddAnalyzerConfiguration("MA0137.exclude_test_methods", "true")
+              .ValidateAsync();
+
+    [Fact]
+    public Task IgnoreTestMethods_ExcludeTestMethodsFalse()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                 class TypeName
+                 {
+                     [Xunit.Fact]
+                     System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
+                 }
+                 """)
+              .AddXUnitApi()
+              .AddAnalyzerConfiguration("MA0137.exclude_test_methods", "false")
+              .ValidateAsync();
 }
