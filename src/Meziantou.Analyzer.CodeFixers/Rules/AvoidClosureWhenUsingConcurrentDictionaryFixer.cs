@@ -57,7 +57,7 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Use factoryArgument overload",
-                    ct => UseFactoryArgumentOverload(context.Document, semanticModel, invocationOperation, lambdaOperation, lambdaArgument, ct),
+                    ct => UseFactoryArgumentOverload(context.Document, semanticModel, invocationOperation, lambdaOperation, ct),
                     equivalenceKey: "Use factoryArgument overload"),
                 context.Diagnostics);
         }
@@ -80,7 +80,7 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseFactoryArgumentOverload(Document document, SemanticModel semanticModel, IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, IArgumentOperation lambdaArgument, CancellationToken cancellationToken)
+    private static async Task<Document> UseFactoryArgumentOverload(Document document, SemanticModel semanticModel, IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, CancellationToken cancellationToken)
     {
         if (invocationOperation.Syntax is not InvocationExpressionSyntax invocationSyntax)
             return document;
@@ -236,7 +236,7 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         return (AnonymousFunctionExpressionSyntax)rewriter.Visit(lambda)!;
     }
 
-    private static AnonymousFunctionExpressionSyntax? AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, string parameterName)
+    private static ParenthesizedLambdaExpressionSyntax? AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, string parameterName)
     {
         var parameter = Parameter(Identifier(parameterName));
 

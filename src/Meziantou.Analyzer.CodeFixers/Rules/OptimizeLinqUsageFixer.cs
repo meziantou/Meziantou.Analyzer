@@ -45,8 +45,8 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         if (diagnostic.Id == RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny)
         {
-            const string codeFixTitle = "Optimize linq usage";
-            context.RegisterCodeFix(CodeAction.Create(codeFixTitle, ct => UseCountGreaterThanZero(context.Document, nodeToFix, ct), equivalenceKey: codeFixTitle), context.Diagnostics);
+            const string CodeFixTitle = "Optimize linq usage";
+            context.RegisterCodeFix(CodeAction.Create(CodeFixTitle, ct => UseCountGreaterThanZero(context.Document, nodeToFix, ct), equivalenceKey: CodeFixTitle), context.Diagnostics);
             return;
         }
 
