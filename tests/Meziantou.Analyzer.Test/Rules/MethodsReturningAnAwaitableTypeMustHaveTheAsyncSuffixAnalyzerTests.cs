@@ -209,4 +209,29 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 }
                 """)
               .ValidateAsync();
+
+    [Fact]
+    public Task VoidLocalFunctionWithSuffix_CodeFix_RemovesAsyncSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
+                {
+                    void Test()
+                    {
+                        void {|MA0138:FooAsync|}() => throw null;
+                        FooAsync();
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    void Test()
+                    {
+                        void Foo() => throw null;
+                        Foo();
+                    }
+                }
+                """)
+              .ValidateAsync();
 }
