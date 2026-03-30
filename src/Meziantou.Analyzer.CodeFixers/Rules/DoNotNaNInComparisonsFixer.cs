@@ -128,7 +128,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         }
 
         if (operation is IMemberReferenceOperation memberReference &&
-            memberReference.Member is IFieldSymbol { Name: "NaN", ContainingType: { } containingType })
+            memberReference.Member is ISymbol { Name: "NaN", ContainingType: { } containingType })
         {
             if (containingType.SpecialType is SpecialType.System_Double or SpecialType.System_Single)
             {

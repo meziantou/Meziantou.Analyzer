@@ -53,7 +53,7 @@ class TestClass
                   {
                       void Test()
                       {
-                          Regex.IsMatch("test", "([a-z]+)", RegexOptions.None | System.Text.RegularExpressions.RegexOptions.ExplicitCapture, default);
+                          Regex.IsMatch("test", "([a-z]+)", RegexOptions.None | RegexOptions.ExplicitCapture, default);
                       }
                   }
                   """)
@@ -160,7 +160,7 @@ partial class TestClass
                   using System.Text.RegularExpressions;
                   partial class TestClass
                   {
-                      [GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.ExplicitCapture, 0)]
+                      [GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, 0)]
                       private static partial Regex Test();
                   }
                   partial class TestClass

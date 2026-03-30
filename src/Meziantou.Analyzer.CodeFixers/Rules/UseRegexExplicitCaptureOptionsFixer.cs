@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -45,7 +46,13 @@ public sealed class UseRegexExplicitCaptureOptionsFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var explicitCapture = SyntaxFactory.ParseExpression("System.Text.RegularExpressions.RegexOptions.ExplicitCapture");
+        var regexOptionsType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
+        if (regexOptionsType is null)
+            return document;
+
+        var explicitCapture = (ExpressionSyntax)editor.Generator.MemberAccessExpression(
+            editor.Generator.TypeExpression(regexOptionsType, addImport: true).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),
+            "ExplicitCapture");
         var updatedExpression = SyntaxFactory.BinaryExpression(
             SyntaxKind.BitwiseOrExpression,
             expressionToFix,
