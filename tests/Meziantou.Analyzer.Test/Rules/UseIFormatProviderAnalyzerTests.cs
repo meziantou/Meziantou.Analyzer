@@ -125,13 +125,19 @@ public sealed class UseIFormatProviderAnalyzerTests
             [|int.Parse("")|];
             """;
 
-        const string Fix = """
+        const string InvariantFix = """
+            int.Parse("", System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        const string CurrentFix = """
             int.Parse("", System.Globalization.CultureInfo.CurrentCulture);
             """;
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
+              .ShouldFixCodeWith(index: 0, InvariantFix)
+              .ShouldFixCodeWith(index: 1, CurrentFix)
+              .ShouldFixCodeWith(InvariantFix)
               .ValidateAsync();
     }
 
@@ -335,7 +341,17 @@ class Sample : System.IFormattable
 }
 """;
 
-        var fix = """
+        var invariantFix = """
+_ = new Sample().ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+
+class Sample : System.IFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+
+        var currentFix = """
 _ = new Sample().ToString(null, System.Globalization.CultureInfo.CurrentCulture);
 
 class Sample : System.IFormattable
@@ -347,7 +363,9 @@ class Sample : System.IFormattable
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
+              .ShouldFixCodeWith(index: 0, invariantFix)
+              .ShouldFixCodeWith(index: 1, currentFix)
+              .ShouldFixCodeWith(invariantFix)
               .ValidateAsync();
     }
 
@@ -576,7 +594,19 @@ class A
 }
 """;
 
-        var fix = """
+        var invariantFix = """
+using System;
+
+A.Sample(System.Globalization.CultureInfo.InvariantCulture, $"{DateTime.Now:D}");
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+
+        var currentFix = """
 using System;
 
 A.Sample(System.Globalization.CultureInfo.CurrentCulture, $"{DateTime.Now:D}");
@@ -590,7 +620,9 @@ class A
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
+              .ShouldFixCodeWith(index: 0, invariantFix)
+              .ShouldFixCodeWith(index: 1, currentFix)
+              .ShouldFixCodeWith(invariantFix)
               .ValidateAsync();
     }
 
@@ -609,7 +641,19 @@ class A
 }
 """;
 
-        var fix = """
+        var invariantFix = """
+using System;
+
+A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.InvariantCulture);
+
+class A
+{
+    public static void Sample(string arg1, FormattableString value) => throw null;
+    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+}
+""";
+
+        var currentFix = """
 using System;
 
 A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.CurrentCulture);
@@ -623,7 +667,9 @@ class A
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
+              .ShouldFixCodeWith(index: 0, invariantFix)
+              .ShouldFixCodeWith(index: 1, currentFix)
+              .ShouldFixCodeWith(invariantFix)
               .ValidateAsync();
     }
 }

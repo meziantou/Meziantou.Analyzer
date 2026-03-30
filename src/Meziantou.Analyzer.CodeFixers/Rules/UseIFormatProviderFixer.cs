@@ -46,8 +46,8 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
 
         if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderSymbol, out var insertionIndex, out var parameterName))
         {
-            RegisterCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
             RegisterCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
+            RegisterCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
             return;
         }
 
@@ -60,8 +60,8 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
 
             if (overload is not null && CanFixToStringOverload(overload, formatProviderSymbol))
             {
-                RegisterToStringCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
                 RegisterToStringCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
+                RegisterToStringCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
             }
         }
 
