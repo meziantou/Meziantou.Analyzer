@@ -10,6 +10,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<UseLazyInitializerEnsureInitializeAnalyzer>()
+            .WithCodeFixProvider<UseLazyInitializerEnsureInitializeFixer>()
             .WithTargetFramework(TargetFramework.NetLatest)
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
     }
@@ -22,6 +23,10 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
                 object a = default;
                 [|System.Threading.Interlocked.CompareExchange(ref a, new object(), null)|];
                 """)
+              .ShouldFixCodeWith("""
+                object a = default;
+                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new object());
+                """)
               .ValidateAsync();
     }
 
@@ -33,7 +38,12 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
                 Sample a = default;
                 [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
                 class Sample { };
-            """)
+                """)
+              .ShouldFixCodeWith("""
+                Sample a = default;
+                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
+                class Sample { };
+                """)
               .ValidateAsync();
     }
 
@@ -45,7 +55,12 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
                 object? a = default;
                 [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
                 class Sample { };
-            """)
+                """)
+              .ShouldFixCodeWith("""
+                object? a = default;
+                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
+                class Sample { };
+                """)
               .ValidateAsync();
     }
 
@@ -57,7 +72,12 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
                 Sample a = default;
                 [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default)|];
                 class Sample { };
-            """)
+                """)
+              .ShouldFixCodeWith("""
+                Sample a = default;
+                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
+                class Sample { };
+                """)
               .ValidateAsync();
     }
 
@@ -69,7 +89,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
                 Sample a = default;
                 System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default);
                 struct Sample { };
-            """)
+                """)
               .ValidateAsync();
     }
 
