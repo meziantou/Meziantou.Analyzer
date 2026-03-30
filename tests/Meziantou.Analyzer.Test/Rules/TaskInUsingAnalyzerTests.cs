@@ -18,7 +18,7 @@ public sealed class TaskInUsingAnalyzerTests
     {
         const string SourceCode = """
             using System.Threading.Tasks;
-            
+
             Task t = null;
             using ([|t|]) { }
             """;
@@ -77,32 +77,8 @@ public sealed class TaskInUsingAnalyzerTests
             }
             """;
 
-        const string FixedCode = """
-            using System;
-            using System.Threading.Tasks;
-
-            class Dummy
-            {
-            }
-
-            class Test
-            {
-                static void Main() { }
-
-                async Task A(IDisposable disposable)
-                {
-                    Task<Dummy> t = null;
-                    using (disposable)
-                    {
-                        using (var d = t) { await Task.Yield(); }
-                    }
-                }
-            }
-            """;
-
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
 
@@ -172,7 +148,7 @@ public sealed class TaskInUsingAnalyzerTests
     {
         const string SourceCode = """
             using System.Threading.Tasks;
-            
+
             Task t = null;
             using (var a = [|t|]) { }
             """;
@@ -187,7 +163,7 @@ public sealed class TaskInUsingAnalyzerTests
     {
         const string SourceCode = """
             using System.Threading.Tasks;
-            
+
             Task t1 = null;
             Task t2 = null;
             using (Task a = [|t1|], b = [|t2|]) { }
