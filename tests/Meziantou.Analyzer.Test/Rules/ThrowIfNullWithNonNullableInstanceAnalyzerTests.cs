@@ -11,7 +11,8 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
         return new ProjectBuilder()
             .WithOutputKind(OutputKind.ConsoleApplication)
             .WithTargetFramework(TargetFramework.Net7_0)
-            .WithAnalyzer<ThrowIfNullWithNonNullableInstanceAnalyzer>();
+            .WithAnalyzer<ThrowIfNullWithNonNullableInstanceAnalyzer>()
+            .WithCodeFixProvider<ThrowIfNullWithNonNullableInstanceFixer>();
     }
 
     [Theory]
@@ -49,6 +50,25 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
 
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ThrowIfNull_Diagnostic_CodeFix()
+    {
+        var sourceCode = """
+            int obj = default;
+            [|System.ArgumentNullException.ThrowIfNull(obj)|];
+            """;
+
+        var fixedCode = """
+            int obj = default;
+            
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(fixedCode)
               .ValidateAsync();
     }
 

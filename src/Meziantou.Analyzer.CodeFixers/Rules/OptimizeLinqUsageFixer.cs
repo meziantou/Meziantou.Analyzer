@@ -23,6 +23,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         RuleIdentifiers.DuplicateEnumerable_OrderBy,
         RuleIdentifiers.OptimizeEnumerable_CombineMethods,
         RuleIdentifiers.OptimizeEnumerable_Count,
+        RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny,
         RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect,
         RuleIdentifiers.OptimizeEnumerable_UseOrder);
 
@@ -41,6 +42,13 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var diagnostic = context.Diagnostics.FirstOrDefault();
         if (diagnostic is null)
             return;
+
+        if (diagnostic.Id == RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny)
+        {
+            const string codeFixTitle = "Optimize linq usage";
+            context.RegisterCodeFix(CodeAction.Create(codeFixTitle, ct => UseCountGreaterThanZero(context.Document, nodeToFix, ct), equivalenceKey: codeFixTitle), context.Diagnostics);
+            return;
+        }
 
         if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeLinqUsageData data) || data is OptimizeLinqUsageData.None)
             return;
@@ -191,6 +199,23 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         {
             newExpression = generator.LogicalNotExpression(newExpression);
         }
+
+        editor.ReplaceNode(nodeToFix, newExpression);
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> UseCountGreaterThanZero(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation invocation)
+            return document;
+
+        if (invocation.Arguments.Length != 1)
+            return document;
+
+        var generator = editor.Generator;
+        var countExpression = generator.MemberAccessExpression(invocation.Arguments[0].Syntax, "Count");
+        var newExpression = generator.ValueNotEqualsExpression(countExpression, generator.LiteralExpression(0));
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();

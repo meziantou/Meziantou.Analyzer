@@ -8,7 +8,8 @@ public class DoNotUseZeroToInitializeAnEnumValueTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseZeroToInitializeAnEnumValue>();
+            .WithAnalyzer<DoNotUseZeroToInitializeAnEnumValue>()
+            .WithCodeFixProvider<DoNotUseZeroToInitializeAnEnumValueFixer>();
     }
 
     public static TheoryData<string, string> GetCombinationZero()
@@ -116,6 +117,35 @@ class Test
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
+
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum a = MyEnum.A;
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Assignation_CodeFix()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                enum MyEnum { A = 0, B = 1 }
+
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum a = [|0|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
                 enum MyEnum { A = 0, B = 1 }
 
                 class Test

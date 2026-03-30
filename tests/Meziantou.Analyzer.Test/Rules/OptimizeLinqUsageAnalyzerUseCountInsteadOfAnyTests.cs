@@ -8,7 +8,8 @@ public sealed class OptimizeLinqUsageAnalyzerUseCountInsteadOfAnyTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny);
+            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny)
+            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
     }
 
     [Fact]
@@ -27,6 +28,37 @@ class Test
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Any_List_CodeFix()
+    {
+        const string SourceCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var collection = new System.Collections.Generic.List<int>();
+        _ = [|collection.Any()|];
+    }
+}
+";
+
+        const string FixedCode = @"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        var collection = new System.Collections.Generic.List<int>();
+        _ = collection.Count != 0;
+    }
+}
+";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
 

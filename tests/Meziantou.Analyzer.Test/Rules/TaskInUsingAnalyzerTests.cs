@@ -9,7 +9,8 @@ public sealed class TaskInUsingAnalyzerTests
     {
         return new ProjectBuilder()
             .WithOutputKind(OutputKind.ConsoleApplication)
-            .WithAnalyzer<TaskInUsingAnalyzer>();
+            .WithAnalyzer<TaskInUsingAnalyzer>()
+            .WithCodeFixProvider<TaskInUsingFixer>();
     }
 
     [Fact]
@@ -24,6 +25,29 @@ public sealed class TaskInUsingAnalyzerTests
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SingleTaskInUsing_CodeFix()
+    {
+        const string SourceCode = """
+            using System.Threading.Tasks;
+
+            Task<System.IDisposable> t = null;
+            using ([|t|]) { }
+            """;
+
+        const string FixedCode = """
+            using System.Threading.Tasks;
+
+            Task<System.IDisposable> t = null;
+            using (await t) { }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
 

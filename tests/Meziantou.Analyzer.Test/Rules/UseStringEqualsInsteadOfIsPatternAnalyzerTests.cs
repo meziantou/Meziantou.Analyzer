@@ -8,7 +8,8 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<UseStringEqualsInsteadOfIsPatternAnalyzer>();
+            .WithAnalyzer<UseStringEqualsInsteadOfIsPatternAnalyzer>()
+            .WithCodeFixProvider<UseStringEqualsInsteadOfIsPatternFixer>();
     }
 
     [Fact]
@@ -80,6 +81,35 @@ class TypeName
 
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PatternMatching_CodeFix()
+    {
+        const string SourceCode = """
+class TypeName
+{
+    public void Test(string str)
+    {
+        _ = str is [|"b"|];
+    }
+}
+""";
+
+        const string FixedCode = """
+class TypeName
+{
+    public void Test(string str)
+    {
+        _ = string.Equals(str, "b", System.StringComparison.Ordinal);
+    }
+}
+""";
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(FixedCode)
             .ValidateAsync();
     }
 

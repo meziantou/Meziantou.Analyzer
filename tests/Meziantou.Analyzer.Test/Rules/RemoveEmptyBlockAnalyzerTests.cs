@@ -8,7 +8,8 @@ public sealed class RemoveEmptyBlockAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<RemoveEmptyBlockAnalyzer>();
+            .WithAnalyzer<RemoveEmptyBlockAnalyzer>()
+            .WithCodeFixProvider<RemoveEmptyBlockFixer>();
     }
 
     [Fact]
@@ -30,6 +31,42 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EmptyElseBlock_CodeFix()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                    }
+                    [|else
+                    {
+                    }|]
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            class Test
+            {
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
 
@@ -149,6 +186,42 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EmptyFinallyBlock_CodeFix()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    try
+                    {
+                    }
+                    [|finally
+                    {
+                    }|]
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    try
+                    {
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
 
