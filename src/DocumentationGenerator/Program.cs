@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-if (!FullPath.CurrentDirectory().TryFindFirstAncestorOrSelf(p => Directory.Exists(p / ".git"), out var outputFolder))
+if (!FullPath.CurrentDirectory().TryFindGitRepositoryRoot(out var outputFolder))
 {
     Console.WriteLine("Cannot find the current git folder");
     return 1;

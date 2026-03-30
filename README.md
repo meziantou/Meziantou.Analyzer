@@ -103,9 +103,9 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0085](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0085.md)|Usage|Anonymous delegates should not be used to unsubscribe from Events|⚠️|✔️|❌|
 |[MA0086](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0086.md)|Design|Do not throw from a finalizer|⚠️|✔️|❌|
 |[MA0087](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0087.md)|Design|Parameters with \[DefaultParameterValue\] attributes should also be marked \[Optional\]|⚠️|✔️|❌|
-|[MA0088](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0088.md)|Design|Use \[DefaultParameterValue\] instead of \[DefaultValue\]|⚠️|✔️|❌|
+|[MA0088](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0088.md)|Design|Use \[DefaultParameterValue\] instead of \[DefaultValue\]|⚠️|✔️|✔️|
 |[MA0089](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0089.md)|Performance|Optimize string method usage|ℹ️|✔️|✔️|
-|[MA0090](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0090.md)|Design|Remove empty else/finally block|ℹ️|✔️|❌|
+|[MA0090](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0090.md)|Design|Remove empty else/finally block|ℹ️|✔️|✔️|
 |[MA0091](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0091.md)|Usage|Sender should be 'this' for instance events|⚠️|✔️|✔️|
 |[MA0092](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0092.md)|Usage|Sender should be 'null' for static events|⚠️|✔️|❌|
 |[MA0093](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0093.md)|Usage|EventArgs should not be null when raising an event|⚠️|✔️|✔️|
@@ -114,20 +114,20 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0096](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0096.md)|Design|A class that implements IComparable\<T\> should also implement IEquatable\<T\>|⚠️|✔️|❌|
 |[MA0097](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0097.md)|Design|A class that implements IComparable\<T\> or IComparable should override comparison operators|⚠️|✔️|❌|
 |[MA0098](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0098.md)|Performance|Use indexer instead of LINQ methods|ℹ️|✔️|✔️|
-|[MA0099](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0099.md)|Usage|Use Explicit enum value instead of 0|⚠️|✔️|❌|
+|[MA0099](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0099.md)|Usage|Use Explicit enum value instead of 0|⚠️|✔️|✔️|
 |[MA0100](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0100.md)|Usage|Await task before disposing of resources|⚠️|✔️|❌|
 |[MA0101](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0101.md)|Usage|String contains an implicit end of line character|👻|✔️|✔️|
 |[MA0102](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0102.md)|Design|Make member readonly|ℹ️|✔️|✔️|
 |[MA0103](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0103.md)|Usage|Use SequenceEqual instead of equality operator|⚠️|✔️|✔️|
 |[MA0104](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0104.md)|Design|Do not create a type with a name from the BCL|⚠️|❌|❌|
-|[MA0105](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0105.md)|Performance|Use the lambda parameters instead of using a closure|ℹ️|✔️|❌|
-|[MA0106](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0106.md)|Performance|Avoid closure by using an overload with the 'factoryArgument' parameter|ℹ️|✔️|❌|
+|[MA0105](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0105.md)|Performance|Use the lambda parameters instead of using a closure|ℹ️|✔️|✔️|
+|[MA0106](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0106.md)|Performance|Avoid closure by using an overload with the 'factoryArgument' parameter|ℹ️|✔️|✔️|
 |[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use object.ToString|ℹ️|❌|❌|
 |[MA0108](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0108.md)|Usage|Remove redundant argument value|ℹ️|✔️|✔️|
 |[MA0109](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0109.md)|Design|Consider adding an overload with a Span\<T\> or Memory\<T\>|ℹ️|❌|❌|
 |[MA0110](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0110.md)|Performance|Use the Regex source generator|ℹ️|✔️|✔️|
 |[MA0111](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0111.md)|Performance|Use string.Create instead of FormattableString|ℹ️|✔️|✔️|
-|[MA0112](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0112.md)|Performance|Use 'Count \> 0' instead of 'Any()'|ℹ️|❌|❌|
+|[MA0112](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0112.md)|Performance|Use 'Count \> 0' instead of 'Any()'|ℹ️|❌|✔️|
 |[MA0113](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0113.md)|Design|Use DateTime.UnixEpoch|ℹ️|✔️|✔️|
 |[MA0114](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0114.md)|Design|Use DateTimeOffset.UnixEpoch|ℹ️|✔️|✔️|
 |[MA0115](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0115.md)|Usage|Unknown component parameter|⚠️|✔️|❌|
@@ -142,11 +142,11 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md)|Design|Log parameter type is not valid|⚠️|✔️|❌|
 |[MA0125](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0125.md)|Design|The list of log parameter types contains an invalid type|⚠️|✔️|❌|
 |[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|⚠️|✔️|❌|
-|[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|⚠️|❌|❌|
+|[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|⚠️|❌|✔️|
 |[MA0128](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0128.md)|Usage|Use 'is' operator instead of SequenceEqual|ℹ️|✔️|✔️|
-|[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|⚠️|✔️|❌|
+|[MA0129](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0129.md)|Usage|Await task in using statement|⚠️|✔️|✔️|
 |[MA0130](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0130.md)|Usage|GetType() should not be used on System.Type instances|⚠️|✔️|❌|
-|[MA0131](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0131.md)|Usage|ArgumentNullException.ThrowIfNull should not be used with non-nullable types|⚠️|✔️|❌|
+|[MA0131](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0131.md)|Usage|ArgumentNullException.ThrowIfNull should not be used with non-nullable types|⚠️|✔️|✔️|
 |[MA0132](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0132.md)|Design|Do not convert implicitly to DateTimeOffset|⚠️|✔️|❌|
 |[MA0133](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0133.md)|Design|Use DateTimeOffset instead of relying on the implicit conversion|ℹ️|✔️|❌|
 |[MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md)|Usage|Observe result of async calls|⚠️|✔️|❌|
