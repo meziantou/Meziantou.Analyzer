@@ -172,7 +172,7 @@
 |[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of HasValue for Nullable\<T\> check|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0172](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0172.md)|Usage|Both sides of the logical operation are identical|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0173](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0173.md)|Design|Use LazyInitializer.EnsureInitialize|<span title='Info'>ℹ️</span>|✔️|❌|
-|[MA0174](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0174.md)|Style|Record should use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0174](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0174.md)|Style|Record should use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0175](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0175.md)|Style|Record should not use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0176](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0176.md)|Performance|Optimize guid creation|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0177](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0177.md)|Style|Use single-line XML comment syntax when possible|<span title='Info'>ℹ️</span>|❌|✔️|
