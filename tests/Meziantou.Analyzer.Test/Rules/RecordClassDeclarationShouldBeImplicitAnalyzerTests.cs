@@ -11,6 +11,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<RecordClassDeclarationShouldBeImplicitAnalyzer>()
+            .WithCodeFixProvider<RecordClassDeclarationShouldBeImplicitFixer>()
             .WithTargetFramework(TargetFramework.NetLatest);
     }
 
@@ -135,6 +136,45 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
             .WithSourceCode("""
                 public abstract record BaseRecord { }
                 public record [|class|] Target : BaseRecord { }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Fix_ExplicitRecordClass()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                public record [|class|] Target { }
+                """)
+            .ShouldFixCodeWith("""
+                public record Target { }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Fix_ExplicitRecordClass_WithModifiers()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                public sealed record [|class|] Target { }
+                """)
+            .ShouldFixCodeWith("""
+                public sealed record Target { }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Fix_ExplicitRecordClass_WithParameters()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                public record [|class|] Target(int Id) { }
+                """)
+            .ShouldFixCodeWith("""
+                public record Target(int Id) { }
                 """)
             .ValidateAsync();
     }
