@@ -136,8 +136,8 @@
 |[MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md)|Usage|Observe result of async calls|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0135](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0135.md)|Design|The log parameter has no configured type|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0136](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0136.md)|Usage|Raw String contains an implicit end of line character|<span title='Hidden'>👻</span>|✔️|❌|
-|[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Use 'Async' suffix when a method returns an awaitable type|<span title='Warning'>⚠️</span>|❌|❌|
-|[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|<span title='Warning'>⚠️</span>|❌|❌|
+|[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Use 'Async' suffix when a method returns an awaitable type|<span title='Warning'>⚠️</span>|❌|✔️|
+|[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|<span title='Warning'>⚠️</span>|❌|✔️|
 |[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Log parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use pattern matching instead of inequality operators for null check|<span title='Info'>ℹ️</span>|❌|✔️|

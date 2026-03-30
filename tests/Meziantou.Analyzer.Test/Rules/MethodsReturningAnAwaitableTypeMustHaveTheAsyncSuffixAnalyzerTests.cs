@@ -8,6 +8,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     private static ProjectBuilder CreateProjectBuilder()
         => new ProjectBuilder()
             .WithAnalyzer<MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzer>()
+            .WithCodeFixProvider<MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer>()
             .WithTargetFramework(TargetFramework.Net8_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
 
@@ -169,6 +170,69 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                  }
                  """)
               .AddXUnitApi()
+              .ValidateAsync();
+
+    [Fact]
+    public Task AsyncMethodWithoutSuffix_CodeFix_AddsAsyncSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
+                {
+                    System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
+                    void Caller() { _ = Test(); }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    System.Threading.Tasks.Task TestAsync() => throw null;
+                    void Caller() { _ = TestAsync(); }
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task MethodNotReturningAwaitableTypeWithSuffix_CodeFix_RemovesAsyncSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
+                {
+                    void {|MA0138:TestAsync|}() => throw null;
+                    void Caller() { TestAsync(); }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    void Test() => throw null;
+                    void Caller() { Test(); }
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task VoidLocalFunctionWithSuffix_CodeFix_RemovesAsyncSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                class TypeName
+                {
+                    void Test()
+                    {
+                        void {|MA0138:FooAsync|}() => throw null;
+                        FooAsync();
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    void Test()
+                    {
+                        void Foo() => throw null;
+                        Foo();
+                    }
+                }
+                """)
               .ValidateAsync();
 
     [Fact]
