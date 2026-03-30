@@ -10,7 +10,8 @@ public sealed class UseRegexOptionsAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<RegexMethodUsageAnalyzer>()
-            .WithAnalyzer<GeneratedRegexAttributeUsageAnalyzer>();
+            .WithAnalyzer<GeneratedRegexAttributeUsageAnalyzer>()
+            .WithCodeFixProvider<UseRegexExplicitCaptureOptionsFixer>();
     }
 
     [Theory]
@@ -30,6 +31,33 @@ class TestClass
     }
 }");
         await project.ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IsMatch_RegexOptions_CodeFix()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  class TestClass
+                  {
+                      void Test()
+                      {
+                          Regex.IsMatch("test", "([a-z]+)", [|RegexOptions.None|], default);
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  using System.Text.RegularExpressions;
+                  class TestClass
+                  {
+                      void Test()
+                      {
+                          Regex.IsMatch("test", "([a-z]+)", RegexOptions.None | System.Text.RegularExpressions.RegexOptions.ExplicitCapture, default);
+                      }
+                  }
+                  """)
+              .ValidateAsync();
     }
 
     [Theory]
@@ -99,6 +127,47 @@ partial class TestClass
                   Id = "MA0023",
                   Locations = [new DiagnosticResultLocation("Test0.cs", 4, 6, 4, 92)],
               });
+
+        await project.ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GeneratedRegex_RegexOptions_Invalid_CodeFix()
+    {
+        var project = new ProjectBuilder()
+              .WithAnalyzer<GeneratedRegexAttributeUsageAnalyzer>()
+              .WithCodeFixProvider<UseRegexExplicitCaptureOptionsFixer>()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+                  partial class TestClass
+                  {
+                      [[|GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, 0)|]]
+                      private static partial Regex Test();
+                  }
+                  partial class TestClass
+                  {
+                      private static partial Regex Test() => throw null;
+                  }
+                  """)
+              .ShouldReportDiagnostic(new DiagnosticResult
+              {
+                  Id = "MA0023",
+                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 6, 4, 92)],
+              })
+              .ShouldFixCodeWith("""
+                  using System.Text.RegularExpressions;
+                  partial class TestClass
+                  {
+                      [GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.ExplicitCapture, 0)]
+                      private static partial Regex Test();
+                  }
+                  partial class TestClass
+                  {
+                      private static partial Regex Test() => throw null;
+                  }
+                  """);
 
         await project.ValidateAsync();
     }

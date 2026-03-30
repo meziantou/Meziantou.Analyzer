@@ -10,6 +10,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<UseIFormatProviderAnalyzer>()
+            .WithCodeFixProvider<UseIFormatProviderFixer>()
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
             .WithTargetFramework(TargetFramework.NetLatest)
             .AddMeziantouAttributes();
@@ -114,6 +115,23 @@ public sealed class UseIFormatProviderAnalyzerTests
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
               .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Int32ParseWithoutCultureInfo_CodeFix()
+    {
+        const string SourceCode = """
+            [|int.Parse("")|];
+            """;
+
+        const string Fix = """
+            int.Parse("", System.Globalization.CultureInfo.CurrentCulture);
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -301,6 +319,35 @@ class Sample : System.IFormattable
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ToString_IFormattable_CodeFix()
+    {
+        var sourceCode = """
+_ = [|new Sample().ToString()|];
+
+class Sample : System.IFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+
+        var fix = """
+_ = new Sample().ToString(null, System.Globalization.CultureInfo.CurrentCulture);
+
+class Sample : System.IFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
 

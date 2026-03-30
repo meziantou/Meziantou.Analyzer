@@ -8,7 +8,8 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<AttributeNameShouldEndWithAttributeAnalyzer>();
+            .WithAnalyzer<AttributeNameShouldEndWithAttributeAnalyzer>()
+            .WithCodeFixProvider<TypeNameShouldEndWithSuffixFixer>();
     }
 
     [Fact]
@@ -34,6 +35,27 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NameDoesNotEndWithAttribute_CodeFix()
+    {
+        const string SourceCode = """
+            class [|CustomAttr|] : System.Attribute
+            {
+            }
+            """;
+
+        const string Fix = """
+            class CustomAttrAttribute : System.Attribute
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }

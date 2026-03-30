@@ -8,7 +8,8 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<DoNotNaNInComparisonsAnalyzer>();
+            .WithAnalyzer<DoNotNaNInComparisonsAnalyzer>()
+            .WithCodeFixProvider<DoNotNaNInComparisonsFixer>();
     }
 
     [Fact]
@@ -40,6 +41,35 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Comparisons_CodeFix()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void A(double value)
+                {
+                    _ = value == [|double.NaN|];
+                }
+            }
+            """;
+
+        const string Fix = """
+            class Test
+            {
+                void A(double value)
+                {
+                    _ = double.IsNaN(value);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }
