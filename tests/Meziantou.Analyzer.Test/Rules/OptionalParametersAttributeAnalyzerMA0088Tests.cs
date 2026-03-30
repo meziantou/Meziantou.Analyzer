@@ -8,7 +8,8 @@ public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<OptionalParametersAttributeAnalyzer>(id: "MA0088");
+            .WithAnalyzer<OptionalParametersAttributeAnalyzer>(id: "MA0088")
+            .WithCodeFixProvider<OptionalParametersAttributeFixer>();
     }
 
     [Fact]
@@ -65,6 +66,39 @@ public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DefaultValue_CodeFix()
+    {
+        const string SourceCode = """
+            using System.ComponentModel;
+            using System.Runtime.InteropServices;
+
+            class Test
+            {
+                void A([DefaultValue(10)]int [|a|])
+                {
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            using System.ComponentModel;
+            using System.Runtime.InteropServices;
+
+            class Test
+            {
+                void A([DefaultValue(10), DefaultParameterValue(10)]int a)
+                {
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
 }

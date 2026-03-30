@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -14,8 +14,8 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzer : DiagnosticAnalyz
         title: "Use String.Equals instead of is pattern",
         messageFormat: "Use string.Equals instead of 'is' pattern",
         RuleCategories.Usage,
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: false,
+        DiagnosticSeverity.Hidden,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringEqualsInsteadOfIsPattern));
 

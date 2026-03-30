@@ -9,7 +9,8 @@ public sealed class TaskInUsingAnalyzerTests
     {
         return new ProjectBuilder()
             .WithOutputKind(OutputKind.ConsoleApplication)
-            .WithAnalyzer<TaskInUsingAnalyzer>();
+            .WithAnalyzer<TaskInUsingAnalyzer>()
+            .WithCodeFixProvider<TaskInUsingFixer>();
     }
 
     [Fact]
@@ -17,7 +18,7 @@ public sealed class TaskInUsingAnalyzerTests
     {
         const string SourceCode = """
             using System.Threading.Tasks;
-            
+
             Task t = null;
             using ([|t|]) { }
             """;
@@ -28,11 +29,126 @@ public sealed class TaskInUsingAnalyzerTests
     }
 
     [Fact]
+    public async Task SingleTaskInUsing_CodeFix()
+    {
+        const string SourceCode = """
+            using System.Threading.Tasks;
+
+            Task<System.IDisposable> t = null;
+            using ([|t|]) { }
+            """;
+
+        const string FixedCode = """
+            using System.Threading.Tasks;
+
+            Task<System.IDisposable> t = null;
+            using (await t) { }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TaskOfNonDisposableInUsing_NoCodeFix()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Dummy
+            {
+            }
+
+            class Test
+            {
+                static void Main() { }
+
+                async Task A(IDisposable disposable)
+                {
+                    Task<Dummy> t = null;
+                    using (disposable)
+                    {
+                        using (var d = [|t|]) { await Task.Yield(); }
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TaskOfDisposableInUsing_CodeFix()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Dummy : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+
+            class Test
+            {
+                static void Main() { }
+
+                async Task A(IDisposable disposable)
+                {
+                    Task<Dummy> t = null;
+                    using (disposable)
+                    {
+                        using (var d = [|t|]) { await Task.Yield(); }
+                    }
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Dummy : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+
+            class Test
+            {
+                static void Main() { }
+
+                async Task A(IDisposable disposable)
+                {
+                    Task<Dummy> t = null;
+                    using (disposable)
+                    {
+                        using (var d = await t) { await Task.Yield(); }
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task SingleTaskAssignedInUsing()
     {
         const string SourceCode = """
             using System.Threading.Tasks;
-            
+
             Task t = null;
             using (var a = [|t|]) { }
             """;
@@ -47,7 +163,7 @@ public sealed class TaskInUsingAnalyzerTests
     {
         const string SourceCode = """
             using System.Threading.Tasks;
-            
+
             Task t1 = null;
             Task t2 = null;
             using (Task a = [|t1|], b = [|t2|]) { }

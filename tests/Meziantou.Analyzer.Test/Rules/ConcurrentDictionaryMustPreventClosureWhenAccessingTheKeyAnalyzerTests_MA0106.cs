@@ -10,7 +10,8 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
     {
         return new ProjectBuilder()
             .WithTargetFramework(TargetFramework.Net6_0)
-            .WithAnalyzer<AvoidClosureWhenUsingConcurrentDictionaryAnalyzer>(id: "MA0106");
+            .WithAnalyzer<AvoidClosureWhenUsingConcurrentDictionaryAnalyzer>(id: "MA0106")
+            .WithCodeFixProvider<AvoidClosureWhenUsingConcurrentDictionaryFixer>();
     }
 
     [Fact]
@@ -100,6 +101,34 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
         await CreateProjectBuilder()
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
             .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GetOrAdd_Closure_CodeFix()
+    {
+        const string SourceCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var value = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.GetOrAdd(key, [|_ => value|]);
+            """;
+
+        const string FixedCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var value = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.GetOrAdd(key, (_, arg) => arg, value);
+            """;
+
+        await CreateProjectBuilder()
+            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(FixedCode)
             .ValidateAsync();
     }
 
