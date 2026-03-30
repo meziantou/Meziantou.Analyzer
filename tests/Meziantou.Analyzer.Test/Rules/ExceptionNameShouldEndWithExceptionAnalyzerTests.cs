@@ -8,7 +8,8 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<ExceptionNameShouldEndWithExceptionAnalyzer>();
+            .WithAnalyzer<ExceptionNameShouldEndWithExceptionAnalyzer>()
+            .WithCodeFixProvider<TypeNameShouldEndWithSuffixFixer>();
     }
 
     [Fact]
@@ -34,6 +35,27 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NameDoesNotEndWithAttribute_CodeFix()
+    {
+        const string SourceCode = """
+            class [|CustomEx|] : System.Exception
+            {
+            }
+            """;
+
+        const string Fix = """
+            class CustomExException : System.Exception
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }

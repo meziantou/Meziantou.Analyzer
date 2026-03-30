@@ -8,7 +8,8 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<EventArgsNameShouldEndWithEventArgsAnalyzer>();
+            .WithAnalyzer<EventArgsNameShouldEndWithEventArgsAnalyzer>()
+            .WithCodeFixProvider<TypeNameShouldEndWithSuffixFixer>();
     }
 
     [Fact]
@@ -34,6 +35,27 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NameDoesNotEndWithEventArgs_CodeFix()
+    {
+        const string SourceCode = """
+            class [|CustomArgs|] : System.EventArgs
+            {
+            }
+            """;
+
+        const string Fix = """
+            class CustomArgsEventArgs : System.EventArgs
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }
