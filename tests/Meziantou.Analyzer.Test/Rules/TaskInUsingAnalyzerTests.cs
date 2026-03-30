@@ -52,6 +52,122 @@ public sealed class TaskInUsingAnalyzerTests
     }
 
     [Fact]
+    public async Task TaskOfNonDisposableInUsing_NoCodeFix()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Dummy
+            {
+            }
+
+            class Test
+            {
+                static void Main() { }
+
+                async Task A(IDisposable disposable)
+                {
+                    Task<Dummy> t = null;
+                    using (disposable)
+                    {
+                        using (var d = [|t|]) { await Task.Yield(); }
+                    }
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Dummy
+            {
+            }
+
+            class Test
+            {
+                static void Main() { }
+
+                async Task A(IDisposable disposable)
+                {
+                    Task<Dummy> t = null;
+                    using (disposable)
+                    {
+                        using (var d = t) { await Task.Yield(); }
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TaskOfDisposableInUsing_CodeFix()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Dummy : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+
+            class Test
+            {
+                static void Main() { }
+
+                async Task A(IDisposable disposable)
+                {
+                    Task<Dummy> t = null;
+                    using (disposable)
+                    {
+                        using (var d = [|t|]) { await Task.Yield(); }
+                    }
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Dummy : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+
+            class Test
+            {
+                static void Main() { }
+
+                async Task A(IDisposable disposable)
+                {
+                    Task<Dummy> t = null;
+                    using (disposable)
+                    {
+                        using (var d = await t) { await Task.Yield(); }
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task SingleTaskAssignedInUsing()
     {
         const string SourceCode = """

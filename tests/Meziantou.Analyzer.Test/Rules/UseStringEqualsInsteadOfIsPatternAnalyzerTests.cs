@@ -1,4 +1,5 @@
 using Meziantou.Analyzer.Rules;
+using Microsoft.CodeAnalysis;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
@@ -85,7 +86,7 @@ class TypeName
     }
 
     [Fact]
-    public async Task PatternMatching_CodeFix()
+    public async Task PatternMatching_CodeFix_Ordinal()
     {
         const string SourceCode = """
 class TypeName
@@ -109,7 +110,36 @@ class TypeName
 
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(FixedCode)
+            .ShouldFixCodeWith(0, FixedCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PatternMatching_CodeFix_OrdinalIgnoreCase()
+    {
+        const string SourceCode = """
+class TypeName
+{
+    public void Test(string str)
+    {
+        _ = str is [|"b"|];
+    }
+}
+""";
+
+        const string FixedCode = """
+class TypeName
+{
+    public void Test(string str)
+    {
+        _ = string.Equals(str, "b", System.StringComparison.OrdinalIgnoreCase);
+    }
+}
+""";
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(1, FixedCode)
             .ValidateAsync();
     }
 
@@ -171,5 +201,13 @@ class TypeName
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)
             .ValidateAsync();
+    }
+
+    [Fact]
+    public void Rule_SeverityAndDefault()
+    {
+        var rule = new UseStringEqualsInsteadOfIsPatternAnalyzer().SupportedDiagnostics[0];
+        Assert.Equal(DiagnosticSeverity.Hidden, rule.DefaultSeverity);
+        Assert.True(rule.IsEnabledByDefault);
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
+using Meziantou.Analyzer.Internals;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -24,12 +25,40 @@ public sealed class TaskInUsingFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        if (nodeToFix is not ExpressionSyntax expressionSyntax)
+            return;
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (!CanAwaitToDisposable(semanticModel, expressionSyntax, context.CancellationToken))
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Await task",
                 ct => AddAwait(context.Document, nodeToFix, ct),
                 equivalenceKey: "Await task"),
             context.Diagnostics);
+    }
+
+    private static bool CanAwaitToDisposable(SemanticModel semanticModel, ExpressionSyntax expressionSyntax, CancellationToken cancellationToken)
+    {
+        var type = semanticModel.GetTypeInfo(expressionSyntax, cancellationToken).Type as INamedTypeSymbol;
+        if (type is null)
+            return false;
+
+        var taskOfT = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+        if (taskOfT is null || !type.OriginalDefinition.IsEqualTo(taskOfT) || type.TypeArguments.Length != 1)
+            return false;
+
+        var disposableType = semanticModel.Compilation.GetBestTypeByMetadataName("System.IDisposable");
+        if (disposableType is null)
+            return false;
+
+        var awaitedType = type.TypeArguments[0];
+        return awaitedType.IsOrImplements(disposableType);
     }
 
     private static async Task<Document> AddAwait(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)

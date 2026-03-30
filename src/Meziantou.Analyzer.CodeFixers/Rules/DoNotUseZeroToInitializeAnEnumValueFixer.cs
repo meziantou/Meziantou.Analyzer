@@ -43,15 +43,24 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueFixer : CodeFixProvider
             .OfType<IFieldSymbol>()
             .Where(field => field.HasConstantValue)
             .FirstOrDefault(field => IsZero(field.ConstantValue));
-        if (zeroEnumField is null)
-            return;
-
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Use {zeroEnumField.Name}",
-                ct => UseEnumField(context.Document, expressionToFix, zeroEnumField, ct),
-                equivalenceKey: "Use enum member"),
-            context.Diagnostics);
+        if (zeroEnumField is not null)
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    $"Use {zeroEnumField.Name}",
+                    ct => UseEnumField(context.Document, expressionToFix, zeroEnumField, ct),
+                    equivalenceKey: "Use enum member"),
+                context.Diagnostics);
+        }
+        else
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    "Use explicit enum cast",
+                    ct => UseEnumCast(context.Document, expressionToFix, enumType, ct),
+                    equivalenceKey: "Use explicit enum cast"),
+                context.Diagnostics);
+        }
 
         static bool IsZero(object? value)
         {
@@ -119,6 +128,18 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueFixer : CodeFixProvider
             .WithAdditionalAnnotations(Simplifier.Annotation);
 
         editor.ReplaceNode(expressionToFix, memberAccess);
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> UseEnumCast(Document document, ExpressionSyntax expressionToFix, INamedTypeSymbol enumType, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var castExpression = CastExpression(
+            (TypeSyntax)ParseName(enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat).Replace("global::", "", StringComparison.Ordinal)),
+            expressionToFix.WithoutTrivia())
+            .WithTriviaFrom(expressionToFix);
+
+        editor.ReplaceNode(expressionToFix, castExpression);
         return editor.GetChangedDocument();
     }
 }

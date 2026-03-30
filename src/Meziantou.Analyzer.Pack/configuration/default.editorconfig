@@ -378,7 +378,7 @@ dotnet_diagnostic.MA0125.severity = warning
 dotnet_diagnostic.MA0126.severity = warning
 
 # MA0127: Use String.Equals instead of is pattern
-dotnet_diagnostic.MA0127.severity = none
+dotnet_diagnostic.MA0127.severity = silent
 
 # MA0128: Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0128.severity = suggestion

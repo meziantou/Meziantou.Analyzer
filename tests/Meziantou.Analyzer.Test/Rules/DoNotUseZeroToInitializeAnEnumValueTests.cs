@@ -160,6 +160,35 @@ class Test
     }
 
     [Fact]
+    public async Task Assignation_CodeFix_NoNamedZero()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                enum MyEnum { A = 1, B = 2 }
+
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum a = [|0|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                enum MyEnum { A = 1, B = 2 }
+
+                class Test
+                {
+                    void A()
+                    {
+                        MyEnum a = (MyEnum)0;
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Reassignation()
     {
         await CreateProjectBuilder()

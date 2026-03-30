@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using Microsoft.CodeAnalysis.Formatting;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -32,15 +32,22 @@ public sealed class UseStringEqualsInsteadOfIsPatternFixer : CodeFixProvider
         if (isPatternExpression.Pattern is not ConstantPatternSyntax { Expression: ExpressionSyntax constantExpression })
             return;
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use string.Equals",
-                ct => ReplaceWithStringEquals(context.Document, isPatternExpression, constantExpression, ct),
-                equivalenceKey: "Use string.Equals"),
-            context.Diagnostics);
+        RegisterCodeFix(nameof(StringComparison.Ordinal));
+        RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
+
+        void RegisterCodeFix(string comparisonMode)
+        {
+            var title = "Use string.Equals " + comparisonMode;
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title,
+                    ct => ReplaceWithStringEquals(context.Document, isPatternExpression, constantExpression, comparisonMode, ct),
+                    equivalenceKey: title),
+                context.Diagnostics);
+        }
     }
 
-    private static async Task<Document> ReplaceWithStringEquals(Document document, IsPatternExpressionSyntax isPatternExpression, ExpressionSyntax constantExpression, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceWithStringEquals(Document document, IsPatternExpressionSyntax isPatternExpression, ExpressionSyntax constantExpression, string comparisonMode, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
@@ -53,9 +60,9 @@ public sealed class UseStringEqualsInsteadOfIsPatternFixer : CodeFixProvider
             generator.MemberAccessExpression(generator.TypeExpression(SpecialType.System_String), nameof(string.Equals)),
             isPatternExpression.Expression,
             constantExpression,
-            ParseExpression("System.StringComparison.Ordinal"));
+            generator.MemberAccessExpression(generator.TypeExpression(stringComparisonType, addImport: true), comparisonMode));
 
-        editor.ReplaceNode(isPatternExpression, newExpression);
+        editor.ReplaceNode(isPatternExpression, newExpression.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 }
