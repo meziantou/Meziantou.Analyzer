@@ -41,7 +41,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         var overloadFinder = new OverloadFinder(semanticModel.Compilation);
         var overload = overloadFinder.FindOverloadWithAdditionalParameterOfType(
             invocationOperation,
-            new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false),
+            new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true),
             [new OverloadParameterType(formatProviderSymbol, AllowInherits: true)]);
 
         if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderSymbol, out var insertionIndex, out var parameterName))

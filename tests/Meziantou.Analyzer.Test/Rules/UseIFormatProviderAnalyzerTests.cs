@@ -557,7 +557,73 @@ class A
 }
 """;
         await CreateProjectBuilder()
+               .WithSourceCode(sourceCode)
+               .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_IFormatProviderNotLast_CodeFix()
+    {
+        var sourceCode = """
+using System;
+
+[|A.Sample($"{DateTime.Now:D}")|];
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+
+        var fix = """
+using System;
+
+A.Sample(System.Globalization.CultureInfo.CurrentCulture, $"{DateTime.Now:D}");
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+
+        await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_OptionalParameterBeforeIFormatProvider_CodeFix()
+    {
+        var sourceCode = """
+using System;
+
+[|A.Sample("prefix", $"{DateTime.Now:D}")|];
+
+class A
+{
+    public static void Sample(string arg1, FormattableString value) => throw null;
+    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+}
+""";
+
+        var fix = """
+using System;
+
+A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.CurrentCulture);
+
+class A
+{
+    public static void Sample(string arg1, FormattableString value) => throw null;
+    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(fix)
               .ValidateAsync();
     }
 }

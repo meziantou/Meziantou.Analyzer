@@ -29,6 +29,8 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
+        var halfTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Half");
+
         var binaryExpression = nodeToFix.FirstAncestorOrSelf<BinaryExpressionSyntax>();
         if (binaryExpression is null)
             return;
@@ -37,8 +39,8 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         if (binaryOperation is null)
             return;
 
-        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, out _, out var leftSyntax);
-        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, out _, out var rightSyntax);
+        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, halfTypeSymbol, out _, out var leftSyntax);
+        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, halfTypeSymbol, out _, out var rightSyntax);
         if (leftIsNaN && leftSyntax is not null && nodeToFix.IsEquivalentTo(leftSyntax))
         {
             RegisterCodeFix(binaryOperation.LeftOperand);
@@ -64,14 +66,15 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
     private static async Task<Document> FixComparison(Document document, IBinaryOperation binaryOperation, IOperation nanOperand, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        if (!TryGetReplacementExpression(editor.Generator, binaryOperation, nanOperand, out var replacement))
+        var halfTypeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Half");
+        if (!TryGetReplacementExpression(editor.Generator, binaryOperation, nanOperand, halfTypeSymbol, out var replacement))
             return document;
 
         editor.ReplaceNode(binaryOperation.Syntax, replacement.WithTriviaFrom(binaryOperation.Syntax));
         return editor.GetChangedDocument();
     }
 
-    private static bool TryGetReplacementExpression(SyntaxGenerator generator, IBinaryOperation binaryOperation, IOperation nanOperand, out ExpressionSyntax replacement)
+    private static bool TryGetReplacementExpression(SyntaxGenerator generator, IBinaryOperation binaryOperation, IOperation nanOperand, INamedTypeSymbol? halfTypeSymbol, out ExpressionSyntax replacement)
     {
         if (binaryOperation.OperatorKind is not (BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals))
         {
@@ -79,8 +82,8 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
             return false;
         }
 
-        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, out var leftType, out _);
-        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, out var rightType, out _);
+        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, halfTypeSymbol, out var leftType, out _);
+        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, halfTypeSymbol, out var rightType, out _);
         if (!leftIsNaN && !rightIsNaN)
         {
             replacement = null!;
@@ -120,7 +123,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         return true;
     }
 
-    private static bool TryGetNaNType(IOperation operation, out ITypeSymbol? typeSymbol, out ExpressionSyntax? expression)
+    private static bool TryGetNaNType(IOperation operation, INamedTypeSymbol? halfTypeSymbol, out ITypeSymbol? typeSymbol, out ExpressionSyntax? expression)
     {
         while (operation is IConversionOperation conversionOperation)
         {
@@ -137,7 +140,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
                 return true;
             }
 
-            if (containingType.Name == "Half" && containingType.ContainingNamespace.ToDisplayString() == "System")
+            if (halfTypeSymbol is not null && containingType.IsEqualTo(halfTypeSymbol))
             {
                 typeSymbol = containingType;
                 expression = memberReference.Syntax as ExpressionSyntax;
