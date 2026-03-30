@@ -60,13 +60,32 @@ public sealed class UseRegexExplicitCaptureOptionsFixer : CodeFixProvider
         if (node.FirstAncestorOrSelf<AttributeSyntax>() is AttributeSyntax attribute && attribute.ArgumentList is not null)
         {
             var regexOptionsType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
-            foreach (var argument in attribute.ArgumentList.Arguments)
+            if (regexOptionsType is not null)
             {
-                if (semanticModel.GetOperation(argument, cancellationToken) is IArgumentOperation argumentOperation &&
-                    argumentOperation.Parameter?.Type.IsEqualTo(regexOptionsType) is true)
+                if (semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol is IMethodSymbol constructor)
                 {
-                    expression = argument.Expression;
-                    return true;
+                    foreach (var argument in attribute.ArgumentList.Arguments)
+                    {
+                        IParameterSymbol? parameter = null;
+                        if (argument.NameEquals is not null)
+                        {
+                            parameter = constructor.Parameters.FirstOrDefault(p => p.Name == argument.NameEquals.Name.Identifier.ValueText);
+                        }
+                        else
+                        {
+                            var argumentIndex = attribute.ArgumentList.Arguments.IndexOf(argument);
+                            if (argumentIndex >= 0 && argumentIndex < constructor.Parameters.Length)
+                            {
+                                parameter = constructor.Parameters[argumentIndex];
+                            }
+                        }
+
+                        if (parameter?.Type.IsEqualTo(regexOptionsType) is true)
+                        {
+                            expression = argument.Expression;
+                            return true;
+                        }
+                    }
                 }
             }
         }
