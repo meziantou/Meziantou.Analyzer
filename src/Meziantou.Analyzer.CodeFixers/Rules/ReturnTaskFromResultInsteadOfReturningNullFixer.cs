@@ -33,26 +33,26 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         if (ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon.FindContainingMethod(semanticModel, nodeToFix, context.CancellationToken)?.ReturnType is not INamedTypeSymbol type)
             return;
 
+        var taskTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+        if (taskTypeSymbol is null)
+            return;
+
         if (!type.IsGenericType)
         {
             var title = "Use Task.CompletedTask";
-            context.RegisterCodeFix(CodeAction.Create(title, ct => UseTaskCompleted(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+            context.RegisterCodeFix(CodeAction.Create(title, ct => UseTaskCompleted(context.Document, nodeToFix, taskTypeSymbol, ct), equivalenceKey: title), context.Diagnostics);
         }
         else
         {
             var title = "Use Task.FromResult";
-            context.RegisterCodeFix(CodeAction.Create(title, ct => UseTaskFromResult(context.Document, nodeToFix, type, ct), equivalenceKey: title), context.Diagnostics);
+            context.RegisterCodeFix(CodeAction.Create(title, ct => UseTaskFromResult(context.Document, nodeToFix, taskTypeSymbol, type, ct), equivalenceKey: title), context.Diagnostics);
         }
     }
 
-    private static async Task<Document> UseTaskCompleted(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseTaskCompleted(Document document, SyntaxNode nodeToFix, INamedTypeSymbol typeSymbol, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-
-        var typeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (typeSymbol is null)
-            return document;
 
         var newExpression = generator.MemberAccessExpression(generator.TypeExpression(typeSymbol), nameof(Task.CompletedTask));
 
@@ -68,14 +68,10 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseTaskFromResult(Document document, SyntaxNode nodeToFix, INamedTypeSymbol typeSymbol, CancellationToken cancellationToken)
+    private static async Task<Document> UseTaskFromResult(Document document, SyntaxNode nodeToFix, INamedTypeSymbol taskTypeSymbol, INamedTypeSymbol typeSymbol, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-
-        var taskTypeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (taskTypeSymbol is null)
-            return document;
 
         var newExpression = generator.MemberAccessExpression(generator.TypeExpression(taskTypeSymbol), generator.GenericName("FromResult", typeSymbol.TypeArguments[0]));
         newExpression = generator.InvocationExpression(newExpression, generator.DefaultExpression(typeSymbol.TypeArguments[0]));

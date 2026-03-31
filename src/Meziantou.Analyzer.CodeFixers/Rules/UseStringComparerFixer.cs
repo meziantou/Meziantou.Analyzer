@@ -25,6 +25,14 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
+        if (stringComparerSymbol is null)
+            return;
+
         RegisterCodeFix(nameof(StringComparer.Ordinal));
         RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
 
@@ -33,22 +41,17 @@ public sealed class UseStringComparerFixer : CodeFixProvider
             var title = "Add StringComparer." + comparerName;
             var codeAction = CodeAction.Create(
                 title,
-                ct => AddStringComparer(context.Document, nodeToFix, comparerName, ct),
+                ct => AddStringComparer(context.Document, nodeToFix, comparerName, stringComparerSymbol, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
     }
 
-    private static async Task<Document> AddStringComparer(Document document, SyntaxNode nodeToFix, string comparerName, CancellationToken cancellationToken)
+    private static async Task<Document> AddStringComparer(Document document, SyntaxNode nodeToFix, string comparerName, INamedTypeSymbol stringComparer, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-        var semanticModel = editor.SemanticModel;
-
-        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
-        if (stringComparer is null)
-            return document;
 
         var newArgument = (ArgumentSyntax)generator.Argument(
             generator.MemberAccessExpression(

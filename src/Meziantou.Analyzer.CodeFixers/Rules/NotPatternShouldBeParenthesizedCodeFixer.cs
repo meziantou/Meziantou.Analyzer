@@ -32,13 +32,18 @@ public sealed class NotPatternShouldBeParenthesizedCodeFixer : CodeFixProvider
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
 
+        if (nodeToFix is UnaryPatternSyntax unary)
         {
-            var title = "Negate all or patterns";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => ParenthesizeOrPattern(context.Document, nodeToFix, ct),
-                equivalenceKey: title);
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+            var orRoot = unary.Ancestors().TakeWhile(IsOrPattern).LastOrDefault();
+            if (orRoot is not null)
+            {
+                var title = "Negate all or patterns";
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => ParenthesizeOrPattern(context.Document, nodeToFix, ct),
+                    equivalenceKey: title);
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
         }
     }
 
@@ -53,9 +58,7 @@ public sealed class NotPatternShouldBeParenthesizedCodeFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        if (nodeToFix is not UnaryPatternSyntax unary)
-            return document;
-
+        var unary = (UnaryPatternSyntax)nodeToFix;
         var root = unary.Ancestors().TakeWhile(IsOrPattern).LastOrDefault();
         if (root is null)
             return document;

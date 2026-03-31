@@ -27,6 +27,10 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
         if (semanticModel is null || !CanUseStringCreate(semanticModel.Compilation))
             return;
 
+        var cultureInfoType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        if (cultureInfoType is null)
+            return;
+
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
         if (nodeToFix?.AncestorsAndSelf().OfType<InterpolatedStringExpressionSyntax>().FirstOrDefault() is not InterpolatedStringExpressionSyntax interpolatedString)
@@ -36,21 +40,15 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,
-                ct => Fix(context.Document, interpolatedString, ct),
+                ct => Fix(context.Document, interpolatedString, cultureInfoType, ct),
                 equivalenceKey: title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> Fix(Document document, InterpolatedStringExpressionSyntax interpolatedStringExpression, CancellationToken cancellationToken)
+    private static async Task<Document> Fix(Document document, InterpolatedStringExpressionSyntax interpolatedStringExpression, INamedTypeSymbol cultureInfoType, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var compilation = editor.SemanticModel.Compilation;
-        if (!CanUseStringCreate(compilation))
-            return document;
-
-        var cultureInfoType = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
-        if (cultureInfoType is null)
-            return document;
 
         var generator = editor.Generator;
         var replacement = generator.InvocationExpression(

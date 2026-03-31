@@ -26,27 +26,33 @@ public sealed class UseStringCreateInsteadOfFormattableStringFixer : CodeFixProv
         if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax nodeToFix)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var cultureInfoSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        if (cultureInfoSymbol is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation)
+            return;
+
         var title = "Use string.Create";
         var codeAction = CodeAction.Create(
             title,
-            ct => Fix(context.Document, nodeToFix, ct),
+            ct => Fix(context.Document, nodeToFix, cultureInfoSymbol, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
 
     }
 
-    private static async Task<Document> Fix(Document document, InvocationExpressionSyntax nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> Fix(Document document, InvocationExpressionSyntax nodeToFix, INamedTypeSymbol cultureInfo, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var cultureInfo = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
-        if (cultureInfo is null)
-            return document;
-
-        if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation op)
-            return document;
+        var op = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken)!;
 
         var methodName = op.TargetMethod.Name;
 

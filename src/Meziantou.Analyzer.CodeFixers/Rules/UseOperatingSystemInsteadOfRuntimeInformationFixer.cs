@@ -24,20 +24,15 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationFixer : CodeFix
         if (nodeToFix is null)
             return;
 
-        const string Title = "Use System.OperatingSystem";
-        context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => UseOperatingSystem(context.Document, nodeToFix, ct), equivalenceKey: Title),
-            context.Diagnostics);
-    }
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
 
-    private static async Task<Document> UseOperatingSystem(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
-    {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        if (FindInvocation(editor.SemanticModel, nodeToFix, cancellationToken) is not { Arguments.Length: 1 } operation)
-            return document;
+        if (FindInvocation(semanticModel, nodeToFix, context.CancellationToken) is not { Arguments.Length: 1 } operation)
+            return;
 
         if (operation.Arguments[0].Value is not IMemberReferenceOperation { Member.Name: var osPlatformName })
-            return document;
+            return;
 
         var methodName = osPlatformName switch
         {
@@ -48,16 +43,26 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationFixer : CodeFix
             _ => null,
         };
         if (methodName is null)
-            return document;
+            return;
 
-        var operatingSystemType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.OperatingSystem");
+        var operatingSystemType = semanticModel.Compilation.GetBestTypeByMetadataName("System.OperatingSystem");
         if (operatingSystemType is null)
-            return document;
+            return;
+
+        const string Title = "Use System.OperatingSystem";
+        context.RegisterCodeFix(
+            CodeAction.Create(Title, ct => UseOperatingSystem(context.Document, operation.Syntax, methodName, operatingSystemType, ct), equivalenceKey: Title),
+            context.Diagnostics);
+    }
+
+    private static async Task<Document> UseOperatingSystem(Document document, SyntaxNode operationSyntax, string methodName, INamedTypeSymbol operatingSystemType, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var invocationExpression = editor.Generator.InvocationExpression(
             editor.Generator.MemberAccessExpression(editor.Generator.TypeExpression(operatingSystemType), methodName));
 
-        editor.ReplaceNode(operation.Syntax, invocationExpression.WithTriviaFrom(operation.Syntax).WithAdditionalAnnotations(Formatter.Annotation));
+        editor.ReplaceNode(operationSyntax, invocationExpression.WithTriviaFrom(operationSyntax).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 

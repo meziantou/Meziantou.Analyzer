@@ -26,24 +26,26 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IBinaryOperation operation)
+            return;
+
         var title = "Use SequenceEquals";
         var codeAction = CodeAction.Create(
             title,
-            ct => Refactor(context.Document, nodeToFix, ct),
+            ct => Refactor(context.Document, operation, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> Refactor(Document document, IBinaryOperation operation, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
-
-        var operation = (IBinaryOperation?)semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation is null)
-            return document;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(operation.LeftOperand.Syntax, "SequenceEqual"), operation.RightOperand.Syntax);
@@ -53,7 +55,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
             newExpression = generator.LogicalNotExpression(newExpression);
         }
 
-        editor.ReplaceNode(nodeToFix, newExpression.WithAdditionalAnnotations(Formatter.Annotation));
+        editor.ReplaceNode(operation.Syntax, newExpression.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 }

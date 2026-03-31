@@ -27,6 +27,13 @@ public sealed class UsePatternMatchingInsteadOfHasvalueFixer : CodeFixProvider
         if (nodeToFix is not MemberAccessExpressionSyntax memberAccess)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(memberAccess, context.CancellationToken) is not IPropertyReferenceOperation)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use pattern matching",
@@ -38,8 +45,7 @@ public sealed class UsePatternMatchingInsteadOfHasvalueFixer : CodeFixProvider
     private static async Task<Document> Update(Document document, MemberAccessExpressionSyntax node, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        if (editor.SemanticModel.GetOperation(node, cancellationToken) is not IPropertyReferenceOperation operation)
-            return document;
+        var operation = (IPropertyReferenceOperation)editor.SemanticModel.GetOperation(node, cancellationToken)!;
 
         var (nodeToReplace, negate) = GetNodeToReplace(operation);
         var target = operation.Instance?.Syntax as ExpressionSyntax;

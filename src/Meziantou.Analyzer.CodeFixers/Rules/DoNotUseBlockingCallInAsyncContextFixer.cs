@@ -32,9 +32,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         {
             case DoNotUseBlockingCallInAsyncContextData.Thread_Sleep:
                 {
+                    var sm = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                    var taskSymbol = sm?.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+                    if (taskSymbol is null)
+                        break;
+
                     var codeAction = CodeAction.Create(
                         "Use Task.Delay",
-                        ct => UseTaskDelay(context.Document, nodeToFix, ct),
+                        ct => UseTaskDelay(context.Document, nodeToFix, taskSymbol, ct),
                         equivalenceKey: "Thread_Sleep");
 
                     context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -43,6 +48,10 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Wait:
                 {
+                    if (nodeToFix is not InvocationExpressionSyntax taskWaitInvocation ||
+                        (taskWaitInvocation.Expression as MemberAccessExpressionSyntax)?.Expression is null)
+                        break;
+
                     var codeAction = CodeAction.Create(
                         "Use await",
                         ct => ReplaceTaskWaitWithAwait(context.Document, nodeToFix, ct),
@@ -140,9 +149,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var expr = ((MemberAccessExpressionSyntax)nodeToFix).Expression;
-        if (expr is null)
-            return document;
-
         var newExpression = generator.AwaitExpression(expr).Parentheses();
         editor.ReplaceNode(nodeToFix, newExpression);
 
@@ -155,24 +161,17 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var invocation = (InvocationExpressionSyntax)nodeToFix;
-        var expr = (invocation.Expression as MemberAccessExpressionSyntax)?.Expression;
-        if (expr is null)
-            return document;
-
+        var expr = (invocation.Expression as MemberAccessExpressionSyntax)!.Expression;
         var newExpression = generator.AwaitExpression(expr).Parentheses();
         editor.ReplaceNode(nodeToFix, newExpression);
 
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseTaskDelay(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseTaskDelay(Document document, SyntaxNode nodeToFix, INamedTypeSymbol taskSymbol, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-
-        var taskSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (taskSymbol is null)
-            return document;
 
         var invocation = (InvocationExpressionSyntax)nodeToFix;
         var delay = invocation.ArgumentList.Arguments[0].Expression;

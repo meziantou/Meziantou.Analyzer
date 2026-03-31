@@ -24,7 +24,7 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        if (nodeToFix is not BinaryExpressionSyntax)
             return;
 
         var diagnostic = context.Diagnostics[0];
@@ -40,12 +40,6 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
 
     private static async Task<Document> RemoveComparisonWithBoolConstant(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
-        if (nodeToFix is not BinaryExpressionSyntax binaryExpressionSyntax)
-            return document;
-
-        if (binaryExpressionSyntax.Left is null || binaryExpressionSyntax.Right is null)
-            return document;
-
         var nodeToKeepSpanStart = int.Parse(diagnostic.Properties["NodeToKeepSpanStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
         var nodeToKeepSpanLength = int.Parse(diagnostic.Properties["NodeToKeepSpanLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
         var logicalNotOperatorNeeded = bool.Parse(diagnostic.Properties["LogicalNotOperatorNeeded"]!);

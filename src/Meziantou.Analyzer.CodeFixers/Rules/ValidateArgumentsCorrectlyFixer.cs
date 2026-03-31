@@ -29,6 +29,16 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        if (nodeToFix is not MethodDeclarationSyntax methodDeclaration)
+            return;
+
+        if (methodDeclaration.Body is null)
+            return;
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel?.GetDeclaredSymbol(nodeToFix, cancellationToken: context.CancellationToken) is not IMethodSymbol)
+            return;
+
         var diagnostic = context.Diagnostics[0];
 
         var title = "Use local function";

@@ -26,6 +26,17 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        if (nodeToFix is not InvocationExpressionSyntax)
+            return;
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var stringComparisonSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
+        if (stringComparisonSymbol is null)
+            return;
+
         AddCodeFix(nameof(StringComparison.Ordinal));
         AddCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
@@ -34,26 +45,20 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
             var title = "Add StringComparison." + comparisonMode;
             var codeAction = CodeAction.Create(
                 title,
-                ct => AddStringComparison(context.Document, nodeToFix, comparisonMode, ct),
+                ct => AddStringComparison(context.Document, nodeToFix, comparisonMode, stringComparisonSymbol, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
     }
 
-    private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, string stringComparisonMode, CancellationToken cancellationToken)
+    private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, string stringComparisonMode, INamedTypeSymbol stringComparison, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
         var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
-        if (invocationExpression is null)
-            return document;
-
-        var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
-        if (stringComparison is null)
-            return document;
 
         var newArgument = (ArgumentSyntax)generator.Argument(
             generator.MemberAccessExpression(
