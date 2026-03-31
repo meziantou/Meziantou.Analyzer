@@ -121,7 +121,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                             Parameter(Identifier("other")).WithType(typeSyntax))))
                 .WithExpressionBody(
                     ArrowExpressionClause(
-                        ParseExpression($"((global::System.IComparable<{fullyQualifiedTypeName}>)this).CompareTo(other) == 0")
+                        ParseExpression("CompareTo(other) == 0")
                             .WithAdditionalAnnotations(Simplifier.Annotation)))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                 .WithAdditionalAnnotations(Formatter.Annotation);
@@ -217,7 +217,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                         IsPatternExpression(
                             IdentifierName("obj"),
                             DeclarationPattern(typeSyntax.WithoutTrivia(), SingleVariableDesignation(Identifier("other")))),
-                        ParseExpression($"((global::System.IEquatable<{fullyQualifiedTypeName}>)this).Equals(other)")
+                        ParseExpression("Equals(other)")
                             .WithAdditionalAnnotations(Simplifier.Annotation))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
             .WithAdditionalAnnotations(Formatter.Annotation);
