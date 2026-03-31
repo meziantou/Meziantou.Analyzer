@@ -25,29 +25,29 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
         if (nodeToFix.Expression is not MemberAccessExpressionSyntax)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
+        if (stringComparerSymbol is null)
+            return;
+
         var title = "Use StringComparer.Ordinal";
         var codeAction = CodeAction.Create(
             title,
-            ct => AddStringComparison(context.Document, nodeToFix, ct),
+            ct => AddStringComparison(context.Document, nodeToFix, stringComparerSymbol, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, INamedTypeSymbol stringComparer, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
         var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
-        if (invocationExpression is null)
-            return document;
-
-        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
-        if (stringComparer is null)
-            return document;
-
         var memberAccessExpression = (MemberAccessExpressionSyntax)invocationExpression.Expression;
 
         var newExpression = generator.InvocationExpression(

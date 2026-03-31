@@ -26,6 +26,20 @@ public sealed class UseEqualsMethodInsteadOfOperatorFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var binaryOp = FindBinaryOperation(semanticModel, nodeToFix, context.CancellationToken);
+        if (binaryOp is null)
+            return;
+
+        if (binaryOp.Syntax is not BinaryExpressionSyntax)
+            return;
+
+        if (binaryOp.LeftOperand.Syntax is not ExpressionSyntax || binaryOp.RightOperand.Syntax is not ExpressionSyntax)
+            return;
+
         const string Title = "Use Equals";
         context.RegisterCodeFix(
             CodeAction.Create(Title, ct => UseEquals(context.Document, nodeToFix, ct), equivalenceKey: Title),

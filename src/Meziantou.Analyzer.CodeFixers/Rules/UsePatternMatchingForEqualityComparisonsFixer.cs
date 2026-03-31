@@ -27,6 +27,13 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
         if (nodeToFix is not BinaryExpressionSyntax invocation)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(invocation, context.CancellationToken) is not IBinaryOperation)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use pattern matching",
@@ -38,8 +45,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
     private static async Task<Document> Update(Document document, BinaryExpressionSyntax node, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        if (editor.SemanticModel.GetOperation(node, cancellationToken) is not IBinaryOperation operation)
-            return document;
+        var operation = (IBinaryOperation)editor.SemanticModel.GetOperation(node, cancellationToken)!;
 
         if (UsePatternMatchingForEqualityComparisonsCommon.IsNull(operation.LeftOperand))
         {

@@ -33,13 +33,19 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
 
         // Code fix 1: Add DynamicallyAccessedMembers attribute
         {
-            var title = "Add DynamicallyAccessedMembers attribute";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => AddDynamicallyAccessedMembersAttribute(context.Document, typeDeclarationSyntax, ct),
-                equivalenceKey: title);
+            var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+            var dynamicallyAccessedMembersAttribute = semanticModel?.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
+            var dynamicallyAccessedMemberTypes = semanticModel?.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes");
+            if (dynamicallyAccessedMembersAttribute is not null && dynamicallyAccessedMemberTypes is not null)
+            {
+                var title = "Add DynamicallyAccessedMembers attribute";
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => AddDynamicallyAccessedMembersAttribute(context.Document, typeDeclarationSyntax, dynamicallyAccessedMembersAttribute, dynamicallyAccessedMemberTypes, ct),
+                    equivalenceKey: title);
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
         }
 
         // Code fix 2: Remove the type
@@ -54,17 +60,10 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         }
     }
 
-    private static async Task<Document> AddDynamicallyAccessedMembersAttribute(Document document, TypeDeclarationSyntax typeDeclarationSyntax, CancellationToken cancellationToken)
+    private static async Task<Document> AddDynamicallyAccessedMembersAttribute(Document document, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol dynamicallyAccessedMembersAttribute, INamedTypeSymbol dynamicallyAccessedMemberTypes, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
-
-        var dynamicallyAccessedMembersAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
-        var dynamicallyAccessedMemberTypes = semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes");
-
-        if (dynamicallyAccessedMembersAttribute is null || dynamicallyAccessedMemberTypes is null)
-            return document;
 
         var attribute = generator.Attribute(
             generator.TypeExpression(dynamicallyAccessedMembersAttribute, addImport: true),

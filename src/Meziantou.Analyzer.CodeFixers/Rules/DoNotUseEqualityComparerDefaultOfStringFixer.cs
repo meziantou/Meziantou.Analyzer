@@ -23,6 +23,14 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringFixer : CodeFixProvid
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
+        if (stringComparerSymbol is null)
+            return;
+
         RegisterCodeFix(nameof(StringComparer.Ordinal));
         RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
 
@@ -31,24 +39,19 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringFixer : CodeFixProvid
             var title = "Use StringComparer." + comparerName;
             var codeAction = CodeAction.Create(
                 title,
-                ct => MakeConstructorProtected(context.Document, nodeToFix, comparerName, ct),
+                ct => MakeConstructorProtected(context.Document, nodeToFix, comparerName, stringComparerSymbol, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
     }
 
-    private static async Task<Document> MakeConstructorProtected(Document document, SyntaxNode nodeToFix, string comparerName, CancellationToken cancellationToken)
+    private static async Task<Document> MakeConstructorProtected(Document document, SyntaxNode nodeToFix, string comparerName, INamedTypeSymbol stringComparer, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
         var syntax = (MemberAccessExpressionSyntax)nodeToFix;
-
-        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
-        if (stringComparer is null)
-            return document;
 
         var newSyntax = generator.MemberAccessExpression(
             generator.TypeExpression(stringComparer),

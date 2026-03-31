@@ -20,27 +20,23 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementFixer : CodeFi
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        if (nodeToFix is not ThrowStatementSyntax throwStatement)
             return;
 
         var title = "Throw original exception";
         var codeAction = CodeAction.Create(
             title,
-            ct => Fix(context.Document, nodeToFix, ct),
+            ct => Fix(context.Document, throwStatement, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Fix(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> Fix(Document document, ThrowStatementSyntax throwStatement, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var syntax = (ThrowStatementSyntax)nodeToFix;
-        if (syntax is null)
-            return document;
-
-        editor.ReplaceNode(syntax, syntax.WithExpression(null).WithAdditionalAnnotations(Formatter.Annotation));
+        editor.ReplaceNode(throwStatement, throwStatement.WithExpression(null).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 }
