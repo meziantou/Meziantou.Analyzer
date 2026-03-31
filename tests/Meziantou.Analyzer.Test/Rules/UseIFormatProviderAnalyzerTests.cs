@@ -10,6 +10,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<UseIFormatProviderAnalyzer>()
+            .WithCodeFixProvider<UseIFormatProviderFixer>()
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
             .WithTargetFramework(TargetFramework.NetLatest)
             .AddMeziantouAttributes();
@@ -114,6 +115,29 @@ public sealed class UseIFormatProviderAnalyzerTests
               .WithSourceCode(SourceCode)
               .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
               .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Int32ParseWithoutCultureInfo_CodeFix()
+    {
+        const string SourceCode = """
+            [|int.Parse("")|];
+            """;
+
+        const string InvariantFix = """
+            int.Parse("", System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        const string CurrentFix = """
+            int.Parse("", System.Globalization.CultureInfo.CurrentCulture);
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(index: 0, InvariantFix)
+              .ShouldFixCodeWith(index: 1, CurrentFix)
+              .ShouldFixCodeWith(InvariantFix)
               .ValidateAsync();
     }
 
@@ -301,6 +325,47 @@ class Sample : System.IFormattable
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ToString_IFormattable_CodeFix()
+    {
+        var sourceCode = """
+_ = [|new Sample().ToString()|];
+
+class Sample : System.IFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+
+        var invariantFix = """
+_ = new Sample().ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+
+class Sample : System.IFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+
+        var currentFix = """
+_ = new Sample().ToString(null, System.Globalization.CultureInfo.CurrentCulture);
+
+class Sample : System.IFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(index: 0, invariantFix)
+              .ShouldFixCodeWith(index: 1, currentFix)
+              .ShouldFixCodeWith(invariantFix)
               .ValidateAsync();
     }
 
@@ -510,7 +575,101 @@ class A
 }
 """;
         await CreateProjectBuilder()
+               .WithSourceCode(sourceCode)
+               .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_IFormatProviderNotLast_CodeFix()
+    {
+        var sourceCode = """
+using System;
+
+[|A.Sample($"{DateTime.Now:D}")|];
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+
+        var invariantFix = """
+using System;
+
+A.Sample(System.Globalization.CultureInfo.InvariantCulture, $"{DateTime.Now:D}");
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+
+        var currentFix = """
+using System;
+
+A.Sample(System.Globalization.CultureInfo.CurrentCulture, $"{DateTime.Now:D}");
+
+class A
+{
+    public static void Sample(FormattableString value) => throw null;
+    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+
+        await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(index: 0, invariantFix)
+              .ShouldFixCodeWith(index: 1, currentFix)
+              .ShouldFixCodeWith(invariantFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_OptionalParameterBeforeIFormatProvider_CodeFix()
+    {
+        var sourceCode = """
+using System;
+
+[|A.Sample("prefix", $"{DateTime.Now:D}")|];
+
+class A
+{
+    public static void Sample(string arg1, FormattableString value) => throw null;
+    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+}
+""";
+
+        var invariantFix = """
+using System;
+
+A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.InvariantCulture);
+
+class A
+{
+    public static void Sample(string arg1, FormattableString value) => throw null;
+    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+}
+""";
+
+        var currentFix = """
+using System;
+
+A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.CurrentCulture);
+
+class A
+{
+    public static void Sample(string arg1, FormattableString value) => throw null;
+    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(index: 0, invariantFix)
+              .ShouldFixCodeWith(index: 1, currentFix)
+              .ShouldFixCodeWith(invariantFix)
               .ValidateAsync();
     }
 }

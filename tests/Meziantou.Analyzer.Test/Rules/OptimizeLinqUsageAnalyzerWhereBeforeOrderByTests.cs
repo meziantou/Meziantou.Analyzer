@@ -9,6 +9,7 @@ public sealed class OptimizeLinqUsageAnalyzerWhereBeforeOrderByTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy)
+            .WithCodeFixProvider<OptimizeLinqUsageFixer>()
             .WithTargetFramework(Helpers.TargetFramework.Net9_0);
     }
 
@@ -67,6 +68,16 @@ class Test
 }
 ")
               .ShouldReportDiagnosticWithMessage(message: $"Call 'Where' before '{a}'")
+              .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        System.Collections.Generic.IEnumerable<string> enumerable = null;
+        enumerable.Where(x => x != null)." + a + @"(x => x);
+    }
+}
+")
               .ValidateAsync();
     }
 
@@ -87,6 +98,16 @@ class Test
 }
 ")
               .ShouldReportDiagnosticWithMessage(message: $"Call 'Where' before '{a}'")
+              .ShouldFixCodeWith(@"using System.Linq;
+class Test
+{
+    public Test()
+    {
+        System.Collections.Generic.IEnumerable<string> enumerable = null;
+        enumerable.Where(x => x != null)." + a + @"();
+    }
+}
+")
               .ValidateAsync();
     }
 }

@@ -8,7 +8,8 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<EmbedCaughtExceptionAsInnerExceptionAnalyzer>();
+            .WithAnalyzer<EmbedCaughtExceptionAsInnerExceptionAnalyzer>()
+            .WithCodeFixProvider<EmbedCaughtExceptionAsInnerExceptionFixer>();
     }
 
     [Fact]
@@ -101,6 +102,47 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InCaughtExceptionWithoutInnerException_CodeFix()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                public void A()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        throw [|new System.Exception("")|];
+                    }
+                }
+            }
+            """;
+
+        const string Fix = """
+            class Test
+            {
+                public void A()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        throw new System.Exception("", ex);
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 }

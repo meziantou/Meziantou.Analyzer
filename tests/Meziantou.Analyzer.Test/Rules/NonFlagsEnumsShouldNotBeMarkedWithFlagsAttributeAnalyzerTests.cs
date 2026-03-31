@@ -8,7 +8,8 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTest
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer>();
+            .WithAnalyzer<NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer>()
+            .WithCodeFixProvider<NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeFixer>();
     }
 
     [Fact]
@@ -25,6 +26,34 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTest
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonPowerOfTwo_CodeFix()
+    {
+        const string SourceCode = """
+            [System.Flags]
+            enum [|Test|] : byte
+            {
+                A = 1,
+                B = 2,
+                C = 5,
+            }
+            """;
+
+        const string Fix = """
+            enum Test : byte
+            {
+                A = 1,
+                B = 2,
+                C = 5,
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 

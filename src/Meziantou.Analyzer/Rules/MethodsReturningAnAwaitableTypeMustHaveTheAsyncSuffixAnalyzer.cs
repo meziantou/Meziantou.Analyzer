@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -81,7 +82,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
                 return;
 
-            if (MustIgnoreSymbol(method))
+            if (MustIgnoreSymbol(context.Options, method))
                 return;
 
             var hasAsyncSuffix = method.Name.EndsWith("Async", StringComparison.Ordinal);
@@ -145,12 +146,13 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             }
         }
 
-        private bool MustIgnoreSymbol(IMethodSymbol symbol)
+        private bool MustIgnoreSymbol(AnalyzerOptions options, IMethodSymbol symbol)
         {
             if (symbol.HasAttribute(_benchmarkSymbol))
                 return true;
 
-            if (symbol.IsUnitTestMethod())
+            var excludeTestMethods = options.GetConfigurationValue(symbol, "MA0137.exclude_test_methods", defaultValue: true);
+            if (excludeTestMethods && symbol.IsUnitTestMethod())
                 return true;
 
             return false;

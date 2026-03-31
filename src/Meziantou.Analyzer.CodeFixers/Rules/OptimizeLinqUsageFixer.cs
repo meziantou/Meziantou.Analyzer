@@ -22,7 +22,9 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         RuleIdentifiers.UseIndexerInsteadOfElementAt,
         RuleIdentifiers.DuplicateEnumerable_OrderBy,
         RuleIdentifiers.OptimizeEnumerable_CombineMethods,
+        RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy,
         RuleIdentifiers.OptimizeEnumerable_Count,
+        RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny,
         RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect,
         RuleIdentifiers.OptimizeEnumerable_UseOrder);
 
@@ -41,6 +43,13 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var diagnostic = context.Diagnostics.FirstOrDefault();
         if (diagnostic is null)
             return;
+
+        if (diagnostic.Id == RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny)
+        {
+            const string CodeFixTitle = "Optimize linq usage";
+            context.RegisterCodeFix(CodeAction.Create(CodeFixTitle, ct => UseCountGreaterThanZero(context.Document, nodeToFix, ct), equivalenceKey: CodeFixTitle), context.Diagnostics);
+            return;
+        }
 
         if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeLinqUsageData data) || data is OptimizeLinqUsageData.None)
             return;
@@ -109,7 +118,15 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.CombineWhereWithNextMethod:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => CombineWhereWithNextMethod(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
+                if (diagnostic.Id == RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy)
+                {
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReorderWhereBeforeOrderBy(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
+                }
+                else
+                {
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => CombineWhereWithNextMethod(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
+                }
+
                 break;
 
             case OptimizeLinqUsageData.UseTrue:
@@ -191,6 +208,23 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         {
             newExpression = generator.LogicalNotExpression(newExpression);
         }
+
+        editor.ReplaceNode(nodeToFix, newExpression);
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> UseCountGreaterThanZero(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation invocation)
+            return document;
+
+        if (invocation.Arguments.Length != 1)
+            return document;
+
+        var generator = editor.Generator;
+        var countExpression = generator.MemberAccessExpression(invocation.Arguments[0].Syntax, "Count");
+        var newExpression = generator.ValueNotEqualsExpression(countExpression, generator.LiteralExpression(0));
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
@@ -671,6 +705,37 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
             return delegateCreationOperation.Syntax;
         }
+    }
+
+    private static async Task<Document> ReorderWhereBeforeOrderBy(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    {
+        var firstOperationStart = int.Parse(diagnostic.Properties["FirstOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        var firstOperationLength = int.Parse(diagnostic.Properties["FirstOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
+        var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+        if (firstNode is null || lastNode is null)
+            return document;
+
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var semanticModel = editor.SemanticModel;
+        if (semanticModel?.GetOperation(firstNode, cancellationToken) is not IInvocationOperation firstOperation || semanticModel?.GetOperation(lastNode, cancellationToken) is not IInvocationOperation lastOperation)
+            return document;
+
+        var generator = editor.Generator;
+        var source = firstOperation.Arguments[0].Syntax;
+
+        var whereMethod = generator.MemberAccessExpression(source, lastOperation.TargetMethod.Name);
+        var whereInvocation = generator.InvocationExpression(whereMethod, lastOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
+
+        var orderMethod = generator.MemberAccessExpression(whereInvocation, firstOperation.TargetMethod.Name);
+        var reorderedInvocation = generator.InvocationExpression(orderMethod, firstOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
+
+        editor.ReplaceNode(lastOperation.Syntax, reorderedInvocation);
+        return editor.GetChangedDocument();
     }
 
     private static SyntaxNode ReplaceParameter(IAnonymousFunctionOperation method, string newParameterName)
