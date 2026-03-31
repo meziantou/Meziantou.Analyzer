@@ -33,6 +33,9 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         if (ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon.FindContainingMethod(semanticModel, nodeToFix, context.CancellationToken)?.ReturnType is not INamedTypeSymbol type)
             return;
 
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task") is null)
+            return;
+
         if (!type.IsGenericType)
         {
             var title = "Use Task.CompletedTask";
@@ -50,10 +53,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var typeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (typeSymbol is null)
-            return document;
-
+        var typeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task")!;
         var newExpression = generator.MemberAccessExpression(generator.TypeExpression(typeSymbol), nameof(Task.CompletedTask));
 
         if (nodeToFix is ReturnStatementSyntax { Expression: { } } returnStatementSyntax)
@@ -73,10 +73,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var taskTypeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        if (taskTypeSymbol is null)
-            return document;
-
+        var taskTypeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task")!;
         var newExpression = generator.MemberAccessExpression(generator.TypeExpression(taskTypeSymbol), generator.GenericName("FromResult", typeSymbol.TypeArguments[0]));
         newExpression = generator.InvocationExpression(newExpression, generator.DefaultExpression(typeSymbol.TypeArguments[0]));
 

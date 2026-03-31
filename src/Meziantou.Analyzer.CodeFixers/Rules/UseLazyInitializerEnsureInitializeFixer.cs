@@ -27,6 +27,16 @@ public sealed class UseLazyInitializerEnsureInitializeFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.LazyInitializer") is null)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use LazyInitializer.EnsureInitialized",

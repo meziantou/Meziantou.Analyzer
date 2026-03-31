@@ -33,13 +33,19 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
 
         // Code fix 1: Add DynamicallyAccessedMembers attribute
         {
-            var title = "Add DynamicallyAccessedMembers attribute";
-            var codeAction = CodeAction.Create(
-                title,
-                ct => AddDynamicallyAccessedMembersAttribute(context.Document, typeDeclarationSyntax, ct),
-                equivalenceKey: title);
+            var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+            if (semanticModel is not null &&
+                semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute") is not null &&
+                semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes") is not null)
+            {
+                var title = "Add DynamicallyAccessedMembers attribute";
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => AddDynamicallyAccessedMembersAttribute(context.Document, typeDeclarationSyntax, ct),
+                    equivalenceKey: title);
 
-            context.RegisterCodeFix(codeAction, context.Diagnostics);
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
         }
 
         // Code fix 2: Remove the type
@@ -60,11 +66,8 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
-        var dynamicallyAccessedMembersAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
-        var dynamicallyAccessedMemberTypes = semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes");
-
-        if (dynamicallyAccessedMembersAttribute is null || dynamicallyAccessedMemberTypes is null)
-            return document;
+        var dynamicallyAccessedMembersAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute")!;
+        var dynamicallyAccessedMemberTypes = semanticModel.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes")!;
 
         var attribute = generator.Attribute(
             generator.TypeExpression(dynamicallyAccessedMembersAttribute, addImport: true),

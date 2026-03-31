@@ -28,36 +28,42 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IBinaryOperation)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison") is null)
+            return;
+
         RegisterCodeFix(nameof(StringComparison.Ordinal));
         RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is not null)
+        var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
+        if (type is not null)
         {
-            var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
-            if (type is not null)
+            if (type.GetMembers("EqualsOrdinal").Length > 0)
             {
-                if (type.GetMembers("EqualsOrdinal").Length > 0)
-                {
-                    var title = "Use EqualsOrdinal";
-                    var codeAction = CodeAction.Create(
-                        title,
-                        ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsOrdinal", ct),
-                        equivalenceKey: title);
+                var title = "Use EqualsOrdinal";
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsOrdinal", ct),
+                    equivalenceKey: title);
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
-                }
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
+            }
 
-                if (type.GetMembers("EqualsIgnoreCase").Length > 0)
-                {
-                    var title = "Use EqualsIgnoreCase";
-                    var codeAction = CodeAction.Create(
-                        title,
-                        ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsIgnoreCase", ct),
-                        equivalenceKey: title);
+            if (type.GetMembers("EqualsIgnoreCase").Length > 0)
+            {
+                var title = "Use EqualsIgnoreCase";
+                var codeAction = CodeAction.Create(
+                    title,
+                    ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsIgnoreCase", ct),
+                    equivalenceKey: title);
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
-                }
+                context.RegisterCodeFix(codeAction, context.Diagnostics);
             }
         }
 
@@ -79,13 +85,8 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
-        var operation = (IBinaryOperation?)semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation is null)
-            return document;
-
-        var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
-        if (stringComparison is null)
-            return document;
+        var operation = (IBinaryOperation)semanticModel.GetOperation(nodeToFix, cancellationToken)!;
+        var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison")!;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(generator.TypeExpression(SpecialType.System_String), nameof(string.Equals)),
@@ -108,13 +109,8 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
-        var operation = (IBinaryOperation?)semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation is null)
-            return document;
-
-        var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
-        if (type is null)
-            return document;
+        var operation = (IBinaryOperation)semanticModel.GetOperation(nodeToFix, cancellationToken)!;
+        var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions")!;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(generator.TypeExpression(type), methodName),
