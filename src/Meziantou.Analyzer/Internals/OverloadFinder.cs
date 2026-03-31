@@ -129,6 +129,9 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (!options.IncludeObsoleteMembers && IsObsolete(method))
                 continue;
 
+            if (options.ShouldCheckMethod is not null && !options.ShouldCheckMethod(method))
+                continue;
+
             if (HasSimilarParametersCore(methodSymbol, method, options, additionalParameterTypes))
             {
                 result.Add(method);
@@ -172,13 +175,13 @@ internal sealed class OverloadFinder(Compilation compilation)
         if (method.IsEqualTo(otherMethod))
             return false;
 
-        var methodParameters = GetComparableParameters(method, otherMethod);
-        var otherMethodParameters = GetComparableParameters(otherMethod, method);
-
         if (!HaveCompatibleGenericSignatures(method, otherMethod))
             return false;
 
-        // The new method must have at least the same number of parameters as the old method, plus the number of additional parameters        
+        var methodParameters = GetComparableParameters(method, otherMethod);
+        var otherMethodParameters = GetComparableParameters(otherMethod, method);
+
+        // The new method must have at least the same number of parameters as the old method, plus the number of additional parameters
         if (otherMethodParameters.Length - methodParameters.Length < additionalParameterTypes.Length)
             return false;
 

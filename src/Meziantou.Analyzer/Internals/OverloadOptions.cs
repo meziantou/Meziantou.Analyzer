@@ -1,3 +1,4 @@
+using System;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
@@ -10,4 +11,5 @@ internal record struct OverloadOptions(
     bool AllowNumericConversion = true,
     bool AllowParamsToNonParamsCompatibility = true,
     bool AllowInModifierCompatibility = true,
-    bool AllowInterfaceConversions = true);
+    bool AllowInterfaceConversions = true,
+    Func<IMethodSymbol, bool>? ShouldCheckMethod = null);
