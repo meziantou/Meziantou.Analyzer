@@ -14,7 +14,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer :
     public override ImmutableArray<string> FixableDiagnosticIds =>
         ImmutableArray.Create(
             RuleIdentifiers.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffix,
-            RuleIdentifiers.MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix);
+            RuleIdentifiers.MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix,
+            RuleIdentifiers.MethodsReturningIAsyncEnumerableMustHaveTheAsyncSuffix,
+            RuleIdentifiers.MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix);
 
     public override FixAllProvider? GetFixAllProvider() => null;
 
@@ -52,7 +54,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer :
         {
             string newName;
             string title;
-            if (diagnostic.Id == RuleIdentifiers.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffix)
+            if (diagnostic.Id is RuleIdentifiers.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffix or RuleIdentifiers.MethodsReturningIAsyncEnumerableMustHaveTheAsyncSuffix)
             {
                 newName = methodSymbol.Name + "Async";
                 title = $"Rename to '{newName}'";

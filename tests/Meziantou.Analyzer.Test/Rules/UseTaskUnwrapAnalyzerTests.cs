@@ -10,6 +10,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<UseTaskUnwrapAnalyzer>()
+            .WithCodeFixProvider<UseTaskUnwrapFixer>()
             .WithTargetFramework(TargetFramework.Net6_0)
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
     }
@@ -23,6 +24,12 @@ public sealed class UseTaskUnwrapAnalyzerTests
 
                 Task<Task> a = null;
                 [|await await a|];
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+
+                Task<Task> a = null;
+                await a.Unwrap();
                 """)
             .ValidateAsync();
     }
@@ -49,6 +56,12 @@ public sealed class UseTaskUnwrapAnalyzerTests
 
                 Task<Task> a = null;
                 [|await (await a).ConfigureAwait(false)|];
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+
+                Task<Task> a = null;
+                await a.Unwrap().ConfigureAwait(false);
                 """)
             .ValidateAsync();
     }

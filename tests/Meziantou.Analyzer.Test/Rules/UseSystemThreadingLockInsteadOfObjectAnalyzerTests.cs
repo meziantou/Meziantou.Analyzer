@@ -10,7 +10,8 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
         return new ProjectBuilder()
             .WithTargetFramework(TargetFramework.Net9_0)
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-            .WithAnalyzer<UseSystemThreadingLockInsteadOfObjectAnalyzer>();
+            .WithAnalyzer<UseSystemThreadingLockInsteadOfObjectAnalyzer>()
+            .WithCodeFixProvider<UseSystemThreadingLockInsteadOfObjectFixer>();
     }
 
     [Fact]
@@ -69,6 +70,14 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
                 class TypeName
                 {
                     object [|_lock|] = new();
+
+                    void A() { lock(_lock) { } }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    System.Threading.Lock _lock = new();
 
                     void A() { lock(_lock) { } }
                 }
@@ -273,6 +282,22 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
                     public A()
                     {
                         _lock = new object();
+                    }
+
+                    public void Run()
+                    {
+                        lock (_lock) { }
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                public sealed class A
+                {
+                    private readonly System.Threading.Lock _lock;
+
+                    public A()
+                    {
+                        _lock = new();
                     }
 
                     public void Run()

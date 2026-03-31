@@ -9,6 +9,7 @@ public class UseOperatingSystemInsteadOfRuntimeInformationAnalyzerTests
     {
         return new ProjectBuilder()
             .WithAnalyzer<UseOperatingSystemInsteadOfRuntimeInformationAnalyzer>()
+            .WithCodeFixProvider<UseOperatingSystemInsteadOfRuntimeInformationFixer>()
             .WithTargetFramework(TargetFramework.Net8_0)
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
     }
@@ -19,6 +20,22 @@ public class UseOperatingSystemInsteadOfRuntimeInformationAnalyzerTests
         await CreateProjectBuilder()
             .WithSourceCode("""
                 [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)|];
+                """)
+            .ShouldFixCodeWith("""
+                System.OperatingSystem.IsWindows();
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ShouldReport_MacOS()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)|];
+                """)
+            .ShouldFixCodeWith("""
+                System.OperatingSystem.IsMacOS();
                 """)
             .ValidateAsync();
     }
