@@ -148,6 +148,25 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
               .ValidateAsync();
 
     [Fact]
+    public Task IAsyncEnumerableWithoutSuffix_CodeFix_AddsAsyncSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                 class TypeName
+                 {
+                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
+                     void Caller() { _ = Foo(); }
+                 }
+                 """)
+              .ShouldFixCodeWith("""
+                 class TypeName
+                 {
+                     System.Collections.Generic.IAsyncEnumerable<int> FooAsync() => throw null;
+                     void Caller() { _ = FooAsync(); }
+                 }
+                 """)
+              .ValidateAsync();
+
+    [Fact]
     public Task IAsyncEnumerableWithSuffix()
         => CreateProjectBuilder()
               .WithSourceCode("""
@@ -157,6 +176,25 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                  }
                  """)
               .ShouldReportDiagnosticWithMessage("Method returning IAsyncEnumerable<T> must not use the 'Async' suffix")
+              .ValidateAsync();
+
+    [Fact]
+    public Task IAsyncEnumerableWithSuffix_CodeFix_RemovesAsyncSuffix()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                 class TypeName
+                 {
+                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
+                     void Caller() { _ = FooAsync(); }
+                 }
+                 """)
+              .ShouldFixCodeWith("""
+                 class TypeName
+                 {
+                     System.Collections.Generic.IAsyncEnumerable<int> Foo() => throw null;
+                     void Caller() { _ = Foo(); }
+                 }
+                 """)
               .ValidateAsync();
 
     [Fact]

@@ -9,7 +9,8 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
         return new ProjectBuilder()
             .WithTargetFramework(Helpers.TargetFramework.Net9_0)
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UseEqualsMethodInsteadOfOperatorAnalyzer>();
+            .WithAnalyzer<UseEqualsMethodInsteadOfOperatorAnalyzer>()
+            .WithCodeFixProvider<UseEqualsMethodInsteadOfOperatorFixer>();
     }
 
     [Theory]
@@ -21,6 +22,28 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
                 {{type}} a = null;
                 {{type}} b = null;
                 _ = [|a == b|];
+                """)
+              .ShouldFixCodeWith($$"""
+                {{type}} a = null;
+                {{type}} b = null;
+                _ = object.Equals(a, b);
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Report_NotEqualsOperator()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                System.Net.IPAddress a = null;
+                System.Net.IPAddress b = null;
+                _ = [|a != b|];
+                """)
+              .ShouldFixCodeWith("""
+                System.Net.IPAddress a = null;
+                System.Net.IPAddress b = null;
+                _ = !object.Equals(a, b);
                 """)
               .ValidateAsync();
     }

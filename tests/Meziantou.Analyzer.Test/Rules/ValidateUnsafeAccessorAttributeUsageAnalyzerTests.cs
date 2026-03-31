@@ -9,7 +9,8 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
     {
         return new ProjectBuilder()
             .WithTargetFramework(TargetFramework.Net8_0)
-            .WithAnalyzer<ValidateUnsafeAccessorAttributeUsageAnalyzer>();
+            .WithAnalyzer<ValidateUnsafeAccessorAttributeUsageAnalyzer>()
+            .WithCodeFixProvider<ValidateUnsafeAccessorAttributeUsageFixer>();
     }
 
     [Fact]
@@ -40,6 +41,18 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                           // Local function name are mangle by the compiler, so the Name property is required
                           [UnsafeAccessor(UnsafeAccessorKind.Field)]
                           extern static ref int [|B|](System.Version a);
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  using System.Runtime.CompilerServices;
+                  class Sample
+                  {
+                      void A()
+                      {
+                          // Local function name are mangle by the compiler, so the Name property is required
+                          [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "B")]
+                          extern static ref int B(System.Version a);
                       }
                   }
                   """)

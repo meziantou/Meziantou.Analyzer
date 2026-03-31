@@ -7,7 +7,8 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<UseContainsKeyInsteadOfTryGetValueAnalyzer>();
+            .WithAnalyzer<UseContainsKeyInsteadOfTryGetValueAnalyzer>()
+            .WithCodeFixProvider<UseContainsKeyInsteadOfTryGetValueFixer>();
     }
 
     [Fact]
@@ -36,6 +37,15 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzerTests
                     void Test(System.Collections.Generic.IDictionary<string, string> dict)
                     {
                         [|dict.TryGetValue("", out _)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                class ClassTest
+                {
+                    void Test(System.Collections.Generic.IDictionary<string, string> dict)
+                    {
+                        dict.ContainsKey("");
                     }
                 }
                 """)
