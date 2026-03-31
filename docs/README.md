@@ -189,6 +189,7 @@
 |[MA0188](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0188.md)|Design|Use System.TimeProvider instead of a custom time abstraction|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0189](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0189.md)|Design|Use InlineArray instead of fixed-size buffers|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0190](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0190.md)|Design|Use partial property instead of partial method for GeneratedRegex|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0191](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0191.md)|Design|Do not use the null-forgiving operator|<span title='Warning'>⚠️</span>|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -771,6 +772,9 @@ dotnet_diagnostic.MA0189.severity = suggestion
 
 # MA0190: Use partial property instead of partial method for GeneratedRegex
 dotnet_diagnostic.MA0190.severity = suggestion
+
+# MA0191: Do not use the null-forgiving operator
+dotnet_diagnostic.MA0191.severity = none
 ```
 
 # .editorconfig - all rules disabled
@@ -1339,4 +1343,7 @@ dotnet_diagnostic.MA0189.severity = none
 
 # MA0190: Use partial property instead of partial method for GeneratedRegex
 dotnet_diagnostic.MA0190.severity = none
+
+# MA0191: Do not use the null-forgiving operator
+dotnet_diagnostic.MA0191.severity = none
 ```
