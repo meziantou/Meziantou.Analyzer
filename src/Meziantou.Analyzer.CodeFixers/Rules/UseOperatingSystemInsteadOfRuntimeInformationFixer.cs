@@ -24,6 +24,30 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationFixer : CodeFix
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (FindInvocation(semanticModel, nodeToFix, context.CancellationToken) is not { Arguments.Length: 1 } operation)
+            return;
+
+        if (operation.Arguments[0].Value is not IMemberReferenceOperation { Member.Name: var osPlatformName })
+            return;
+
+        var methodName = osPlatformName switch
+        {
+            "Windows" => "IsWindows",
+            "Linux" => "IsLinux",
+            "OSX" => "IsMacOS",
+            "FreeBSD" => "IsFreeBSD",
+            _ => null,
+        };
+        if (methodName is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.OperatingSystem") is null)
+            return;
+
         const string Title = "Use System.OperatingSystem";
         context.RegisterCodeFix(
             CodeAction.Create(Title, ct => UseOperatingSystem(context.Document, nodeToFix, ct), equivalenceKey: Title),

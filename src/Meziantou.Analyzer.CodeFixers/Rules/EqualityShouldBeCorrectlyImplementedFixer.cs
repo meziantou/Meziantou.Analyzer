@@ -22,6 +22,20 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: context.CancellationToken) is not ITypeSymbol declaredTypeSymbol)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1") is null)
+            return;
+
+        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod(m) && m is not null);
+        if (equalsMethod is null)
+            return;
+
         var title = "Implement System.IEquatable";
         var codeAction = CodeAction.Create(
             title,

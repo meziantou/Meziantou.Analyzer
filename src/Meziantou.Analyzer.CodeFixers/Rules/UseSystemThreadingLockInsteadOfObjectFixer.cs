@@ -27,6 +27,23 @@ public sealed class UseSystemThreadingLockInsteadOfObjectFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Lock") is null)
+            return;
+
+        var variableDeclarator = nodeToFix.FirstAncestorOrSelf<VariableDeclaratorSyntax>();
+        if (variableDeclarator is null)
+            return;
+
+        if (semanticModel.GetDeclaredSymbol(variableDeclarator, context.CancellationToken) is null)
+            return;
+
+        if (variableDeclarator.Parent is not VariableDeclarationSyntax { } declaration || declaration.Variables.Count != 1)
+            return;
+
         const string Title = "Use System.Threading.Lock";
         context.RegisterCodeFix(
             CodeAction.Create(Title, ct => UseLockType(context.Document, nodeToFix, ct), equivalenceKey: Title),

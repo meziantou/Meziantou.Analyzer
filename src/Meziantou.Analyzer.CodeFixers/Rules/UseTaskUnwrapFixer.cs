@@ -26,6 +26,17 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var awaitOp = FindAwait(semanticModel, nodeToFix, context.CancellationToken);
+        if (awaitOp is null)
+            return;
+
+        if (awaitOp.Syntax is not AwaitExpressionSyntax)
+            return;
+
         const string Title = "Use Unwrap";
         context.RegisterCodeFix(
             CodeAction.Create(Title, ct => UseUnwrap(context.Document, nodeToFix, ct), equivalenceKey: Title),
