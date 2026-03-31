@@ -48,6 +48,62 @@ The analyzer must use `IOperation` or `ISymbol` to analyze the content. Only fal
 Code snippets in tests must use raw string literals (`"""`) and must be minimized to only include the necessary code to reproduce the issue. Avoid including unnecessary code that does not contribute to the test case.
 When reporting a diagnostic, the snippet must use the `[|code|]` syntax or `{|id:code|}` syntax. Do not explicitly indicates lines or columns.
 
+### Code fixer best practice: validate before registering
+
+In `RegisterCodeFixesAsync`, validate **all** conditions that could prevent the fix from being applied **before** calling `context.RegisterCodeFix`. Do not register a code fix whose action would return the document unchanged.
+
+**Wrong** — registers the fix without validating whether it can be applied:
+```csharp
+public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+{
+    var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+    var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
+    if (nodeToFix is null)
+        return;
+
+    context.RegisterCodeFix(CodeAction.Create(title, ct => FixAsync(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+}
+
+private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+{
+    if (nodeToFix is not BinaryExpressionSyntax binaryExpression)
+        return document; // Fix not applied — but it was already shown to the user!
+
+    var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+    var mySymbol = semanticModel!.Compilation.GetBestTypeByMetadataName("System.SomeType");
+    if (mySymbol is null)
+        return document; // Fix not applied — but it was already shown to the user!
+    // ...
+}
+```
+
+**Correct** — validates all conditions first, then registers the fix:
+```csharp
+public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+{
+    var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+    var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
+    if (nodeToFix is not BinaryExpressionSyntax binaryExpression)
+        return;
+
+    var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+    if (semanticModel is null)
+        return;
+
+    if (semanticModel.Compilation.GetBestTypeByMetadataName("System.SomeType") is null)
+        return;
+
+    context.RegisterCodeFix(CodeAction.Create(title, ct => FixAsync(context.Document, binaryExpression, ct), equivalenceKey: title), context.Diagnostics);
+}
+
+private static async Task<Document> FixAsync(Document document, BinaryExpressionSyntax binaryExpression, CancellationToken cancellationToken)
+{
+    var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+    // ... fix logic — all preconditions are guaranteed to hold
+    return editor.GetChangedDocument();
+}
+```
+
 ## Testing with different Roslyn versions
 
 This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are configured in `Directory.Build.targets`:
