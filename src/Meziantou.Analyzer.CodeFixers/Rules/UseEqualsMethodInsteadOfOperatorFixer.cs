@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -54,7 +55,7 @@ public sealed class UseEqualsMethodInsteadOfOperatorFixer : CodeFixProvider
 
         if (operation.OperatorKind is BinaryOperatorKind.NotEquals)
         {
-            newExpression = PrefixUnaryExpression(Microsoft.CodeAnalysis.CSharp.SyntaxKind.LogicalNotExpression, Parenthesize(newExpression));
+            newExpression = PrefixUnaryExpression(Microsoft.CodeAnalysis.CSharp.SyntaxKind.LogicalNotExpression, (ExpressionSyntax)newExpression.Parentheses());
         }
 
         editor.ReplaceNode(binaryExpression, newExpression.WithTriviaFrom(binaryExpression).WithAdditionalAnnotations(Formatter.Annotation));
@@ -71,16 +72,4 @@ public sealed class UseEqualsMethodInsteadOfOperatorFixer : CodeFixProvider
 
         return null;
     }
-
-    private static ExpressionSyntax Parenthesize(ExpressionSyntax expression)
-        => expression switch
-        {
-            IdentifierNameSyntax or
-            ThisExpressionSyntax or
-            BaseExpressionSyntax or
-            InvocationExpressionSyntax or
-            MemberAccessExpressionSyntax or
-            ElementAccessExpressionSyntax => expression,
-            _ => ParenthesizedExpression(expression),
-        };
 }

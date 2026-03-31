@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -45,7 +46,7 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
             var unwrappedExpression = InvocationExpression(
                 MemberAccessExpression(
                     Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
-                    WrapForMemberAccess((ExpressionSyntax)innerAwait.Operation.Syntax.WithoutTrivia()),
+                    (ExpressionSyntax)((ExpressionSyntax)innerAwait.Operation.Syntax.WithoutTrivia()).Parentheses(),
                     IdentifierName("Unwrap")));
 
             var newNode = awaitExpression.WithExpression(unwrappedExpression.WithTriviaFrom(awaitExpression.Expression));
@@ -60,7 +61,7 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
             var unwrappedExpression = InvocationExpression(
                 MemberAccessExpression(
                     Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
-                    WrapForMemberAccess((ExpressionSyntax)innerAwaitOperation.Operation.Syntax.WithoutTrivia()),
+                    (ExpressionSyntax)((ExpressionSyntax)innerAwaitOperation.Operation.Syntax.WithoutTrivia()).Parentheses(),
                     IdentifierName("Unwrap")));
 
             var newExpression = invocation.WithExpression(memberAccess.WithExpression(unwrappedExpression.WithTriviaFrom(memberAccess.Expression)));
@@ -81,18 +82,5 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
 
         return null;
     }
-
-    private static ExpressionSyntax WrapForMemberAccess(ExpressionSyntax expression)
-        => expression switch
-        {
-            IdentifierNameSyntax or
-            GenericNameSyntax or
-            ThisExpressionSyntax or
-            BaseExpressionSyntax or
-            InvocationExpressionSyntax or
-            MemberAccessExpressionSyntax or
-            ElementAccessExpressionSyntax => expression,
-            _ => ParenthesizedExpression(expression),
-        };
 }
 
