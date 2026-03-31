@@ -7,6 +7,8 @@ namespace Meziantou.Analyzer.Internals;
 internal sealed class OverloadFinder(Compilation compilation)
 {
     private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
+    private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
+    private readonly INamedTypeSymbol? _halfSymbol = compilation.GetBestTypeByMetadataName("System.Half");
 
     private static ReadOnlySpan<OverloadParameterType> Wrap(ReadOnlySpan<ITypeSymbol?> types)
     {
@@ -127,7 +129,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (!options.IncludeObsoleteMembers && IsObsolete(method))
                 continue;
 
-            if (HasSimilarParameters(methodSymbol, method, options, additionalParameterTypes, compilation))
+            if (HasSimilarParametersCore(methodSymbol, method, options, additionalParameterTypes))
             {
                 result.Add(method);
             }
@@ -136,9 +138,9 @@ internal sealed class OverloadFinder(Compilation compilation)
         return ImmutableArray.CreateRange(result);
     }
 
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
+    public bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
     {
-        return HasSimilarParameters(method, otherMethod, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), Wrap(additionalParameterTypes), compilation: null);
+        return HasSimilarParameters(method, otherMethod, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), Wrap(additionalParameterTypes));
     }
 
     /// <summary>
@@ -150,33 +152,25 @@ internal sealed class OverloadFinder(Compilation compilation)
     /// <item>If <paramref name="allowOptionalParameters"/>, <paramref name="otherMethod"/> can have more parameters if they are optional</item>
     /// </list>
     /// </summary>
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+    public bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
-        return HasSimilarParameters(method, otherMethod, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), additionalParameterTypes, compilation: null);
+        return HasSimilarParameters(method, otherMethod, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), additionalParameterTypes);
     }
 
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
+    public bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
     {
-        return HasSimilarParameters(method, otherMethod, options, Wrap(additionalParameterTypes), compilation: null);
+        return HasSimilarParametersCore(method, otherMethod, options, Wrap(additionalParameterTypes));
     }
 
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes, Compilation? compilation)
+    public bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, params ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
-        return HasSimilarParameters(method, otherMethod, options, Wrap(additionalParameterTypes), compilation);
+        return HasSimilarParametersCore(method, otherMethod, options, additionalParameterTypes);
     }
 
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, params ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
-    {
-        return HasSimilarParameters(method, otherMethod, options, additionalParameterTypes, compilation: null);
-    }
-
-    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes, Compilation? compilation)
+    private bool HasSimilarParametersCore(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
         if (method.IsEqualTo(otherMethod))
             return false;
-
-        var ienumerableOfTSymbol = compilation?.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
-        var halfSymbol = compilation?.GetBestTypeByMetadataName("System.Half");
 
         var methodParameters = GetComparableParameters(method, otherMethod);
         var otherMethodParameters = GetComparableParameters(otherMethod, method);
@@ -202,7 +196,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var methodParameter = methodParameters[i];
                 var otherMethodParameter = otherMethodParameters[j];
 
-                if (AreParametersCompatible(methodParameter, otherMethodParameter, method, otherMethod, options, ienumerableOfTSymbol, halfSymbol, inferredMethodTypeArguments))
+                if (AreParametersCompatible(methodParameter, otherMethodParameter, method, otherMethod, options, _ienumerableOfTSymbol, _halfSymbol, inferredMethodTypeArguments))
                 {
                     i++;
                     j++;
@@ -243,7 +237,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var found = false;
                 for (var i = 0; i < unmatchedOtherMethodParameters.Length; i++)
                 {
-                    if (AreParametersCompatible(param, unmatchedOtherMethodParameters[i], method, otherMethod, options, ienumerableOfTSymbol, halfSymbol, inferredMethodTypeArguments))
+                    if (AreParametersCompatible(param, unmatchedOtherMethodParameters[i], method, otherMethod, options, _ienumerableOfTSymbol, _halfSymbol, inferredMethodTypeArguments))
                     {
                         unmatchedOtherMethodParameters = unmatchedOtherMethodParameters.RemoveAt(i);
                         found = true;
