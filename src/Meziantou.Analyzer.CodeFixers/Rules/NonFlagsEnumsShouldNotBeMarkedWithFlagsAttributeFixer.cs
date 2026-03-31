@@ -24,24 +24,28 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeFixer : Code
         if (enumDeclaration is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var flagsAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute");
+        if (flagsAttributeSymbol is null)
+            return;
+
         var title = "Remove [Flags] attribute";
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,
-                ct => RemoveFlagsAttribute(context.Document, enumDeclaration, ct),
+                ct => RemoveFlagsAttribute(context.Document, enumDeclaration, flagsAttributeSymbol, ct),
                 equivalenceKey: title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> RemoveFlagsAttribute(Document document, EnumDeclarationSyntax enumDeclaration, CancellationToken cancellationToken)
+    private static async Task<Document> RemoveFlagsAttribute(Document document, EnumDeclarationSyntax enumDeclaration, INamedTypeSymbol flagsAttributeSymbol, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
         if (root is null || semanticModel is null)
-            return document;
-
-        var flagsAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute");
-        if (flagsAttributeSymbol is null)
             return document;
 
         var newAttributeLists = new List<AttributeListSyntax>(enumDeclaration.AttributeLists.Count);

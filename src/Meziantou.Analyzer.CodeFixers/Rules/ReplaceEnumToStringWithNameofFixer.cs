@@ -27,6 +27,13 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is null)
+            return;
+
         var title = "Use nameof";
         context.RegisterCodeFix(CodeAction.Create(title, ct => UseNameof(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
     }
@@ -46,9 +53,6 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
             var newExpression = SyntaxFactory.Interpolation((ExpressionSyntax)generator.NameOfExpression(interpolation.Expression.Syntax));
             editor.ReplaceNode(nodeToFix, newExpression);
         }
-
-        if (operation is null)
-            return document;
 
         return editor.GetChangedDocument();
     }

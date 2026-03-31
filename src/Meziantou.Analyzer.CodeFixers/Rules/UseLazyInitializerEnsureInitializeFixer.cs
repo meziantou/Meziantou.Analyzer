@@ -27,24 +27,31 @@ public sealed class UseLazyInitializerEnsureInitializeFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation)
+            return;
+
+        var lazyInitializerType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.LazyInitializer");
+        if (lazyInitializerType is null)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use LazyInitializer.EnsureInitialized",
-                ct => Update(context.Document, nodeToFix, ct),
+                ct => Update(context.Document, nodeToFix, lazyInitializerType, ct),
                 equivalenceKey: "Use LazyInitializer.EnsureInitialized"),
             context.Diagnostics);
     }
 
-    private static async Task<Document> Update(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> Update(Document document, SyntaxNode nodeToFix, INamedTypeSymbol lazyInitializerType, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
 
         if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation invocation)
-            return document;
-
-        var lazyInitializerType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.LazyInitializer");
-        if (lazyInitializerType is null)
             return document;
 
         var generator = editor.Generator;

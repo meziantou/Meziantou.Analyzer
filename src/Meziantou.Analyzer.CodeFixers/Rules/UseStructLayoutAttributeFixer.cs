@@ -28,31 +28,37 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
         if (nodeToFix is null or not TypeDeclarationSyntax)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var structLayoutAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
+        if (structLayoutAttribute is null)
+            return;
+
+        var layoutKindEnum = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
+        if (layoutKindEnum is null)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Add Auto StructLayout attribute",
-                ct => Refactor(context.Document, nodeToFix, LayoutKind.Auto, ct),
+                ct => Refactor(context.Document, nodeToFix, LayoutKind.Auto, structLayoutAttribute, layoutKindEnum, ct),
                 equivalenceKey: "Add Auto StructLayout attribute"),
             context.Diagnostics);
 
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Add Sequential StructLayout attribute",
-                ct => Refactor(context.Document, nodeToFix, LayoutKind.Sequential, ct),
+                ct => Refactor(context.Document, nodeToFix, LayoutKind.Sequential, structLayoutAttribute, layoutKindEnum, ct),
                 equivalenceKey: "Add Sequential StructLayout attribute"),
             context.Diagnostics);
     }
 
-    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, LayoutKind layoutKind, CancellationToken cancellationToken)
+    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, LayoutKind layoutKind, INamedTypeSymbol structLayoutAttribute, INamedTypeSymbol layoutKindEnum, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-        var semanticModel = editor.SemanticModel;
-
-        var structLayoutAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
-        var layoutKindEnum = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
-        if (structLayoutAttribute is null || layoutKindEnum is null)
-            return document;
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(structLayoutAttribute).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),

@@ -26,6 +26,14 @@ public sealed class UseArrayEmptyFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var typeInfo = semanticModel.GetTypeInfo(nodeToFix, context.CancellationToken);
+        if ((IArrayTypeSymbol?)(typeInfo.Type ?? typeInfo.ConvertedType) is null)
+            return;
+
         var title = "Use Array.Empty<T>()";
         var codeAction = CodeAction.Create(
             title,
@@ -41,9 +49,7 @@ public sealed class UseArrayEmptyFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
-        var elementType = GetArrayElementType(nodeToFix, semanticModel, cancellationToken);
-        if (elementType is null)
-            return document;
+        var elementType = GetArrayElementType(nodeToFix, semanticModel, cancellationToken)!;
 
         var arrayEmptyInvocation = GenerateArrayEmptyInvocation(generator, elementType, semanticModel).WithTriviaFrom(nodeToFix);
         editor.ReplaceNode(nodeToFix, arrayEmptyInvocation);

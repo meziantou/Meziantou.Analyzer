@@ -28,6 +28,21 @@ public sealed class NamedParameterFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
+        if (argument is null || argument.NameColon is not null)
+            return;
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (FindParameters(semanticModel, argument, context.CancellationToken) is not { } parameters)
+            return;
+
+        var index = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
+        if (index < 0 || index >= parameters.Length)
+            return;
+
         var title = "Add parameter name";
         var codeAction = CodeAction.Create(
             title,

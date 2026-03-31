@@ -27,6 +27,24 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeFixer : CodeFix
         if (nodeToFix is null)
             return;
 
+        var parameter = nodeToFix.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault();
+        if (parameter is null)
+            return;
+
+        if (parameter.Type is not GenericNameSyntax)
+            return;
+
+        var containingTypeDeclaration = parameter.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+        if (containingTypeDeclaration is null)
+            return;
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetDeclaredSymbol(containingTypeDeclaration, context.CancellationToken) is null)
+            return;
+
         var title = "Use ILogger with matching type parameter";
         var codeAction = CodeAction.Create(
             title,

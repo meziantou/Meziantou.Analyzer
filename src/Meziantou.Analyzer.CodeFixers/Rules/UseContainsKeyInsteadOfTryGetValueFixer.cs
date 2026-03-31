@@ -25,6 +25,23 @@ public sealed class UseContainsKeyInsteadOfTryGetValueFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (FindInvocation(semanticModel, nodeToFix, context.CancellationToken) is not { Arguments.Length: 2 } operation)
+            return;
+
+        if (operation.TargetMethod.Name != "TryGetValue")
+            return;
+
+        if (operation.Arguments[1].Value is not IDiscardOperation)
+            return;
+
+        if (operation.Syntax is not InvocationExpressionSyntax invocationSyntax ||
+            invocationSyntax.Expression is not MemberAccessExpressionSyntax)
+            return;
+
         const string Title = "Use ContainsKey";
         context.RegisterCodeFix(
             CodeAction.Create(Title, ct => UseContainsKey(context.Document, nodeToFix, ct), equivalenceKey: Title),
