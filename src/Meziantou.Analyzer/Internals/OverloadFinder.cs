@@ -105,21 +105,35 @@ internal sealed class OverloadFinder(Compilation compilation)
         if (additionalParameterTypes.IsEmpty)
             return null;
 
-        var members = GetCandidateMethods(methodSymbol, options);
-
-        foreach (var member in members)
+        foreach (var method in FindSimilarMethods(methodSymbol, options, methodSymbol.Name, additionalParameterTypes))
         {
-            if (member is IMethodSymbol method)
-            {
-                if (!options.IncludeObsoleteMembers && IsObsolete(method))
-                    continue;
-
-                if (HasSimilarParameters(methodSymbol, method, options, additionalParameterTypes, compilation))
-                    return method;
-            }
+            return method;
         }
 
         return null;
+    }
+
+    public ImmutableArray<IMethodSymbol> FindSimilarMethods(IMethodSymbol methodSymbol, OverloadOptions options, string methodName, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+    {
+        additionalParameterTypes = RemoveNulls(additionalParameterTypes);
+
+        var result = new List<IMethodSymbol>();
+        var members = GetCandidateMethods(methodSymbol, methodName, options);
+        foreach (var member in members)
+        {
+            if (member is not IMethodSymbol method)
+                continue;
+
+            if (!options.IncludeObsoleteMembers && IsObsolete(method))
+                continue;
+
+            if (HasSimilarParameters(methodSymbol, method, options, additionalParameterTypes, compilation))
+            {
+                result.Add(method);
+            }
+        }
+
+        return ImmutableArray.CreateRange(result);
     }
 
     public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
@@ -582,7 +596,7 @@ internal sealed class OverloadFinder(Compilation compilation)
         }
     }
 
-    private ImmutableArray<ISymbol> GetCandidateMethods(IMethodSymbol methodSymbol, OverloadOptions options)
+    private ImmutableArray<ISymbol> GetCandidateMethods(IMethodSymbol methodSymbol, string methodName, OverloadOptions options)
     {
         if (methodSymbol.ContainingType is null)
             return ImmutableArray<ISymbol>.Empty;
@@ -607,18 +621,19 @@ internal sealed class OverloadFinder(Compilation compilation)
             var semanticModel = compilation.GetSemanticModel(options.SyntaxNode.SyntaxTree);
             var position = options.SyntaxNode.GetLocation().SourceSpan.End;
 
-            AddSymbols(semanticModel.LookupSymbols(position, methodSymbol.ContainingType, methodSymbol.Name, includeReducedExtensionMethods: true), results, knownSymbols);
+            AddSymbols(semanticModel.LookupSymbols(position, methodSymbol.ContainingType, methodName, includeReducedExtensionMethods: true), results, knownSymbols);
             if (reducedReceiverType is not null)
             {
-                AddSymbols(semanticModel.LookupSymbols(position, reducedReceiverType, methodSymbol.Name, includeReducedExtensionMethods: false), results, knownSymbols);
+                AddSymbols(semanticModel.LookupSymbols(position, reducedReceiverType, methodName, includeReducedExtensionMethods: false), results, knownSymbols);
+                AddSymbols(reducedReceiverType.GetMembers(methodName), results, knownSymbols);
             }
         }
         else
         {
-            AddSymbols(methodSymbol.ContainingType.GetMembers(methodSymbol.Name), results, knownSymbols);
+            AddSymbols(methodSymbol.ContainingType.GetMembers(methodName), results, knownSymbols);
             if (reducedReceiverType is not null)
             {
-                AddSymbols(reducedReceiverType.GetMembers(methodSymbol.Name), results, knownSymbols);
+                AddSymbols(reducedReceiverType.GetMembers(methodName), results, knownSymbols);
             }
         }
 
@@ -627,10 +642,18 @@ internal sealed class OverloadFinder(Compilation compilation)
 
     private static ITypeSymbol? GetReducedReceiverType(IMethodSymbol methodSymbol)
     {
-        if (methodSymbol.MethodKind is not MethodKind.ReducedExtension || methodSymbol.ReducedFrom is null || methodSymbol.ReducedFrom.Parameters.Length == 0)
-            return null;
+        if (methodSymbol.MethodKind is MethodKind.ReducedExtension &&
+            methodSymbol.ReducedFrom is { Parameters.Length: > 0 } reducedFromMethod)
+        {
+            return reducedFromMethod.Parameters[0].Type;
+        }
 
-        return methodSymbol.ReducedFrom.Parameters[0].Type;
+        if (methodSymbol.IsExtensionMethod && methodSymbol.Parameters.Length > 0)
+        {
+            return methodSymbol.Parameters[0].Type;
+        }
+
+        return null;
     }
 
     private bool IsObsolete(IMethodSymbol methodSymbol)
