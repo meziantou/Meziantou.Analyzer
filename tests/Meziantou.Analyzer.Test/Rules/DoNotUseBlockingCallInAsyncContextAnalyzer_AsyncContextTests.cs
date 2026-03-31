@@ -912,7 +912,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public async Task GenericArgument_NestedGenericIncompatibility_ShouldNotReport()
     {
-        // For simplicity, we skik checking compatibility of nested generics
+        // For simplicity, we skip checking compatibility of nested generics
         await CreateProjectBuilder()
               .WithSourceCode("""
                 using System.Collections.Generic;
