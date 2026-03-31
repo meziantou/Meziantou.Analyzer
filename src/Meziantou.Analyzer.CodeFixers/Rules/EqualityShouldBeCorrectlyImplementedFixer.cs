@@ -17,15 +17,13 @@ namespace Meziantou.Analyzer.Rules;
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
 public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
 {
-    private static readonly ImmutableArray<string> ComparisonOperatorNames =
-    [
+    private static readonly ImmutableArray<string> ComparisonOperatorNames = ImmutableArray.Create(
         "op_LessThan",
         "op_LessThanOrEqual",
         "op_GreaterThan",
         "op_GreaterThanOrEqual",
         "op_Equality",
-        "op_Inequality",
-    ];
+        "op_Inequality");
 
     public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
         RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT,
