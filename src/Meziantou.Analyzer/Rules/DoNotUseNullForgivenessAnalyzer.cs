@@ -33,6 +33,11 @@ public sealed class DoNotUseNullForgivenessAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeSyntax(SyntaxNodeAnalysisContext context)
     {
         var node = (PostfixUnaryExpressionSyntax)context.Node;
+        if (!node.Operand.IsKind(SyntaxKind.NullLiteralExpression) &&
+            !node.Operand.IsKind(SyntaxKind.DefaultLiteralExpression) &&
+            !node.Operand.IsKind(SyntaxKind.DefaultExpression))
+            return;
+
         context.ReportDiagnostic(Rule, node);
     }
 }

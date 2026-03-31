@@ -42,6 +42,20 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
     }
 
     [Fact]
+    public async Task NullForgiveness_DefaultExpression_ReportsDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                #nullable enable
+                class Sample
+                {
+                    string _field = [|default(string)!|];
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NullForgiveness_Property_ReportsDiagnostic()
     {
         await CreateProjectBuilder()
@@ -50,27 +64,6 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
                 class Sample
                 {
                     string Prop { get; set; } = [|null!|];
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NullForgiveness_MemberAccess_ReportsDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Model
-                {
-                    public string? Value { get; set; }
-                }
-                class Sample
-                {
-                    void M(Model model)
-                    {
-                        _ = [|model.Value!|].Length;
-                    }
                 }
                 """)
             .ValidateAsync();
@@ -87,6 +80,27 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
                     void M()
                     {
                         string s = [|null!|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NullForgiveness_MemberAccess_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                #nullable enable
+                class Model
+                {
+                    public string? Value { get; set; }
+                }
+                class Sample
+                {
+                    void M(Model model)
+                    {
+                        _ = model.Value!.Length;
                     }
                 }
                 """)
