@@ -20,26 +20,21 @@ public sealed class AbstractTypesShouldNotHaveConstructorsFixer : CodeFixProvide
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not ConstructorDeclarationSyntax ctorSyntax)
             return;
 
         var title = "Make constructor protected";
         var codeAction = CodeAction.Create(
             title,
-            ct => MakeConstructorProtected(context.Document, nodeToFix, ct),
+            ct => MakeConstructorProtected(context.Document, ctorSyntax, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> MakeConstructorProtected(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> MakeConstructorProtected(Document document, ConstructorDeclarationSyntax ctorSyntax, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
-        var ctorSyntax = (ConstructorDeclarationSyntax)nodeToFix;
-        if (ctorSyntax is null)
-            return document;
 
         var modifiers = ctorSyntax.Modifiers;
         foreach (var modifier in modifiers.Where(m => m.IsKind(SyntaxKind.PublicKeyword) || m.IsKind(SyntaxKind.InternalKeyword)))

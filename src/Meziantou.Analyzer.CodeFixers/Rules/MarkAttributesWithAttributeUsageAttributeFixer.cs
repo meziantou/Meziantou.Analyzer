@@ -26,6 +26,16 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute") is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets") is null)
+            return;
+
         var title = "Add AttributeUsage attribute";
         var codeAction = CodeAction.Create(
             title,
@@ -43,11 +53,8 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
 
         var classNode = (ClassDeclarationSyntax)nodeToFix;
 
-        var attributeUsageAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
-        var attributeTargets = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets");
-
-        if (attributeUsageAttribute is null || attributeTargets is null)
-            return document;
+        var attributeUsageAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute")!;
+        var attributeTargets = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets")!;
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(attributeUsageAttribute, addImport: true),

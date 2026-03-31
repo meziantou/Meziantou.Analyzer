@@ -25,8 +25,15 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
         if (context.Diagnostics[0].Id == RuleIdentifiers.UseDateTimeUnixEpoch)
         {
+            if (semanticModel.Compilation.GetBestTypeByMetadataName("System.DateTime") is null)
+                return;
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Use DateTime.UnixEpoch",
@@ -36,6 +43,9 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
         }
         else
         {
+            if (semanticModel.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset") is null)
+                return;
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Use DateTimeOffset.UnixEpoch",
@@ -48,9 +58,7 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
     private static async Task<Document> Remove(Document document, SyntaxNode node, string type, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var symbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName(type);
-        if (symbol is null)
-            return document;
+        var symbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName(type)!;
 
         var generator = editor.Generator;
         var member = generator.MemberAccessExpression(generator.TypeExpression(symbol), "UnixEpoch");

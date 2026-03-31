@@ -28,6 +28,16 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
         if (nodeToFix is null or not TypeDeclarationSyntax)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute") is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.LayoutKind") is null)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Add Auto StructLayout attribute",
@@ -49,10 +59,8 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
         var generator = editor.Generator;
         var semanticModel = editor.SemanticModel;
 
-        var structLayoutAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
-        var layoutKindEnum = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
-        if (structLayoutAttribute is null || layoutKindEnum is null)
-            return document;
+        var structLayoutAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute")!;
+        var layoutKindEnum = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.LayoutKind")!;
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(structLayoutAttribute).WithAdditionalAnnotations(Simplifier.AddImportsAnnotation),

@@ -25,6 +25,13 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
         if (nodeToFix.Expression is not MemberAccessExpressionSyntax)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer") is null)
+            return;
+
         var title = "Use StringComparer.Ordinal";
         var codeAction = CodeAction.Create(
             title,
@@ -41,13 +48,8 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
-        if (invocationExpression is null)
-            return document;
 
-        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
-        if (stringComparer is null)
-            return document;
-
+        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer")!;
         var memberAccessExpression = (MemberAccessExpressionSyntax)invocationExpression.Expression;
 
         var newExpression = generator.InvocationExpression(

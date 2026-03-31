@@ -24,6 +24,13 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeFixer : Code
         if (enumDeclaration is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute") is null)
+            return;
+
         var title = "Remove [Flags] attribute";
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -40,9 +47,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeFixer : Code
         if (root is null || semanticModel is null)
             return document;
 
-        var flagsAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute");
-        if (flagsAttributeSymbol is null)
-            return document;
+        var flagsAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute")!;
 
         var newAttributeLists = new List<AttributeListSyntax>(enumDeclaration.AttributeLists.Count);
         foreach (var attributeList in enumDeclaration.AttributeLists)

@@ -26,6 +26,13 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IBinaryOperation)
+            return;
+
         var title = "Use SequenceEquals";
         var codeAction = CodeAction.Create(
             title,
@@ -41,9 +48,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
-        var operation = (IBinaryOperation?)semanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation is null)
-            return document;
+        var operation = (IBinaryOperation)semanticModel.GetOperation(nodeToFix, cancellationToken)!;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(operation.LeftOperand.Syntax, "SequenceEqual"), operation.RightOperand.Syntax);
