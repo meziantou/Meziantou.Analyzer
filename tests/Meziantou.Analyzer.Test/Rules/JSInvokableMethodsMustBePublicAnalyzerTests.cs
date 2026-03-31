@@ -100,4 +100,56 @@ public class JSInvokableMethodsMustBePublicAnalyzerTests
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Test_CodeFix_StaticPrivateMethod()
+    {
+        const string SourceCode = """
+            using Microsoft.JSInterop;
+
+            class Test
+            {
+                [JSInvokable]
+                static private void [|C|]() => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith("""
+                using Microsoft.JSInterop;
+
+                class Test
+                {
+                    [JSInvokable]
+                    static public void C() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Test_CodeFix_StaticMethodWithoutVisibilityModifier()
+    {
+        const string SourceCode = """
+            using Microsoft.JSInterop;
+
+            class Test
+            {
+                [JSInvokable]
+                static void [|C|]() => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith("""
+                using Microsoft.JSInterop;
+
+                class Test
+                {
+                    [JSInvokable]
+                    public static void C() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
 }

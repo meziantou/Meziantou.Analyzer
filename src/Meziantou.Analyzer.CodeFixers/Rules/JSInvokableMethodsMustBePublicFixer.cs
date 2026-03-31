@@ -41,14 +41,35 @@ public sealed class JSInvokableMethodsMustBePublicFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var modifiers = methodDeclaration.Modifiers
-            .Remove(SyntaxKind.PrivateKeyword)
-            .Remove(SyntaxKind.InternalKeyword)
-            .Remove(SyntaxKind.ProtectedKeyword)
-            .Add(SyntaxKind.PublicKeyword);
+        var modifiers = methodDeclaration.Modifiers;
+        var visibilityIndex = GetVisibilityModifierIndex(modifiers);
+        if (visibilityIndex >= 0)
+        {
+            modifiers = modifiers.Replace(modifiers[visibilityIndex], SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+        }
+        else
+        {
+            modifiers = modifiers.Insert(0, SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+        }
 
         editor.ReplaceNode(methodDeclaration, methodDeclaration.WithModifiers(modifiers));
         return editor.GetChangedDocument();
+    }
+
+    private static int GetVisibilityModifierIndex(SyntaxTokenList modifiers)
+    {
+        for (var i = 0; i < modifiers.Count; i++)
+        {
+            if (modifiers[i].IsKind(SyntaxKind.PrivateKeyword) ||
+                modifiers[i].IsKind(SyntaxKind.InternalKeyword) ||
+                modifiers[i].IsKind(SyntaxKind.ProtectedKeyword) ||
+                modifiers[i].IsKind(SyntaxKind.PublicKeyword))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private static MethodDeclarationSyntax? GetMethodDeclaration(SyntaxNode? root, SemanticModel? semanticModel, Diagnostic diagnostic, CancellationToken cancellationToken)

@@ -46,6 +46,7 @@ public sealed class UseShellExecuteMustBeSetFixer : CodeFixProvider
     private static async Task<Document> SetUseShellExecute(Document document, ObjectCreationExpressionSyntax nodeToFix, bool value, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var isMultilineInitializer = nodeToFix.Initializer is { } initializer && initializer.GetLocation().GetLineSpan().StartLinePosition.Line != initializer.GetLocation().GetLineSpan().EndLinePosition.Line;
 
         var assignment = AssignmentExpression(
             SyntaxKind.SimpleAssignmentExpression,
@@ -62,10 +63,34 @@ public sealed class UseShellExecuteMustBeSetFixer : CodeFixProvider
         }
         else
         {
-            updatedNode = updatedNode.WithInitializer(nodeToFix.Initializer.AddExpressions(assignment));
+            var updatedInitializer = nodeToFix.Initializer.AddExpressions(assignment);
+            if (isMultilineInitializer)
+            {
+                updatedInitializer = EnsureTrailingComma(updatedInitializer);
+            }
+
+            updatedNode = updatedNode.WithInitializer(updatedInitializer);
         }
 
         editor.ReplaceNode(nodeToFix, updatedNode.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
+    }
+
+    private static InitializerExpressionSyntax EnsureTrailingComma(InitializerExpressionSyntax initializer)
+    {
+        var expressionsWithSeparators = initializer.Expressions.GetWithSeparators();
+        var lastIndex = expressionsWithSeparators.Count - 1;
+        if (lastIndex >= 0 && expressionsWithSeparators[lastIndex].IsToken && expressionsWithSeparators[lastIndex].AsToken().IsKind(SyntaxKind.CommaToken))
+            return initializer;
+
+        var separators = new SyntaxTokenList();
+        foreach (var separator in initializer.Expressions.GetSeparators())
+        {
+            separators = separators.Add(separator);
+        }
+
+        separators = separators.Add(Token(SyntaxKind.CommaToken));
+        var expressions = SeparatedList(initializer.Expressions, separators);
+        return initializer.WithExpressions(expressions);
     }
 }

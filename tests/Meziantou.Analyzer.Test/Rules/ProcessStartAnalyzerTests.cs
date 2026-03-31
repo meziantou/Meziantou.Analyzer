@@ -270,7 +270,7 @@ public sealed class ProcessStartAnalyzerTests
                                        var processStartInfo = new ProcessStartInfo()
                                        {
                                            FileName = "notepad",
-                                           UseShellExecute = false
+                                           UseShellExecute = false,
                                        };
                                        Process.Start(processStartInfo);
                                    }
