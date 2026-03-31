@@ -109,8 +109,16 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
 
         if (!hasEqualsMethod)
         {
-            var fullyQualifiedTypeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var typeSyntax = ParseTypeName(fullyQualifiedTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
+            var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
+            var equalsExpression = BinaryExpression(
+                SyntaxKind.EqualsExpression,
+                InvocationExpression(
+                    IdentifierName(nameof(IComparable.CompareTo)))
+                .WithArgumentList(
+                    ArgumentList(
+                        SingletonSeparatedList(
+                            Argument(IdentifierName("other"))))),
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)));
             var equalsMethod = MethodDeclaration(
                 PredefinedType(Token(SyntaxKind.BoolKeyword)),
                 Identifier(nameof(object.Equals)))
@@ -120,9 +128,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                         SingletonSeparatedList(
                             Parameter(Identifier("other")).WithType(typeSyntax))))
                 .WithExpressionBody(
-                    ArrowExpressionClause(
-                        ParseExpression("CompareTo(other) == 0")
-                            .WithAdditionalAnnotations(Simplifier.Annotation)))
+                    ArrowExpressionClause(equalsExpression.WithAdditionalAnnotations(Simplifier.Annotation)))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                 .WithAdditionalAnnotations(Formatter.Annotation);
 
@@ -201,8 +207,13 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var fullyQualifiedTypeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var typeSyntax = ParseTypeName(fullyQualifiedTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
+        var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
+        var equalsExpression = InvocationExpression(
+            IdentifierName(nameof(object.Equals)))
+            .WithArgumentList(
+                ArgumentList(
+                    SingletonSeparatedList(
+                        Argument(IdentifierName("other")))));
         var equalsMethod = MethodDeclaration(
             PredefinedType(Token(SyntaxKind.BoolKeyword)),
             Identifier(nameof(object.Equals)))
@@ -217,8 +228,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                         IsPatternExpression(
                             IdentifierName("obj"),
                             DeclarationPattern(typeSyntax.WithoutTrivia(), SingleVariableDesignation(Identifier("other")))),
-                        ParseExpression("Equals(other)")
-                            .WithAdditionalAnnotations(Simplifier.Annotation))))
+                        equalsExpression.WithAdditionalAnnotations(Simplifier.Annotation))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
             .WithAdditionalAnnotations(Formatter.Annotation);
 
@@ -255,23 +265,66 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (missingOperators.Count == 0)
             return document;
 
-        var typeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-        var typeSyntax = ParseTypeName(typeName).WithAdditionalAnnotations(Simplifier.Annotation);
-        var compareExpression = $"System.Collections.Generic.Comparer<{typeName}>.Default.Compare(left, right)";
-        var equalsExpression = $"System.Collections.Generic.EqualityComparer<{typeName}>.Default.Equals(left, right)";
-
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
+        var comparerTypeDefinition = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.Comparer`1");
+        var equalityComparerTypeDefinition = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
+        if (comparerTypeDefinition is null || equalityComparerTypeDefinition is null)
+            return document;
 
-        AddMissingOperator("op_LessThan", "<", compareExpression + " < 0");
-        AddMissingOperator("op_LessThanOrEqual", "<=", compareExpression + " <= 0");
-        AddMissingOperator("op_GreaterThan", ">", compareExpression + " > 0");
-        AddMissingOperator("op_GreaterThanOrEqual", ">=", compareExpression + " >= 0");
-        AddMissingOperator("op_Equality", "==", equalsExpression);
-        AddMissingOperator("op_Inequality", "!=", "!(" + equalsExpression + ")");
+        var comparerType = comparerTypeDefinition.Construct(declaredTypeSymbol);
+        var equalityComparerType = equalityComparerTypeDefinition.Construct(declaredTypeSymbol);
+        var comparerTypeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(comparerType)).WithAdditionalAnnotations(Simplifier.Annotation);
+        var equalityComparerTypeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(equalityComparerType)).WithAdditionalAnnotations(Simplifier.Annotation);
+
+        AddMissingOperator("op_LessThan", "<", BinaryExpression(SyntaxKind.LessThanExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_LessThanOrEqual", "<=", BinaryExpression(SyntaxKind.LessThanOrEqualExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_GreaterThan", ">", BinaryExpression(SyntaxKind.GreaterThanExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_GreaterThanOrEqual", ">=", BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_Equality", "==", CreateEqualityComparerExpression());
+        AddMissingOperator("op_Inequality", "!=", PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, ParenthesizedExpression(CreateEqualityComparerExpression())));
 
         return editor.GetChangedDocument();
 
-        void AddMissingOperator(string operatorName, string operatorToken, string bodyExpression)
+        InvocationExpressionSyntax CreateComparerComparisonExpression()
+        {
+            return InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        comparerTypeSyntax,
+                        IdentifierName("Default")),
+                    IdentifierName(nameof(IComparer<int>.Compare))))
+                .WithArgumentList(
+                    ArgumentList(
+                        SeparatedList(
+                        [
+                            Argument(IdentifierName("left")),
+                            Argument(IdentifierName("right")),
+                        ])));
+        }
+
+        InvocationExpressionSyntax CreateEqualityComparerExpression()
+        {
+            return InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        equalityComparerTypeSyntax,
+                        IdentifierName("Default")),
+                    IdentifierName(nameof(IEqualityComparer<int>.Equals))))
+                .WithArgumentList(
+                    ArgumentList(
+                        SeparatedList(
+                        [
+                            Argument(IdentifierName("left")),
+                            Argument(IdentifierName("right")),
+                        ])));
+        }
+
+        void AddMissingOperator(string operatorName, string operatorToken, ExpressionSyntax bodyExpression)
         {
             if (!missingOperators.Contains(operatorName))
                 return;
@@ -287,7 +340,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                             Parameter(Identifier("left")).WithType(typeSyntax),
                             Parameter(Identifier("right")).WithType(typeSyntax),
                         ])))
-                .WithExpressionBody(ArrowExpressionClause(ParseExpression(bodyExpression).WithAdditionalAnnotations(Simplifier.Annotation)))
+                .WithExpressionBody(ArrowExpressionClause(bodyExpression.WithAdditionalAnnotations(Simplifier.Annotation)))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                 .WithAdditionalAnnotations(Formatter.Annotation);
             editor.AddMember(nodeToFix, method);
