@@ -1,66 +1,363 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
 public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
 {
-    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT);
+    private static readonly ImmutableArray<string> ComparisonOperatorNames = ImmutableArray.Create(
+        "op_LessThan",
+        "op_LessThanOrEqual",
+        "op_GreaterThan",
+        "op_GreaterThanOrEqual",
+        "op_Equality",
+        "op_Inequality");
+
+    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
+        RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT,
+        RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT,
+        RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject,
+        RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT,
+        RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable);
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
+        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true)?.FirstAncestorOrSelf<TypeDeclarationSyntax>();
         if (nodeToFix is null)
             return;
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-            return;
+        foreach (var diagnosticId in context.Diagnostics.Select(diagnostic => diagnostic.Id).Distinct(StringComparer.Ordinal))
+        {
+            switch (diagnosticId)
+            {
+                case RuleIdentifiers.ClassWithEqualsTShouldImplementIEquatableT:
+                    RegisterCodeFix(context, context.Document, nodeToFix, "Implement System.IEquatable", ImplementIEquatable, diagnosticId);
+                    break;
 
-        if (semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: context.CancellationToken) is not ITypeSymbol declaredTypeSymbol)
-            return;
+                case RuleIdentifiers.ClassWithCompareToTShouldImplementIComparableT:
+                    RegisterCodeFix(context, context.Document, nodeToFix, "Implement System.IComparable", ImplementIComparable, diagnosticId);
+                    break;
+
+                case RuleIdentifiers.ClassWithEqualsTShouldOverrideEqualsObject:
+                    RegisterCodeFix(context, context.Document, nodeToFix, "Override Equals(object)", OverrideEqualsObject, diagnosticId);
+                    break;
+
+                case RuleIdentifiers.ClassImplementingIComparableTShouldImplementIEquatableT:
+                    RegisterCodeFix(context, context.Document, nodeToFix, "Implement System.IEquatable", ImplementIEquatableForComparable, diagnosticId);
+                    break;
+
+                case RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable:
+                    RegisterCodeFix(context, context.Document, nodeToFix, "Add comparison operators", AddComparisonOperators, diagnosticId);
+                    break;
+            }
+        }
+    }
+
+    private static void RegisterCodeFix(CodeFixContext context, Document document, TypeDeclarationSyntax nodeToFix, string title, Func<Document, TypeDeclarationSyntax, CancellationToken, Task<Document>> action, string diagnosticId)
+    {
+        context.RegisterCodeFix(
+            CodeAction.Create(title, ct => action(document, nodeToFix, ct), equivalenceKey: $"{title}_{diagnosticId}"),
+            context.Diagnostics.Where(diagnostic => diagnostic.Id == diagnosticId));
+    }
+
+    private static async Task<Document> ImplementIComparable(Document document, TypeDeclarationSyntax nodeToFix, CancellationToken cancellationToken)
+    {
+        return await AddInterface(document, nodeToFix, "System.IComparable`1", null, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<Document> ImplementIEquatableForComparable(Document document, TypeDeclarationSyntax nodeToFix, CancellationToken cancellationToken)
+    {
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
+            return document;
 
         var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
         if (genericInterfaceSymbol is null)
-            return;
+            return document;
 
-        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod(m) && m is not null);
-        if (equalsMethod is null)
-            return;
+        var implementedInterface = genericInterfaceSymbol.Construct(
+            ImmutableArray.Create<ITypeSymbol>(declaredTypeSymbol),
+            ImmutableArray.Create(NullableAnnotation.None));
+        var shouldAddInterface = !declaredTypeSymbol.AllInterfaces.Any(interfaceSymbol => interfaceSymbol.IsEqualTo(implementedInterface));
 
-        var nullableAnnotation = equalsMethod.Parameters[0].NullableAnnotation;
-
-        var title = "Implement System.IEquatable";
-        var codeAction = CodeAction.Create(
-            title,
-            ct => ImplementIEquatable(context.Document, nodeToFix, genericInterfaceSymbol, declaredTypeSymbol, nullableAnnotation, ct),
-            equivalenceKey: title);
-
-        context.RegisterCodeFix(codeAction, context.Diagnostics);
-    }
-
-    private static async Task<Document> ImplementIEquatable(Document document, SyntaxNode nodeToFix, INamedTypeSymbol genericInterfaceSymbol, ITypeSymbol declaredTypeSymbol, NullableAnnotation nullableAnnotation, CancellationToken cancellationToken)
-    {
-        var concreteInterfaceSymbol = genericInterfaceSymbol.Construct(
-            ImmutableArray.Create(declaredTypeSymbol),
-            ImmutableArray.Create(nullableAnnotation));
+        var hasEqualsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().Any(EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod);
+        if (!shouldAddInterface && hasEqualsMethod)
+            return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
+        if (shouldAddInterface)
+        {
+            var concreteInterfaceTypeNode = editor.Generator.TypeExpression(implementedInterface);
+            editor.AddInterfaceType(nodeToFix, concreteInterfaceTypeNode.WithoutTrailingTrivia());
+        }
 
-        var concreteInterfaceTypeNode = generator.TypeExpression(concreteInterfaceSymbol);
+        if (!hasEqualsMethod)
+        {
+            var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
+            var equalsExpression = BinaryExpression(
+                SyntaxKind.EqualsExpression,
+                InvocationExpression(
+                    IdentifierName(nameof(IComparable.CompareTo)))
+                .WithArgumentList(
+                    ArgumentList(
+                        SingletonSeparatedList(
+                            Argument(IdentifierName("other"))))),
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)));
+            var equalsMethod = MethodDeclaration(
+                PredefinedType(Token(SyntaxKind.BoolKeyword)),
+                Identifier(nameof(object.Equals)))
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                .WithParameterList(
+                    ParameterList(
+                        SingletonSeparatedList(
+                            Parameter(Identifier("other")).WithType(typeSyntax))))
+                .WithExpressionBody(
+                    ArrowExpressionClause(equalsExpression.WithAdditionalAnnotations(Simplifier.Annotation)))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                .WithAdditionalAnnotations(Formatter.Annotation);
 
-        editor.AddInterfaceType(nodeToFix, concreteInterfaceTypeNode.WithoutTrailingTrivia());
+            editor.AddMember(nodeToFix, equalsMethod);
+        }
 
         return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> ImplementIEquatable(Document document, TypeDeclarationSyntax nodeToFix, CancellationToken cancellationToken)
+    {
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+
+        if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
+            return document;
+
+        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+        if (genericInterfaceSymbol is null)
+            return document;
+
+        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod);
+        if (equalsMethod is null)
+            return document;
+
+        var nullableAnnotation = equalsMethod.Parameters[0].NullableAnnotation;
+        var implementedInterface = genericInterfaceSymbol.Construct(
+            ImmutableArray.Create<ITypeSymbol>(declaredTypeSymbol),
+            ImmutableArray.Create(nullableAnnotation));
+        if (declaredTypeSymbol.AllInterfaces.Any(interfaceSymbol => interfaceSymbol.IsEqualTo(implementedInterface)))
+            return document;
+
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var concreteInterfaceTypeNode = editor.Generator.TypeExpression(implementedInterface);
+        editor.AddInterfaceType(nodeToFix, concreteInterfaceTypeNode.WithoutTrailingTrivia());
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> AddInterface(Document document, TypeDeclarationSyntax nodeToFix, string metadataName, NullableAnnotation? nullableAnnotation, CancellationToken cancellationToken)
+    {
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
+            return document;
+
+        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName(metadataName);
+        if (genericInterfaceSymbol is null)
+            return document;
+
+        INamedTypeSymbol implementedInterface;
+        if (nullableAnnotation is not null)
+        {
+            implementedInterface = genericInterfaceSymbol.Construct(
+                ImmutableArray.Create<ITypeSymbol>(declaredTypeSymbol),
+                ImmutableArray.Create(nullableAnnotation.Value));
+        }
+        else
+        {
+            implementedInterface = genericInterfaceSymbol.Construct(declaredTypeSymbol);
+        }
+
+        if (declaredTypeSymbol.AllInterfaces.Any(interfaceSymbol => interfaceSymbol.IsEqualTo(implementedInterface)))
+            return document;
+
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var concreteInterfaceTypeNode = editor.Generator.TypeExpression(implementedInterface);
+        editor.AddInterfaceType(nodeToFix, concreteInterfaceTypeNode.WithoutTrailingTrivia());
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> OverrideEqualsObject(Document document, TypeDeclarationSyntax nodeToFix, CancellationToken cancellationToken)
+    {
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
+            return document;
+
+        if (declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().Any(IsEqualsObjectOverride))
+            return document;
+
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
+        var equalsExpression = InvocationExpression(
+            IdentifierName(nameof(object.Equals)))
+            .WithArgumentList(
+                ArgumentList(
+                    SingletonSeparatedList(
+                        Argument(IdentifierName("other")))));
+        var equalsMethod = MethodDeclaration(
+            PredefinedType(Token(SyntaxKind.BoolKeyword)),
+            Identifier(nameof(object.Equals)))
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword)))
+            .WithParameterList(ParameterList(
+                SingletonSeparatedList(
+                    Parameter(Identifier("obj")).WithType(PredefinedType(Token(SyntaxKind.ObjectKeyword))))))
+            .WithExpressionBody(
+                ArrowExpressionClause(
+                    BinaryExpression(
+                        SyntaxKind.LogicalAndExpression,
+                        IsPatternExpression(
+                            IdentifierName("obj"),
+                            DeclarationPattern(typeSyntax.WithoutTrivia(), SingleVariableDesignation(Identifier("other")))),
+                        equalsExpression.WithAdditionalAnnotations(Simplifier.Annotation))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            .WithAdditionalAnnotations(Formatter.Annotation);
+
+        editor.AddMember(nodeToFix, equalsMethod);
+        return editor.GetChangedDocument();
+    }
+
+    private static bool IsEqualsObjectOverride(IMethodSymbol symbol)
+    {
+        return symbol.Name == nameof(object.Equals) &&
+               symbol.ReturnType.IsBoolean() &&
+               symbol.Parameters.Length == 1 &&
+               symbol.Parameters[0].Type.IsObject() &&
+               symbol.DeclaredAccessibility == Accessibility.Public &&
+               !symbol.IsStatic &&
+               symbol.IsOverride;
+    }
+
+    private static async Task<Document> AddComparisonOperators(Document document, TypeDeclarationSyntax nodeToFix, CancellationToken cancellationToken)
+    {
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
+            return document;
+
+        var missingOperators = new HashSet<string>(ComparisonOperatorNames, StringComparer.Ordinal);
+        foreach (var method in declaredTypeSymbol.GetAllMembers().OfType<IMethodSymbol>())
+        {
+            if (method.MethodKind is MethodKind.UserDefinedOperator)
+            {
+                missingOperators.Remove(method.Name);
+            }
+        }
+
+        if (missingOperators.Count == 0)
+            return document;
+
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
+        var comparerTypeDefinition = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.Comparer`1");
+        var equalityComparerTypeDefinition = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
+        if (comparerTypeDefinition is null || equalityComparerTypeDefinition is null)
+            return document;
+
+        var comparerType = comparerTypeDefinition.Construct(declaredTypeSymbol);
+        var equalityComparerType = equalityComparerTypeDefinition.Construct(declaredTypeSymbol);
+        var comparerTypeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(comparerType)).WithAdditionalAnnotations(Simplifier.Annotation);
+        var equalityComparerTypeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(equalityComparerType)).WithAdditionalAnnotations(Simplifier.Annotation);
+
+        AddMissingOperator("op_LessThan", "<", BinaryExpression(SyntaxKind.LessThanExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_LessThanOrEqual", "<=", BinaryExpression(SyntaxKind.LessThanOrEqualExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_GreaterThan", ">", BinaryExpression(SyntaxKind.GreaterThanExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_GreaterThanOrEqual", ">=", BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+        AddMissingOperator("op_Equality", "==", CreateEqualityComparerExpression());
+        AddMissingOperator("op_Inequality", "!=", PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, ParenthesizedExpression(CreateEqualityComparerExpression())));
+
+        return editor.GetChangedDocument();
+
+        InvocationExpressionSyntax CreateComparerComparisonExpression()
+        {
+            return InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        comparerTypeSyntax,
+                        IdentifierName("Default")),
+                    IdentifierName(nameof(IComparer<int>.Compare))))
+                .WithArgumentList(
+                    ArgumentList(
+                        SeparatedList(
+                        [
+                            Argument(IdentifierName("left")),
+                            Argument(IdentifierName("right")),
+                        ])));
+        }
+
+        InvocationExpressionSyntax CreateEqualityComparerExpression()
+        {
+            return InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        equalityComparerTypeSyntax,
+                        IdentifierName("Default")),
+                    IdentifierName(nameof(IEqualityComparer<int>.Equals))))
+                .WithArgumentList(
+                    ArgumentList(
+                        SeparatedList(
+                        [
+                            Argument(IdentifierName("left")),
+                            Argument(IdentifierName("right")),
+                        ])));
+        }
+
+        void AddMissingOperator(string operatorName, string operatorToken, ExpressionSyntax bodyExpression)
+        {
+            if (!missingOperators.Contains(operatorName))
+                return;
+
+            var method = OperatorDeclaration(
+                PredefinedType(Token(SyntaxKind.BoolKeyword)),
+                Token(GetOperatorSyntaxKind(operatorToken)))
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList(
+                    ParameterList(
+                        SeparatedList(
+                        [
+                            Parameter(Identifier("left")).WithType(typeSyntax),
+                            Parameter(Identifier("right")).WithType(typeSyntax),
+                        ])))
+                .WithExpressionBody(ArrowExpressionClause(bodyExpression.WithAdditionalAnnotations(Simplifier.Annotation)))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                .WithAdditionalAnnotations(Formatter.Annotation);
+            editor.AddMember(nodeToFix, method);
+        }
+    }
+
+    private static SyntaxKind GetOperatorSyntaxKind(string operatorToken)
+    {
+        return operatorToken switch
+        {
+            "<" => SyntaxKind.LessThanToken,
+            "<=" => SyntaxKind.LessThanEqualsToken,
+            ">" => SyntaxKind.GreaterThanToken,
+            ">=" => SyntaxKind.GreaterThanEqualsToken,
+            "==" => SyntaxKind.EqualsEqualsToken,
+            "!=" => SyntaxKind.ExclamationEqualsToken,
+            _ => throw new ArgumentOutOfRangeException(nameof(operatorToken)),
+        };
     }
 }
