@@ -408,8 +408,7 @@ internal sealed class OverloadFinder(Compilation compilation)
 
         static bool IsIEnumerableType(INamedTypeSymbol typeSymbol)
         {
-            return typeSymbol.MetadataName is "IEnumerable`1" &&
-                   typeSymbol.ContainingNamespace.ToDisplayString() is "System.Collections.Generic";
+            return IsMetadataType(typeSymbol, "System.Collections.Generic.IEnumerable`1");
         }
 
         static bool AreGenericTypeArgumentsCompatible(ITypeSymbol sourceTypeArgument, ITypeSymbol targetTypeArgument, IMethodSymbol method, IMethodSymbol otherMethod, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
@@ -486,8 +485,7 @@ internal sealed class OverloadFinder(Compilation compilation)
         static bool IsSafeImplicitNumericConversion(ITypeSymbol sourceType, ITypeSymbol targetType)
         {
             if (sourceType is INamedTypeSymbol namedType &&
-                namedType.Name is "Half" &&
-                namedType.ContainingNamespace.ToDisplayString() is "System" &&
+                IsMetadataType(namedType, "System.Half") &&
                 targetType.SpecialType is SpecialType.System_Single or SpecialType.System_Double)
             {
                 return true;
@@ -525,6 +523,12 @@ internal sealed class OverloadFinder(Compilation compilation)
 
             mappedType = null;
             return false;
+        }
+
+        static bool IsMetadataType(INamedTypeSymbol typeSymbol, string metadataName)
+        {
+            var expectedType = typeSymbol.ContainingAssembly?.GetTypeByMetadataName(metadataName);
+            return expectedType is not null && typeSymbol.OriginalDefinition.IsEqualTo(expectedType);
         }
 
         static ImmutableArray<IParameterSymbol> GetComparableParameters(IMethodSymbol method, IMethodSymbol otherMethod)
