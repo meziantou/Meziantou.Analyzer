@@ -38,6 +38,7 @@ Do NOT add equivalence/similarity notes directly to individual rule documentatio
 ## Implementing Roslyn analyzers
 
 - When creating a new rule, create a new constant in `src/Meziantou.Analyzer/RuleIdentifiers.cs` using the name of the new rule. The value must be unique and incremented from the last rule.
+- When updating an existing rule, update the corresponding documentation file under `docs/Rules/` to reflect the change.
 - The analyzers must be under `src/Meziantou.Analyzer/Rules/`
 - The code fixers must be under `src/Meziantou.Analyzer.CodeFixers/Rules`
 - The tests must be under `tests/Meziantou.Analyzer.Test/Rules`
