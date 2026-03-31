@@ -25,6 +25,13 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer") is null)
+            return;
+
         RegisterCodeFix(nameof(StringComparer.Ordinal));
         RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
 
@@ -46,9 +53,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         var generator = editor.Generator;
         var semanticModel = editor.SemanticModel;
 
-        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
-        if (stringComparer is null)
-            return document;
+        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer")!;
 
         var newArgument = (ArgumentSyntax)generator.Argument(
             generator.MemberAccessExpression(

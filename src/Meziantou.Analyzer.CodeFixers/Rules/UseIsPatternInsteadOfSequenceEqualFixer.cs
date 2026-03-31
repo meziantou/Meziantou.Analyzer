@@ -27,6 +27,13 @@ public sealed class UseIsPatternInsteadOfSequenceEqualFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation)
+            return;
+
         var title = "Use 'is' pattern";
         context.RegisterCodeFix(CodeAction.Create(title, ct => UseIs(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
     }
@@ -34,8 +41,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualFixer : CodeFixProvider
     private static async Task<Document> UseIs(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
-            return document;
+        var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken)!;
 
         var newExpression = SyntaxFactory.IsPatternExpression((ExpressionSyntax)operation.Arguments[0].Value.Syntax, SyntaxFactory.ConstantPattern((ExpressionSyntax)operation.Arguments[1].Value.Syntax));
         editor.ReplaceNode(nodeToFix, newExpression);
