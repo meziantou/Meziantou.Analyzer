@@ -27,9 +27,9 @@ public sealed class UseSystemThreadingLockInsteadOfObjectFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
-        const string title = "Use System.Threading.Lock";
+        const string Title = "Use System.Threading.Lock";
         context.RegisterCodeFix(
-            CodeAction.Create(title, ct => UseLockType(context.Document, nodeToFix, ct), equivalenceKey: title),
+            CodeAction.Create(Title, ct => UseLockType(context.Document, nodeToFix, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 

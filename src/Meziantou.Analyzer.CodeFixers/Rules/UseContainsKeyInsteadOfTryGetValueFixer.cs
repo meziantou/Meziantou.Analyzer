@@ -25,9 +25,9 @@ public sealed class UseContainsKeyInsteadOfTryGetValueFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
-        const string title = "Use ContainsKey";
+        const string Title = "Use ContainsKey";
         context.RegisterCodeFix(
-            CodeAction.Create(title, ct => UseContainsKey(context.Document, nodeToFix, ct), equivalenceKey: title),
+            CodeAction.Create(Title, ct => UseContainsKey(context.Document, nodeToFix, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 

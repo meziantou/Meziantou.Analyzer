@@ -26,9 +26,9 @@ public sealed class ValidateUnsafeAccessorAttributeUsageFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
-        const string title = "Set UnsafeAccessor Name";
+        const string Title = "Set UnsafeAccessor Name";
         context.RegisterCodeFix(
-            CodeAction.Create(title, ct => SetNameProperty(context.Document, nodeToFix, ct), equivalenceKey: title),
+            CodeAction.Create(Title, ct => SetNameProperty(context.Document, nodeToFix, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 

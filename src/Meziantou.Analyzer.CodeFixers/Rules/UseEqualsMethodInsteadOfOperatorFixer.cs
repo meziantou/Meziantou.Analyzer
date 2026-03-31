@@ -25,9 +25,9 @@ public sealed class UseEqualsMethodInsteadOfOperatorFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
-        const string title = "Use Equals";
+        const string Title = "Use Equals";
         context.RegisterCodeFix(
-            CodeAction.Create(title, ct => UseEquals(context.Document, nodeToFix, ct), equivalenceKey: title),
+            CodeAction.Create(Title, ct => UseEquals(context.Document, nodeToFix, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 

@@ -24,9 +24,9 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationFixer : CodeFix
         if (nodeToFix is null)
             return;
 
-        const string title = "Use System.OperatingSystem";
+        const string Title = "Use System.OperatingSystem";
         context.RegisterCodeFix(
-            CodeAction.Create(title, ct => UseOperatingSystem(context.Document, nodeToFix, ct), equivalenceKey: title),
+            CodeAction.Create(Title, ct => UseOperatingSystem(context.Document, nodeToFix, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 

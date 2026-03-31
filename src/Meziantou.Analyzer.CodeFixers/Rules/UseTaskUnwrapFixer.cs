@@ -25,9 +25,9 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
-        const string title = "Use Unwrap";
+        const string Title = "Use Unwrap";
         context.RegisterCodeFix(
-            CodeAction.Create(title, ct => UseUnwrap(context.Document, nodeToFix, ct), equivalenceKey: title),
+            CodeAction.Create(Title, ct => UseUnwrap(context.Document, nodeToFix, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
