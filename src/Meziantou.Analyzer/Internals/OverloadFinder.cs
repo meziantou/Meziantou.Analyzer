@@ -316,7 +316,7 @@ internal sealed class OverloadFinder(Compilation compilation)
 
         static bool AreParametersCompatible(IParameterSymbol methodParameter, IParameterSymbol otherMethodParameter, IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ITypeSymbol? ienumerableOfTSymbol, ITypeSymbol? halfSymbol, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
         {
-            if (options.DisableParamsToNonParamsCompatibility && methodParameter.IsParams != otherMethodParameter.IsParams)
+            if (!options.AllowParamsToNonParamsCompatibility && methodParameter.IsParams != otherMethodParameter.IsParams)
                 return false;
 
             if (!AreRefKindsCompatible(methodParameter.RefKind, otherMethodParameter.RefKind, options))
@@ -333,7 +333,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (methodIsByRef || otherMethodIsByRef)
                 return methodRefKind == otherMethodRefKind;
 
-            if (options.DisableInModifierCompatibility && (methodRefKind is RefKind.In || otherMethodRefKind is RefKind.In))
+            if (!options.AllowInModifierCompatibility && (methodRefKind is RefKind.In || otherMethodRefKind is RefKind.In))
                 return methodRefKind == otherMethodRefKind;
 
             // `in` and by-value calls should be treated as compatible for analyzer matching.
@@ -348,7 +348,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (TryGetMethodTypeArgument(otherMethodType, method, otherMethod, out var mappedType))
                 return methodType.IsEqualTo(mappedType);
 
-            if (!options.DisableNumericConversion && IsSafeImplicitNumericConversion(methodType, otherMethodType, halfSymbol))
+            if (options.AllowNumericConversion && IsSafeImplicitNumericConversion(methodType, otherMethodType, halfSymbol))
                 return true;
 
             if (methodType is IArrayTypeSymbol methodArrayType &&
@@ -389,7 +389,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (IsIEnumerableType(otherMethodNamedType.OriginalDefinition, ienumerableOfTSymbol))
                 return false;
 
-            if (!options.DisableInterfaceConversions)
+            if (options.AllowInterfaceConversions)
             {
                 foreach (var candidate in methodNamedType.GetAllInterfacesIncludingThis().OfType<INamedTypeSymbol>())
                 {

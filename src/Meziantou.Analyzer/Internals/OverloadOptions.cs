@@ -7,7 +7,7 @@ internal record struct OverloadOptions(
     bool AllowOptionalParameters = false,
     bool IncludeExtensionsMethods = false,
     SyntaxNode? SyntaxNode = null,
-    bool DisableNumericConversion = false,
-    bool DisableParamsToNonParamsCompatibility = false,
-    bool DisableInModifierCompatibility = false,
-    bool DisableInterfaceConversions = false);
+    bool AllowNumericConversion = true,
+    bool AllowParamsToNonParamsCompatibility = true,
+    bool AllowInModifierCompatibility = true,
+    bool AllowInterfaceConversions = true);
