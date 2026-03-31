@@ -50,17 +50,19 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         });
     }
 
-    private sealed class Context
-    {
-        private static readonly Version Version6 = new(6, 0, 0, 0);
+        private sealed class Context
+        {
+            private static readonly Version Version6 = new(6, 0, 0, 0);
+            private readonly Compilation _compilation;
 
-        private readonly AwaitableTypes _awaitableTypes;
+            private readonly AwaitableTypes _awaitableTypes;
 
         private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
         private readonly ConcurrentHashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
 
         public Context(Compilation compilation)
         {
+            _compilation = compilation;
             _awaitableTypes = new AwaitableTypes(compilation);
 
             var consoleSymbol = compilation.GetBestTypeByMetadataName("System.Console");
@@ -357,10 +359,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (IsTestProject && TemporaryDirectorySymbol is not null && methodSymbol.ContainingType.IsEqualTo(TemporaryDirectorySymbol))
                     return false;
 
-                if (OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false, default(ReadOnlySpan<OverloadParameterType>)))
+                if (OverloadFinder.HasSimilarParameters(method, methodSymbol, new OverloadOptions(AllowOptionalParameters: false), default(ReadOnlySpan<OverloadParameterType>), _compilation))
                     return true;
 
-                if (CancellationTokenSymbol is not null && OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false, [CancellationTokenSymbol]))
+                if (CancellationTokenSymbol is not null &&
+                    OverloadFinder.HasSimilarParameters(method, methodSymbol, new OverloadOptions(AllowOptionalParameters: false), [CancellationTokenSymbol], _compilation))
                     return true;
             }
 

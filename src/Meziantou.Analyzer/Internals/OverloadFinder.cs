@@ -114,7 +114,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 if (!options.IncludeObsoleteMembers && IsObsolete(method))
                     continue;
 
-                if (HasSimilarParameters(methodSymbol, method, options.AllowOptionalParameters, additionalParameterTypes))
+                if (HasSimilarParameters(methodSymbol, method, options, additionalParameterTypes, compilation))
                     return method;
             }
         }
@@ -124,7 +124,7 @@ internal sealed class OverloadFinder(Compilation compilation)
 
     public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
     {
-        return HasSimilarParameters(method, otherMethod, allowOptionalParameters, Wrap(additionalParameterTypes));
+        return HasSimilarParameters(method, otherMethod, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), Wrap(additionalParameterTypes), compilation: null);
     }
 
     /// <summary>
@@ -138,8 +138,31 @@ internal sealed class OverloadFinder(Compilation compilation)
     /// </summary>
     public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, bool allowOptionalParameters, params ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
+        return HasSimilarParameters(method, otherMethod, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), additionalParameterTypes, compilation: null);
+    }
+
+    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, params ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
+    {
+        return HasSimilarParameters(method, otherMethod, options, Wrap(additionalParameterTypes), compilation: null);
+    }
+
+    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes, Compilation? compilation)
+    {
+        return HasSimilarParameters(method, otherMethod, options, Wrap(additionalParameterTypes), compilation);
+    }
+
+    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, params ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+    {
+        return HasSimilarParameters(method, otherMethod, options, additionalParameterTypes, compilation: null);
+    }
+
+    public static bool HasSimilarParameters(IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes, Compilation? compilation)
+    {
         if (method.IsEqualTo(otherMethod))
             return false;
+
+        var ienumerableOfTSymbol = compilation?.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
+        var halfSymbol = compilation?.GetBestTypeByMetadataName("System.Half");
 
         var methodParameters = GetComparableParameters(method, otherMethod);
         var otherMethodParameters = GetComparableParameters(otherMethod, method);
@@ -152,7 +175,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             return false;
 
         // If allowOptionalParameters is false, the new method must have exactly the same number of parameters as the old method
-        if (!allowOptionalParameters && otherMethodParameters.Length - methodParameters.Length != additionalParameterTypes.Length)
+        if (!options.AllowOptionalParameters && otherMethodParameters.Length - methodParameters.Length != additionalParameterTypes.Length)
             return false;
 
         // Most of the time, an overload has the same order for the parameters. Try to match them in order first (faster)
@@ -165,7 +188,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var methodParameter = methodParameters[i];
                 var otherMethodParameter = otherMethodParameters[j];
 
-                if (AreParametersCompatible(methodParameter, otherMethodParameter, method, otherMethod, inferredMethodTypeArguments))
+                if (AreParametersCompatible(methodParameter, otherMethodParameter, method, otherMethod, options, ienumerableOfTSymbol, halfSymbol, inferredMethodTypeArguments))
                 {
                     i++;
                     j++;
@@ -206,7 +229,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var found = false;
                 for (var i = 0; i < unmatchedOtherMethodParameters.Length; i++)
                 {
-                    if (AreParametersCompatible(param, unmatchedOtherMethodParameters[i], method, otherMethod, inferredMethodTypeArguments))
+                    if (AreParametersCompatible(param, unmatchedOtherMethodParameters[i], method, otherMethod, options, ienumerableOfTSymbol, halfSymbol, inferredMethodTypeArguments))
                     {
                         unmatchedOtherMethodParameters = unmatchedOtherMethodParameters.RemoveAt(i);
                         found = true;
@@ -238,7 +261,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (unmatchedOtherMethodParameters.Length == 0)
                 return AreInferredGenericConstraintsSatisfied(method, otherMethod, inferredMethodTypeArguments);
 
-            if (allowOptionalParameters)
+            if (options.AllowOptionalParameters)
             {
                 if (unmatchedOtherMethodParameters.All(p => p.IsOptional))
                     return true;
@@ -291,15 +314,18 @@ internal sealed class OverloadFinder(Compilation compilation)
             return true;
         }
 
-        static bool AreParametersCompatible(IParameterSymbol methodParameter, IParameterSymbol otherMethodParameter, IMethodSymbol method, IMethodSymbol otherMethod, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
+        static bool AreParametersCompatible(IParameterSymbol methodParameter, IParameterSymbol otherMethodParameter, IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ITypeSymbol? ienumerableOfTSymbol, ITypeSymbol? halfSymbol, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
         {
-            if (!AreRefKindsCompatible(methodParameter.RefKind, otherMethodParameter.RefKind))
+            if (options.DisableParamsToNonParamsCompatibility && methodParameter.IsParams != otherMethodParameter.IsParams)
                 return false;
 
-            return AreTypesCompatible(methodParameter.Type, otherMethodParameter.Type, method, otherMethod, inferredMethodTypeArguments);
+            if (!AreRefKindsCompatible(methodParameter.RefKind, otherMethodParameter.RefKind, options))
+                return false;
+
+            return AreTypesCompatible(methodParameter.Type, otherMethodParameter.Type, method, otherMethod, options, ienumerableOfTSymbol, halfSymbol, inferredMethodTypeArguments);
         }
 
-        static bool AreRefKindsCompatible(RefKind methodRefKind, RefKind otherMethodRefKind)
+        static bool AreRefKindsCompatible(RefKind methodRefKind, RefKind otherMethodRefKind, OverloadOptions options)
         {
             var methodIsByRef = methodRefKind is RefKind.Ref or RefKind.Out;
             var otherMethodIsByRef = otherMethodRefKind is RefKind.Ref or RefKind.Out;
@@ -307,11 +333,14 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (methodIsByRef || otherMethodIsByRef)
                 return methodRefKind == otherMethodRefKind;
 
+            if (options.DisableInModifierCompatibility && (methodRefKind is RefKind.In || otherMethodRefKind is RefKind.In))
+                return methodRefKind == otherMethodRefKind;
+
             // `in` and by-value calls should be treated as compatible for analyzer matching.
             return true;
         }
 
-        static bool AreTypesCompatible(ITypeSymbol methodType, ITypeSymbol otherMethodType, IMethodSymbol method, IMethodSymbol otherMethod, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
+        static bool AreTypesCompatible(ITypeSymbol methodType, ITypeSymbol otherMethodType, IMethodSymbol method, IMethodSymbol otherMethod, OverloadOptions options, ITypeSymbol? ienumerableOfTSymbol, ITypeSymbol? halfSymbol, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
         {
             if (methodType.IsEqualTo(otherMethodType))
                 return true;
@@ -319,14 +348,14 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (TryGetMethodTypeArgument(otherMethodType, method, otherMethod, out var mappedType))
                 return methodType.IsEqualTo(mappedType);
 
-            if (IsSafeImplicitNumericConversion(methodType, otherMethodType))
+            if (!options.DisableNumericConversion && IsSafeImplicitNumericConversion(methodType, otherMethodType, halfSymbol))
                 return true;
 
             if (methodType is IArrayTypeSymbol methodArrayType &&
                 otherMethodType is IArrayTypeSymbol otherMethodArrayType &&
                 methodArrayType.Rank == otherMethodArrayType.Rank)
             {
-                return AreTypesCompatible(methodArrayType.ElementType, otherMethodArrayType.ElementType, method, otherMethod, inferredMethodTypeArguments);
+                return AreTypesCompatible(methodArrayType.ElementType, otherMethodArrayType.ElementType, method, otherMethod, options, ienumerableOfTSymbol, halfSymbol, inferredMethodTypeArguments);
             }
 
             if (methodType is not INamedTypeSymbol methodNamedType || otherMethodType is not INamedTypeSymbol otherMethodNamedType)
@@ -357,31 +386,34 @@ internal sealed class OverloadFinder(Compilation compilation)
                 return true;
             }
 
-            if (IsIEnumerableType(otherMethodNamedType.OriginalDefinition))
+            if (IsIEnumerableType(otherMethodNamedType.OriginalDefinition, ienumerableOfTSymbol))
                 return false;
 
-            foreach (var candidate in methodNamedType.GetAllInterfacesIncludingThis().OfType<INamedTypeSymbol>())
+            if (!options.DisableInterfaceConversions)
             {
-                if (!candidate.OriginalDefinition.IsEqualTo(otherMethodNamedType.OriginalDefinition))
-                    continue;
-
-                if (candidate.TypeArguments.Length != otherMethodNamedType.TypeArguments.Length)
-                    continue;
-
-                var isCompatible = true;
-                for (var i = 0; i < candidate.TypeArguments.Length; i++)
+                foreach (var candidate in methodNamedType.GetAllInterfacesIncludingThis().OfType<INamedTypeSymbol>())
                 {
-                    var sourceTypeArgument = candidate.TypeArguments[i];
-                    var targetTypeArgument = otherMethodNamedType.TypeArguments[i];
-                    if (!AreGenericTypeArgumentsCompatible(sourceTypeArgument, targetTypeArgument, method, otherMethod, inferredMethodTypeArguments))
-                    {
-                        isCompatible = false;
-                        break;
-                    }
-                }
+                    if (!candidate.OriginalDefinition.IsEqualTo(otherMethodNamedType.OriginalDefinition))
+                        continue;
 
-                if (isCompatible)
-                    return true;
+                    if (candidate.TypeArguments.Length != otherMethodNamedType.TypeArguments.Length)
+                        continue;
+
+                    var isCompatible = true;
+                    for (var i = 0; i < candidate.TypeArguments.Length; i++)
+                    {
+                        var sourceTypeArgument = candidate.TypeArguments[i];
+                        var targetTypeArgument = otherMethodNamedType.TypeArguments[i];
+                        if (!AreGenericTypeArgumentsCompatible(sourceTypeArgument, targetTypeArgument, method, otherMethod, inferredMethodTypeArguments))
+                        {
+                            isCompatible = false;
+                            break;
+                        }
+                    }
+
+                    if (isCompatible)
+                        return true;
+                }
             }
 
             if (methodNamedType is INamedTypeSymbol directCandidate &&
@@ -406,9 +438,9 @@ internal sealed class OverloadFinder(Compilation compilation)
             return false;
         }
 
-        static bool IsIEnumerableType(INamedTypeSymbol typeSymbol)
+        static bool IsIEnumerableType(INamedTypeSymbol typeSymbol, ITypeSymbol? ienumerableOfTSymbol)
         {
-            return IsMetadataType(typeSymbol, "System.Collections.Generic.IEnumerable`1");
+            return ienumerableOfTSymbol is not null && typeSymbol.OriginalDefinition.IsEqualTo(ienumerableOfTSymbol);
         }
 
         static bool AreGenericTypeArgumentsCompatible(ITypeSymbol sourceTypeArgument, ITypeSymbol targetTypeArgument, IMethodSymbol method, IMethodSymbol otherMethod, Dictionary<ITypeParameterSymbol, ITypeSymbol> inferredMethodTypeArguments)
@@ -482,10 +514,10 @@ internal sealed class OverloadFinder(Compilation compilation)
             return true;
         }
 
-        static bool IsSafeImplicitNumericConversion(ITypeSymbol sourceType, ITypeSymbol targetType)
+        static bool IsSafeImplicitNumericConversion(ITypeSymbol sourceType, ITypeSymbol targetType, ITypeSymbol? halfSymbol)
         {
             if (sourceType is INamedTypeSymbol namedType &&
-                IsMetadataType(namedType, "System.Half") &&
+                IsMetadataType(namedType, halfSymbol) &&
                 targetType.SpecialType is SpecialType.System_Single or SpecialType.System_Double)
             {
                 return true;
@@ -525,9 +557,8 @@ internal sealed class OverloadFinder(Compilation compilation)
             return false;
         }
 
-        static bool IsMetadataType(INamedTypeSymbol typeSymbol, string metadataName)
+        static bool IsMetadataType(INamedTypeSymbol typeSymbol, ITypeSymbol? expectedType)
         {
-            var expectedType = typeSymbol.ContainingAssembly?.GetTypeByMetadataName(metadataName);
             return expectedType is not null && typeSymbol.OriginalDefinition.IsEqualTo(expectedType);
         }
 
