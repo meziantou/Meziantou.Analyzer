@@ -41,13 +41,25 @@ public sealed class JSInvokableMethodsMustBePublicFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var modifiers = methodDeclaration.Modifiers;
-        var visibilityIndex = GetVisibilityModifierIndex(modifiers);
-        if (visibilityIndex >= 0)
+        var modifiers = default(SyntaxTokenList);
+        var hasAccessibilityModifier = false;
+        foreach (var modifier in methodDeclaration.Modifiers)
         {
-            modifiers = modifiers.Replace(modifiers[visibilityIndex], SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+            if (IsAccessibilityModifier(modifier))
+            {
+                if (!hasAccessibilityModifier)
+                {
+                    modifiers = modifiers.Add(SyntaxFactory.Token(modifier.LeadingTrivia, SyntaxKind.PublicKeyword, modifier.TrailingTrivia));
+                    hasAccessibilityModifier = true;
+                }
+            }
+            else
+            {
+                modifiers = modifiers.Add(modifier);
+            }
         }
-        else
+
+        if (!hasAccessibilityModifier)
         {
             modifiers = modifiers.Insert(0, SyntaxFactory.Token(SyntaxKind.PublicKeyword));
         }
@@ -56,20 +68,12 @@ public sealed class JSInvokableMethodsMustBePublicFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static int GetVisibilityModifierIndex(SyntaxTokenList modifiers)
+    private static bool IsAccessibilityModifier(SyntaxToken modifier)
     {
-        for (var i = 0; i < modifiers.Count; i++)
-        {
-            if (modifiers[i].IsKind(SyntaxKind.PrivateKeyword) ||
-                modifiers[i].IsKind(SyntaxKind.InternalKeyword) ||
-                modifiers[i].IsKind(SyntaxKind.ProtectedKeyword) ||
-                modifiers[i].IsKind(SyntaxKind.PublicKeyword))
-            {
-                return i;
-            }
-        }
-
-        return -1;
+        return modifier.IsKind(SyntaxKind.PrivateKeyword) ||
+               modifier.IsKind(SyntaxKind.InternalKeyword) ||
+               modifier.IsKind(SyntaxKind.ProtectedKeyword) ||
+               modifier.IsKind(SyntaxKind.PublicKeyword);
     }
 
     private static MethodDeclarationSyntax? GetMethodDeclaration(SyntaxNode? root, SemanticModel? semanticModel, Diagnostic diagnostic, CancellationToken cancellationToken)

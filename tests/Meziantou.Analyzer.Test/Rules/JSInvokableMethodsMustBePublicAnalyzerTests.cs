@@ -152,4 +152,30 @@ public class JSInvokableMethodsMustBePublicAnalyzerTests
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Test_CodeFix_PrivateProtectedStaticMethod()
+    {
+        const string SourceCode = """
+            using Microsoft.JSInterop;
+
+            class Test
+            {
+                [JSInvokable]
+                private protected static void [|A|]() => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith("""
+                using Microsoft.JSInterop;
+
+                class Test
+                {
+                    [JSInvokable]
+                    public static void A() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
 }
