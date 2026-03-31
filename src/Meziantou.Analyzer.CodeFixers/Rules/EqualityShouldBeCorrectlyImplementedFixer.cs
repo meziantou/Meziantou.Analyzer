@@ -255,10 +255,10 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (missingOperators.Count == 0)
             return document;
 
-        var fullyQualifiedTypeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var typeSyntax = ParseTypeName(fullyQualifiedTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
-        var compareExpression = $"global::System.Collections.Generic.Comparer<{fullyQualifiedTypeName}>.Default.Compare(left, right)";
-        var equalsExpression = $"global::System.Collections.Generic.EqualityComparer<{fullyQualifiedTypeName}>.Default.Equals(left, right)";
+        var typeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        var typeSyntax = ParseTypeName(typeName).WithAdditionalAnnotations(Simplifier.Annotation);
+        var compareExpression = $"System.Collections.Generic.Comparer<{typeName}>.Default.Compare(left, right)";
+        var equalsExpression = $"System.Collections.Generic.EqualityComparer<{typeName}>.Default.Equals(left, right)";
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
