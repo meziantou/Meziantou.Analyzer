@@ -30,6 +30,33 @@ public sealed class [|TriggersMA0095AndCA1067|] : IEquatable<TriggersMA0095AndCA
     }
 
     [Fact]
+    public async Task MA0095_CodeFix()
+    {
+        var originalCode = """
+using System;
+
+public sealed class {|MA0095:Test|} : IEquatable<Test>
+{
+    public bool Equals(Test? other) => true;
+}
+""";
+        var fixedCode = """
+using System;
+
+public sealed class Test : IEquatable<Test>
+{
+    public bool Equals(Test? other) => true;
+    public override bool Equals(object obj) => obj is global::Test other && ((global::System.IEquatable<global::Test>)this).Equals(other);
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(fixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task DirectImplementation_WithEqualsObject_ShouldNotTrigger()
     {
         var originalCode = """

@@ -8,7 +8,8 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<EqualityShouldBeCorrectlyImplementedAnalyzer>();
+            .WithAnalyzer<EqualityShouldBeCorrectlyImplementedAnalyzer>()
+            .WithCodeFixProvider<EqualityShouldBeCorrectlyImplementedFixer>();
     }
 
     [Fact]
@@ -82,6 +83,90 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
 
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MA0094_CodeFix()
+    {
+        var originalCode = """
+            using System;
+            
+            class {|MA0094:Test|} : IComparable<string>
+            {
+                public int CompareTo(string other) => throw null;
+                public int CompareTo(Test other) => throw null;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+            }
+            """;
+        var fixedCode = """
+            using System;
+            
+            class Test : IComparable<string>, IComparable<Test>
+            {
+                public int CompareTo(string other) => throw null;
+                public int CompareTo(Test other) => throw null;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(fixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MA0096_CodeFix()
+    {
+        var originalCode = """
+            using System;
+            
+            class {|MA0096:Test|} : IComparable<Test>
+            {
+                public int CompareTo(Test other) => throw null;
+                public override bool Equals(object other) => throw null;
+                public override int GetHashCode() => 0;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+            }
+            """;
+        var fixedCode = """
+            using System;
+            
+            class Test : IComparable<Test>, IEquatable<Test>
+            {
+                public int CompareTo(Test other) => throw null;
+                public override bool Equals(object other) => throw null;
+                public override int GetHashCode() => 0;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+
+                public bool Equals(global::Test other) => ((global::System.IComparable<global::Test>)this).CompareTo(other) == 0;
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(fixedCode)
               .ValidateAsync();
     }
 
