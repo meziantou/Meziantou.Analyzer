@@ -117,7 +117,7 @@
 |[MA0115](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0115.md)|Usage|Unknown component parameter|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0116](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0116.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes should also be marked as \[Parameter\]|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0117](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0117.md)|Design|Parameters with \[EditorRequired\] attributes should also be marked as \[Parameter\]|<span title='Warning'>⚠️</span>|✔️|✔️|
-|[MA0118](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0118.md)|Design|\[JSInvokable\] methods must be public|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0118](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0118.md)|Design|\[JSInvokable\] methods must be public|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0119](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0119.md)|Design|JSRuntime must not be used in OnInitialized or OnInitializedAsync|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0120](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0120.md)|Performance|Use InvokeVoidAsync when the returned value is not used|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|<span title='Info'>ℹ️</span>|❌|❌|
@@ -160,7 +160,7 @@
 |[MA0158](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0158.md)|Performance|Use System.Threading.Lock|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0159](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0159.md)|Performance|Use 'Order' instead of 'OrderBy'|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Performance|Use ContainsKey instead of TryGetValue|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0161](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0161.md)|Usage|UseShellExecute must be explicitly set|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0161](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0161.md)|Usage|UseShellExecute must be explicitly set|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0162](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0162.md)|Usage|Use Process.Start overload with ProcessStartInfo|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0163](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0163.md)|Usage|UseShellExecute must be false when redirecting standard input or output|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0164](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0164.md)|Style|Use parentheses to make not pattern clearer|<span title='Warning'>⚠️</span>|✔️|✔️|
@@ -184,7 +184,7 @@
 |[MA0183](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0183.md)|Usage|The format string should use placeholders|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0184](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0184.md)|Style|Do not use interpolated string without parameters|<span title='Hidden'>👻</span>|✔️|✔️|
 |[MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md)|Performance|Simplify string.Create when all parameters are culture invariant|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Design|Equals method should use \[NotNullWhen(true)\] on the parameter|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0186](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0186.md)|Design|Equals method should use \[NotNullWhen(true)\] on the parameter|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0187](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0187.md)|Design|Use constructor injection instead of \[Inject\] attribute|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0188](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0188.md)|Design|Use System.TimeProvider instead of a custom time abstraction|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0189](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0189.md)|Design|Use InlineArray instead of fixed-size buffers|<span title='Info'>ℹ️</span>|✔️|✔️|

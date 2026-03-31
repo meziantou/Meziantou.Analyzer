@@ -65,6 +65,39 @@ public sealed class ProcessStartAnalyzerTests
     }
 
     [Fact]
+    public async Task Process_start_should_fix_when_use_shell_execute_is_not_set()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          var processStartInfo = [|new ProcessStartInfo()|];
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        const string CodeFix = """
+                               using System.Diagnostics;
+
+                               class TypeName
+                               {
+                                   public void Test()
+                                   {
+                                       var processStartInfo = new ProcessStartInfo() { UseShellExecute = false };
+                                       Process.Start(processStartInfo);
+                                   }
+                               }
+                               """;
+        await CreateProjectBuilder("MA0161")
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Process_start_should_report_when_use_shell_execute_is_set_to_true_and_output_redirected()
     {
         const string SourceCode = """
@@ -210,6 +243,46 @@ public sealed class ProcessStartAnalyzerTests
     }
 
     [Fact]
+    public async Task Process_start_should_fix_when_use_shell_execute_is_not_set_and_initializer_exists()
+    {
+        const string SourceCode = """
+                                  using System.Diagnostics;
+
+                                  class TypeName
+                                  {
+                                      public void Test()
+                                      {
+                                          var processStartInfo = [|new ProcessStartInfo()
+                                          {
+                                              FileName = "notepad",
+                                          }|];
+                                          Process.Start(processStartInfo);
+                                      }
+                                  }
+                                  """;
+        const string CodeFix = """
+                               using System.Diagnostics;
+
+                               class TypeName
+                               {
+                                   public void Test()
+                                   {
+                                       var processStartInfo = new ProcessStartInfo()
+                                       {
+                                           FileName = "notepad",
+                                           UseShellExecute = false
+                                       };
+                                       Process.Start(processStartInfo);
+                                   }
+                               }
+                               """;
+        await CreateProjectBuilder("MA0161")
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Process_start_should_report_when_use_shell_execute_is_not_set_3()
     {
         const string SourceCode = """
@@ -291,5 +364,7 @@ public sealed class ProcessStartAnalyzerTests
             .ValidateAsync();
     }
 
-    private static ProjectBuilder CreateProjectBuilder(string id) => new ProjectBuilder().WithAnalyzer<ProcessStartAnalyzer>(id);
+    private static ProjectBuilder CreateProjectBuilder(string id) => new ProjectBuilder()
+        .WithAnalyzer<ProcessStartAnalyzer>(id)
+        .WithCodeFixProvider<UseShellExecuteMustBeSetFixer>();
 }
