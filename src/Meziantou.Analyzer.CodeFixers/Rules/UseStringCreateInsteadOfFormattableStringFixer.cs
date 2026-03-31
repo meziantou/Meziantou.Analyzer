@@ -30,7 +30,8 @@ public sealed class UseStringCreateInsteadOfFormattableStringFixer : CodeFixProv
         if (semanticModel is null)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo") is null)
+        var cultureInfoSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        if (cultureInfoSymbol is null)
             return;
 
         if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation)
@@ -39,19 +40,18 @@ public sealed class UseStringCreateInsteadOfFormattableStringFixer : CodeFixProv
         var title = "Use string.Create";
         var codeAction = CodeAction.Create(
             title,
-            ct => Fix(context.Document, nodeToFix, ct),
+            ct => Fix(context.Document, nodeToFix, cultureInfoSymbol, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
 
     }
 
-    private static async Task<Document> Fix(Document document, InvocationExpressionSyntax nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> Fix(Document document, InvocationExpressionSyntax nodeToFix, INamedTypeSymbol cultureInfo, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var cultureInfo = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo")!;
         var op = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken)!;
 
         var methodName = op.TargetMethod.Name;

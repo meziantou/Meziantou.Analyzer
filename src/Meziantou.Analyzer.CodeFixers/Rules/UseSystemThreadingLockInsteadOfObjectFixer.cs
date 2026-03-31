@@ -31,7 +31,8 @@ public sealed class UseSystemThreadingLockInsteadOfObjectFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Lock") is null)
+        var lockType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Lock");
+        if (lockType is null)
             return;
 
         var variableDeclarator = nodeToFix.FirstAncestorOrSelf<VariableDeclaratorSyntax>();
@@ -46,16 +47,13 @@ public sealed class UseSystemThreadingLockInsteadOfObjectFixer : CodeFixProvider
 
         const string Title = "Use System.Threading.Lock";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => UseLockType(context.Document, nodeToFix, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => UseLockType(context.Document, nodeToFix, lockType, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> UseLockType(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseLockType(Document document, SyntaxNode nodeToFix, INamedTypeSymbol lockType, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var lockType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Lock");
-        if (lockType is null)
-            return document;
 
         var variableDeclarator = nodeToFix.FirstAncestorOrSelf<VariableDeclaratorSyntax>();
         if (variableDeclarator is null)

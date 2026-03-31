@@ -27,7 +27,8 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
         if (semanticModel is null || !CanUseStringCreate(semanticModel.Compilation))
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo") is null)
+        var cultureInfoType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        if (cultureInfoType is null)
             return;
 
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
@@ -39,16 +40,15 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,
-                ct => Fix(context.Document, interpolatedString, ct),
+                ct => Fix(context.Document, interpolatedString, cultureInfoType, ct),
                 equivalenceKey: title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> Fix(Document document, InterpolatedStringExpressionSyntax interpolatedStringExpression, CancellationToken cancellationToken)
+    private static async Task<Document> Fix(Document document, InterpolatedStringExpressionSyntax interpolatedStringExpression, INamedTypeSymbol cultureInfoType, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var compilation = editor.SemanticModel.Compilation;
-        var cultureInfoType = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo")!;
 
         var generator = editor.Generator;
         var replacement = generator.InvocationExpression(

@@ -29,40 +29,27 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: context.CancellationToken) is not ITypeSymbol declaredTypeSymbol)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1") is null)
+        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+        if (genericInterfaceSymbol is null)
             return;
 
         var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod(m) && m is not null);
         if (equalsMethod is null)
             return;
 
+        var nullableAnnotation = equalsMethod.Parameters[0].NullableAnnotation;
+
         var title = "Implement System.IEquatable";
         var codeAction = CodeAction.Create(
             title,
-            ct => ImplementIEquatable(context.Document, nodeToFix, ct),
+            ct => ImplementIEquatable(context.Document, nodeToFix, genericInterfaceSymbol, declaredTypeSymbol, nullableAnnotation, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> ImplementIEquatable(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> ImplementIEquatable(Document document, SyntaxNode nodeToFix, INamedTypeSymbol genericInterfaceSymbol, ITypeSymbol declaredTypeSymbol, NullableAnnotation nullableAnnotation, CancellationToken cancellationToken)
     {
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-
-        if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not ITypeSymbol declaredTypeSymbol)
-            return document;
-
-        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
-        if (genericInterfaceSymbol is null)
-            return document;
-
-        // Retrieve Nullable Annotation from the Equals method and use it to construct the concrete interface
-        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(m => EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod(m) && m is not null);
-        if (equalsMethod is null)
-            return document;
-
-        var nullableAnnotation = equalsMethod.Parameters[0].NullableAnnotation;
-
         var concreteInterfaceSymbol = genericInterfaceSymbol.Construct(
             ImmutableArray.Create(declaredTypeSymbol),
             ImmutableArray.Create(nullableAnnotation));

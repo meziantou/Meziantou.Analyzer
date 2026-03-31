@@ -33,12 +33,13 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
             case DoNotUseBlockingCallInAsyncContextData.Thread_Sleep:
                 {
                     var sm = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-                    if (sm?.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task") is null)
+                    var taskSymbol = sm?.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+                    if (taskSymbol is null)
                         break;
 
                     var codeAction = CodeAction.Create(
                         "Use Task.Delay",
-                        ct => UseTaskDelay(context.Document, nodeToFix, ct),
+                        ct => UseTaskDelay(context.Document, nodeToFix, taskSymbol, ct),
                         equivalenceKey: "Thread_Sleep");
 
                     context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -167,12 +168,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseTaskDelay(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseTaskDelay(Document document, SyntaxNode nodeToFix, INamedTypeSymbol taskSymbol, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var taskSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task")!;
         var invocation = (InvocationExpressionSyntax)nodeToFix;
         var delay = invocation.ArgumentList.Arguments[0].Expression;
 

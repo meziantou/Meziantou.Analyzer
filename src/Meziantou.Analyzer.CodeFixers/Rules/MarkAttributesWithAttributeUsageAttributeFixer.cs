@@ -30,31 +30,29 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
         if (semanticModel is null)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute") is null)
+        var attributeUsageAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
+        if (attributeUsageAttribute is null)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets") is null)
+        var attributeTargets = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets");
+        if (attributeTargets is null)
             return;
 
         var title = "Add AttributeUsage attribute";
         var codeAction = CodeAction.Create(
             title,
-            ct => Refactor(context.Document, nodeToFix, ct),
+            ct => Refactor(context.Document, nodeToFix, attributeUsageAttribute, attributeTargets, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, INamedTypeSymbol attributeUsageAttribute, INamedTypeSymbol attributeTargets, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
         var classNode = (ClassDeclarationSyntax)nodeToFix;
-
-        var attributeUsageAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute")!;
-        var attributeTargets = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets")!;
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(attributeUsageAttribute, addImport: true),

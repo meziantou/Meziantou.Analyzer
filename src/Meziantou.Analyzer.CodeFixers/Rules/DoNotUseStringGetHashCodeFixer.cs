@@ -29,27 +29,25 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer") is null)
+        var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
+        if (stringComparerSymbol is null)
             return;
 
         var title = "Use StringComparer.Ordinal";
         var codeAction = CodeAction.Create(
             title,
-            ct => AddStringComparison(context.Document, nodeToFix, ct),
+            ct => AddStringComparison(context.Document, nodeToFix, stringComparerSymbol, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> AddStringComparison(Document document, SyntaxNode nodeToFix, INamedTypeSymbol stringComparer, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
         var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
-
-        var stringComparer = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer")!;
         var memberAccessExpression = (MemberAccessExpressionSyntax)invocationExpression.Expression;
 
         var newExpression = generator.InvocationExpression(

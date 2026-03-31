@@ -35,32 +35,33 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IBinaryOperation)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison") is null)
+        var stringComparisonSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
+        if (stringComparisonSymbol is null)
             return;
 
         RegisterCodeFix(nameof(StringComparison.Ordinal));
         RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
-        var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
-        if (type is not null)
+        var extensionsType = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
+        if (extensionsType is not null)
         {
-            if (type.GetMembers("EqualsOrdinal").Length > 0)
+            if (extensionsType.GetMembers("EqualsOrdinal").Length > 0)
             {
                 var title = "Use EqualsOrdinal";
                 var codeAction = CodeAction.Create(
                     title,
-                    ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsOrdinal", ct),
+                    ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsOrdinal", extensionsType, ct),
                     equivalenceKey: title);
 
                 context.RegisterCodeFix(codeAction, context.Diagnostics);
             }
 
-            if (type.GetMembers("EqualsIgnoreCase").Length > 0)
+            if (extensionsType.GetMembers("EqualsIgnoreCase").Length > 0)
             {
                 var title = "Use EqualsIgnoreCase";
                 var codeAction = CodeAction.Create(
                     title,
-                    ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsIgnoreCase", ct),
+                    ct => RefactorExtensionMethod(context.Document, nodeToFix, "EqualsIgnoreCase", extensionsType, ct),
                     equivalenceKey: title);
 
                 context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -72,21 +73,20 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
             var title = "Use String.Equals " + comparisonMode;
             var codeAction = CodeAction.Create(
                 title,
-                ct => RefactorStringEquals(context.Document, nodeToFix, comparisonMode, ct),
+                ct => RefactorStringEquals(context.Document, nodeToFix, comparisonMode, stringComparisonSymbol, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
     }
 
-    private static async Task<Document> RefactorStringEquals(Document document, SyntaxNode nodeToFix, string comparisonMode, CancellationToken cancellationToken)
+    private static async Task<Document> RefactorStringEquals(Document document, SyntaxNode nodeToFix, string comparisonMode, INamedTypeSymbol stringComparison, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
         var operation = (IBinaryOperation)semanticModel.GetOperation(nodeToFix, cancellationToken)!;
-        var stringComparison = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison")!;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(generator.TypeExpression(SpecialType.System_String), nameof(string.Equals)),
@@ -103,14 +103,13 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> RefactorExtensionMethod(Document document, SyntaxNode nodeToFix, string methodName, CancellationToken cancellationToken)
+    private static async Task<Document> RefactorExtensionMethod(Document document, SyntaxNode nodeToFix, string methodName, INamedTypeSymbol type, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
         var generator = editor.Generator;
 
         var operation = (IBinaryOperation)semanticModel.GetOperation(nodeToFix, cancellationToken)!;
-        var type = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions")!;
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(generator.TypeExpression(type), methodName),

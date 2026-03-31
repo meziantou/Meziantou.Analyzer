@@ -45,43 +45,24 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationFixer : CodeFix
         if (methodName is null)
             return;
 
-        if (semanticModel.Compilation.GetBestTypeByMetadataName("System.OperatingSystem") is null)
+        var operatingSystemType = semanticModel.Compilation.GetBestTypeByMetadataName("System.OperatingSystem");
+        if (operatingSystemType is null)
             return;
 
         const string Title = "Use System.OperatingSystem";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => UseOperatingSystem(context.Document, nodeToFix, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => UseOperatingSystem(context.Document, operation.Syntax, methodName, operatingSystemType, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> UseOperatingSystem(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseOperatingSystem(Document document, SyntaxNode operationSyntax, string methodName, INamedTypeSymbol operatingSystemType, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        if (FindInvocation(editor.SemanticModel, nodeToFix, cancellationToken) is not { Arguments.Length: 1 } operation)
-            return document;
-
-        if (operation.Arguments[0].Value is not IMemberReferenceOperation { Member.Name: var osPlatformName })
-            return document;
-
-        var methodName = osPlatformName switch
-        {
-            "Windows" => "IsWindows",
-            "Linux" => "IsLinux",
-            "OSX" => "IsMacOS",
-            "FreeBSD" => "IsFreeBSD",
-            _ => null,
-        };
-        if (methodName is null)
-            return document;
-
-        var operatingSystemType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.OperatingSystem");
-        if (operatingSystemType is null)
-            return document;
 
         var invocationExpression = editor.Generator.InvocationExpression(
             editor.Generator.MemberAccessExpression(editor.Generator.TypeExpression(operatingSystemType), methodName));
 
-        editor.ReplaceNode(operation.Syntax, invocationExpression.WithTriviaFrom(operation.Syntax).WithAdditionalAnnotations(Formatter.Annotation));
+        editor.ReplaceNode(operationSyntax, invocationExpression.WithTriviaFrom(operationSyntax).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 
