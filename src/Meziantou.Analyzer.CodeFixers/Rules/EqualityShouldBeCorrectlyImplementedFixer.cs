@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
@@ -109,7 +110,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (!hasEqualsMethod)
         {
             var fullyQualifiedTypeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var typeSyntax = ParseTypeName(fullyQualifiedTypeName);
+            var typeSyntax = ParseTypeName(fullyQualifiedTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
             var equalsMethod = MethodDeclaration(
                 PredefinedType(Token(SyntaxKind.BoolKeyword)),
                 Identifier(nameof(object.Equals)))
@@ -120,7 +121,8 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                             Parameter(Identifier("other")).WithType(typeSyntax))))
                 .WithExpressionBody(
                     ArrowExpressionClause(
-                        ParseExpression($"((global::System.IComparable<{fullyQualifiedTypeName}>)this).CompareTo(other) == 0")))
+                        ParseExpression($"((global::System.IComparable<{fullyQualifiedTypeName}>)this).CompareTo(other) == 0")
+                            .WithAdditionalAnnotations(Simplifier.Annotation)))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                 .WithAdditionalAnnotations(Formatter.Annotation);
 
@@ -200,7 +202,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var fullyQualifiedTypeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var typeSyntax = ParseTypeName(fullyQualifiedTypeName);
+        var typeSyntax = ParseTypeName(fullyQualifiedTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
         var equalsMethod = MethodDeclaration(
             PredefinedType(Token(SyntaxKind.BoolKeyword)),
             Identifier(nameof(object.Equals)))
@@ -215,7 +217,8 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                         IsPatternExpression(
                             IdentifierName("obj"),
                             DeclarationPattern(typeSyntax.WithoutTrivia(), SingleVariableDesignation(Identifier("other")))),
-                        ParseExpression($"((global::System.IEquatable<{fullyQualifiedTypeName}>)this).Equals(other)"))))
+                        ParseExpression($"((global::System.IEquatable<{fullyQualifiedTypeName}>)this).Equals(other)")
+                            .WithAdditionalAnnotations(Simplifier.Annotation))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
             .WithAdditionalAnnotations(Formatter.Annotation);
 
@@ -253,7 +256,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
             return document;
 
         var fullyQualifiedTypeName = declaredTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var typeSyntax = ParseTypeName(fullyQualifiedTypeName);
+        var typeSyntax = ParseTypeName(fullyQualifiedTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
         var compareExpression = $"global::System.Collections.Generic.Comparer<{fullyQualifiedTypeName}>.Default.Compare(left, right)";
         var equalsExpression = $"global::System.Collections.Generic.EqualityComparer<{fullyQualifiedTypeName}>.Default.Equals(left, right)";
 
@@ -284,7 +287,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                             Parameter(Identifier("left")).WithType(typeSyntax),
                             Parameter(Identifier("right")).WithType(typeSyntax),
                         ])))
-                .WithExpressionBody(ArrowExpressionClause(ParseExpression(bodyExpression)))
+                .WithExpressionBody(ArrowExpressionClause(ParseExpression(bodyExpression).WithAdditionalAnnotations(Simplifier.Annotation)))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                 .WithAdditionalAnnotations(Formatter.Annotation);
             editor.AddMember(nodeToFix, method);

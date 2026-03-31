@@ -62,12 +62,12 @@ class InheritedTest : Test // should be ok as the operators are implemented in t
                 public override bool Equals(object obj) => throw null;
                 public override int GetHashCode() => 0;
 
-                public static bool operator <(global::Test left, global::Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) < 0;
-                public static bool operator <=(global::Test left, global::Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) <= 0;
-                public static bool operator >(global::Test left, global::Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) > 0;
-                public static bool operator >=(global::Test left, global::Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) >= 0;
-                public static bool operator ==(global::Test left, global::Test right) => global::System.Collections.Generic.EqualityComparer<global::Test>.Default.Equals(left, right);
-                public static bool operator !=(global::Test left, global::Test right) => !(global::System.Collections.Generic.EqualityComparer<global::Test>.Default.Equals(left, right));
+                public static bool operator <(Test left, Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) < 0;
+                public static bool operator <=(Test left, Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) <= 0;
+                public static bool operator >(Test left, Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) > 0;
+                public static bool operator >=(Test left, Test right) => global::System.Collections.Generic.Comparer<global::Test>.Default.Compare(left, right) >= 0;
+                public static bool operator ==(Test left, Test right) => global::System.Collections.Generic.EqualityComparer<global::Test>.Default.Equals(left, right);
+                public static bool operator !=(Test left, Test right) => !(global::System.Collections.Generic.EqualityComparer<global::Test>.Default.Equals(left, right));
             }
             """;
 

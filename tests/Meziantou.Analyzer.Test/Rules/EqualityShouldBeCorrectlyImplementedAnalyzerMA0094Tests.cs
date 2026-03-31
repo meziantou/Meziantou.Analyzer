@@ -160,7 +160,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
                 public static bool operator ==(Test a, Test b) => throw null;
                 public static bool operator !=(Test a, Test b) => throw null;
 
-                public bool Equals(global::Test other) => ((global::System.IComparable<global::Test>)this).CompareTo(other) == 0;
+                public bool Equals(Test other) => ((global::System.IComparable<global::Test>)this).CompareTo(other) == 0;
             }
             """;
 

@@ -46,7 +46,7 @@ using System;
 public sealed class Test : IEquatable<Test>
 {
     public bool Equals(Test? other) => true;
-    public override bool Equals(object obj) => obj is global::Test other && ((global::System.IEquatable<global::Test>)this).Equals(other);
+    public override bool Equals(object obj) => obj is Test other && ((global::System.IEquatable<global::Test>)this).Equals(other);
 }
 """;
 
