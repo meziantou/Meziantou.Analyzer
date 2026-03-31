@@ -1585,7 +1585,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
-    public async Task GenericArgument_NestedCompatibleGenericDefinitions_ShouldReport()
+    public async Task GenericArgument_CompatibleGenericDefinitions_ShouldReport()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
