@@ -26,20 +26,20 @@ public sealed class UseShellExecuteMustBeSetFixer : CodeFixProvider
         if (objectCreation is null)
             return;
 
-        const string setFalseTitle = "Set UseShellExecute to false";
+        const string SetFalseTitle = "Set UseShellExecute to false";
         context.RegisterCodeFix(
             CodeAction.Create(
-                setFalseTitle,
+                SetFalseTitle,
                 ct => SetUseShellExecute(context.Document, objectCreation, false, ct),
-                equivalenceKey: setFalseTitle),
+                equivalenceKey: SetFalseTitle),
             context.Diagnostics);
 
-        const string setTrueTitle = "Set UseShellExecute to true";
+        const string SetTrueTitle = "Set UseShellExecute to true";
         context.RegisterCodeFix(
             CodeAction.Create(
-                setTrueTitle,
+                SetTrueTitle,
                 ct => SetUseShellExecute(context.Document, objectCreation, true, ct),
-                equivalenceKey: setTrueTitle),
+                equivalenceKey: SetTrueTitle),
             context.Diagnostics);
     }
 

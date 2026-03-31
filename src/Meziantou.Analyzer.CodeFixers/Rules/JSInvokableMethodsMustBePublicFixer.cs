@@ -21,7 +21,7 @@ public sealed class JSInvokableMethodsMustBePublicFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        const string title = "Make method public";
+        const string Title = "Make method public";
         foreach (var diagnostic in context.Diagnostics)
         {
             var methodDeclaration = GetMethodDeclaration(root, semanticModel, diagnostic, context.CancellationToken);
@@ -30,9 +30,9 @@ public sealed class JSInvokableMethodsMustBePublicFixer : CodeFixProvider
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title,
+                    Title,
                     ct => MakeMethodPublic(context.Document, methodDeclaration, ct),
-                    equivalenceKey: title),
+                    equivalenceKey: Title),
                 diagnostic);
         }
     }
