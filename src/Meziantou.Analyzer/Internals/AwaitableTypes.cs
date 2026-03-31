@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -6,6 +7,7 @@ internal sealed class AwaitableTypes
 {
     private readonly INamedTypeSymbol[] _taskOrValueTaskSymbols;
     private readonly Compilation _compilation;
+    private readonly ConcurrentDictionary<ITypeSymbol, bool> _isAwaitableCache = new(SymbolEqualityComparer.Default);
 
     public AwaitableTypes(Compilation compilation)
     {
@@ -80,6 +82,11 @@ internal sealed class AwaitableTypes
         if (symbol is null)
             return false;
 
+        return _isAwaitableCache.GetOrAdd(symbol, IsAwaitableCore);
+    }
+
+    private bool IsAwaitableCore(ITypeSymbol symbol)
+    {
         if (INotifyCompletionSymbol is null)
             return false;
 
