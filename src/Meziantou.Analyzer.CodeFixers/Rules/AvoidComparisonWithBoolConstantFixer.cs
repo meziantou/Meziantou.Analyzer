@@ -50,7 +50,9 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
 
         var nodeToKeep = syntaxRoot.FindNode(new TextSpan(nodeToKeepSpanStart, nodeToKeepSpanLength), getInnermostNodeForTie: true);
         if (nodeToKeep.Parent.IsKind(SyntaxKind.ParenthesizedExpression))
+        {
             nodeToKeep = nodeToKeep.Parent;
+        }
 
         if (logicalNotOperatorNeeded)
         {

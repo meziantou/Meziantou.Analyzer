@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -73,7 +74,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
                 constantExpression = UnaryPattern(constantExpression);
             }
 
-            var newExpression = IsPatternExpression(ParenthesizedExpression((ExpressionSyntax)expression.Syntax).WithAdditionalAnnotations(Simplifier.Annotation), constantExpression);
+            var newExpression = IsPatternExpression((ExpressionSyntax)expression.Syntax.Parentheses(), constantExpression);
             if (newExpression is not null)
             {
                 editor.ReplaceNode(node, newExpression);
@@ -94,6 +95,6 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
             constantExpression = UnaryPattern(constantExpression);
         }
 
-        return IsPatternExpression(ParenthesizedExpression(expression).WithAdditionalAnnotations(Simplifier.Annotation), constantExpression);
+        return IsPatternExpression(expression.Parentheses(), constantExpression);
     }
 }
