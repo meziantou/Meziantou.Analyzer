@@ -97,7 +97,7 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             {
                 void A(float value)
                 {
-                    _ = !(float.IsNaN(value));
+                    _ = !float.IsNaN(value);
                 }
             }
             """;

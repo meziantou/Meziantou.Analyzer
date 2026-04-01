@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Simplification;
 using Microsoft.CodeAnalysis;
@@ -16,7 +16,7 @@ internal static class ParenthesesExtensions
         return syntaxNode;
     }
 
-    public static ParenthesizedExpressionSyntax Parentheses<T>(this ExpressionSyntax expression)
+    public static ParenthesizedExpressionSyntax Parentheses(this ExpressionSyntax expression)
     {
         return SyntaxFactory.ParenthesizedExpression(expression).WithAdditionalAnnotations(Simplifier.Annotation);
     }

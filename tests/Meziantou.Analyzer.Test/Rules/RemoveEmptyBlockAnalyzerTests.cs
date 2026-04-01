@@ -212,7 +212,48 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             {
                 void A()
                 {
+                    {
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EmptyFinallyBlock_WithCatch_CodeFix()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
                     try
+                    {
+                    }
+                    catch
+                    {
+                    }
+                    [|finally
+                    {
+                    }|]
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    try
+                    {
+                    }
+                    catch
                     {
                     }
                 }

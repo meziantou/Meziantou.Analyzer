@@ -62,7 +62,15 @@ public sealed class RemoveEmptyBlockFixer : CodeFixProvider
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        editor.ReplaceNode(tryStatement, tryStatement.WithFinally(null).WithAdditionalAnnotations(Formatter.Annotation));
+        if (tryStatement.Catches.Count > 0)
+        {
+            editor.ReplaceNode(tryStatement, tryStatement.WithFinally(null).WithAdditionalAnnotations(Formatter.Annotation));
+        }
+        else
+        {
+            editor.ReplaceNode(tryStatement, tryStatement.Block.WithTriviaFrom(tryStatement).WithAdditionalAnnotations(Formatter.Annotation));
+        }
+
         return editor.GetChangedDocument();
     }
 }

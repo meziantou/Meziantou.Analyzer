@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -100,6 +101,6 @@ public sealed class UsePatternMatchingInsteadOfHasvalueFixer : CodeFixProvider
             constantExpression = UnaryPattern(constantExpression);
         }
 
-        return IsPatternExpression(ParenthesizedExpression(instance).WithAdditionalAnnotations(Simplifier.Annotation), constantExpression);
+        return IsPatternExpression(instance.Parentheses(), constantExpression);
     }
 }
