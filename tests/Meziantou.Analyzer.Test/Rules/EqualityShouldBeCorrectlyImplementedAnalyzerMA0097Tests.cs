@@ -43,7 +43,7 @@ class InheritedTest : Test // should be ok as the operators are implemented in t
     {
         var originalCode = """
             using System;
-            
+
             class {|MA0097:Test|} : IComparable<Test>, IEquatable<Test>
             {
                 public int CompareTo(Test other) => throw null;
@@ -54,7 +54,7 @@ class InheritedTest : Test // should be ok as the operators are implemented in t
             """;
         var fixedCode = """
             using System;
-            
+
             class Test : IComparable<Test>, IEquatable<Test>
             {
                 public int CompareTo(Test other) => throw null;
@@ -67,7 +67,7 @@ class InheritedTest : Test // should be ok as the operators are implemented in t
                 public static bool operator >(Test left, Test right) => System.Collections.Generic.Comparer<Test>.Default.Compare(left, right) > 0;
                 public static bool operator >=(Test left, Test right) => System.Collections.Generic.Comparer<Test>.Default.Compare(left, right) >= 0;
                 public static bool operator ==(Test left, Test right) => System.Collections.Generic.EqualityComparer<Test>.Default.Equals(left, right);
-                public static bool operator !=(Test left, Test right) => !(System.Collections.Generic.EqualityComparer<Test>.Default.Equals(left, right));
+                public static bool operator !=(Test left, Test right) => !System.Collections.Generic.EqualityComparer<Test>.Default.Equals(left, right);
             }
             """;
 
