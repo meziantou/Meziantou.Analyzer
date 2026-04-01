@@ -15,7 +15,6 @@ if (!FullPath.CurrentDirectory().TryFindGitRepositoryRoot(out var outputFolder))
     Console.WriteLine("Cannot find the current git folder");
     return 1;
 }
-
 var fileWritten = 0;
 
 var assemblies = new[] { typeof(Meziantou.Analyzer.Rules.CommaAnalyzer).Assembly, typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly };

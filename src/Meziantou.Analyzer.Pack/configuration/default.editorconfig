@@ -565,3 +565,6 @@ dotnet_diagnostic.MA0189.severity = suggestion
 
 # MA0190: Use partial property instead of partial method for GeneratedRegex
 dotnet_diagnostic.MA0190.severity = suggestion
+
+# MA0191: Do not use the null-forgiving operator
+dotnet_diagnostic.MA0191.severity = none

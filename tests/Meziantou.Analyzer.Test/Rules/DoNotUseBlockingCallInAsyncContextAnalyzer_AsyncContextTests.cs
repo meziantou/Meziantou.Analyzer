@@ -784,16 +784,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
                 class Test
                 {
-                    public void A()
-                    {
-                    }
+                    public void A() => throw null;
                 }
 
                 static class TestExtensions
                 {
-                    public static async Task AAsync(this Test test, CancellationToken token = default)
-                    {
-                    }
+                    public static async Task AAsync(this Test test, CancellationToken token = default) => throw null;
                 }
 
                 class demo
@@ -812,16 +808,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
                 class Test
                 {
-                    public void A()
-                    {
-                    }
+                    public void A() => throw null;
                 }
 
                 static class TestExtensions
                 {
-                    public static async Task AAsync(this Test test, CancellationToken token = default)
-                    {
-                    }
+                    public static async Task AAsync(this Test test, CancellationToken token = default) => throw null;
                 }
 
                 class demo
@@ -829,6 +821,995 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                     public async Task a()
                     {
                         await new Test().AAsync();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_MultipleIncompatibleGenericArguments_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(List<int> a, List<string> b) => throw null;
+                    public Task AAsync<T>(List<T> a, List<T> b, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<int>(), new List<string>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExtensionMethod_GenericArgumentsIncompatible_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                }
+
+                static class TestExtensions
+                {
+                    public static void A(this Test test, List<int> a, List<string> b) => throw null;
+                    public static Task AAsync<T>(this Test test, List<T> a, List<T> b, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<int>(), new List<string>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_ListToIEnumerable_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(List<int> value) => throw null;
+                    public Task AAsync<T>(IEnumerable<T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<int>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_NestedGenericIncompatibility_ShouldNotReport()
+    {
+        // For simplicity, we skip checking compatibility of nested generics
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(List<List<int>> value) => throw null;
+                    public Task AAsync<T>(List<List<T>> value, CancellationToken token = default) => throw null;
+                    public Task AAsync(List<List<string>> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new List<List<int>>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_SameOriginalDefinitionButDifferentTypeParameterMapping_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A<T1, T2>(Dictionary<T1, T2> value) => throw null;
+                    public Task AAsync<T>(Dictionary<T, T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A<int, string>(new Dictionary<int, string>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_SingleGenericArgument_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A<T>(List<T> value) => throw null;
+                    public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A<int>(new List<int>())|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A<T>(List<T> value) => throw null;
+                    public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        await new Test().AAsync<int>(new List<int>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExtensionMethod_GenericArgument_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                }
+
+                static class TestExtensions
+                {
+                    public static void A<T>(this Test test, List<T> value) => throw null;
+                    public static Task AAsync<T>(this Test test, List<T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A<int>(new List<int>())|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                }
+
+                static class TestExtensions
+                {
+                    public static void A<T>(this Test test, List<T> value) => throw null;
+                    public static Task AAsync<T>(this Test test, List<T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        await new Test().AAsync<int>(new List<int>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_ArrayOfGenericArgument_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A<T>(T[] value) => throw null;
+                    public Task AAsync<T>(T[] value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A<int>(new int[1])|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A<T>(T[] value) => throw null;
+                    public Task AAsync<T>(T[] value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        await new Test().AAsync<int>(new int[1]);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_AsyncConstraintIncompatible_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A<T>(List<T> value) => throw null;
+                    public Task AAsync<T>(List<T> value, CancellationToken token = default)
+                        where T : class => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A<int>(new List<int>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_InModifierDifference_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(in int value) => throw null;
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        var value = 1;
+                        [|new Test().A(in value)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_RefMismatch_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(ref int value) => throw null;
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        var value = 1;
+                        new Test().A(ref value);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_OutMismatch_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(out int value)
+                    {
+                        value = 0;
+                    }
+
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(out var value);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_NullLiteral_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(string value) => throw null;
+                    public Task AAsync(string value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(null)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_DefaultLiteral_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(string value) => throw null;
+                    public Task AAsync(string value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(default)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericConversion_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(long value) => throw null;
+                    public Task AAsync(long value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(42)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericWidening_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(int value) => throw null;
+                    public Task AAsync(long value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(1)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(int value) => throw null;
+                    public Task AAsync(long value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        await new Test().AAsync(1);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericNarrowing_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(long value) => throw null;
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(1L);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericToFloatingPoint_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(int value) => throw null;
+                    public Task AAsync(double value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(1)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericFloatingPointToInteger_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(double value) => throw null;
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(1.0);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericInt64ToFloatingPoint_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(long value) => throw null;
+                    public Task AAsync(double value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(1L);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericInt32ToFloatingPoint_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(int value) => throw null;
+                    public Task AAsync(float value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(1);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericByteToInt32_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(byte value) => throw null;
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A((byte)1)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericInt16ToInt32_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(short value) => throw null;
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A((short)1)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericSingleToDouble_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(float value) => throw null;
+                    public Task AAsync(double value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(1f)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericHalfToSingle_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(Half value) => throw null;
+                    public Task AAsync(float value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A((Half)1)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitNumericHalfToDouble_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(Half value) => throw null;
+                    public Task AAsync(double value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A((Half)1)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_CompatibleGenericDefinitions_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(List<int> value) => throw null;
+                    public Task AAsync<T>(IReadOnlyCollection<T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(new List<int>())|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_DifferentArity_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(Dictionary<int, string> value) => throw null;
+                    public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A(new Dictionary<int, string>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_ConstraintNewIncompatible_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class WithoutPublicParameterlessConstructor
+                {
+                    public WithoutPublicParameterlessConstructor(int value)
+                    {
+                    }
+                }
+
+                class Test
+                {
+                    public void A<T>(List<T> value) => throw null;
+                    public Task AAsync<T>(List<T> value, CancellationToken token = default)
+                        where T : new() => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A<WithoutPublicParameterlessConstructor>(new List<WithoutPublicParameterlessConstructor>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericArgument_DifferentTypeConstraintsOrder_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                interface IMark1 { }
+                interface IMark2 { }
+
+                class Mark : IMark1, IMark2 { }
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test) where T : IMark1, IMark2 => throw null;
+                    public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : IMark2, IMark1 => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        new Test().A<Mark>(1, new List<Mark>());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericMethod_SameConstraints_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                interface IMark1 { }
+                interface IMark2 { }
+
+                class Mark : IMark1, IMark2 { }
+
+                class Test
+                {
+                    public void A<T>(int i, List<T> test) where T : class, IMark1, IMark2 => throw null;
+                    public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : class, IMark1, IMark2 => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A<Mark>(1, new List<Mark>())|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_ImplicitUserDefinedConversion_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Value
+                {
+                    public static implicit operator Value(string value) => new Value();
+                }
+
+                class Test
+                {
+                    public void A(Value value) => throw null;
+                    public Task AAsync(Value value, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A("value")|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExtensionMethodToInstanceMethod_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                }
+
+                static class TestExtensions
+                {
+                    public static void A(this Test test, int value) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(1)|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Argument_NamedArgumentsReordered_ShouldReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public void A(int left, int right) => throw null;
+                    public Task AAsync(int left, int right, CancellationToken token = default) => throw null;
+                }
+
+                class Demo
+                {
+                    public async Task M()
+                    {
+                        [|new Test().A(right: 2, left: 1)|];
                     }
                 }
                 """)

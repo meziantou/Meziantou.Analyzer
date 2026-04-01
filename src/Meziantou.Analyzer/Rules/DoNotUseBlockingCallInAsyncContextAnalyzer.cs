@@ -50,11 +50,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         });
     }
 
-    private sealed class Context
-    {
-        private static readonly Version Version6 = new(6, 0, 0, 0);
-
-        private readonly AwaitableTypes _awaitableTypes;
+        private sealed class Context
+        {
+            private static readonly Version Version6 = new(6, 0, 0, 0);
+            private readonly AwaitableTypes _awaitableTypes;
+            private readonly OverloadFinder _overloadFinder;
 
         private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
         private readonly ConcurrentHashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
@@ -62,6 +62,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         public Context(Compilation compilation)
         {
             _awaitableTypes = new AwaitableTypes(compilation);
+            _overloadFinder = new OverloadFinder(compilation);
 
             var consoleSymbol = compilation.GetBestTypeByMetadataName("System.Console");
             if (consoleSymbol is not null)
@@ -261,70 +262,62 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Search async equivalent: sample.Write() => sample.WriteAsync()
             if (!targetMethod.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
             {
-                var position = operation.Syntax.GetLocation().SourceSpan.End;
-
-                var result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name, includeReducedExtensionMethods: true));
-                if (result is not null)
+                var asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name);
+                if (asyncEquivalentMethod is not null)
                 {
-                    data = result;
+                    data = new($"Use '{asyncEquivalentMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, asyncEquivalentMethod.Name);
                     return true;
                 }
 
                 if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
                 {
-                    result = ProcessSymbols(operation.SemanticModel!.LookupSymbols(position, targetMethod.ContainingType, name: targetMethod.Name + "Async", includeReducedExtensionMethods: true));
-                    if (result is not null)
+                    asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name + "Async");
+                    if (asyncEquivalentMethod is not null)
                     {
-                        data = result;
+                        data = new($"Use '{asyncEquivalentMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, asyncEquivalentMethod.Name);
                         return true;
                     }
-                }
-
-                DiagnosticData? ProcessSymbols(ImmutableArray<ISymbol> potentialMethods)
-                {
-                    foreach (var potentialMethod in potentialMethods)
-                    {
-                        if (IsPotentialMember(operation, targetMethod, potentialMethod))
-                        {
-                            return new($"Use '{potentialMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, potentialMethod.Name);
-                        }
-                    }
-
-                    return null;
                 }
             }
 
             return false;
         }
 
-        private bool IsPotentialMember(IInvocationOperation operation, IMethodSymbol method, ISymbol potentialAsyncSymbol)
+        private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName)
         {
-            if (potentialAsyncSymbol.IsEqualTo(method))
-                return false;
+            var options = new OverloadOptions(
+                AllowOptionalParameters: false,
+                IncludeExtensionsMethods: true,
+                SyntaxNode: operation.Syntax);
 
-            if (potentialAsyncSymbol is IMethodSymbol methodSymbol)
+            foreach (var candidateMethod in _overloadFinder.FindSimilarMethods(targetMethod, options, methodName, default))
             {
-                if (method.IsStatic && !methodSymbol.IsStatic)
-                    return false;
-
-                if (!_awaitableTypes.IsAwaitable(methodSymbol.ReturnType, operation.SemanticModel!, operation.Syntax.SpanStart))
-                    return false;
-
-                if (methodSymbol.HasAttribute(ObsoleteAttributeSymbol))
-                    return false;
-
-                // In test projects, exclude async methods from Meziantou.Framework.TemporaryDirectory
-                if (IsTestProject && TemporaryDirectorySymbol is not null && methodSymbol.ContainingType.IsEqualTo(TemporaryDirectorySymbol))
-                    return false;
-
-                if (OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false, default(ReadOnlySpan<OverloadParameterType>)))
-                    return true;
-
-                if (CancellationTokenSymbol is not null && OverloadFinder.HasSimilarParameters(method, methodSymbol, allowOptionalParameters: false, [CancellationTokenSymbol]))
-                    return true;
+                if (IsPotentialAsyncEquivalent(operation, candidateMethod))
+                    return candidateMethod;
             }
 
-            return false;
+            if (CancellationTokenSymbol is not null)
+            {
+                foreach (var candidateMethod in _overloadFinder.FindSimilarMethods(targetMethod, options, methodName, [new OverloadParameterType(CancellationTokenSymbol)]))
+                {
+                    if (IsPotentialAsyncEquivalent(operation, candidateMethod))
+                        return candidateMethod;
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol methodSymbol)
+        {
+            if (!_awaitableTypes.IsAwaitable(methodSymbol.ReturnType, operation.SemanticModel!, operation.Syntax.SpanStart))
+                return false;
+
+            // In test projects, exclude async methods from Meziantou.Framework.TemporaryDirectory
+            if (IsTestProject && TemporaryDirectorySymbol is not null && methodSymbol.ContainingType.IsEqualTo(TemporaryDirectorySymbol))
+                return false;
+
+            return true;
         }
 
         private bool IsSemaphoreSlimWaitWithZeroTimeout(IInvocationOperation operation)
