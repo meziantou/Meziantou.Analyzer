@@ -113,6 +113,30 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && !IsCultureSensitiveOperation(invocation.Arguments[0].Value, options))
                     return false;
             }
+            else if (methodName is "AppendFormat" && invocation.TargetMethod.ContainingType.IsEqualTo(StringBuilderSymbol) && invocation.Arguments.Length > 0)
+            {
+                if (invocation.Arguments.Length == 1)
+                    return false;
+
+                if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Parameter?.Type is IArrayTypeSymbol && invocation.Arguments[1].Value is IArrayCreationOperation appendFormatArrayCreation)
+                {
+                    var initializer = appendFormatArrayCreation.Initializer;
+                    if (initializer is null)
+                        return true;
+
+                    return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                }
+#if ROSLYN_4_14_OR_GREATER
+                else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation appendFormatCollectionExpression)
+                {
+                    return appendFormatCollectionExpression.Elements.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                }
+#endif
+                else
+                {
+                    return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
+                }
+            }
             else if (methodName is "Format" && invocation.TargetMethod.IsStatic && invocation.TargetMethod.ContainingType.IsString() && invocation.Arguments.Length > 0)
             {
                 if (invocation.TargetMethod.Parameters[0].Type.IsEqualTo(FormatProviderSymbol))
