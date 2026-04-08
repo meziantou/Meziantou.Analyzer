@@ -95,6 +95,76 @@ Prop;System.Int32
     }
 
     [Fact]
+    public async Task SeriLog_Log_Information_AtPrefix_MultipleParams()
+    {
+        const string SourceCode = """
+using Serilog;
+
+Log.Information("{@Prop1}{@Prop2}", 1, 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop1;System.Int32
+Prop2;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SeriLog_Log_Information_AtPrefix_MixedParams()
+    {
+        const string SourceCode = """
+using Serilog;
+
+Log.Information("{Bar}{@Prop}", 1, 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Bar;System.Int32
+Prop;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SeriLog_ILogger_AtPrefix_MultipleParams()
+    {
+        const string SourceCode = """
+using Serilog;
+
+Serilog.ILogger logger = null!;
+logger.Debug("{@Prop1}{@Prop2}", 1, 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Prop1;System.Int32
+Prop2;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SeriLog_ILogger_AtPrefix_MixedParams()
+    {
+        const string SourceCode = """
+using Serilog;
+
+Serilog.ILogger logger = null!;
+logger.Debug("{Bar}{@Prop}", 1, 2);
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAdditionalFile("LoggerParameterTypes.txt", """
+Bar;System.Int32
+Prop;System.Int32
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task SeriLog_Enrich_WithProperty()
     {
         const string SourceCode = """
