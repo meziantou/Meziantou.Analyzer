@@ -1601,4 +1601,52 @@ partial class Program
               .ValidateAsync();
     }
 #endif
+
+#if CSHARP11_OR_GREATER
+    [Fact]
+    public async Task BatchFix_MultipleRegex()
+    {
+        const string SourceCode = """
+using System;
+using System.Text.RegularExpressions;
+
+class Test1
+{
+    Regex a = [|new Regex("pattern1")|];
+}
+
+class Test2
+{
+    Regex b = [|new Regex("pattern2")|];
+}
+""";
+
+        const string CodeFix = """
+using System;
+using System.Text.RegularExpressions;
+
+partial class Test1
+{
+    Regex a = MyRegex();
+
+    [GeneratedRegex("pattern1")]
+    private static partial Regex MyRegex();
+}
+
+partial class Test2
+{
+    Regex b = MyRegex();
+
+    [GeneratedRegex("pattern2")]
+    private static partial Regex MyRegex();
+}
+""";
+
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
+              .WithSourceCode(SourceCode)
+              .ShouldBatchFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+#endif
 }
