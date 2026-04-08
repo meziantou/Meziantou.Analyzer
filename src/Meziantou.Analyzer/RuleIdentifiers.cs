@@ -191,6 +191,7 @@ internal static class RuleIdentifiers
     public const string UseInlineArrayInsteadOfFixedBuffer = "MA0189";
     public const string UsePartialPropertyInsteadOfPartialMethodForGeneratedRegex = "MA0190";
     public const string DoNotUseNullForgiveness = "MA0191";
+    public const string UseHasFlagMethod = "MA0192";
 
     public static string GetHelpUri(string identifier)
     {

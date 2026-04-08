@@ -568,3 +568,6 @@ dotnet_diagnostic.MA0190.severity = none
 
 # MA0191: Do not use the null-forgiving operator
 dotnet_diagnostic.MA0191.severity = none
+
+# MA0192: Use HasFlag instead of bitwise checks
+dotnet_diagnostic.MA0192.severity = none
