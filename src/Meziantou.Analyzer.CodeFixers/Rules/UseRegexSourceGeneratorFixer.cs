@@ -21,7 +21,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
     public override FixAllProvider? GetFixAllProvider()
     {
-        return null;
+        return WellKnownFixAllProviders.BatchFixer;
     }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
