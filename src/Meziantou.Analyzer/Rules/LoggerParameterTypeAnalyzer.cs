@@ -371,11 +371,10 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 if (templateIndex != -1)
                 {
                     formatExpression = operation.Arguments[templateIndex].Value;
+                    potentialNamePrefixes = SerilogPrefixes;
                     if (operation.Arguments.Length == templateIndex + 2)
                     {
                         var argument = operation.Arguments[templateIndex + 1];
-                        potentialNamePrefixes = SerilogPrefixes;
-
                         if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
                         {
                             argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax))];
