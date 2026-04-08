@@ -206,6 +206,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0189](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0189.md)|Design|Use InlineArray instead of fixed-size buffers|ℹ️|✔️|✔️|
 |[MA0190](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0190.md)|Design|Use partial property instead of partial method for GeneratedRegex|ℹ️|✔️|✔️|
 |[MA0191](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0191.md)|Design|Do not use the null-forgiving operator|⚠️|❌|❌|
+|[MA0192](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0192.md)|Usage|Use HasFlag instead of bitwise checks|ℹ️|❌|✔️|
 
 <!-- rules -->
 
