@@ -1000,6 +1000,32 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     }
 
     [Fact]
+    public async Task ThrowIfNullOrWhiteSpace_MemberAccess_OptionEnabled_ShouldNotReportError()
+    {
+        var sourceCode = """
+            using System;
+            class Sample
+            {
+                public static void ToSvg(string qrCode, QRCodeSvgOptions options)
+                {
+                    ArgumentNullException.ThrowIfNull(qrCode);
+                    ArgumentException.ThrowIfNullOrWhiteSpace(options.DarkColor);
+                }
+            }
+
+            class QRCodeSvgOptions
+            {
+                public string DarkColor { get; set; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ThrowIfNull_DeepMemberAccess_OptionEnabled_ShouldNotReportError()
     {
         var sourceCode = """
