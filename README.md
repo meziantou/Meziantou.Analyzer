@@ -3,11 +3,15 @@
 [![Meziantou.Analyzer on NuGet](https://img.shields.io/nuget/v/Meziantou.Analyzer.svg)](https://www.nuget.org/packages/Meziantou.Analyzer/)
 [![Meziantou.Analyzer on NuGet](https://img.shields.io/nuget/dt/Meziantou.Analyzer)](https://www.nuget.org/packages/Meziantou.Analyzer/)
 
-A Roslyn analyzer to enforce some good practices in C# in terms of design, usage, security, performance, and style.
+**Meziantou.Analyzer** is a powerful C# Roslyn analyzer that uses static analysis to detect bugs, surface security issues, and enforce best practices. It helps you catch real-world problems early—before they reach production—by analyzing your code as you write it and providing automated fixes when possible. Designed for both human developers and AI-assisted workflows, it acts as a safety net to keep your code reliable, consistent, and maintainable.
 
 ## Installation
 
-Install the NuGet package <https://www.nuget.org/packages/Meziantou.Analyzer/>
+Install the NuGet package [Meziantou.Analyzer](https://www.nuget.org/packages/Meziantou.Analyzer/)
+
+```bash
+dotnet package add Meziantou.Analyzer
+```
 
 ## Rules
 

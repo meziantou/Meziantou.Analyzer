@@ -10,8 +10,8 @@
     <Version>2.0.0</Version>
 
     <PackageId>Meziantou.Analyzer</PackageId>
-    <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
-    <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
+    <Description>A powerful C# Roslyn analyzer that uses static analysis to detect bugs, surface security issues, and enforce best practices—helping developers and AI write more reliable code.</Description>
+    <PackageTags>Meziantou.Analyzer, csharp, roslyn, static-analysis, analyzer, code-quality, analyzers, roslyn-analyzers</PackageTags>
 
     <SearchReadmeFileAbove>true</SearchReadmeFileAbove>
   </PropertyGroup>
