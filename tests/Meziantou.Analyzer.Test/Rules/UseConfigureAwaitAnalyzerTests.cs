@@ -740,6 +740,54 @@ class MyClass : System.Windows.Window
     }
 
     [Fact]
+    public async Task AwaitUsing_WithMultipleUsings_ShouldNotThrow()
+    {
+        const string SourceCode = """
+            using System;
+            using System.IO;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    Stream stream = OpenWrite();
+                    await using (stream.ConfigureAwait(false))
+                    await using (var [|streamWriter = new StreamWriter(stream)|])
+                    {
+                        await streamWriter.WriteAsync("test-data").ConfigureAwait(false);
+                    }
+                }
+
+                Stream OpenWrite() => throw null;
+            }
+            """;
+        const string CodeFix = """
+            using System;
+            using System.IO;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    Stream stream = OpenWrite();
+                    var streamWriter = new StreamWriter(stream);
+                    await using (stream.ConfigureAwait(false))
+                    await using (streamWriter.ConfigureAwait(false))
+                    {
+                        await streamWriter.WriteAsync("test-data").ConfigureAwait(false);
+                    }
+                }
+
+                Stream OpenWrite() => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task AwaitUsingAwait_NoVariable()
     {
         const string SourceCode = """

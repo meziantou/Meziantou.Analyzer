@@ -114,15 +114,23 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                 {
                     // Move statement before using
                     // foreach variable, add
-                    var variablesStatement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(usingBlock.Declaration.Type, usingBlock.Declaration.Variables))
-                        .WithLeadingTrivia(usingBlock.GetLeadingTrivia());
+                    var variablesStatement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(usingBlock.Declaration.Type, usingBlock.Declaration.Variables));
                     var newUsingBlock = usingBlock
                         .WithDeclaration(null)
-                        .WithExpression(AppendConfigureAwait(SyntaxFactory.IdentifierName(usingBlock.Declaration.Variables[0].Identifier)))
-                        .WithoutLeadingTrivia();
+                        .WithExpression(AppendConfigureAwait(SyntaxFactory.IdentifierName(usingBlock.Declaration.Variables[0].Identifier)));
 
-                    editor.InsertBefore(usingBlock, variablesStatement);
-                    editor.ReplaceNode(usingBlock, newUsingBlock);
+                    if (TryInsertVariableStatementBeforeUsing(variablesStatement.WithLeadingTrivia(usingBlock.GetLeadingTrivia()), usingBlock))
+                    {
+                        editor.ReplaceNode(usingBlock, newUsingBlock);
+                    }
+                    else
+                    {
+                        var newBlock = SyntaxFactory.Block(variablesStatement, newUsingBlock.WithoutLeadingTrivia())
+                            .WithLeadingTrivia(usingBlock.GetLeadingTrivia())
+                            .WithTrailingTrivia(usingBlock.GetTrailingTrivia());
+                        editor.ReplaceNode(usingBlock, newBlock);
+                    }
+
                     return editor.GetChangedDocument();
                 }
             }
@@ -195,6 +203,31 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         }
 
         return context.Document;
+
+        bool TryInsertVariableStatementBeforeUsing(LocalDeclarationStatementSyntax variableStatement, UsingStatementSyntax usingStatement)
+        {
+            var insertionTarget = usingStatement;
+            while (insertionTarget.Parent is UsingStatementSyntax parentUsing &&
+                   parentUsing.Statement == insertionTarget &&
+                   parentUsing.Declaration is null)
+            {
+                insertionTarget = parentUsing;
+            }
+
+            if (insertionTarget.Parent is BlockSyntax or SwitchSectionSyntax)
+            {
+                editor.InsertBefore(insertionTarget, variableStatement);
+                return true;
+            }
+
+            if (insertionTarget.Parent is GlobalStatementSyntax { Parent: CompilationUnitSyntax } globalStatement)
+            {
+                editor.InsertBefore(globalStatement, SyntaxFactory.GlobalStatement(variableStatement));
+                return true;
+            }
+
+            return false;
+        }
 
         ExpressionSyntax AppendConfigureAwait(SyntaxNode expressionSyntax)
         {
