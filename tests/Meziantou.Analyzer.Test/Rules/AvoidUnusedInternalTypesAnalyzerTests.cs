@@ -1718,6 +1718,33 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    public async Task InternalInterfaceOnlyUsedInTypeCheck_NoDiagnostic()
+    {
+        const string SourceCode = """
+            public sealed class Foo
+            {
+                public static string? Run(object x)
+                {
+                    if (x is IRunnable)
+                    {
+                        return null;
+                    }
+
+                    return "X";
+                }
+            }
+
+            internal interface IRunnable
+            {
+                void Run();
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task InternalRecordUsedInPatternMatching_NoDiagnostic()
     {
         const string SourceCode = """
