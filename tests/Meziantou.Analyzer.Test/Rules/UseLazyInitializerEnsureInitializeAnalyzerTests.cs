@@ -82,6 +82,43 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
     }
 
     [Fact]
+    public async Task LocalVariable_Field_Null()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                _ = new Sample().M();
+
+                class Sample
+                {
+                    private static System.Func<string>? s_getDisplayName;
+
+                    public string M()
+                    {
+                        System.Func<string> getDisplayName = () => string.Empty;
+                        [|System.Threading.Interlocked.CompareExchange(ref s_getDisplayName, getDisplayName, comparand: null)|];
+                        return getDisplayName();
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                _ = new Sample().M();
+
+                class Sample
+                {
+                    private static System.Func<string>? s_getDisplayName;
+
+                    public string M()
+                    {
+                        System.Func<string> getDisplayName = () => string.Empty;
+                        System.Threading.LazyInitializer.EnsureInitialized(ref s_getDisplayName, () => getDisplayName);
+                        return getDisplayName();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NewCustomStruct()
     {
         await CreateProjectBuilder()
