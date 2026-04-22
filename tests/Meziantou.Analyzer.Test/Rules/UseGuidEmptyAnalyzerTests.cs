@@ -14,6 +14,15 @@ public sealed class UseGuidEmptyAnalyzerTests
 
     [Theory]
     [InlineData("new System.Guid()")]
+    [InlineData("new System.Guid(\"00000000-0000-0000-0000-000000000000\")")]
+    [InlineData("new System.Guid(\"{00000000-0000-0000-0000-000000000000}\")")]
+    [InlineData("new System.Guid(\"00000000000000000000000000000000\")")]
+    [InlineData("new System.Guid(\"(00000000-0000-0000-0000-000000000000)\")")]
+    [InlineData("new System.Guid(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)")]
+    [InlineData("System.Guid.Parse(\"00000000-0000-0000-0000-000000000000\")")]
+    [InlineData("System.Guid.Parse(\"{00000000-0000-0000-0000-000000000000}\")")]
+    [InlineData("System.Guid.Parse(\"00000000000000000000000000000000\")")]
+    [InlineData("System.Guid.Parse(\"(00000000-0000-0000-0000-000000000000)\")")]
     public async Task ShouldReportError(string code)
     {
         await CreateProjectBuilder()
@@ -40,6 +49,9 @@ class TestClass
 
     [Theory]
     [InlineData("new System.Guid(\"\")")]
+    [InlineData("new System.Guid(\"10752bc4-c151-50f5-f27b-df92d8af5a61\")")]
+    [InlineData("System.Guid.Parse(\"10752bc4-c151-50f5-f27b-df92d8af5a61\")")]
+    [InlineData("new System.Guid(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)")]
     public async Task ShouldNotReportError(string code)
     {
         await CreateProjectBuilder()

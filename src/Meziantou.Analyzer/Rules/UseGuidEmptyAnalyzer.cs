@@ -28,17 +28,67 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            compilationContext.RegisterOperationAction(AnalyzeObjectCreationOperation, OperationKind.ObjectCreation);
+            var guidType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Guid");
+            if (guidType is null)
+                return;
+
+            compilationContext.RegisterOperationAction(ctx => AnalyzeObjectCreationOperation(ctx, guidType), OperationKind.ObjectCreation);
+            compilationContext.RegisterOperationAction(ctx => AnalyzeInvocationOperation(ctx, guidType), OperationKind.Invocation);
         });
     }
 
-    private static void AnalyzeObjectCreationOperation(OperationAnalysisContext context)
+    private static void AnalyzeObjectCreationOperation(OperationAnalysisContext context, INamedTypeSymbol guidType)
     {
         var operation = (IObjectCreationOperation)context.Operation;
-        var guidType = context.Compilation.GetBestTypeByMetadataName("System.Guid");
-        if (operation.Type.IsEqualTo(guidType) && operation.Arguments.Length == 0)
+
+        if (operation.Constructor is null || !operation.Constructor.ContainingType.IsEqualTo(guidType))
+            return;
+
+        if (operation.Arguments.Length == 0)
         {
             context.ReportDiagnostic(Rule, operation);
+            return;
+        }
+
+        if (operation.Arguments is [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }])
+        {
+            if (System.Guid.TryParse(value, out var guid) && guid == System.Guid.Empty)
+            {
+                context.ReportDiagnostic(Rule, operation);
+            }
+
+            return;
+        }
+
+        if (operation.Arguments.Length == 11 && IsAllZero(operation.Arguments))
+        {
+            context.ReportDiagnostic(Rule, operation);
+        }
+    }
+
+    private static bool IsAllZero(ImmutableArray<IArgumentOperation> arguments)
+    {
+        foreach (var argument in arguments)
+        {
+            if (!argument.Value.ConstantValue.HasValue || !NumericHelpers.IsZero(argument.Value.ConstantValue.Value))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static void AnalyzeInvocationOperation(OperationAnalysisContext context, INamedTypeSymbol guidType)
+    {
+        var invocation = (IInvocationOperation)context.Operation;
+        if (!invocation.TargetMethod.ContainingType.IsEqualTo(guidType))
+            return;
+
+        if (invocation is { TargetMethod.Name: "Parse", Arguments: [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }] })
+        {
+            if (System.Guid.TryParse(value, out var guid) && guid == System.Guid.Empty)
+            {
+                context.ReportDiagnostic(Rule, invocation);
+            }
         }
     }
 }
