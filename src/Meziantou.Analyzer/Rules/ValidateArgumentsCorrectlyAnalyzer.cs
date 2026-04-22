@@ -107,7 +107,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                     var targetMethod = operation.TargetMethod;
                     return targetMethod.IsStatic &&
                         targetMethod.ContainingType.IsOrInheritFrom(_argumentExceptionSymbol) &&
-                        targetMethod.Name.Contains("Throw", System.StringComparison.Ordinal);
+                        targetMethod.Name.StartsWith("Throw", System.StringComparison.Ordinal);
                 }
             }
 

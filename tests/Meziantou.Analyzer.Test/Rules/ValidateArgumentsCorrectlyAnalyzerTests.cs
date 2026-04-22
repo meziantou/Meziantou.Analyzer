@@ -222,6 +222,124 @@ class TypeName
     }
 
     [Fact]
+    public async Task ValidValidation_ArgumentExceptionThrowIfNullOrEmpty()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    System.ArgumentException.ThrowIfNullOrEmpty(a);
+
+                    return A();
+
+                    IEnumerable<int> A()
+                    {
+                        yield return 0;
+                        if (a == null)
+                        {
+                            yield return 1;
+                        }
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_ArgumentExceptionThrowIfNullOrEmpty()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> [|A|](string a)
+                {
+                    System.ArgumentException.ThrowIfNullOrEmpty(a);
+                    yield return 0;
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_CustomArgumentExceptionThrowIf()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class CustomArgumentException : System.ArgumentException
+            {
+                public static void ThrowIf(bool condition, string paramName)
+                {
+                    if (condition)
+                        throw new CustomArgumentException(paramName);
+                }
+
+                public CustomArgumentException(string paramName) : base(paramName)
+                {
+                }
+            }
+
+            class TypeName
+            {
+                IEnumerable<int> [|A|](string a)
+                {
+                    CustomArgumentException.ThrowIf(a is null, nameof(a));
+                    yield return 0;
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_CustomArgumentExceptionThrow()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class CustomArgumentException : System.ArgumentException
+            {
+                public static void Throw(bool condition, string paramName)
+                {
+                    if (condition)
+                        throw new CustomArgumentException(paramName);
+                }
+
+                public CustomArgumentException(string paramName) : base(paramName)
+                {
+                }
+            }
+
+            class TypeName
+            {
+                IEnumerable<int> [|A|](string a)
+                {
+                    CustomArgumentException.Throw(a is null, nameof(a));
+                    yield return 0;
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ReportDiagnostic_IAsyncEnumerable()
     {
         const string SourceCode = @"using System.Collections.Generic;
