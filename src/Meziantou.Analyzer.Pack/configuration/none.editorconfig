@@ -571,3 +571,6 @@ dotnet_diagnostic.MA0191.severity = none
 
 # MA0192: Use HasFlag instead of bitwise checks
 dotnet_diagnostic.MA0192.severity = none
+
+# MA0193: Use an overload with a MidpointRounding argument
+dotnet_diagnostic.MA0193.severity = none
