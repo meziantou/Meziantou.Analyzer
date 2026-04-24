@@ -97,7 +97,7 @@ public sealed class UseAnOverloadThatHasMidpointRoundingFixer : CodeFixProvider
 
         var newArgument = (ArgumentSyntax)generator.Argument(midpointRoundingExpression);
 
-        var newInvocation = invocationExpression;
+        InvocationExpressionSyntax newInvocation;
         if (parameterInfo.ParameterIndex > invocationExpression.ArgumentList.Arguments.Count)
         {
             var namedArgument = (ArgumentSyntax)generator.Argument(parameterInfo.ParameterName, RefKind.None, midpointRoundingExpression);
