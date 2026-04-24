@@ -503,6 +503,41 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    public async Task Method_NonGenericOverloadWithGenericAwaitableOverload_NoDiagnostic()
+    {
+        // The non-generic method has a same-named generic overload with an awaitable return type.
+        // The compiler always prefers the non-generic method, so adding await would still resolve
+        // to the non-generic (non-awaitable) method, making the suggestion invalid (false positive).
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Runtime.CompilerServices;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var x = "hello";
+                        Assert.That(x);
+                    }
+                }
+
+                static class Assert
+                {
+                    public static ValueAssertion That(string? value) => throw null;
+                    public static ValueAssertion<T> That<T>(T value) => throw null;
+                }
+
+                class ValueAssertion { }
+
+                class ValueAssertion<T>
+                {
+                    public TaskAwaiter GetAwaiter() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Console_NoDiagnostic()
     {
         await CreateProjectBuilder()

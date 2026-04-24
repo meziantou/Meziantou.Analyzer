@@ -290,8 +290,17 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 IncludeExtensionsMethods: true,
                 SyntaxNode: operation.Syntax);
 
+            // When the method name is the same as the original method, and the original is non-generic
+            // while a candidate is generic, the compiler will always prefer the non-generic original
+            // over the generic candidate. Awaiting the call would therefore still resolve to the
+            // non-generic (non-awaitable) method, making the suggested fix invalid.
+            var sameNameSearch = string.Equals(methodName, targetMethod.Name, StringComparison.Ordinal);
+
             foreach (var candidateMethod in _overloadFinder.FindSimilarMethods(targetMethod, options, methodName, default))
             {
+                if (sameNameSearch && !targetMethod.IsGenericMethod && candidateMethod.IsGenericMethod)
+                    continue;
+
                 if (IsPotentialAsyncEquivalent(operation, candidateMethod))
                     return candidateMethod;
             }
@@ -300,6 +309,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 foreach (var candidateMethod in _overloadFinder.FindSimilarMethods(targetMethod, options, methodName, [new OverloadParameterType(CancellationTokenSymbol)]))
                 {
+                    if (sameNameSearch && !targetMethod.IsGenericMethod && candidateMethod.IsGenericMethod)
+                        continue;
+
                     if (IsPotentialAsyncEquivalent(operation, candidateMethod))
                         return candidateMethod;
                 }
