@@ -223,6 +223,34 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     }
 
     [Fact]
+    public async Task MatchFileNamePrefix_LongestPrefix_WithoutLongestPrefixInFileName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Sample.cs", """
+                class [|SampleProjectHandler|] {}
+                class [|SampleProjectQuery|] {}
+                class [|SampleProjectResponse|] {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.allow_type_name_prefix", "true")
+              .AddAnalyzerConfiguration("MA0048.use_longest_type_name_prefix", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_LongestPrefix_WithLongestPrefixInFileName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "SampleProject.cs", """
+                class SampleProjectHandler {}
+                class SampleProjectQuery {}
+                class SampleProjectResponse {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.allow_type_name_prefix", "true")
+              .AddAnalyzerConfiguration("MA0048.use_longest_type_name_prefix", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task MatchOnlyFirstType_class1()
     {
         await CreateProjectBuilder()
