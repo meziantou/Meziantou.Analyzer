@@ -234,7 +234,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     }
 
     [Fact]
-    public async Task MatchFileNamePrefix_LongestPrefixMode_WithoutLongestPrefixInFileName()
+    public async Task MatchFileNamePrefix_LongestCommonPrefixMode_WithoutLongestCommonPrefixInFileName()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Sample.cs", """
@@ -242,12 +242,12 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
                 class [|SampleProjectQuery|] {}
                 class [|SampleProjectResponse|] {}
                 """)
-              .AddAnalyzerConfiguration("MA0048.mode", "LongestPrefix")
+              .AddAnalyzerConfiguration("MA0048.mode", "LongestCommonPrefix")
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task MatchFileNamePrefix_LongestPrefixMode_WithLongestPrefixInFileName()
+    public async Task MatchFileNamePrefix_LongestCommonPrefixMode_WithLongestCommonPrefixInFileName()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "SampleProject.cs", """
@@ -255,12 +255,12 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
                 class SampleProjectQuery {}
                 class SampleProjectResponse {}
                 """)
-              .AddAnalyzerConfiguration("MA0048.mode", "LongestPrefix")
+              .AddAnalyzerConfiguration("MA0048.mode", "LongestCommonPrefix")
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task MatchFileNamePrefix_LongestPrefix_WithLegacyConfiguration()
+    public async Task MatchFileNamePrefix_LongestCommonPrefix_WithLegacyConfiguration()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "SampleProject.cs", """

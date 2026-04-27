@@ -17,7 +17,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     {
         Exact,
         Prefix,
-        LongestPrefix,
+        LongestCommonPrefix,
     }
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -116,7 +116,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
             if (!fileName.IsEmpty && symbolName.AsSpan().StartsWith(fileName, StringComparison.OrdinalIgnoreCase) &&
                 (typeNameMatchMode is TypeNameMatchMode.Prefix ||
-                (typeNameMatchMode is TypeNameMatchMode.LongestPrefix && IsLongestTypeNamePrefix(context, location.SourceTree, fileName))))
+                (typeNameMatchMode is TypeNameMatchMode.LongestCommonPrefix && IsLongestTypeNamePrefix(context, location.SourceTree, fileName))))
                 continue;
 
             if (symbol.Arity > 0)
@@ -165,15 +165,15 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         if (mode.Equals(nameof(TypeNameMatchMode.Prefix), StringComparison.OrdinalIgnoreCase))
             return TypeNameMatchMode.Prefix;
 
-        if (mode.Equals(nameof(TypeNameMatchMode.LongestPrefix), StringComparison.OrdinalIgnoreCase))
-            return TypeNameMatchMode.LongestPrefix;
+        if (mode.Equals(nameof(TypeNameMatchMode.LongestCommonPrefix), StringComparison.OrdinalIgnoreCase))
+            return TypeNameMatchMode.LongestCommonPrefix;
 
         // Backward compatibility
         if (!context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".allow_type_name_prefix", defaultValue: false))
             return TypeNameMatchMode.Exact;
 
         return context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".use_longest_type_name_prefix", defaultValue: false)
-            ? TypeNameMatchMode.LongestPrefix
+            ? TypeNameMatchMode.LongestCommonPrefix
             : TypeNameMatchMode.Prefix;
     }
 
