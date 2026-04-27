@@ -165,6 +165,87 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     }
 
     [Fact]
+    public async Task EqualityComparison_MergeConditions()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var value = 0;
+                  _ = [|value == 0|] || [|value == 1|];
+                  """)
+              .ShouldFixCodeWith("""
+                  var value = 0;
+                  _ = value is 0 or 1;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InequalityComparison_MergeConditions()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var value = 0;
+                  _ = [|value != 0|] && [|value != 1|];
+                  """)
+              .ShouldFixCodeWith("""
+                  var value = 0;
+                  _ = value is not (0 or 1);
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EqualityComparison_DifferentExpressions_DoNotMerge()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var value1 = 0;
+                  var value2 = 0;
+                  _ = [|value1 == 0|] || [|value2 == 1|];
+                  """)
+              .ShouldFixCodeWith("""
+                  var value1 = 0;
+                  var value2 = 0;
+                  _ = value1 is 0 || value2 is 1;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EqualityComparison_NonContiguousExpressions_DoNotMerge()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var value1 = 0;
+                  var value2 = 0;
+                  _ = [|value1 == 0|] || [|value2 == 1|] || [|value1 == 2|];
+                  """)
+              .ShouldFixCodeWith("""
+                  var value1 = 0;
+                  var value2 = 0;
+                  _ = value1 is 0 || value2 is 1 || value1 is 2;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task BatchFix_MergeConditions()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var value = 0;
+                  _ = [|value == 0|] || [|value == 1|];
+                  _ = [|value != 2|] && [|value != 3|];
+                  """)
+              .ShouldBatchFixCodeWith("""
+                  var value = 0;
+                  _ = value is 0 or 1;
+                  _ = value is not (2 or 3);
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task CustomOperator_Class_Int32()
     {
         await CreateProjectBuilder()
