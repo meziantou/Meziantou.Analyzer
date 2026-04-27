@@ -199,6 +199,30 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     }
 
     [Fact]
+    public async Task DoesNotMatchFileNamePrefix_WithoutConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Perk.cs", """
+                class [|PerkQuery|] {}
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_WithConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Perk.cs", """
+                class PerkQuery {}
+                class PerkResponse {}
+                class PerkHandler {}
+                class [|DummyHandler|] {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.allow_type_name_prefix", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task MatchOnlyFirstType_class1()
     {
         await CreateProjectBuilder()

@@ -99,8 +99,12 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
             var filePath = location.SourceTree.FilePath;
             var fileName = filePath is not null ? GetFileName(filePath.AsSpan()) : null;
+            var allowTypeNamePrefixMatch = context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".allow_type_name_prefix", defaultValue: false);
 
             if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (allowTypeNamePrefixMatch && !fileName.IsEmpty && symbolName.AsSpan().StartsWith(fileName, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             if (symbol.Arity > 0)
