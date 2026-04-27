@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -231,7 +232,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         return node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax;
     }
 
-    private static bool TryGetTypeDeclarationName(SyntaxNode node, out string? typeName)
+    private static bool TryGetTypeDeclarationName(SyntaxNode node, [NotNullWhen(true)] out string? typeName)
     {
         switch (node)
         {
