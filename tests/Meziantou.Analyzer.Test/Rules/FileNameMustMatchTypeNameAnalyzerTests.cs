@@ -209,7 +209,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     }
 
     [Fact]
-    public async Task MatchFileNamePrefix_WithConfiguration()
+    public async Task MatchFileNamePrefix_WithModeConfiguration()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Perk.cs", """
@@ -218,12 +218,23 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
                 class PerkHandler {}
                 class [|DummyHandler|] {}
                 """)
+              .AddAnalyzerConfiguration("MA0048.mode", "Prefix")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_WithLegacyConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Perk.cs", """
+                class PerkQuery {}
+                """)
               .AddAnalyzerConfiguration("MA0048.allow_type_name_prefix", "true")
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task MatchFileNamePrefix_LongestPrefix_WithoutLongestPrefixInFileName()
+    public async Task MatchFileNamePrefix_LongestPrefixMode_WithoutLongestPrefixInFileName()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "Sample.cs", """
@@ -231,13 +242,25 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
                 class [|SampleProjectQuery|] {}
                 class [|SampleProjectResponse|] {}
                 """)
-              .AddAnalyzerConfiguration("MA0048.allow_type_name_prefix", "true")
-              .AddAnalyzerConfiguration("MA0048.use_longest_type_name_prefix", "true")
+              .AddAnalyzerConfiguration("MA0048.mode", "LongestPrefix")
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task MatchFileNamePrefix_LongestPrefix_WithLongestPrefixInFileName()
+    public async Task MatchFileNamePrefix_LongestPrefixMode_WithLongestPrefixInFileName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "SampleProject.cs", """
+                class SampleProjectHandler {}
+                class SampleProjectQuery {}
+                class SampleProjectResponse {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.mode", "LongestPrefix")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_LongestPrefix_WithLegacyConfiguration()
     {
         await CreateProjectBuilder()
               .WithSourceCode(fileName: "SampleProject.cs", """

@@ -12,6 +12,13 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 {
+    private enum TypeNameMatchMode
+    {
+        Exact,
+        Prefix,
+        LongestPrefix,
+    }
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.FileNameMustMatchTypeName,
         title: "File name must match type name",
@@ -46,6 +53,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             // Nested type
             if (symbol.ContainingType is not null)
                 continue;
+
+            var typeNameMatchMode = GetTypeNameMatchMode(context, location.SourceTree);
 
 #if ROSLYN_4_4_OR_GREATER
             if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".exclude_file_local_types", defaultValue: true))
@@ -100,14 +109,13 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
             var filePath = location.SourceTree.FilePath;
             var fileName = filePath is not null ? GetFileName(filePath.AsSpan()) : null;
-            var allowTypeNamePrefixMatch = context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".allow_type_name_prefix", defaultValue: false);
-            var useLongestTypeNamePrefix = context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".use_longest_type_name_prefix", defaultValue: false);
 
             if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            if (allowTypeNamePrefixMatch && !fileName.IsEmpty && symbolName.AsSpan().StartsWith(fileName, StringComparison.OrdinalIgnoreCase) &&
-                (!useLongestTypeNamePrefix || IsLongestTypeNamePrefix(context, location.SourceTree, fileName)))
+            if (!fileName.IsEmpty && symbolName.AsSpan().StartsWith(fileName, StringComparison.OrdinalIgnoreCase) &&
+                (typeNameMatchMode is TypeNameMatchMode.Prefix ||
+                (typeNameMatchMode is TypeNameMatchMode.LongestPrefix && IsLongestTypeNamePrefix(context, location.SourceTree, fileName))))
                 continue;
 
             if (symbol.Arity > 0)
@@ -145,6 +153,27 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             return filePath;
 
         return filePath[..index];
+    }
+
+    private static TypeNameMatchMode GetTypeNameMatchMode(SymbolAnalysisContext context, SyntaxTree sourceTree)
+    {
+        var mode = context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".mode", defaultValue: string.Empty);
+        if (mode.Equals(nameof(TypeNameMatchMode.Exact), StringComparison.OrdinalIgnoreCase))
+            return TypeNameMatchMode.Exact;
+
+        if (mode.Equals(nameof(TypeNameMatchMode.Prefix), StringComparison.OrdinalIgnoreCase))
+            return TypeNameMatchMode.Prefix;
+
+        if (mode.Equals(nameof(TypeNameMatchMode.LongestPrefix), StringComparison.OrdinalIgnoreCase))
+            return TypeNameMatchMode.LongestPrefix;
+
+        // Backward compatibility
+        if (!context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".allow_type_name_prefix", defaultValue: false))
+            return TypeNameMatchMode.Exact;
+
+        return context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".use_longest_type_name_prefix", defaultValue: false)
+            ? TypeNameMatchMode.LongestPrefix
+            : TypeNameMatchMode.Prefix;
     }
 
     private static bool IsLongestTypeNamePrefix(SymbolAnalysisContext context, SyntaxTree sourceTree, ReadOnlySpan<char> fileName)
