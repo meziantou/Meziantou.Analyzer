@@ -195,7 +195,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         if (longestCommonPrefixLength <= 0)
             return "'" + fallbackTypeName + "'";
 
-        return "'" + typeNames![0].Substring(0, longestCommonPrefixLength) + "'";
+        return "'" + typeNames![0].AsSpan(0, longestCommonPrefixLength).ToString() + "'";
     }
 
     private static bool IsLongestTypeNamePrefix(SymbolAnalysisContext context, SyntaxTree sourceTree, ReadOnlySpan<char> fileName)
