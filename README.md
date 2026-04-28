@@ -52,19 +52,19 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0029](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0029.md)|Performance|Combine LINQ methods|ℹ️|✔️|✔️|
 |[MA0030](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0030.md)|Performance|Remove useless OrderBy call|⚠️|✔️|✔️|
 |[MA0031](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0031.md)|Performance|Optimize Enumerable.Count() usage|ℹ️|✔️|✔️|
-|[MA0032](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0032.md)|Usage|Use an overload with a CancellationToken argument|ℹ️|❌|❌|
+|[MA0032](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0032.md)|Usage|Use the CancellationToken overload, even if one must be introduced|ℹ️|❌|❌|
 |[MA0033](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0033.md)|Design|Do not tag instance fields with ThreadStaticAttribute|⚠️|✔️|❌|
 |[MA0035](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0035.md)|Usage|Do not use dangerous threading methods|⚠️|✔️|❌|
 |[MA0036](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0036.md)|Design|Make class static|ℹ️|✔️|✔️|
 |[MA0037](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0037.md)|Usage|Remove empty statement|❌|✔️|✔️|
 |[MA0038](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0038.md)|Design|Make method static (deprecated, use CA1822 instead)|ℹ️|✔️|✔️|
 |[MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md)|Security|Do not write your own certificate validation method|❌|✔️|❌|
-|[MA0040](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0040.md)|Usage|Forward the CancellationToken parameter to methods that take one|ℹ️|✔️|✔️|
+|[MA0040](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0040.md)|Usage|Forward the available CancellationToken to called methods|ℹ️|✔️|✔️|
 |[MA0041](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0041.md)|Design|Make property static (deprecated, use CA1822 instead)|ℹ️|✔️|✔️|
-|[MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md)|Design|Do not use blocking calls in an async method|ℹ️|✔️|✔️|
+|[MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md)|Design|Use await instead of blocking in async-compatible methods|ℹ️|✔️|✔️|
 |[MA0043](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0043.md)|Usage|Use nameof operator in ArgumentException|ℹ️|✔️|✔️|
 |[MA0044](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0044.md)|Performance|Remove useless ToString call|ℹ️|✔️|✔️|
-|[MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md)|Design|Do not use blocking calls in a sync method (need to make calling method async)|ℹ️|❌|✔️|
+|[MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md)|Design|Do not use blocking calls when the calling method must become async|ℹ️|❌|✔️|
 |[MA0046](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0046.md)|Design|Use EventHandler\<T\> to declare events|⚠️|✔️|❌|
 |[MA0047](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0047.md)|Design|Declare types in namespaces|⚠️|✔️|❌|
 |[MA0048](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0048.md)|Design|File name must match type name|⚠️|✔️|❌|
@@ -126,7 +126,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0104](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0104.md)|Design|Do not create a type with a name from the BCL|⚠️|❌|❌|
 |[MA0105](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0105.md)|Performance|Use the lambda parameters instead of using a closure|ℹ️|✔️|✔️|
 |[MA0106](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0106.md)|Performance|Avoid closure by using an overload with the 'factoryArgument' parameter|ℹ️|✔️|✔️|
-|[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use object.ToString|ℹ️|❌|❌|
+|[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not call object.ToString() on values typed as object|ℹ️|❌|❌|
 |[MA0108](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0108.md)|Usage|Remove redundant argument value|ℹ️|✔️|✔️|
 |[MA0109](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0109.md)|Design|Consider adding an overload with a Span\<T\> or Memory\<T\>|ℹ️|❌|❌|
 |[MA0110](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0110.md)|Performance|Use the Regex source generator|ℹ️|✔️|✔️|
@@ -143,7 +143,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|ℹ️|❌|❌|
 |[MA0122](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0122.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes are only valid in routable components (@page)|ℹ️|✔️|❌|
 |[MA0123](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0123.md)|Design|Sequence number must be a constant|⚠️|✔️|❌|
-|[MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md)|Design|Log parameter type is not valid|⚠️|✔️|❌|
+|[MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md)|Design|Microsoft.Extensions.Logging parameter type is not valid|⚠️|✔️|❌|
 |[MA0125](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0125.md)|Design|The list of log parameter types contains an invalid type|⚠️|✔️|❌|
 |[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|⚠️|✔️|❌|
 |[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|👻|✔️|✔️|
@@ -156,27 +156,27 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md)|Usage|Observe result of async calls|⚠️|✔️|❌|
 |[MA0135](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0135.md)|Design|The log parameter has no configured type|⚠️|❌|❌|
 |[MA0136](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0136.md)|Usage|Raw String contains an implicit end of line character|👻|✔️|❌|
-|[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Use 'Async' suffix when a method returns an awaitable type|⚠️|❌|✔️|
-|[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|⚠️|❌|✔️|
-|[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Log parameter type is not valid|⚠️|✔️|❌|
+|[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Awaitable-returning method name should end with 'Async'|⚠️|❌|✔️|
+|[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Non-awaitable method name should not end with 'Async'|⚠️|❌|✔️|
+|[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Serilog parameter type is not valid|⚠️|✔️|❌|
 |[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|⚠️|✔️|❌|
-|[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use pattern matching instead of inequality operators for null check|ℹ️|❌|✔️|
-|[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use pattern matching instead of equality operators for null check|ℹ️|❌|✔️|
+|[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use 'is not null' instead of '!= null'|ℹ️|❌|✔️|
+|[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use 'is null' instead of '== null'|ℹ️|❌|✔️|
 |[MA0143](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0143.md)|Design|Primary constructor parameters should be readonly|⚠️|✔️|❌|
 |[MA0144](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0144.md)|Performance|Use System.OperatingSystem to check the current OS|⚠️|✔️|✔️|
 |[MA0145](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0145.md)|Usage|Signature for \[UnsafeAccessorAttribute\] method is not valid|⚠️|✔️|❌|
 |[MA0146](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0146.md)|Usage|Name must be set explicitly on local functions|⚠️|✔️|✔️|
 |[MA0147](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0147.md)|Usage|Avoid async void method for delegate|⚠️|✔️|❌|
-|[MA0148](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0148.md)|Usage|Use pattern matching instead of equality operators for discrete value|ℹ️|❌|✔️|
-|[MA0149](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0149.md)|Usage|Use pattern matching instead of inequality operators for discrete value|ℹ️|❌|✔️|
-|[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call the default object.ToString explicitly|⚠️|✔️|❌|
+|[MA0148](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0148.md)|Usage|Use 'is' patterns instead of '==' for constant values|ℹ️|❌|✔️|
+|[MA0149](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0149.md)|Usage|Use 'is not' patterns instead of '!=' for constant values|ℹ️|❌|✔️|
+|[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call ToString() when the type falls back to object.ToString()|⚠️|✔️|❌|
 |[MA0151](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0151.md)|Usage|DebuggerDisplay must contain valid members|⚠️|✔️|❌|
 |[MA0152](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0152.md)|Performance|Use Unwrap instead of using await twice|ℹ️|✔️|✔️|
 |[MA0153](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0153.md)|Design|Do not log symbols decorated with DataClassificationAttribute directly|⚠️|✔️|❌|
 |[MA0154](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0154.md)|Design|Use langword in XML comment|ℹ️|✔️|✔️|
 |[MA0155](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0155.md)|Design|Do not use async void methods|⚠️|❌|❌|
-|[MA0156](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0156.md)|Design|Use 'Async' suffix when a method returns IAsyncEnumerable\<T\>|⚠️|❌|✔️|
-|[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|Do not use 'Async' suffix when a method returns IAsyncEnumerable\<T\>|⚠️|❌|✔️|
+|[MA0156](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0156.md)|Design|IAsyncEnumerable-returning method name should end with 'Async'|⚠️|❌|✔️|
+|[MA0157](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0157.md)|Design|IAsyncEnumerable-returning method name should not end with 'Async'|⚠️|❌|✔️|
 |[MA0158](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0158.md)|Performance|Use System.Threading.Lock|⚠️|✔️|✔️|
 |[MA0159](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0159.md)|Performance|Use 'Order' instead of 'OrderBy'|ℹ️|✔️|✔️|
 |[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Performance|Use ContainsKey instead of TryGetValue|ℹ️|✔️|✔️|
@@ -189,7 +189,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0168](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0168.md)|Performance|Use readonly struct for in or ref readonly parameter|ℹ️|❌|❌|
 |[MA0169](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0169.md)|Design|Use Equals method instead of operator|⚠️|✔️|✔️|
 |[MA0170](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0170.md)|Design|Type cannot be used as an attribute argument|⚠️|❌|❌|
-|[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of HasValue for Nullable\<T\> check|ℹ️|❌|✔️|
+|[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use 'is null' / 'is not null' instead of Nullable\<T\>.HasValue|ℹ️|❌|✔️|
 |[MA0172](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0172.md)|Usage|Both sides of the logical operation are identical|⚠️|❌|❌|
 |[MA0173](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0173.md)|Design|Use LazyInitializer.EnsureInitialize|ℹ️|✔️|✔️|
 |[MA0174](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0174.md)|Style|Record should use explicit 'class' keyword|ℹ️|❌|✔️|

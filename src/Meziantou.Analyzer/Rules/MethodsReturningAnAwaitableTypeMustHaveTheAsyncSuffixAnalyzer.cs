@@ -12,7 +12,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 {
     private static readonly DiagnosticDescriptor AsyncSuffixRule = new(
         RuleIdentifiers.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffix,
-        title: "Use 'Async' suffix when a method returns an awaitable type",
+        title: "Awaitable-returning method name should end with 'Async'",
         messageFormat: "Method returning an awaitable type must use the 'Async' suffix",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
@@ -22,7 +22,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
     private static readonly DiagnosticDescriptor NotAsyncSuffixRule = new(
         RuleIdentifiers.MethodsNotReturningAnAwaitableTypeMustNotHaveTheAsyncSuffix,
-        title: "Do not use 'Async' suffix when a method does not return an awaitable type",
+        title: "Non-awaitable method name should not end with 'Async'",
         messageFormat: "Method not returning an awaitable type must not use the 'Async' suffix",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
@@ -32,7 +32,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
     private static readonly DiagnosticDescriptor AsyncSuffixRuleAsyncEnumerable = new(
        RuleIdentifiers.MethodsReturningIAsyncEnumerableMustHaveTheAsyncSuffix,
-       title: "Use 'Async' suffix when a method returns IAsyncEnumerable<T>",
+        title: "IAsyncEnumerable-returning method name should end with 'Async'",
        messageFormat: "Method returning IAsyncEnumerable<T> must use the 'Async' suffix",
        RuleCategories.Design,
        DiagnosticSeverity.Warning,
@@ -42,7 +42,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
     private static readonly DiagnosticDescriptor NotAsyncSuffixRuleAsyncEnumerable = new(
         RuleIdentifiers.MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix,
-        title: "Do not use 'Async' suffix when a method returns IAsyncEnumerable<T>",
+        title: "IAsyncEnumerable-returning method name should not end with 'Async'",
         messageFormat: "Method returning IAsyncEnumerable<T> must not use the 'Async' suffix",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,

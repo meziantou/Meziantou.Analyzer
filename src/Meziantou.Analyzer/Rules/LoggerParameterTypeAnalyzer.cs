@@ -15,7 +15,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.LoggerParameterType,
-        title: "Log parameter type is not valid",
+        title: "Microsoft.Extensions.Logging parameter type is not valid",
         messageFormat: "Log parameter '{0}' {1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
@@ -25,7 +25,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor RuleSerilog = new(
         RuleIdentifiers.LoggerParameterType_Serilog,
-        title: "Log parameter type is not valid",
+        title: "Serilog parameter type is not valid",
         messageFormat: "Log parameter '{0}' {1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,

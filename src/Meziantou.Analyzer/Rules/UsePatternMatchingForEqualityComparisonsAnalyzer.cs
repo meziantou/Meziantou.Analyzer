@@ -11,8 +11,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
 {
     private static readonly DiagnosticDescriptor RuleEqualNull = new(
         RuleIdentifiers.UsePatternMatchingForNullEquality,
-        title: "Use pattern matching instead of equality operators for null check",
-        messageFormat: "Use pattern matching instead of equality operators for null check",
+        title: "Use 'is null' instead of '== null'",
+        messageFormat: "Use 'is null' instead of '== null'",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,
@@ -21,8 +21,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
 
     private static readonly DiagnosticDescriptor RuleNotEqualNull = new(
         RuleIdentifiers.UsePatternMatchingForNullCheck,
-        title: "Use pattern matching instead of inequality operators for null check",
-        messageFormat: "Use pattern matching instead of inequality operators for null check",
+        title: "Use 'is not null' instead of '!= null'",
+        messageFormat: "Use 'is not null' instead of '!= null'",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,
@@ -31,8 +31,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
 
     private static readonly DiagnosticDescriptor RuleEqualConstant = new(
         RuleIdentifiers.UsePatternMatchingForEqualityComparison,
-        title: "Use pattern matching instead of equality operators for discrete value",
-        messageFormat: "Use pattern matching instead of equality operators for discrete value",
+        title: "Use 'is' patterns instead of '==' for constant values",
+        messageFormat: "Use 'is' patterns instead of '==' for constant values",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,
@@ -41,8 +41,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
 
     private static readonly DiagnosticDescriptor RuleNotEqualConstant = new(
         RuleIdentifiers.UsePatternMatchingForInequalityComparison,
-        title: "Use pattern matching instead of inequality operators for discrete value",
-        messageFormat: "Use pattern matching instead of inequality operators for discrete values",
+        title: "Use 'is not' patterns instead of '!=' for constant values",
+        messageFormat: "Use 'is not' patterns instead of '!=' for constant values",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,

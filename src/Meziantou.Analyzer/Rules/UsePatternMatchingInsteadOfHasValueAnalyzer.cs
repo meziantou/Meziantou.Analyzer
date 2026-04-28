@@ -11,8 +11,8 @@ public sealed class UsePatternMatchingInsteadOfHasValueAnalyzer : DiagnosticAnal
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UsePatternMatchingInsteadOfHasvalue,
-        title: "Use pattern matching instead of HasValue for Nullable<T> check",
-        messageFormat: "Use pattern matching instead of HasValue for Nullable<T> check",
+        title: "Use 'is null' / 'is not null' instead of Nullable<T>.HasValue",
+        messageFormat: "Use 'is null' / 'is not null' instead of Nullable<T>.HasValue",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,

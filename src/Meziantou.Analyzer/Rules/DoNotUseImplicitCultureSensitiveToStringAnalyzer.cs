@@ -33,7 +33,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
     private static readonly DiagnosticDescriptor ObjectToStringRule = new(
         RuleIdentifiers.DoNotUseCultureSensitiveObjectToString,
-        title: "Do not use object.ToString",
+        title: "Do not call object.ToString() on values typed as object",
         messageFormat: "Do not use object.ToString",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
