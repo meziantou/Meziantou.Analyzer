@@ -170,6 +170,52 @@ public sealed class MergeIsPatternChecksAnalyzerTests
     }
 
     [Fact]
+    public async Task Field_NameAndThisFieldName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  _ = new Sample().M();
+
+                  class Sample
+                  {
+                      private int fieldName;
+                      public bool M() => [|fieldName is 1 || this.fieldName is 2|];
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  _ = new Sample().M();
+
+                  class Sample
+                  {
+                      private int fieldName;
+                      public bool M() => fieldName is 1 or 2;
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalVariable_HidesField_DoNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  _ = new Sample().M();
+
+                  class Sample
+                  {
+                      private int value;
+
+                      public bool M()
+                      {
+                          var value = 0;
+                          return value is 1 || this.value is 2;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Property_ExplicitAndImplicitThis()
     {
         await CreateProjectBuilder()
