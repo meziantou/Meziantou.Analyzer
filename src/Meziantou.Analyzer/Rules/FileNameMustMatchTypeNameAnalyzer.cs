@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Meziantou.Analyzer.Configurations;
@@ -11,10 +13,17 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 {
+    private enum TypeNameMatchMode
+    {
+        Exact,
+        Prefix,
+        LongestCommonPrefix,
+    }
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.FileNameMustMatchTypeName,
         title: "File name must match type name",
-        messageFormat: "File name must match type name ({0} {1})",
+        messageFormat: "File name must match type name ({0} {1}), expected file name: {2}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -45,6 +54,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             // Nested type
             if (symbol.ContainingType is not null)
                 continue;
+
+            var typeNameMatchMode = GetTypeNameMatchMode(context, location.SourceTree);
 
 #if ROSLYN_4_4_OR_GREATER
             if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".exclude_file_local_types", defaultValue: true))
@@ -103,6 +114,11 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 continue;
 
+            if (!fileName.IsEmpty && symbolName.AsSpan().StartsWith(fileName, StringComparison.OrdinalIgnoreCase) &&
+                (typeNameMatchMode is TypeNameMatchMode.Prefix ||
+                (typeNameMatchMode is TypeNameMatchMode.LongestCommonPrefix && IsLongestTypeNamePrefix(context, location.SourceTree, fileName))))
+                continue;
+
             if (symbol.Arity > 0)
             {
                 // Type`1
@@ -121,7 +137,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
             }
 
-            context.ReportDiagnostic(Rule, location, GetTypeKindDisplayString(symbol), symbolName);
+            context.ReportDiagnostic(Rule, location, GetTypeKindDisplayString(symbol), symbolName, GetExpectedFileName(context, symbol, location.SourceTree, typeNameMatchMode));
         }
     }
 
@@ -139,6 +155,150 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
         return filePath[..index];
     }
+
+    private static TypeNameMatchMode GetTypeNameMatchMode(SymbolAnalysisContext context, SyntaxTree sourceTree)
+    {
+        var mode = context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".mode", defaultValue: string.Empty);
+        if (mode.Equals(nameof(TypeNameMatchMode.Exact), StringComparison.OrdinalIgnoreCase))
+            return TypeNameMatchMode.Exact;
+
+        if (mode.Equals(nameof(TypeNameMatchMode.Prefix), StringComparison.OrdinalIgnoreCase))
+            return TypeNameMatchMode.Prefix;
+
+        if (mode.Equals(nameof(TypeNameMatchMode.LongestCommonPrefix), StringComparison.OrdinalIgnoreCase))
+            return TypeNameMatchMode.LongestCommonPrefix;
+
+        // Backward compatibility
+        if (!context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".allow_type_name_prefix", defaultValue: false))
+            return TypeNameMatchMode.Exact;
+
+        return context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".use_longest_type_name_prefix", defaultValue: false)
+            ? TypeNameMatchMode.LongestCommonPrefix
+            : TypeNameMatchMode.Prefix;
+    }
+
+    private static string GetExpectedFileName(SymbolAnalysisContext context, INamedTypeSymbol symbol, SyntaxTree sourceTree, TypeNameMatchMode typeNameMatchMode)
+    {
+        return typeNameMatchMode switch
+        {
+            TypeNameMatchMode.Exact => "'" + symbol.Name + "'",
+            TypeNameMatchMode.Prefix => "a prefix of '" + symbol.Name + "'",
+            TypeNameMatchMode.LongestCommonPrefix => GetExpectedLongestCommonPrefixFileName(context, sourceTree, symbol.Name),
+            _ => throw new ArgumentOutOfRangeException(nameof(typeNameMatchMode)),
+        };
+    }
+
+    private static string GetExpectedLongestCommonPrefixFileName(SymbolAnalysisContext context, SyntaxTree sourceTree, string fallbackTypeName)
+    {
+        var typeNames = GetTopLevelTypeNames(context, sourceTree);
+        var longestCommonPrefixLength = GetLongestCommonPrefixLength(typeNames);
+        if (longestCommonPrefixLength <= 0)
+            return "'" + fallbackTypeName + "'";
+
+        return "'" + typeNames![0].AsSpan(0, longestCommonPrefixLength).ToString() + "'";
+    }
+
+    private static bool IsLongestTypeNamePrefix(SymbolAnalysisContext context, SyntaxTree sourceTree, ReadOnlySpan<char> fileName)
+    {
+        var typeNames = GetTopLevelTypeNames(context, sourceTree);
+        var longestCommonPrefixLength = GetLongestCommonPrefixLength(typeNames);
+        if (longestCommonPrefixLength < 0)
+            return true;
+
+        if (longestCommonPrefixLength == 0)
+            return false;
+
+        return longestCommonPrefixLength == fileName.Length &&
+               typeNames![0].AsSpan(0, longestCommonPrefixLength).Equals(fileName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static List<string>? GetTopLevelTypeNames(SymbolAnalysisContext context, SyntaxTree sourceTree)
+    {
+        var root = sourceTree.GetRoot(context.CancellationToken);
+        List<string>? typeNames = null;
+
+#if ROSLYN_4_4_OR_GREATER
+        var excludeFileLocalTypes = context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".exclude_file_local_types", defaultValue: true);
+#endif
+
+        foreach (var node in root.DescendantNodesAndSelf(descendIntoChildren: static node => !IsTypeDeclaration(node)))
+        {
+            if (!TryGetTypeDeclarationName(node, out var typeName))
+                continue;
+
+#if ROSLYN_4_4_OR_GREATER
+            if (excludeFileLocalTypes && IsFileLocalType(node))
+                continue;
+#endif
+
+            typeNames ??= new List<string>();
+            typeNames.Add(typeName);
+        }
+
+        return typeNames;
+    }
+
+    // -1: no/one type, 0: no common prefix, >0: prefix length
+    private static int GetLongestCommonPrefixLength(List<string>? typeNames)
+    {
+        if (typeNames is null || typeNames.Count <= 1)
+            return -1;
+
+        var commonPrefixLength = typeNames[0].Length;
+        for (var i = 1; i < typeNames.Count; i++)
+        {
+            commonPrefixLength = GetCommonPrefixLength(typeNames[0], typeNames[i], commonPrefixLength);
+            if (commonPrefixLength == 0)
+                return 0;
+        }
+
+        return commonPrefixLength;
+    }
+
+    private static int GetCommonPrefixLength(string left, string right, int maxLength)
+    {
+        var length = Math.Min(maxLength, right.Length);
+        var index = 0;
+        while (index < length && char.ToUpperInvariant(left[index]) == char.ToUpperInvariant(right[index]))
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static bool IsTypeDeclaration(SyntaxNode node)
+    {
+        return node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax;
+    }
+
+    private static bool TryGetTypeDeclarationName(SyntaxNode node, [NotNullWhen(true)] out string? typeName)
+    {
+        switch (node)
+        {
+            case BaseTypeDeclarationSyntax typeDeclaration:
+                typeName = typeDeclaration.Identifier.ValueText;
+                return true;
+            case DelegateDeclarationSyntax delegateDeclaration:
+                typeName = delegateDeclaration.Identifier.ValueText;
+                return true;
+            default:
+                typeName = null;
+                return false;
+        }
+    }
+
+#if ROSLYN_4_4_OR_GREATER
+    private static bool IsFileLocalType(SyntaxNode node)
+    {
+        return node switch
+        {
+            BaseTypeDeclarationSyntax typeDeclaration => typeDeclaration.Modifiers.Any(SyntaxKind.FileKeyword),
+            DelegateDeclarationSyntax delegateDeclaration => delegateDeclaration.Modifiers.Any(SyntaxKind.FileKeyword),
+            _ => false,
+        };
+    }
+#endif
 
     /// <summary>
     /// Implemented wildcard pattern match

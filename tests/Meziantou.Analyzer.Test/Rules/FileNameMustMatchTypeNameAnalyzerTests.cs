@@ -20,7 +20,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
                 {
                 }
                 """)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 
@@ -195,6 +195,83 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
                 {
                 }
                 """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DoesNotMatchFileNamePrefix_WithoutConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Perk.cs", """
+                class [|PerkQuery|] {}
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_WithModeConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Perk.cs", """
+                class PerkQuery {}
+                class PerkResponse {}
+                class PerkHandler {}
+                class [|DummyHandler|] {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.mode", "Prefix")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class DummyHandler), expected file name: a prefix of 'DummyHandler'")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_WithLegacyConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Perk.cs", """
+                class PerkQuery {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.allow_type_name_prefix", "true")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_LongestCommonPrefixMode_WithoutLongestCommonPrefixInFileName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "Sample.cs", """
+                class [|SampleProjectHandler|] {}
+                class [|SampleProjectQuery|] {}
+                class [|SampleProjectResponse|] {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.mode", "LongestCommonPrefix")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class SampleProjectHandler), expected file name: 'SampleProject'")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_LongestCommonPrefixMode_WithLongestCommonPrefixInFileName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "SampleProject.cs", """
+                class SampleProjectHandler {}
+                class SampleProjectQuery {}
+                class SampleProjectResponse {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.mode", "LongestCommonPrefix")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MatchFileNamePrefix_LongestCommonPrefix_WithLegacyConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(fileName: "SampleProject.cs", """
+                class SampleProjectHandler {}
+                class SampleProjectQuery {}
+                class SampleProjectResponse {}
+                """)
+              .AddAnalyzerConfiguration("MA0048.allow_type_name_prefix", "true")
+              .AddAnalyzerConfiguration("MA0048.use_longest_type_name_prefix", "true")
               .ValidateAsync();
     }
 
@@ -430,7 +507,7 @@ file class [|Sample|]
 }
 """)
               .AddAnalyzerConfiguration("MA0048.exclude_file_local_types", "false")
-              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 
@@ -443,7 +520,7 @@ class [|Sample|]
 {
 }
 """)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (class Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 
@@ -456,7 +533,7 @@ struct [|Sample|]
 {
 }
 """)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (struct Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (struct Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 
@@ -469,7 +546,7 @@ interface [|ISample|]
 {
 }
 """)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (interface ISample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (interface ISample), expected file name: 'ISample'")
               .ValidateAsync();
     }
 
@@ -483,7 +560,7 @@ enum [|Sample|]
     Value1
 }
 """)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (enum Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (enum Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 
@@ -494,7 +571,7 @@ enum [|Sample|]
               .WithSourceCode(fileName: "Test.cs", """
 record [|Sample|];
 """)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (record Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (record Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 
@@ -507,7 +584,7 @@ record [|Sample|];
 record struct [|Sample|];
 """)
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (record struct Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (record struct Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 #endif
@@ -519,7 +596,7 @@ record struct [|Sample|];
               .WithSourceCode(fileName: "Test.cs", """
 delegate void [|Sample|]();
 """)
-              .ShouldReportDiagnosticWithMessage("File name must match type name (delegate Sample)")
+              .ShouldReportDiagnosticWithMessage("File name must match type name (delegate Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
 #endif
