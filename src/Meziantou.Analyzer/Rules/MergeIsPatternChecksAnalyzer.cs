@@ -69,7 +69,7 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         {
             if (TryCreateMergeCandidate(term, semanticModel, cancellationToken, out var candidate))
             {
-                if (currentGroup.Count == 0 || SyntaxFactory.AreEquivalent(currentGroup[0].Expression, candidate.Expression))
+                if (currentGroup.Count == 0 || AreSameMergeTarget(currentGroup[0].Target, candidate.Target))
                 {
                     currentGroup.Add(candidate);
                 }
@@ -118,13 +118,13 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         if (operation is not IIsPatternOperation isPatternOperation)
             return false;
 
-        if (isPatternOperation.Value.Syntax is not ExpressionSyntax valueExpression)
+        if (!TryGetMergeTarget(isPatternOperation.Value, out var mergeTarget))
             return false;
 
         if (!TryCreatePatternSyntax(isPatternOperation.Pattern, out var patternSyntax))
             return false;
 
-        candidate = new(UnwrapParentheses(valueExpression), patternSyntax);
+        candidate = new(mergeTarget, patternSyntax);
         return true;
     }
 
@@ -224,15 +224,86 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         return pattern;
     }
 
-    private static ExpressionSyntax UnwrapParentheses(ExpressionSyntax expression)
+    private static bool TryGetMergeTarget(IOperation operation, out MergeTarget mergeTarget)
     {
-        while (expression is ParenthesizedExpressionSyntax parenthesizedExpression)
+        operation = UnwrapOperation(operation);
+        switch (operation)
         {
-            expression = parenthesizedExpression.Expression;
+            case ILocalReferenceOperation localReferenceOperation:
+                mergeTarget = new SymbolMergeTarget(localReferenceOperation.Local);
+                return true;
+            case IParameterReferenceOperation parameterReferenceOperation:
+                mergeTarget = new SymbolMergeTarget(parameterReferenceOperation.Parameter);
+                return true;
+            case IFieldReferenceOperation fieldReferenceOperation when TryGetOptionalMergeTarget(fieldReferenceOperation.Instance, out var fieldInstance):
+                mergeTarget = new SymbolMergeTarget(fieldReferenceOperation.Field, fieldInstance);
+                return true;
+            case IPropertyReferenceOperation propertyReferenceOperation when TryGetOptionalMergeTarget(propertyReferenceOperation.Instance, out var propertyInstance):
+                mergeTarget = new SymbolMergeTarget(propertyReferenceOperation.Property, propertyInstance);
+                return true;
+            case IEventReferenceOperation eventReferenceOperation when TryGetOptionalMergeTarget(eventReferenceOperation.Instance, out var eventInstance):
+                mergeTarget = new SymbolMergeTarget(eventReferenceOperation.Event, eventInstance);
+                return true;
+            case IInstanceReferenceOperation instanceReferenceOperation:
+                mergeTarget = new InstanceMergeTarget(instanceReferenceOperation.ReferenceKind, instanceReferenceOperation.Type);
+                return true;
+            default:
+                mergeTarget = null!;
+                return false;
         }
-
-        return expression;
     }
 
-    private readonly record struct MergeCandidate(ExpressionSyntax Expression, PatternSyntax Pattern);
+    private static bool TryGetOptionalMergeTarget(IOperation? operation, out MergeTarget? mergeTarget)
+    {
+        if (operation is null)
+        {
+            mergeTarget = null;
+            return true;
+        }
+
+        if (TryGetMergeTarget(operation, out var target))
+        {
+            mergeTarget = target;
+            return true;
+        }
+
+        mergeTarget = null;
+        return false;
+    }
+
+    private static bool AreSameMergeTarget(MergeTarget left, MergeTarget right)
+    {
+        if (left is SymbolMergeTarget leftSymbol && right is SymbolMergeTarget rightSymbol)
+        {
+            return SymbolEqualityComparer.Default.Equals(leftSymbol.Symbol, rightSymbol.Symbol) &&
+                   AreSameOptionalMergeTarget(leftSymbol.Instance, rightSymbol.Instance);
+        }
+
+        if (left is InstanceMergeTarget leftInstance && right is InstanceMergeTarget rightInstance)
+        {
+            return leftInstance.ReferenceKind == rightInstance.ReferenceKind &&
+                   SymbolEqualityComparer.Default.Equals(leftInstance.Type, rightInstance.Type);
+        }
+
+        return false;
+    }
+
+    private static bool AreSameOptionalMergeTarget(MergeTarget? left, MergeTarget? right)
+    {
+        if (left is null)
+            return right is null;
+
+        if (right is null)
+            return false;
+
+        return AreSameMergeTarget(left, right);
+    }
+
+    private abstract record class MergeTarget;
+
+    private sealed record class SymbolMergeTarget(ISymbol Symbol, MergeTarget? Instance = null) : MergeTarget;
+
+    private sealed record class InstanceMergeTarget(InstanceReferenceKind ReferenceKind, ITypeSymbol? Type) : MergeTarget;
+
+    private readonly record struct MergeCandidate(MergeTarget Target, PatternSyntax Pattern);
 }

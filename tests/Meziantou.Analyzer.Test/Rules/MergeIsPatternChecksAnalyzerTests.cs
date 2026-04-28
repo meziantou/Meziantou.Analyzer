@@ -117,6 +117,127 @@ public sealed class MergeIsPatternChecksAnalyzerTests
     }
 
     [Fact]
+    public async Task Parameter()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  static bool M(int value) => [|value is 1 || value is 2|];
+                  """)
+              .ShouldFixCodeWith("""
+                  static bool M(int value) => value is 1 or 2;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalVariable()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var value = 0;
+                  _ = [|value is 1 || value is 2|];
+                  """)
+              .ShouldFixCodeWith("""
+                  var value = 0;
+                  _ = value is 1 or 2;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Field_ExplicitAndImplicitThis()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  _ = new Sample().M();
+
+                  class Sample
+                  {
+                      private int _value;
+                      public bool M() => [|_value is 1 || this._value is 2|];
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  _ = new Sample().M();
+
+                  class Sample
+                  {
+                      private int _value;
+                      public bool M() => _value is 1 or 2;
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Property_ExplicitAndImplicitThis()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  _ = new Sample().M();
+
+                  class Sample
+                  {
+                      private int Value { get; set; }
+                      public bool M() => [|Value is 1 || this.Value is 2|];
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  _ = new Sample().M();
+
+                  class Sample
+                  {
+                      private int Value { get; set; }
+                      public bool M() => Value is 1 or 2;
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Property_DifferentInstances_DoNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var a = new Sample();
+                  var b = new Sample();
+                  _ = a.Value is 1 || b.Value is 2;
+
+                  class Sample
+                  {
+                      public int Value { get; set; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+#if CSHARP12_OR_GREATER
+    [Fact]
+    public async Task PrimaryConstructorParameter()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode("""
+                  _ = new Sample(1).M();
+
+                  class Sample(int value)
+                  {
+                      public bool M() => [|value is 1 || value is 2|];
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  _ = new Sample(1).M();
+
+                  class Sample(int value)
+                  {
+                      public bool M() => value is 1 or 2;
+                  }
+                  """)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
     public void Rule_SeverityAndDefault()
     {
         var rule = new MergeIsPatternChecksAnalyzer().SupportedDiagnostics[0];
