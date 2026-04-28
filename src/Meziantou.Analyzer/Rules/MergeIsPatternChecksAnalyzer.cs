@@ -18,7 +18,7 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         messageFormat: "Merge is expressions on the same value",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MergeIsPatternChecks));
 

@@ -576,4 +576,4 @@ dotnet_diagnostic.MA0192.severity = none
 dotnet_diagnostic.MA0193.severity = suggestion
 
 # MA0194: Merge is expressions on the same value
-dotnet_diagnostic.MA0194.severity = none
+dotnet_diagnostic.MA0194.severity = suggestion

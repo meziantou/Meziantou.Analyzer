@@ -1,4 +1,5 @@
 using Meziantou.Analyzer.Rules;
+using Microsoft.CodeAnalysis;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
@@ -113,5 +114,13 @@ public sealed class MergeIsPatternChecksAnalyzerTests
                   enum MyEnum { Value1, Value2 }
                   """)
               .ValidateAsync();
+    }
+
+    [Fact]
+    public void Rule_SeverityAndDefault()
+    {
+        var rule = new MergeIsPatternChecksAnalyzer().SupportedDiagnostics[0];
+        Assert.Equal(DiagnosticSeverity.Info, rule.DefaultSeverity);
+        Assert.True(rule.IsEnabledByDefault);
     }
 }
