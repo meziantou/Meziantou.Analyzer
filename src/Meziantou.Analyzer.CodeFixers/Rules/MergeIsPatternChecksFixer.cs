@@ -340,22 +340,22 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
         switch (operation)
         {
             case ILocalReferenceOperation localReferenceOperation:
-                mergeTarget = new SymbolMergeTarget(localReferenceOperation.Local);
+                mergeTarget = new(localReferenceOperation.Local);
                 return true;
             case IParameterReferenceOperation parameterReferenceOperation:
-                mergeTarget = new SymbolMergeTarget(parameterReferenceOperation.Parameter);
+                mergeTarget = new(parameterReferenceOperation.Parameter);
                 return true;
             case IFieldReferenceOperation fieldReferenceOperation when TryGetOptionalMergeTarget(fieldReferenceOperation.Instance, out var fieldInstance):
-                mergeTarget = new SymbolMergeTarget(fieldReferenceOperation.Field, fieldInstance);
+                mergeTarget = new(fieldReferenceOperation.Field, fieldInstance);
                 return true;
             case IPropertyReferenceOperation propertyReferenceOperation when TryGetOptionalMergeTarget(propertyReferenceOperation.Instance, out var propertyInstance):
-                mergeTarget = new SymbolMergeTarget(propertyReferenceOperation.Property, propertyInstance);
+                mergeTarget = new(propertyReferenceOperation.Property, propertyInstance);
                 return true;
             case IEventReferenceOperation eventReferenceOperation when TryGetOptionalMergeTarget(eventReferenceOperation.Instance, out var eventInstance):
-                mergeTarget = new SymbolMergeTarget(eventReferenceOperation.Event, eventInstance);
+                mergeTarget = new(eventReferenceOperation.Event, eventInstance);
                 return true;
-            case IInstanceReferenceOperation instanceReferenceOperation:
-                mergeTarget = new InstanceMergeTarget(instanceReferenceOperation.ReferenceKind, instanceReferenceOperation.Type);
+            case IInstanceReferenceOperation instanceReferenceOperation when instanceReferenceOperation.Type is not null:
+                mergeTarget = new(instanceReferenceOperation.Type);
                 return true;
             default:
                 mergeTarget = null!;
@@ -383,19 +383,8 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
 
     private static bool AreSameMergeTarget(MergeTarget left, MergeTarget right)
     {
-        if (left is SymbolMergeTarget leftSymbol && right is SymbolMergeTarget rightSymbol)
-        {
-            return SymbolEqualityComparer.Default.Equals(leftSymbol.Symbol, rightSymbol.Symbol) &&
-                   AreSameOptionalMergeTarget(leftSymbol.Instance, rightSymbol.Instance);
-        }
-
-        if (left is InstanceMergeTarget leftInstance && right is InstanceMergeTarget rightInstance)
-        {
-            return leftInstance.ReferenceKind == rightInstance.ReferenceKind &&
-                   SymbolEqualityComparer.Default.Equals(leftInstance.Type, rightInstance.Type);
-        }
-
-        return false;
+        return SymbolEqualityComparer.Default.Equals(left.Symbol, right.Symbol) &&
+               AreSameOptionalMergeTarget(left.Instance, right.Instance);
     }
 
     private static bool AreSameOptionalMergeTarget(MergeTarget? left, MergeTarget? right)
@@ -445,11 +434,7 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
 
     private static bool IsLogicalBinary(SyntaxKind kind) => kind is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression;
 
-    private abstract record class MergeTarget;
-
-    private sealed record class SymbolMergeTarget(ISymbol Symbol, MergeTarget? Instance = null) : MergeTarget;
-
-    private sealed record class InstanceMergeTarget(InstanceReferenceKind ReferenceKind, ITypeSymbol? Type) : MergeTarget;
+    private sealed record class MergeTarget(ISymbol Symbol, MergeTarget? Instance = null);
 
     private readonly record struct MergeCandidate(ExpressionSyntax TermExpression, MergeTarget Target, ExpressionSyntax Expression, PatternSyntax Pattern);
 }

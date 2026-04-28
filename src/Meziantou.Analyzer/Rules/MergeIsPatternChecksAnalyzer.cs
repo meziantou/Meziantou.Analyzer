@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -121,10 +120,7 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         if (!TryGetMergeTarget(isPatternOperation.Value, out var mergeTarget))
             return false;
 
-        if (!TryCreatePatternSyntax(isPatternOperation.Pattern, out var patternSyntax))
-            return false;
-
-        candidate = new(mergeTarget, patternSyntax);
+        candidate = new(mergeTarget);
         return true;
     }
 
@@ -139,113 +135,28 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         return operation;
     }
 
-    private static bool TryCreatePatternSyntax(IPatternOperation patternOperation, out PatternSyntax patternSyntax)
-    {
-        switch (patternOperation)
-        {
-            case IConstantPatternOperation constantPatternOperation:
-                if (constantPatternOperation.Syntax is PatternSyntax syntaxPattern)
-                {
-                    patternSyntax = syntaxPattern;
-                    return true;
-                }
-
-                if (constantPatternOperation.Value?.Syntax is ExpressionSyntax expressionSyntax)
-                {
-                    patternSyntax = ConstantPattern(expressionSyntax);
-                    return true;
-                }
-
-                break;
-
-            case INegatedPatternOperation negatedPatternOperation:
-                if (TryCreatePatternSyntax(negatedPatternOperation.Pattern, out var negatedPatternSyntax))
-                {
-                    patternSyntax = UnaryPattern(
-                        negatedPatternSyntax is BinaryPatternSyntax
-                            ? ParenthesizedPattern(negatedPatternSyntax)
-                            : negatedPatternSyntax);
-                    return true;
-                }
-
-                break;
-
-            case IBinaryPatternOperation binaryPatternOperation:
-                if (TryCreatePatternSyntax(binaryPatternOperation.LeftPattern, out var leftPatternSyntax) &&
-                    TryCreatePatternSyntax(binaryPatternOperation.RightPattern, out var rightPatternSyntax) &&
-                    TryGetPatternOperator(binaryPatternOperation.OperatorKind, out var binaryPatternKind, out var operatorTokenKind))
-                {
-                    patternSyntax = BinaryPattern(
-                        binaryPatternKind,
-                        ParenthesizePatternIfNeeded(leftPatternSyntax, binaryPatternKind),
-                        Token(operatorTokenKind),
-                        ParenthesizePatternIfNeeded(rightPatternSyntax, binaryPatternKind));
-                    return true;
-                }
-
-                break;
-        }
-
-        patternSyntax = null!;
-        return false;
-    }
-
-    private static bool TryGetPatternOperator(BinaryOperatorKind operatorKind, out SyntaxKind binaryPatternKind, out SyntaxKind operatorTokenKind)
-    {
-        switch (operatorKind)
-        {
-            case BinaryOperatorKind.And:
-                binaryPatternKind = SyntaxKind.AndPattern;
-                operatorTokenKind = SyntaxKind.AndKeyword;
-                return true;
-            case BinaryOperatorKind.Or:
-                binaryPatternKind = SyntaxKind.OrPattern;
-                operatorTokenKind = SyntaxKind.OrKeyword;
-                return true;
-            default:
-                binaryPatternKind = default;
-                operatorTokenKind = default;
-                return false;
-        }
-    }
-
-    private static PatternSyntax ParenthesizePatternIfNeeded(PatternSyntax pattern, SyntaxKind parentPatternKind)
-    {
-        if (pattern is ParenthesizedPatternSyntax)
-            return pattern;
-
-        if (pattern is BinaryPatternSyntax binaryPattern &&
-            parentPatternKind is SyntaxKind.AndPattern &&
-            binaryPattern.Kind() is SyntaxKind.OrPattern)
-        {
-            return ParenthesizedPattern(pattern);
-        }
-
-        return pattern;
-    }
-
     private static bool TryGetMergeTarget(IOperation operation, out MergeTarget mergeTarget)
     {
         operation = UnwrapOperation(operation);
         switch (operation)
         {
             case ILocalReferenceOperation localReferenceOperation:
-                mergeTarget = new SymbolMergeTarget(localReferenceOperation.Local);
+                mergeTarget = new(localReferenceOperation.Local);
                 return true;
             case IParameterReferenceOperation parameterReferenceOperation:
-                mergeTarget = new SymbolMergeTarget(parameterReferenceOperation.Parameter);
+                mergeTarget = new(parameterReferenceOperation.Parameter);
                 return true;
             case IFieldReferenceOperation fieldReferenceOperation when TryGetOptionalMergeTarget(fieldReferenceOperation.Instance, out var fieldInstance):
-                mergeTarget = new SymbolMergeTarget(fieldReferenceOperation.Field, fieldInstance);
+                mergeTarget = new(fieldReferenceOperation.Field, fieldInstance);
                 return true;
             case IPropertyReferenceOperation propertyReferenceOperation when TryGetOptionalMergeTarget(propertyReferenceOperation.Instance, out var propertyInstance):
-                mergeTarget = new SymbolMergeTarget(propertyReferenceOperation.Property, propertyInstance);
+                mergeTarget = new(propertyReferenceOperation.Property, propertyInstance);
                 return true;
             case IEventReferenceOperation eventReferenceOperation when TryGetOptionalMergeTarget(eventReferenceOperation.Instance, out var eventInstance):
-                mergeTarget = new SymbolMergeTarget(eventReferenceOperation.Event, eventInstance);
+                mergeTarget = new(eventReferenceOperation.Event, eventInstance);
                 return true;
-            case IInstanceReferenceOperation instanceReferenceOperation:
-                mergeTarget = new InstanceMergeTarget(instanceReferenceOperation.ReferenceKind, instanceReferenceOperation.Type);
+            case IInstanceReferenceOperation instanceReferenceOperation when instanceReferenceOperation.Type is not null:
+                mergeTarget = new(instanceReferenceOperation.Type);
                 return true;
             default:
                 mergeTarget = null!;
@@ -273,19 +184,8 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
 
     private static bool AreSameMergeTarget(MergeTarget left, MergeTarget right)
     {
-        if (left is SymbolMergeTarget leftSymbol && right is SymbolMergeTarget rightSymbol)
-        {
-            return SymbolEqualityComparer.Default.Equals(leftSymbol.Symbol, rightSymbol.Symbol) &&
-                   AreSameOptionalMergeTarget(leftSymbol.Instance, rightSymbol.Instance);
-        }
-
-        if (left is InstanceMergeTarget leftInstance && right is InstanceMergeTarget rightInstance)
-        {
-            return leftInstance.ReferenceKind == rightInstance.ReferenceKind &&
-                   SymbolEqualityComparer.Default.Equals(leftInstance.Type, rightInstance.Type);
-        }
-
-        return false;
+        return SymbolEqualityComparer.Default.Equals(left.Symbol, right.Symbol) &&
+               AreSameOptionalMergeTarget(left.Instance, right.Instance);
     }
 
     private static bool AreSameOptionalMergeTarget(MergeTarget? left, MergeTarget? right)
@@ -299,11 +199,7 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         return AreSameMergeTarget(left, right);
     }
 
-    private abstract record class MergeTarget;
+    private sealed record class MergeTarget(ISymbol Symbol, MergeTarget? Instance = null);
 
-    private sealed record class SymbolMergeTarget(ISymbol Symbol, MergeTarget? Instance = null) : MergeTarget;
-
-    private sealed record class InstanceMergeTarget(InstanceReferenceKind ReferenceKind, ITypeSymbol? Type) : MergeTarget;
-
-    private readonly record struct MergeCandidate(MergeTarget Target, PatternSyntax Pattern);
+    private readonly record struct MergeCandidate(MergeTarget Target);
 }
