@@ -23,7 +23,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.FileNameMustMatchTypeName,
         title: "File name must match type name",
-        messageFormat: "File name must match type name ({0} {1})",
+        messageFormat: "File name must match type name ({0} {1}), expected file name: {2}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -137,7 +137,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
             }
 
-            context.ReportDiagnostic(Rule, location, GetTypeKindDisplayString(symbol), symbolName);
+            context.ReportDiagnostic(Rule, location, GetTypeKindDisplayString(symbol), symbolName, GetExpectedFileName(context, symbol, location.SourceTree, typeNameMatchMode));
         }
     }
 
@@ -177,7 +177,42 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             : TypeNameMatchMode.Prefix;
     }
 
+    private static string GetExpectedFileName(SymbolAnalysisContext context, INamedTypeSymbol symbol, SyntaxTree sourceTree, TypeNameMatchMode typeNameMatchMode)
+    {
+        return typeNameMatchMode switch
+        {
+            TypeNameMatchMode.Exact => "'" + symbol.Name + "'",
+            TypeNameMatchMode.Prefix => "a prefix of '" + symbol.Name + "'",
+            TypeNameMatchMode.LongestCommonPrefix => GetExpectedLongestCommonPrefixFileName(context, sourceTree, symbol.Name),
+            _ => throw new ArgumentOutOfRangeException(nameof(typeNameMatchMode)),
+        };
+    }
+
+    private static string GetExpectedLongestCommonPrefixFileName(SymbolAnalysisContext context, SyntaxTree sourceTree, string fallbackTypeName)
+    {
+        var typeNames = GetTopLevelTypeNames(context, sourceTree);
+        var longestCommonPrefixLength = GetLongestCommonPrefixLength(typeNames);
+        if (longestCommonPrefixLength <= 0)
+            return "'" + fallbackTypeName + "'";
+
+        return "'" + typeNames![0].Substring(0, longestCommonPrefixLength) + "'";
+    }
+
     private static bool IsLongestTypeNamePrefix(SymbolAnalysisContext context, SyntaxTree sourceTree, ReadOnlySpan<char> fileName)
+    {
+        var typeNames = GetTopLevelTypeNames(context, sourceTree);
+        var longestCommonPrefixLength = GetLongestCommonPrefixLength(typeNames);
+        if (longestCommonPrefixLength < 0)
+            return true;
+
+        if (longestCommonPrefixLength == 0)
+            return false;
+
+        return longestCommonPrefixLength == fileName.Length &&
+               typeNames![0].AsSpan(0, longestCommonPrefixLength).Equals(fileName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static List<string>? GetTopLevelTypeNames(SymbolAnalysisContext context, SyntaxTree sourceTree)
     {
         var root = sourceTree.GetRoot(context.CancellationToken);
         List<string>? typeNames = null;
@@ -200,19 +235,24 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             typeNames.Add(typeName);
         }
 
+        return typeNames;
+    }
+
+    // -1: no/one type, 0: no common prefix, >0: prefix length
+    private static int GetLongestCommonPrefixLength(List<string>? typeNames)
+    {
         if (typeNames is null || typeNames.Count <= 1)
-            return true;
+            return -1;
 
         var commonPrefixLength = typeNames[0].Length;
         for (var i = 1; i < typeNames.Count; i++)
         {
             commonPrefixLength = GetCommonPrefixLength(typeNames[0], typeNames[i], commonPrefixLength);
             if (commonPrefixLength == 0)
-                return false;
+                return 0;
         }
 
-        return commonPrefixLength == fileName.Length &&
-               typeNames[0].AsSpan(0, commonPrefixLength).Equals(fileName, StringComparison.OrdinalIgnoreCase);
+        return commonPrefixLength;
     }
 
     private static int GetCommonPrefixLength(string left, string right, int maxLength)
