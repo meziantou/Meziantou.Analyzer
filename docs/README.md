@@ -41,10 +41,10 @@
 |[MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md)|Security|Do not write your own certificate validation method|<span title='Error'>❌</span>|✔️|❌|
 |[MA0040](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0040.md)|Usage|Forward the CancellationToken parameter to methods that take one|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0041](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0041.md)|Design|Make property static (deprecated, use CA1822 instead)|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md)|Design|Do not use blocking calls in an async method|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md)|Design|Do not use blocking calls when the calling method is async|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0043](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0043.md)|Usage|Use nameof operator in ArgumentException|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0044](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0044.md)|Performance|Remove useless ToString call|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md)|Design|Do not use blocking calls in a sync method (need to make calling method async)|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md)|Design|Do not use blocking calls, even when the calling method must become async|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0046](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0046.md)|Design|Use EventHandler\<T\> to declare events|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0047](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0047.md)|Design|Declare types in namespaces|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0048](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0048.md)|Design|File name must match type name|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -123,7 +123,7 @@
 |[MA0121](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0121.md)|Design|Do not overwrite parameter value|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0122](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0122.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes are only valid in routable components (@page)|<span title='Info'>ℹ️</span>|✔️|❌|
 |[MA0123](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0123.md)|Design|Sequence number must be a constant|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md)|Design|Log parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md)|Design|Microsoft.Extensions.Logging parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0125](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0125.md)|Design|The list of log parameter types contains an invalid type|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0126](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0126.md)|Design|The list of log parameter types contains a duplicate|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0127](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0127.md)|Usage|Use String.Equals instead of is pattern|<span title='Hidden'>👻</span>|✔️|✔️|
@@ -138,18 +138,18 @@
 |[MA0136](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0136.md)|Usage|Raw String contains an implicit end of line character|<span title='Hidden'>👻</span>|✔️|❌|
 |[MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md)|Design|Use 'Async' suffix when a method returns an awaitable type|<span title='Warning'>⚠️</span>|❌|✔️|
 |[MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md)|Design|Do not use 'Async' suffix when a method does not return an awaitable type|<span title='Warning'>⚠️</span>|❌|✔️|
-|[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Log parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Design|Serilog parameter type is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0140](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0140.md)|Design|Both if and else branch have identical code|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use pattern matching instead of inequality operators for null check|<span title='Info'>ℹ️</span>|❌|✔️|
-|[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use pattern matching instead of equality operators for null check|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0141](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0141.md)|Usage|Use 'is not null' instead of '!= null'|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0142](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0142.md)|Usage|Use 'is null' instead of '== null'|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0143](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0143.md)|Design|Primary constructor parameters should be readonly|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0144](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0144.md)|Performance|Use System.OperatingSystem to check the current OS|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0145](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0145.md)|Usage|Signature for \[UnsafeAccessorAttribute\] method is not valid|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0146](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0146.md)|Usage|Name must be set explicitly on local functions|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0147](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0147.md)|Usage|Avoid async void method for delegate|<span title='Warning'>⚠️</span>|✔️|❌|
-|[MA0148](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0148.md)|Usage|Use pattern matching instead of equality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
-|[MA0149](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0149.md)|Usage|Use pattern matching instead of inequality operators for discrete value|<span title='Info'>ℹ️</span>|❌|✔️|
-|[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call the default object.ToString explicitly|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0148](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0148.md)|Usage|Use 'is' patterns instead of '==' for constant values|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0149](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0149.md)|Usage|Use 'is not' patterns instead of '!=' for constant values|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0150](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0150.md)|Design|Do not call ToString() when the type falls back to object.ToString()|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0151](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0151.md)|Usage|DebuggerDisplay must contain valid members|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0152](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0152.md)|Performance|Use Unwrap instead of using await twice|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0153](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0153.md)|Design|Do not log symbols decorated with DataClassificationAttribute directly|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -169,7 +169,7 @@
 |[MA0168](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0168.md)|Performance|Use readonly struct for in or ref readonly parameter|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0169](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0169.md)|Design|Use Equals method instead of operator|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0170](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0170.md)|Design|Type cannot be used as an attribute argument|<span title='Warning'>⚠️</span>|❌|❌|
-|[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use pattern matching instead of HasValue for Nullable\<T\> check|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0171](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0171.md)|Usage|Use 'is null' / 'is not null' instead of Nullable\<T\>.HasValue|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0172](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0172.md)|Usage|Both sides of the logical operation are identical|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0173](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0173.md)|Design|Use LazyInitializer.EnsureInitialize|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0174](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0174.md)|Style|Record should use explicit 'class' keyword|<span title='Info'>ℹ️</span>|❌|✔️|
@@ -332,7 +332,7 @@ dotnet_diagnostic.MA0040.severity = suggestion
 # MA0041: Make property static (deprecated, use CA1822 instead)
 dotnet_diagnostic.MA0041.severity = suggestion
 
-# MA0042: Do not use blocking calls in an async method
+# MA0042: Do not use blocking calls when the calling method is async
 dotnet_diagnostic.MA0042.severity = suggestion
 
 # MA0043: Use nameof operator in ArgumentException
@@ -341,7 +341,7 @@ dotnet_diagnostic.MA0043.severity = suggestion
 # MA0044: Remove useless ToString call
 dotnet_diagnostic.MA0044.severity = suggestion
 
-# MA0045: Do not use blocking calls in a sync method (need to make calling method async)
+# MA0045: Do not use blocking calls, even when the calling method must become async
 dotnet_diagnostic.MA0045.severity = none
 
 # MA0046: Use EventHandler<T> to declare events
@@ -578,7 +578,7 @@ dotnet_diagnostic.MA0122.severity = suggestion
 # MA0123: Sequence number must be a constant
 dotnet_diagnostic.MA0123.severity = warning
 
-# MA0124: Log parameter type is not valid
+# MA0124: Microsoft.Extensions.Logging parameter type is not valid
 dotnet_diagnostic.MA0124.severity = warning
 
 # MA0125: The list of log parameter types contains an invalid type
@@ -623,16 +623,16 @@ dotnet_diagnostic.MA0137.severity = none
 # MA0138: Do not use 'Async' suffix when a method does not return an awaitable type
 dotnet_diagnostic.MA0138.severity = none
 
-# MA0139: Log parameter type is not valid
+# MA0139: Serilog parameter type is not valid
 dotnet_diagnostic.MA0139.severity = warning
 
 # MA0140: Both if and else branch have identical code
 dotnet_diagnostic.MA0140.severity = warning
 
-# MA0141: Use pattern matching instead of inequality operators for null check
+# MA0141: Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0141.severity = none
 
-# MA0142: Use pattern matching instead of equality operators for null check
+# MA0142: Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0142.severity = none
 
 # MA0143: Primary constructor parameters should be readonly
@@ -650,13 +650,13 @@ dotnet_diagnostic.MA0146.severity = warning
 # MA0147: Avoid async void method for delegate
 dotnet_diagnostic.MA0147.severity = warning
 
-# MA0148: Use pattern matching instead of equality operators for discrete value
+# MA0148: Use 'is' patterns instead of '==' for constant values
 dotnet_diagnostic.MA0148.severity = none
 
-# MA0149: Use pattern matching instead of inequality operators for discrete value
+# MA0149: Use 'is not' patterns instead of '!=' for constant values
 dotnet_diagnostic.MA0149.severity = none
 
-# MA0150: Do not call the default object.ToString explicitly
+# MA0150: Do not call ToString() when the type falls back to object.ToString()
 dotnet_diagnostic.MA0150.severity = warning
 
 # MA0151: DebuggerDisplay must contain valid members
@@ -716,7 +716,7 @@ dotnet_diagnostic.MA0169.severity = warning
 # MA0170: Type cannot be used as an attribute argument
 dotnet_diagnostic.MA0170.severity = none
 
-# MA0171: Use pattern matching instead of HasValue for Nullable<T> check
+# MA0171: Use 'is null' / 'is not null' instead of Nullable<T>.HasValue
 dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical
@@ -912,7 +912,7 @@ dotnet_diagnostic.MA0040.severity = none
 # MA0041: Make property static (deprecated, use CA1822 instead)
 dotnet_diagnostic.MA0041.severity = none
 
-# MA0042: Do not use blocking calls in an async method
+# MA0042: Do not use blocking calls when the calling method is async
 dotnet_diagnostic.MA0042.severity = none
 
 # MA0043: Use nameof operator in ArgumentException
@@ -921,7 +921,7 @@ dotnet_diagnostic.MA0043.severity = none
 # MA0044: Remove useless ToString call
 dotnet_diagnostic.MA0044.severity = none
 
-# MA0045: Do not use blocking calls in a sync method (need to make calling method async)
+# MA0045: Do not use blocking calls, even when the calling method must become async
 dotnet_diagnostic.MA0045.severity = none
 
 # MA0046: Use EventHandler<T> to declare events
@@ -1158,7 +1158,7 @@ dotnet_diagnostic.MA0122.severity = none
 # MA0123: Sequence number must be a constant
 dotnet_diagnostic.MA0123.severity = none
 
-# MA0124: Log parameter type is not valid
+# MA0124: Microsoft.Extensions.Logging parameter type is not valid
 dotnet_diagnostic.MA0124.severity = none
 
 # MA0125: The list of log parameter types contains an invalid type
@@ -1203,16 +1203,16 @@ dotnet_diagnostic.MA0137.severity = none
 # MA0138: Do not use 'Async' suffix when a method does not return an awaitable type
 dotnet_diagnostic.MA0138.severity = none
 
-# MA0139: Log parameter type is not valid
+# MA0139: Serilog parameter type is not valid
 dotnet_diagnostic.MA0139.severity = none
 
 # MA0140: Both if and else branch have identical code
 dotnet_diagnostic.MA0140.severity = none
 
-# MA0141: Use pattern matching instead of inequality operators for null check
+# MA0141: Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0141.severity = none
 
-# MA0142: Use pattern matching instead of equality operators for null check
+# MA0142: Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0142.severity = none
 
 # MA0143: Primary constructor parameters should be readonly
@@ -1230,13 +1230,13 @@ dotnet_diagnostic.MA0146.severity = none
 # MA0147: Avoid async void method for delegate
 dotnet_diagnostic.MA0147.severity = none
 
-# MA0148: Use pattern matching instead of equality operators for discrete value
+# MA0148: Use 'is' patterns instead of '==' for constant values
 dotnet_diagnostic.MA0148.severity = none
 
-# MA0149: Use pattern matching instead of inequality operators for discrete value
+# MA0149: Use 'is not' patterns instead of '!=' for constant values
 dotnet_diagnostic.MA0149.severity = none
 
-# MA0150: Do not call the default object.ToString explicitly
+# MA0150: Do not call ToString() when the type falls back to object.ToString()
 dotnet_diagnostic.MA0150.severity = none
 
 # MA0151: DebuggerDisplay must contain valid members
@@ -1296,7 +1296,7 @@ dotnet_diagnostic.MA0169.severity = none
 # MA0170: Type cannot be used as an attribute argument
 dotnet_diagnostic.MA0170.severity = none
 
-# MA0171: Use pattern matching instead of HasValue for Nullable<T> check
+# MA0171: Use 'is null' / 'is not null' instead of Nullable<T>.HasValue
 dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical

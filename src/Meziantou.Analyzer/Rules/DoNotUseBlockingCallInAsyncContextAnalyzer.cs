@@ -12,7 +12,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseBlockingCallInAsyncContext,
-        title: "Do not use blocking calls in an async method",
+        title: "Do not use blocking calls when the calling method is async",
         messageFormat: "{0}",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
@@ -22,7 +22,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
     private static readonly DiagnosticDescriptor Rule2 = new(
         RuleIdentifiers.DoNotUseBlockingCall,
-        title: "Do not use blocking calls in a sync method (need to make calling method async)",
+        title: "Do not use blocking calls, even when the calling method must become async",
         messageFormat: "{0}",
         RuleCategories.Design,
         DiagnosticSeverity.Info,
