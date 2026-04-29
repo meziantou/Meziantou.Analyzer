@@ -95,7 +95,7 @@ dotnet_diagnostic.MA0030.severity = warning
 # MA0031: Optimize Enumerable.Count() usage
 dotnet_diagnostic.MA0031.severity = suggestion
 
-# MA0032: Use an overload with a CancellationToken argument
+# MA0032: Use an overload with a CancellationToken argument, even when no token is available in scope
 dotnet_diagnostic.MA0032.severity = none
 
 # MA0033: Do not tag instance fields with ThreadStaticAttribute
@@ -122,7 +122,7 @@ dotnet_diagnostic.MA0040.severity = suggestion
 # MA0041: Make property static (deprecated, use CA1822 instead)
 dotnet_diagnostic.MA0041.severity = suggestion
 
-# MA0042: Do not use blocking calls in an async method
+# MA0042: Do not use blocking calls when the calling method is async
 dotnet_diagnostic.MA0042.severity = suggestion
 
 # MA0043: Use nameof operator in ArgumentException
@@ -131,7 +131,7 @@ dotnet_diagnostic.MA0043.severity = suggestion
 # MA0044: Remove useless ToString call
 dotnet_diagnostic.MA0044.severity = suggestion
 
-# MA0045: Do not use blocking calls in a sync method (need to make calling method async)
+# MA0045: Do not use blocking calls, even when the calling method must become async
 dotnet_diagnostic.MA0045.severity = none
 
 # MA0046: Use EventHandler<T> to declare events
@@ -368,7 +368,7 @@ dotnet_diagnostic.MA0122.severity = suggestion
 # MA0123: Sequence number must be a constant
 dotnet_diagnostic.MA0123.severity = warning
 
-# MA0124: Log parameter type is not valid
+# MA0124: Microsoft.Extensions.Logging parameter type is not valid
 dotnet_diagnostic.MA0124.severity = warning
 
 # MA0125: The list of log parameter types contains an invalid type
@@ -413,16 +413,16 @@ dotnet_diagnostic.MA0137.severity = none
 # MA0138: Do not use 'Async' suffix when a method does not return an awaitable type
 dotnet_diagnostic.MA0138.severity = none
 
-# MA0139: Log parameter type is not valid
+# MA0139: Serilog parameter type is not valid
 dotnet_diagnostic.MA0139.severity = warning
 
 # MA0140: Both if and else branch have identical code
 dotnet_diagnostic.MA0140.severity = warning
 
-# MA0141: Use pattern matching instead of inequality operators for null check
+# MA0141: Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0141.severity = none
 
-# MA0142: Use pattern matching instead of equality operators for null check
+# MA0142: Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0142.severity = none
 
 # MA0143: Primary constructor parameters should be readonly
@@ -440,13 +440,13 @@ dotnet_diagnostic.MA0146.severity = warning
 # MA0147: Avoid async void method for delegate
 dotnet_diagnostic.MA0147.severity = warning
 
-# MA0148: Use pattern matching instead of equality operators for discrete value
+# MA0148: Use 'is' patterns instead of '==' for constant values
 dotnet_diagnostic.MA0148.severity = none
 
-# MA0149: Use pattern matching instead of inequality operators for discrete value
+# MA0149: Use 'is not' patterns instead of '!=' for constant values
 dotnet_diagnostic.MA0149.severity = none
 
-# MA0150: Do not call the default object.ToString explicitly
+# MA0150: Do not call ToString() when the type falls back to object.ToString()
 dotnet_diagnostic.MA0150.severity = warning
 
 # MA0151: DebuggerDisplay must contain valid members
@@ -506,7 +506,7 @@ dotnet_diagnostic.MA0169.severity = warning
 # MA0170: Type cannot be used as an attribute argument
 dotnet_diagnostic.MA0170.severity = none
 
-# MA0171: Use pattern matching instead of HasValue for Nullable<T> check
+# MA0171: Use 'is null' / 'is not null' instead of Nullable<T>.HasValue
 dotnet_diagnostic.MA0171.severity = none
 
 # MA0172: Both sides of the logical operation are identical

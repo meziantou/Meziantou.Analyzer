@@ -17,7 +17,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 {
     private static readonly DiagnosticDescriptor UseAnOverloadThatHasCancellationTokenRule = new(
         RuleIdentifiers.UseAnOverloadThatHasCancellationToken,
-        title: "Use an overload with a CancellationToken argument",
+        title: "Use an overload with a CancellationToken argument, even when no token is available in scope",
         messageFormat: "Use an overload with a CancellationToken",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,

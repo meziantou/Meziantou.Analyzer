@@ -12,7 +12,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseToStringIfObject,
-        title: "Do not call the default object.ToString explicitly",
+        title: "Do not call ToString() when the type falls back to object.ToString()",
         messageFormat: "ToString on '{0}' will use the default object.ToString",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
