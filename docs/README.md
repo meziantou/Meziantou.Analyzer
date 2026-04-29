@@ -32,7 +32,7 @@
 |[MA0029](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0029.md)|Performance|Combine LINQ methods|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0030](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0030.md)|Performance|Remove useless OrderBy call|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0031](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0031.md)|Performance|Optimize Enumerable.Count() usage|<span title='Info'>ℹ️</span>|✔️|✔️|
-|[MA0032](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0032.md)|Usage|Use an overload with a CancellationToken argument|<span title='Info'>ℹ️</span>|❌|❌|
+|[MA0032](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0032.md)|Usage|Use an overload with a CancellationToken argument, even when no token is available in scope|<span title='Info'>ℹ️</span>|❌|❌|
 |[MA0033](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0033.md)|Design|Do not tag instance fields with ThreadStaticAttribute|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0035](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0035.md)|Usage|Do not use dangerous threading methods|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0036](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0036.md)|Design|Make class static|<span title='Info'>ℹ️</span>|✔️|✔️|
@@ -305,7 +305,7 @@ dotnet_diagnostic.MA0030.severity = warning
 # MA0031: Optimize Enumerable.Count() usage
 dotnet_diagnostic.MA0031.severity = suggestion
 
-# MA0032: Use an overload with a CancellationToken argument
+# MA0032: Use an overload with a CancellationToken argument, even when no token is available in scope
 dotnet_diagnostic.MA0032.severity = none
 
 # MA0033: Do not tag instance fields with ThreadStaticAttribute
@@ -885,7 +885,7 @@ dotnet_diagnostic.MA0030.severity = none
 # MA0031: Optimize Enumerable.Count() usage
 dotnet_diagnostic.MA0031.severity = none
 
-# MA0032: Use an overload with a CancellationToken argument
+# MA0032: Use an overload with a CancellationToken argument, even when no token is available in scope
 dotnet_diagnostic.MA0032.severity = none
 
 # MA0033: Do not tag instance fields with ThreadStaticAttribute

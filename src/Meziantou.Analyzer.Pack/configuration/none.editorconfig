@@ -95,7 +95,7 @@ dotnet_diagnostic.MA0030.severity = none
 # MA0031: Optimize Enumerable.Count() usage
 dotnet_diagnostic.MA0031.severity = none
 
-# MA0032: Use an overload with a CancellationToken argument
+# MA0032: Use an overload with a CancellationToken argument, even when no token is available in scope
 dotnet_diagnostic.MA0032.severity = none
 
 # MA0033: Do not tag instance fields with ThreadStaticAttribute
