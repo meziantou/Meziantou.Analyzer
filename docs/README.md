@@ -192,6 +192,7 @@
 |[MA0191](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0191.md)|Design|Do not use the null-forgiving operator|<span title='Warning'>⚠️</span>|❌|❌|
 |[MA0192](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0192.md)|Usage|Use HasFlag instead of bitwise checks|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0193](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0193.md)|Usage|Use an overload with a MidpointRounding argument|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0194](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0194.md)|Usage|Merge is expressions on the same value|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -783,6 +784,9 @@ dotnet_diagnostic.MA0192.severity = none
 
 # MA0193: Use an overload with a MidpointRounding argument
 dotnet_diagnostic.MA0193.severity = suggestion
+
+# MA0194: Merge is expressions on the same value
+dotnet_diagnostic.MA0194.severity = suggestion
 ```
 
 # .editorconfig - all rules disabled
@@ -1360,4 +1364,7 @@ dotnet_diagnostic.MA0192.severity = none
 
 # MA0193: Use an overload with a MidpointRounding argument
 dotnet_diagnostic.MA0193.severity = none
+
+# MA0194: Merge is expressions on the same value
+dotnet_diagnostic.MA0194.severity = none
 ```
