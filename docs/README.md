@@ -193,6 +193,7 @@
 |[MA0192](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0192.md)|Usage|Use HasFlag instead of bitwise checks|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0193](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0193.md)|Usage|Use an overload with a MidpointRounding argument|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0194](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0194.md)|Usage|Merge is expressions on the same value|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0195](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0195.md)|Usage|Do not use static fields before they are initialized|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -787,6 +788,9 @@ dotnet_diagnostic.MA0193.severity = suggestion
 
 # MA0194: Merge is expressions on the same value
 dotnet_diagnostic.MA0194.severity = suggestion
+
+# MA0195: Do not use static fields before they are initialized
+dotnet_diagnostic.MA0195.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1367,4 +1371,7 @@ dotnet_diagnostic.MA0193.severity = none
 
 # MA0194: Merge is expressions on the same value
 dotnet_diagnostic.MA0194.severity = none
+
+# MA0195: Do not use static fields before they are initialized
+dotnet_diagnostic.MA0195.severity = none
 ```

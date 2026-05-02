@@ -194,6 +194,7 @@ internal static class RuleIdentifiers
     public const string UseHasFlagMethod = "MA0192";
     public const string UseAnOverloadThatHasMidpointRounding = "MA0193";
     public const string MergeIsPatternChecks = "MA0194";
+    public const string DoNotUseNotYetInitializedStaticField = "MA0195";
 
     public static string GetHelpUri(string identifier)
     {
