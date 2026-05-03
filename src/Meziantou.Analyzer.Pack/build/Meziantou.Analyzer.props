@@ -1,6 +1,9 @@
 <Project>
   <ItemGroup>
     <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'None'" Include="$(MSBuildThisFileDirectory)\..\configuration\none.editorconfig" />
-    <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'Default'"  Include="$(MSBuildThisFileDirectory)\..\configuration\default.editorconfig" />
+    <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'Default'" Include="$(MSBuildThisFileDirectory)\..\configuration\default.editorconfig" />
+    <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'all-suggestions'" Include="$(MSBuildThisFileDirectory)\..\configuration\all-suggestions.editorconfig" />
+    <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'all-warnings'" Include="$(MSBuildThisFileDirectory)\..\configuration\all-warnings.editorconfig" />
+    <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'all-errors'" Include="$(MSBuildThisFileDirectory)\..\configuration\all-errors.editorconfig" />
   </ItemGroup>
 </Project>
