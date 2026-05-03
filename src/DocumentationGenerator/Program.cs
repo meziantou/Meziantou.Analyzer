@@ -171,6 +171,9 @@ Console.WriteLine(sb.ToString());
 {
     GenerateFile(outputFolder / "src" / "Meziantou.Analyzer.Pack" / "configuration" / "none.editorconfig", sb => GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: "none", appendCodeBlock: false));
     GenerateFile(outputFolder / "src" / "Meziantou.Analyzer.Pack" / "configuration" / "default.editorconfig", sb => GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: null, appendCodeBlock: false));
+    GenerateFile(outputFolder / "src" / "Meziantou.Analyzer.Pack" / "configuration" / "all-suggestions.editorconfig", sb => GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: "suggestion", appendCodeBlock: false));
+    GenerateFile(outputFolder / "src" / "Meziantou.Analyzer.Pack" / "configuration" / "all-warnings.editorconfig", sb => GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: "warning", appendCodeBlock: false));
+    GenerateFile(outputFolder / "src" / "Meziantou.Analyzer.Pack" / "configuration" / "all-errors.editorconfig", sb => GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: "error", appendCodeBlock: false));
     void GenerateFile(FullPath outputPath, Action<StringBuilder> code)
     {
         var sb = new StringBuilder();

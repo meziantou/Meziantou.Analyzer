@@ -243,11 +243,18 @@ If you are already using other analyzers, you can check [which rules are duplica
 
 # Configuration
 
-You can set the `<MeziantouAnalysisMode>` MSBuild property to configure the default severity of the rules. The default value is `Default`. You can set it to `None` to disable all rules by default.
+You can set the `<MeziantouAnalysisMode>` MSBuild property to configure the default severity of the rules.
+Supported values are:
+
+- `Default`: Uses each rule's default severity
+- `None`: Disables all rules by default
+- `all-suggestions`: Sets all rules to `suggestion`
+- `all-warnings`: Sets all rules to `warning`
+- `all-errors`: Sets all rules to `error`
 
 ```xml
 <Project>
   <PropertyGroup>
-    <MeziantouAnalysisMode>None</MeziantouAnalysisMode>
+    <MeziantouAnalysisMode>all-warnings</MeziantouAnalysisMode>
   </PropertyGroup>
 </Project>
