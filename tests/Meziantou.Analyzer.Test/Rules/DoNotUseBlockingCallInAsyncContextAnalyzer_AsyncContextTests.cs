@@ -1927,6 +1927,33 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/891")]
+    public async Task IDbContextFactory_CreateDbContext_NoReport()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .AddNuGetReference("Microsoft.EntityFrameworkCore", "6.0.8", "lib/net6.0/")
+              .AddNuGetReference("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8", "lib/net6.0/")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.EntityFrameworkCore;
+
+                class BloggingContext : DbContext { }
+
+                class Sample
+                {
+                    private IDbContextFactory<BloggingContext> _factory;
+
+                    async Task A()
+                    {
+                        await using var context = _factory.CreateDbContext();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task IAsyncEnumerable()
     {
         await CreateProjectBuilder()
