@@ -95,6 +95,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             DbContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
             DbSetSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
+            DbContextFactorySymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.IDbContextFactory`1");
 
             ServiceProviderServiceExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
             if (ServiceProviderServiceExtensionsSymbol is not null)
@@ -146,6 +147,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private INamedTypeSymbol? DbContextSymbol { get; }
         private INamedTypeSymbol? DbSetSymbol { get; }
+        private INamedTypeSymbol? DbContextFactorySymbol { get; }
 
         public INamedTypeSymbol? Moq_MockSymbol { get; }
 
@@ -244,6 +246,15 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             // https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-6.0&WT.mc_id=DT-MVP-5003978#overloads
             else if ((DbContextSymbol is not null || DbSetSymbol is not null) && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(DbContextSymbol, DbSetSymbol))
+            {
+                return false;
+            }
+
+            // IDbContextFactory<TContext>.CreateDbContext() - CreateDbContextAsync() is only for specific edge-cases
+            // https://github.com/dotnet/efcore/issues/26630
+            else if (DbContextFactorySymbol is not null && targetMethod.Name is "CreateDbContext" &&
+                     (targetMethod.ContainingType.OriginalDefinition.IsEqualTo(DbContextFactorySymbol) ||
+                      targetMethod.ContainingType.ImplementsGenericInterface(DbContextFactorySymbol)))
             {
                 return false;
             }
