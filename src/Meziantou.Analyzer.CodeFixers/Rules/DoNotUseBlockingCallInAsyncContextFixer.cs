@@ -105,14 +105,25 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         if (nodeToFix is UsingStatementSyntax usingStatement)
         {
-            editor.ReplaceNode(usingStatement, usingStatement.WithAwaitKeyword(SyntaxFactory.Token(SyntaxKind.AwaitKeyword)));
+            var awaitKeyword = GetAwaitKeyword(usingStatement.UsingKeyword);
+            editor.ReplaceNode(
+                usingStatement,
+                usingStatement.WithUsingKeyword(usingStatement.UsingKeyword.WithLeadingTrivia(SyntaxFactory.TriviaList())).WithAwaitKeyword(awaitKeyword));
         }
         else if (nodeToFix is LocalDeclarationStatementSyntax localDeclarationStatement)
         {
-            editor.ReplaceNode(localDeclarationStatement, localDeclarationStatement.WithAwaitKeyword(SyntaxFactory.Token(SyntaxKind.AwaitKeyword)));
+            var awaitKeyword = GetAwaitKeyword(localDeclarationStatement.UsingKeyword);
+            editor.ReplaceNode(
+                localDeclarationStatement,
+                localDeclarationStatement.WithUsingKeyword(localDeclarationStatement.UsingKeyword.WithLeadingTrivia(SyntaxFactory.TriviaList())).WithAwaitKeyword(awaitKeyword));
         }
 
         return editor.GetChangedDocument();
+    }
+
+    private static SyntaxToken GetAwaitKeyword(SyntaxToken usingKeyword)
+    {
+        return SyntaxFactory.Token(usingKeyword.LeadingTrivia, SyntaxKind.AwaitKeyword, SyntaxFactory.TriviaList(SyntaxFactory.Space));
     }
 
     private static async Task<Document> ReplaceWithMethodName(Document document, SyntaxNode nodeToFix, string methodName, CancellationToken cancellationToken)

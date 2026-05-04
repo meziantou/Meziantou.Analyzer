@@ -688,6 +688,51 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    public async Task Using_Diagnostic1_WithComment()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        // MA0042 "Prefer using 'await using'"
+                        [|using var a = new Sample();|]
+                    }
+
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
+              .ShouldBatchFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        // MA0042 "Prefer using 'await using'"
+                        await using var a = new Sample();
+                    }
+
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Using_Diagnostic2()
     {
         await CreateProjectBuilder()
