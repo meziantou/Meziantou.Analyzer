@@ -2326,4 +2326,151 @@ class Sample
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task UsingNewObjectCreation_InheritedDisposeAsync_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var conn = new DerivedConnection();
+                    }
+                }
+
+                class BaseConnection : IDisposable
+                {
+                    public void Dispose() { }
+                    public virtual ValueTask DisposeAsync() => default;
+                }
+
+                class DerivedConnection : BaseConnection { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_InheritedDisposeAsync_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = CreateConnection();|]
+                    }
+
+                    private DerivedConnection CreateConnection() => new DerivedConnection();
+                }
+
+                class BaseConnection : IDisposable
+                {
+                    public void Dispose() { }
+                    public virtual ValueTask DisposeAsync() => default;
+                }
+
+                class DerivedConnection : BaseConnection { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewObjectCreation_OverridesDisposeAsync_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = new DerivedConnection();|]
+                    }
+                }
+
+                class BaseConnection : IDisposable
+                {
+                    public void Dispose() { }
+                    public virtual ValueTask DisposeAsync() => default;
+                }
+
+                class DerivedConnection : BaseConnection
+                {
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_SealedType_InheritedDisposeAsync_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var conn = CreateConnection();
+                    }
+
+                    private SealedConnection CreateConnection() => new SealedConnection();
+                }
+
+                class BaseConnection : IDisposable
+                {
+                    public void Dispose() { }
+                    public virtual ValueTask DisposeAsync() => default;
+                }
+
+                sealed class SealedConnection : BaseConnection { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_SealedType_OverridesDisposeAsync_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = CreateConnection();|]
+                    }
+
+                    private SealedConnection CreateConnection() => new SealedConnection();
+                }
+
+                class BaseConnection : IDisposable
+                {
+                    public void Dispose() { }
+                    public virtual ValueTask DisposeAsync() => default;
+                }
+
+                sealed class SealedConnection : BaseConnection
+                {
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
 }
