@@ -2158,6 +2158,78 @@ class Sample
     }
 
     [Fact]
+    public async Task UsingFactoryMethod_StreamSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.IO;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var s = CreateStream();|]
+                    }
+
+                    private MyStream CreateStream() => throw null;
+                }
+
+                class MyStream : Stream
+                {
+                    public override bool CanRead => throw null;
+                    public override bool CanSeek => throw null;
+                    public override bool CanWrite => throw null;
+                    public override long Length => throw null;
+                    public override long Position { get => throw null; set => throw null; }
+                    public override void Flush() => throw null;
+                    public override int Read(byte[] buffer, int offset, int count) => throw null;
+                    public override long Seek(long offset, SeekOrigin origin) => throw null;
+                    public override void SetLength(long value) => throw null;
+                    public override void Write(byte[] buffer, int offset, int count) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewStreamSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.IO;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var s = new MyStream();|]
+                    }
+                }
+
+                class MyStream : Stream
+                {
+                    public override bool CanRead => throw null;
+                    public override bool CanSeek => throw null;
+                    public override bool CanWrite => throw null;
+                    public override long Length => throw null;
+                    public override long Position { get => throw null; set => throw null; }
+                    public override void Flush() => throw null;
+                    public override int Read(byte[] buffer, int offset, int count) => throw null;
+                    public override long Seek(long offset, SeekOrigin origin) => throw null;
+                    public override void SetLength(long value) => throw null;
+                    public override void Write(byte[] buffer, int offset, int count) => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+
+    [Fact]
     public async Task SemaphoreSlim_Wait_NoDiagnostic()
     {
         await CreateProjectBuilder()
@@ -2370,5 +2442,151 @@ class Sample
                 }
                 """)
             .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var conn = new MySqlConnection();
+                    }
+                }
+
+                class MySqlConnection : DbConnection
+                {
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = CreateConnection();|]
+                    }
+
+                    private MySqlConnection CreateConnection() => throw null;
+                }
+
+                class MySqlConnection : DbConnection
+                {
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbConnectionSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = new MySqlConnection();|]
+                    }
+                }
+
+                class MySqlConnection : DbConnection
+                {
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbConnectionSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = new DerivedConnection();|]
+                    }
+                }
+
+                class BaseConnection : DbConnection
+                {
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+
+                class DerivedConnection : BaseConnection { }
+                """)
+              .ValidateAsync();
     }
 }
