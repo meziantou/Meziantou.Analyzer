@@ -808,6 +808,168 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    public async Task Using_DeclaredTypeIDisposable_NoDiagnostic()
+    {
+        // Declared type is IDisposable, so await using would not compile
+        // The initializer's actual type has DisposeAsync, but the declared type does not
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using IDisposable x = new Sample();
+                    }
+
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingStatement_DeclaredTypeIDisposable_NoDiagnostic()
+    {
+        // Declared type is IDisposable in using statement, so await using would not compile
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using (IDisposable x = new Sample()) { }
+                    }
+
+                    private class Sample : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Using_DeclaredTypeSupportsAwaitUsing_Diagnostic()
+    {
+        // Declared type is a base class that also supports await using
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using Base x = new Sample();|]
+                    }
+
+                    private class Base : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+
+                    private class Sample : Base { }
+                }
+                """)
+              .ShouldBatchFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await using Base x = new Sample();
+                    }
+
+                    private class Base : IDisposable
+                    {
+                        public void Dispose() => throw null;
+                        public ValueTask DisposeAsync() => throw null;
+                    }
+
+                    private class Sample : Base { }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Using_AdoNetDbConnection_Diagnostic()
+    {
+        // DbConnection in Net6+ implements IAsyncDisposable, so the diagnostic should fire and the fix should be valid
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode("""
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = new ConcreteDbConnection();|]
+                    }
+                }
+
+                class ConcreteDbConnection : DbConnection
+                {
+                    public override string ConnectionString { get; set; } = "";
+                    public override string Database => "";
+                    public override string DataSource => "";
+                    public override string ServerVersion => "";
+                    public override System.Data.ConnectionState State => System.Data.ConnectionState.Closed;
+                    public override void ChangeDatabase(string databaseName) { }
+                    public override void Close() { }
+                    public override void Open() { }
+                    protected override DbTransaction BeginDbTransaction(System.Data.IsolationLevel isolationLevel) => throw new System.NotImplementedException();
+                    protected override DbCommand CreateDbCommand() => throw new System.NotImplementedException();
+                }
+                """)
+              .ShouldBatchFixCodeWith("""
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        await using var conn = new ConcreteDbConnection();
+                    }
+                }
+
+                class ConcreteDbConnection : DbConnection
+                {
+                    public override string ConnectionString { get; set; } = "";
+                    public override string Database => "";
+                    public override string DataSource => "";
+                    public override string ServerVersion => "";
+                    public override System.Data.ConnectionState State => System.Data.ConnectionState.Closed;
+                    public override void ChangeDatabase(string databaseName) { }
+                    public override void Close() { }
+                    public override void Open() { }
+                    protected override DbTransaction BeginDbTransaction(System.Data.IsolationLevel isolationLevel) => throw new System.NotImplementedException();
+                    protected override DbCommand CreateDbCommand() => throw new System.NotImplementedException();
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ExtensionMethod()
     {
         await CreateProjectBuilder()

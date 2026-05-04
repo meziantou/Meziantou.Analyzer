@@ -454,6 +454,15 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return false;
         }
 
+        private bool CanBeAwaitUsing(INamedTypeSymbol type)
+        {
+            // using var ms = new MemoryStream();
+            if (type.IsEqualTo(MemoryStreamSymbol))
+                return false;
+
+            return HasDisposeAsyncMethod(type);
+        }
+
         private bool CanBeAwaitUsing(IOperation operation)
         {
             if (operation.GetActualType() is not INamedTypeSymbol type)
@@ -482,7 +491,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
                 foreach (var declarator in declaration.Declarators)
                 {
-                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value))
+                    // Use the declared type (not the initializer expression's actual type) to determine whether
+                    // await using is applicable. Using the expression's actual type could cause false positives
+                    // when the declared type doesn't support await using (e.g., IDisposable, IDbConnection).
+                    // Example: "using IDisposable x = new T()" where T has DisposeAsync but IDisposable doesn't.
+                    // Applying the fix would produce "await using IDisposable x = new T()" which doesn't compile.
+                    if (declarator.Initializer is not null
+                        && declarator.Symbol.Type is INamedTypeSymbol declaredType
+                        && CanBeAwaitUsing(declaredType))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.UsingDeclarator);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
