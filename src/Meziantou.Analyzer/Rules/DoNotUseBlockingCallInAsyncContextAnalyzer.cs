@@ -75,6 +75,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
 
             ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
+            MemoryStreamSymbol = compilation.GetBestTypeByMetadataName("System.IO.MemoryStream");
+            DbConnectionSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbConnection");
             CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
             ObsoleteAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
 
@@ -121,7 +123,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             _taskAwaiterLikeSymbols = [.. taskAwaiterLikeSymbols];
         }
 
+        private ISymbol? MemoryStreamSymbol { get; }
         private ISymbol? ProcessSymbol { get; }
+        private INamedTypeSymbol? DbConnectionSymbol { get; }
         private ISymbol[] ConsoleErrorAndOutSymbols { get; }
         private INamedTypeSymbol? CancellationTokenSymbol { get; }
         private INamedTypeSymbol? ObsoleteAttributeSymbol { get; }
@@ -452,24 +456,36 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        private bool HasDisposeAsyncMethodDeclaredDirectly(INamedTypeSymbol symbol)
+        /// <summary>
+        /// Checks whether any type in the hierarchy from <paramref name="symbol"/> up to (but NOT including)
+        /// <see cref="DbConnectionSymbol"/> declares or overrides a <c>DisposeAsync</c> method.
+        /// Used to detect whether a <see cref="System.Data.Common.DbConnection"/> subclass has a meaningful
+        /// (truly async) <c>DisposeAsync</c> override, as opposed to relying on
+        /// <c>DbConnection.DisposeAsync</c> which merely calls <c>Dispose()</c> synchronously.
+        /// </summary>
+        private bool HasDisposeAsyncMethodDeclaredInDbConnectionSubclass(INamedTypeSymbol symbol)
         {
-            // Only look at members declared directly on the type, not inherited ones.
-            foreach (var member in symbol.GetMembers("DisposeAsync").OfType<IMethodSymbol>())
+            var current = symbol;
+            while (current is not null && !current.IsEqualTo(DbConnectionSymbol))
             {
-                if (member.Parameters.Length != 0)
-                    continue;
+                foreach (var member in current.GetMembers("DisposeAsync").OfType<IMethodSymbol>())
+                {
+                    if (member.Parameters.Length != 0)
+                        continue;
 
-                if (member.IsGenericMethod)
-                    continue;
+                    if (member.IsGenericMethod)
+                        continue;
 
-                if (member.IsStatic)
-                    continue;
+                    if (member.IsStatic)
+                        continue;
 
-                if (!member.ReturnType.IsEqualTo(ValueTaskSymbol))
-                    continue;
+                    if (!member.ReturnType.IsEqualTo(ValueTaskSymbol))
+                        continue;
 
-                return true;
+                    return true;
+                }
+
+                current = current.BaseType;
             }
 
             return false;
@@ -480,13 +496,20 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.GetActualType() is not INamedTypeSymbol type)
                 return false;
 
-            // When the runtime type is statically known — either because the expression is a direct
-            // object creation (new T()) or because the type is sealed — only report if the type
-            // itself declares/overrides DisposeAsync. Inheriting a non-async "default" DisposeAsync
-            // (e.g. DbConnection.DisposeAsync which just calls Dispose()) is not a meaningful override.
-            var unwrapped = operation.UnwrapImplicitConversionOperations();
-            if (unwrapped is IObjectCreationOperation || type.IsSealed)
-                return HasDisposeAsyncMethodDeclaredDirectly(type);
+            // using var ms = new MemoryStream();
+            if (operation is IObjectCreationOperation && type.IsEqualTo(MemoryStreamSymbol))
+                return false;
+
+            // For DbConnection subclasses created directly (new T()), only report if the exact
+            // type being instantiated (or an intermediate subclass up to but not including
+            // DbConnection) actually overrides DisposeAsync. DbConnection.DisposeAsync just calls
+            // Dispose() synchronously, so it is not a meaningful async override.
+            if (DbConnectionSymbol is not null && type.InheritsFrom(DbConnectionSymbol))
+            {
+                var unwrapped = operation.UnwrapImplicitConversionOperations();
+                if (unwrapped is IObjectCreationOperation)
+                    return HasDisposeAsyncMethodDeclaredInDbConnectionSubclass(type);
+            }
 
             return HasDisposeAsyncMethod(type);
         }

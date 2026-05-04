@@ -2328,38 +2328,48 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingNewObjectCreation_InheritedDisposeAsync_NoDiagnostic()
+    public async Task UsingNewDbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
               .WithSourceCode("""
-                using System;
+                using System.Data;
+                using System.Data.Common;
                 using System.Threading.Tasks;
 
                 class Test
                 {
                     public async Task A()
                     {
-                        using var conn = new DerivedConnection();
+                        using var conn = new MySqlConnection();
                     }
                 }
 
-                class BaseConnection : IDisposable
+                class MySqlConnection : DbConnection
                 {
-                    public void Dispose() { }
-                    public virtual ValueTask DisposeAsync() => default;
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
                 }
-
-                class DerivedConnection : BaseConnection { }
                 """)
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_InheritedDisposeAsync_Diagnostic()
+    public async Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_Diagnostic()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
               .WithSourceCode("""
-                using System;
+                using System.Data;
+                using System.Data.Common;
                 using System.Threading.Tasks;
 
                 class Test
@@ -2369,26 +2379,70 @@ class Sample
                         [|using var conn = CreateConnection();|]
                     }
 
-                    private DerivedConnection CreateConnection() => new DerivedConnection();
+                    private MySqlConnection CreateConnection() => throw null;
                 }
 
-                class BaseConnection : IDisposable
+                class MySqlConnection : DbConnection
                 {
-                    public void Dispose() { }
-                    public virtual ValueTask DisposeAsync() => default;
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
                 }
-
-                class DerivedConnection : BaseConnection { }
                 """)
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task UsingNewObjectCreation_OverridesDisposeAsync_Diagnostic()
+    public async Task UsingNewDbConnectionSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
         await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
               .WithSourceCode("""
-                using System;
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var conn = new MySqlConnection();|]
+                    }
+                }
+
+                class MySqlConnection : DbConnection
+                {
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbConnectionSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
                 using System.Threading.Tasks;
 
                 class Test
@@ -2399,77 +2453,22 @@ class Sample
                     }
                 }
 
-                class BaseConnection : IDisposable
+                class BaseConnection : DbConnection
                 {
-                    public void Dispose() { }
-                    public virtual ValueTask DisposeAsync() => default;
-                }
-
-                class DerivedConnection : BaseConnection
-                {
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
                     public override ValueTask DisposeAsync() => throw null;
                 }
-                """)
-              .ValidateAsync();
-    }
 
-    [Fact]
-    public async Task UsingFactoryMethod_SealedType_InheritedDisposeAsync_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-
-                class Test
-                {
-                    public async Task A()
-                    {
-                        using var conn = CreateConnection();
-                    }
-
-                    private SealedConnection CreateConnection() => new SealedConnection();
-                }
-
-                class BaseConnection : IDisposable
-                {
-                    public void Dispose() { }
-                    public virtual ValueTask DisposeAsync() => default;
-                }
-
-                sealed class SealedConnection : BaseConnection { }
-                """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task UsingFactoryMethod_SealedType_OverridesDisposeAsync_Diagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-
-                class Test
-                {
-                    public async Task A()
-                    {
-                        [|using var conn = CreateConnection();|]
-                    }
-
-                    private SealedConnection CreateConnection() => new SealedConnection();
-                }
-
-                class BaseConnection : IDisposable
-                {
-                    public void Dispose() { }
-                    public virtual ValueTask DisposeAsync() => default;
-                }
-
-                sealed class SealedConnection : BaseConnection
-                {
-                    public override ValueTask DisposeAsync() => throw null;
-                }
+                class DerivedConnection : BaseConnection { }
                 """)
               .ValidateAsync();
     }
