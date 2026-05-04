@@ -2113,6 +2113,78 @@ class Sample
     }
 
     [Fact]
+    public async Task UsingFactoryMethod_StreamSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.IO;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var s = CreateStream();|]
+                    }
+
+                    private MyStream CreateStream() => throw null;
+                }
+
+                class MyStream : Stream
+                {
+                    public override bool CanRead => throw null;
+                    public override bool CanSeek => throw null;
+                    public override bool CanWrite => throw null;
+                    public override long Length => throw null;
+                    public override long Position { get => throw null; set => throw null; }
+                    public override void Flush() => throw null;
+                    public override int Read(byte[] buffer, int offset, int count) => throw null;
+                    public override long Seek(long offset, SeekOrigin origin) => throw null;
+                    public override void SetLength(long value) => throw null;
+                    public override void Write(byte[] buffer, int offset, int count) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewStreamSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.IO;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var s = new MyStream();|]
+                    }
+                }
+
+                class MyStream : Stream
+                {
+                    public override bool CanRead => throw null;
+                    public override bool CanSeek => throw null;
+                    public override bool CanWrite => throw null;
+                    public override long Length => throw null;
+                    public override long Position { get => throw null; set => throw null; }
+                    public override void Flush() => throw null;
+                    public override int Read(byte[] buffer, int offset, int count) => throw null;
+                    public override long Seek(long offset, SeekOrigin origin) => throw null;
+                    public override void SetLength(long value) => throw null;
+                    public override void Write(byte[] buffer, int offset, int count) => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+
+    [Fact]
     public async Task SemaphoreSlim_Wait_NoDiagnostic()
     {
         await CreateProjectBuilder()
