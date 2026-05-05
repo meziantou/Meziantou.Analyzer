@@ -788,6 +788,58 @@ class MyClass : System.Windows.Window
     }
 
     [Fact]
+    public async Task AwaitUsingVar_InsideConfiguredUsing_ShouldNotThrow()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    var connection = new AsyncDisposable();
+                    await using (connection.ConfigureAwait(false))
+                    {
+                        await using var [|command = new AsyncDisposable()|];
+                    }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        const string CodeFix = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    var connection = new AsyncDisposable();
+                    await using (connection.ConfigureAwait(false))
+                    {
+                        var command = new AsyncDisposable();
+                        await using (command.ConfigureAwait(false))
+                        {
+                        }
+                    }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task AwaitUsingAwait_NoVariable()
     {
         const string SourceCode = """

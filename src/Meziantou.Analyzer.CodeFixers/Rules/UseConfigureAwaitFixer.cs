@@ -107,7 +107,13 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         {
             // await using (var a = expr);
             // var a = expr; await using (a.ConfigureAwait(false));
-            var usingBlock = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<UsingStatementSyntax>().FirstOrDefault();
+            var usingBlock = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<UsingStatementSyntax>().FirstOrDefault(usingStatement =>
+            {
+                if (usingStatement.Declaration is not null)
+                    return usingStatement.Declaration.Span.Contains(nodeToFix.Span);
+
+                return usingStatement.Expression?.Span.Contains(nodeToFix.Span) == true;
+            });
             if (usingBlock is not null)
             {
                 if (usingBlock.Declaration is not null && usingBlock.Declaration.Variables.Count == 1)
@@ -198,7 +204,10 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                 }
             }
 
-            editor.ReplaceNode(nodeToFix, AppendConfigureAwait(nodeToFix));
+            if (nodeToFix is not ExpressionSyntax expression)
+                return context.Document;
+
+            editor.ReplaceNode(nodeToFix, AppendConfigureAwait(expression));
             return editor.GetChangedDocument();
         }
 
@@ -229,7 +238,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             return false;
         }
 
-        ExpressionSyntax AppendConfigureAwait(SyntaxNode expressionSyntax)
+        ExpressionSyntax AppendConfigureAwait(ExpressionSyntax expressionSyntax)
         {
             return (ExpressionSyntax)generator.InvocationExpression(
                 generator.MemberAccessExpression(expressionSyntax, nameof(Task.ConfigureAwait)),
