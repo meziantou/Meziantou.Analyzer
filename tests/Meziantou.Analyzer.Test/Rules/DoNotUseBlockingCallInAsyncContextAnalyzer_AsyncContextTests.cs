@@ -2589,4 +2589,166 @@ class Sample
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task UsingNewDbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var command = new MyDbCommand();
+                    }
+                }
+
+                class MyDbCommand : DbCommand
+                {
+                    public override string CommandText { get => throw null; set => throw null; }
+                    public override int CommandTimeout { get => throw null; set => throw null; }
+                    public override CommandType CommandType { get => throw null; set => throw null; }
+                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbParameterCollection DbParameterCollection => throw null;
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override void Prepare() => throw null;
+                    protected override DbParameter CreateDbParameter() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var command = CreateCommand();|]
+                    }
+
+                    private MyDbCommand CreateCommand() => throw null;
+                }
+
+                class MyDbCommand : DbCommand
+                {
+                    public override string CommandText { get => throw null; set => throw null; }
+                    public override int CommandTimeout { get => throw null; set => throw null; }
+                    public override CommandType CommandType { get => throw null; set => throw null; }
+                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbParameterCollection DbParameterCollection => throw null;
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override void Prepare() => throw null;
+                    protected override DbParameter CreateDbParameter() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbCommandSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var command = new MyDbCommand();|]
+                    }
+                }
+
+                class MyDbCommand : DbCommand
+                {
+                    public override string CommandText { get => throw null; set => throw null; }
+                    public override int CommandTimeout { get => throw null; set => throw null; }
+                    public override CommandType CommandType { get => throw null; set => throw null; }
+                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbParameterCollection DbParameterCollection => throw null;
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override void Prepare() => throw null;
+                    protected override DbParameter CreateDbParameter() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbCommandSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var command = new DerivedDbCommand();|]
+                    }
+                }
+
+                class BaseDbCommand : DbCommand
+                {
+                    public override string CommandText { get => throw null; set => throw null; }
+                    public override int CommandTimeout { get => throw null; set => throw null; }
+                    public override CommandType CommandType { get => throw null; set => throw null; }
+                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbParameterCollection DbParameterCollection => throw null;
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override void Prepare() => throw null;
+                    protected override DbParameter CreateDbParameter() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+
+                class DerivedDbCommand : BaseDbCommand { }
+                """)
+              .ValidateAsync();
+    }
 }
