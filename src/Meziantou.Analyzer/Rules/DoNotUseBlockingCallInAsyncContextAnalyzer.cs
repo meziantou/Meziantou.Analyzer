@@ -77,6 +77,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
             StreamSymbol = compilation.GetBestTypeByMetadataName("System.IO.Stream");
             DbConnectionSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbConnection");
+            DbCommandSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbCommand");
             CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
             ObsoleteAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
 
@@ -126,6 +127,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private ISymbol? StreamSymbol { get; }
         private ISymbol? ProcessSymbol { get; }
         private INamedTypeSymbol? DbConnectionSymbol { get; }
+        private INamedTypeSymbol? DbCommandSymbol { get; }
         private ISymbol[] ConsoleErrorAndOutSymbols { get; }
         private INamedTypeSymbol? CancellationTokenSymbol { get; }
         private INamedTypeSymbol? ObsoleteAttributeSymbol { get; }
@@ -515,6 +517,17 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 var unwrapped = operation.UnwrapImplicitConversionOperations();
                 if (unwrapped is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbConnectionSymbol);
+            }
+
+            // For DbCommand subclasses created directly (new T()), only report if the exact
+            // type being instantiated (or an intermediate subclass up to but not including
+            // DbCommand) actually overrides DisposeAsync. DbCommand.DisposeAsync just calls
+            // Dispose() synchronously, so it is not a meaningful async override.
+            if (DbCommandSymbol is not null && type.InheritsFrom(DbCommandSymbol))
+            {
+                var unwrapped = operation.UnwrapImplicitConversionOperations();
+                if (unwrapped is IObjectCreationOperation)
+                    return HasDisposeAsyncMethodDeclaredInSubclass(type, DbCommandSymbol);
             }
 
             return HasDisposeAsyncMethod(type);
