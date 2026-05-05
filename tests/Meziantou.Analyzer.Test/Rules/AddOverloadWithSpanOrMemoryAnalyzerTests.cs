@@ -14,6 +14,37 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
     }
 
     [Fact]
+    public async Task EntryPoint_Main_ShouldNotTrigger()
+    {
+        const string SourceCode = """
+            public class Program
+            {
+                public static void Main(string[] args) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EntryPoint_NonMainMethod_ShouldTrigger()
+    {
+        const string SourceCode = """
+            public class Program
+            {
+                public static void Main(string[] args) { }
+                public static void [|DoWork|](string[] data) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task StringArrayWithoutSpanOverload_Params()
     {
         const string SourceCode = """
