@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -78,6 +79,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             StreamSymbol = compilation.GetBestTypeByMetadataName("System.IO.Stream");
             DbConnectionSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbConnection");
             DbCommandSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbCommand");
+            SqliteConnectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteConnection");
+            SqliteCommandSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteCommand");
             CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
             ObsoleteAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
 
@@ -128,6 +131,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private ISymbol? ProcessSymbol { get; }
         private INamedTypeSymbol? DbConnectionSymbol { get; }
         private INamedTypeSymbol? DbCommandSymbol { get; }
+        private INamedTypeSymbol? SqliteConnectionSymbol { get; }
+        private INamedTypeSymbol? SqliteCommandSymbol { get; }
         private ISymbol[] ConsoleErrorAndOutSymbols { get; }
         private INamedTypeSymbol? CancellationTokenSymbol { get; }
         private INamedTypeSymbol? ObsoleteAttributeSymbol { get; }
@@ -164,23 +169,25 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         {
             var operation = (IInvocationOperation)context.Operation;
             var targetMethod = operation.TargetMethod;
+            var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
+            var isSqliteSpecialCaseMethod = IsSqliteSpecialCaseMethod(targetMethod);
 
             // The cache only contains methods with no async equivalent methods.
             // This optimizes the best-case scenario where code is correctly written according to this analyzer.
-            if (_symbolsWithNoAsyncOverloads.Contains(targetMethod))
+            if (!isSqliteSpecialCaseMethod && _symbolsWithNoAsyncOverloads.Contains(targetMethod))
                 return;
 
-            if (HasAsyncEquivalent(operation, out var diagnosticMessage))
+            if (HasAsyncEquivalent(operation, sqliteSpecialCasesEnabled, out var diagnosticMessage))
             {
                 ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage);
             }
-            else
+            else if (!isSqliteSpecialCaseMethod)
             {
                 _symbolsWithNoAsyncOverloads.Add(targetMethod);
             }
         }
 
-        private bool HasAsyncEquivalent(IInvocationOperation operation, [NotNullWhen(true)] out DiagnosticData? data)
+        private bool HasAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, [NotNullWhen(true)] out DiagnosticData? data)
         {
             data = null;
             var targetMethod = operation.TargetMethod;
@@ -263,6 +270,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return false;
             }
 
+            // SqliteConnection.CreateCommand() always returns SqliteCommand.
+            // SqliteCommand does not override DisposeAsync, so there is no async alternative to require.
+            // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/async
+            else if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(targetMethod))
+            {
+                return false;
+            }
+
             else if (Moq_MockSymbol is not null && targetMethod.Name is "Raise" && targetMethod.ContainingType.OriginalDefinition.IsEqualTo(Moq_MockSymbol))
             {
                 return false;
@@ -296,6 +311,36 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
 
             return false;
+        }
+
+        private static bool IsSqliteSpecialCasesEnabled(OperationAnalysisContext context, IOperation operation)
+        {
+            var defaultValue = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".enable_sqlite_special_cases", defaultValue: true);
+            return context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCall + ".enable_sqlite_special_cases", defaultValue);
+        }
+
+        private bool IsSqliteConnectionCreateCommand(IMethodSymbol targetMethod)
+        {
+            if (SqliteConnectionSymbol is null || SqliteCommandSymbol is null)
+                return false;
+
+            return targetMethod.Name is "CreateCommand" &&
+                   targetMethod.ContainingType.IsEqualTo(SqliteConnectionSymbol) &&
+                   targetMethod.ReturnType.IsEqualTo(SqliteCommandSymbol);
+        }
+
+        private bool IsSqliteCommandMethod(IMethodSymbol targetMethod)
+        {
+            if (SqliteCommandSymbol is null)
+                return false;
+
+            return targetMethod.ContainingType.IsEqualTo(SqliteCommandSymbol) &&
+                   targetMethod.Name is "ExecuteNonQuery" or "ExecuteScalar" or "ExecuteReader";
+        }
+
+        private bool IsSqliteSpecialCaseMethod(IMethodSymbol targetMethod)
+        {
+            return IsSqliteConnectionCreateCommand(targetMethod) || IsSqliteCommandMethod(targetMethod);
         }
 
         private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName)
@@ -492,8 +537,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        private bool CanBeAwaitUsing(IOperation operation)
+        private bool CanBeAwaitUsing(IOperation operation, bool sqliteSpecialCasesEnabled)
         {
+            var unwrappedOperation = operation.UnwrapImplicitConversionOperations();
+            if (sqliteSpecialCasesEnabled &&
+                unwrappedOperation is IInvocationOperation invocationOperation &&
+                IsSqliteConnectionCreateCommand(invocationOperation.TargetMethod))
+            {
+                return false;
+            }
+
             if (operation.GetActualType() is not INamedTypeSymbol type)
                 return false;
 
@@ -503,8 +556,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Dispose() synchronously by default, so it is not a meaningful async override.
             if (StreamSymbol is INamedTypeSymbol streamSymbol && type.InheritsFrom(streamSymbol))
             {
-                var unwrapped = operation.UnwrapImplicitConversionOperations();
-                if (unwrapped is IObjectCreationOperation)
+                if (unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, streamSymbol);
             }
 
@@ -514,8 +566,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Dispose() synchronously, so it is not a meaningful async override.
             if (DbConnectionSymbol is not null && type.InheritsFrom(DbConnectionSymbol))
             {
-                var unwrapped = operation.UnwrapImplicitConversionOperations();
-                if (unwrapped is IObjectCreationOperation)
+                if (unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbConnectionSymbol);
             }
 
@@ -525,21 +576,20 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Dispose() synchronously, so it is not a meaningful async override.
             if (DbCommandSymbol is not null && type.InheritsFrom(DbCommandSymbol))
             {
-                var unwrapped = operation.UnwrapImplicitConversionOperations();
-                if (unwrapped is IObjectCreationOperation)
+                if (unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbCommandSymbol);
             }
 
             return HasDisposeAsyncMethod(type);
         }
 
-        private bool ReportIfCanBeAwaitUsing(OperationAnalysisContext context, IOperation usingOperation, IVariableDeclarationGroupOperation operation)
+        private bool ReportIfCanBeAwaitUsing(OperationAnalysisContext context, IOperation usingOperation, IVariableDeclarationGroupOperation operation, bool sqliteSpecialCasesEnabled)
         {
             foreach (var declaration in operation.Declarations)
             {
                 if ((declaration.Initializer?.Value) is not null)
                 {
-                    if (CanBeAwaitUsing(declaration.Initializer.Value))
+                    if (CanBeAwaitUsing(declaration.Initializer.Value, sqliteSpecialCasesEnabled))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
@@ -549,7 +599,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
                 foreach (var declarator in declaration.Declarators)
                 {
-                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value))
+                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value, sqliteSpecialCasesEnabled))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.UsingDeclarator);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
@@ -567,13 +617,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.IsAsynchronous)
                 return;
 
+            var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
             if (operation.Resources is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
             {
-                if (ReportIfCanBeAwaitUsing(context, operation, variableDeclarationGroupOperation))
+                if (ReportIfCanBeAwaitUsing(context, operation, variableDeclarationGroupOperation, sqliteSpecialCasesEnabled))
                     return;
             }
 
-            if (CanBeAwaitUsing(operation.Resources))
+            if (CanBeAwaitUsing(operation.Resources, sqliteSpecialCasesEnabled))
             {
                 var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
                 ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage);
@@ -586,7 +637,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.IsAsynchronous)
                 return;
 
-            ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup);
+            var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
+            ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup, sqliteSpecialCasesEnabled);
         }
     }
 

@@ -1,3 +1,7 @@
+using System.Collections.Immutable;
+using System.IO;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -1999,6 +2003,132 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteConnection_CreateCommand_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteConnection connection)
+                    {
+                        using var command = connection.CreateCommand();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteCommand_ExecuteMethods_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteCommand command)
+                    {
+                        command.ExecuteNonQuery();
+                        command.ExecuteScalar();
+                        command.ExecuteReader();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteConnection_CreateCommand_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteConnection connection)
+                    {
+                        [|using var command = connection.CreateCommand();|]
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteCommand_ExecuteMethods_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteCommand command)
+                    {
+                        [|command.ExecuteNonQuery()|];
+                        [|command.ExecuteScalar()|];
+                        [|command.ExecuteReader()|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public void SqliteConnection_CreateCommand_ReturnsSqliteCommand()
+    {
+        var builder = new ProjectBuilder()
+            .WithTargetFramework(TargetFramework.Net8_0)
+            .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/");
+
+        var sqliteReference = Assert.Single(builder.References, static reference =>
+            string.Equals(Path.GetFileName(reference.Display), "Microsoft.Data.Sqlite.dll", StringComparison.OrdinalIgnoreCase));
+
+        using var stream = File.OpenRead(sqliteReference.Display!);
+        using var peReader = new PEReader(stream);
+        var metadataReader = peReader.GetMetadataReader();
+
+        var sqliteConnectionHandle = metadataReader.TypeDefinitions.Single(handle =>
+        {
+            var type = metadataReader.GetTypeDefinition(handle);
+            return string.Equals(metadataReader.GetString(type.Namespace), "Microsoft.Data.Sqlite", StringComparison.Ordinal) &&
+                   string.Equals(metadataReader.GetString(type.Name), "SqliteConnection", StringComparison.Ordinal);
+        });
+        var sqliteConnectionType = metadataReader.GetTypeDefinition(sqliteConnectionHandle);
+
+        var typeNameProvider = new MetadataTypeNameProvider();
+        var createCommand = sqliteConnectionType.GetMethods()
+            .Select(metadataReader.GetMethodDefinition)
+            .Select(method => (Method: method, Signature: method.DecodeSignature(typeNameProvider, genericContext: default(object))))
+            .Single(item => string.Equals(metadataReader.GetString(item.Method.Name), "CreateCommand", StringComparison.Ordinal) && item.Signature.ParameterTypes.Length == 0);
+
+        Assert.Equal("Microsoft.Data.Sqlite.SqliteCommand", createCommand.Signature.ReturnType);
+    }
+
+    [Fact]
     public async Task IAsyncEnumerable()
     {
         await CreateProjectBuilder()
@@ -2750,5 +2880,42 @@ class Sample
                 class DerivedDbCommand : BaseDbCommand { }
                 """)
               .ValidateAsync();
+    }
+
+    private sealed class MetadataTypeNameProvider : ISignatureTypeProvider<string, object?>
+    {
+        public string GetArrayType(string elementType, ArrayShape shape) => elementType + "[]";
+        public string GetByReferenceType(string elementType) => "ref " + elementType;
+        public string GetFunctionPointerType(MethodSignature<string> signature) => "methodptr";
+        public string GetGenericInstantiation(string genericType, ImmutableArray<string> typeArguments) => genericType + "<" + string.Join(", ", typeArguments) + ">";
+        public string GetGenericMethodParameter(object? genericContext, int index) => "!!" + index;
+        public string GetGenericTypeParameter(object? genericContext, int index) => "!" + index;
+        public string GetModifiedType(string modifierType, string unmodifiedType, bool isRequired) => unmodifiedType;
+        public string GetPinnedType(string elementType) => elementType;
+        public string GetPointerType(string elementType) => elementType + "*";
+        public string GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode.ToString();
+        public string GetSZArrayType(string elementType) => elementType + "[]";
+
+        public string GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
+        {
+            var type = reader.GetTypeDefinition(handle);
+            var @namespace = reader.GetString(type.Namespace);
+            var name = reader.GetString(type.Name);
+            return string.IsNullOrEmpty(@namespace) ? name : @namespace + "." + name;
+        }
+
+        public string GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+        {
+            var type = reader.GetTypeReference(handle);
+            var @namespace = reader.GetString(type.Namespace);
+            var name = reader.GetString(type.Name);
+            return string.IsNullOrEmpty(@namespace) ? name : @namespace + "." + name;
+        }
+
+        public string GetTypeFromSpecification(MetadataReader reader, object? genericContext, TypeSpecificationHandle handle, byte rawTypeKind) =>
+            reader.GetTypeSpecification(handle).DecodeSignature(this, genericContext);
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static")]
+        public string GetUnsupportedSignatureTypeKind(SignatureTypeKind rawTypeKind) => rawTypeKind.ToString();
     }
 }
