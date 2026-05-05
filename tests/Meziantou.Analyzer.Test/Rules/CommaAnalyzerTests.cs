@@ -237,7 +237,7 @@ public sealed class CommaAnalyzerTests
 
 #if CSHARP12_OR_GREATER
     [Fact]
-    public async Task CollectionExpressionWithoutLeadingComma()
+    public async Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnNextLine()
     {
         const string SourceCode = """
 class TypeName
@@ -271,6 +271,73 @@ class TypeName
             .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
+
+    [Fact]
+    public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnSameLine()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public void Test(int[] source)
+                    {
+                        int[] a =
+                        [
+                            .. source];
+                    }
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnSameLine_WithPreviousValue()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public void Test(int[] source)
+                    {
+                        int[] a =
+                        [
+                            1,
+                            .. source];
+                    }
+                }
+                """)
+            .ValidateAsync();
+
+    [Fact]
+    public Task CollectionExpressionWithoutLeadingComma_SpreadElementWithComment()
+        => CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+            .WithSourceCode("""
+                class TypeName
+                {
+                    public void Test(int[] source)
+                    {
+                        int[] a =
+                        [
+                            1,
+                            [|.. source|] // comment
+                        ];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                class TypeName
+                {
+                    public void Test(int[] source)
+                    {
+                        int[] a =
+                        [
+                            1,
+                            .. source, // comment
+                        ];
+                    }
+                }
+                """)
+            .ValidateAsync();
 #endif
 
     [Fact]

@@ -58,7 +58,17 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
     private void HandleCollectionExpression(SyntaxNodeAnalysisContext context)
     {
         var node = (CollectionExpressionSyntax)context.Node;
-        HandleSeparatedList(context, node, node.Elements);
+        if (node.Elements.Count == 0)
+            return;
+
+        if (node.Elements.Count == node.Elements.SeparatorCount || !node.SpansMultipleLines(context.CancellationToken))
+            return;
+
+        var lastElement = node.Elements[^1];
+        if (lastElement.GetEndLine(context.CancellationToken) == node.CloseBracketToken.GetEndLine(context.CancellationToken))
+            return;
+
+        context.ReportDiagnostic(Rule, lastElement);
     }
 #endif
 
