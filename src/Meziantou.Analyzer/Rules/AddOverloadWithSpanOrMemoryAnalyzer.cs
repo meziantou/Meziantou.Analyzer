@@ -40,6 +40,10 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         if (method.MethodKind is not MethodKind.Ordinary and not MethodKind.Constructor)
             return;
 
+        // Skip the program entry point (e.g., Main(string[] args)) as the signature is mandated by the runtime
+        if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
+            return;
+
         if (!method.Parameters.Any(IsCandidateForSpanOrMemory))
             return;
 
