@@ -270,8 +270,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return false;
             }
 
-            // SqliteConnection.CreateCommand() always returns SqliteCommand.
-            // SqliteCommand does not override DisposeAsync, so there is no async alternative to require.
+            // SqliteConnection.Open() and CreateCommand() are synchronous by design in Microsoft.Data.Sqlite.
+            // SqliteConnection.CreateCommand() always returns SqliteCommand and SqliteCommand does not override
+            // DisposeAsync, so there is no async alternative to require.
             // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/async
             else if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(targetMethod))
             {
@@ -329,6 +330,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                    targetMethod.ReturnType.IsEqualTo(SqliteCommandSymbol);
         }
 
+        private bool IsSqliteConnectionOpen(IMethodSymbol targetMethod)
+        {
+            if (SqliteConnectionSymbol is null)
+                return false;
+
+            return targetMethod.Name is "Open" &&
+                   targetMethod.ContainingType.IsEqualTo(SqliteConnectionSymbol) &&
+                   targetMethod.Parameters.Length == 0;
+        }
+
         private bool IsSqliteCommandMethod(IMethodSymbol targetMethod)
         {
             if (SqliteCommandSymbol is null)
@@ -340,7 +351,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private bool IsSqliteSpecialCaseMethod(IMethodSymbol targetMethod)
         {
-            return IsSqliteConnectionCreateCommand(targetMethod) || IsSqliteCommandMethod(targetMethod);
+            return IsSqliteConnectionOpen(targetMethod) || IsSqliteConnectionCreateCommand(targetMethod) || IsSqliteCommandMethod(targetMethod);
         }
 
         private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName)
