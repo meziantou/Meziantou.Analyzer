@@ -1,3 +1,7 @@
+using System.Collections.Immutable;
+using System.IO;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -1992,6 +1996,100 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                     async Task A()
                     {
                         await using var context = _factory.CreateDbContext();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteConnection_CreateCommand_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteConnection connection)
+                    {
+                        using var command = connection.CreateCommand();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteCommand_ExecuteMethods_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteCommand command)
+                    {
+                        command.ExecuteNonQuery();
+                        command.ExecuteScalar();
+                        command.ExecuteReader();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteConnection_CreateCommand_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteConnection connection)
+                    {
+                        [|using var command = connection.CreateCommand();|]
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteCommand_ExecuteMethods_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteCommand command)
+                    {
+                        [|command.ExecuteNonQuery()|];
+                        [|command.ExecuteScalar()|];
+                        [|command.ExecuteReader()|];
                     }
                 }
                 """)

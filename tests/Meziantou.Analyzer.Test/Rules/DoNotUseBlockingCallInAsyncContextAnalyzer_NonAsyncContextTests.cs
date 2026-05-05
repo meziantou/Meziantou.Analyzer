@@ -1,4 +1,5 @@
 using Meziantou.Analyzer.Rules;
+using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
@@ -113,6 +114,74 @@ public class Test
         }
     }
 }")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task PrivateNonAsync_SqliteConnection_CreateCommand_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    private void A(SqliteConnection connection)
+                    {
+                        using var command = connection.CreateCommand();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task PrivateNonAsync_SqliteCommand_ExecuteMethods_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    private void A(SqliteCommand command)
+                    {
+                        command.ExecuteNonQuery();
+                        command.ExecuteScalar();
+                        command.ExecuteReader();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task PrivateNonAsync_SqliteCommand_ExecuteMethods_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
+              .WithSourceCode("""
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    private void A(SqliteCommand command)
+                    {
+                        [|command.ExecuteNonQuery()|];
+                        [|command.ExecuteScalar()|];
+                        [|command.ExecuteReader()|];
+                    }
+                }
+                """)
               .ValidateAsync();
     }
 }
