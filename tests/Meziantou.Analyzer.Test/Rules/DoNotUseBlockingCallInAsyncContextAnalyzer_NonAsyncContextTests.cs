@@ -266,4 +266,67 @@ public class Test
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
+    public async Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+
+                class Test
+                {
+                    private void A()
+                    {
+                        using var transaction = CreateTransaction();
+                    }
+
+                    private MyDbTransaction CreateTransaction() => throw null;
+                }
+
+                class MyDbTransaction : DbTransaction
+                {
+                    protected override DbConnection DbConnection => throw null;
+                    public override IsolationLevel IsolationLevel => throw null;
+                    public override void Commit() => throw null;
+                    public override void Rollback() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
+    public async Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+
+                class Test
+                {
+                    private void A()
+                    {
+                        [|using var transaction = CreateTransaction();|]
+                    }
+
+                    private MyDbTransaction CreateTransaction() => throw null;
+                }
+
+                class MyDbTransaction : DbTransaction
+                {
+                    protected override DbConnection DbConnection => throw null;
+                    public override IsolationLevel IsolationLevel => throw null;
+                    public override void Commit() => throw null;
+                    public override void Rollback() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
 }

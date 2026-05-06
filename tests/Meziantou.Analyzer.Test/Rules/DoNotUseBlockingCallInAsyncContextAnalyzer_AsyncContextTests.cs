@@ -2664,10 +2664,48 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_Diagnostic()
+    public async Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var conn = CreateConnection();
+                    }
+
+                    private MySqlConnection CreateConnection() => throw null;
+                }
+
+                class MySqlConnection : DbConnection
+                {
+                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                    protected override DbCommand CreateDbCommand() => throw null;
+                    public override void ChangeDatabase(string databaseName) => throw null;
+                    public override void Close() => throw null;
+                    public override void Open() => throw null;
+                    public override string ConnectionString { get => throw null; set => throw null; }
+                    public override string Database => throw null;
+                    public override string DataSource => throw null;
+                    public override string ServerVersion => throw null;
+                    public override ConnectionState State => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
               .WithSourceCode("""
                 using System.Data;
                 using System.Data.Common;
@@ -2814,10 +2852,52 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_Diagnostic()
+    public async Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var command = CreateCommand();
+                    }
+
+                    private MyDbCommand CreateCommand() => throw null;
+                }
+
+                class MyDbCommand : DbCommand
+                {
+                    public override string CommandText { get => throw null; set => throw null; }
+                    public override int CommandTimeout { get => throw null; set => throw null; }
+                    public override CommandType CommandType { get => throw null; set => throw null; }
+                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbParameterCollection DbParameterCollection => throw null;
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override void Prepare() => throw null;
+                    protected override DbParameter CreateDbParameter() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
               .WithSourceCode("""
                 using System.Data;
                 using System.Data.Common;
@@ -2957,10 +3037,33 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_Diagnostic()
+    public async Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var reader = CreateReader();
+                    }
+
+                    private DataTableReader CreateReader() => new DataTableReader(new DataTable());
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
               .WithSourceCode("""
                 using System.Data;
                 using System.Threading.Tasks;
@@ -3069,10 +3172,42 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_Diagnostic()
+    public async Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var transaction = CreateTransaction();
+                    }
+
+                    private MyDbTransaction CreateTransaction() => throw null;
+                }
+
+                class MyDbTransaction : DbTransaction
+                {
+                    protected override DbConnection DbConnection => throw null;
+                    public override IsolationLevel IsolationLevel => throw null;
+                    public override void Commit() => throw null;
+                    public override void Rollback() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
               .WithSourceCode("""
                 using System.Data;
                 using System.Data.Common;
@@ -3173,10 +3308,53 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_Diagnostic()
+    public async Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var batch = CreateBatch();
+                    }
+
+                    private MyDbBatch CreateBatch() => throw null;
+                }
+
+                class MyDbBatch : DbBatch
+                {
+                    public override int Timeout { get => throw null; set => throw null; }
+                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override void Prepare() => throw null;
+                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
               .WithSourceCode("""
                 using System.Data;
                 using System.Data.Common;
