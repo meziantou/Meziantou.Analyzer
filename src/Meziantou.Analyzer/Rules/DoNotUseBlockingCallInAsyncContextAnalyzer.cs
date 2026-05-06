@@ -506,8 +506,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         /// <summary>
         /// Checks whether any type in the hierarchy from <paramref name="symbol"/> up to (but NOT including)
         /// <paramref name="baseTypeSymbol"/> declares or overrides a <c>DisposeAsync</c> method.
-        /// Used to detect whether a subclass has a meaningful (truly async) <c>DisposeAsync</c> override,
-        /// as opposed to relying on an inherited implementation that is not truly asynchronous.
+        /// Used to detect whether a <see cref="System.IO.Stream"/> subclass created directly via <c>new</c>
+        /// has a meaningful (truly async) <c>DisposeAsync</c> override, as opposed to relying on the
+        /// inherited <c>Stream.DisposeAsync</c> implementation which merely calls <c>Dispose()</c> synchronously.
         /// </summary>
         private bool HasDisposeAsyncMethodDeclaredInSubclass(INamedTypeSymbol symbol, INamedTypeSymbol baseTypeSymbol)
         {
@@ -558,26 +559,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, streamSymbol);
-            }
-
-            // For DbConnection subclasses created directly (new T()), only report if the exact
-            // type being instantiated (or an intermediate subclass up to but not including
-            // DbConnection) actually overrides DisposeAsync. DbConnection.DisposeAsync just calls
-            // Dispose() synchronously, so it is not a meaningful async override.
-            if (DbConnectionSymbol is not null && type.InheritsFrom(DbConnectionSymbol))
-            {
-                if (unwrappedOperation is IObjectCreationOperation)
-                    return HasDisposeAsyncMethodDeclaredInSubclass(type, DbConnectionSymbol);
-            }
-
-            // For DbCommand subclasses created directly (new T()), only report if the exact
-            // type being instantiated (or an intermediate subclass up to but not including
-            // DbCommand) actually overrides DisposeAsync. DbCommand.DisposeAsync just calls
-            // Dispose() synchronously, so it is not a meaningful async override.
-            if (DbCommandSymbol is not null && type.InheritsFrom(DbCommandSymbol))
-            {
-                if (unwrappedOperation is IObjectCreationOperation)
-                    return HasDisposeAsyncMethodDeclaredInSubclass(type, DbCommandSymbol);
             }
 
             return HasDisposeAsyncMethod(type);

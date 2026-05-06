@@ -2629,7 +2629,7 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingNewDbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public async Task UsingNewDbConnectionSubclass_NoDisposeAsyncOverride_Diagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
@@ -2642,7 +2642,7 @@ class Sample
                 {
                     public async Task A()
                     {
-                        using var conn = new MySqlConnection();
+                        [|using var conn = new MySqlConnection();|]
                     }
                 }
 
@@ -2775,7 +2775,7 @@ class Sample
     }
 
     [Fact]
-    public async Task UsingNewDbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public async Task UsingNewDbCommandSubclass_NoDisposeAsyncOverride_Diagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
@@ -2788,7 +2788,7 @@ class Sample
                 {
                     public async Task A()
                     {
-                        using var command = new MyDbCommand();
+                        [|using var command = new MyDbCommand();|]
                     }
                 }
 
