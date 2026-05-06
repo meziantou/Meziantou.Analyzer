@@ -329,6 +329,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCall + ".enable_sqlite_special_cases", defaultValue);
         }
 
+        private static bool IsDbSpecialCasesEnabled(OperationAnalysisContext context, IOperation operation)
+        {
+            var defaultValue = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".enable_db_special_cases", defaultValue: true);
+            return context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCall + ".enable_db_special_cases", defaultValue);
+        }
+
         private bool IsSqliteSpecialCaseType(INamedTypeSymbol type)
         {
             return type.IsEqualToAny(SqliteConnectionSymbol, SqliteCommandSymbol, SqliteDataReaderSymbol);
@@ -545,7 +551,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        private bool CanBeAwaitUsing(IOperation operation, bool sqliteSpecialCasesEnabled)
+        private bool CanBeAwaitUsing(IOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled)
         {
             var unwrappedOperation = operation.UnwrapImplicitConversionOperations();
             if (sqliteSpecialCasesEnabled &&
@@ -558,6 +564,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.GetActualType() is not INamedTypeSymbol type)
                 return false;
 
+            var isSqliteSpecialCaseType = IsSqliteSpecialCaseType(type);
+
             // For Stream subclasses (including MemoryStream) created directly (new T()), only report
             // if the concrete type being instantiated (or an intermediate subclass up to but not
             // including Stream) actually overrides DisposeAsync. Stream.DisposeAsync merely calls
@@ -568,53 +576,53 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, streamSymbol);
             }
 
-            // For DbConnection subclasses created directly (new T()), only report if the exact
-            // type being instantiated (or an intermediate subclass up to but not including
-            // DbConnection) actually overrides DisposeAsync. DbConnection.DisposeAsync just calls
-            // Dispose() synchronously, so it is not a meaningful async override.
+            // DbConnection DisposeAsync has a synchronous fallback in the base implementation.
+            // When db special-cases are enabled, treat the compile-time DbConnection type
+            // hierarchy as final and only report when there is a DisposeAsync override below
+            // DbConnection, even for factory-returned instances.
             if (DbConnectionSymbol is not null && type.InheritsFrom(DbConnectionSymbol))
             {
-                if (unwrappedOperation is IObjectCreationOperation)
+                if ((dbSpecialCasesEnabled && !isSqliteSpecialCaseType) || unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbConnectionSymbol);
             }
 
-            // For DbCommand subclasses created directly (new T()), only report if the exact
-            // type being instantiated (or an intermediate subclass up to but not including
-            // DbCommand) actually overrides DisposeAsync. DbCommand.DisposeAsync just calls
-            // Dispose() synchronously, so it is not a meaningful async override.
+            // DbCommand DisposeAsync has a synchronous fallback in the base implementation.
+            // When db special-cases are enabled, treat the compile-time DbCommand type
+            // hierarchy as final and only report when there is a DisposeAsync override below
+            // DbCommand, even for factory-returned instances.
             if (DbCommandSymbol is not null && type.InheritsFrom(DbCommandSymbol))
             {
-                if (unwrappedOperation is IObjectCreationOperation)
+                if ((dbSpecialCasesEnabled && !isSqliteSpecialCaseType) || unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbCommandSymbol);
             }
 
-            // For DbDataReader subclasses created directly (new T()), only report if the exact
-            // type being instantiated (or an intermediate subclass up to but not including
-            // DbDataReader) actually overrides DisposeAsync. DbDataReader.DisposeAsync just calls
-            // Dispose() synchronously, so it is not a meaningful async override.
+            // DbDataReader DisposeAsync has a synchronous fallback in the base implementation.
+            // When db special-cases are enabled, treat the compile-time DbDataReader type
+            // hierarchy as final and only report when there is a DisposeAsync override below
+            // DbDataReader, even for factory-returned instances.
             if (DbDataReaderSymbol is not null && type.InheritsFrom(DbDataReaderSymbol))
             {
-                if (unwrappedOperation is IObjectCreationOperation)
+                if ((dbSpecialCasesEnabled && !isSqliteSpecialCaseType) || unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbDataReaderSymbol);
             }
 
-            // For DbTransaction subclasses created directly (new T()), only report if the exact
-            // type being instantiated (or an intermediate subclass up to but not including
-            // DbTransaction) actually overrides DisposeAsync. DbTransaction.DisposeAsync just calls
-            // Dispose() synchronously, so it is not a meaningful async override.
+            // DbTransaction DisposeAsync has a synchronous fallback in the base implementation.
+            // When db special-cases are enabled, treat the compile-time DbTransaction type
+            // hierarchy as final and only report when there is a DisposeAsync override below
+            // DbTransaction, even for factory-returned instances.
             if (DbTransactionSymbol is not null && type.InheritsFrom(DbTransactionSymbol))
             {
-                if (unwrappedOperation is IObjectCreationOperation)
+                if (dbSpecialCasesEnabled || unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbTransactionSymbol);
             }
 
-            // For DbBatch subclasses created directly (new T()), only report if the exact
-            // type being instantiated (or an intermediate subclass up to but not including
-            // DbBatch) actually overrides DisposeAsync. DbBatch.DisposeAsync just calls
-            // Dispose() synchronously, so it is not a meaningful async override.
+            // DbBatch DisposeAsync has a synchronous fallback in the base implementation.
+            // When db special-cases are enabled, treat the compile-time DbBatch type
+            // hierarchy as final and only report when there is a DisposeAsync override below
+            // DbBatch, even for factory-returned instances.
             if (DbBatchSymbol is not null && type.InheritsFrom(DbBatchSymbol))
             {
-                if (unwrappedOperation is IObjectCreationOperation)
+                if (dbSpecialCasesEnabled || unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbBatchSymbol);
             }
 
@@ -631,13 +639,13 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return HasDisposeAsyncMethod(type);
         }
 
-        private bool ReportIfCanBeAwaitUsing(OperationAnalysisContext context, IOperation usingOperation, IVariableDeclarationGroupOperation operation, bool sqliteSpecialCasesEnabled)
+        private bool ReportIfCanBeAwaitUsing(OperationAnalysisContext context, IOperation usingOperation, IVariableDeclarationGroupOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled)
         {
             foreach (var declaration in operation.Declarations)
             {
                 if ((declaration.Initializer?.Value) is not null)
                 {
-                    if (CanBeAwaitUsing(declaration.Initializer.Value, sqliteSpecialCasesEnabled))
+                    if (CanBeAwaitUsing(declaration.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
@@ -647,7 +655,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
                 foreach (var declarator in declaration.Declarators)
                 {
-                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value, sqliteSpecialCasesEnabled))
+                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.UsingDeclarator);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
@@ -666,13 +674,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return;
 
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
+            var dbSpecialCasesEnabled = IsDbSpecialCasesEnabled(context, operation);
             if (operation.Resources is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
             {
-                if (ReportIfCanBeAwaitUsing(context, operation, variableDeclarationGroupOperation, sqliteSpecialCasesEnabled))
+                if (ReportIfCanBeAwaitUsing(context, operation, variableDeclarationGroupOperation, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
                     return;
             }
 
-            if (CanBeAwaitUsing(operation.Resources, sqliteSpecialCasesEnabled))
+            if (CanBeAwaitUsing(operation.Resources, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
             {
                 var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
                 ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage);
@@ -686,7 +695,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return;
 
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
-            ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup, sqliteSpecialCasesEnabled);
+            var dbSpecialCasesEnabled = IsDbSpecialCasesEnabled(context, operation);
+            ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled);
         }
     }
 
