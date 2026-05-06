@@ -129,7 +129,7 @@ internal static class TimeSpanOperation
 
             return null;
 
-            static long? AddValues(params long?[] values)
+            static long? AddValues(params ReadOnlySpan<long?> values)
             {
                 var result = 0L;
                 foreach (var value in values)

@@ -111,12 +111,18 @@ internal static class TypeSymbolExtensions
         return symbol.IsEqualTo(expectedType) || (!expectedType.IsSealed && symbol.InheritsFrom(expectedType));
     }
 
-    public static bool IsEqualToAny(this ITypeSymbol? symbol, params ITypeSymbol?[]? expectedTypes)
+    public static bool IsEqualToAny(this ITypeSymbol? symbol, params ReadOnlySpan<ITypeSymbol?> expectedTypes)
     {
-        if (symbol is null || expectedTypes is null)
+        if (symbol is null || expectedTypes.IsEmpty)
             return false;
 
-        return expectedTypes.Any(t => t.IsEqualTo(symbol));
+        foreach (var expectedType in expectedTypes)
+        {
+            if (expectedType is not null && symbol.IsEqualTo(expectedType))
+                return true;
+        }
+
+        return false;
     }
 
     public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1)

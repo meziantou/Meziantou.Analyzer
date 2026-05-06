@@ -82,7 +82,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
     [Fact]
     public async Task CodeFix_ConvertsMethodToProperty()
     {
-        const string sourceCode = """
+        const string SourceCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -92,7 +92,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        const string expectedFix = """
+        const string ExpectedFix = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -103,15 +103,15 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             """;
 
         await CreateProjectBuilder()
-            .WithSourceCode(sourceCode)
-            .ShouldFixCodeWith(expectedFix)
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(ExpectedFix)
             .ValidateAsync();
     }
 
     [Fact]
     public async Task CodeFix_ConvertsMethodToProperty_WithTimeout()
     {
-        const string sourceCode = """
+        const string SourceCode = """
             using System.Text.RegularExpressions;
             using System.Threading;
 
@@ -122,7 +122,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        const string expectedFix = """
+        const string ExpectedFix = """
             using System.Text.RegularExpressions;
             using System.Threading;
 
@@ -134,15 +134,15 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             """;
 
         await CreateProjectBuilder()
-            .WithSourceCode(sourceCode)
-            .ShouldFixCodeWith(expectedFix)
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(ExpectedFix)
             .ValidateAsync();
     }
 
     [Fact]
     public async Task CodeFix_ReplacesInvocationsWithPropertyAccess()
     {
-        const string sourceCode = """
+        const string SourceCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -157,7 +157,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        const string expectedFix = """
+        const string ExpectedFix = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -173,15 +173,15 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             """;
 
         await CreateProjectBuilder()
-            .WithSourceCode(sourceCode)
-            .ShouldFixCodeWith(expectedFix)
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(ExpectedFix)
             .ValidateAsync();
     }
 
     [Fact]
     public async Task CodeFix_ReplacesMultipleInvocationsWithPropertyAccess()
     {
-        const string sourceCode = """
+        const string SourceCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -197,7 +197,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        const string expectedFix = """
+        const string ExpectedFix = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -214,8 +214,8 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             """;
 
         await CreateProjectBuilder()
-            .WithSourceCode(sourceCode)
-            .ShouldFixCodeWith(expectedFix)
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(ExpectedFix)
             .ValidateAsync();
     }
 #endif
