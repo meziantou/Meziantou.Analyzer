@@ -81,6 +81,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             DbCommandSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbCommand");
             SqliteConnectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteConnection");
             SqliteCommandSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteCommand");
+            SqliteDataReaderSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteDataReader");
             CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
             ObsoleteAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
 
@@ -133,6 +134,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private INamedTypeSymbol? DbCommandSymbol { get; }
         private INamedTypeSymbol? SqliteConnectionSymbol { get; }
         private INamedTypeSymbol? SqliteCommandSymbol { get; }
+        private INamedTypeSymbol? SqliteDataReaderSymbol { get; }
         private ISymbol[] ConsoleErrorAndOutSymbols { get; }
         private INamedTypeSymbol? CancellationTokenSymbol { get; }
         private INamedTypeSymbol? ObsoleteAttributeSymbol { get; }
@@ -170,7 +172,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var operation = (IInvocationOperation)context.Operation;
             var targetMethod = operation.TargetMethod;
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
-            var isSqliteSpecialCaseMethod = IsSqliteSpecialCaseMethod(targetMethod);
+            var isSqliteSpecialCaseMethod = IsSqliteSpecialCaseMethod(operation);
 
             // The cache only contains methods with no async equivalent methods.
             // This optimizes the best-case scenario where code is correctly written according to this analyzer.
@@ -270,11 +272,10 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return false;
             }
 
-            // SqliteConnection.Open() and CreateCommand() are synchronous by design in Microsoft.Data.Sqlite.
-            // SqliteConnection.CreateCommand() always returns SqliteCommand and SqliteCommand does not override
-            // DisposeAsync, so there is no async alternative to require.
+            // Async APIs in Microsoft.Data.Sqlite have documented limitations.
+            // Ignore any invocation on SqliteConnection, SqliteCommand, or SqliteDataReader by default.
             // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/async
-            else if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(targetMethod))
+            else if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(operation))
             {
                 return false;
             }
@@ -320,38 +321,26 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCall + ".enable_sqlite_special_cases", defaultValue);
         }
 
-        private bool IsSqliteConnectionCreateCommand(IMethodSymbol targetMethod)
+        private bool IsSqliteSpecialCaseType(INamedTypeSymbol type)
         {
-            if (SqliteConnectionSymbol is null || SqliteCommandSymbol is null)
-                return false;
-
-            return targetMethod.Name is "CreateCommand" &&
-                   targetMethod.ContainingType.IsEqualTo(SqliteConnectionSymbol) &&
-                   targetMethod.ReturnType.IsEqualTo(SqliteCommandSymbol);
+            return type.IsEqualToAny(SqliteConnectionSymbol, SqliteCommandSymbol, SqliteDataReaderSymbol);
         }
 
-        private bool IsSqliteConnectionOpen(IMethodSymbol targetMethod)
+        private bool IsSqliteSpecialCaseMethod(IInvocationOperation operation)
         {
-            if (SqliteConnectionSymbol is null)
+            if (IsSqliteSpecialCaseType(operation.TargetMethod.ContainingType))
+                return true;
+
+            if (operation.TargetMethod.IsExtensionMethod)
                 return false;
 
-            return targetMethod.Name is "Open" &&
-                   targetMethod.ContainingType.IsEqualTo(SqliteConnectionSymbol) &&
-                   targetMethod.Parameters.Length == 0;
-        }
-
-        private bool IsSqliteCommandMethod(IMethodSymbol targetMethod)
-        {
-            if (SqliteCommandSymbol is null)
+            if (operation.TargetMethod.IsStatic)
                 return false;
 
-            return targetMethod.ContainingType.IsEqualTo(SqliteCommandSymbol) &&
-                   targetMethod.Name is "ExecuteNonQuery" or "ExecuteScalar" or "ExecuteReader";
-        }
+            if (operation.Instance?.GetActualType() is not INamedTypeSymbol type)
+                return false;
 
-        private bool IsSqliteSpecialCaseMethod(IMethodSymbol targetMethod)
-        {
-            return IsSqliteConnectionOpen(targetMethod) || IsSqliteConnectionCreateCommand(targetMethod) || IsSqliteCommandMethod(targetMethod);
+            return IsSqliteSpecialCaseType(type);
         }
 
         private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName)
@@ -553,7 +542,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var unwrappedOperation = operation.UnwrapImplicitConversionOperations();
             if (sqliteSpecialCasesEnabled &&
                 unwrappedOperation is IInvocationOperation invocationOperation &&
-                IsSqliteConnectionCreateCommand(invocationOperation.TargetMethod))
+                IsSqliteSpecialCaseMethod(invocationOperation))
             {
                 return false;
             }
