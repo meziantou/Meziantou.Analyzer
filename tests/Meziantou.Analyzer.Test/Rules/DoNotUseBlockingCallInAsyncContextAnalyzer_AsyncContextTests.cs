@@ -2935,4 +2935,410 @@ class Sample
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task UsingNewDbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var reader = new DataTableReader(new DataTable());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var reader = CreateReader();|]
+                    }
+
+                    private DataTableReader CreateReader() => new DataTableReader(new DataTable());
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbDataReaderSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System;
+                using System.Collections;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var reader1 = new MyDbDataReader();|]
+                        [|using var reader2 = new DerivedDbDataReader();|]
+                    }
+                }
+
+                class MyDbDataReader : DbDataReader
+                {
+                    public override object this[int ordinal] => throw null;
+                    public override object this[string name] => throw null;
+                    public override int Depth => throw null;
+                    public override int FieldCount => throw null;
+                    public override bool HasRows => throw null;
+                    public override bool IsClosed => throw null;
+                    public override int RecordsAffected => throw null;
+                    public override bool GetBoolean(int ordinal) => throw null;
+                    public override byte GetByte(int ordinal) => throw null;
+                    public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length) => throw null;
+                    public override char GetChar(int ordinal) => throw null;
+                    public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length) => throw null;
+                    public override string GetDataTypeName(int ordinal) => throw null;
+                    public override DateTime GetDateTime(int ordinal) => throw null;
+                    public override decimal GetDecimal(int ordinal) => throw null;
+                    public override double GetDouble(int ordinal) => throw null;
+                    public override IEnumerator GetEnumerator() => throw null;
+                    public override Type GetFieldType(int ordinal) => throw null;
+                    public override float GetFloat(int ordinal) => throw null;
+                    public override Guid GetGuid(int ordinal) => throw null;
+                    public override short GetInt16(int ordinal) => throw null;
+                    public override int GetInt32(int ordinal) => throw null;
+                    public override long GetInt64(int ordinal) => throw null;
+                    public override string GetName(int ordinal) => throw null;
+                    public override int GetOrdinal(string name) => throw null;
+                    public override string GetString(int ordinal) => throw null;
+                    public override object GetValue(int ordinal) => throw null;
+                    public override int GetValues(object[] values) => throw null;
+                    public override bool IsDBNull(int ordinal) => throw null;
+                    public override bool NextResult() => throw null;
+                    public override bool Read() => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+
+                class DerivedDbDataReader : MyDbDataReader { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var transaction = new MyDbTransaction();
+                    }
+                }
+
+                class MyDbTransaction : DbTransaction
+                {
+                    protected override DbConnection DbConnection => throw null;
+                    public override IsolationLevel IsolationLevel => throw null;
+                    public override void Commit() => throw null;
+                    public override void Rollback() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var transaction = CreateTransaction();|]
+                    }
+
+                    private MyDbTransaction CreateTransaction() => throw null;
+                }
+
+                class MyDbTransaction : DbTransaction
+                {
+                    protected override DbConnection DbConnection => throw null;
+                    public override IsolationLevel IsolationLevel => throw null;
+                    public override void Commit() => throw null;
+                    public override void Rollback() => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbTransactionSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var transaction1 = new MyDbTransaction();|]
+                        [|using var transaction2 = new DerivedDbTransaction();|]
+                    }
+                }
+
+                class MyDbTransaction : DbTransaction
+                {
+                    protected override DbConnection DbConnection => throw null;
+                    public override IsolationLevel IsolationLevel => throw null;
+                    public override void Commit() => throw null;
+                    public override void Rollback() => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+
+                class DerivedDbTransaction : MyDbTransaction { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var batch = new MyDbBatch();
+                    }
+                }
+
+                class MyDbBatch : DbBatch
+                {
+                    public override int Timeout { get => throw null; set => throw null; }
+                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override void Prepare() => throw null;
+                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var batch = CreateBatch();|]
+                    }
+
+                    private MyDbBatch CreateBatch() => throw null;
+                }
+
+                class MyDbBatch : DbBatch
+                {
+                    public override int Timeout { get => throw null; set => throw null; }
+                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override void Prepare() => throw null;
+                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewDbBatchSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.Data;
+                using System.Data.Common;
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var batch1 = new MyDbBatch();|]
+                        [|using var batch2 = new DerivedDbBatch();|]
+                    }
+                }
+
+                class MyDbBatch : DbBatch
+                {
+                    public override int Timeout { get => throw null; set => throw null; }
+                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                    public override void Cancel() => throw null;
+                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                    public override int ExecuteNonQuery() => throw null;
+                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override object ExecuteScalar() => throw null;
+                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override void Prepare() => throw null;
+                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+
+                class DerivedDbBatch : MyDbBatch { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewTextWriterSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.IO;
+                using System.Text;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var writer = new MyTextWriter();
+                    }
+                }
+
+                class MyTextWriter : TextWriter
+                {
+                    public override Encoding Encoding => Encoding.UTF8;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingFactoryMethod_TextWriterSubclass_NoDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.IO;
+                using System.Text;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var writer = CreateTextWriter();|]
+                    }
+
+                    private MyTextWriter CreateTextWriter() => new MyTextWriter();
+                }
+
+                class MyTextWriter : TextWriter
+                {
+                    public override Encoding Encoding => Encoding.UTF8;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UsingNewTextWriterSubclass_WithDisposeAsyncOverride_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .WithSourceCode("""
+                using System.IO;
+                using System.Text;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var writer1 = new MyTextWriter();|]
+                        [|using var writer2 = new DerivedTextWriter();|]
+                    }
+                }
+
+                class MyTextWriter : TextWriter
+                {
+                    public override Encoding Encoding => Encoding.UTF8;
+                    public override ValueTask DisposeAsync() => throw null;
+                }
+
+                class DerivedTextWriter : MyTextWriter { }
+                """)
+              .ValidateAsync();
+    }
 }
