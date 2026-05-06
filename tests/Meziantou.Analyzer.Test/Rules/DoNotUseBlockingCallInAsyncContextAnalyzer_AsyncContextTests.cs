@@ -2026,7 +2026,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteConnection_Open_NoDiagnostic()
+    public async Task SqliteConnection_Close_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
@@ -2039,7 +2039,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                 {
                     public async Task A(SqliteConnection connection)
                     {
-                        connection.Open();
+                        connection.Close();
                     }
                 }
                 """)
@@ -2048,7 +2048,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteCommand_ExecuteMethods_NoDiagnostic()
+    public async Task SqliteCommand_Prepare_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
@@ -2061,9 +2061,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                 {
                     public async Task A(SqliteCommand command)
                     {
-                        command.ExecuteNonQuery();
-                        command.ExecuteScalar();
-                        command.ExecuteReader();
+                        command.Prepare();
                     }
                 }
                 """)
@@ -2095,7 +2093,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteConnection_Open_OptionDisabled_Diagnostic()
+    public async Task SqliteConnection_Close_OptionDisabled_Diagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
@@ -2109,7 +2107,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                 {
                     public async Task A(SqliteConnection connection)
                     {
-                        [|connection.Open()|];
+                        [|connection.Close()|];
                     }
                 }
                 """)
@@ -2118,7 +2116,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteCommand_ExecuteMethods_OptionDisabled_Diagnostic()
+    public async Task SqliteCommand_Prepare_OptionDisabled_Diagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net8_0)
@@ -2132,9 +2130,52 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
                 {
                     public async Task A(SqliteCommand command)
                     {
-                        [|command.ExecuteNonQuery()|];
-                        [|command.ExecuteScalar()|];
-                        [|command.ExecuteReader()|];
+                        [|command.Prepare()|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteDataReader_Read_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteDataReader reader)
+                    {
+                        reader.Read();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public async Task SqliteDataReader_Read_OptionDisabled_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A(SqliteDataReader reader)
+                    {
+                        [|reader.Read()|];
                     }
                 }
                 """)
