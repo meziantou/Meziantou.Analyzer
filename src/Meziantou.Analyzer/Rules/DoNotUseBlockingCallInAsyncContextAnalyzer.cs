@@ -77,8 +77,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
             StreamSymbol = compilation.GetBestTypeByMetadataName("System.IO.Stream");
+            TextWriterSymbol = compilation.GetBestTypeByMetadataName("System.IO.TextWriter");
             DbConnectionSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbConnection");
             DbCommandSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbCommand");
+            DbDataReaderSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbDataReader");
+            DbTransactionSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbTransaction");
+            DbBatchSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbBatch");
             SqliteConnectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteConnection");
             SqliteCommandSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteCommand");
             SqliteDataReaderSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteDataReader");
@@ -129,9 +133,13 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         }
 
         private ISymbol? StreamSymbol { get; }
+        private INamedTypeSymbol? TextWriterSymbol { get; }
         private ISymbol? ProcessSymbol { get; }
         private INamedTypeSymbol? DbConnectionSymbol { get; }
         private INamedTypeSymbol? DbCommandSymbol { get; }
+        private INamedTypeSymbol? DbDataReaderSymbol { get; }
+        private INamedTypeSymbol? DbTransactionSymbol { get; }
+        private INamedTypeSymbol? DbBatchSymbol { get; }
         private INamedTypeSymbol? SqliteConnectionSymbol { get; }
         private INamedTypeSymbol? SqliteCommandSymbol { get; }
         private INamedTypeSymbol? SqliteDataReaderSymbol { get; }
@@ -578,6 +586,46 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (unwrappedOperation is IObjectCreationOperation)
                     return HasDisposeAsyncMethodDeclaredInSubclass(type, DbCommandSymbol);
+            }
+
+            // For DbDataReader subclasses created directly (new T()), only report if the exact
+            // type being instantiated (or an intermediate subclass up to but not including
+            // DbDataReader) actually overrides DisposeAsync. DbDataReader.DisposeAsync just calls
+            // Dispose() synchronously, so it is not a meaningful async override.
+            if (DbDataReaderSymbol is not null && type.InheritsFrom(DbDataReaderSymbol))
+            {
+                if (unwrappedOperation is IObjectCreationOperation)
+                    return HasDisposeAsyncMethodDeclaredInSubclass(type, DbDataReaderSymbol);
+            }
+
+            // For DbTransaction subclasses created directly (new T()), only report if the exact
+            // type being instantiated (or an intermediate subclass up to but not including
+            // DbTransaction) actually overrides DisposeAsync. DbTransaction.DisposeAsync just calls
+            // Dispose() synchronously, so it is not a meaningful async override.
+            if (DbTransactionSymbol is not null && type.InheritsFrom(DbTransactionSymbol))
+            {
+                if (unwrappedOperation is IObjectCreationOperation)
+                    return HasDisposeAsyncMethodDeclaredInSubclass(type, DbTransactionSymbol);
+            }
+
+            // For DbBatch subclasses created directly (new T()), only report if the exact
+            // type being instantiated (or an intermediate subclass up to but not including
+            // DbBatch) actually overrides DisposeAsync. DbBatch.DisposeAsync just calls
+            // Dispose() synchronously, so it is not a meaningful async override.
+            if (DbBatchSymbol is not null && type.InheritsFrom(DbBatchSymbol))
+            {
+                if (unwrappedOperation is IObjectCreationOperation)
+                    return HasDisposeAsyncMethodDeclaredInSubclass(type, DbBatchSymbol);
+            }
+
+            // For TextWriter subclasses created directly (new T()), only report if the exact
+            // type being instantiated (or an intermediate subclass up to but not including
+            // TextWriter) actually overrides DisposeAsync. TextWriter.DisposeAsync just calls
+            // Dispose() synchronously by default, so it is not a meaningful async override.
+            if (TextWriterSymbol is not null && type.InheritsFrom(TextWriterSymbol))
+            {
+                if (unwrappedOperation is IObjectCreationOperation)
+                    return HasDisposeAsyncMethodDeclaredInSubclass(type, TextWriterSymbol);
             }
 
             return HasDisposeAsyncMethod(type);
