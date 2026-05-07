@@ -195,6 +195,7 @@
 |[MA0194](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0194.md)|Usage|Merge is expressions on the same value|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0195](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0195.md)|Usage|Do not use static fields before they are initialized|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0196](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0196.md)|Design|Do not use inheritdoc on non-inheriting members|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0197](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0197.md)|Design|Do not use inheritdoc on types|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -795,6 +796,9 @@ dotnet_diagnostic.MA0195.severity = warning
 
 # MA0196: Do not use inheritdoc on non-inheriting members
 dotnet_diagnostic.MA0196.severity = warning
+
+# MA0197: Do not use inheritdoc on types
+dotnet_diagnostic.MA0197.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1381,4 +1385,7 @@ dotnet_diagnostic.MA0195.severity = none
 
 # MA0196: Do not use inheritdoc on non-inheriting members
 dotnet_diagnostic.MA0196.severity = none
+
+# MA0197: Do not use inheritdoc on types
+dotnet_diagnostic.MA0197.severity = none
 ```
