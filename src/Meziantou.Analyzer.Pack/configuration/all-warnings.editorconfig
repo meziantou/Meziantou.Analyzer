@@ -580,3 +580,6 @@ dotnet_diagnostic.MA0194.severity = warning
 
 # MA0195: Do not use static fields before they are initialized
 dotnet_diagnostic.MA0195.severity = warning
+
+# MA0196: Do not use inheritdoc on non-inheriting members
+dotnet_diagnostic.MA0196.severity = warning
