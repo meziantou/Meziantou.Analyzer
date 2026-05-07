@@ -195,6 +195,7 @@ internal static class RuleIdentifiers
     public const string UseAnOverloadThatHasMidpointRounding = "MA0193";
     public const string MergeIsPatternChecks = "MA0194";
     public const string DoNotUseNotYetInitializedStaticField = "MA0195";
+    public const string InheritdocShouldBeUsedOnInheritingMember = "MA0196";
 
     public static string GetHelpUri(string identifier)
     {

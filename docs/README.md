@@ -194,6 +194,7 @@
 |[MA0193](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0193.md)|Usage|Use an overload with a MidpointRounding argument|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0194](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0194.md)|Usage|Merge is expressions on the same value|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0195](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0195.md)|Usage|Do not use static fields before they are initialized|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0196](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0196.md)|Design|Do not use inheritdoc on non-inheriting members|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -791,6 +792,9 @@ dotnet_diagnostic.MA0194.severity = suggestion
 
 # MA0195: Do not use static fields before they are initialized
 dotnet_diagnostic.MA0195.severity = warning
+
+# MA0196: Do not use inheritdoc on non-inheriting members
+dotnet_diagnostic.MA0196.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1374,4 +1378,7 @@ dotnet_diagnostic.MA0194.severity = none
 
 # MA0195: Do not use static fields before they are initialized
 dotnet_diagnostic.MA0195.severity = none
+
+# MA0196: Do not use inheritdoc on non-inheriting members
+dotnet_diagnostic.MA0196.severity = none
 ```
