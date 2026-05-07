@@ -196,6 +196,7 @@ internal static class RuleIdentifiers
     public const string MergeIsPatternChecks = "MA0194";
     public const string DoNotUseNotYetInitializedStaticField = "MA0195";
     public const string InheritdocShouldBeUsedOnInheritingMember = "MA0196";
+    public const string InheritdocShouldNotBeUsedOnTypes = "MA0197";
 
     public static string GetHelpUri(string identifier)
     {

@@ -583,3 +583,6 @@ dotnet_diagnostic.MA0195.severity = none
 
 # MA0196: Do not use inheritdoc on non-inheriting members
 dotnet_diagnostic.MA0196.severity = none
+
+# MA0197: Do not use inheritdoc on types
+dotnet_diagnostic.MA0197.severity = none
