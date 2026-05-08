@@ -18,10 +18,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\NamespaceSymbolExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\ObjectPool.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OperationExtensions.cs" LinkBase="Internals" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SyntaxTokenListExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\StringExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SymbolExtensions.cs" LinkBase="Internals" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SyntaxNodeExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadFinder.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadOptions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadParameterType.cs" LinkBase="Internals" />

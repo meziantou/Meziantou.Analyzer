@@ -175,35 +175,4 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
             }
         }
     }
-
-    private sealed class NodeQueuePoolPolicy : IPooledObjectPolicy<Queue<SyntaxNode>>
-    {
-        private readonly Func<Queue<SyntaxNode>, int> _func;
-
-        public NodeQueuePoolPolicy()
-        {
-            var field = typeof(Queue<SyntaxNode>).GetField("_array");
-            if (field is not null)
-            {
-                var param = Expression.Parameter(typeof(Queue<SyntaxNode>));
-                var lambda = Expression.Lambda(Expression.Property(Expression.Field(param, field), "Length"), param);
-                _func = (Func<Queue<SyntaxNode>, int>)lambda.Compile();
-            }
-            else
-            {
-                _func = item => 0;
-            }
-        }
-
-        public Queue<SyntaxNode> Create() => new(capacity: 30);
-
-        public bool Return(Queue<SyntaxNode> obj)
-        {
-            if (_func(obj) > 100)
-                return false;
-
-            obj.Clear();
-            return true;
-        }
-    }
 }
