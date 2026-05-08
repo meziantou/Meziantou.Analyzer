@@ -140,6 +140,6 @@ public sealed class InheritdocShouldNotBeUsedOnTypesFixer : CodeFixProvider
 
     private static string ToCrefValue(INamedTypeSymbol symbol)
     {
-        return DocumentationCommentId.CreateDeclarationId(symbol) ?? symbol.Name;
+        return DocumentationCommentId.CreateReferenceId(symbol);
     }
 }

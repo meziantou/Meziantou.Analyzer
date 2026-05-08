@@ -67,7 +67,7 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
                   {
                   }
 
-                  /// <inheritdoc cref="T:IInterface1" />
+                  /// <inheritdoc cref="IInterface1" />
                   class Sample : IInterface1, IInterface2
                   {
                   }
@@ -102,7 +102,7 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
                   {
                   }
 
-                  /// <inheritdoc cref="T:IInterface2" />
+                  /// <inheritdoc cref="IInterface2" />
                   class Sample : IInterface1, IInterface2
                   {
                   }
@@ -137,7 +137,70 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
                   {
                   }
 
-                  /// <inheritdoc cref="T:IInterface2"></inheritdoc>
+                  /// <inheritdoc cref="IInterface2"></inheritdoc>
+                  class Sample : IInterface1, IInterface2
+                  {
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_WhenSingleDeclaredInterfaceIsPresent()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  interface IInterface1
+                  {
+                  }
+
+                  /// <inheritdoc />
+                  class Sample : IInterface1
+                  {
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_WhenBaseTypeIsPresent()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class BaseClass
+                  {
+                  }
+
+                  interface IInterface1
+                  {
+                  }
+
+                  interface IInterface2
+                  {
+                  }
+
+                  /// <inheritdoc />
+                  class Sample : BaseClass, IInterface1, IInterface2
+                  {
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_WhenCrefIsPresent()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  interface IInterface1
+                  {
+                  }
+
+                  interface IInterface2
+                  {
+                  }
+
+                  /// <inheritdoc cref="T:IInterface1" />
                   class Sample : IInterface1, IInterface2
                   {
                   }

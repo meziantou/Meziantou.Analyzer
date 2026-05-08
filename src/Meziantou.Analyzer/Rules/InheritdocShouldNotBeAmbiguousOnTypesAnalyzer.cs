@@ -24,9 +24,9 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzer : DiagnosticAn
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(static context =>
+        context.RegisterSymbolAction(context =>
         {
-            InheritdocOnTypesAnalyzerHelper.Analyze(context, static (hasBaseType, interfaceCount) => !hasBaseType && interfaceCount > 1, Rule);
+            InheritdocOnTypesAnalyzerHelper.Analyze(context, (hasBaseType, interfaceCount) => !hasBaseType && interfaceCount > 1, Rule);
         }, SymbolKind.NamedType);
     }
 }
