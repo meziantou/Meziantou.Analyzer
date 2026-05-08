@@ -84,7 +84,7 @@ internal static class MethodSymbolExtensions
             if (symbol.IsEqualTo(baseMethod))
                 return true;
 
-            symbol = symbol.OverriddenMethod!;
+            symbol = symbol.OverriddenMethod;
         }
 
         return false;
@@ -100,7 +100,7 @@ internal static class MethodSymbolExtensions
             if (symbol.OverriddenMethod.IsEqualTo(baseMethod))
                 return true;
 
-            symbol = symbol.OverriddenMethod!;
+            symbol = symbol.OverriddenMethod;
         }
 
         return false;

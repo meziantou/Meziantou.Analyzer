@@ -162,7 +162,7 @@ internal static class OperationExtensions
         {
             if (member is LocalFunctionStatementSyntax localFunction)
             {
-                var symbol = operation.SemanticModel!.GetDeclaredSymbol(localFunction, cancellationToken);
+                var symbol = operation.SemanticModel.GetDeclaredSymbol(localFunction, cancellationToken);
                 if (symbol is not null && symbol.IsStatic)
                 {
                     parentStaticMemberStartPosition = localFunction.GetLocation().SourceSpan.Start;
@@ -171,7 +171,7 @@ internal static class OperationExtensions
             }
             else if (member is LambdaExpressionSyntax lambdaExpression)
             {
-                var symbol = operation.SemanticModel!.GetSymbolInfo(lambdaExpression, cancellationToken).Symbol;
+                var symbol = operation.SemanticModel.GetSymbolInfo(lambdaExpression, cancellationToken).Symbol;
                 if (symbol is not null && symbol.IsStatic)
                 {
                     parentStaticMemberStartPosition = lambdaExpression.GetLocation().SourceSpan.Start;
@@ -180,7 +180,7 @@ internal static class OperationExtensions
             }
             else if (member is AnonymousMethodExpressionSyntax anonymousMethod)
             {
-                var symbol = operation.SemanticModel!.GetSymbolInfo(anonymousMethod, cancellationToken).Symbol;
+                var symbol = operation.SemanticModel.GetSymbolInfo(anonymousMethod, cancellationToken).Symbol;
                 if (symbol is not null && symbol.IsStatic)
                 {
                     parentStaticMemberStartPosition = anonymousMethod.GetLocation().SourceSpan.Start;
@@ -191,7 +191,7 @@ internal static class OperationExtensions
             {
                 parentStaticMemberStartPosition = methodDeclaration.GetLocation().SourceSpan.Start;
 
-                var symbol = operation.SemanticModel!.GetDeclaredSymbol(methodDeclaration, cancellationToken);
+                var symbol = operation.SemanticModel.GetDeclaredSymbol(methodDeclaration, cancellationToken);
                 return symbol is not null && symbol.IsStatic;
             }
         }
