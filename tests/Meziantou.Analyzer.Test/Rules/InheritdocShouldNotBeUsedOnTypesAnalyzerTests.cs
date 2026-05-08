@@ -14,12 +14,58 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
     }
 
     [Fact]
-    public async Task ReportDiagnostic_Class()
+    public async Task ReportDiagnostic_MA0197_WhenBaseTypeIsPresent()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-                  /// [|<inheritdoc />|]
-                  class Sample
+                  class BaseType
+                  {
+                  }
+
+                  /// {|MA0197:<inheritdoc />|}
+                  class Sample : BaseType
+                  {
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_MA0197_WhenSingleDeclaredInterfaceIsPresent()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  interface ITest
+                  {
+                  }
+
+                  /// {|MA0197:<inheritdoc />|}
+                  class Sample : ITest
+                  {
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_MA0197_WhenDeclaredInterfaceInheritsMultipleInterfaces()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  interface IInterface1
+                  {
+                  }
+
+                  interface IInterface2
+                  {
+                  }
+
+                  interface ICompositeInterface : IInterface1, IInterface2
+                  {
+                  }
+
+                  /// {|MA0197:<inheritdoc />|}
+                  class Sample : ICompositeInterface
                   {
                   }
                   """)
@@ -53,19 +99,6 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
     }
 
     [Fact]
-    public async Task ReportDiagnostic_Interface()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// [|<inheritdoc />|]
-                  interface ITest
-                  {
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
     public async Task NoDiagnostic_WhenUsedOnMember()
     {
         await CreateProjectBuilder()
@@ -74,24 +107,6 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
                   {
                       /// <inheritdoc />
                       public override string ToString() => base.ToString();
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ReportDiagnostic_ForEachPartialDeclaration()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// [|<inheritdoc />|]
-                  partial class Sample
-                  {
-                  }
-
-                  /// [|<inheritdoc />|]
-                  partial class Sample
-                  {
                   }
                   """)
               .ValidateAsync();

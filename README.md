@@ -215,7 +215,9 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0194](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0194.md)|Usage|Merge is expressions on the same value|ℹ️|✔️|✔️|
 |[MA0195](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0195.md)|Usage|Do not use static fields before they are initialized|⚠️|✔️|❌|
 |[MA0196](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0196.md)|Design|Do not use inheritdoc on non-inheriting members|⚠️|✔️|❌|
-|[MA0197](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0197.md)|Design|Do not use inheritdoc on types|⚠️|✔️|❌|
+|[MA0197](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0197.md)|Design|Add dedicated documentation on types|ℹ️|✔️|❌|
+|[MA0198](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0198.md)|Design|Specify cref for ambiguous inheritdoc on types|⚠️|✔️|✔️|
+|[MA0199](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0199.md)|Design|Do not use inheritdoc on types without inheritance source|⚠️|✔️|❌|
 
 <!-- rules -->
 
