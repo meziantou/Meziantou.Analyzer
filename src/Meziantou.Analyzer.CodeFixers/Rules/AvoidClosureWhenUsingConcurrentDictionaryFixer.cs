@@ -233,7 +233,7 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
     private static AnonymousFunctionExpressionSyntax ReplaceSymbolReferences(AnonymousFunctionExpressionSyntax lambda, SemanticModel semanticModel, ISymbol symbolToReplace, string replacementParameterName)
     {
         var rewriter = new SymbolReferenceRewriter(semanticModel, symbolToReplace, replacementParameterName);
-        return (AnonymousFunctionExpressionSyntax)rewriter.Visit(lambda)!;
+        return (AnonymousFunctionExpressionSyntax)rewriter.Visit(lambda);
     }
 
     private static ParenthesizedLambdaExpressionSyntax? AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, string parameterName)
