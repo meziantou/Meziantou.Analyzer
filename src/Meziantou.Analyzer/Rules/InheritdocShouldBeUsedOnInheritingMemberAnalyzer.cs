@@ -34,6 +34,9 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzer : Diagnosti
         if (context.Symbol is not (IMethodSymbol or IPropertySymbol or IEventSymbol))
             return;
 
+        if (context.Symbol is IMethodSymbol methodSymbol && methodSymbol.IsPrimaryConstructor(context.CancellationToken, includeRecordDeclarations: true))
+            return;
+
         if (context.Symbol.IsImplicitlyDeclared || context.Symbol.IsOverrideOrInterfaceImplementation())
             return;
 

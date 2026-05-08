@@ -42,6 +42,33 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
     }
 
     [Fact]
+    public async Task ReportDiagnostic_ConstructorIsNotOverrideOrInterfaceImplementation()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      /// [|<inheritdoc />|]
+                      public Sample() { }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+#if CSHARP12_OR_GREATER
+    [Fact]
+    public async Task NoDiagnostic_WhenInheritdocIsOnTypeWithPrimaryConstructor()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// <inheritdoc />
+                  public class Sample() { }
+                  """)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
     public async Task NoDiagnostic_MethodIsOverride()
     {
         await CreateProjectBuilder()

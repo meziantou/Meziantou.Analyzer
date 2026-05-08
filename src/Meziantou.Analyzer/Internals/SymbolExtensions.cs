@@ -1,5 +1,6 @@
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Internals;
 
@@ -32,6 +33,21 @@ internal static class SymbolExtensions
     public static bool IsOperator(this ISymbol? symbol)
     {
         return symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion };
+    }
+
+    public static bool IsPrimaryConstructor(this IMethodSymbol? methodSymbol, CancellationToken cancellationToken, bool includeRecordDeclarations = false)
+    {
+        if (methodSymbol is not { MethodKind: MethodKind.Constructor })
+            return false;
+
+        foreach (var syntaxReference in methodSymbol.DeclaringSyntaxReferences)
+        {
+            var syntax = syntaxReference.GetSyntax(cancellationToken);
+            if (syntax is ClassDeclarationSyntax or StructDeclarationSyntax || (includeRecordDeclarations && syntax is RecordDeclarationSyntax))
+                return true;
+        }
+
+        return false;
     }
 
     public static bool IsOverrideOrInterfaceImplementation(this ISymbol? symbol)
