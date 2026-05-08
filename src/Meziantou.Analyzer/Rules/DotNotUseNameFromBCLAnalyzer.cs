@@ -69,7 +69,10 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         var types = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
         var resourceName = preview ? "Meziantou.Analyzer.Resources.bcl-preview.txt" : "Meziantou.Analyzer.Resources.bcl.txt";
-        using var stream = typeof(DotNotUseNameFromBCLAnalyzer).Assembly.GetManifestResourceStream(resourceName)!;
+        using var stream = typeof(DotNotUseNameFromBCLAnalyzer).Assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+            return types;
+
         using var sr = new StreamReader(stream);
         while (sr.ReadLine() is { } line)
         {
