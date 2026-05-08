@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -86,21 +85,13 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         {
             foreach (var constructor in type.InstanceConstructors)
             {
-                if (constructor.Parameters.Length == 0)
+                if (constructor.Parameters.Length == 0 || !constructor.IsPrimaryConstructor(cancellationToken))
                     continue;
 
-                foreach (var syntaxRef in constructor.DeclaringSyntaxReferences)
+                foreach (var param in constructor.Parameters)
                 {
-                    var syntax = syntaxRef.GetSyntax(cancellationToken);
-                    if (syntax.IsKind(SyntaxKind.ClassDeclaration) || syntax.IsKind(SyntaxKind.StructDeclaration))
-                    {
-                        var typeDeclaration = (TypeDeclarationSyntax)syntax;
-                        foreach (var param in constructor.Parameters)
-                        {
-                            if (param.Name == name)
-                                yield return param;
-                        }
-                    }
+                    if (param.Name == name)
+                        yield return param;
                 }
             }
         }

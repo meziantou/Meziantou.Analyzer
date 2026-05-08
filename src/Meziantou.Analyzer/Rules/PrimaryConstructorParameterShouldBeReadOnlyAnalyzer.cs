@@ -2,7 +2,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -124,20 +123,9 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
 
     private static bool IsPrimaryConstructorParameter(IOperation operation, CancellationToken cancellationToken)
     {
-        if (operation is IParameterReferenceOperation parameterReferenceOperation)
-        {
-            if (parameterReferenceOperation.Parameter.ContainingSymbol is IMethodSymbol { MethodKind: MethodKind.Constructor } ctor)
-            {
-                foreach (var syntaxRef in ctor.DeclaringSyntaxReferences)
-                {
-                    var syntax = syntaxRef.GetSyntax(cancellationToken);
-                    if (syntax is ClassDeclarationSyntax or StructDeclarationSyntax)
-                        return true;
-                }
-            }
-        }
-
-        return false;
+        return operation is IParameterReferenceOperation parameterReferenceOperation &&
+               parameterReferenceOperation.Parameter.ContainingSymbol is IMethodSymbol methodSymbol &&
+               methodSymbol.IsPrimaryConstructor(cancellationToken);
     }
 }
 #endif
