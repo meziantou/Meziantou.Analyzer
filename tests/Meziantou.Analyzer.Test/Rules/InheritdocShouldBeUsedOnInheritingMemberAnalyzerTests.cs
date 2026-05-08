@@ -163,11 +163,24 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
     }
 
     [Fact]
-    public async Task ReportDiagnostic_WhenCrefIsPresent()
+    public async Task NoDiagnostic_WhenCrefIsPresent()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-                  /// [|<inheritdoc cref="object" />|]
+                  /// <inheritdoc cref="object" />
+                  class Sample
+                  {
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_WhenCrefIsPresentOnXmlElement()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// <inheritdoc cref="object"></inheritdoc>
                   class Sample
                   {
                   }

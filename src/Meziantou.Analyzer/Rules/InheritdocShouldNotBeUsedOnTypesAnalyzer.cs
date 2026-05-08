@@ -53,7 +53,7 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
 
                 foreach (var element in documentation.DescendantNodes().OfType<XmlEmptyElementSyntax>())
                 {
-                    if (!IsInheritdocElement(element.Name))
+                    if (!IsInheritdocElement(element.Name) || HasCrefAttribute(element.Attributes))
                         continue;
 
                     context.ReportDiagnostic(Rule, element);
@@ -61,7 +61,7 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
 
                 foreach (var element in documentation.DescendantNodes().OfType<XmlElementSyntax>())
                 {
-                    if (!IsInheritdocElement(element.StartTag.Name))
+                    if (!IsInheritdocElement(element.StartTag.Name) || HasCrefAttribute(element.StartTag.Attributes))
                         continue;
 
                     context.ReportDiagnostic(Rule, element.StartTag);
@@ -73,5 +73,16 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
     private static bool IsInheritdocElement(XmlNameSyntax name)
     {
         return string.Equals(name.LocalName.Text, "inheritdoc", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasCrefAttribute(SyntaxList<XmlAttributeSyntax> attributes)
+    {
+        foreach (var attribute in attributes)
+        {
+            if (string.Equals(attribute.Name.LocalName.Text, "cref", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 }
