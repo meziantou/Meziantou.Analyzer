@@ -11,15 +11,35 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.InheritdocShouldNotBeUsedOnTypes,
-        title: "Do not use inheritdoc on types",
-        messageFormat: "Do not use '<inheritdoc />' on types; use it on members only",
+        title: "Add dedicated documentation on types",
+        messageFormat: "A type should have dedicated documentation instead of '<inheritdoc />'",
         RuleCategories.Design,
-        DiagnosticSeverity.Warning,
+        DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InheritdocShouldNotBeUsedOnTypes));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    private static readonly DiagnosticDescriptor AmbiguousInheritdocRule = new(
+        RuleIdentifiers.InheritdocShouldNotBeAmbiguousOnTypes,
+        title: "Specify cref for ambiguous inheritdoc on types",
+        messageFormat: "Specify 'cref' for '<inheritdoc />' because this type has multiple declared interfaces and no base type",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InheritdocShouldNotBeAmbiguousOnTypes));
+
+    private static readonly DiagnosticDescriptor InheritdocWithoutSourceRule = new(
+        RuleIdentifiers.InheritdocShouldHaveSourceOnTypes,
+        title: "Do not use inheritdoc on types without inheritance source",
+        messageFormat: "Do not use '<inheritdoc />' without 'cref' when this type has no base type and no declared interfaces",
+        RuleCategories.Design,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InheritdocShouldHaveSourceOnTypes));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, AmbiguousInheritdocRule, InheritdocWithoutSourceRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -40,6 +60,9 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
         if (symbol.IsImplicitClass || symbol.Name.Contains('$', StringComparison.Ordinal))
             return;
 
+        var hasBaseType = HasBaseType(symbol);
+        var interfaceCount = symbol.Interfaces.Length;
+
         foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
         {
             var syntax = syntaxReference.GetSyntax(context.CancellationToken);
@@ -56,7 +79,7 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
                     if (!IsInheritdocElement(element.Name) || HasCrefAttribute(element.Attributes))
                         continue;
 
-                    context.ReportDiagnostic(Rule, element);
+                    ReportInheritdocDiagnostic(context, element, hasBaseType, interfaceCount);
                 }
 
                 foreach (var element in documentation.DescendantNodes().OfType<XmlElementSyntax>())
@@ -64,10 +87,35 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
                     if (!IsInheritdocElement(element.StartTag.Name) || HasCrefAttribute(element.StartTag.Attributes))
                         continue;
 
-                    context.ReportDiagnostic(Rule, element.StartTag);
+                    ReportInheritdocDiagnostic(context, element.StartTag, hasBaseType, interfaceCount);
                 }
             }
         }
+    }
+
+    private static void ReportInheritdocDiagnostic(SymbolAnalysisContext context, SyntaxNode syntaxNode, bool hasBaseType, int interfaceCount)
+    {
+        if (!hasBaseType)
+        {
+            if (interfaceCount == 0)
+            {
+                context.ReportDiagnostic(InheritdocWithoutSourceRule, syntaxNode);
+                return;
+            }
+
+            if (interfaceCount > 1)
+            {
+                context.ReportDiagnostic(AmbiguousInheritdocRule, syntaxNode);
+                return;
+            }
+        }
+
+        context.ReportDiagnostic(Rule, syntaxNode);
+    }
+
+    private static bool HasBaseType(INamedTypeSymbol symbol)
+    {
+        return symbol.BaseType is { SpecialType: not (SpecialType.System_Object or SpecialType.System_ValueType) };
     }
 
     private static bool IsInheritdocElement(XmlNameSyntax name)

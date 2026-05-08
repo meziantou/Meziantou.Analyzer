@@ -584,5 +584,11 @@ dotnet_diagnostic.MA0195.severity = error
 # MA0196: Do not use inheritdoc on non-inheriting members
 dotnet_diagnostic.MA0196.severity = error
 
-# MA0197: Do not use inheritdoc on types
+# MA0197: Add dedicated documentation on types
 dotnet_diagnostic.MA0197.severity = error
+
+# MA0198: Specify cref for ambiguous inheritdoc on types
+dotnet_diagnostic.MA0198.severity = error
+
+# MA0199: Do not use inheritdoc on types without inheritance source
+dotnet_diagnostic.MA0199.severity = error
