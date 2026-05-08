@@ -5,17 +5,17 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyzer
+public sealed class InheritdocShouldHaveSourceOnTypesAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
-        RuleIdentifiers.InheritdocShouldNotBeUsedOnTypes,
-        title: "Add dedicated documentation on types",
-        messageFormat: "A type should have dedicated documentation instead of '<inheritdoc />'",
+        RuleIdentifiers.InheritdocShouldHaveSourceOnTypes,
+        title: "Do not use inheritdoc on types without inheritance source",
+        messageFormat: "Do not use '<inheritdoc />' without 'cref' when this type has no base type and no declared interfaces",
         RuleCategories.Design,
-        DiagnosticSeverity.Info,
+        DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InheritdocShouldNotBeUsedOnTypes));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InheritdocShouldHaveSourceOnTypes));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -26,7 +26,7 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzer : DiagnosticAnalyze
 
         context.RegisterSymbolAction(static context =>
         {
-            InheritdocOnTypesAnalyzerHelper.Analyze(context, static (hasBaseType, interfaceCount) => hasBaseType || interfaceCount == 1, Rule);
+            InheritdocOnTypesAnalyzerHelper.Analyze(context, static (hasBaseType, interfaceCount) => !hasBaseType && interfaceCount == 0, Rule);
         }, SymbolKind.NamedType);
     }
 }

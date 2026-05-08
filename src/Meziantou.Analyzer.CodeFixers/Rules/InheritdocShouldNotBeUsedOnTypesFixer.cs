@@ -140,9 +140,6 @@ public sealed class InheritdocShouldNotBeUsedOnTypesFixer : CodeFixProvider
 
     private static string ToCrefValue(INamedTypeSymbol symbol)
     {
-        return symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                     .Replace("global::", "", StringComparison.Ordinal)
-                     .Replace('<', '{')
-                     .Replace('>', '}');
+        return DocumentationCommentId.CreateDeclarationId(symbol) ?? symbol.Name;
     }
 }
