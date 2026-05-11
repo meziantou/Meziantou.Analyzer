@@ -1,5 +1,11 @@
 # Comparison with other analyzers
 
+This page is maintained on a best-effort basis and may be out of date.
+
+It is mostly driven by community feedback. If you notice missing or outdated mappings, please create an issue.
+
+I do not control other analyzers' roadmaps, and I do not regularly read their changelogs to keep this page up to date.
+
 ## Equivalent rules
 
 |                                                                                                                           |                                                                                            |
