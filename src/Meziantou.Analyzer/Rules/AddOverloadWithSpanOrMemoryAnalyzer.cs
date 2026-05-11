@@ -25,94 +25,116 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var analyzerContext = new AnalyzerContext(compilationContext.Compilation);
+            if (!analyzerContext.IsValid)
+                return;
+
+            compilationContext.RegisterSymbolAction(analyzerContext.AnalyzeMethod, SymbolKind.Method);
+        });
     }
 
-    private static void AnalyzeMethod(SymbolAnalysisContext context)
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        var method = (IMethodSymbol)context.Symbol;
-        if (method.IsImplicitlyDeclared || method.IsOverrideOrInterfaceImplementation())
-            return;
+        private readonly INamedTypeSymbol? _spanType = compilation.GetBestTypeByMetadataName("System.Span`1");
+        private readonly INamedTypeSymbol? _readOnlySpanType = compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1");
+        private readonly INamedTypeSymbol? _memoryType = compilation.GetBestTypeByMetadataName("System.Memory`1");
+        private readonly INamedTypeSymbol? _readOnlyMemoryType = compilation.GetBestTypeByMetadataName("System.ReadOnlyMemory`1");
 
-        if (!method.IsVisibleOutsideOfAssembly())
-            return;
+        public bool IsValid => _spanType is not null || _readOnlySpanType is not null || _memoryType is not null || _readOnlyMemoryType is not null;
 
-        if (method.MethodKind is not MethodKind.Ordinary and not MethodKind.Constructor)
-            return;
-
-        // Skip the program entry point (e.g., Main(string[] args)) as the signature is mandated by the runtime
-        if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
-            return;
-
-        if (!method.Parameters.Any(IsCandidateForSpanOrMemory))
-            return;
-
-        var overloads = method.ContainingType.GetMembers(method.Name);
-        foreach (var overload in overloads.OfType<IMethodSymbol>())
+        public void AnalyzeMethod(SymbolAnalysisContext context)
         {
-            if (IsValidOverload(context.Compilation, method, overload))
+            var method = (IMethodSymbol)context.Symbol;
+            if (method.IsImplicitlyDeclared || method.IsOverrideOrInterfaceImplementation())
                 return;
+
+            if (!method.IsVisibleOutsideOfAssembly())
+                return;
+
+            if (method.MethodKind is not MethodKind.Ordinary and not MethodKind.Constructor)
+                return;
+
+            // Skip the program entry point (e.g., Main(string[] args)) as the signature is mandated by the runtime
+            if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
+                return;
+
+            if (!method.Parameters.Any(IsCandidateForSpanOrMemory))
+                return;
+
+            var overloads = method.ContainingType.GetMembers(method.Name);
+            foreach (var overload in overloads.OfType<IMethodSymbol>())
+            {
+                if (IsValidOverload(method, overload))
+                    return;
+            }
+
+            context.ReportDiagnostic(Rule, method);
         }
 
-        context.ReportDiagnostic(Rule, method);
-    }
-
-    private static bool IsCandidateForSpanOrMemory(IParameterSymbol param)
-    {
-        return param.Type.TypeKind is TypeKind.Array && !param.IsParams && param.RefKind is RefKind.None;
-    }
-
-    private static bool IsValidOverload(Compilation compilation, IMethodSymbol method, IMethodSymbol overload)
-    {
-        if (overload.IsEqualTo(method))
-            return false;
-
-        if (overload.Parameters.Length != method.Parameters.Length)
-            return false;
-
-        for (var i = 0; i < method.Parameters.Length; i++)
+        public bool IsSpanOrMemory(ITypeSymbol typeSymbol, ITypeSymbol arrayType)
         {
-            var methodParameter = method.Parameters[i].Type;
-            var overloadParameter = overload.Parameters[i].Type;
-
-            var methodParameterIsArray = methodParameter.TypeKind == TypeKind.Array;
-            if (methodParameterIsArray)
+            ITypeSymbol elementType;
+            if (arrayType.IsString())
             {
-                if (!IsCandidateForSpanOrMemory(method.Parameters[i]) && methodParameter.IsEqualTo(overloadParameter))
-                    continue;
-
-                if (!IsSpanOrMemory(compilation, overloadParameter, methodParameter))
-                    return false;
+                elementType = compilation.GetSpecialType(SpecialType.System_Char);
             }
             else
             {
-                if (!methodParameter.IsEqualTo(overloadParameter))
-                    return false;
+                elementType = ((IArrayTypeSymbol)arrayType).ElementType;
             }
-        }
 
-        return true;
-    }
-
-    private static bool IsSpanOrMemory(Compilation compilation, ITypeSymbol typeSymbol, ITypeSymbol arrayType)
-    {
-        ITypeSymbol elementType;
-        if (arrayType.IsString())
-        {
-            elementType = compilation.GetSpecialType(SpecialType.System_Char);
-        }
-        else
-        {
-            elementType = ((IArrayTypeSymbol)arrayType).ElementType;
-        }
-
-        var types = new string[] { "System.Span`1", "System.ReadOnlySpan`1", "System.Memory`1", "System.ReadOnlyMemory`1" };
-        foreach (var type in types)
-        {
-            if (typeSymbol.IsEqualTo(compilation.GetBestTypeByMetadataName(type)?.Construct(elementType)))
+            if (typeSymbol.IsEqualTo(_spanType?.Construct(elementType)))
                 return true;
+
+            if (typeSymbol.IsEqualTo(_readOnlySpanType?.Construct(elementType)))
+                return true;
+
+            if (typeSymbol.IsEqualTo(_memoryType?.Construct(elementType)))
+                return true;
+
+            if (typeSymbol.IsEqualTo(_readOnlyMemoryType?.Construct(elementType)))
+                return true;
+
+            return false;
         }
 
-        return false;
+        private static bool IsCandidateForSpanOrMemory(IParameterSymbol param)
+        {
+            return param.Type.TypeKind is TypeKind.Array && !param.IsParams && param.RefKind is RefKind.None;
+        }
+
+        private bool IsValidOverload(IMethodSymbol method, IMethodSymbol overload)
+        {
+            if (overload.IsEqualTo(method))
+                return false;
+
+            if (overload.Parameters.Length != method.Parameters.Length)
+                return false;
+
+            for (var i = 0; i < method.Parameters.Length; i++)
+            {
+                var methodParameter = method.Parameters[i].Type;
+                var overloadParameter = overload.Parameters[i].Type;
+
+                var methodParameterIsArray = methodParameter.TypeKind == TypeKind.Array;
+                if (methodParameterIsArray)
+                {
+                    if (!IsCandidateForSpanOrMemory(method.Parameters[i]) && methodParameter.IsEqualTo(overloadParameter))
+                        continue;
+
+                    if (!IsSpanOrMemory(overloadParameter, methodParameter))
+                        return false;
+                }
+                else
+                {
+                    if (!methodParameter.IsEqualTo(overloadParameter))
+                        return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

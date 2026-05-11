@@ -170,7 +170,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             var method = operation.TargetMethod;
-            if (!ExtensionMethodOwnerTypes.Contains(method.ContainingType))
+            if (!ExtensionMethodOwnerTypes.Contains(method.ContainingType, SymbolEqualityComparer.Default))
                 return;
 
             UseFindInsteadOfFirstOrDefault(context, operation);
@@ -189,7 +189,43 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private static ImmutableDictionary<string, string?> CreateProperties(OptimizeLinqUsageData data)
         {
-            return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            builder.Add("Data", data.ToString());
+            return builder.ToImmutable();
+        }
+
+        private static ImmutableDictionary<string, string?> CreateLinqChainProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string methodName)
+        {
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            builder.Add("Data", data.ToString());
+            builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add("LastOperationStart", lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add("LastOperationLength", lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add("MethodName", methodName);
+            return builder.ToImmutable();
+        }
+
+        private static ImmutableDictionary<string, string?> CreateSingleOperationProperties(OptimizeLinqUsageData data, IInvocationOperation operation)
+        {
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            builder.Add("Data", data.ToString());
+            builder.Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            return builder.ToImmutable();
+        }
+
+        private static ImmutableDictionary<string, string?> CreateDuplicateOrderByProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string expectedMethodName, string methodName)
+        {
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            builder.Add("Data", data.ToString());
+            builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add("LastOperationStart", lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add("LastOperationLength", lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add("ExpectedMethodName", expectedMethodName);
+            builder.Add("MethodName", methodName);
+            return builder.ToImmutable();
         }
 
         private void WhereShouldBeBeforeOrderBy(OperationAnalysisContext context, IInvocationOperation operation)
@@ -201,12 +237,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (parent.TargetMethod.Name == nameof(Enumerable.Where))
                     {
-                        var properties = CreateProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod)
-                           .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                           .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                           .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                           .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                           .Add("MethodName", parent.TargetMethod.Name);
+                        var properties = CreateLinqChainProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod, operation, parent, parent.TargetMethod.Name);
 
                         context.ReportDiagnostic(OptimizeWhereAndOrderByRule, properties, parent, operation.TargetMethod.Name);
                     }
@@ -446,12 +477,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         if (QueryableSymbol is not null && operation.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol) && parent.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol))
                             return;
 
-                        var properties = CreateProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod)
-                           .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                           .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                           .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                           .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                           .Add("MethodName", parent.TargetMethod.Name);
+                        var properties = CreateLinqChainProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod, operation, parent, parent.TargetMethod.Name);
 
                         if (parent.Arguments.Length > 1 && IsExpressionPredicateReference(parent.Arguments[1].Value))
                             return;
@@ -484,14 +510,13 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (parent.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) or "Order" or "OrderDescending")
                     {
-                        var expectedMethodName = parent.TargetMethod.Name.Replace("OrderBy", "ThenBy", StringComparison.Ordinal);
-                        var properties = CreateProperties(OptimizeLinqUsageData.DuplicatedOrderBy)
-                            .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                            .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                            .Add("LastOperationStart", parent.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                            .Add("LastOperationLength", parent.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                            .Add("ExpectedMethodName", expectedMethodName)
-                            .Add("MethodName", parent.TargetMethod.Name);
+                        var expectedMethodName = parent.TargetMethod.Name switch
+                        {
+                            nameof(Enumerable.OrderBy) or "Order" => nameof(Enumerable.ThenBy),
+                            nameof(Enumerable.OrderByDescending) or "OrderDescending" => nameof(Enumerable.ThenByDescending),
+                            _ => parent.TargetMethod.Name,
+                        };
+                        var properties = CreateDuplicateOrderByProperties(OptimizeLinqUsageData.DuplicatedOrderBy, operation, parent, expectedMethodName, parent.TargetMethod.Name);
 
                         context.ReportDiagnostic(DuplicateOrderByMethodsRule, properties, parent, operation.TargetMethod.Name, expectedMethodName);
                     }
@@ -511,9 +536,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 // x => x
                 if (arg is IDelegateCreationOperation { Target: IAnonymousFunctionOperation { Symbol.Parameters: [var delegateParameter], Body: IBlockOperation { Operations: [IReturnOperation { ReturnedValue: IParameterReferenceOperation parameterReference }] } } } && parameterReference.Parameter.IsEqualTo(delegateParameter))
                 {
-                    var properties = CreateProperties(OptimizeLinqUsageData.UseOrder)
-                        .Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                        .Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+                    var properties = CreateSingleOperationProperties(OptimizeLinqUsageData.UseOrder, operation);
 
                     var newMethodName = operation.TargetMethod.Name is "OrderBy" ? "Order" : "OrderDescending";
 

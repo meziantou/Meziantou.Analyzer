@@ -15,6 +15,11 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 {
+    private const string ExcludedMethodsRegexConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex";
+    private const string ExcludedMethodsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods";
+    private const string MinimumMethodParametersConfigurationKey = RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters";
+    private const string ExpressionKindsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".expression_kinds";
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseNamedParameter,
         title: "Add parameter name to improve readability",
@@ -261,21 +266,28 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (operation is not null && !operation.GetCSharpLanguageVersion().IsCSharp14OrAbove() && operationUtilities.IsInExpressionContext(operation))
                             return;
 
-                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex", out var excludedMethodsRegex))
+                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsRegexConfigurationKey, out var excludedMethodsRegex))
                         {
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
-                            if (declarationId is not null && Regex.IsMatch(declarationId, excludedMethodsRegex, RegexOptions.None, Timeout.InfiniteTimeSpan))
-                                return;
+                            if (declarationId is not null)
+                            {
+                                var regex = RegexCache.GetOrCreate(excludedMethodsRegex, RegexOptions.Compiled, Timeout.InfiniteTimeSpan);
+                                if (regex.IsMatch(declarationId))
+                                    return;
+                            }
                         }
 
-                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, RuleIdentifiers.UseNamedParameter + ".excluded_methods", out var excludedMethods))
+                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfigurationKey, out var excludedMethods))
                         {
-                            var types = excludedMethods.Split('|');
-                            foreach (var type in types)
+                            var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
+                            if (declarationId is not null)
                             {
-                                var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
-                                if (type == declarationId)
-                                    return;
+                                var types = excludedMethods.Split('|');
+                                foreach (var type in types)
+                                {
+                                    if (type == declarationId)
+                                        return;
+                                }
                             }
                         }
                     }
@@ -306,7 +318,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     private static int GetMinimumMethodArgumentsConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
     {
         var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
-        if (options.TryGetValue(RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters", out var value))
+        if (options.TryGetValue(MinimumMethodParametersConfigurationKey, out var value))
         {
             if (int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var result))
                 return result;
@@ -318,7 +330,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     private static ArgumentExpressionKinds GetExpressionKindsConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
     {
         var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
-        if (options.TryGetValue(RuleIdentifiers.UseNamedParameter + ".expression_kinds", out var value))
+        if (options.TryGetValue(ExpressionKindsConfigurationKey, out var value))
         {
             if (Enum.TryParse<ArgumentExpressionKinds>(value, ignoreCase: true, out var result))
                 return result;

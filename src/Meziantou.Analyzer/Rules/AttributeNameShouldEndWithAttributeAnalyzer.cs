@@ -25,16 +25,23 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzer : DiagnosticAnal
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var attributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Attribute");
+            if (attributeType is null)
+                return;
+
+            compilationContext.RegisterSymbolAction(context => AnalyzeSymbol(context, attributeType), SymbolKind.NamedType);
+        });
     }
 
-    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeSymbol(SymbolAnalysisContext context, ITypeSymbol attributeType)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.Name is null)
             return;
 
-        if (!symbol.Name.EndsWith("Attribute", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.Attribute")))
+        if (!symbol.Name.EndsWith("Attribute", System.StringComparison.Ordinal) && symbol.InheritsFrom(attributeType))
         {
             context.ReportDiagnostic(Rule, symbol);
         }

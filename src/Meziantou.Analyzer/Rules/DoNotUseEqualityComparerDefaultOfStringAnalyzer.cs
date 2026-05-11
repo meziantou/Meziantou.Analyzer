@@ -26,20 +26,23 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzer : Diagnostic
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(Analyze, OperationKind.PropertyReference);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var equalityComparerSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
+            if (equalityComparerSymbol is null)
+                return;
+
+            var equalityComparerStringSymbol = equalityComparerSymbol.Construct(compilationContext.Compilation.GetSpecialType(SpecialType.System_String));
+            compilationContext.RegisterOperationAction(context => Analyze(context, equalityComparerStringSymbol), OperationKind.PropertyReference);
+        });
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    private static void Analyze(OperationAnalysisContext context, ITypeSymbol equalityComparerStringSymbol)
     {
         var operation = (IPropertyReferenceOperation)context.Operation;
         if (!string.Equals(operation.Member.Name, nameof(EqualityComparer<>.Default), StringComparison.Ordinal))
             return;
 
-        var equalityComparerSymbol = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
-        if (equalityComparerSymbol is null)
-            return;
-
-        var equalityComparerStringSymbol = equalityComparerSymbol.Construct(context.Compilation.GetSpecialType(SpecialType.System_String));
         if (operation.Member.ContainingType.IsEqualTo(equalityComparerStringSymbol))
         {
             if (operation.IsInNameofOperation())

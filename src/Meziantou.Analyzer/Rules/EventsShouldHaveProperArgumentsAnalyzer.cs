@@ -46,10 +46,18 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeRaiseEvent, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var eventArgsSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.EventArgs");
+            var multicastDelegateSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.MulticastDelegate");
+            if (eventArgsSymbol is null || multicastDelegateSymbol is null)
+                return;
+
+            compilationContext.RegisterOperationAction(context => AnalyzeRaiseEvent(context, eventArgsSymbol, multicastDelegateSymbol), OperationKind.Invocation);
+        });
     }
 
-    private static void AnalyzeRaiseEvent(OperationAnalysisContext context)
+    private static void AnalyzeRaiseEvent(OperationAnalysisContext context, ITypeSymbol eventArgsSymbol, ITypeSymbol multicastDelegateSymbol)
     {
         var operation = (IInvocationOperation)context.Operation;
         var targetMethod = operation.TargetMethod;
@@ -63,11 +71,9 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         if (!targetMethod.Parameters[0].Type.IsObject())
             return;
 
-        var eventArgsSymbol = context.Compilation.GetBestTypeByMetadataName("System.EventArgs");
         if (!targetMethod.Parameters[1].Type.IsOrInheritFrom(eventArgsSymbol))
             return;
 
-        var multicastDelegateSymbol = context.Compilation.GetBestTypeByMetadataName("System.MulticastDelegate");
         if (!targetMethod.ContainingType.IsOrInheritFrom(multicastDelegateSymbol))
             return;
 

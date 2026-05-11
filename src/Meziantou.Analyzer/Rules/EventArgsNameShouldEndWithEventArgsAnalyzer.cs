@@ -25,16 +25,23 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnal
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var eventArgsType = compilationContext.Compilation.GetBestTypeByMetadataName("System.EventArgs");
+            if (eventArgsType is null)
+                return;
+
+            compilationContext.RegisterSymbolAction(context => AnalyzeSymbol(context, eventArgsType), SymbolKind.NamedType);
+        });
     }
 
-    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeSymbol(SymbolAnalysisContext context, ITypeSymbol eventArgsType)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.Name is null)
             return;
 
-        if (!symbol.Name.EndsWith("EventArgs", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.EventArgs")))
+        if (!symbol.Name.EndsWith("EventArgs", System.StringComparison.Ordinal) && symbol.InheritsFrom(eventArgsType))
         {
             context.ReportDiagnostic(Rule, symbol);
         }

@@ -45,7 +45,13 @@ internal static class TypeSymbolExtensions
         if (interfaceType is null)
             return false;
 
-        return classSymbol.AllInterfaces.Any(interfaceType.IsEqualTo);
+        foreach (var @interface in classSymbol.AllInterfaces)
+        {
+            if (@interface.IsEqualTo(interfaceType))
+                return true;
+        }
+
+        return false;
     }
 
     public static bool ImplementsGenericInterface(this ITypeSymbol classSymbol, ITypeSymbol? interfaceType)
@@ -53,7 +59,13 @@ internal static class TypeSymbolExtensions
         if (interfaceType is null)
             return false;
 
-        return classSymbol.AllInterfaces.Any(iface => iface.OriginalDefinition.IsEqualTo(interfaceType.OriginalDefinition));
+        foreach (var iface in classSymbol.AllInterfaces)
+        {
+            if (iface.OriginalDefinition.IsEqualTo(interfaceType.OriginalDefinition))
+                return true;
+        }
+
+        return false;
     }
 
     public static bool IsOrImplements(this ITypeSymbol symbol, ITypeSymbol? interfaceType)
@@ -61,7 +73,16 @@ internal static class TypeSymbolExtensions
         if (interfaceType is null)
             return false;
 
-        return GetAllInterfacesIncludingThis(symbol).Any(interfaceType.IsEqualTo);
+        if (symbol is INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol && interfaceSymbol.IsEqualTo(interfaceType))
+            return true;
+
+        foreach (var @interface in symbol.AllInterfaces)
+        {
+            if (@interface.IsEqualTo(interfaceType))
+                return true;
+        }
+
+        return false;
     }
 
     public static IEnumerable<AttributeData> GetAttributes(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
@@ -95,7 +116,30 @@ internal static class TypeSymbolExtensions
 
     public static AttributeData? GetAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
     {
-        return GetAttributes(symbol, attributeType, inherits).FirstOrDefault();
+        if (attributeType is null)
+            return null;
+
+        if (attributeType.IsSealed)
+            inherits = false;
+
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (attribute.AttributeClass is null)
+                continue;
+
+            if (inherits)
+            {
+                if (attribute.AttributeClass.IsOrInheritFrom(attributeType))
+                    return attribute;
+            }
+            else
+            {
+                if (attributeType.IsEqualTo(attribute.AttributeClass))
+                    return attribute;
+            }
+        }
+
+        return null;
     }
 
     public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)

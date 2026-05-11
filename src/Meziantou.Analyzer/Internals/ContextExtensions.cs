@@ -17,8 +17,17 @@ internal static partial class ContextExtensions
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, IEnumerable<Location> locations, object?[]? messageArgs = null) => ReportDiagnostic(context, descriptor, ImmutableDictionary<string, string?>.Empty, locations, messageArgs);
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, ImmutableDictionary<string, string?>? properties, IEnumerable<Location> locations, params object?[]? messageArgs)
     {
-        var inSource = locations.Where(l => l.IsInSource);
-        if (!inSource.Any())
+        List<Location>? inSourceLocations = null;
+        foreach (var location in locations)
+        {
+            if (!location.IsInSource)
+                continue;
+
+            inSourceLocations ??= [];
+            inSourceLocations.Add(location);
+        }
+
+        if (inSourceLocations is null)
         {
             context.ReportDiagnostic(CreateDiagnostic(descriptor, location: null, properties, messageArgs));
             return;
@@ -26,12 +35,20 @@ internal static partial class ContextExtensions
 
         var diagnostic = Diagnostic.Create(
                  descriptor,
-                 location: inSource.First(),
-                 additionalLocations: inSource.Skip(1),
+                 location: inSourceLocations[0],
+                 additionalLocations: inSourceLocations.Count > 1 ? GetAdditionalLocations(inSourceLocations) : null,
                  properties: properties,
                  messageArgs: messageArgs);
 
         context.ReportDiagnostic(diagnostic);
+
+        static IEnumerable<Location> GetAdditionalLocations(List<Location> locations)
+        {
+            for (var i = 1; i < locations.Count; i++)
+            {
+                yield return locations[i];
+            }
+        }
     }
 
     public static void ReportDiagnostic(this DiagnosticReporter context, DiagnosticDescriptor descriptor, SyntaxReference syntaxReference, object?[]? messageArgs = null)

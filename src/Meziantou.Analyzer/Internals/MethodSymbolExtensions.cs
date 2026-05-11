@@ -39,24 +39,24 @@ internal static class MethodSymbolExtensions
 
     public static IPropertySymbol? GetImplementingInterfaceSymbol(this IPropertySymbol symbol)
     {
-        if (symbol.ExplicitInterfaceImplementations.Any())
-            return symbol.ExplicitInterfaceImplementations.First();
+        if (symbol.ExplicitInterfaceImplementations.Length > 0)
+            return symbol.ExplicitInterfaceImplementations[0];
 
         return (IPropertySymbol?)GetImplementingInterfaceSymbol((ISymbol)symbol);
     }
 
     public static IEventSymbol? GetImplementingInterfaceSymbol(this IEventSymbol symbol)
     {
-        if (symbol.ExplicitInterfaceImplementations.Any())
-            return symbol.ExplicitInterfaceImplementations.First();
+        if (symbol.ExplicitInterfaceImplementations.Length > 0)
+            return symbol.ExplicitInterfaceImplementations[0];
 
         return (IEventSymbol?)GetImplementingInterfaceSymbol((ISymbol)symbol);
     }
 
     public static IMethodSymbol? GetImplementingInterfaceSymbol(this IMethodSymbol symbol)
     {
-        if (symbol.ExplicitInterfaceImplementations.Any())
-            return symbol.ExplicitInterfaceImplementations.First();
+        if (symbol.ExplicitInterfaceImplementations.Length > 0)
+            return symbol.ExplicitInterfaceImplementations[0];
 
         return (IMethodSymbol?)GetImplementingInterfaceSymbol((ISymbol)symbol);
     }

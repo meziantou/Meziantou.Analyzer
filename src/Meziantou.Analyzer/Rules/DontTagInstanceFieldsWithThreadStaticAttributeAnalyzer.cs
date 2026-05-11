@@ -25,16 +25,23 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : Dia
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(Analyze, SymbolKind.Field);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var threadStaticAttributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.ThreadStaticAttribute");
+            if (threadStaticAttributeType is null)
+                return;
+
+            compilationContext.RegisterSymbolAction(context => Analyze(context, threadStaticAttributeType), SymbolKind.Field);
+        });
     }
 
-    private static void Analyze(SymbolAnalysisContext context)
+    private static void Analyze(SymbolAnalysisContext context, ITypeSymbol threadStaticAttributeType)
     {
         var field = (IFieldSymbol)context.Symbol;
         if (field.IsStatic)
             return;
 
-        if (field.HasAttribute(context.Compilation.GetBestTypeByMetadataName("System.ThreadStaticAttribute")))
+        if (field.HasAttribute(threadStaticAttributeType))
         {
             context.ReportDiagnostic(Rule, field);
         }
