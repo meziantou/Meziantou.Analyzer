@@ -16,10 +16,10 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly string ExcludedMethodsRegexConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex";
-    private static readonly string ExcludedMethodsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods";
-    private static readonly string MinimumMethodParametersConfigurationKey = RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters";
-    private static readonly string ExpressionKindsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".expression_kinds";
+    private const string ExcludedMethodsRegexConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex";
+    private const string ExcludedMethodsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods";
+    private const string MinimumMethodParametersConfigurationKey = RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters";
+    private const string ExpressionKindsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".expression_kinds";
 
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseNamedParameter,
