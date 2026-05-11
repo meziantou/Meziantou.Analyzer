@@ -53,9 +53,10 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         if (types!.TryGetValue(symbol.MetadataName, out var namespaces))
         {
             var regex = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", "^System($|\\.)"));
+            var namespaceRegex = RegexCache.GetOrCreate(regex, RegexOptions.None, Timeout.InfiniteTimeSpan);
             foreach (var ns in namespaces)
             {
-                if (Regex.IsMatch(ns, regex, RegexOptions.None, Timeout.InfiniteTimeSpan))
+                if (namespaceRegex.IsMatch(ns))
                 {
                     context.ReportDiagnostic(Rule, symbol, symbol.MetadataName, ns);
                     return;

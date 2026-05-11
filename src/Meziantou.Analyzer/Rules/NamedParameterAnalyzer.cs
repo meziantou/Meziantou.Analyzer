@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -57,7 +56,6 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
             var syntaxNodeType = context.Compilation.GetBestTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
             var expressionType = context.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
             var operationUtilities = new OperationUtilities(context.Compilation);
-            var regexCache = new ConcurrentDictionary<string, Regex>(StringComparer.Ordinal);
 
             context.RegisterSyntaxNodeAction(syntaxContext =>
             {
@@ -273,7 +271,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
                             if (declarationId is not null)
                             {
-                                var regex = regexCache.GetOrAdd(excludedMethodsRegex, static pattern => new Regex(pattern, RegexOptions.Compiled, Timeout.InfiniteTimeSpan));
+                                var regex = RegexCache.GetOrCreate(excludedMethodsRegex, RegexOptions.Compiled, Timeout.InfiniteTimeSpan);
                                 if (regex.IsMatch(declarationId))
                                     return;
                             }
