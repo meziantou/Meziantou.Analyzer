@@ -25,16 +25,23 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzer : DiagnosticAnal
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var exceptionType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Exception");
+            if (exceptionType is null)
+                return;
+
+            compilationContext.RegisterSymbolAction(context => AnalyzeSymbol(context, exceptionType), SymbolKind.NamedType);
+        });
     }
 
-    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeSymbol(SymbolAnalysisContext context, ITypeSymbol exceptionType)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.Name is null)
             return;
 
-        if (!symbol.Name.EndsWith("Exception", System.StringComparison.Ordinal) && symbol.InheritsFrom(context.Compilation.GetBestTypeByMetadataName("System.Exception")))
+        if (!symbol.Name.EndsWith("Exception", System.StringComparison.Ordinal) && symbol.InheritsFrom(exceptionType))
         {
             context.ReportDiagnostic(Rule, symbol);
         }

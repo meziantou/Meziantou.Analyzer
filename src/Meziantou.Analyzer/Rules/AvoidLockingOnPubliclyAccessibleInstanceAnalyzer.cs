@@ -26,10 +26,14 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : Diagnosti
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeOperation, OperationKind.Lock);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var typeSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.Type");
+            compilationContext.RegisterOperationAction(context => AnalyzeOperation(context, typeSymbol), OperationKind.Lock);
+        });
     }
 
-    private static void AnalyzeOperation(OperationAnalysisContext context)
+    private static void AnalyzeOperation(OperationAnalysisContext context, ITypeSymbol? typeSymbol)
     {
         var operation = (ILockOperation)context.Operation;
         if (operation.LockedValue is ITypeOfOperation)
@@ -48,7 +52,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : Diagnosti
         {
             context.ReportDiagnostic(Rule, operation.LockedValue);
         }
-        else if (operation.LockedValue is ILocalReferenceOperation localReference && localReference.Local.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Type")))
+        else if (operation.LockedValue is ILocalReferenceOperation localReference && localReference.Local.Type.IsEqualTo(typeSymbol))
         {
             context.ReportDiagnostic(Rule, operation.LockedValue);
         }

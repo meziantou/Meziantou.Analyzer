@@ -26,16 +26,23 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var flagsAttributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute");
+            if (flagsAttributeType is null)
+                return;
+
+            compilationContext.RegisterSymbolAction(context => AnalyzeSymbol(context, flagsAttributeType), SymbolKind.NamedType);
+        });
     }
 
-    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeSymbol(SymbolAnalysisContext context, ITypeSymbol flagsAttributeType)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.EnumUnderlyingType is null)
             return;
 
-        if (!symbol.HasAttribute(context.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute")))
+        if (!symbol.HasAttribute(flagsAttributeType))
             return;
 
         if (!symbol.GetMembers().OfType<IFieldSymbol>().All(member => member.HasConstantValue && member.ConstantValue is not null))

@@ -25,16 +25,19 @@ public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : Diagnost
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var attributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Attribute");
+            var attributeUsageAttributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
+            if (attributeType is null || attributeUsageAttributeType is null)
+                return;
+
+            compilationContext.RegisterSymbolAction(context => Analyze(context, attributeType, attributeUsageAttributeType), SymbolKind.NamedType);
+        });
     }
 
-    private static void Analyze(SymbolAnalysisContext context)
+    private static void Analyze(SymbolAnalysisContext context, ITypeSymbol attributeType, ITypeSymbol attributeUsageAttributeType)
     {
-        var attributeType = context.Compilation.GetBestTypeByMetadataName("System.Attribute");
-        var attributeUsageAttributeType = context.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
-        if (attributeType is null || attributeUsageAttributeType is null)
-            return;
-
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.IsAbstract)
             return;
