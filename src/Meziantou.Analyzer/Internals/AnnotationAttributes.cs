@@ -92,4 +92,26 @@ internal static class AnnotationAttributes
             }
         };
     }
+
+    public static bool IsNonAsyncDisposableTypeAttributeSymbol(ITypeSymbol? symbol)
+    {
+        // Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute
+        return symbol is INamedTypeSymbol
+        {
+            Name: "NonAsyncDisposableTypeAttribute",
+            ContainingSymbol: INamespaceSymbol
+            {
+                Name: "Annotations",
+                ContainingSymbol: INamespaceSymbol
+                {
+                    Name: "Analyzer",
+                    ContainingSymbol: INamespaceSymbol
+                    {
+                        Name: "Meziantou",
+                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
+                    }
+                }
+            }
+        };
+    }
 }

@@ -19,7 +19,8 @@ If you want to keep these attributes in the metadata (for example, for reflectio
 | Attribute | Purpose | Related rules |
 | --- | --- | --- |
 | `CultureInsensitiveTypeAttribute` | Marks a type (or a specific format) as culture-insensitive. | [MA0011](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0011.md), [MA0075](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0075.md), [MA0076](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0076.md), [MA0185](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0185.md) |
-| `NonAwaitableTypeAttribute` | Excludes await/await-using recommendations for specific types. | [MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md), [MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md), [MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md), [MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md), [MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md) |
+| `NonAwaitableTypeAttribute` | Excludes await recommendations for specific types. | [MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md), [MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md), [MA0134](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0134.md), [MA0137](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0137.md), [MA0138](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0138.md) |
+| `NonAsyncDisposableTypeAttribute` | Excludes `await using` recommendations for specific types. | [MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md), [MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md) |
 | `ExcludeFromBlockingCallAnalysisAttribute` | Excludes specific methods/properties from blocking-call diagnostics. | [MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md), [MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md) |
 | `RequireNamedArgumentAttribute` | Requires named arguments for decorated parameters. | [MA0003](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0003.md) |
 | `StructuredLogFieldAttribute` | Declares allowed types for named log properties in an assembly. | [MA0124](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0124.md), [MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md) |
@@ -35,9 +36,18 @@ Use `ExcludeFromBlockingCallAnalysisAttribute` to exclude specific MA0042/MA0045
 
 ## NonAwaitableTypeAttribute
 
-Use `NonAwaitableTypeAttribute` to exclude MA0042/MA0045 `await`/`await using` recommendations for specific types at the assembly level.
+Use `NonAwaitableTypeAttribute` to exclude MA0042/MA0045 `await` recommendations for specific types at the assembly level.
 The match is exact-type only. Derived types are not excluded unless explicitly listed.
 
 ```csharp
 [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(System.Data.Common.DbCommand))]
+```
+
+## NonAsyncDisposableTypeAttribute
+
+Use `NonAsyncDisposableTypeAttribute` to exclude MA0042/MA0045 `await using` recommendations for specific types at the assembly level.
+The match is exact-type only. Derived types are not excluded unless explicitly listed.
+
+```csharp
+[assembly: Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute(typeof(System.Data.Common.DbCommand))]
 ```

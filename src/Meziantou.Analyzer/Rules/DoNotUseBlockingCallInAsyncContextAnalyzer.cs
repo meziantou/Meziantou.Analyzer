@@ -662,7 +662,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.GetActualType() is not INamedTypeSymbol type)
                 return false;
 
-            if (_awaitableTypes.IsNonAwaitableType(type))
+            if (_awaitableTypes.IsNonAsyncDisposableType(type))
                 return false;
 
             var isSqliteSpecialCaseType = IsSqliteSpecialCaseType(type);

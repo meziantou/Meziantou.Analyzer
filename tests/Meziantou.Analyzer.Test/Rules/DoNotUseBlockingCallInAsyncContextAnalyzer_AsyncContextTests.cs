@@ -3617,7 +3617,7 @@ class Sample
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesAffectAwaitUsing()
+    public async Task NonAwaitableTypeAttribute_DoesNotAffectAwaitUsing()
     {
         await CreateProjectBuilder()
               .AddMeziantouAttributes()
@@ -3625,6 +3625,33 @@ class Sample
                 using System;
                 using System.Threading.Tasks;
                 [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AsyncDisposable))]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var value = new AsyncDisposable();|]
+                    }
+                }
+
+                class AsyncDisposable : IDisposable, IAsyncDisposable
+                {
+                    public void Dispose() { }
+                    public ValueTask DisposeAsync() => default;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonAsyncDisposableTypeAttribute_DoesAffectAwaitUsing()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute(typeof(AsyncDisposable))]
 
                 class Test
                 {
