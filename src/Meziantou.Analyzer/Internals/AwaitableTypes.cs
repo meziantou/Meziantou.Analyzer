@@ -7,7 +7,6 @@ internal sealed class AwaitableTypes
 {
     private readonly INamedTypeSymbol[] _taskOrValueTaskSymbols;
     private readonly HashSet<INamedTypeSymbol> _nonAwaitableTypes;
-    private readonly HashSet<INamedTypeSymbol> _nonAsyncDisposableTypes;
     private readonly Compilation _compilation;
     private readonly ConcurrentDictionary<ITypeSymbol, bool> _isAwaitableCache = new(SymbolEqualityComparer.Default);
 
@@ -35,7 +34,6 @@ internal sealed class AwaitableTypes
         }
 
         _nonAwaitableTypes = CreateNonAwaitableTypes(compilation);
-        _nonAsyncDisposableTypes = CreateNonAsyncDisposableTypes(compilation);
         _compilation = compilation;
     }
 
@@ -52,14 +50,6 @@ internal sealed class AwaitableTypes
             return false;
 
         return IsConfiguredTypeCore(namedType, _nonAwaitableTypes);
-    }
-
-    public bool IsNonAsyncDisposableType(ITypeSymbol? symbol)
-    {
-        if (_nonAsyncDisposableTypes.Count == 0 || symbol is not INamedTypeSymbol namedType)
-            return false;
-
-        return IsConfiguredTypeCore(namedType, _nonAsyncDisposableTypes);
     }
 
     private static bool IsConfiguredTypeCore(INamedTypeSymbol type, HashSet<INamedTypeSymbol> configuredTypes)
@@ -79,28 +69,6 @@ internal sealed class AwaitableTypes
         foreach (var attribute in compilation.Assembly.GetAttributes())
         {
             if (!AnnotationAttributes.IsNonAwaitableTypeAttributeSymbol(attribute.AttributeClass))
-                continue;
-
-            var constructorArguments = attribute.ConstructorArguments;
-            if (constructorArguments is [{ Value: INamedTypeSymbol type }])
-            {
-                result.Add(type);
-                if (!ReferenceEquals(type.OriginalDefinition, type))
-                {
-                    result.Add(type.OriginalDefinition);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static HashSet<INamedTypeSymbol> CreateNonAsyncDisposableTypes(Compilation compilation)
-    {
-        var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        foreach (var attribute in compilation.Assembly.GetAttributes())
-        {
-            if (!AnnotationAttributes.IsNonAsyncDisposableTypeAttributeSymbol(attribute.AttributeClass))
                 continue;
 
             var constructorArguments = attribute.ConstructorArguments;
