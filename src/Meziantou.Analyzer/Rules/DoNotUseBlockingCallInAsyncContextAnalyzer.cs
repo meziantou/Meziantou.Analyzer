@@ -59,7 +59,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
         private readonly HashSet<ISymbol> _excludedDiagnosticSymbols;
-        private readonly HashSet<INamedTypeSymbol> _excludedAwaitTypes;
         private readonly ConcurrentHashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
 
         public Context(Compilation compilation)
@@ -133,7 +132,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterOfTSymbol);
             _taskAwaiterLikeSymbols = [.. taskAwaiterLikeSymbols];
             _excludedDiagnosticSymbols = CreateExcludedDiagnosticSymbols(compilation);
-            _excludedAwaitTypes = CreateExcludedAwaitTypes(compilation);
         }
 
         private ISymbol? StreamSymbol { get; }
@@ -421,28 +419,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
         }
 
-        private static HashSet<INamedTypeSymbol> CreateExcludedAwaitTypes(Compilation compilation)
-        {
-            var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-            foreach (var attribute in compilation.Assembly.GetAttributes())
-            {
-                if (!AnnotationAttributes.IsNonAwaitableTypeAttributeSymbol(attribute.AttributeClass))
-                    continue;
-
-                var constructorArguments = attribute.ConstructorArguments;
-                if (constructorArguments is [{ Value: INamedTypeSymbol type }])
-                {
-                    result.Add(type);
-                    if (!ReferenceEquals(type.OriginalDefinition, type))
-                    {
-                        result.Add(type.OriginalDefinition);
-                    }
-                }
-            }
-
-            return result;
-        }
-
         private bool IsExcludedDiagnosticSymbol(ISymbol symbol)
         {
             if (_excludedDiagnosticSymbols.Count == 0)
@@ -453,36 +429,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             var originalDefinition = symbol.OriginalDefinition;
             return !ReferenceEquals(symbol, originalDefinition) && _excludedDiagnosticSymbols.Contains(originalDefinition);
-        }
-
-        private bool IsExcludedAwaitType(ITypeSymbol? type)
-        {
-            if (_excludedAwaitTypes.Count == 0 || type is not INamedTypeSymbol namedType)
-                return false;
-
-            if (IsExcludedAwaitTypeCore(namedType))
-                return true;
-
-            if (namedType is { TypeArguments.Length: 1 } &&
-                namedType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol) &&
-                namedType.TypeArguments[0] is INamedTypeSymbol awaitedType &&
-                IsExcludedAwaitTypeCore(awaitedType))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool IsExcludedAwaitTypeCore(INamedTypeSymbol type)
-        {
-            if (_excludedAwaitTypes.Contains(type))
-                return true;
-
-            if (!ReferenceEquals(type, type.OriginalDefinition) && _excludedAwaitTypes.Contains(type.OriginalDefinition))
-                return true;
-
-            return false;
         }
 
         private bool IsSqliteSpecialCaseType(INamedTypeSymbol type)
@@ -547,9 +493,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private bool IsPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol methodSymbol)
         {
             if (!_awaitableTypes.IsAwaitable(methodSymbol.ReturnType, operation.SemanticModel!, operation.Syntax.SpanStart))
-                return false;
-
-            if (IsExcludedAwaitType(methodSymbol.ReturnType))
                 return false;
 
             // In test projects, exclude async methods from Meziantou.Framework.TemporaryDirectory
@@ -722,7 +665,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.GetActualType() is not INamedTypeSymbol type)
                 return false;
 
-            if (IsExcludedAwaitType(type))
+            if (_awaitableTypes.IsNonAwaitableType(type))
                 return false;
 
             var isSqliteSpecialCaseType = IsSqliteSpecialCaseType(type);
