@@ -52,7 +52,7 @@ internal sealed class AwaitableTypes
         return IsConfiguredTypeCore(namedType, _nonAwaitableTypes);
     }
 
-    private static bool IsConfiguredTypeCore(INamedTypeSymbol type, HashSet<INamedTypeSymbol> configuredTypes)
+    private bool IsConfiguredTypeCore(INamedTypeSymbol type, HashSet<INamedTypeSymbol> configuredTypes)
     {
         if (configuredTypes.Contains(type))
             return true;
