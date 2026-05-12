@@ -7,6 +7,7 @@ namespace Meziantou.Analyzer.Internals;
 internal sealed class OverloadFinder(Compilation compilation)
 {
     private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
+    private readonly ITypeSymbol? _experimentalSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.ExperimentalAttribute");
     private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
     private readonly INamedTypeSymbol? _halfSymbol = compilation.GetBestTypeByMetadataName("System.Half");
 
@@ -127,6 +128,9 @@ internal sealed class OverloadFinder(Compilation compilation)
                 continue;
 
             if (!options.IncludeObsoleteMembers && IsObsolete(method))
+                continue;
+
+            if (!options.IncludeExperimentalMembers && IsExperimental(method))
                 continue;
 
             if (options.ShouldCheckMethod is not null && !options.ShouldCheckMethod(method))
@@ -659,5 +663,13 @@ internal sealed class OverloadFinder(Compilation compilation)
             return false;
 
         return methodSymbol.HasAttribute(_obsoleteSymbol);
+    }
+
+    private bool IsExperimental(IMethodSymbol methodSymbol)
+    {
+        if (_experimentalSymbol is null)
+            return false;
+
+        return methodSymbol.HasAttribute(_experimentalSymbol);
     }
 }
