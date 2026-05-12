@@ -59,6 +59,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
         private readonly HashSet<ISymbol> _excludedDiagnosticSymbols;
+        private readonly HashSet<INamedTypeSymbol> _nonAsyncDisposableTypes;
         private readonly ConcurrentHashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
 
         public Context(Compilation compilation)
@@ -132,6 +133,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterOfTSymbol);
             _taskAwaiterLikeSymbols = [.. taskAwaiterLikeSymbols];
             _excludedDiagnosticSymbols = CreateExcludedDiagnosticSymbols(compilation);
+            _nonAsyncDisposableTypes = CreateNonAsyncDisposableTypes(compilation);
         }
 
         private ISymbol? StreamSymbol { get; }
@@ -419,6 +421,47 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
         }
 
+        private bool IsNonAsyncDisposableType(ITypeSymbol? symbol)
+        {
+            if (_nonAsyncDisposableTypes.Count == 0 || symbol is not INamedTypeSymbol namedType)
+                return false;
+
+            return IsConfiguredType(namedType, _nonAsyncDisposableTypes);
+        }
+
+        private static HashSet<INamedTypeSymbol> CreateNonAsyncDisposableTypes(Compilation compilation)
+        {
+            var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            foreach (var attribute in compilation.Assembly.GetAttributes())
+            {
+                if (!AnnotationAttributes.IsNonAsyncDisposableTypeAttributeSymbol(attribute.AttributeClass))
+                    continue;
+
+                var constructorArguments = attribute.ConstructorArguments;
+                if (constructorArguments is [{ Value: INamedTypeSymbol type }])
+                {
+                    result.Add(type);
+                    if (!ReferenceEquals(type, type.OriginalDefinition))
+                    {
+                        result.Add(type.OriginalDefinition);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static bool IsConfiguredType(INamedTypeSymbol type, HashSet<INamedTypeSymbol> configuredTypes)
+        {
+            if (configuredTypes.Contains(type))
+                return true;
+
+            if (!ReferenceEquals(type, type.OriginalDefinition) && configuredTypes.Contains(type.OriginalDefinition))
+                return true;
+
+            return false;
+        }
+
         private bool IsExcludedDiagnosticSymbol(ISymbol symbol)
         {
             if (_excludedDiagnosticSymbols.Count == 0)
@@ -662,7 +705,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.GetActualType() is not INamedTypeSymbol type)
                 return false;
 
-            if (_awaitableTypes.IsNonAwaitableType(type))
+            if (IsNonAsyncDisposableType(type))
                 return false;
 
             var isSqliteSpecialCaseType = IsSqliteSpecialCaseType(type);
