@@ -49,7 +49,66 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
                   class Sample
                   {
                       /// [|<inheritdoc />|]
+                      public Sample(int value) { }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_ConstructorHasSameSignatureAsBaseConstructor()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class BaseType
+                  {
+                      public BaseType(int value) { }
+                  }
+
+                  class Sample : BaseType
+                  {
+                      /// <inheritdoc />
+                      public Sample(int value) : this() { }
+
+                      private Sample() : base(0) { }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_ConstructorHasSameSignatureAsBaseParameterlessConstructor()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class BaseType
+                  {
+                      public BaseType() { }
+                  }
+
+                  class Sample : BaseType
+                  {
+                      /// <inheritdoc />
                       public Sample() { }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_ConstructorDoesNotMatchBaseConstructorSignature()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class BaseType
+                  {
+                      public BaseType(int value) { }
+                  }
+
+                  class Sample : BaseType
+                  {
+                      /// [|<inheritdoc />|]
+                      public Sample(string value) : base(0) { }
                   }
                   """)
               .ValidateAsync();
