@@ -12,7 +12,7 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzer : Diagnosti
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.InheritdocShouldBeUsedOnInheritingMember,
         title: "Do not use inheritdoc on non-inheriting members",
-        messageFormat: "Do not use '<inheritdoc />' on members that are not overrides or interface implementations",
+        messageFormat: "Do not use '<inheritdoc />' on members that do not inherit documentation",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -34,8 +34,14 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzer : Diagnosti
         if (context.Symbol is not (IMethodSymbol or IPropertySymbol or IEventSymbol))
             return;
 
-        if (context.Symbol is IMethodSymbol methodSymbol && methodSymbol.IsPrimaryConstructor(context.CancellationToken, includeRecordDeclarations: true))
-            return;
+        if (context.Symbol is IMethodSymbol methodSymbol)
+        {
+            if (methodSymbol.IsPrimaryConstructor(context.CancellationToken, includeRecordDeclarations: true))
+                return;
+
+            if (IsInheritingConstructor(methodSymbol))
+                return;
+        }
 
         if (context.Symbol.IsImplicitlyDeclared || context.Symbol.IsOverrideOrInterfaceImplementation())
             return;
@@ -84,5 +90,45 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzer : Diagnosti
         }
 
         return false;
+    }
+
+    private static bool IsInheritingConstructor(IMethodSymbol methodSymbol)
+    {
+        if (methodSymbol.MethodKind is not MethodKind.Constructor)
+            return false;
+
+        var baseType = methodSymbol.ContainingType.BaseType;
+        if (baseType is null)
+            return false;
+
+        foreach (var baseConstructor in baseType.InstanceConstructors)
+        {
+            if (HasSameSignature(methodSymbol, baseConstructor))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasSameSignature(IMethodSymbol method, IMethodSymbol otherMethod)
+    {
+        if (method.Parameters.Length != otherMethod.Parameters.Length)
+            return false;
+
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var parameter = method.Parameters[i];
+            var otherParameter = otherMethod.Parameters[i];
+            if (parameter.RefKind != otherParameter.RefKind)
+                return false;
+
+            if (parameter.IsParams != otherParameter.IsParams)
+                return false;
+
+            if (!SymbolEqualityComparer.Default.Equals(parameter.Type, otherParameter.Type))
+                return false;
+        }
+
+        return true;
     }
 }
