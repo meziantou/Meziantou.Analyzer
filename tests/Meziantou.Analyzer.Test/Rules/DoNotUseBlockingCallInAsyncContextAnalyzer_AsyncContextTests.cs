@@ -3586,4 +3586,111 @@ class Sample
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_AffectsAwaitUsing()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(Test), "Create")]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var value = Create();
+                    }
+
+                    private AsyncDisposable Create() => throw null;
+                }
+
+                class AsyncDisposable : IDisposable, IAsyncDisposable
+                {
+                    public void Dispose() { }
+                    public ValueTask DisposeAsync() => default;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonAwaitableTypeAttribute_DoesAffectAwaitUsing()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AsyncDisposable))]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        using var value = new AsyncDisposable();
+                    }
+                }
+
+                class AsyncDisposable : IDisposable, IAsyncDisposable
+                {
+                    public void Dispose() { }
+                    public ValueTask DisposeAsync() => default;
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonAwaitableTypeAttribute_DoesAffectAwaitSuggestion()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult))]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        Create();
+                    }
+
+                    private AwaitResult Create() => throw null;
+                    private Task<AwaitResult> CreateAsync() => throw null;
+                }
+
+                class AwaitResult { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonAwaitableTypeAttribute_DoesNotAffectOtherTypes()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(OtherResult))]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Create()|];
+                    }
+
+                    private AwaitResult Create() => throw null;
+                    private Task<AwaitResult> CreateAsync() => throw null;
+                }
+
+                class AwaitResult { }
+                class OtherResult { }
+                """)
+              .ValidateAsync();
+    }
 }
