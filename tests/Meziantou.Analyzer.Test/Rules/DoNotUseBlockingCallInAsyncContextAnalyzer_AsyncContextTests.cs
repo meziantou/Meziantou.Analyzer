@@ -3588,7 +3588,7 @@ class Sample
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_AffectsAwaitUsing()
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing()
     {
         await CreateProjectBuilder()
               .AddMeziantouAttributes()
@@ -3601,7 +3601,7 @@ class Sample
                 {
                     public async Task A()
                     {
-                        using var value = Create();
+                        [|using var value = Create();|]
                     }
 
                     private AsyncDisposable Create() => throw null;

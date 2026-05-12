@@ -390,7 +390,7 @@ public class Test
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_AffectsAwaitUsing()
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing()
     {
         await CreateProjectBuilder()
               .AddMeziantouAttributes()
@@ -403,7 +403,7 @@ public class Test
                 {
                     private void A()
                     {
-                        using var value = Create();
+                        [|using var value = Create();|]
                     }
 
                     private AsyncDisposable Create() => throw null;
