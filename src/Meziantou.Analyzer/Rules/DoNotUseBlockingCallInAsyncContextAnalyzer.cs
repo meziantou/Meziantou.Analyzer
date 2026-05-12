@@ -58,6 +58,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             private readonly OverloadFinder _overloadFinder;
 
         private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
+        private readonly HashSet<ISymbol> _excludedDiagnosticSymbols;
         private readonly ConcurrentHashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
 
         public Context(Compilation compilation)
@@ -130,6 +131,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterOfTSymbol);
             _taskAwaiterLikeSymbols = [.. taskAwaiterLikeSymbols];
+            _excludedDiagnosticSymbols = CreateExcludedDiagnosticSymbols(compilation);
         }
 
         private ISymbol? StreamSymbol { get; }
@@ -179,6 +181,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         {
             var operation = (IInvocationOperation)context.Operation;
             var targetMethod = operation.TargetMethod;
+            if (IsExcludedDiagnosticSymbol(targetMethod))
+                return;
+
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
             var isSqliteSpecialCaseMethod = IsSqliteSpecialCaseMethod(operation);
 
@@ -335,6 +340,97 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCall + ".enable_db_special_cases", defaultValue);
         }
 
+        private static HashSet<ISymbol> CreateExcludedDiagnosticSymbols(Compilation compilation)
+        {
+            var result = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            foreach (var attribute in compilation.Assembly.GetAttributes())
+            {
+                if (!AnnotationAttributes.IsExcludeFromBlockingCallAnalysisAttributeSymbol(attribute.AttributeClass))
+                    continue;
+
+                var constructorArguments = attribute.ConstructorArguments;
+                if (constructorArguments is [{ Type.SpecialType: SpecialType.System_String, IsNull: false, Value: string documentationId }])
+                {
+                    foreach (var symbol in DocumentationCommentId.GetSymbolsForDeclarationId(documentationId, compilation))
+                    {
+                        AddExcludedSymbol(result, symbol);
+                    }
+
+                    continue;
+                }
+
+                if (constructorArguments.Length is not 2 and not 3)
+                    continue;
+
+                if (constructorArguments[0].Value is not INamedTypeSymbol containingType)
+                    continue;
+
+                if (constructorArguments[1] is not { Type.SpecialType: SpecialType.System_String, IsNull: false, Value: string memberName } || string.IsNullOrWhiteSpace(memberName))
+                    continue;
+
+                if (constructorArguments.Length == 2)
+                {
+                    foreach (var member in containingType.GetMembers(memberName))
+                    {
+                        AddExcludedSymbol(result, member);
+                    }
+
+                    continue;
+                }
+
+                if (constructorArguments[2].Kind != TypedConstantKind.Array)
+                    continue;
+
+                var parameterTypes = constructorArguments[2].Values;
+                foreach (var method in containingType.GetMembers(memberName).OfType<IMethodSymbol>())
+                {
+                    if (method.Parameters.Length != parameterTypes.Length)
+                        continue;
+
+                    var match = true;
+                    for (var i = 0; i < parameterTypes.Length; i++)
+                    {
+                        if (parameterTypes[i].Value is not ITypeSymbol parameterType || !method.Parameters[i].Type.IsEqualTo(parameterType))
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match)
+                    {
+                        AddExcludedSymbol(result, method);
+                    }
+                }
+            }
+
+            return result;
+
+            static void AddExcludedSymbol(HashSet<ISymbol> symbols, ISymbol symbol)
+            {
+                if (symbol is not IMethodSymbol and not IPropertySymbol)
+                    return;
+
+                symbols.Add(symbol);
+                if (!ReferenceEquals(symbol.OriginalDefinition, symbol))
+                {
+                    symbols.Add(symbol.OriginalDefinition);
+                }
+            }
+        }
+
+        private bool IsExcludedDiagnosticSymbol(ISymbol symbol)
+        {
+            if (_excludedDiagnosticSymbols.Count == 0)
+                return false;
+
+            if (_excludedDiagnosticSymbols.Contains(symbol))
+                return true;
+
+            var originalDefinition = symbol.OriginalDefinition;
+            return !ReferenceEquals(symbol, originalDefinition) && _excludedDiagnosticSymbols.Contains(originalDefinition);
+        }
+
         private bool IsSqliteSpecialCaseType(INamedTypeSymbol type)
         {
             return type.IsEqualToAny(SqliteConnectionSymbol, SqliteCommandSymbol, SqliteDataReaderSymbol);
@@ -433,6 +529,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var operation = (IPropertyReferenceOperation)context.Operation;
 
             if (operation.IsInNameofOperation())
+                return;
+
+            if (IsExcludedDiagnosticSymbol(operation.Property))
                 return;
 
             // Task`1.Result

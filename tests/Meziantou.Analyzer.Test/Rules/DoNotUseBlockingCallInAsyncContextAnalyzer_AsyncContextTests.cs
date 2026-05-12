@@ -3519,4 +3519,71 @@ class Sample
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        Task.Delay(1).Wait();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdProperty()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("P:System.Threading.Tasks.Task`1.Result")]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        _ = Task.FromResult(1).Result;
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_DoesNotAffectAwaitUsing()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var value = new AsyncDisposable();|]
+                    }
+                }
+
+                class AsyncDisposable : IDisposable, IAsyncDisposable
+                {
+                    public void Dispose() { }
+                    public ValueTask DisposeAsync() => default;
+                }
+                """)
+              .ValidateAsync();
+    }
 }

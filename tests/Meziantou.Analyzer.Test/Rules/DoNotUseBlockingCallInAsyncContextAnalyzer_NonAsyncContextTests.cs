@@ -329,4 +329,63 @@ public class Test
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
+
+                class Test
+                {
+                    private void A()
+                    {
+                        Task.Delay(1).Wait();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
+
+                class Test
+                {
+                    private void A()
+                    {
+                        System.Threading.Thread.Sleep(1);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_OnlyMatchingOverload()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System;
+                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
+
+                class Test
+                {
+                    private void A()
+                    {
+                        [|System.Threading.Thread.Sleep(TimeSpan.FromSeconds(1))|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
 }
