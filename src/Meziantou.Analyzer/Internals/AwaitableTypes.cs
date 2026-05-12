@@ -18,16 +18,14 @@ internal sealed class AwaitableTypes
         IAsyncEnumeratorSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1");
         TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
         TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-        var valueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-        ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
 
         if (INotifyCompletionSymbol is not null)
         {
             var taskLikeSymbols = new List<INamedTypeSymbol>(4);
             taskLikeSymbols.AddIfNotNull(TaskSymbol);
             taskLikeSymbols.AddIfNotNull(TaskOfTSymbol);
-            taskLikeSymbols.AddIfNotNull(valueTaskSymbol);
-            taskLikeSymbols.AddIfNotNull(ValueTaskOfTSymbol);
+            taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask"));
+            taskLikeSymbols.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1"));
             _taskOrValueTaskSymbols = [.. taskLikeSymbols];
         }
         else
@@ -41,7 +39,6 @@ internal sealed class AwaitableTypes
 
     private INamedTypeSymbol? TaskSymbol { get; }
     private INamedTypeSymbol? TaskOfTSymbol { get; }
-    private INamedTypeSymbol? ValueTaskOfTSymbol { get; }
     private INamedTypeSymbol? INotifyCompletionSymbol { get; }
     private INamedTypeSymbol? AsyncMethodBuilderAttributeSymbol { get; }
     public INamedTypeSymbol? IAsyncEnumerableSymbol { get; }
