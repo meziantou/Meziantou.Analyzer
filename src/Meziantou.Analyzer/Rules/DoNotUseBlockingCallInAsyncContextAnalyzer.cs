@@ -655,9 +655,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var unwrappedOperation = operation.UnwrapImplicitConversionOperations();
             if (unwrappedOperation is IInvocationOperation invocationOperation)
             {
-                if (IsExcludedDiagnosticSymbol(invocationOperation.TargetMethod))
-                    return false;
-
                 if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(invocationOperation))
                     return false;
             }
