@@ -10,7 +10,7 @@ body:
   id: version
   attributes:
     label: Version of the Meziantou.Analyzer NuGet package
-    placeholder: "2.0.0"
+    placeholder: "3.0.0"
   validations:
     required: true
 
@@ -35,7 +35,7 @@ body:
   attributes:
     label: "C# Language version"
     description: "If you are unsure you can use `#error` in your code to get the version. See [Getting Roslyn (C# compiler) and Language versions](https://www.meziantou.net/getting-roslyn-csharp-compiler-and-language-versions.htm) for more information."
-    placeholder: "C# 11"
+    placeholder: "C# 13.0"
   validations:
     required: true
 
