@@ -49,15 +49,15 @@ internal sealed class AwaitableTypes
         if (_nonAwaitableTypes.Count == 0 || symbol is not INamedTypeSymbol namedType)
             return false;
 
-        return IsConfiguredTypeCore(namedType, _nonAwaitableTypes);
+        return IsNonAwaitableTypeCore(namedType);
     }
 
-    private bool IsConfiguredTypeCore(INamedTypeSymbol type, HashSet<INamedTypeSymbol> configuredTypes)
+    private bool IsNonAwaitableTypeCore(INamedTypeSymbol type)
     {
-        if (configuredTypes.Contains(type))
+        if (_nonAwaitableTypes.Contains(type))
             return true;
 
-        if (!ReferenceEquals(type, type.OriginalDefinition) && configuredTypes.Contains(type.OriginalDefinition))
+        if (!ReferenceEquals(type, type.OriginalDefinition) && _nonAwaitableTypes.Contains(type.OriginalDefinition))
             return true;
 
         return false;
