@@ -1243,6 +1243,48 @@ record struct Test(System.Threading.CancellationToken a)
     }
 
     [Fact]
+    public async Task SuggestOverloadWithExperimentalAttribute()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System;
+                using System.Threading;
+                using System.Diagnostics.CodeAnalysis;
+
+                class Sample
+                {
+                    public static void Repro(CancellationToken cancellationToken)
+                    {
+                        Method();
+                    }
+
+                    public static void Method()
+                    {
+                    }
+
+                    [Experimental("EXTEXP0001")]
+                    public static void Method(CancellationToken cancellationToken)
+                    {
+                    }
+                }
+
+                namespace System.Diagnostics.CodeAnalysis
+                {
+                    [AttributeUsage(AttributeTargets.All, Inherited = false)]
+                    public sealed class ExperimentalAttribute : Attribute
+                    {
+                        public ExperimentalAttribute(string diagnosticId)
+                        {
+                        }
+
+                        public string? UrlFormat { get; set; }
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Xunit2()
     {
         await CreateProjectBuilder()
