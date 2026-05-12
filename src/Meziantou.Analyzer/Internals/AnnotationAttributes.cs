@@ -48,4 +48,26 @@ internal static class AnnotationAttributes
             }
         };
     }
+
+    public static bool IsExcludeFromBlockingCallAnalysisAttributeSymbol(ITypeSymbol? symbol)
+    {
+        // Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute        
+        return symbol is INamedTypeSymbol
+        {
+            Name: "ExcludeFromBlockingCallAnalysisAttribute",
+            ContainingSymbol: INamespaceSymbol
+            {
+                Name: "Annotations",
+                ContainingSymbol: INamespaceSymbol
+                {
+                    Name: "Analyzer",
+                    ContainingSymbol: INamespaceSymbol
+                    {
+                        Name: "Meziantou",
+                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
+                    }
+                }
+            }
+        };
+    }
 }
