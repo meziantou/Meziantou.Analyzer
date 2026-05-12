@@ -3669,6 +3669,31 @@ class Sample
     }
 
     [Fact]
+    public async Task NonAwaitableTypeAttribute_OpenGenericType_DoesAffectAwaitSuggestion()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult<>))]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        Create();
+                    }
+
+                    private AwaitResult<int> Create() => throw null;
+                    private Task<AwaitResult<int>> CreateAsync() => throw null;
+                }
+
+                class AwaitResult<T> { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NonAwaitableTypeAttribute_DoesNotAffectOtherTypes()
     {
         await CreateProjectBuilder()
