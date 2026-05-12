@@ -469,4 +469,33 @@ public class Test
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseAsyncDisposable))]
+
+                class Test
+                {
+                    private void A()
+                    {
+                        [|using var value = new DerivedAsyncDisposable();|]
+                    }
+                }
+
+                class BaseAsyncDisposable : IDisposable, IAsyncDisposable
+                {
+                    public void Dispose() { }
+                    public ValueTask DisposeAsync() => default;
+                }
+
+                class DerivedAsyncDisposable : BaseAsyncDisposable { }
+                """)
+              .ValidateAsync();
+    }
 }

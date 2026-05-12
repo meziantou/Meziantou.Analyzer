@@ -482,12 +482,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (!ReferenceEquals(type, type.OriginalDefinition) && _excludedAwaitTypes.Contains(type.OriginalDefinition))
                 return true;
 
-            foreach (var excludedType in _excludedAwaitTypes)
-            {
-                if (type.InheritsFrom(excludedType))
-                    return true;
-            }
-
             return false;
         }
 

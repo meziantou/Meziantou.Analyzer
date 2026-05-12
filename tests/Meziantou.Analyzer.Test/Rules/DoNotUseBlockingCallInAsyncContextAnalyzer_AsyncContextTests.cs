@@ -3693,4 +3693,59 @@ class Sample
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseAsyncDisposable))]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|using var value = new DerivedAsyncDisposable();|]
+                    }
+                }
+
+                class BaseAsyncDisposable : IDisposable, IAsyncDisposable
+                {
+                    public void Dispose() { }
+                    public ValueTask DisposeAsync() => default;
+                }
+
+                class DerivedAsyncDisposable : BaseAsyncDisposable { }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitSuggestion()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseResult))]
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        [|Create()|];
+                    }
+
+                    private BaseResult Create() => throw null;
+                    private Task<DerivedResult> CreateAsync() => throw null;
+                }
+
+                class BaseResult { }
+                class DerivedResult : BaseResult { }
+                """)
+              .ValidateAsync();
+    }
 }

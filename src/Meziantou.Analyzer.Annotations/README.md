@@ -36,6 +36,7 @@ Use `ExcludeFromBlockingCallAnalysisAttribute` to exclude specific MA0042/MA0045
 ## NonAwaitableTypeAttribute
 
 Use `NonAwaitableTypeAttribute` to exclude MA0042/MA0045 `await`/`await using` recommendations for specific types at the assembly level.
+The match is exact-type only. Derived types are not excluded unless explicitly listed.
 
 ```csharp
 [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(System.Data.Common.DbCommand))]
