@@ -3644,7 +3644,7 @@ class Sample
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesAffectAwaitSuggestion()
+    public async Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion()
     {
         await CreateProjectBuilder()
               .AddMeziantouAttributes()
@@ -3656,7 +3656,7 @@ class Sample
                 {
                     public async Task A()
                     {
-                        Create();
+                        [|Create()|];
                     }
 
                     private AwaitResult Create() => throw null;
@@ -3669,7 +3669,7 @@ class Sample
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_OpenGenericType_DoesAffectAwaitSuggestion()
+    public async Task NonAwaitableTypeAttribute_OpenGenericType_DoesNotAffectTaskWrappedAwaitSuggestion()
     {
         await CreateProjectBuilder()
               .AddMeziantouAttributes()
@@ -3681,7 +3681,7 @@ class Sample
                 {
                     public async Task A()
                     {
-                        Create();
+                        [|Create()|];
                     }
 
                     private AwaitResult<int> Create() => throw null;

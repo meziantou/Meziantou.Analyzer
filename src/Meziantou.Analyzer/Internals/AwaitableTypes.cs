@@ -52,18 +52,7 @@ internal sealed class AwaitableTypes
         if (_nonAwaitableTypes.Count == 0 || symbol is not INamedTypeSymbol namedType)
             return false;
 
-        if (IsNonAwaitableTypeCore(namedType))
-            return true;
-
-        if (namedType is { TypeArguments.Length: 1 } &&
-            namedType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol) &&
-            namedType.TypeArguments[0] is INamedTypeSymbol awaitedType &&
-            IsNonAwaitableTypeCore(awaitedType))
-        {
-            return true;
-        }
-
-        return false;
+        return IsNonAwaitableTypeCore(namedType);
     }
 
     private bool IsNonAwaitableTypeCore(INamedTypeSymbol type)

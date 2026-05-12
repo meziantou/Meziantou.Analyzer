@@ -446,7 +446,7 @@ public class Test
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesAffectAwaitSuggestion()
+    public async Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion()
     {
         await CreateProjectBuilder()
               .AddMeziantouAttributes()
@@ -458,7 +458,7 @@ public class Test
                 {
                     private void A()
                     {
-                        Create();
+                        [|Create()|];
                     }
 
                     private AwaitResult Create() => throw null;

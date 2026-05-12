@@ -35,7 +35,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
               .ValidateAsync();
 
     [Fact]
-    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_NoDiagnostic()
+    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_TaskWrappedType_Diagnostic()
         => CreateProjectBuilder()
               .AddMeziantouAttributes()
               .WithSourceCode("""
@@ -44,7 +44,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
                 class TypeName
                 {
-                    Task<Result> Test() => throw null;
+                    Task<Result> {|MA0137:Test|}() => throw null;
                 }
 
                 class Result { }
@@ -52,7 +52,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
               .ValidateAsync();
 
     [Fact]
-    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_OpenGenericType_NoDiagnostic()
+    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_OpenGenericTaskWrappedType_Diagnostic()
         => CreateProjectBuilder()
               .AddMeziantouAttributes()
               .WithSourceCode("""
@@ -61,7 +61,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
                 class TypeName
                 {
-                    Task<Result<int>> Test() => throw null;
+                    Task<Result<int>> {|MA0137:Test|}() => throw null;
                 }
 
                 class Result<T> { }

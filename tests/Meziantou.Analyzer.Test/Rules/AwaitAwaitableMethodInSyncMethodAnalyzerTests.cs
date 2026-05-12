@@ -157,7 +157,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
     }
 
     [Fact]
-    public async Task NoReport_NonAwaitableTypeAttribute_InSyncMethod()
+    public async Task Report_NonAwaitableTypeAttribute_TaskWrappedType_InSyncMethod()
     {
         await CreateProjectBuilder()
             .AddMeziantouAttributes()
@@ -169,7 +169,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     void A()
                     {
-                        B();
+                        [|B()|];
                     }
 
                     Task<Result> B() => throw null;
@@ -181,7 +181,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
     }
 
     [Fact]
-    public async Task NoReport_NonAwaitableTypeAttribute_OpenGenericType_InSyncMethod()
+    public async Task Report_NonAwaitableTypeAttribute_OpenGenericTaskWrappedType_InSyncMethod()
     {
         await CreateProjectBuilder()
             .AddMeziantouAttributes()
@@ -193,7 +193,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     void A()
                     {
-                        B();
+                        [|B()|];
                     }
 
                     Task<Result<int>> B() => throw null;
