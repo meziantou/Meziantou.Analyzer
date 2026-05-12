@@ -35,6 +35,13 @@ When a rule in this analyzer is equivalent to or similar to a rule in another an
 
 Do NOT add equivalence/similarity notes directly to individual rule documentation files (e.g., `docs/Rules/MA0158.md`).
 
+## Maintaining Meziantou.Analyzer.Annotations
+
+When you change any file under `src/Meziantou.Analyzer.Annotations`, you MUST:
+
+- Update [`src/Meziantou.Analyzer.Annotations/README.md`](/src/Meziantou.Analyzer.Annotations/README.md) if the package behavior, exposed attributes, or usage guidance changed.
+- Bump `<Version>` in [`src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj`](/src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj).
+
 ## Implementing Roslyn analyzers
 
 - When creating a new rule, create a new constant in `src/Meziantou.Analyzer/RuleIdentifiers.cs` using the name of the new rule. The value must be unique and incremented from the last rule.
