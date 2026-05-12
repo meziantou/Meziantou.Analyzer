@@ -33,6 +33,41 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 }
                 """)
               .ValidateAsync();
+
+    [Fact]
+    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_TaskWrappedType_Diagnostic()
+        => CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result))]
+
+                class TypeName
+                {
+                    Task<Result> {|MA0137:Test|}() => throw null;
+                }
+
+                class Result { }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_OpenGenericTaskWrappedType_Diagnostic()
+        => CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result<>))]
+
+                class TypeName
+                {
+                    Task<Result<int>> {|MA0137:Test|}() => throw null;
+                }
+
+                class Result<T> { }
+                """)
+              .ValidateAsync();
+
     [Fact]
     public Task VoidMethodWithSuffix()
         => CreateProjectBuilder()

@@ -157,6 +157,54 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
     }
 
     [Fact]
+    public async Task Report_NonAwaitableTypeAttribute_TaskWrappedType_InSyncMethod()
+    {
+        await CreateProjectBuilder()
+            .AddMeziantouAttributes()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result))]
+
+                class Test
+                {
+                    void A()
+                    {
+                        [|B()|];
+                    }
+
+                    Task<Result> B() => throw null;
+                }
+
+                class Result { }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Report_NonAwaitableTypeAttribute_OpenGenericTaskWrappedType_InSyncMethod()
+    {
+        await CreateProjectBuilder()
+            .AddMeziantouAttributes()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result<>))]
+
+                class Test
+                {
+                    void A()
+                    {
+                        [|B()|];
+                    }
+
+                    Task<Result<int>> B() => throw null;
+                }
+
+                class Result<T> { }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Report_TaskInSyncVoidMethod()
     {
         await CreateProjectBuilder()

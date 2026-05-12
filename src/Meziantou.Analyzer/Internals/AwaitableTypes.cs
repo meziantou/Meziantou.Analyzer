@@ -6,6 +6,7 @@ namespace Meziantou.Analyzer.Internals;
 internal sealed class AwaitableTypes
 {
     private readonly INamedTypeSymbol[] _taskOrValueTaskSymbols;
+    private readonly HashSet<INamedTypeSymbol> _nonAwaitableTypes;
     private readonly Compilation _compilation;
     private readonly ConcurrentDictionary<ITypeSymbol, bool> _isAwaitableCache = new(SymbolEqualityComparer.Default);
 
@@ -32,6 +33,7 @@ internal sealed class AwaitableTypes
             _taskOrValueTaskSymbols = [];
         }
 
+        _nonAwaitableTypes = CreateNonAwaitableTypes(compilation);
         _compilation = compilation;
     }
 
@@ -42,6 +44,47 @@ internal sealed class AwaitableTypes
     public INamedTypeSymbol? IAsyncEnumerableSymbol { get; }
     public INamedTypeSymbol? IAsyncEnumeratorSymbol { get; }
 
+    public bool IsNonAwaitableType(ITypeSymbol? symbol)
+    {
+        if (_nonAwaitableTypes.Count == 0 || symbol is not INamedTypeSymbol namedType)
+            return false;
+
+        return IsNonAwaitableTypeCore(namedType);
+    }
+
+    private bool IsNonAwaitableTypeCore(INamedTypeSymbol type)
+    {
+        if (_nonAwaitableTypes.Contains(type))
+            return true;
+
+        if (!ReferenceEquals(type, type.OriginalDefinition) && _nonAwaitableTypes.Contains(type.OriginalDefinition))
+            return true;
+
+        return false;
+    }
+
+    private static HashSet<INamedTypeSymbol> CreateNonAwaitableTypes(Compilation compilation)
+    {
+        var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (var attribute in compilation.Assembly.GetAttributes())
+        {
+            if (!AnnotationAttributes.IsNonAwaitableTypeAttributeSymbol(attribute.AttributeClass))
+                continue;
+
+            var constructorArguments = attribute.ConstructorArguments;
+            if (constructorArguments is [{ Value: INamedTypeSymbol type }])
+            {
+                result.Add(type);
+                if (!ReferenceEquals(type.OriginalDefinition, type))
+                {
+                    result.Add(type.OriginalDefinition);
+                }
+            }
+        }
+
+        return result;
+    }
+
     // https://github.com/dotnet/roslyn/blob/248e85149427c534c4a156a436ecff69bab83b59/src/Compilers/CSharp/Portable/Binder/Binder_Await.cs#L347
     public bool IsAwaitable(ITypeSymbol? symbol, SemanticModel semanticModel, int position)
     {
@@ -49,6 +92,9 @@ internal sealed class AwaitableTypes
             return false;
 
         if (INotifyCompletionSymbol is null)
+            return false;
+
+        if (IsNonAwaitableType(symbol))
             return false;
 
         if (symbol.SpecialType is SpecialType.System_Void || symbol.TypeKind is TypeKind.Dynamic)
@@ -88,6 +134,9 @@ internal sealed class AwaitableTypes
     private bool IsAwaitableCore(ITypeSymbol symbol)
     {
         if (INotifyCompletionSymbol is null)
+            return false;
+
+        if (IsNonAwaitableType(symbol))
             return false;
 
         if (symbol.SpecialType is SpecialType.System_Void || symbol.TypeKind is TypeKind.Dynamic)

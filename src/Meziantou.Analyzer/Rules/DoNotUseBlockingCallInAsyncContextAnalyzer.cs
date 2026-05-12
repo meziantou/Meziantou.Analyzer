@@ -653,14 +653,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private bool CanBeAwaitUsing(IOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled)
         {
             var unwrappedOperation = operation.UnwrapImplicitConversionOperations();
-            if (sqliteSpecialCasesEnabled &&
-                unwrappedOperation is IInvocationOperation invocationOperation &&
-                IsSqliteSpecialCaseMethod(invocationOperation))
+            if (unwrappedOperation is IInvocationOperation invocationOperation)
             {
-                return false;
+                if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(invocationOperation))
+                    return false;
             }
 
             if (operation.GetActualType() is not INamedTypeSymbol type)
+                return false;
+
+            if (_awaitableTypes.IsNonAwaitableType(type))
                 return false;
 
             var isSqliteSpecialCaseType = IsSqliteSpecialCaseType(type);
