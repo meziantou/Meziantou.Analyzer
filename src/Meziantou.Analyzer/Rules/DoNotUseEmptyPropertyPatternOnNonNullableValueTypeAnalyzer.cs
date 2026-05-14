@@ -16,7 +16,7 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzer :
         title: "Do not use empty property patterns with non-nullable value types",
         messageFormat: "This pattern is always '{0}' for non-nullable value types",
         RuleCategories.Usage,
-        DiagnosticSeverity.Warning,
+        DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseEmptyPropertyPatternOnNonNullableValueType));
