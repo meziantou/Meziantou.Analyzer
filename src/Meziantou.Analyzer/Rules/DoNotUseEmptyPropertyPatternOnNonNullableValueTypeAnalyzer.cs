@@ -40,18 +40,11 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzer :
     private static void AnalyzeIsPattern(OperationAnalysisContext context)
     {
         var operation = (IIsPatternOperation)context.Operation;
-        if (!TryGetPatternResult(operation.Pattern, out var result))
-            return;
-
-        if (!IsNonNullableValueType(operation.Value.GetActualType()))
-            return;
-
-        context.ReportDiagnostic(Rule, operation, result ? "true" : "false");
+        AnalyzePattern(context, operation.Pattern, isNegated: false);
     }
 
-    private static bool TryGetPatternResult(IPatternOperation pattern, out bool result)
+    private static void AnalyzePattern(OperationAnalysisContext context, IPatternOperation pattern, bool isNegated)
     {
-        var isNegated = false;
         while (true)
         {
             switch (pattern)
@@ -60,12 +53,33 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzer :
                     isNegated = !isNegated;
                     pattern = negatedPattern.Pattern;
                     continue;
-                case IRecursivePatternOperation recursivePattern when IsEmptyPropertyPattern(recursivePattern):
-                    result = !isNegated;
-                    return true;
                 default:
-                    result = default;
-                    return false;
+                    goto EndNegatedPatternLoop;
+            }
+        }
+
+    EndNegatedPatternLoop:
+        if (pattern is IRecursivePatternOperation recursivePattern &&
+            IsEmptyPropertyPattern(recursivePattern) &&
+            IsNonNullableValueType(pattern.InputType))
+        {
+            context.ReportDiagnostic(Rule, recursivePattern, isNegated ? "false" : "true");
+        }
+
+        AnalyzeNestedPatterns(context, pattern);
+    }
+
+    private static void AnalyzeNestedPatterns(OperationAnalysisContext context, IOperation operation)
+    {
+        foreach (var child in operation.GetChildOperations())
+        {
+            if (child is IPatternOperation childPattern)
+            {
+                AnalyzePattern(context, childPattern, isNegated: false);
+            }
+            else
+            {
+                AnalyzeNestedPatterns(context, child);
             }
         }
     }
@@ -75,7 +89,6 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzer :
         return pattern.Syntax is RecursivePatternSyntax
         {
             Type: null,
-            Designation: null,
             PositionalPatternClause: null,
             PropertyPatternClause.Subpatterns.Count: 0,
         };
