@@ -218,6 +218,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0197](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0197.md)|Design|Add dedicated documentation on types|ℹ️|✔️|❌|
 |[MA0198](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0198.md)|Design|Specify cref for ambiguous inheritdoc on types|⚠️|✔️|✔️|
 |[MA0199](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0199.md)|Design|Do not use inheritdoc on types without inheritance source|⚠️|✔️|❌|
+|[MA0200](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0200.md)|Usage|Do not use empty property patterns with non-nullable value types|⚠️|✔️|❌|
 
 <!-- rules -->
 
