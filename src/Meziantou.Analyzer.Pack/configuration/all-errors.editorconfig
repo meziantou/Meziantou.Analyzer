@@ -592,3 +592,6 @@ dotnet_diagnostic.MA0198.severity = error
 
 # MA0199: Do not use inheritdoc on types without inheritance source
 dotnet_diagnostic.MA0199.severity = error
+
+# MA0200: Do not use empty property patterns with non-nullable value types
+dotnet_diagnostic.MA0200.severity = error
