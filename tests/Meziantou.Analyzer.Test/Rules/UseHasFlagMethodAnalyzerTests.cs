@@ -187,6 +187,146 @@ public sealed class UseHasFlagMethodAnalyzerTests
     }
 
     [Fact]
+    public async Task EqualsZeroCheck_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => [|(value & MyEnum.Flag1) == 0|];
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => !value.HasFlag(MyEnum.Flag1);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NotEqualsZeroCheck_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => [|(value & MyEnum.Flag1) != 0|];
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => value.HasFlag(MyEnum.Flag1);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IsPatternZeroCheck_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => [|(value & MyEnum.Flag1) is 0|];
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => !value.HasFlag(MyEnum.Flag1);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IsNotPatternZeroCheck_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => [|(value & MyEnum.Flag1) is not 0|];
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => value.HasFlag(MyEnum.Flag1);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task DifferentFlag_NoDiagnostic()
     {
         await CreateProjectBuilder()
@@ -202,6 +342,28 @@ public sealed class UseHasFlagMethodAnalyzerTests
                 class Sample
                 {
                     bool M(MyEnum value) => (value & MyEnum.Flag1) == MyEnum.Flag2;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CombinedFlag_NotEqualsZero_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                    Flag1AndFlag2 = Flag1 | Flag2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => (value & MyEnum.Flag1AndFlag2) != 0;
                 }
                 """)
             .ValidateAsync();

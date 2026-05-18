@@ -141,14 +141,22 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
 
         if (potentialFlag is IFieldReferenceOperation firstFieldReference &&
-            comparedOperand is IFieldReferenceOperation secondFieldReference &&
             firstFieldReference.Field.HasConstantValue &&
-            secondFieldReference.Field.HasConstantValue &&
-            firstFieldReference.Field.IsEqualTo(secondFieldReference.Field) &&
             firstFieldReference.Field.ContainingType.IsEnumeration())
         {
-            flagOperation = secondFieldReference;
-            return true;
+            if (comparedOperand is IFieldReferenceOperation secondFieldReference &&
+                secondFieldReference.Field.HasConstantValue &&
+                firstFieldReference.Field.IsEqualTo(secondFieldReference.Field))
+            {
+                flagOperation = secondFieldReference;
+                return true;
+            }
+
+            if (comparedOperand.IsConstantZero() && NumericHelpers.IsSingleBitSet(firstFieldReference.Field.ConstantValue))
+            {
+                flagOperation = firstFieldReference;
+                return true;
+            }
         }
 
         flagOperation = null;
