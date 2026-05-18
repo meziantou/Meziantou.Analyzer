@@ -184,42 +184,53 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
         var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversionOperations();
         comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
 
-        if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation) &&
+        if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation, out var comparedWithZero) &&
             IsValidPattern(leftOperand, flagOperation) &&
             leftOperand.Syntax is ExpressionSyntax enumValueExpression &&
             flagOperation.Syntax is ExpressionSyntax flagExpression)
         {
-            return new(operationExpression, enumValueExpression, flagExpression, negate);
+            return new(operationExpression, enumValueExpression, flagExpression, comparedWithZero ? !negate : negate);
         }
 
-        if (TryGetEnumFlagReference(leftOperand, comparedOperand, out flagOperation) &&
+        if (TryGetEnumFlagReference(leftOperand, comparedOperand, out flagOperation, out comparedWithZero) &&
             IsValidPattern(rightOperand, flagOperation) &&
             rightOperand.Syntax is ExpressionSyntax enumValueExpression2 &&
             flagOperation.Syntax is ExpressionSyntax flagExpression2)
         {
-            return new(operationExpression, enumValueExpression2, flagExpression2, negate);
+            return new(operationExpression, enumValueExpression2, flagExpression2, comparedWithZero ? !negate : negate);
         }
 
         return null;
     }
 
-    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IFieldReferenceOperation? flagOperation)
+    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IFieldReferenceOperation? flagOperation, out bool comparedWithZero)
     {
         potentialFlag = potentialFlag.UnwrapImplicitConversionOperations();
         comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
 
         if (potentialFlag is IFieldReferenceOperation firstFieldReference &&
-            comparedOperand is IFieldReferenceOperation secondFieldReference &&
             firstFieldReference.Field.HasConstantValue &&
-            secondFieldReference.Field.HasConstantValue &&
-            firstFieldReference.Field.IsEqualTo(secondFieldReference.Field) &&
             firstFieldReference.Field.ContainingType.IsEnumeration())
         {
-            flagOperation = secondFieldReference;
-            return true;
+            if (comparedOperand is IFieldReferenceOperation secondFieldReference &&
+                secondFieldReference.Field.HasConstantValue &&
+                firstFieldReference.Field.IsEqualTo(secondFieldReference.Field))
+            {
+                flagOperation = secondFieldReference;
+                comparedWithZero = false;
+                return true;
+            }
+
+            if (comparedOperand.IsConstantZero() && IsSingleBitSet(firstFieldReference.Field.ConstantValue))
+            {
+                flagOperation = firstFieldReference;
+                comparedWithZero = true;
+                return true;
+            }
         }
 
         flagOperation = null;
+        comparedWithZero = false;
         return false;
     }
 
@@ -235,6 +246,23 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
             return false;
 
         return enumValueOperation.Type.IsEqualTo(flagOperation.Type);
+    }
+
+    private static bool IsSingleBitSet(object? value)
+    {
+        return value switch
+        {
+            null => false,
+            sbyte x => IsSingleBitSet((byte)x),
+            byte x => x > 0 && (x & (x - 1)) == 0,
+            short x => IsSingleBitSet((ushort)x),
+            ushort x => x > 0 && (x & (x - 1)) == 0,
+            int x => IsSingleBitSet((uint)x),
+            uint x => x > 0 && (x & (x - 1)) == 0,
+            long x => IsSingleBitSet((ulong)x),
+            ulong x => x > 0 && (x & (x - 1)) == 0,
+            _ => false,
+        };
     }
 
     private sealed record HasFlagPattern(ExpressionSyntax OperationExpression, ExpressionSyntax EnumValueExpression, ExpressionSyntax FlagExpression, bool Negate)

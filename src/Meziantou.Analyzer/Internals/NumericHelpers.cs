@@ -20,4 +20,21 @@ internal static class NumericHelpers
             _ => false,
         };
     }
+
+    public static bool IsSingleBitSet(object? value)
+    {
+        return value switch
+        {
+            null => false,
+            sbyte x => IsSingleBitSet((byte)x),
+            byte x => x > 0 && (x & (x - 1)) == 0,
+            short x => IsSingleBitSet((ushort)x),
+            ushort x => x > 0 && (x & (x - 1)) == 0,
+            int x => IsSingleBitSet((uint)x),
+            uint x => x > 0 && (x & (x - 1)) == 0,
+            long x => IsSingleBitSet((ulong)x),
+            ulong x => x > 0 && (x & (x - 1)) == 0,
+            _ => false,
+        };
+    }
 }
