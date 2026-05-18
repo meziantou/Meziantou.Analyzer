@@ -207,8 +207,7 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
             return pattern;
 
         if (pattern is BinaryPatternSyntax binaryPattern &&
-            parentPatternKind is SyntaxKind.AndPattern &&
-            binaryPattern.Kind() is SyntaxKind.OrPattern)
+            (parentPatternKind, binaryPattern.Kind()) is (SyntaxKind.AndPattern, SyntaxKind.OrPattern) or (SyntaxKind.OrPattern, SyntaxKind.AndPattern))
         {
             return ParenthesizedPattern(pattern);
         }
@@ -266,6 +265,12 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
 
     private static bool TryCreatePatternSyntax(IPatternOperation patternOperation, out PatternSyntax patternSyntax)
     {
+        if (patternOperation.Syntax is PatternSyntax patternFromSyntax)
+        {
+            patternSyntax = patternFromSyntax;
+            return true;
+        }
+
         switch (patternOperation)
         {
             case IConstantPatternOperation constantPatternOperation:

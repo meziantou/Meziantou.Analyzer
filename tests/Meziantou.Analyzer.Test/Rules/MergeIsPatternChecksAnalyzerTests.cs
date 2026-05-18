@@ -90,6 +90,21 @@ public sealed class MergeIsPatternChecksAnalyzerTests
     }
 
     [Fact]
+    public async Task LogicalOr_ParenthesizeAndPattern()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  byte marker = 0;
+                  _ = [|marker is 0x01 || marker is >= 0xD0 and <= 0xD7|];
+                  """)
+              .ShouldFixCodeWith("""
+                  byte marker = 0;
+                  _ = marker is 0x01 or (>= 0xD0 and <= 0xD7);
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task DifferentExpressions_DoNotReport()
     {
         await CreateProjectBuilder()
