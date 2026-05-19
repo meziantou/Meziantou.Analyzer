@@ -200,6 +200,7 @@ internal static class RuleIdentifiers
     public const string InheritdocShouldNotBeAmbiguousOnTypes = "MA0198";
     public const string InheritdocShouldHaveSourceOnTypes = "MA0199";
     public const string DoNotUseEmptyPropertyPatternOnNonNullableValueType = "MA0200";
+    public const string DoNotUseZeroValuedEnumFlagsInFlagChecks = "MA0201";
 
     public static string GetHelpUri(string identifier)
     {
