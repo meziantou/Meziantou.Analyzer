@@ -9,6 +9,8 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer : DiagnosticAnalyzer
 {
+    private const string EnumHasFlagMethodDocumentationId = "M:System.Enum.HasFlag(System.Enum)";
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseZeroValuedEnumFlagsInFlagChecks,
         title: "Do not use zero-valued enum flags in flag checks",
@@ -28,7 +30,8 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer : Diagnostic
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            if (!TryGetEnumHasFlagMethod(compilationContext.Compilation, out var hasFlagMethod))
+            var hasFlagMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumHasFlagMethodDocumentationId, compilationContext.Compilation) as IMethodSymbol;
+            if (hasFlagMethod is null)
                 return;
 
             compilationContext.RegisterOperationAction(AnalyzeBinary, OperationKind.Binary);
@@ -57,33 +60,6 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer : Diagnostic
             return;
 
         context.ReportDiagnostic(Rule, operation, isAlwaysTrue ? "true" : "false");
-    }
-
-    private static bool TryGetEnumHasFlagMethod(Compilation compilation, out IMethodSymbol hasFlagMethod)
-    {
-        var enumType = compilation.GetBestTypeByMetadataName("System.Enum");
-        if (enumType is null)
-        {
-            hasFlagMethod = null!;
-            return false;
-        }
-
-        foreach (var member in enumType.GetMembers(nameof(Enum.HasFlag)))
-        {
-            if (member is IMethodSymbol
-                {
-                    IsStatic: false,
-                    Parameters: [{ Type: var parameterType }],
-                } method &&
-                parameterType.IsEqualTo(enumType))
-            {
-                hasFlagMethod = method;
-                return true;
-            }
-        }
-
-        hasFlagMethod = null!;
-        return false;
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context, IMethodSymbol hasFlagMethod)
