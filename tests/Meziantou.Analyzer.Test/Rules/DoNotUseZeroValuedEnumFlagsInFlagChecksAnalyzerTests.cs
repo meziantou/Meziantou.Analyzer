@@ -1,3 +1,4 @@
+using System.Linq;
 using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using TestHelper;
@@ -9,7 +10,7 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer>();
+            .WithAnalyzer<UseHasFlagMethodAnalyzer>();
     }
 
     [Fact]
@@ -191,8 +192,7 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzerTests
 
                 class Sample
                 {
-                    bool M(MyEnum value) => (value & MyEnum.Flag1) == MyEnum.Flag1;
-                    bool M2(MyEnum value) => value.HasFlag(MyEnum.Flag1);
+                    bool M(MyEnum value) => value.HasFlag(MyEnum.Flag1);
                 }
                 """)
             .ValidateAsync();
@@ -214,7 +214,7 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzerTests
     [Fact]
     public void Rule_SeverityAndDefault()
     {
-        var rule = new DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer().SupportedDiagnostics[0];
+        var rule = new UseHasFlagMethodAnalyzer().SupportedDiagnostics.Single(r => r.Id == RuleIdentifiers.DoNotUseZeroValuedEnumFlagsInFlagChecks);
         Assert.Equal(DiagnosticSeverity.Warning, rule.DefaultSeverity);
         Assert.True(rule.IsEnabledByDefault);
     }

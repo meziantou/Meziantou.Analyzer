@@ -1,3 +1,4 @@
+using System.Linq;
 using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using TestHelper;
@@ -340,7 +341,7 @@ public sealed class UseHasFlagMethodAnalyzerTests
 
                 class Sample
                 {
-                    bool M(MyEnum value) => (value & MyEnum.None) == MyEnum.None;
+                    bool M(MyEnum value) => {|MA0201:(value & MyEnum.None) == MyEnum.None|};
                 }
                 """)
             .ValidateAsync();
@@ -446,7 +447,7 @@ public sealed class UseHasFlagMethodAnalyzerTests
     [Fact]
     public void Rule_SeverityAndDefault()
     {
-        var rule = new UseHasFlagMethodAnalyzer().SupportedDiagnostics[0];
+        var rule = new UseHasFlagMethodAnalyzer().SupportedDiagnostics.Single(r => r.Id == RuleIdentifiers.UseHasFlagMethod);
         Assert.Equal(DiagnosticSeverity.Info, rule.DefaultSeverity);
         Assert.False(rule.IsEnabledByDefault);
     }
