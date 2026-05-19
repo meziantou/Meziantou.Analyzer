@@ -153,7 +153,7 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzerTests
     }
 
     [Fact]
-    public async Task HasFlagsExtension_ZeroFlag_ReportDiagnostic()
+    public async Task HasFlagsExtension_ZeroFlag_NoDiagnostic()
     {
         await CreateProjectBuilder()
             .WithSourceCode("""
@@ -171,7 +171,7 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzerTests
 
                 class Sample
                 {
-                    bool M(MyEnum value) => [|value.HasFlags(MyEnum.None)|];
+                    bool M(MyEnum value) => value.HasFlags(MyEnum.None);
                 }
                 """)
             .ValidateAsync();

@@ -26,9 +26,15 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer : Diagnostic
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeBinary, OperationKind.Binary);
-        context.RegisterOperationAction(AnalyzeIsPattern, OperationKind.IsPattern);
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            if (!TryGetEnumHasFlagMethod(compilationContext.Compilation, out var hasFlagMethod))
+                return;
+
+            compilationContext.RegisterOperationAction(AnalyzeBinary, OperationKind.Binary);
+            compilationContext.RegisterOperationAction(AnalyzeIsPattern, OperationKind.IsPattern);
+            compilationContext.RegisterOperationAction(context => AnalyzeInvocation(context, hasFlagMethod), OperationKind.Invocation);
+        });
     }
 
     private static void AnalyzeBinary(OperationAnalysisContext context)
@@ -53,10 +59,37 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer : Diagnostic
         context.ReportDiagnostic(Rule, operation, isAlwaysTrue ? "true" : "false");
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    private static bool TryGetEnumHasFlagMethod(Compilation compilation, out IMethodSymbol hasFlagMethod)
+    {
+        var enumType = compilation.GetBestTypeByMetadataName("System.Enum");
+        if (enumType is null)
+        {
+            hasFlagMethod = null!;
+            return false;
+        }
+
+        foreach (var member in enumType.GetMembers(nameof(Enum.HasFlag)))
+        {
+            if (member is IMethodSymbol
+                {
+                    IsStatic: false,
+                    Parameters: [{ Type: var parameterType }],
+                } method &&
+                parameterType.IsEqualTo(enumType))
+            {
+                hasFlagMethod = method;
+                return true;
+            }
+        }
+
+        hasFlagMethod = null!;
+        return false;
+    }
+
+    private static void AnalyzeInvocation(OperationAnalysisContext context, IMethodSymbol hasFlagMethod)
     {
         var operation = (IInvocationOperation)context.Operation;
-        if (!IsZeroValuedHasFlagInvocation(operation))
+        if (!IsZeroValuedHasFlagInvocation(operation, hasFlagMethod))
             return;
 
         context.ReportDiagnostic(Rule, operation, "true");
@@ -206,33 +239,18 @@ public sealed class DoNotUseZeroValuedEnumFlagsInFlagChecksAnalyzer : Diagnostic
         return enumValueOperation.Type.IsEqualTo(flagType);
     }
 
-    private static bool IsZeroValuedHasFlagInvocation(IInvocationOperation operation)
+    private static bool IsZeroValuedHasFlagInvocation(IInvocationOperation operation, IMethodSymbol hasFlagMethod)
     {
-        if (operation.TargetMethod.Name is not nameof(Enum.HasFlag) and not "HasFlags")
+        if (!operation.TargetMethod.OriginalDefinition.IsEqualTo(hasFlagMethod))
             return false;
 
-        IOperation? enumValueOperation;
-        var flagArgumentIndex = 0;
-        if (operation.Instance is not null)
-        {
-            enumValueOperation = operation.Instance.UnwrapImplicitConversionOperations();
-        }
-        else if (operation.TargetMethod.IsExtensionMethod && operation.Arguments.Length >= 2)
-        {
-            enumValueOperation = operation.Arguments[0].Value.UnwrapImplicitConversionOperations();
-            flagArgumentIndex = 1;
-        }
-        else
-        {
+        if (operation.Arguments.Length is not 1 || operation.Instance is null)
             return false;
-        }
 
+        var enumValueOperation = operation.Instance.UnwrapImplicitConversionOperations();
         if (enumValueOperation.Type is null || !enumValueOperation.Type.IsEnumeration())
             return false;
 
-        if (operation.Arguments.Length <= flagArgumentIndex)
-            return false;
-
-        return IsComparedOperandZero(operation.Arguments[flagArgumentIndex].Value, enumValueOperation.Type);
+        return IsComparedOperandZero(operation.Arguments[0].Value, enumValueOperation.Type);
     }
 }
