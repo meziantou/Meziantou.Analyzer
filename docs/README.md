@@ -199,6 +199,7 @@
 |[MA0198](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0198.md)|Design|Specify cref for ambiguous inheritdoc on types|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0199](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0199.md)|Design|Do not use inheritdoc on types without inheritance source|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0200](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0200.md)|Usage|Do not use empty property patterns with non-nullable value types|<span title='Info'>ℹ️</span>|✔️|✔️|
+|[MA0201](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0201.md)|Usage|Do not use zero-valued enum flags in flag checks|<span title='Warning'>⚠️</span>|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
@@ -811,6 +812,9 @@ dotnet_diagnostic.MA0199.severity = warning
 
 # MA0200: Do not use empty property patterns with non-nullable value types
 dotnet_diagnostic.MA0200.severity = suggestion
+
+# MA0201: Do not use zero-valued enum flags in flag checks
+dotnet_diagnostic.MA0201.severity = warning
 ```
 
 # .editorconfig - all rules disabled
@@ -1409,4 +1413,7 @@ dotnet_diagnostic.MA0199.severity = none
 
 # MA0200: Do not use empty property patterns with non-nullable value types
 dotnet_diagnostic.MA0200.severity = none
+
+# MA0201: Do not use zero-valued enum flags in flag checks
+dotnet_diagnostic.MA0201.severity = none
 ```

@@ -146,7 +146,8 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         {
             if (comparedOperand is IFieldReferenceOperation secondFieldReference &&
                 secondFieldReference.Field.HasConstantValue &&
-                firstFieldReference.Field.IsEqualTo(secondFieldReference.Field))
+                firstFieldReference.Field.IsEqualTo(secondFieldReference.Field) &&
+                !NumericHelpers.IsZero(firstFieldReference.Field.ConstantValue))
             {
                 flagOperation = secondFieldReference;
                 return true;

@@ -327,6 +327,26 @@ public sealed class UseHasFlagMethodAnalyzerTests
     }
 
     [Fact]
+    public async Task ZeroFlag_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value) => (value & MyEnum.None) == MyEnum.None;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task DifferentFlag_NoDiagnostic()
     {
         await CreateProjectBuilder()
