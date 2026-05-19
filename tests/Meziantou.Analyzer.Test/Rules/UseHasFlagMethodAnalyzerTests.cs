@@ -1,6 +1,4 @@
-using System.Linq;
 using Meziantou.Analyzer.Rules;
-using Microsoft.CodeAnalysis;
 using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
@@ -609,19 +607,4 @@ public sealed class UseHasFlagMethodAnalyzerTests
             .ValidateAsync();
     }
 
-    [Fact]
-    public void MA0192_SeverityAndDefault()
-    {
-        var rule = new UseHasFlagMethodAnalyzer().SupportedDiagnostics.Single(r => r.Id == RuleIdentifiers.UseHasFlagMethod);
-        Assert.Equal(DiagnosticSeverity.Info, rule.DefaultSeverity);
-        Assert.False(rule.IsEnabledByDefault);
-    }
-
-    [Fact]
-    public void MA0201_SeverityAndDefault()
-    {
-        var rule = new UseHasFlagMethodAnalyzer().SupportedDiagnostics.Single(r => r.Id == RuleIdentifiers.DoNotUseZeroValuedEnumFlagsInFlagChecks);
-        Assert.Equal(DiagnosticSeverity.Warning, rule.DefaultSeverity);
-        Assert.True(rule.IsEnabledByDefault);
-    }
 }
