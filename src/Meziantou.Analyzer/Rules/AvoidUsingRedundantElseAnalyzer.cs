@@ -64,7 +64,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         if (controlFlowAnalysis is null || !controlFlowAnalysis.Succeeded)
             return;
 
-        if (!CanExecuteOutsideElseIfChain(context.SemanticModel, ifStatement))
+        if (!AllPreviousBranchesJumpUnconditionally(context.SemanticModel, ifStatement))
             return;
 
         if (!controlFlowAnalysis.EndPointIsReachable)
@@ -73,19 +73,24 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool CanExecuteOutsideElseIfChain(SemanticModel semanticModel, IfStatementSyntax ifStatement)
+    private static bool AllPreviousBranchesJumpUnconditionally(SemanticModel semanticModel, IfStatementSyntax ifStatement)
     {
         var currentIfStatement = ifStatement;
         while (currentIfStatement.Parent is ElseClauseSyntax { Parent: IfStatementSyntax parentIfStatement })
         {
             var controlFlowAnalysis = semanticModel.AnalyzeControlFlow(parentIfStatement.Statement);
-            if (controlFlowAnalysis is null || !controlFlowAnalysis.Succeeded || controlFlowAnalysis.EndPointIsReachable)
+            if (!IsUnreachableEndpoint(controlFlowAnalysis))
                 return false;
 
             currentIfStatement = parentIfStatement;
         }
 
         return true;
+    }
+
+    private static bool IsUnreachableEndpoint(ControlFlowAnalysis? controlFlowAnalysis)
+    {
+        return controlFlowAnalysis is { Succeeded: true, EndPointIsReachable: false };
     }
 
     private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)
