@@ -64,10 +64,33 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         if (controlFlowAnalysis is null || !controlFlowAnalysis.Succeeded)
             return;
 
+        if (!AllPreviousBranchesJumpUnconditionally(context.SemanticModel, ifStatement))
+            return;
+
         if (!controlFlowAnalysis.EndPointIsReachable)
         {
             context.ReportDiagnostic(Rule, elseClause.ElseKeyword);
         }
+    }
+
+    private static bool AllPreviousBranchesJumpUnconditionally(SemanticModel semanticModel, IfStatementSyntax ifStatement)
+    {
+        var currentIfStatement = ifStatement;
+        while (currentIfStatement.Parent is ElseClauseSyntax { Parent: IfStatementSyntax parentIfStatement })
+        {
+            var controlFlowAnalysis = semanticModel.AnalyzeControlFlow(parentIfStatement.Statement);
+            if (!IsUnreachableEndpoint(controlFlowAnalysis))
+                return false;
+
+            currentIfStatement = parentIfStatement;
+        }
+
+        return true;
+    }
+
+    private static bool IsUnreachableEndpoint(ControlFlowAnalysis? controlFlowAnalysis)
+    {
+        return controlFlowAnalysis is { Succeeded: true, EndPointIsReachable: false };
     }
 
     private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)

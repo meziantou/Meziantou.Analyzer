@@ -466,6 +466,44 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     }
 
     [Fact]
+    public async Task Test_ElseIfChainWithReachablePreviousThenAndMethodInvocationCondition_NoDiagnosticReported()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    var test = new TestClass();
+                    foreach (var cmp in new[] { "first", "second", "third" })
+                    {
+                        if (test.Verify("first", cmp) is not null)
+                        {
+                            System.Console.WriteLine("Handled");
+                        }
+                        else if (test.Verify("second", cmp) is not null)
+                        {
+                            System.Console.WriteLine("Handled");
+                            continue;
+                        }
+                        else
+                        {
+                            System.Console.WriteLine("Not handled");
+                        }
+                    }
+                }
+
+                int? Verify(string tag, string cmp)
+                {
+                    return tag.Equals(cmp, System.StringComparison.Ordinal) ? 1 : null;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Test_SeveralNestedIfElseBlocksWithIfsThatJump_AllProblematicElsesRemoved()
     {
         var originalCode = """
