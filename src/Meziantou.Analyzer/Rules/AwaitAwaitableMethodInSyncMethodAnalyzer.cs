@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -9,6 +10,8 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyzer
 {
+    private const string ReportDiscardedConfigurationKey = RuleIdentifiers.AwaitAwaitableMethodInSyncMethod + ".report_discarded";
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AwaitAwaitableMethodInSyncMethod,
         title: "Observe result of async calls",
@@ -39,6 +42,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
     private static void AnalyzeOperation(OperationAnalysisContext context, OperationUtilities operationUtilities, AwaitableTypes awaitableTypes)
     {
         var operation = (IInvocationOperation)context.Operation;
+        var reportDiscarded = context.Options.GetConfigurationValue(operation, ReportDiscardedConfigurationKey, defaultValue: false);
 
         var parent = operation.Parent;
 
@@ -48,22 +52,23 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             parent = conditionalAccess.Parent;
         }
 
-        if (parent is null or IBlockOperation or IExpressionStatementOperation)
-        {
-            if (operationUtilities.IsInExpressionContext(operation))
-                return;
+        if (parent is not (null or IBlockOperation or IExpressionStatementOperation) &&
+            (!reportDiscarded || parent is not ISimpleAssignmentOperation { Target: IDiscardOperation }))
+            return;
 
-            var semanticModel = operation.SemanticModel!;
-            var position = operation.Syntax.GetLocation().SourceSpan.End;
+        if (operationUtilities.IsInExpressionContext(operation))
+            return;
 
-            var enclosingSymbol = semanticModel.GetEnclosingSymbol(position, context.CancellationToken);
-            if (enclosingSymbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod()))
-                return; // Already handled by CS4014
+        var semanticModel = operation.SemanticModel!;
+        var position = operation.Syntax.GetLocation().SourceSpan.End;
 
-            if (!awaitableTypes.IsAwaitable(operation.Type, semanticModel, position))
-                return;
+        var enclosingSymbol = semanticModel.GetEnclosingSymbol(position, context.CancellationToken);
+        if (enclosingSymbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod()))
+            return; // Already handled by CS4014
 
-            context.ReportDiagnostic(Rule, operation);
-        }
+        if (!awaitableTypes.IsAwaitable(operation.Type, semanticModel, position))
+            return;
+
+        context.ReportDiagnostic(Rule, operation);
     }
 }
