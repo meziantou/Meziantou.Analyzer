@@ -104,6 +104,44 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
     }
 
     [Fact]
+    public async Task Report_Discard_WhenConfigured()
+    {
+        await CreateProjectBuilder()
+            .AddAnalyzerConfiguration("MA0134.report_discarded", "true")
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    void A()
+                    {
+                        _ = [|Task.Delay(0)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Report_Discard_InConstructor_WhenConfigured()
+    {
+        await CreateProjectBuilder()
+            .AddAnalyzerConfiguration("MA0134.report_discarded", "true")
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Test()
+                    {
+                        _ = [|StartAsync()|];
+                    }
+
+                    Task StartAsync() => Task.Delay(0);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NoReport_TopLevelStatement()
     {
         await CreateProjectBuilder()
@@ -429,6 +467,26 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     void A(Test instance)
                     {
                         _ = instance?.ReturnTask();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Report_Discard_ConditionalInvoke_WhenConfigured()
+    {
+        await CreateProjectBuilder()
+            .AddAnalyzerConfiguration("MA0134.report_discarded", "true")
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task ReturnTask() => throw null;
+
+                    void A(Test instance)
+                    {
+                        _ = instance?[|.ReturnTask()|];
                     }
                 }
                 """)
