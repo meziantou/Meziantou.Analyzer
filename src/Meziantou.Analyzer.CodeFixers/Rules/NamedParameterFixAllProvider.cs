@@ -16,7 +16,7 @@ internal sealed class NamedParameterFixAllProvider : DocumentBasedFixAllProvider
         if (diagnostics.IsEmpty)
             return null;
 
-        foreach (var diagnostic in diagnostics.OrderByDescending(diagnostic => diagnostic.Location.SourceSpan.Start))
+        foreach (var diagnostic in diagnostics.OrderByDescending(d => d.Location.SourceSpan.Start))
         {
             document = await NamedParameterFixer.AddParameterName(document, diagnostic.Location.SourceSpan, fixAllContext.CancellationToken).ConfigureAwait(false);
         }
