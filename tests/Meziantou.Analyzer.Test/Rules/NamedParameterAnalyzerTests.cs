@@ -118,6 +118,41 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public async Task BatchFix_MultipleArgumentsInSingleInvocation()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                private void InsertStatus(object reviewStatuses, object courseStatuses, object paymentInfos, object utcStatuses, object dmvStatuses)
+                {
+                }
+
+                public void Test()
+                {
+                    this.InsertStatus([|null|], [|null|], [|null|], utcStatuses: null, [|null|]);
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                private void InsertStatus(object reviewStatuses, object courseStatuses, object paymentInfos, object utcStatuses, object dmvStatuses)
+                {
+                }
+
+                public void Test()
+                {
+                    this.InsertStatus(reviewStatuses: null, courseStatuses: null, paymentInfos: null, utcStatuses: null, dmvStatuses: null);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldBatchFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task True_WithOptions_ShouldNotReportDiagnostic()
     {
         const string SourceCode = """

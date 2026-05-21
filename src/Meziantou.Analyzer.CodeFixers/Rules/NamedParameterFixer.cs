@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -14,21 +15,17 @@ public sealed class NamedParameterFixer : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(RuleIdentifiers.UseNamedParameter);
 
-    public override FixAllProvider GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
+    public override FixAllProvider GetFixAllProvider() => NamedParameterFixAllProvider.Instance;
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
-        // get the innermost node for ties.
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        var diagnostic = context.Diagnostics.FirstOrDefault();
+        if (root is null || diagnostic is null)
             return;
 
-        var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
+        var argumentSpan = diagnostic.Location.SourceSpan;
+        var argument = FindArgument(root, argumentSpan);
         if (argument is null || argument.NameColon is not null)
             return;
 
@@ -46,18 +43,22 @@ public sealed class NamedParameterFixer : CodeFixProvider
         var title = "Add parameter name";
         var codeAction = CodeAction.Create(
             title,
-            ct => AddParameterName(context.Document, nodeToFix, ct),
+            ct => AddParameterName(context.Document, argumentSpan, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> AddParameterName(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    internal static async Task<Document> AddParameterName(Document document, TextSpan argumentSpan, CancellationToken cancellationToken)
     {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+            return document;
+
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
 
-        var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
+        var argument = FindArgument(root, argumentSpan);
         if (argument is null || argument.NameColon is not null)
             return document;
 
@@ -73,6 +74,14 @@ public sealed class NamedParameterFixer : CodeFixProvider
 
         editor.ReplaceNode(argument, argument.WithNameColon(SyntaxFactory.NameColon(argumentName)));
         return editor.GetChangedDocument();
+    }
+
+    private static ArgumentSyntax? FindArgument(SyntaxNode root, TextSpan argumentSpan)
+    {
+        // In case the literal is wrapped in an ArgumentSyntax or some other node with the same span,
+        // get the innermost node for ties.
+        var nodeToFix = root.FindNode(argumentSpan, getInnermostNodeForTie: true);
+        return nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
     }
 
     private static ImmutableArray<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node, CancellationToken cancellationToken)
