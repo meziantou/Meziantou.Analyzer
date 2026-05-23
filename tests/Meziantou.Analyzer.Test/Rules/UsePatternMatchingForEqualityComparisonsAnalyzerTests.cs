@@ -260,4 +260,63 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
                 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task EqualityComparison_ImplicitConversion_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  Sample value = null;
+                  _ = value == 0;
+
+                  class Sample
+                  {
+                      public static implicit operator int(Sample value) => 0;
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InequalityComparison_ImplicitConversion_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  Sample value = null;
+                  _ = value != 0;
+
+                  class Sample
+                  {
+                      public static implicit operator int(Sample value) => 0;
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EqualityComparison_MixedWithImplicitConversion_OnlyFixValidExpression()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var number = 0;
+                  Sample value = null;
+                  _ = [|number == 0|] || value == 0;
+
+                  class Sample
+                  {
+                      public static implicit operator int(Sample value) => 0;
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  var number = 0;
+                  Sample value = null;
+                  _ = number is 0 || value == 0;
+
+                  class Sample
+                  {
+                      public static implicit operator int(Sample value) => 0;
+                  }
+                  """)
+              .ValidateAsync();
+    }
 }

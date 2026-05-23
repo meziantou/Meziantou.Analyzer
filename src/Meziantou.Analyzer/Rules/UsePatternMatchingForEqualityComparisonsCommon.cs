@@ -23,4 +23,17 @@ internal static class UsePatternMatchingForEqualityComparisonsCommon
 
         return false;
     }
+
+    public static bool HasImplicitUserDefinedConversion(IOperation operation)
+    {
+        while (operation is IConversionOperation { IsImplicit: true } conversionOperation)
+        {
+            if (conversionOperation.Conversion.IsUserDefined)
+                return true;
+
+            operation = conversionOperation.Operand;
+        }
+
+        return false;
+    }
 }
