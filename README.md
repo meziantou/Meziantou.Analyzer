@@ -220,7 +220,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0199](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0199.md)|Design|Do not use inheritdoc on types without inheritance source|⚠️|✔️|❌|
 |[MA0200](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0200.md)|Usage|Do not use empty property patterns with non-nullable value types|ℹ️|✔️|✔️|
 |[MA0201](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0201.md)|Usage|Do not use zero-valued enum flags in flag checks|⚠️|✔️|❌|
-|[MA0202](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0202.md)|Design|Conditional compilation branches have identical code|⚠️|✔️|❌|
+|[MA0202](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0202.md)|Design|Conditional compilation branches have identical code|⚠️|✔️|✔️|
 
 <!-- rules -->
 

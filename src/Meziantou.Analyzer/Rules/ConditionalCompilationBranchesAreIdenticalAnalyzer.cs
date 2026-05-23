@@ -1,12 +1,8 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -42,67 +38,27 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzer : Diagnos
             if (!trivia.HasStructure)
                 continue;
 
-            if (trivia.GetStructure() is IfDirectiveTriviaSyntax ifDirective)
+            if (trivia.GetStructure() is IfDirectiveTriviaSyntax ifDirective &&
+                ConditionalCompilationBranchesAreIdenticalCommon.TryCreateBranchGroup(ifDirective, sourceText, out var group))
             {
-                AnalyzeDirectiveGroup(context, sourceText, ifDirective);
+                AnalyzeDirectiveGroup(context, group);
             }
         }
     }
 
-    private static void AnalyzeDirectiveGroup(SyntaxTreeAnalysisContext context, SourceText sourceText, IfDirectiveTriviaSyntax ifDirective)
+    private static void AnalyzeDirectiveGroup(SyntaxTreeAnalysisContext context, ConditionalCompilationBranchesAreIdenticalCommon.BranchGroup group)
     {
-        var relatedDirectives = ifDirective.GetRelatedDirectives();
-        List<DirectiveTriviaSyntax> branchDirectives = [];
-        DirectiveTriviaSyntax? endIfDirective = null;
-        foreach (var directive in relatedDirectives)
-        {
-            if (directive.IsKind(SyntaxKind.IfDirectiveTrivia) || directive.IsKind(SyntaxKind.ElifDirectiveTrivia) || directive.IsKind(SyntaxKind.ElseDirectiveTrivia))
-            {
-                branchDirectives.Add(directive);
-            }
-            else if (directive.IsKind(SyntaxKind.EndIfDirectiveTrivia))
-            {
-                endIfDirective = directive;
-            }
-        }
-
-        if (endIfDirective is null || branchDirectives.Count < 2)
-            return;
-
         Dictionary<string, DirectiveTriviaSyntax> previousBranchBySignature = new(StringComparer.Ordinal);
-        for (var i = 0; i < branchDirectives.Count; i++)
+        foreach (var branch in group.Branches)
         {
-            var startDirective = branchDirectives[i];
-            var endDirective = i + 1 < branchDirectives.Count ? branchDirectives[i + 1] : endIfDirective;
-            var branchSpan = TextSpan.FromBounds(startDirective.FullSpan.End, endDirective.FullSpan.Start);
-            var signature = ComputeBranchSignature(sourceText, branchSpan);
-            if (previousBranchBySignature.ContainsKey(signature))
+            if (previousBranchBySignature.ContainsKey(branch.Signature))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, startDirective.GetLocation()));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, branch.StartDirective.GetLocation()));
             }
             else
             {
-                previousBranchBySignature.Add(signature, startDirective);
+                previousBranchBySignature.Add(branch.Signature, branch.StartDirective);
             }
         }
-    }
-
-    private static string ComputeBranchSignature(SourceText sourceText, TextSpan span)
-    {
-        var text = sourceText.ToString(span);
-        var tokens = SyntaxFactory.ParseTokens(text);
-        var builder = new StringBuilder();
-        foreach (var token in tokens)
-        {
-            if (token.IsKind(SyntaxKind.EndOfFileToken))
-                continue;
-
-            builder.Append(token.RawKind);
-            builder.Append(':');
-            builder.Append(token.Text);
-            builder.Append(';');
-        }
-
-        return builder.ToString();
     }
 }
