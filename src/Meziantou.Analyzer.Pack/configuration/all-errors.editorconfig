@@ -598,3 +598,6 @@ dotnet_diagnostic.MA0200.severity = error
 
 # MA0201: Do not use zero-valued enum flags in flag checks
 dotnet_diagnostic.MA0201.severity = error
+
+# MA0202: Conditional compilation branches have identical code
+dotnet_diagnostic.MA0202.severity = error
