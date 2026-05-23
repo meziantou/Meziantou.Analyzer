@@ -73,4 +73,39 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             #endif
             """)
         .ValidateAsync();
+
+    [Fact]
+    public Task IfElse_SameCode_PartialExpression() => CreateProjectBuilder()
+        .WithSourceCode("""
+            _ =
+            #if A
+             1;
+            {|MA0202:#else|}
+             1;
+            #endif
+            """)
+        .ValidateAsync();
+
+    [Fact]
+    public Task IfElse_SameCode_PartialTypeDeclaration() => CreateProjectBuilder()
+        .WithSourceCode("""
+            interface ISample { }
+            interface ISpanFormattable { }
+
+            #if A
+             public
+            #else
+             internal
+            #endif
+            class Sample : ISample
+            #if NET10_0
+            , ISpanFormattable
+            {|MA0202:#else|}
+            , ISpanFormattable
+            #endif
+            { }
+
+            static class Program { static void Main() { } }
+            """)
+        .ValidateAsync();
 }
