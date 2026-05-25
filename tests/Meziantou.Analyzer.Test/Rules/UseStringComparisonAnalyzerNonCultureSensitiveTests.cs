@@ -185,6 +185,125 @@ public sealed class UseStringComparisonAnalyzerNonCultureSensitiveTests
     }
 
     [Fact]
+    public async Task IndexOf_Char_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|"a".IndexOf('v')|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".IndexOf('v', System.StringComparison.Ordinal);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IndexOf_Char_Int_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|"abc".IndexOf('v', 0)|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "abc".IndexOf('v', 0, System.StringComparison.Ordinal);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Contains_Char_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|"abc".Contains('a')|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "abc".Contains('a', System.StringComparison.Ordinal);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'Contains' that has a StringComparison parameter")
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Contains_Char_StringComparison_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".Contains('a', System.StringComparison.Ordinal);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LastIndexOf_Char_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|"abc".LastIndexOf('a')|];
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'LastIndexOf' that has a StringComparison parameter")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task JObject_Property_ShouldReportDiagnostic()
     {
         const string SourceCode = """
