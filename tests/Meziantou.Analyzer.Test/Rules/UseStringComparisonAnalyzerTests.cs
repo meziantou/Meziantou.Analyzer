@@ -183,6 +183,74 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
+    public async Task IndexOf_Char_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".IndexOf('a');
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IndexOf_Char_Int_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".IndexOf('a', 0);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LastIndexOf_Char_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".LastIndexOf('a');
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Contains_Char_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".Contains('a');
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Replace_ShouldNotReportDiagnostic()
     {
         const string SourceCode = """

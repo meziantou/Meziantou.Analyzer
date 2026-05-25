@@ -203,6 +203,10 @@ public sealed partial class ProjectBuilder
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "10.0.0", "ref/net10.0/");
                 break;
 
+            case TargetFramework.Net11_0:
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "11.0.0-preview.4.26230.115", "ref/net11.0/");
+                break;
+
             case TargetFramework.AspNetCore5_0:
                 AddNuGetReference("Microsoft.NETCore.App.Ref", "5.0.0", "ref/net5.0/");
                 AddNuGetReference("Microsoft.AspNetCore.App.Ref", "5.0.0", "ref/net5.0/");
@@ -258,11 +262,15 @@ public sealed partial class ProjectBuilder
                 case TargetFramework.Net10_0:
                     WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "10.0.0", "analyzers/dotnet/cs/");
                     break;
+
+                case TargetFramework.Net11_0:
+                    WithSourceGeneratorsFromNuGet("Microsoft.NETCore.App.Ref", "11.0.0-preview.4.26230.115", "analyzers/dotnet/cs/");
+                    break;
             }
         }
 
 
-        if (TargetFramework is not TargetFramework.Net7_0 and not TargetFramework.Net8_0 and not TargetFramework.Net9_0 and not TargetFramework.Net10_0 and not TargetFramework.AspNetCore9_0)
+        if (TargetFramework is not TargetFramework.Net7_0 and not TargetFramework.Net8_0 and not TargetFramework.Net9_0 and not TargetFramework.Net10_0 and not TargetFramework.Net11_0 and not TargetFramework.AspNetCore9_0)
         {
             AddNuGetReference("System.Collections.Immutable", "1.5.0", "lib/netstandard2.0/");
             AddNuGetReference("System.Numerics.Vectors", "4.5.0", "ref/netstandard2.0/");
