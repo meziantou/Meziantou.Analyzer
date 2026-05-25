@@ -109,6 +109,11 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                 { Name: nameof(string.Equals), Parameters: [{ Type.SpecialType: SpecialType.System_String }] } or
                 { Name: nameof(string.Equals), IsStatic: true, Parameters: [{ Type.SpecialType: SpecialType.System_String }, { Type.SpecialType: SpecialType.System_String }] } or
                 { Name: nameof(string.IndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
+                { Name: nameof(string.IndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }] } or
+                { Name: nameof(string.IndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }, { Type.SpecialType: SpecialType.System_Int32 }] } or
+                { Name: nameof(string.LastIndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
+                { Name: nameof(string.LastIndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }] } or
+                { Name: nameof(string.LastIndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }, { Type.SpecialType: SpecialType.System_Int32 }] } or
                 { Name: nameof(string.EndsWith), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
                 { Name: nameof(string.StartsWith), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
                 { Name: nameof(string.Contains), Parameters: [{ Type.SpecialType: SpecialType.System_Char or SpecialType.System_String }] } or
