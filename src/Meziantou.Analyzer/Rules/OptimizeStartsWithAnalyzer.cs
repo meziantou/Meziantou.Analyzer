@@ -187,13 +187,12 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     if (StartsWith_Char is null || operation.TargetMethod.IsEqualTo(StartsWith_Char))
                         return;
 
-                    if (operation.Arguments.Length == 2)
+                    if (operation.Arguments is [
+                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } value },
+                        { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } },
+                        ])
                     {
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
-                        {
-                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                        }
+                        context.ReportDiagnostic(Rule, value);
                     }
                 }
                 else if (operation.TargetMethod.Name is "EndsWith")
@@ -201,13 +200,12 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     if (EndsWith_Char is null || operation.TargetMethod.IsEqualTo(EndsWith_Char))
                         return;
 
-                    if (operation.Arguments.Length == 2)
+                    if (operation.Arguments is [
+                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } value },
+                        { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } },
+                        ])
                     {
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
-                        {
-                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                        }
+                        context.ReportDiagnostic(Rule, value);
                     }
                 }
                 else if (operation.TargetMethod.Name is "Replace")
@@ -215,23 +213,21 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     if (Replace_Char_Char is null || operation.TargetMethod.IsEqualTo(Replace_Char_Char))
                         return;
 
-                    if (operation.Arguments.Length == 2)
+                    if (operation.Arguments is [
+                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                        ])
                     {
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } })
-                        {
-                            // Improve the error message as the rule is reported on the method
-                            context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticInvocationReportOptions.ReportOnMember);
-                        }
+                        // Improve the error message as the rule is reported on the method
+                        context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticInvocationReportOptions.ReportOnMember);
                     }
-                    else if (operation.Arguments.Length == 3)
+                    else if (operation.Arguments is [
+                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                        { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
+                        ])
                     {
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
-                        {
-                            context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticInvocationReportOptions.ReportOnMember);
-                        }
+                        context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticInvocationReportOptions.ReportOnMember);
                     }
                 }
                 else if (operation.TargetMethod.Name is "IndexOf")
@@ -240,8 +236,10 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     {
                         if (IndexOf_Char is not null)
                         {
-                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                                operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                            if (operation.Arguments is [
+                                { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                                { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
+                                ])
                             {
                                 context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
@@ -263,9 +261,11 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (IndexOf_Char_Int32 is null)
                             return;
 
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value.Type.IsInt32() &&
-                            operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        if (operation.Arguments is [
+                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
+                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
+                            ])
                         {
                             context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
@@ -275,10 +275,12 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (IndexOf_Char_Int32_Int32 is null)
                             return;
 
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value.Type.IsInt32() &&
-                            operation.Arguments[2].Value.Type.IsInt32() &&
-                            operation.Arguments[3].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        if (operation.Arguments is [
+                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
+                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
+                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
+                            ])
                         {
                             context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
@@ -290,8 +292,10 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     {
                         if (LastIndexOf_Char is not null)
                         {
-                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                                operation.Arguments[1].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                            if (operation.Arguments is [
+                                { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                                { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
+                                ])
                             {
                                 context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
@@ -300,8 +304,10 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
 
                         if (LastIndexOf_Char_StringComparison is not null)
                         {
-                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                                operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
+                            if (operation.Arguments is [
+                                { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                                { Value: { Type.SpecialType: SpecialType.System_Int32 } }
+                                ])
                             {
                                 context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                                 return;
@@ -313,9 +319,11 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (LastIndexOf_Char_Int32 is null)
                             return;
 
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value.Type.IsInt32() &&
-                            operation.Arguments[2].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        if (operation.Arguments is [
+                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
+                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
+                            ])
                         {
                             context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
@@ -325,10 +333,12 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                         if (LastIndexOf_Char_Int32_Int32 is null)
                             return;
 
-                        if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                            operation.Arguments[1].Value.Type.IsInt32() &&
-                            operation.Arguments[2].Value.Type.IsInt32() &&
-                            operation.Arguments[3].Value is { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } })
+                        if (operation.Arguments is [
+                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
+                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
+                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
+                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
+                            ])
                         {
                             context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
                         }
