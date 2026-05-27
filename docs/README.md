@@ -190,7 +190,7 @@
 |[MA0189](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0189.md)|Design|Use InlineArray instead of fixed-size buffers|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0190](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0190.md)|Design|Use partial property instead of partial method for GeneratedRegex|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0191](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0191.md)|Design|Do not use the null-forgiving operator|<span title='Warning'>⚠️</span>|❌|❌|
-|[MA0192](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0192.md)|Usage|Use HasFlag instead of bitwise checks|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0192](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0192.md)|Usage|Use HasFlag instead of bitwise checks|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0193](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0193.md)|Usage|Use an overload with a MidpointRounding argument|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0194](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0194.md)|Usage|Merge is expressions on the same value|<span title='Info'>ℹ️</span>|✔️|✔️|
 |[MA0195](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0195.md)|Usage|Do not use static fields before they are initialized|<span title='Warning'>⚠️</span>|✔️|❌|
@@ -788,7 +788,7 @@ dotnet_diagnostic.MA0190.severity = suggestion
 dotnet_diagnostic.MA0191.severity = none
 
 # MA0192: Use HasFlag instead of bitwise checks
-dotnet_diagnostic.MA0192.severity = none
+dotnet_diagnostic.MA0192.severity = suggestion
 
 # MA0193: Use an overload with a MidpointRounding argument
 dotnet_diagnostic.MA0193.severity = suggestion

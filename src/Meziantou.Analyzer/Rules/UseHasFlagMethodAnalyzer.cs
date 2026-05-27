@@ -17,7 +17,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         messageFormat: "Use HasFlag instead of bitwise checks",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseHasFlagMethod));
 

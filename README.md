@@ -210,7 +210,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0189](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0189.md)|Design|Use InlineArray instead of fixed-size buffers|ℹ️|✔️|✔️|
 |[MA0190](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0190.md)|Design|Use partial property instead of partial method for GeneratedRegex|ℹ️|✔️|✔️|
 |[MA0191](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0191.md)|Design|Do not use the null-forgiving operator|⚠️|❌|❌|
-|[MA0192](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0192.md)|Usage|Use HasFlag instead of bitwise checks|ℹ️|❌|✔️|
+|[MA0192](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0192.md)|Usage|Use HasFlag instead of bitwise checks|ℹ️|✔️|✔️|
 |[MA0193](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0193.md)|Usage|Use an overload with a MidpointRounding argument|ℹ️|✔️|✔️|
 |[MA0194](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0194.md)|Usage|Merge is expressions on the same value|ℹ️|✔️|✔️|
 |[MA0195](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0195.md)|Usage|Do not use static fields before they are initialized|⚠️|✔️|❌|
