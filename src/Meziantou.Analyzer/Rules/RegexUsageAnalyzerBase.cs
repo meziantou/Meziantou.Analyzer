@@ -51,7 +51,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
             var attributes = context.Symbol.GetAttributes(_generatedRegexAttributeSymbol, inherits: false);
             foreach (var attribute in attributes)
             {
-                // Only analyze the symbol in the files that declared the attribute to avoid reporting multiple times for the same symbol (property and method in case of a property with an init-only setter)
+                // Only analyze the symbol in the files that declared the attribute to avoid reporting multiple times for the same symbol
                 var attributeSyntaxReference = attribute.ApplicationSyntaxReference;
                 if (attributeSyntaxReference is not null && !context.Symbol.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree == attributeSyntaxReference.SyntaxTree && reference.Span.Contains(attributeSyntaxReference.Span)))
                     continue;
