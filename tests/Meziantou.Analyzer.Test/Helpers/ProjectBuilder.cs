@@ -75,6 +75,31 @@ public sealed partial class ProjectBuilder
 
             if (!IsCacheValid())
             {
+                await DownloadPackageWithRetries().ConfigureAwait(false);
+            }
+
+            async Task DownloadPackageWithRetries()
+            {
+                const int MaxAttempts = 5;
+                for (var attempt = 1; ; attempt++)
+                {
+                    try
+                    {
+                        await DownloadPackage().ConfigureAwait(false);
+                        return;
+                    }
+                    catch (Exception ex) when (!IsLastAttempt(attempt) && IsTransientException(ex))
+                    {
+                        await Task.Delay(100 * attempt).ConfigureAwait(false);
+                    }
+                }
+
+                static bool IsLastAttempt(int attempt) => attempt >= MaxAttempts;
+                static bool IsTransientException(Exception exception) => exception is HttpRequestException or IOException or InvalidDataException;
+            }
+
+            async Task DownloadPackage()
+            {
                 var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
                 try
                 {
