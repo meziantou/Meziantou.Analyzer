@@ -33,21 +33,27 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(TimeoutRule, ExplicitCaptureRule);
 
-    protected static void AnalyzeMethod(SymbolAnalysisContext context)
+    protected static void AnalyzeGeneratedRegexSymbol(SymbolAnalysisContext context)
     {
-        var method = (IMethodSymbol)context.Symbol;
-        if (method.MethodKind is not MethodKind.Ordinary)
+        if (context.Symbol is IMethodSymbol method && method.MethodKind is not MethodKind.Ordinary)
+            return;
+
+        if (context.Symbol is not IMethodSymbol and not IPropertySymbol)
             return;
 
         var generatorAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
         if (generatorAttributeSymbol is null)
             return;
 
-        foreach (var attribute in method.GetAttributes())
+        foreach (var attribute in context.Symbol.GetAttributes())
         {
             // https://github.com/dotnet/runtime/issues/58880
             if (attribute.AttributeClass.IsEqualTo(generatorAttributeSymbol))
             {
+                var attributeSyntaxReference = attribute.ApplicationSyntaxReference;
+                if (attributeSyntaxReference is not null && !context.Symbol.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree == attributeSyntaxReference.SyntaxTree && reference.Span.Contains(attributeSyntaxReference.Span)))
+                    continue;
+
                 var regexOptions = RegexOptions.None;
 
                 // RegexOptions.ExplicitCapture
@@ -57,13 +63,13 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                     regexOptions = (RegexOptions)(int)attribute.ConstructorArguments[1].Value!;
                     if (pattern is not null && ShouldAddExplicitCapture(pattern, regexOptions))
                     {
-                        if (attribute.ApplicationSyntaxReference is not null)
+                        if (attributeSyntaxReference is not null)
                         {
-                            context.ReportDiagnostic(ExplicitCaptureRule, attribute.ApplicationSyntaxReference);
+                            context.ReportDiagnostic(ExplicitCaptureRule, attributeSyntaxReference);
                         }
                         else
                         {
-                            context.ReportDiagnostic(ExplicitCaptureRule, method);
+                            context.ReportDiagnostic(ExplicitCaptureRule, context.Symbol);
                         }
                     }
                 }
@@ -71,13 +77,13 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                 // Timeout
                 if (!HasNonBacktracking(regexOptions) && attribute.ConstructorArguments.Length < 3)
                 {
-                    if (attribute.ApplicationSyntaxReference is not null)
+                    if (attributeSyntaxReference is not null)
                     {
-                        context.ReportDiagnostic(TimeoutRule, attribute.ApplicationSyntaxReference);
+                        context.ReportDiagnostic(TimeoutRule, attributeSyntaxReference);
                     }
                     else
                     {
-                        context.ReportDiagnostic(TimeoutRule, method);
+                        context.ReportDiagnostic(TimeoutRule, context.Symbol);
                     }
                 }
             }

@@ -11,6 +11,6 @@ public sealed class GeneratedRegexAttributeUsageAnalyzer : RegexUsageAnalyzerBas
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
-        context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
+        context.RegisterSymbolAction(AnalyzeGeneratedRegexSymbol, SymbolKind.Method, SymbolKind.Property);
     }
 }

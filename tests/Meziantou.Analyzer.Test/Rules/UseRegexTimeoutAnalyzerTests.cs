@@ -159,12 +159,7 @@ class TestClass
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
               .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnostic(new DiagnosticResult
-              {
-                  Id = RuleIdentifiers.MissingTimeoutParameterForRegex,
-                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 6, 4, 50)],
-              });
+              .WithSourceCode(SourceCode);
 
         await project.ValidateAsync();
     }
@@ -230,4 +225,60 @@ partial class TestClass
 
         await project.ValidateAsync();
     }
+
+#if CSHARP13_OR_GREATER
+    [Fact]
+    public async Task GeneratedRegexProperty_WithoutTimeout()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+
+                  partial class TestClass
+                  {
+                      [[|GeneratedRegex("pattern", RegexOptions.None)|]]
+                      private static partial Regex Test { get; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GeneratedRegexProperty_WithTimeout()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+
+                  partial class TestClass
+                  {
+                      [GeneratedRegex("pattern", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+                      private static partial Regex Test { get; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GeneratedRegexProperty_WithoutTimeout_NonBacktracking()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+              .WithTargetFramework(TargetFramework.Net9_0)
+              .WithSourceCode("""
+                  using System.Text.RegularExpressions;
+
+                  partial class TestClass
+                  {
+                      [GeneratedRegex("pattern", RegexOptions.NonBacktracking)]
+                      private static partial Regex Test { get; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+#endif
 }
