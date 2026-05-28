@@ -31,11 +31,15 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
             if (context.Compilation.GetSpecialType(SpecialType.System_Object).GetMembers("Equals").FirstOrDefault() is not IMethodSymbol objectEqualsSymbol)
                 return;
 
-            context.RegisterOperationAction(context => AnalyzerBinaryOperation(context, objectEqualsSymbol, context.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo")), OperationKind.Binary);
+            var cultureInfoSymbol = context.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+            if (cultureInfoSymbol is null)
+                return;
+
+            context.RegisterOperationAction(context => AnalyzerBinaryOperation(context, objectEqualsSymbol, cultureInfoSymbol), OperationKind.Binary);
         });
     }
 
-    private static void AnalyzerBinaryOperation(OperationAnalysisContext context, IMethodSymbol objectEqualsSymbol, ITypeSymbol? cultureInfoSymbol)
+    private static void AnalyzerBinaryOperation(OperationAnalysisContext context, IMethodSymbol objectEqualsSymbol, ITypeSymbol cultureInfoSymbol)
     {
         var operation = (IBinaryOperation)context.Operation;
         if (operation is { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals, OperatorMethod: null })

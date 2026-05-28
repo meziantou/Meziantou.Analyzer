@@ -10,7 +10,12 @@ public sealed class GeneratedRegexAttributeUsageAnalyzer : RegexUsageAnalyzerBas
     {
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
-
-        context.RegisterSymbolAction(AnalyzeGeneratedRegexSymbol, SymbolKind.Method, SymbolKind.Property);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var analyzerContext = new AnalyzerContext(context.Compilation);
+            context.RegisterSymbolAction(analyzerContext.AnalyzeGeneratedRegexSymbol, SymbolKind.Method, SymbolKind.Property);
+        });
     }
+
+
 }

@@ -31,21 +31,17 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
             if (attributeType is null)
                 return;
 
-            compilationContext.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
+            compilationContext.RegisterSymbolAction(context => Analyze(context, attributeType), SymbolKind.NamedType);
         });
     }
 
-    private static void Analyze(SymbolAnalysisContext context)
+    private static void Analyze(SymbolAnalysisContext context, INamedTypeSymbol attributeType)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (!symbol.IsValueType || symbol.EnumUnderlyingType is not null) // Only support struct
             return;
 
-        var attributeType = context.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
-        if (attributeType is null)
-            return;
-
-        if (symbol.GetAttributes().Any(attr => attributeType.IsEqualTo(attr.AttributeClass)))
+        if (symbol.HasAttribute(attributeType))
             return;
 
         var memberCount = 0;

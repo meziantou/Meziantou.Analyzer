@@ -33,23 +33,25 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(TimeoutRule, ExplicitCaptureRule);
 
-    protected static void AnalyzeGeneratedRegexSymbol(SymbolAnalysisContext context)
+    private protected sealed class AnalyzerContext(Compilation compilation)
     {
-        if (context.Symbol is IMethodSymbol method && method.MethodKind is not MethodKind.Ordinary)
-            return;
+        private readonly ITypeSymbol? _regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
+        private readonly ITypeSymbol? _regexOptionsSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
+        private readonly ITypeSymbol? _generatedRegexAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
+        private readonly ITypeSymbol? _timeSpanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
 
-        if (context.Symbol is not IMethodSymbol and not IPropertySymbol)
-            return;
-
-        var generatorAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
-        if (generatorAttributeSymbol is null)
-            return;
-
-        foreach (var attribute in context.Symbol.GetAttributes())
+        public void AnalyzeGeneratedRegexSymbol(SymbolAnalysisContext context)
         {
-            // https://github.com/dotnet/runtime/issues/58880
-            if (attribute.AttributeClass.IsEqualTo(generatorAttributeSymbol))
+            if (context.Symbol is not (IPropertySymbol or IMethodSymbol { MethodKind: MethodKind.Ordinary }))
+                return;
+
+            if (_generatedRegexAttributeSymbol is null)
+                return;
+
+            var attributes = context.Symbol.GetAttributes(_generatedRegexAttributeSymbol, inherits: false);
+            foreach (var attribute in attributes)
             {
+                // Only analyze the symbol in the files that declared the attribute to avoid reporting multiple times for the same symbol
                 var attributeSyntaxReference = attribute.ApplicationSyntaxReference;
                 if (attributeSyntaxReference is not null && !context.Symbol.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree == attributeSyntaxReference.SyntaxTree && reference.Span.Contains(attributeSyntaxReference.Span)))
                     continue;
@@ -63,153 +65,142 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                     regexOptions = (RegexOptions)(int)attribute.ConstructorArguments[1].Value!;
                     if (pattern is not null && ShouldAddExplicitCapture(pattern, regexOptions))
                     {
-                        if (attributeSyntaxReference is not null)
-                        {
-                            context.ReportDiagnostic(ExplicitCaptureRule, attributeSyntaxReference);
-                        }
-                        else
-                        {
-                            context.ReportDiagnostic(ExplicitCaptureRule, context.Symbol);
-                        }
+                        context.ReportDiagnostic(ExplicitCaptureRule, attribute);
                     }
                 }
 
                 // Timeout
                 if (!HasNonBacktracking(regexOptions) && attribute.ConstructorArguments.Length < 3)
                 {
-                    if (attributeSyntaxReference is not null)
-                    {
-                        context.ReportDiagnostic(TimeoutRule, attributeSyntaxReference);
-                    }
-                    else
-                    {
-                        context.ReportDiagnostic(TimeoutRule, context.Symbol);
-                    }
+                    context.ReportDiagnostic(TimeoutRule, attribute);
                 }
             }
         }
-    }
 
-    private static bool HasNonBacktracking(RegexOptions options) => ((int)options & 1024) == 1024;
+        private static bool HasNonBacktracking(RegexOptions options) => ((int)options & 1024) == 1024;
 
-    protected static void AnalyzeInvocation(OperationAnalysisContext context)
-    {
-        var op = (IInvocationOperation)context.Operation;
-        if (op is null || op.TargetMethod is null)
-            return;
-
-        if (!op.TargetMethod.IsStatic)
-            return;
-
-        if (!MethodNames.Contains(op.TargetMethod.Name, StringComparer.Ordinal))
-            return;
-
-        if (!op.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
-            return;
-
-        if (op.Arguments.Length == 0)
-            return;
-
-        var regexOptions = CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
-        if (!HasNonBacktracking(regexOptions) && !CheckTimeout(context, op.Arguments))
+        public void AnalyzeInvocation(OperationAnalysisContext context)
         {
-            context.ReportDiagnostic(TimeoutRule, op);
-        }
-    }
+            var op = (IInvocationOperation)context.Operation;
+            if (op is null || op.TargetMethod is null)
+                return;
 
-    protected static void AnalyzeObjectCreation(OperationAnalysisContext context)
-    {
-        var op = (IObjectCreationOperation)context.Operation;
-        if (op is null)
-            return;
+            if (!op.TargetMethod.IsStatic)
+                return;
 
-        if (op.Arguments.Length == 0)
-            return;
+            if (!MethodNames.Contains(op.TargetMethod.Name, StringComparer.Ordinal))
+                return;
 
-        if (!op.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex")))
-            return;
+            if (!op.TargetMethod.ContainingType.IsEqualTo(_regexSymbol))
+                return;
 
-        var regexOptions = CheckRegexOptionsArgument(context, 0, op.Arguments, context.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions"));
-        if (!HasNonBacktracking(regexOptions) && !CheckTimeout(context, op.Arguments))
-        {
-            context.ReportDiagnostic(TimeoutRule, op);
-        }
-    }
+            if (op.Arguments.Length == 0)
+                return;
 
-    private static bool CheckTimeout(OperationAnalysisContext context, ImmutableArray<IArgumentOperation> args)
-    {
-        return args.Last().Value.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.TimeSpan"));
-    }
-
-    private static RegexOptions CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)
-    {
-        var pattern = GetPattern();
-        var (regexOptions, regexOptionsArgument) = GetRegexOptions();
-        if (pattern is not null && regexOptions is not null && regexOptionsArgument is not null)
-        {
-            if (ShouldAddExplicitCapture(pattern, regexOptions.Value))
+            var regexOptions = CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, _regexOptionsSymbol);
+            if (!HasNonBacktracking(regexOptions) && !CheckTimeout(op.Arguments))
             {
-                context.ReportDiagnostic(ExplicitCaptureRule, regexOptionsArgument);
+                context.ReportDiagnostic(TimeoutRule, op);
             }
         }
 
-        return regexOptions ?? RegexOptions.None;
-
-        string? GetPattern()
+        public void AnalyzeObjectCreation(OperationAnalysisContext context)
         {
-            if (patternArgumentIndex < arguments.Length)
+            var op = (IObjectCreationOperation)context.Operation;
+            if (op is null)
+                return;
+
+            if (op.Arguments.Length == 0)
+                return;
+
+            if (!op.Type.IsEqualTo(_regexSymbol))
+                return;
+
+            var regexOptions = CheckRegexOptionsArgument(context, 0, op.Arguments, _regexOptionsSymbol);
+            if (!HasNonBacktracking(regexOptions) && !CheckTimeout(op.Arguments))
             {
-                var argument = arguments[patternArgumentIndex];
-                if (argument.Value is not null && argument.Value.ConstantValue.HasValue && argument.Value.ConstantValue.Value is string pattern)
-                    return pattern;
+                context.ReportDiagnostic(TimeoutRule, op);
             }
-
-            return null;
         }
 
-        (RegexOptions?, IArgumentOperation?) GetRegexOptions()
+        private bool CheckTimeout(ImmutableArray<IArgumentOperation> args)
         {
-            if (regexOptionsSymbol is null)
-                return (null, null);
-
-            var arg = arguments.FirstOrDefault(a => a.Parameter is not null && a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
-            if (arg is null || arg.Value is null || !arg.Value.ConstantValue.HasValue)
-                return (null, arg);
-
-            return ((RegexOptions)arg.Value.ConstantValue.Value!, arg);
-        }
-    }
-
-    private static bool ShouldAddExplicitCapture(string pattern, RegexOptions regexOptions)
-    {
-        if (!regexOptions.HasFlag(RegexOptions.ExplicitCapture) && !regexOptions.HasFlag(RegexOptions.ECMAScript)) // The 2 options are exclusives
-        {
-            // early exit
-            if (!pattern.Contains('(', StringComparison.Ordinal))
+            if (_timeSpanSymbol is null)
                 return false;
 
-            return HasUnnamedGroups(pattern, regexOptions);
+            return args.Last().Value.Type.IsEqualTo(_timeSpanSymbol);
         }
 
-        return false;
-
-        static bool HasUnnamedGroups(string pattern, RegexOptions options)
+        private static RegexOptions CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)
         {
-            try
+            var pattern = GetPattern();
+            var (regexOptions, regexOptionsArgument) = GetRegexOptions();
+            if (pattern is not null && regexOptions is not null && regexOptionsArgument is not null)
             {
-                options &= ~RegexOptions.Compiled; // Compiled options doesn't change anything but is much more resource consuming
-                var regex1 = new Regex(pattern, options, Regex.InfiniteMatchTimeout);
-                var regex2 = new Regex(pattern, options | RegexOptions.ExplicitCapture, Regex.InfiniteMatchTimeout);
+                if (ShouldAddExplicitCapture(pattern, regexOptions.Value))
+                {
+                    context.ReportDiagnostic(ExplicitCaptureRule, regexOptionsArgument);
+                }
+            }
 
-                // All groups are named => No need for explicit capture
-                if (regex1.GetGroupNames().Length == regex2.GetGroupNames().Length)
+            return regexOptions ?? RegexOptions.None;
+
+            string? GetPattern()
+            {
+                if (patternArgumentIndex < arguments.Length)
+                {
+                    var argument = arguments[patternArgumentIndex];
+                    if (argument.Value is not null && argument.Value.ConstantValue.HasValue && argument.Value.ConstantValue.Value is string pattern)
+                        return pattern;
+                }
+
+                return null;
+            }
+
+            (RegexOptions?, IArgumentOperation?) GetRegexOptions()
+            {
+                if (regexOptionsSymbol is null)
+                    return (null, null);
+
+                var arg = arguments.FirstOrDefault(a => a.Parameter is not null && a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
+                if (arg is null || arg.Value is null || !arg.Value.ConstantValue.HasValue)
+                    return (null, arg);
+
+                return ((RegexOptions)arg.Value.ConstantValue.Value!, arg);
+            }
+        }
+
+        private static bool ShouldAddExplicitCapture(string pattern, RegexOptions regexOptions)
+        {
+            if (!regexOptions.HasFlag(RegexOptions.ExplicitCapture) && !regexOptions.HasFlag(RegexOptions.ECMAScript)) // The 2 options are exclusives
+            {
+                // early exit
+                if (!pattern.Contains('(', StringComparison.Ordinal))
                     return false;
-            }
-            catch
-            {
+
+                return HasUnnamedGroups(pattern, regexOptions);
             }
 
-            return true;
+            return false;
+
+            static bool HasUnnamedGroups(string pattern, RegexOptions options)
+            {
+                try
+                {
+                    options &= ~RegexOptions.Compiled; // Compiled options doesn't change anything but is much more resource consuming
+                    var regex1 = new Regex(pattern, options, Regex.InfiniteMatchTimeout);
+                    var regex2 = new Regex(pattern, options | RegexOptions.ExplicitCapture, Regex.InfiniteMatchTimeout);
+
+                    // All groups are named => No need for explicit capture
+                    if (regex1.GetGroupNames().Length == regex2.GetGroupNames().Length)
+                        return false;
+                }
+                catch
+                {
+                }
+
+                return true;
+            }
         }
     }
 }

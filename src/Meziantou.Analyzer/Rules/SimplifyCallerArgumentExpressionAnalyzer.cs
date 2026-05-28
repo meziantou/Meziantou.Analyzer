@@ -25,66 +25,75 @@ public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyze
     {
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var analyzerContext = new AnalyzerContext(context.Compilation);
+            if (!analyzerContext.IsValid)
+                return;
 
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+            context.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+        });
     }
 
-    private static void AnalyzeInvocation(OperationAnalysisContext context)
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        var operation = (IInvocationOperation)context.Operation;
-        if (!operation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
-            return;
+        private readonly ITypeSymbol _callerArgumentExpressionAttribute = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute")!;
 
-        foreach (var argument in operation.Arguments)
+        public bool IsValid => _callerArgumentExpressionAttribute is not null;
+
+        public void AnalyzeInvocation(OperationAnalysisContext context)
         {
-            AnalyzeArgument(context, operation, argument);
-        }
-    }
+            var operation = (IInvocationOperation)context.Operation;
+            if (!operation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
+                return;
 
-    private static void AnalyzeArgument(OperationAnalysisContext context, IInvocationOperation invocation, IArgumentOperation argument)
-    {
-        if (!argument.Value.ConstantValue.HasValue)
-            return;
-
-        if (argument.ArgumentKind != ArgumentKind.Explicit)
-            return;
-
-        if (argument.Parameter is null)
-            return;
-
-        if (!argument.Parameter.Type.IsString())
-            return;
-
-        if (!argument.Parameter.HasExplicitDefaultValue)
-            return;
-
-        if (argument.Parameter.ExplicitDefaultValue is not null)
-            return;
-
-        var attributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
-        if (attributeSymbol is null)
-            return;
-
-        foreach (var attribute in argument.Parameter.GetAttributes())
-        {
-            if (attribute.ConstructorArguments.Length == 0)
-                continue;
-
-            if (!attribute.AttributeClass.IsEqualTo(attributeSymbol))
-                continue;
-
-            var parameterName = attribute.ConstructorArguments[0].Value as string;
-            if (string.IsNullOrEmpty(parameterName))
-                continue;
-
-            var targetArgument = invocation.Arguments.FirstOrDefault(arg => arg.Parameter?.Name == parameterName);
-            if (targetArgument is null)
-                continue;
-
-            var defaultValue = targetArgument.Value.Syntax.ToString();
-            if (defaultValue == (string?)argument.Value.ConstantValue.Value)
+            foreach (var argument in operation.Arguments)
             {
-                context.ReportDiagnostic(Rule, argument);
+                AnalyzeArgument(context, operation, argument);
+            }
+        }
+
+        private void AnalyzeArgument(OperationAnalysisContext context, IInvocationOperation invocation, IArgumentOperation argument)
+        {
+            if (!argument.Value.ConstantValue.HasValue)
+                return;
+
+            if (argument.ArgumentKind is not ArgumentKind.Explicit)
+                return;
+
+            if (argument.Parameter is null)
+                return;
+
+            if (!argument.Parameter.Type.IsString())
+                return;
+
+            if (!argument.Parameter.HasExplicitDefaultValue)
+                return;
+
+            if (argument.Parameter.ExplicitDefaultValue is not null)
+                return;
+
+            foreach (var attribute in argument.Parameter.GetAttributes())
+            {
+                if (attribute.ConstructorArguments.Length == 0)
+                    continue;
+
+                if (!attribute.AttributeClass.IsEqualTo(_callerArgumentExpressionAttribute))
+                    continue;
+
+                var parameterName = attribute.ConstructorArguments[0].Value as string;
+                if (string.IsNullOrEmpty(parameterName))
+                    continue;
+
+                var targetArgument = invocation.Arguments.FirstOrDefault(arg => arg.Parameter?.Name == parameterName);
+                if (targetArgument is null)
+                    continue;
+
+                var defaultValue = targetArgument.Value.Syntax.ToString();
+                if (defaultValue == (string?)argument.Value.ConstantValue.Value)
+                {
+                    context.ReportDiagnostic(Rule, argument);
+                }
             }
         }
     }

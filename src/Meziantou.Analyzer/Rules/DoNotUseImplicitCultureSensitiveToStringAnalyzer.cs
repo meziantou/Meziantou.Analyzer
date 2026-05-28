@@ -62,6 +62,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
     {
         private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new(compilation);
 
+
         public static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
@@ -120,7 +121,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (parent is IConversionOperation conversionOperation)
             {
                 // `FormattableString _ = $""` is valid whereas `string _ = $""` may not be
-                if (conversionOperation.Type.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("System.FormattableString")))
+                if (conversionOperation.Type.IsEqualTo(_cultureSensitiveContext.FormattableStringSymbol))
                     return;
             }
 

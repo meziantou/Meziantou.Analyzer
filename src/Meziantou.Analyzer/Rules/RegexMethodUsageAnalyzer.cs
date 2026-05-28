@@ -11,7 +11,11 @@ public sealed class RegexMethodUsageAnalyzer : RegexUsageAnalyzerBase
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeObjectCreation, OperationKind.ObjectCreation);
-        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var analyzerContext = new AnalyzerContext(context.Compilation);
+            context.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
+            context.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+        });
     }
 }

@@ -23,7 +23,7 @@ internal static class TypeSymbolExtensions
         return allInterfaces;
     }
 
-    public static bool InheritsFrom(this ITypeSymbol classSymbol, ITypeSymbol? baseClassType)
+    public static bool InheritsFrom(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? baseClassType)
     {
         if (baseClassType is null)
             return false;
@@ -40,7 +40,7 @@ internal static class TypeSymbolExtensions
         return false;
     }
 
-    public static bool Implements(this ITypeSymbol classSymbol, ITypeSymbol? interfaceType)
+    public static bool Implements(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? interfaceType)
     {
         if (interfaceType is null)
             return false;
@@ -54,7 +54,7 @@ internal static class TypeSymbolExtensions
         return false;
     }
 
-    public static bool ImplementsGenericInterface(this ITypeSymbol classSymbol, ITypeSymbol? interfaceType)
+    public static bool ImplementsGenericInterface(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? interfaceType)
     {
         if (interfaceType is null)
             return false;
@@ -68,7 +68,7 @@ internal static class TypeSymbolExtensions
         return false;
     }
 
-    public static bool IsOrImplements(this ITypeSymbol symbol, ITypeSymbol? interfaceType)
+    public static bool IsOrImplements(this ITypeSymbol symbol, [NotNullWhen(true)] ITypeSymbol? interfaceType)
     {
         if (interfaceType is null)
             return false;
@@ -142,12 +142,12 @@ internal static class TypeSymbolExtensions
         return null;
     }
 
-    public static bool HasAttribute(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
+    public static bool HasAttribute(this ISymbol symbol, [NotNullWhen(true)] ITypeSymbol? attributeType, bool inherits = true)
     {
         return GetAttribute(symbol, attributeType, inherits) is not null;
     }
 
-    public static bool IsOrInheritFrom(this ITypeSymbol symbol, ITypeSymbol? expectedType)
+    public static bool IsOrInheritFrom(this ITypeSymbol symbol, [NotNullWhen(true)] ITypeSymbol? expectedType)
     {
         if (expectedType is null)
             return false;
@@ -155,7 +155,7 @@ internal static class TypeSymbolExtensions
         return symbol.IsEqualTo(expectedType) || (!expectedType.IsSealed && symbol.InheritsFrom(expectedType));
     }
 
-    public static bool IsEqualToAny(this ITypeSymbol? symbol, params ReadOnlySpan<ITypeSymbol?> expectedTypes)
+    public static bool IsEqualToAny([NotNullWhen(true)] this ITypeSymbol? symbol, params ReadOnlySpan<ITypeSymbol?> expectedTypes)
     {
         if (symbol is null || expectedTypes.IsEmpty)
             return false;
@@ -169,7 +169,7 @@ internal static class TypeSymbolExtensions
         return false;
     }
 
-    public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1)
+    public static bool IsEqualToAny([NotNullWhen(true)] this ITypeSymbol? symbol, [NotNullWhen(true)] ITypeSymbol? expectedType1)
     {
         if (symbol is null)
             return false;
@@ -180,7 +180,7 @@ internal static class TypeSymbolExtensions
         return false;
     }
 
-    public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2)
+    public static bool IsEqualToAny([NotNullWhen(true)] this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2)
     {
         if (symbol is null)
             return false;
@@ -194,7 +194,7 @@ internal static class TypeSymbolExtensions
         return false;
     }
 
-    public static bool IsEqualToAny(this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2, ITypeSymbol? expectedType3)
+    public static bool IsEqualToAny([NotNullWhen(true)] this ITypeSymbol? symbol, ITypeSymbol? expectedType1, ITypeSymbol? expectedType2, ITypeSymbol? expectedType3)
     {
         if (symbol is null)
             return false;
@@ -211,7 +211,7 @@ internal static class TypeSymbolExtensions
         return false;
     }
 
-    public static bool IsObject(this ITypeSymbol? symbol)
+    public static bool IsObject([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -219,7 +219,7 @@ internal static class TypeSymbolExtensions
         return symbol.SpecialType == SpecialType.System_Object;
     }
 
-    public static bool IsString(this ITypeSymbol? symbol)
+    public static bool IsString([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -227,7 +227,7 @@ internal static class TypeSymbolExtensions
         return symbol.SpecialType == SpecialType.System_String;
     }
 
-    public static bool IsChar(this ITypeSymbol? symbol)
+    public static bool IsChar([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -235,7 +235,7 @@ internal static class TypeSymbolExtensions
         return symbol.SpecialType == SpecialType.System_Char;
     }
 
-    public static bool IsInt32(this ITypeSymbol? symbol)
+    public static bool IsInt32([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -243,7 +243,7 @@ internal static class TypeSymbolExtensions
         return symbol.SpecialType == SpecialType.System_Int32;
     }
 
-    public static bool IsBoolean(this ITypeSymbol? symbol)
+    public static bool IsBoolean([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -251,7 +251,7 @@ internal static class TypeSymbolExtensions
         return symbol.SpecialType == SpecialType.System_Boolean;
     }
 
-    public static bool IsDateTime(this ITypeSymbol? symbol)
+    public static bool IsDateTime([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -269,7 +269,7 @@ internal static class TypeSymbolExtensions
         return (symbol as INamedTypeSymbol)?.EnumUnderlyingType;
     }
 
-    public static bool IsNumberType(this ITypeSymbol? symbol)
+    public static bool IsNumberType([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;
@@ -300,7 +300,7 @@ internal static class TypeSymbolExtensions
     /// float, double, IntPtr, UIntPtr, pointers, enums, and structs
     /// containing only blittable fields.
     /// </summary>
-    public static bool IsBlittableType(this ITypeSymbol? symbol)
+    public static bool IsBlittableType([NotNullWhen(true)] this ITypeSymbol? symbol)
     {
         if (symbol is null)
             return false;

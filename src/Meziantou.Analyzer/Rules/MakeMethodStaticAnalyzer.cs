@@ -40,7 +40,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var analyzerContext = new AnalyzerContext();
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
             ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeMethod, SyntaxKind.MethodDeclaration);
             ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeProperty, SyntaxKind.PropertyDeclaration);
@@ -49,10 +49,15 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private sealed class AnalyzerContext
+    private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly ConcurrentHashSet<ISymbol> _potentialSymbols = new(SymbolEqualityComparer.Default);
         private readonly ConcurrentHashSet<ISymbol> _cannotBeStaticSymbols = new(SymbolEqualityComparer.Default);
+
+        private readonly ITypeSymbol? _httpContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
+        private readonly ITypeSymbol? _iapplicationBuilder = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
+        private readonly ITypeSymbol? _iserviceCollectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
+        private readonly ITypeSymbol? _imiddlewareSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.IMiddleware");
 
         public void CompilationEnd(CompilationAnalysisContext context)
         {
@@ -86,10 +91,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             if (context.Compilation is null)
                 return;
 
-            if (!IsPotentialStatic(methodSymbol) ||
-                methodSymbol.IsUnitTestMethod() ||
-                IsAspNetCoreMiddleware(context.Compilation, methodSymbol) ||
-                IsAspNetCoreStartup(context.Compilation, methodSymbol))
+            if (!IsPotentialStatic(methodSymbol) || methodSymbol.IsUnitTestMethod() || IsAspNetCoreMiddleware(methodSymbol) || IsAspNetCoreStartup(methodSymbol))
             {
                 return;
             }
@@ -199,43 +201,37 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        private static bool IsAspNetCoreMiddleware(Compilation compilation, IMethodSymbol methodSymbol)
+        private bool IsAspNetCoreMiddleware(IMethodSymbol methodSymbol)
         {
             if (string.Equals(methodSymbol.Name, "Invoke", StringComparison.Ordinal) ||
                 string.Equals(methodSymbol.Name, "InvokeAsync", StringComparison.Ordinal))
             {
-                var httpContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
-                if (methodSymbol.Parameters.Length == 0 || !methodSymbol.Parameters[0].Type.IsEqualTo(httpContextSymbol))
+                if (methodSymbol.Parameters.Length == 0 || !methodSymbol.Parameters[0].Type.IsEqualTo(_httpContextSymbol))
                     return false;
 
                 return true;
             }
 
-            var imiddlewareSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.IMiddleware");
-            if (imiddlewareSymbol is not null)
+            if (methodSymbol.ContainingType.Implements(_imiddlewareSymbol))
             {
-                if (methodSymbol.ContainingType.Implements(imiddlewareSymbol))
+                var invokeAsyncSymbol = _imiddlewareSymbol.GetMembers("InvokeAsync").FirstOrDefault();
+                if (invokeAsyncSymbol is not null)
                 {
-                    var invokeAsyncSymbol = imiddlewareSymbol.GetMembers("InvokeAsync").FirstOrDefault();
-                    if (invokeAsyncSymbol is not null)
-                    {
-                        var implementationMember = methodSymbol.ContainingType.FindImplementationForInterfaceMember(invokeAsyncSymbol);
-                        if (methodSymbol.IsEqualTo(implementationMember))
-                            return true;
-                    }
+                    var implementationMember = methodSymbol.ContainingType.FindImplementationForInterfaceMember(invokeAsyncSymbol);
+                    if (methodSymbol.IsEqualTo(implementationMember))
+                        return true;
                 }
             }
 
             return false;
         }
 
-        private static bool IsAspNetCoreStartup(Compilation compilation, IMethodSymbol methodSymbol)
+        private bool IsAspNetCoreStartup(IMethodSymbol methodSymbol)
         {
             // void ConfigureServices Microsoft.Extensions.DependencyInjection.IServiceCollection
             if (string.Equals(methodSymbol.Name, "ConfigureServices", StringComparison.Ordinal))
             {
-                var iserviceCollectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
-                if (methodSymbol.ReturnsVoid && methodSymbol.Parameters.Length == 1 && methodSymbol.Parameters[0].Type.IsEqualTo(iserviceCollectionSymbol))
+                if (methodSymbol.ReturnsVoid && methodSymbol.Parameters.Length == 1 && methodSymbol.Parameters[0].Type.IsEqualTo(_iserviceCollectionSymbol))
                     return true;
 
                 return false;
@@ -244,8 +240,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             // void Configure Microsoft.AspNetCore.Builder.IApplicationBuilder
             if (string.Equals(methodSymbol.Name, "Configure", StringComparison.Ordinal))
             {
-                var iapplicationBuilder = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
-                if (methodSymbol.Parameters.Length > 0 && methodSymbol.Parameters[0].Type.IsEqualTo(iapplicationBuilder))
+                if (methodSymbol.Parameters.Length > 0 && methodSymbol.Parameters[0].Type.IsEqualTo(_iapplicationBuilder))
                     return true;
 
                 return false;
