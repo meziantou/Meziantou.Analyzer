@@ -26,10 +26,17 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(Analyze, OperationKind.ObjectCreation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var type = context.Compilation.GetBestTypeByMetadataName("System.EventArgs");
+            if (type is null)
+                return;
+
+            context.RegisterOperationAction(context => Analyze(context, type), OperationKind.ObjectCreation);
+        });
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    private static void Analyze(OperationAnalysisContext context, INamedTypeSymbol type)
     {
         var operation = (IObjectCreationOperation)context.Operation;
         if (operation is null || operation.Constructor is null)
@@ -38,7 +45,6 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length > 0)
             return;
 
-        var type = context.Compilation.GetBestTypeByMetadataName("System.EventArgs");
         if (operation.Constructor.ContainingType.IsEqualTo(type))
         {
             context.ReportDiagnostic(Rule, operation);

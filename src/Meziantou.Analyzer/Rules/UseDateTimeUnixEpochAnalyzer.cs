@@ -38,149 +38,159 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var dateTimeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.DateTime");
-            var dateTimeOffsetSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
+            var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
-            if (dateTimeSymbol is not null && dateTimeSymbol.GetMembers("UnixEpoch").Length > 0)
+            if (analyzerContext.HasDateTimeUnixEpoch)
             {
-                ctx.RegisterOperationAction(ctx => AnalyzeDateTimeObjectCreation(ctx, dateTimeSymbol), OperationKind.ObjectCreation);
+                ctx.RegisterOperationAction(ctx => analyzerContext.AnalyzeDateTimeObjectCreation(ctx), OperationKind.ObjectCreation);
             }
 
-            if (dateTimeSymbol is not null && dateTimeOffsetSymbol is not null && dateTimeOffsetSymbol.GetMembers("UnixEpoch").Length > 0)
+            if (analyzerContext.HasDateTimeOffsetUnixEpoch)
             {
-                ctx.RegisterOperationAction(ctx => AnalyzeDateTimeOffsetObjectCreation(ctx, dateTimeSymbol, dateTimeOffsetSymbol), OperationKind.ObjectCreation);
+                ctx.RegisterOperationAction(ctx => analyzerContext.AnalyzeDateTimeOffsetObjectCreation(ctx), OperationKind.ObjectCreation);
             }
         });
     }
 
-    private static void AnalyzeDateTimeObjectCreation(OperationAnalysisContext context, ITypeSymbol dateTimeSymbol)
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        var operation = (IObjectCreationOperation)context.Operation;
-        if (IsDateTimeUnixEpoch(operation, context.Compilation, dateTimeSymbol))
+        private readonly TimeSpanOperation _timeSpanOperation = new(compilation);
+        private readonly ITypeSymbol? _dateTimeSymbol = compilation.GetBestTypeByMetadataName("System.DateTime");
+        private readonly ITypeSymbol? _dateTimeOffsetSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
+        private readonly ITypeSymbol? _dateTimeKindSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeKind");
+
+        public bool HasDateTimeUnixEpoch => _dateTimeSymbol is not null && _dateTimeSymbol.GetMembers("UnixEpoch").Length > 0;
+        public bool HasDateTimeOffsetUnixEpoch => _dateTimeOffsetSymbol is not null && _dateTimeOffsetSymbol.GetMembers("UnixEpoch").Length > 0;
+
+        public void AnalyzeDateTimeObjectCreation(OperationAnalysisContext context)
         {
-            context.ReportDiagnostic(DateTimeRule, operation);
-        }
-    }
-    private static void AnalyzeDateTimeOffsetObjectCreation(OperationAnalysisContext context, ITypeSymbol dateTimeSymbol, ITypeSymbol dateTimeOffsetSymbol)
-    {
-        var operation = (IObjectCreationOperation)context.Operation;
-        if (IsDateTimeOffsetUnixEpoch())
-        {
-            context.ReportDiagnostic(DateTimeOffsetRule, operation);
+            var operation = (IObjectCreationOperation)context.Operation;
+            if (IsDateTimeUnixEpoch(operation))
+            {
+                context.ReportDiagnostic(DateTimeRule, operation);
+            }
         }
 
-        bool IsDateTimeOffsetUnixEpoch()
+        public void AnalyzeDateTimeOffsetObjectCreation(OperationAnalysisContext context)
         {
-            if (!operation.Type.IsEqualTo(dateTimeOffsetSymbol))
+            var operation = (IObjectCreationOperation)context.Operation;
+            if (IsDateTimeOffsetUnixEpoch())
+            {
+                context.ReportDiagnostic(DateTimeOffsetRule, operation);
+            }
+
+            bool IsDateTimeOffsetUnixEpoch()
+            {
+                if (!operation.Type.IsEqualTo(_dateTimeOffsetSymbol))
+                    return false;
+
+                if (operation.Arguments.Length == 1)
+                {
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L]))
+                        return true;
+
+                    if (IsUnixEpochProperty(operation.Arguments[0]))
+                        return true;
+                }
+                else if (operation.Arguments.Length == 2)
+                {
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L]) && IsTimeSpanZero(operation.Arguments[1]))
+                        return true;
+
+                    if (IsUnixEpochProperty(operation.Arguments[0]) && IsTimeSpanZero(operation.Arguments[1]))
+                        return true;
+                }
+                else if (operation.Arguments.Length == 7)
+                {
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[6]))
+                        return true;
+                }
+                else if (operation.Arguments.Length == 8)
+                {
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 7), [1970, 1, 1, 0, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[7]))
+                        return true;
+                }
+                else if (operation.Arguments.Length == 9)
+                {
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 8), [1970, 1, 1, 0, 0, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[8]))
+                        return true;
+                }
+
+                return false;
+            }
+
+            bool IsUnixEpochProperty(IArgumentOperation argumentOperation)
+            {
+                if (argumentOperation.Value is IMemberReferenceOperation memberReference)
+                {
+                    if (memberReference.Member.Name == "UnixEpoch" && memberReference.Member.ContainingType.IsEqualTo(_dateTimeSymbol))
+                        return true;
+                }
+
+                return false;
+            }
+        }
+
+        private bool IsDateTimeUnixEpoch(IObjectCreationOperation operation)
+        {
+            if (!operation.Type.IsEqualTo(_dateTimeSymbol))
                 return false;
 
             if (operation.Arguments.Length == 1)
             {
                 if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L]))
                     return true;
-
-                if (IsUnixEpochProperty(operation.Arguments[0]))
-                    return true;
             }
             else if (operation.Arguments.Length == 2)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L]) && IsTimeSpanZero(operation.Arguments[1]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L]) && IsDateTimeKindUtc(operation.Arguments[1]))
                     return true;
-
-                if (IsUnixEpochProperty(operation.Arguments[0]) && IsTimeSpanZero(operation.Arguments[1]))
+            }
+            else if (operation.Arguments.Length == 3)
+            {
+                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1]))
+                    return true;
+            }
+            else if (operation.Arguments.Length == 6)
+            {
+                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1, 0, 0, 0]))
                     return true;
             }
             else if (operation.Arguments.Length == 7)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[6]))
-                    return true;
-            }
-            else if (operation.Arguments.Length == 8)
-            {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 7), [1970, 1, 1, 0, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[7]))
-                    return true;
-            }
-            else if (operation.Arguments.Length == 9)
-            {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 8), [1970, 1, 1, 0, 0, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[8]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0]) && IsDateTimeKindUtc(operation.Arguments[6]))
                     return true;
             }
 
             return false;
         }
 
-        bool IsUnixEpochProperty(IArgumentOperation argumentOperation)
+        private bool IsDateTimeKindUtc(IArgumentOperation argument)
         {
-            if (argumentOperation.Value is IMemberReferenceOperation memberReference)
-            {
-                if (memberReference.Member.Name == "UnixEpoch" && memberReference.Member.ContainingType.IsEqualTo(dateTimeSymbol))
-                    return true;
-            }
-
-            return false;
-        }
-    }
-
-    private static bool IsDateTimeUnixEpoch(IObjectCreationOperation operation, Compilation compilation, ITypeSymbol dateTimeSymbol)
-    {
-        if (!operation.Type.IsEqualTo(dateTimeSymbol))
-            return false;
-
-        if (operation.Arguments.Length == 1)
-        {
-            if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L]))
-                return true;
-        }
-        else if (operation.Arguments.Length == 2)
-        {
-            if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L]) && IsDateTimeKindUtc(compilation, operation.Arguments[1]))
-                return true;
-        }
-        else if (operation.Arguments.Length == 3)
-        {
-            if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1]))
-                return true;
-        }
-        else if (operation.Arguments.Length == 6)
-        {
-            if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1, 0, 0, 0]))
-                return true;
-        }
-        else if (operation.Arguments.Length == 7)
-        {
-            if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0]) && IsDateTimeKindUtc(compilation, operation.Arguments[6]))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static bool IsDateTimeKindUtc(Compilation compilation, IArgumentOperation argument)
-    {
-        var dateTimeKindSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeKind");
-        if (dateTimeKindSymbol is null)
-            return false;
-
-        return argument.Value.ConstantValue.HasValue && (DateTimeKind)argument.Value.ConstantValue.Value! == DateTimeKind.Utc;
-    }
-
-    private static bool ArgumentsEquals(ReadOnlySpan<IArgumentOperation> arguments, object[] expectedValues)
-    {
-        for (var i = 0; i < arguments.Length; i++)
-        {
-            var argument = arguments[i];
-            if (!argument.Value.ConstantValue.HasValue)
+            if (_dateTimeKindSymbol is null)
                 return false;
 
-            if (!Equals(argument.Value.ConstantValue.Value, expectedValues[i]))
-                return false;
+            return argument.Value.ConstantValue.HasValue && (DateTimeKind)argument.Value.ConstantValue.Value! == DateTimeKind.Utc;
         }
 
-        return true;
-    }
+        private static bool ArgumentsEquals(ReadOnlySpan<IArgumentOperation> arguments, object[] expectedValues)
+        {
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                var argument = arguments[i];
+                if (!argument.Value.ConstantValue.HasValue)
+                    return false;
 
-    private static bool IsTimeSpanZero(IArgumentOperation operation)
-    {
-        return TimeSpanOperation.GetMilliseconds(operation.Value) is 0L;
+                if (!Equals(argument.Value.ConstantValue.Value, expectedValues[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool IsTimeSpanZero(IArgumentOperation operation)
+        {
+            return _timeSpanOperation.GetMilliseconds(operation.Value) is 0L;
+        }
     }
 }
