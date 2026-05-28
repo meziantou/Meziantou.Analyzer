@@ -42,10 +42,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
         public void AnalyzeGeneratedRegexSymbol(SymbolAnalysisContext context)
         {
-            if (context.Symbol is IMethodSymbol method && method.MethodKind is not MethodKind.Ordinary)
-                return;
-
-            if (context.Symbol is not IMethodSymbol and not IPropertySymbol)
+            if (context.Symbol is not (IPropertySymbol or IMethodSymbol { MethodKind: MethodKind.Ordinary }))
                 return;
 
             if (_generatedRegexAttributeSymbol is null)
@@ -54,6 +51,11 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
             var attributes = context.Symbol.GetAttributes(_generatedRegexAttributeSymbol, inherits: false);
             foreach (var attribute in attributes)
             {
+                // Only analyze the symbol in the files that declared the attribute to avoid reporting multiple times for the same symbol (property and method in case of a property with an init-only setter)
+                var attributeSyntaxReference = attribute.ApplicationSyntaxReference;
+                if (attributeSyntaxReference is not null && !context.Symbol.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree == attributeSyntaxReference.SyntaxTree && reference.Span.Contains(attributeSyntaxReference.Span)))
+                    continue;
+
                 var regexOptions = RegexOptions.None;
 
                 // RegexOptions.ExplicitCapture
