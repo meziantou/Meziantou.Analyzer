@@ -51,12 +51,6 @@ var refactoringsTable = GenerateRefactoringsTable(codeRefactoringProviders);
 sb.Append("\n# Refactorings\n\n");
 sb.Append(refactoringsTable);
 
-sb.Append("\n\n# .editorconfig - default values\n\n");
-GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: null);
-
-sb.Append("\n# .editorconfig - all rules disabled\n\n");
-GenerateEditorConfig(sb, diagnosticAnalyzers, overrideSeverity: "none");
-
 Console.WriteLine(sb.ToString());
 
 // Update home readme
