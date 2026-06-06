@@ -74,6 +74,26 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public async Task Volatile_ReadWrite_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                private bool _value;
+
+                public void Test()
+                {
+                    System.Threading.Volatile.Write(ref _value, false);
+                    _ = System.Threading.Volatile.Read(ref _value);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NamedParameter_ShouldNotReportDiagnostic()
     {
         const string SourceCode = """
