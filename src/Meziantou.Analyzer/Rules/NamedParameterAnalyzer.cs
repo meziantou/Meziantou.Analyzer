@@ -45,6 +45,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
             var valueTaskTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
             var valueTaskGenericTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
             var taskCompletionSourceType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
+            var volatileType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Volatile");
             var methodBaseTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.MethodBase");
             var fieldInfoTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.FieldInfo");
             var propertyInfoTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.PropertyInfo");
@@ -217,6 +218,12 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                             return;
 
                         if (IsMethod(invokedMethodSymbol, valueTaskTokenType, nameof(Task.FromResult)))
+                            return;
+
+                        if (IsMethod(invokedMethodSymbol, volatileType, nameof(System.Threading.Volatile.Read)))
+                            return;
+
+                        if (IsMethod(invokedMethodSymbol, volatileType, nameof(System.Threading.Volatile.Write)))
                             return;
 
                         if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<>.SetResult)))
