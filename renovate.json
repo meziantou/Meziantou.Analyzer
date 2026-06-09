@@ -5,9 +5,11 @@
   ],
   "packageRules": [
     {
-      "matchPackagePatterns": [ ".*" ],
       "groupName": "all dependencies",
-      "separateMajorMinor": false
+      "separateMajorMinor": false,
+      "matchPackageNames": [
+        "/.*/"
+      ]
     },
     {
       "matchPackageNames": [ 
