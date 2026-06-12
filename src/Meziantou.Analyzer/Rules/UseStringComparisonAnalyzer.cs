@@ -53,8 +53,56 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol _stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison")!;
         private readonly INamedTypeSymbol? _jobjectSymbol = compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
         private readonly INamedTypeSymbol? _xunitAssertSymbol = compilation.GetBestTypeByMetadataName("XUnit.Assert");
+        private readonly HashSet<ISymbol> _nonCultureSensitiveSymbols = CreateNonCultureSensitiveSymbols(compilation);
 
         public bool IsValid => _stringComparisonSymbol is not null;
+
+        private static HashSet<ISymbol> CreateNonCultureSensitiveSymbols(Compilation compilation)
+        {
+            var symbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            Add("M:Microsoft.Extensions.Primitives.StringSegment.Equals(Microsoft.Extensions.Primitives.StringSegment)~System.Boolean");
+            Add("M:Microsoft.Extensions.Primitives.StringSegment.Equals(System.String)~System.Boolean");
+            Add("M:System.Char.Equals(System.Char)~System.Boolean");
+            Add("M:System.IO.Path.GetRelativePath(System.String,System.String)~System.String");
+            Add("M:System.MemoryExtensions.EndsWith``1(System.ReadOnlySpan{``0},System.ReadOnlySpan{``0})~System.Boolean");
+            Add("M:System.MemoryExtensions.EndsWith``1(System.ReadOnlySpan{``0},``0)~System.Boolean");
+            Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.IO.BinaryReader)");
+            Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Claims.ClaimsIdentity)");
+            Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Principal.IIdentity,System.Collections.Generic.IEnumerable{System.Security.Claims.Claim},System.String,System.String,System.String)");
+            Add("M:System.String.Contains(System.Char)~System.Boolean");
+            Add("M:System.String.Contains(System.Text.Rune)~System.Boolean");
+            Add("M:System.String.EndsWith(System.Char)~System.Boolean");
+            Add("M:System.String.EndsWith(System.Text.Rune)~System.Boolean");
+            Add("M:System.String.Equals(System.String)~System.Boolean");
+            Add("M:System.String.Equals(System.String,System.String)~System.Boolean");
+            Add("M:System.String.GetHashCode(System.ReadOnlySpan{System.Char})~System.Int32");
+            Add("M:System.String.GetHashCode~System.Int32");
+            Add("M:System.String.IndexOf(System.Char)~System.Int32");
+            Add("M:System.String.IndexOf(System.Char,System.Int32)~System.Int32");
+            Add("M:System.String.IndexOf(System.Char,System.Int32,System.Int32)~System.Int32");
+            Add("M:System.String.IndexOf(System.Text.Rune)~System.Int32");
+            Add("M:System.String.IndexOf(System.Text.Rune,System.Int32)~System.Int32");
+            Add("M:System.String.IndexOf(System.Text.Rune,System.Int32,System.Int32)~System.Int32");
+            Add("M:System.String.LastIndexOf(System.Char)~System.Int32");
+            Add("M:System.String.LastIndexOf(System.Char,System.Int32)~System.Int32");
+            Add("M:System.String.LastIndexOf(System.Char,System.Int32,System.Int32)~System.Int32");
+            Add("M:System.String.LastIndexOf(System.Text.Rune)~System.Int32");
+            Add("M:System.String.LastIndexOf(System.Text.Rune,System.Int32)~System.Int32");
+            Add("M:System.String.LastIndexOf(System.Text.Rune,System.Int32,System.Int32)~System.Int32");
+            Add("M:System.String.Replace(System.String,System.String)~System.String");
+            Add("M:System.String.StartsWith(System.Char)~System.Boolean");
+            Add("M:System.String.StartsWith(System.Text.Rune)~System.Boolean");
+            Add("M:System.Text.Rune.Equals(System.Text.Rune)~System.Boolean");
+            return symbols;
+
+            void Add(string documentationId)
+            {
+                foreach (var symbol in DocumentationCommentId.GetSymbolsForDeclarationId(documentationId, compilation))
+                {
+                    symbols.Add(symbol);
+                }
+            }
+        }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -81,44 +129,14 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private static bool IsMethod(IInvocationOperation operation, ITypeSymbol type, string name)
-        {
-            var methodSymbol = operation.TargetMethod;
-            if (methodSymbol is null)
-                return false;
-
-            if (!string.Equals(methodSymbol.Name, name, StringComparison.Ordinal))
-                return false;
-
-            if (!type.IsEqualTo(methodSymbol.ContainingType))
-                return false;
-
-            return true;
-        }
-
         private bool IsNonCultureSensitiveMethod(IInvocationOperation operation)
         {
             var method = operation.TargetMethod;
             if (method is null)
                 return false;
 
-            if (method.ContainingType.IsString())
-            {
-                return method is
-                { Name: nameof(string.GetHashCode), IsStatic: false, Parameters: [] } or
-                { Name: nameof(string.Equals), Parameters: [{ Type.SpecialType: SpecialType.System_String }] } or
-                { Name: nameof(string.Equals), IsStatic: true, Parameters: [{ Type.SpecialType: SpecialType.System_String }, { Type.SpecialType: SpecialType.System_String }] } or
-                { Name: nameof(string.IndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
-                { Name: nameof(string.IndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }] } or
-                { Name: nameof(string.IndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }, { Type.SpecialType: SpecialType.System_Int32 }] } or
-                { Name: nameof(string.LastIndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
-                { Name: nameof(string.LastIndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }] } or
-                { Name: nameof(string.LastIndexOf), Parameters: [{ Type.SpecialType: SpecialType.System_Char }, { Type.SpecialType: SpecialType.System_Int32 }, { Type.SpecialType: SpecialType.System_Int32 }] } or
-                { Name: nameof(string.EndsWith), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
-                { Name: nameof(string.StartsWith), Parameters: [{ Type.SpecialType: SpecialType.System_Char }] } or
-                { Name: nameof(string.Contains), Parameters: [{ Type.SpecialType: SpecialType.System_Char or SpecialType.System_String }] } or
-                { Name: nameof(string.Replace), Parameters: [{ Type.SpecialType: SpecialType.System_String }, { Type.SpecialType: SpecialType.System_String }] };
-            }
+            if (_nonCultureSensitiveSymbols.Contains(method))
+                return true;
 
             // JObject.Property / TryGetValue / GetValue
             if (method.ContainingType.IsEqualTo(_jobjectSymbol))
