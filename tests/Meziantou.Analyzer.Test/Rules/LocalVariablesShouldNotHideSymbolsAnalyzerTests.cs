@@ -165,4 +165,73 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task LocalVariableInLocalFunctionHidesLocalVariableFromContainingMethod()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    var a = 10;
+
+                    void LocalFunction()
+                    {
+                        var [|a|] = 10;
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalVariableInStaticLocalFunctionDoesNotHideLocalVariableFromContainingMethod()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    var a = 10;
+
+                    static void LocalFunction()
+                    {
+                        var a = 10;
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalVariableInNestedLocalFunctionDoesNotHideLocalVariableAcrossStaticLocalFunction()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    var a = 10;
+
+                    static void LocalFunction()
+                    {
+                        void NestedLocalFunction()
+                        {
+                            var a = 10;
+                        }
+                    }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
