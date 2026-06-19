@@ -601,3 +601,6 @@ dotnet_diagnostic.MA0201.severity = warning
 
 # MA0202: Conditional compilation branches have identical code
 dotnet_diagnostic.MA0202.severity = warning
+
+# MA0203: Do not use return tag for void method
+dotnet_diagnostic.MA0203.severity = warning
