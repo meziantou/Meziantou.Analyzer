@@ -202,6 +202,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseEmptyPropertyPatternOnNonNullableValueType = "MA0200";
     public const string DoNotUseZeroValuedEnumFlagsInFlagChecks = "MA0201";
     public const string ConditionalCompilationBranchesAreIdentical = "MA0202";
+    public const string DoNotUseReturnTagForVoidMethod = "MA0203";
 
     public static string GetHelpUri(string identifier)
     {
