@@ -41,6 +41,26 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
         if (containingType is null)
             return;
 
+        foreach (var ancestor in operation.Ancestors())
+        {
+            if (ancestor is not ILocalFunctionOperation localFunction)
+                continue;
+
+            if (!localFunction.Symbol.IsStatic)
+            {
+                foreach (var symbol in semanticModel.LookupSymbols(localFunction.Syntax.SpanStart, name: localSymbol.Name))
+                {
+                    if (symbol is ILocalSymbol hiddenLocal && CanAccessLocal(localFunction.Symbol, hiddenLocal))
+                    {
+                        ReportDiagnostic("local variable");
+                        return;
+                    }
+                }
+            }
+
+            break;
+        }
+
         foreach (var member in GetSymbols(containingType, localSymbol.Name, context.CancellationToken))
         {
             if (!semanticModel.IsAccessible(operation.Syntax.SpanStart, member))
@@ -76,6 +96,26 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
                 context.ReportDiagnostic(Rule, operation, localSymbol.Name, type);
             }
         }
+    }
+
+    private static bool CanAccessLocal(IMethodSymbol localFunction, ILocalSymbol local)
+    {
+        var currentLocalFunction = localFunction;
+        while (currentLocalFunction.MethodKind is MethodKind.LocalFunction)
+        {
+            if (currentLocalFunction.IsStatic)
+                return false;
+
+            if (currentLocalFunction.ContainingSymbol.IsEqualTo(local.ContainingSymbol))
+                return true;
+
+            if (currentLocalFunction.ContainingSymbol is not IMethodSymbol containingMethod)
+                return false;
+
+            currentLocalFunction = containingMethod;
+        }
+
+        return false;
     }
 
     private static IEnumerable<ISymbol> GetSymbols(INamedTypeSymbol? type, string name, CancellationToken cancellationToken)
