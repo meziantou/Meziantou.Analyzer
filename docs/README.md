@@ -202,6 +202,7 @@
 |[MA0201](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0201.md)|Usage|Do not use zero-valued enum flags in flag checks|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0202](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0202.md)|Design|Conditional compilation branches have identical code|<span title='Warning'>⚠️</span>|✔️|✔️|
 |[MA0203](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0203.md)|Design|Do not use return tag for void method|<span title='Warning'>⚠️</span>|✔️|❌|
+|[MA0205](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0205.md)|Style|Use exclusive or operator|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|

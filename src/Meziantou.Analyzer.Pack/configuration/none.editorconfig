@@ -604,3 +604,6 @@ dotnet_diagnostic.MA0202.severity = none
 
 # MA0203: Do not use return tag for void method
 dotnet_diagnostic.MA0203.severity = none
+
+# MA0205: Use exclusive or operator
+dotnet_diagnostic.MA0205.severity = none
