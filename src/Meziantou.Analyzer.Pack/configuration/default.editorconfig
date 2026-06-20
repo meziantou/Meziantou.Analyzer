@@ -604,3 +604,6 @@ dotnet_diagnostic.MA0202.severity = warning
 
 # MA0203: Do not use return tag for void method
 dotnet_diagnostic.MA0203.severity = warning
+
+# MA0206: Remove unnecessary braces in type declaration
+dotnet_diagnostic.MA0206.severity = suggestion

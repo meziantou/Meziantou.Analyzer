@@ -203,6 +203,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseZeroValuedEnumFlagsInFlagChecks = "MA0201";
     public const string ConditionalCompilationBranchesAreIdentical = "MA0202";
     public const string DoNotUseReturnTagForVoidMethod = "MA0203";
+    public const string RemoveUnnecessaryBracesInTypeDeclaration = "MA0206";
 
     public static string GetHelpUri(string identifier)
     {
