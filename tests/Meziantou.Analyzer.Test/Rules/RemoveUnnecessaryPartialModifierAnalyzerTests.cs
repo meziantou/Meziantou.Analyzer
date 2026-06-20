@@ -34,7 +34,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     }
 
     [Fact]
-    public async Task PartialClass_WithSingleDeclaration_PreserveComments_ReportsDiagnostic()
+    public async Task PartialClass_WithSingleDeclaration_PreserveComments_Keyword_ReportsDiagnostic()
     {
         const string SourceCode = """
             /*sample*/[|partial|] class Sample
@@ -44,6 +44,27 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
 
         const string CodeFix = """
             /*sample*/class Sample
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PartialClass_WithSingleDeclaration_PreserveComments_Modifier_ReportsDiagnostic()
+    {
+        const string SourceCode = """
+            static /*sample*/[|partial|] class Sample
+            {
+            }
+            """;
+
+        const string CodeFix = """
+            static /*sample*/class Sample
             {
             }
             """;
