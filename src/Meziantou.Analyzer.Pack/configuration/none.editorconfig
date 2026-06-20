@@ -604,3 +604,6 @@ dotnet_diagnostic.MA0202.severity = none
 
 # MA0203: Do not use return tag for void method
 dotnet_diagnostic.MA0203.severity = none
+
+# MA0204: Remove unnecessary partial modifier
+dotnet_diagnostic.MA0204.severity = none
