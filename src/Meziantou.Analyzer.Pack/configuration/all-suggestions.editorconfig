@@ -607,3 +607,6 @@ dotnet_diagnostic.MA0203.severity = suggestion
 
 # MA0204: Remove unnecessary partial modifier
 dotnet_diagnostic.MA0204.severity = suggestion
+
+# MA0205: Use exclusive or operator
+dotnet_diagnostic.MA0205.severity = suggestion

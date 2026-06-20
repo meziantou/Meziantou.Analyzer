@@ -204,6 +204,7 @@ internal static class RuleIdentifiers
     public const string ConditionalCompilationBranchesAreIdentical = "MA0202";
     public const string DoNotUseReturnTagForVoidMethod = "MA0203";
     public const string RemoveUnnecessaryPartialModifier = "MA0204";
+    public const string UseExclusiveOrOperator = "MA0205";
 
     public static string GetHelpUri(string identifier)
     {

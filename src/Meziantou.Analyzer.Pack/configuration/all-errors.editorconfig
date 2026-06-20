@@ -607,3 +607,6 @@ dotnet_diagnostic.MA0203.severity = error
 
 # MA0204: Remove unnecessary partial modifier
 dotnet_diagnostic.MA0204.severity = error
+
+# MA0205: Use exclusive or operator
+dotnet_diagnostic.MA0205.severity = error
