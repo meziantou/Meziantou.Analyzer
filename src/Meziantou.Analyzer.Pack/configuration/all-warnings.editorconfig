@@ -610,3 +610,6 @@ dotnet_diagnostic.MA0204.severity = warning
 
 # MA0205: Use exclusive or operator
 dotnet_diagnostic.MA0205.severity = warning
+
+# MA0206: Remove unnecessary braces in type declaration
+dotnet_diagnostic.MA0206.severity = warning

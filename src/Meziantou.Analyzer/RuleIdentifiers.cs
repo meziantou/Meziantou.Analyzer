@@ -205,6 +205,7 @@ internal static class RuleIdentifiers
     public const string DoNotUseReturnTagForVoidMethod = "MA0203";
     public const string RemoveUnnecessaryPartialModifier = "MA0204";
     public const string UseExclusiveOrOperator = "MA0205";
+    public const string RemoveUnnecessaryBracesInTypeDeclaration = "MA0206";
 
     public static string GetHelpUri(string identifier)
     {
