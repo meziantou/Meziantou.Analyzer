@@ -74,6 +74,8 @@ public sealed class RemoveUnnecessaryPartialModifierFixer : CodeFixProvider
             return typeDeclaration.WithModifiers(modifiers.Remove(partialKeyword));
         }
 
-        return typeDeclaration.WithModifiers(modifiers.Remove(partialKeyword));
+        return typeDeclaration
+            .WithModifiers(modifiers.Remove(partialKeyword))
+            .WithKeyword(typeDeclaration.Keyword.WithLeadingTrivia(nonspaceTrivia.Concat(typeDeclaration.Keyword.LeadingTrivia)));
     }
 }
