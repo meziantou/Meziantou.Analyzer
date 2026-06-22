@@ -225,6 +225,8 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0204](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0204.md)|Design|Remove unnecessary partial modifier|ℹ️|✔️|✔️|
 |[MA0205](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0205.md)|Style|Use exclusive or operator|ℹ️|✔️|✔️|
 |[MA0206](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0206.md)|Style|Remove unnecessary braces in type declaration|ℹ️|✔️|✔️|
+|[MA0207](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0207.md)|Usage|\[FixedAddressValueType\] fields must be static|⚠️|✔️|❌|
+|[MA0208](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0208.md)|Usage|\[FixedAddressValueType\] fields must be value types|⚠️|✔️|❌|
 
 <!-- rules -->
 
