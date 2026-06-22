@@ -613,3 +613,9 @@ dotnet_diagnostic.MA0205.severity = warning
 
 # MA0206: Remove unnecessary braces in type declaration
 dotnet_diagnostic.MA0206.severity = warning
+
+# MA0207: [FixedAddressValueType] fields must be static
+dotnet_diagnostic.MA0207.severity = warning
+
+# MA0208: [FixedAddressValueType] fields must be value types
+dotnet_diagnostic.MA0208.severity = warning
