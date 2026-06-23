@@ -29,16 +29,17 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
 
         context.RegisterCompilationStartAction(context =>
         {
-            var wpfUserControlSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.UserControl");
-            var wpfPageSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.Page");
-            var wpfWindowSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Window");
-            var wpfApplicationSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Application");
+            var excludedBaseTypes = ImmutableArray.Create(
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.UserControl"),
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.Page"),
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Window"),
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Application"));
 
-            context.RegisterSymbolAction(context => AnalyzeNamedTypeSymbol(context, wpfUserControlSymbol, wpfPageSymbol, wpfWindowSymbol, wpfApplicationSymbol), SymbolKind.NamedType);
+            context.RegisterSymbolAction(context => AnalyzeNamedTypeSymbol(context, excludedBaseTypes), SymbolKind.NamedType);
         });
     }
 
-    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context, INamedTypeSymbol? wpfUserControlSymbol, INamedTypeSymbol? wpfPageSymbol, INamedTypeSymbol? wpfWindowSymbol, INamedTypeSymbol? wpfApplicationSymbol)
+    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface))
@@ -55,17 +56,20 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         if (partialToken == default)
             return;
 
-        if (InheritsFromWpfXamlType(symbol, wpfUserControlSymbol, wpfPageSymbol, wpfWindowSymbol, wpfApplicationSymbol))
+        if (InheritsFromExcludedType(symbol, excludedBaseTypes))
             return;
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, partialToken.GetLocation()));
     }
 
-    private static bool InheritsFromWpfXamlType(INamedTypeSymbol symbol, INamedTypeSymbol? wpfUserControlSymbol, INamedTypeSymbol? wpfPageSymbol, INamedTypeSymbol? wpfWindowSymbol, INamedTypeSymbol? wpfApplicationSymbol)
+    private static bool InheritsFromExcludedType(INamedTypeSymbol symbol, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes)
     {
-        return symbol.InheritsFrom(wpfUserControlSymbol) ||
-               symbol.InheritsFrom(wpfPageSymbol) ||
-               symbol.InheritsFrom(wpfWindowSymbol) ||
-               symbol.InheritsFrom(wpfApplicationSymbol);
+        foreach (var excludedType in excludedBaseTypes)
+        {
+            if (symbol.InheritsFrom(excludedType))
+                return true;
+        }
+
+        return false;
     }
 }
