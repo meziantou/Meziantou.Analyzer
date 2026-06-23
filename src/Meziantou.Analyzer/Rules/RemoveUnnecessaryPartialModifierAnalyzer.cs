@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -46,6 +47,17 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         if (partialToken == default)
             return;
 
+        if (InheritsFromWpfXamlType(symbol, context.Compilation))
+            return;
+
         context.ReportDiagnostic(Diagnostic.Create(Rule, partialToken.GetLocation()));
+    }
+
+    private static bool InheritsFromWpfXamlType(INamedTypeSymbol symbol, Compilation compilation)
+    {
+        return symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Controls.UserControl")) ||
+               symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Controls.Page")) ||
+               symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Window")) ||
+               symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Application"));
     }
 }

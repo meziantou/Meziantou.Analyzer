@@ -222,4 +222,67 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task PartialClass_InheritingFromWpfUserControl_NoDiagnostic()
+    {
+        const string SourceCode = """
+            namespace System.Windows.Controls
+            {
+                public class UserControl
+                {
+                }
+            }
+
+            partial class Sample : System.Windows.Controls.UserControl
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PartialClass_InheritingFromWpfPage_NoDiagnostic()
+    {
+        const string SourceCode = """
+            namespace System.Windows.Controls
+            {
+                public class Page
+                {
+                }
+            }
+
+            partial class Sample : System.Windows.Controls.Page
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PartialClass_InheritingFromWpfApplication_NoDiagnostic()
+    {
+        const string SourceCode = """
+            namespace System.Windows
+            {
+                public class Application
+                {
+                }
+            }
+
+            partial class Sample : System.Windows.Application
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 }
