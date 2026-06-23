@@ -233,7 +233,6 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
                 {
                 }
             }
-
             partial class Sample : System.Windows.Controls.UserControl
             {
             }
@@ -254,7 +253,6 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
                 {
                 }
             }
-
             partial class Sample : System.Windows.Controls.Page
             {
             }
@@ -275,7 +273,6 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
                 {
                 }
             }
-
             partial class Sample : System.Windows.Application
             {
             }
@@ -296,7 +293,6 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
                 {
                 }
             }
-
             partial class Sample : System.Windows.Window
             {
             }
