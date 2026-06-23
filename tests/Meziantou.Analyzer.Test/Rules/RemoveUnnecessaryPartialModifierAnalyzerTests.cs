@@ -285,4 +285,25 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             .WithSourceCode(SourceCode)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task PartialClass_InheritingFromWpfWindow_NoDiagnostic()
+    {
+        const string SourceCode = """
+            namespace System.Windows
+            {
+                public class Window
+                {
+                }
+            }
+
+            partial class Sample : System.Windows.Window
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ValidateAsync();
+    }
 }

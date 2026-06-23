@@ -27,10 +27,18 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze);
 
-        context.RegisterSymbolAction(AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var wpfUserControlSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.UserControl");
+            var wpfPageSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.Page");
+            var wpfWindowSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Window");
+            var wpfApplicationSymbol = context.Compilation.GetBestTypeByMetadataName("System.Windows.Application");
+
+            context.RegisterSymbolAction(context => AnalyzeNamedTypeSymbol(context, wpfUserControlSymbol, wpfPageSymbol, wpfWindowSymbol, wpfApplicationSymbol), SymbolKind.NamedType);
+        });
     }
 
-    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context, INamedTypeSymbol? wpfUserControlSymbol, INamedTypeSymbol? wpfPageSymbol, INamedTypeSymbol? wpfWindowSymbol, INamedTypeSymbol? wpfApplicationSymbol)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface))
@@ -47,17 +55,17 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         if (partialToken == default)
             return;
 
-        if (InheritsFromWpfXamlType(symbol, context.Compilation))
+        if (InheritsFromWpfXamlType(symbol, wpfUserControlSymbol, wpfPageSymbol, wpfWindowSymbol, wpfApplicationSymbol))
             return;
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, partialToken.GetLocation()));
     }
 
-    private static bool InheritsFromWpfXamlType(INamedTypeSymbol symbol, Compilation compilation)
+    private static bool InheritsFromWpfXamlType(INamedTypeSymbol symbol, INamedTypeSymbol? wpfUserControlSymbol, INamedTypeSymbol? wpfPageSymbol, INamedTypeSymbol? wpfWindowSymbol, INamedTypeSymbol? wpfApplicationSymbol)
     {
-        return symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Controls.UserControl")) ||
-               symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Controls.Page")) ||
-               symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Window")) ||
-               symbol.InheritsFrom(compilation.GetBestTypeByMetadataName("System.Windows.Application"));
+        return symbol.InheritsFrom(wpfUserControlSymbol) ||
+               symbol.InheritsFrom(wpfPageSymbol) ||
+               symbol.InheritsFrom(wpfWindowSymbol) ||
+               symbol.InheritsFrom(wpfApplicationSymbol);
     }
 }
