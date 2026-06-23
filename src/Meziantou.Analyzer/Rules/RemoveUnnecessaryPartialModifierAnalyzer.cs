@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -26,10 +27,19 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze);
 
-        context.RegisterSymbolAction(AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(context =>
+        {
+            var excludedBaseTypes = ImmutableArray.Create(
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.UserControl"),
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.Page"),
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Window"),
+                context.Compilation.GetBestTypeByMetadataName("System.Windows.Application"));
+
+            context.RegisterSymbolAction(context => AnalyzeNamedTypeSymbol(context, excludedBaseTypes), SymbolKind.NamedType);
+        });
     }
 
-    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface))
@@ -46,6 +56,20 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         if (partialToken == default)
             return;
 
+        if (InheritsFromExcludedType(symbol, excludedBaseTypes))
+            return;
+
         context.ReportDiagnostic(Diagnostic.Create(Rule, partialToken.GetLocation()));
+    }
+
+    private static bool InheritsFromExcludedType(INamedTypeSymbol symbol, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes)
+    {
+        foreach (var excludedType in excludedBaseTypes)
+        {
+            if (symbol.InheritsFrom(excludedType))
+                return true;
+        }
+
+        return false;
     }
 }
