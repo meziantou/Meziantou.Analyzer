@@ -83,9 +83,10 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
         await CreateProjectBuilder()
             .WithLanguageVersion(LanguageVersion.CSharp9)
             .WithSourceCode("""
-                public record Foo
-                {
-                }
+                public record Foo [|{|]}
+                """)
+            .ShouldFixCodeWith("""
+                public record Foo;
                 """)
             .ValidateAsync();
     }
@@ -126,6 +127,46 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
                 """)
             .ShouldFixCodeWith("""
                 public struct Foo(string Value1, string Value2);
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClassPrimaryConstructor_WithDocumentation()
+    {
+        await CreateProjectBuilder()
+            .WithLanguageVersion(LanguageVersion.CSharp12)
+            .WithSourceCode("""
+                /// <summary>
+                /// I show up when you hover my constructor invocation too!
+                /// </summary>
+                public sealed class Documented() [|{|]}
+                """)
+            .ShouldFixCodeWith("""
+                /// <summary>
+                /// I show up when you hover my constructor invocation too!
+                /// </summary>
+                public sealed class Documented();
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClassWithoutPrimaryConstructor_WithDocumentation()
+    {
+        await CreateProjectBuilder()
+            .WithLanguageVersion(LanguageVersion.CSharp12)
+            .WithSourceCode("""
+                /// <summary>
+                /// I don't. :(
+                /// </summary>
+                public sealed class HalfDocumented [|{|]}
+                """)
+            .ShouldFixCodeWith("""
+                /// <summary>
+                /// I don't. :(
+                /// </summary>
+                public sealed class HalfDocumented;
                 """)
             .ValidateAsync();
     }
