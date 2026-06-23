@@ -52,6 +52,9 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
         if (typeDeclaration.Members.Count != 0)
             return false;
 
+        if (HasDocumentationComment(typeDeclaration))
+            return false;
+
         if (typeDeclaration.OpenBraceToken.IsMissing || typeDeclaration.CloseBraceToken.IsMissing || typeDeclaration.SemicolonToken.IsKind(SyntaxKind.SemicolonToken))
             return false;
 
@@ -79,5 +82,13 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
         return typeDeclaration.OpenBraceToken.TrailingTrivia
             .Concat(typeDeclaration.CloseBraceToken.LeadingTrivia)
             .Any(static trivia => trivia.IsDirective || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia));
+    }
+
+    private static bool HasDocumentationComment(TypeDeclarationSyntax typeDeclaration)
+    {
+        if (!typeDeclaration.HasStructuredTrivia)
+            return false;
+
+        return typeDeclaration.GetLeadingTrivia().Any(static trivia => trivia.GetStructure() is DocumentationCommentTriviaSyntax);
     }
 }

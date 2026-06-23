@@ -103,6 +103,22 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     }
 
     [Fact]
+    public async Task ClassPrimaryConstructor_WithDocumentationComment()
+    {
+        await CreateProjectBuilder()
+            .WithLanguageVersion(LanguageVersion.CSharp12)
+            .WithSourceCode("""
+                /// <summary>
+                /// Test
+                /// </summary>
+                public class Foo(string Value1, string Value2)
+                {
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ClassPrimaryConstructor_CodeFix()
     {
         await CreateProjectBuilder()
