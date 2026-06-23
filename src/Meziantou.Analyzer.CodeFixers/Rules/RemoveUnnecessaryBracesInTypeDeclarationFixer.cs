@@ -53,7 +53,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationFixer : CodeFixProvi
 
     private static bool CanRemoveBraces(TypeDeclarationSyntax typeDeclaration)
     {
-        if (!HasParameterList(typeDeclaration))
+        if (!CanUseSemicolonTypeDeclaration(typeDeclaration))
             return false;
 
         if (typeDeclaration.Members.Count != 0)
@@ -65,16 +65,16 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationFixer : CodeFixProvi
         return !ContainsCommentOrDirectiveInBraces(typeDeclaration);
     }
 
-    private static bool HasParameterList(TypeDeclarationSyntax typeDeclaration)
+    private static bool CanUseSemicolonTypeDeclaration(TypeDeclarationSyntax typeDeclaration)
     {
-        if (typeDeclaration is RecordDeclarationSyntax { ParameterList: not null })
+        if (typeDeclaration is RecordDeclarationSyntax)
             return true;
 
 #if CSHARP12_OR_GREATER
         if (!typeDeclaration.GetCSharpLanguageVersion().IsCSharp12OrAbove())
             return false;
 
-        if (typeDeclaration is ClassDeclarationSyntax { ParameterList: not null } or StructDeclarationSyntax { ParameterList: not null })
+        if (typeDeclaration is ClassDeclarationSyntax or StructDeclarationSyntax)
             return true;
 #endif
 

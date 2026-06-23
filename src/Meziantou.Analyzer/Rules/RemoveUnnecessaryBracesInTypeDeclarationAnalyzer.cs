@@ -46,7 +46,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
 
     private static bool CanRemoveBraces(TypeDeclarationSyntax typeDeclaration, LanguageVersion languageVersion)
     {
-        if (!HasParameterList(typeDeclaration, languageVersion))
+        if (!CanUseSemicolonTypeDeclaration(typeDeclaration, languageVersion))
             return false;
 
         if (typeDeclaration.Members.Count != 0)
@@ -58,16 +58,16 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
         return !ContainsCommentOrDirectiveInBraces(typeDeclaration);
     }
 
-    private static bool HasParameterList(TypeDeclarationSyntax typeDeclaration, LanguageVersion languageVersion)
+    private static bool CanUseSemicolonTypeDeclaration(TypeDeclarationSyntax typeDeclaration, LanguageVersion languageVersion)
     {
-        if (typeDeclaration is RecordDeclarationSyntax { ParameterList: not null })
+        if (typeDeclaration is RecordDeclarationSyntax)
             return true;
 
 #if CSHARP12_OR_GREATER
         if (!languageVersion.IsCSharp12OrAbove())
             return false;
 
-        if (typeDeclaration is ClassDeclarationSyntax { ParameterList: not null } or StructDeclarationSyntax { ParameterList: not null })
+        if (typeDeclaration is ClassDeclarationSyntax or StructDeclarationSyntax)
             return true;
 #endif
 
