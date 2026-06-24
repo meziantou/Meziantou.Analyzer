@@ -78,7 +78,7 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
-            if (!methodSymbol.Parameters[1].Type.IsOrInheritFrom(EventArgsSymbol))
+            if (!IsEventArgsType(methodSymbol.Parameters[1].Type))
             {
                 message = "The second parameter must be of type 'System.EventArgs' or a derived type";
                 return false;
@@ -86,6 +86,23 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
 
             message = null;
             return true;
+        }
+
+        private bool IsEventArgsType(ITypeSymbol type)
+        {
+            if (type.IsOrInheritFrom(EventArgsSymbol))
+                return true;
+
+            if (type is not ITypeParameterSymbol typeParameter)
+                return false;
+
+            foreach (var constraintType in typeParameter.ConstraintTypes)
+            {
+                if (IsEventArgsType(constraintType))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

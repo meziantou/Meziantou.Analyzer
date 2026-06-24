@@ -60,6 +60,19 @@ public sealed class UseEventHandlerOfTAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task ValidEvent_GenericTypeParameterConstraint()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                class Test<TEventArgs> where TEventArgs : System.EventArgs
+                {
+                    event System.EventHandler<TEventArgs> myevent;
+                }
+                """)
+              .ValidateAsync();
+    }
+
     [Theory]
     [InlineData("System.Action<string>")]
     [InlineData("System.EventHandler<string>")]
