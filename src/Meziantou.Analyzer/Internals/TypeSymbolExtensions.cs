@@ -25,8 +25,21 @@ internal static class TypeSymbolExtensions
 
     public static bool InheritsFrom(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? baseClassType)
     {
+        return InheritsFrom(classSymbol, baseClassType, visitedTypeParameters: null);
+    }
+
+    private static bool InheritsFrom(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? baseClassType, HashSet<ITypeParameterSymbol>? visitedTypeParameters)
+    {
         if (baseClassType is null)
             return false;
+
+        if (classSymbol is ITypeParameterSymbol typeParameter)
+        {
+            return AnyConstraintTypeMatches(typeParameter, visitedTypeParameters, (constraintType, visitedTypeParameters) =>
+            {
+                return !constraintType.IsEqualTo(baseClassType) && constraintType.InheritsFrom(baseClassType, visitedTypeParameters);
+            });
+        }
 
         var baseType = classSymbol.BaseType;
         while (baseType is not null)
@@ -42,8 +55,21 @@ internal static class TypeSymbolExtensions
 
     public static bool Implements(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? interfaceType)
     {
+        return Implements(classSymbol, interfaceType, visitedTypeParameters: null);
+    }
+
+    private static bool Implements(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? interfaceType, HashSet<ITypeParameterSymbol>? visitedTypeParameters)
+    {
         if (interfaceType is null)
             return false;
+
+        if (classSymbol is ITypeParameterSymbol typeParameter)
+        {
+            return AnyConstraintTypeMatches(typeParameter, visitedTypeParameters, (constraintType, visitedTypeParameters) =>
+            {
+                return constraintType.IsEqualTo(interfaceType) || constraintType.Implements(interfaceType, visitedTypeParameters);
+            });
+        }
 
         foreach (var @interface in classSymbol.AllInterfaces)
         {
@@ -56,8 +82,21 @@ internal static class TypeSymbolExtensions
 
     public static bool ImplementsGenericInterface(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? interfaceType)
     {
+        return ImplementsGenericInterface(classSymbol, interfaceType, visitedTypeParameters: null);
+    }
+
+    private static bool ImplementsGenericInterface(this ITypeSymbol classSymbol, [NotNullWhen(true)] ITypeSymbol? interfaceType, HashSet<ITypeParameterSymbol>? visitedTypeParameters)
+    {
         if (interfaceType is null)
             return false;
+
+        if (classSymbol is ITypeParameterSymbol typeParameter)
+        {
+            return AnyConstraintTypeMatches(typeParameter, visitedTypeParameters, (constraintType, visitedTypeParameters) =>
+            {
+                return constraintType.OriginalDefinition.IsEqualTo(interfaceType.OriginalDefinition) || constraintType.ImplementsGenericInterface(interfaceType, visitedTypeParameters);
+            });
+        }
 
         foreach (var iface in classSymbol.AllInterfaces)
         {
@@ -73,16 +112,7 @@ internal static class TypeSymbolExtensions
         if (interfaceType is null)
             return false;
 
-        if (symbol is INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol && interfaceSymbol.IsEqualTo(interfaceType))
-            return true;
-
-        foreach (var @interface in symbol.AllInterfaces)
-        {
-            if (@interface.IsEqualTo(interfaceType))
-                return true;
-        }
-
-        return false;
+        return symbol.IsEqualTo(interfaceType) || symbol.Implements(interfaceType);
     }
 
     public static IEnumerable<AttributeData> GetAttributes(this ISymbol symbol, ITypeSymbol? attributeType, bool inherits = true)
@@ -149,10 +179,41 @@ internal static class TypeSymbolExtensions
 
     public static bool IsOrInheritFrom(this ITypeSymbol symbol, [NotNullWhen(true)] ITypeSymbol? expectedType)
     {
+        return IsOrInheritFrom(symbol, expectedType, visitedTypeParameters: null);
+    }
+
+    private static bool IsOrInheritFrom(this ITypeSymbol symbol, [NotNullWhen(true)] ITypeSymbol? expectedType, HashSet<ITypeParameterSymbol>? visitedTypeParameters)
+    {
         if (expectedType is null)
             return false;
 
-        return symbol.IsEqualTo(expectedType) || (!expectedType.IsSealed && symbol.InheritsFrom(expectedType));
+        if (symbol.IsEqualTo(expectedType))
+            return true;
+
+        if (symbol is ITypeParameterSymbol typeParameter)
+        {
+            return AnyConstraintTypeMatches(typeParameter, visitedTypeParameters, (constraintType, visitedTypeParameters) =>
+            {
+                return constraintType.IsOrInheritFrom(expectedType, visitedTypeParameters);
+            });
+        }
+
+        return !expectedType.IsSealed && symbol.InheritsFrom(expectedType, visitedTypeParameters);
+    }
+
+    private static bool AnyConstraintTypeMatches(ITypeParameterSymbol typeParameter, HashSet<ITypeParameterSymbol>? visitedTypeParameters, Func<ITypeSymbol, HashSet<ITypeParameterSymbol>, bool> predicate)
+    {
+        visitedTypeParameters ??= [];
+        if (!visitedTypeParameters.Add(typeParameter))
+            return false;
+
+        foreach (var constraintType in typeParameter.ConstraintTypes)
+        {
+            if (predicate(constraintType, visitedTypeParameters))
+                return true;
+        }
+
+        return false;
     }
 
     public static bool IsEqualToAny([NotNullWhen(true)] this ITypeSymbol? symbol, params ReadOnlySpan<ITypeSymbol?> expectedTypes)

@@ -294,4 +294,25 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InvalidEventArgs_GenericTypeParameterConstraint()
+    {
+        const string SourceCode = """
+            using System;
+            delegate void CustomEventHandler<TEventArgs>(object sender, TEventArgs e) where TEventArgs : EventArgs;
+            class Test<TEventArgs> where TEventArgs : EventArgs
+            {
+                public event CustomEventHandler<TEventArgs> MyEvent;
+
+                void OnEvent()
+                {
+                    MyEvent?.Invoke(this, [|null|]);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

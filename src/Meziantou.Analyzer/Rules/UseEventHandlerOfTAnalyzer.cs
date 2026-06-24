@@ -90,19 +90,7 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
 
         private bool IsEventArgsType(ITypeSymbol type)
         {
-            if (type.IsOrInheritFrom(EventArgsSymbol))
-                return true;
-
-            if (type is not ITypeParameterSymbol typeParameter)
-                return false;
-
-            foreach (var constraintType in typeParameter.ConstraintTypes)
-            {
-                if (IsEventArgsType(constraintType))
-                    return true;
-            }
-
-            return false;
+            return type.IsOrInheritFrom(EventArgsSymbol);
         }
     }
 }
