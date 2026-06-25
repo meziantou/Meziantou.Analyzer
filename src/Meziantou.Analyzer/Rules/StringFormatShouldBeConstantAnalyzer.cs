@@ -161,7 +161,7 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         while (i < formatString.Length)
         {
             // Use IndexOf to find the next '{' - this can be vectorized for better performance
-            var braceIndex = formatString.IndexOf('{', i);
+            var braceIndex = formatString.IndexOf('{', i, StringComparison.Ordinal);
             if (braceIndex == -1)
             {
                 // No more opening braces
