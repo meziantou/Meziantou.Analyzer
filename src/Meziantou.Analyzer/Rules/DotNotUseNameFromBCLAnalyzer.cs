@@ -77,7 +77,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         using var sr = new StreamReader(stream);
         while (sr.ReadLine() is { } line)
         {
-            var index = line.LastIndexOf('.');
+            var index = line.LastIndexOf(".", StringComparison.Ordinal);
             var ns = line[..index];
             var name = line[(index + 1)..];
 

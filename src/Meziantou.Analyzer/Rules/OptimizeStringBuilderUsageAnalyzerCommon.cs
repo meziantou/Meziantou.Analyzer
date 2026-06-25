@@ -74,7 +74,7 @@ internal static class OptimizeStringBuilderUsageAnalyzerCommon
         var i = 0;
         while (i < formatString.Length)
         {
-            var braceIndex = formatString.IndexOf('{', i);
+            var braceIndex = formatString.IndexOf("{", i, StringComparison.Ordinal);
             if (braceIndex == -1)
                 return false;
 

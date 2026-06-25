@@ -55,7 +55,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         if (nodeToFix is LiteralExpressionSyntax literal)
         {
             var text = literal.GetText().ToString();
-            var isVerbatim = text.StartsWith('@');
+            var isVerbatim = text.StartsWith("@", StringComparison.Ordinal);
             text = isVerbatim ? text[2..^1] : text[1..^1];
 
             var newNode = ReplaceString(generator, text, newLine, newLineTrivia);
