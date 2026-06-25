@@ -140,7 +140,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                             continue;
 
                         var lineText = line.ToString();
-                        if (lineText.StartsWith("#", StringComparison.Ordinal))
+                        if (lineText.StartsWith('#', StringComparison.Ordinal))
                             continue;
 
                         var parts = lineText.Split(';');
@@ -513,7 +513,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             {
                 foreach (var prefix in potentialNamePrefixes)
                 {
-                    if (name.StartsWith(prefix.ToString(), StringComparison.Ordinal))
+                    if (name.StartsWith(prefix, StringComparison.Ordinal))
                     {
                         name = name[1..];
                         break;
