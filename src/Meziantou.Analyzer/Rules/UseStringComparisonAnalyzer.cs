@@ -53,6 +53,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol _stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison")!;
         private readonly INamedTypeSymbol? _jobjectSymbol = compilation.GetBestTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
         private readonly INamedTypeSymbol? _xunitAssertSymbol = compilation.GetBestTypeByMetadataName("XUnit.Assert");
+        private readonly INamedTypeSymbol? _meziantouFrameworkAssertSymbol = compilation.GetBestTypeByMetadataName("Meziantou.Framework.Assertions.Assert");
         private readonly HashSet<ISymbol> _nonCultureSensitiveSymbols = CreateNonCultureSensitiveSymbols(compilation);
 
         public bool IsValid => _stringComparisonSymbol is not null;
@@ -144,6 +145,10 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 
             // Xunit.Assert.Contains/NotContains
             if (method.ContainingType.IsEqualTo(_xunitAssertSymbol))
+                return true;
+
+            // Meziantou.Framework.Assertions.Assert
+            if (method.ContainingType.IsEqualTo(_meziantouFrameworkAssertSymbol))
                 return true;
 
             return false;

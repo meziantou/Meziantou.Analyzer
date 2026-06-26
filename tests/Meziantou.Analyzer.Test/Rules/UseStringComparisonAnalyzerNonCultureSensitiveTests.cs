@@ -329,4 +329,31 @@ public sealed class UseStringComparisonAnalyzerNonCultureSensitiveTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task MeziantouFrameworkAssertions_Assert_ShouldReportDiagnosticMA0001()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|Meziantou.Framework.Assertions.Assert.Contains("abc", "abcdef")|];
+                }
+            }
+
+            namespace Meziantou.Framework.Assertions
+            {
+                public static class Assert
+                {
+                    public static void Contains(string expected, string actual) => throw null;
+                    public static void Contains(string expected, string actual, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldReportDiagnosticWithMessage("Use an overload of 'Contains' that has a StringComparison parameter")
+              .ValidateAsync();
+    }
 }
