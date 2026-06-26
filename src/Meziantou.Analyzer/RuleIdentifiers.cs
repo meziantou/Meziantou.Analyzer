@@ -208,6 +208,8 @@ internal static class RuleIdentifiers
     public const string RemoveUnnecessaryBracesInTypeDeclaration = "MA0206";
     public const string FixedAddressValueTypeAttribute_FieldMustBeStatic = "MA0207";
     public const string FixedAddressValueTypeAttribute_FieldTypeMustBeValueType = "MA0208";
+    public const string UseInKeywordForInParameter = "MA0209";
+    public const string UseInKeywordToSelectInOverload = "MA0210";
 
     public static string GetHelpUri(string identifier)
     {

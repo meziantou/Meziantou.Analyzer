@@ -619,3 +619,9 @@ dotnet_diagnostic.MA0207.severity = error
 
 # MA0208: [FixedAddressValueType] fields must be value types
 dotnet_diagnostic.MA0208.severity = error
+
+# MA0209: Use in keyword for in parameter
+dotnet_diagnostic.MA0209.severity = error
+
+# MA0210: Use in keyword to call the in overload
+dotnet_diagnostic.MA0210.severity = error
