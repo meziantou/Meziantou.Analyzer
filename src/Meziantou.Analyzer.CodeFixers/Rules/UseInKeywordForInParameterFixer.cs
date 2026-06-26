@@ -35,9 +35,6 @@ public sealed class UseInKeywordForInParameterFixer : CodeFixProvider
         if (semanticModel?.GetOperation(argument, context.CancellationToken) is not IArgumentOperation operation)
             return;
 
-        if (HasNonIdentityConversion(operation.Value))
-            return;
-
         if (!IsVariableReference(operation.Value))
             return;
 
@@ -48,19 +45,6 @@ public sealed class UseInKeywordForInParameterFixer : CodeFixProvider
                 cancellationToken => AddInKeywordAsync(context.Document, diagnostic.Location.SourceSpan, cancellationToken),
                 equivalenceKey: title),
             context.Diagnostics);
-    }
-
-    private static bool HasNonIdentityConversion(IOperation operation)
-    {
-        while (operation is IConversionOperation conversion)
-        {
-            if (!conversion.Conversion.IsIdentity)
-                return true;
-
-            operation = conversion.Operand;
-        }
-
-        return false;
     }
 
     private static bool IsVariableReference(IOperation operation)
