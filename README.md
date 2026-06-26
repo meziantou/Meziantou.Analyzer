@@ -227,6 +227,8 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0206](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0206.md)|Style|Remove unnecessary braces in type declaration|ℹ️|✔️|✔️|
 |[MA0207](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0207.md)|Usage|\[FixedAddressValueType\] fields must be static|⚠️|✔️|❌|
 |[MA0208](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0208.md)|Usage|\[FixedAddressValueType\] fields must be value types|⚠️|✔️|❌|
+|[MA0209](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0209.md)|Performance|Use in keyword for in parameter|ℹ️|❌|✔️|
+|[MA0210](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0210.md)|Performance|Use in keyword to call the in overload|ℹ️|❌|✔️|
 
 <!-- rules -->
 
