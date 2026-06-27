@@ -112,7 +112,7 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
         {
             if (TryCreateMergeCandidate(term, semanticModel, cancellationToken, out var candidate))
             {
-                if (mergeCandidates.Count == 0 || AreSameMergeTarget(mergeCandidates[0].Target, candidate.Target))
+                if (mergeCandidates.Count == 0 || MergeIsPatternChecksCommon.AreSameMergeTarget(mergeCandidates[0].Target, candidate.Target))
                 {
                     mergeCandidates.Add(candidate);
                 }
@@ -242,7 +242,7 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
         if (isPatternOperation.Value.Syntax is not ExpressionSyntax valueExpression)
             return false;
 
-        if (!TryGetMergeTarget(isPatternOperation.Value, out var mergeTarget))
+        if (!MergeIsPatternChecksCommon.TryGetMergeTarget(isPatternOperation.Value, out var mergeTarget))
             return false;
 
         if (!TryCreatePatternSyntax(isPatternOperation.Pattern, out var patternSyntax))
@@ -339,111 +339,6 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
         }
     }
 
-    private static bool TryGetMergeTarget(IOperation operation, out MergeTarget mergeTarget)
-    {
-        operation = UnwrapOperation(operation);
-        switch (operation)
-        {
-            case ILocalReferenceOperation localReferenceOperation:
-                mergeTarget = new(localReferenceOperation.Local, null, ImmutableArray<ExpressionSyntax>.Empty);
-                return true;
-            case IParameterReferenceOperation parameterReferenceOperation:
-                mergeTarget = new(parameterReferenceOperation.Parameter, null, ImmutableArray<ExpressionSyntax>.Empty);
-                return true;
-            case IFieldReferenceOperation fieldReferenceOperation when TryGetOptionalMergeTarget(fieldReferenceOperation.Instance, out var fieldInstance):
-                mergeTarget = new(fieldReferenceOperation.Field, fieldInstance, ImmutableArray<ExpressionSyntax>.Empty);
-                return true;
-            case IPropertyReferenceOperation propertyReferenceOperation
-                when TryGetOptionalMergeTarget(propertyReferenceOperation.Instance, out var propertyInstance) &&
-                     TryGetMergeTargetArguments(propertyReferenceOperation.Arguments, out var propertyArguments):
-                mergeTarget = new(propertyReferenceOperation.Property, propertyInstance, propertyArguments);
-                return true;
-            case IEventReferenceOperation eventReferenceOperation when TryGetOptionalMergeTarget(eventReferenceOperation.Instance, out var eventInstance):
-                mergeTarget = new(eventReferenceOperation.Event, eventInstance, ImmutableArray<ExpressionSyntax>.Empty);
-                return true;
-            case IInstanceReferenceOperation instanceReferenceOperation when instanceReferenceOperation.Type is not null:
-                mergeTarget = new(instanceReferenceOperation.Type, null, ImmutableArray<ExpressionSyntax>.Empty);
-                return true;
-            default:
-                mergeTarget = null!;
-                return false;
-        }
-    }
-
-    private static bool TryGetMergeTargetArguments(ImmutableArray<IArgumentOperation> arguments, out ImmutableArray<ExpressionSyntax> mergeTargetArguments)
-    {
-        if (arguments.IsDefaultOrEmpty)
-        {
-            mergeTargetArguments = ImmutableArray<ExpressionSyntax>.Empty;
-            return true;
-        }
-
-        var builder = ImmutableArray.CreateBuilder<ExpressionSyntax>(arguments.Length);
-        foreach (var argument in arguments)
-        {
-            if (argument.Value.Syntax is not ExpressionSyntax expressionSyntax)
-            {
-                mergeTargetArguments = default;
-                return false;
-            }
-
-            builder.Add(expressionSyntax);
-        }
-
-        mergeTargetArguments = builder.MoveToImmutable();
-        return true;
-    }
-
-    private static bool TryGetOptionalMergeTarget(IOperation? operation, out MergeTarget? mergeTarget)
-    {
-        if (operation is null)
-        {
-            mergeTarget = null;
-            return true;
-        }
-
-        if (TryGetMergeTarget(operation, out var target))
-        {
-            mergeTarget = target;
-            return true;
-        }
-
-        mergeTarget = null;
-        return false;
-    }
-
-    private static bool AreSameMergeTarget(MergeTarget left, MergeTarget right)
-    {
-        return SymbolEqualityComparer.Default.Equals(left.Symbol, right.Symbol) &&
-               AreSameOptionalMergeTarget(left.Instance, right.Instance) &&
-               AreSameMergeTargetArguments(left.Arguments, right.Arguments);
-    }
-
-    private static bool AreSameOptionalMergeTarget(MergeTarget? left, MergeTarget? right)
-    {
-        if (left is null)
-            return right is null;
-
-        if (right is null)
-            return false;
-
-        return AreSameMergeTarget(left, right);
-    }
-
-    private static bool AreSameMergeTargetArguments(ImmutableArray<ExpressionSyntax> left, ImmutableArray<ExpressionSyntax> right)
-    {
-        if (left.Length != right.Length)
-            return false;
-
-        for (var i = 0; i < left.Length; i++)
-        {
-            if (!left[i].IsEquivalentTo(right[i], topLevel: false))
-                return false;
-        }
-
-        return true;
-    }
-
     private static bool CanMergeCandidates(SyntaxKind logicalExpressionKind, List<MergeCandidate> mergeCandidates)
     {
         if (logicalExpressionKind is not SyntaxKind.LogicalAndExpression)
@@ -480,7 +375,5 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
 
     private static bool IsLogicalBinary(SyntaxKind kind) => kind is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression;
 
-    private sealed record class MergeTarget(ISymbol Symbol, MergeTarget? Instance, ImmutableArray<ExpressionSyntax> Arguments);
-
-    private readonly record struct MergeCandidate(ExpressionSyntax TermExpression, MergeTarget Target, ExpressionSyntax Expression, PatternSyntax Pattern);
+    private readonly record struct MergeCandidate(ExpressionSyntax TermExpression, MergeIsPatternChecksCommon.MergeTarget Target, ExpressionSyntax Expression, PatternSyntax Pattern);
 }
