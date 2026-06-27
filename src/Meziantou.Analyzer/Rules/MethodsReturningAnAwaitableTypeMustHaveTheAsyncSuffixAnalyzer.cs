@@ -128,7 +128,6 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
             if (WellKnownMethodNames.Contains(method.Name))
                 return;
-
             var hasAsyncSuffix = method.Name.EndsWith("Async", StringComparison.Ordinal);
             if (_awaitableTypes.IsAwaitable(method.ReturnType))
             {
