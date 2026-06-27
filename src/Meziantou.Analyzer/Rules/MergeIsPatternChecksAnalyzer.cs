@@ -68,7 +68,7 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         {
             if (TryCreateMergeCandidate(term, semanticModel, cancellationToken, out var candidate))
             {
-                if (currentGroup.Count == 0 || AreSameMergeTarget(currentGroup[0].Target, candidate.Target))
+                if (currentGroup.Count == 0 || MergeIsPatternChecksCommon.AreSameMergeTarget(currentGroup[0].Target, candidate.Target))
                 {
                     currentGroup.Add(candidate);
                 }
@@ -117,7 +117,7 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         if (operation is not IIsPatternOperation isPatternOperation)
             return false;
 
-        if (!TryGetMergeTarget(isPatternOperation.Value, out var mergeTarget))
+        if (!MergeIsPatternChecksCommon.TryGetMergeTarget(isPatternOperation.Value, out var mergeTarget))
             return false;
 
         candidate = new(mergeTarget);
@@ -135,71 +135,5 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         return operation;
     }
 
-    private static bool TryGetMergeTarget(IOperation operation, out MergeTarget mergeTarget)
-    {
-        operation = UnwrapOperation(operation);
-        switch (operation)
-        {
-            case ILocalReferenceOperation localReferenceOperation:
-                mergeTarget = new(localReferenceOperation.Local);
-                return true;
-            case IParameterReferenceOperation parameterReferenceOperation:
-                mergeTarget = new(parameterReferenceOperation.Parameter);
-                return true;
-            case IFieldReferenceOperation fieldReferenceOperation when TryGetOptionalMergeTarget(fieldReferenceOperation.Instance, out var fieldInstance):
-                mergeTarget = new(fieldReferenceOperation.Field, fieldInstance);
-                return true;
-            case IPropertyReferenceOperation propertyReferenceOperation when TryGetOptionalMergeTarget(propertyReferenceOperation.Instance, out var propertyInstance):
-                mergeTarget = new(propertyReferenceOperation.Property, propertyInstance);
-                return true;
-            case IEventReferenceOperation eventReferenceOperation when TryGetOptionalMergeTarget(eventReferenceOperation.Instance, out var eventInstance):
-                mergeTarget = new(eventReferenceOperation.Event, eventInstance);
-                return true;
-            case IInstanceReferenceOperation instanceReferenceOperation when instanceReferenceOperation.Type is not null:
-                mergeTarget = new(instanceReferenceOperation.Type);
-                return true;
-            default:
-                mergeTarget = null!;
-                return false;
-        }
-    }
-
-    private static bool TryGetOptionalMergeTarget(IOperation? operation, out MergeTarget? mergeTarget)
-    {
-        if (operation is null)
-        {
-            mergeTarget = null;
-            return true;
-        }
-
-        if (TryGetMergeTarget(operation, out var target))
-        {
-            mergeTarget = target;
-            return true;
-        }
-
-        mergeTarget = null;
-        return false;
-    }
-
-    private static bool AreSameMergeTarget(MergeTarget left, MergeTarget right)
-    {
-        return SymbolEqualityComparer.Default.Equals(left.Symbol, right.Symbol) &&
-               AreSameOptionalMergeTarget(left.Instance, right.Instance);
-    }
-
-    private static bool AreSameOptionalMergeTarget(MergeTarget? left, MergeTarget? right)
-    {
-        if (left is null)
-            return right is null;
-
-        if (right is null)
-            return false;
-
-        return AreSameMergeTarget(left, right);
-    }
-
-    private sealed record class MergeTarget(ISymbol Symbol, MergeTarget? Instance = null);
-
-    private readonly record struct MergeCandidate(MergeTarget Target);
+    private readonly record struct MergeCandidate(MergeIsPatternChecksCommon.MergeTarget Target);
 }

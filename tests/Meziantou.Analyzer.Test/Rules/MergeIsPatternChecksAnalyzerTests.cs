@@ -272,6 +272,17 @@ public sealed class MergeIsPatternChecksAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task Indexer_DifferentArguments_DoNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var text = "";
+                  _ = text[0] is 'a' || text[1] is 'b';
+                  """)
+              .ValidateAsync();
+    }
+
 #if CSHARP12_OR_GREATER
     [Fact]
     public async Task PrimaryConstructorParameter()
