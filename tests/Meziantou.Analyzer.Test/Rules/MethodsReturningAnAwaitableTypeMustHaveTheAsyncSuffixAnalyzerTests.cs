@@ -335,4 +335,84 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
               .AddXUnitApi()
               .AddAnalyzerConfiguration("MA0137.exclude_test_methods", "false")
               .ValidateAsync();
+
+    [Fact]
+    public Task ConfigureAwait_IsIgnored()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Runtime.CompilerServices;
+                using System.Threading.Tasks;
+                class TypeName
+                {
+                    ConfiguredTaskAwaitable ConfigureAwait(bool continueOnCapturedContext) => Task.CompletedTask.ConfigureAwait(continueOnCapturedContext);
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task GetAwaiter_IsIgnored()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Runtime.CompilerServices;
+                using System.Threading.Tasks;
+                class TypeName
+                {
+                    TaskAwaiter GetAwaiter() => Task.CompletedTask.GetAwaiter();
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task WithCancellation_IsIgnored()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Collections.Generic;
+                using System.Threading;
+                class TypeName
+                {
+                    IAsyncEnumerable<int> WithCancellation(CancellationToken cancellationToken) => throw null;
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task PropertyReturningTask_IsIgnored()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class TypeName
+                {
+                    Task Task => Task.CompletedTask;
+                }
+                """)
+              .ValidateAsync();
+
+    [Fact]
+    public Task PropertyReturningTask_ExcludePropertyAccessorsTrue()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class TypeName
+                {
+                    Task Task => Task.CompletedTask;
+                }
+                """)
+              .AddAnalyzerConfiguration("MA0137.exclude_property_accessors", "true")
+              .ValidateAsync();
+
+    [Fact]
+    public Task PropertyReturningTask_ExcludePropertyAccessorsFalse_Diagnostic()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class TypeName
+                {
+                    Task Task
+                    {
+                        {|MA0137:get|} => System.Threading.Tasks.Task.CompletedTask;
+                    }
+                }
+                """)
+              .AddAnalyzerConfiguration("MA0137.exclude_property_accessors", "false")
+              .ValidateAsync();
 }
