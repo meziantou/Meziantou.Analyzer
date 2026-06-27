@@ -386,4 +386,33 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 }
                 """)
               .ValidateAsync();
+
+    [Fact]
+    public Task PropertyReturningTask_ExcludePropertyAccessorsTrue()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class TypeName
+                {
+                    Task Task => Task.CompletedTask;
+                }
+                """)
+              .AddAnalyzerConfiguration("MA0137.exclude_property_accessors", "true")
+              .ValidateAsync();
+
+    [Fact]
+    public Task PropertyReturningTask_ExcludePropertyAccessorsFalse_Diagnostic()
+        => CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading.Tasks;
+                class TypeName
+                {
+                    Task Task
+                    {
+                        {|MA0137:get|} => System.Threading.Tasks.Task.CompletedTask;
+                    }
+                }
+                """)
+              .AddAnalyzerConfiguration("MA0137.exclude_property_accessors", "false")
+              .ValidateAsync();
 }

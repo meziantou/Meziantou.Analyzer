@@ -84,9 +84,6 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
                 return;
 
-            if (method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove)
-                return;
-
             if (WellKnownMethodNames.Contains(method.Name))
                 return;
 
@@ -163,6 +160,10 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
             var excludeTestMethods = options.GetConfigurationValue(symbol, "MA0137.exclude_test_methods", defaultValue: true);
             if (excludeTestMethods && symbol.IsUnitTestMethod())
+                return true;
+
+            var excludePropertyAccessors = options.GetConfigurationValue(symbol, "MA0137.exclude_property_accessors", defaultValue: true);
+            if (excludePropertyAccessors && symbol.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove)
                 return true;
 
             return false;
