@@ -162,9 +162,12 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             if (excludeTestMethods && symbol.IsUnitTestMethod())
                 return true;
 
-            var excludePropertyAccessors = options.GetConfigurationValue(symbol, "MA0137.exclude_property_accessors", defaultValue: true);
-            if (excludePropertyAccessors && symbol.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove)
-                return true;
+            if (symbol.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove)
+            {
+                var excludePropertyAccessors = options.GetConfigurationValue(symbol, "MA0137.exclude_property_accessors", defaultValue: true);
+                if (excludePropertyAccessors)
+                    return true;
+            }
 
             return false;
         }
