@@ -66,6 +66,8 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
+        private static readonly ImmutableHashSet<string> WellKnownMethodNames = ImmutableHashSet.Create(StringComparer.Ordinal, "ConfigureAwait", "GetAwaiter", "WithCancellation");
+
         private readonly AwaitableTypes _awaitableTypes = new(compilation);
         private readonly INamedTypeSymbol? _iasyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
         private readonly INamedTypeSymbol? _benchmarkSymbol = compilation.GetBestTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
@@ -80,6 +82,12 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
                 return;
 
             if (method.IsEqualTo(context.Compilation.GetEntryPoint(context.CancellationToken)))
+                return;
+
+            if (method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove)
+                return;
+
+            if (WellKnownMethodNames.Contains(method.Name))
                 return;
 
             if (MustIgnoreSymbol(context.Options, method))
@@ -117,6 +125,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         {
             var operation = (ILocalFunctionOperation)context.Operation;
             var method = operation.Symbol;
+
+            if (WellKnownMethodNames.Contains(method.Name))
+                return;
 
             var hasAsyncSuffix = method.Name.EndsWith("Async", StringComparison.Ordinal);
             if (_awaitableTypes.IsAwaitable(method.ReturnType))
