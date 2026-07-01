@@ -209,6 +209,7 @@
 |[MA0208](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0208.md)|Usage|\[FixedAddressValueType\] fields must be value types|<span title='Warning'>⚠️</span>|✔️|❌|
 |[MA0209](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0209.md)|Performance|Use in keyword for in parameter|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0210](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0210.md)|Performance|Use in keyword to call the in overload|<span title='Info'>ℹ️</span>|❌|✔️|
+|[MA0211](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0211.md)|Design|Do not create a backing field that merely copies a primary constructor parameter|<span title='Info'>ℹ️</span>|✔️|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|

@@ -625,3 +625,6 @@ dotnet_diagnostic.MA0209.severity = error
 
 # MA0210: Use in keyword to call the in overload
 dotnet_diagnostic.MA0210.severity = error
+
+# MA0211: Do not create a backing field that merely copies a primary constructor parameter
+dotnet_diagnostic.MA0211.severity = error
