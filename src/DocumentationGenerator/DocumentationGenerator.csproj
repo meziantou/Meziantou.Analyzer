@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Meziantou.Framework.FullPath" Version="2.1.6" />
+    <PackageReference Include="Meziantou.Framework.FullPath" Version="2.1.7" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
   </ItemGroup>
 
