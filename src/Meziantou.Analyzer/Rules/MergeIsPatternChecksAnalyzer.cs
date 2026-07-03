@@ -74,7 +74,7 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (currentGroup.Count > 1)
+                    if (CanMergeCandidates(rootExpression.Kind(), currentGroup))
                         return true;
 
                     currentGroup.Clear();
@@ -83,14 +83,14 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
             }
             else
             {
-                if (currentGroup.Count > 1)
+                if (CanMergeCandidates(rootExpression.Kind(), currentGroup))
                     return true;
 
                 currentGroup.Clear();
             }
         }
 
-        return currentGroup.Count > 1;
+        return CanMergeCandidates(rootExpression.Kind(), currentGroup);
     }
 
     private static void FlattenLogicalTerms(ExpressionSyntax expression, SyntaxKind operatorKind, List<ExpressionSyntax> terms)
@@ -120,7 +120,8 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         if (!MergeIsPatternChecksCommon.TryGetMergeTarget(isPatternOperation.Value, out var mergeTarget))
             return false;
 
-        candidate = new(mergeTarget);
+        var patternSyntax = isPatternOperation.Pattern.Syntax as PatternSyntax;
+        candidate = new(mergeTarget, patternSyntax);
         return true;
     }
 
@@ -135,5 +136,56 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
         return operation;
     }
 
-    private readonly record struct MergeCandidate(MergeIsPatternChecksCommon.MergeTarget Target);
+    private static bool CanMergeCandidates(SyntaxKind logicalExpressionKind, List<MergeCandidate> mergeCandidates)
+    {
+        if (mergeCandidates.Count <= 1)
+            return false;
+
+        foreach (var candidate in mergeCandidates)
+        {
+            if (candidate.Pattern is not null && ContainsNotPatternWithVariableDesignation(candidate.Pattern))
+                return false;
+        }
+
+        if (logicalExpressionKind is SyntaxKind.LogicalOrExpression)
+        {
+            foreach (var candidate in mergeCandidates)
+            {
+                if (candidate.Pattern is not null && ContainsVariableDesignation(candidate.Pattern))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ContainsNotPatternWithVariableDesignation(PatternSyntax pattern)
+    {
+        if (pattern is UnaryPatternSyntax unaryPattern && ContainsVariableDesignation(unaryPattern.Pattern))
+            return true;
+
+        foreach (var child in pattern.ChildNodes())
+        {
+            if (child is PatternSyntax childPattern && ContainsNotPatternWithVariableDesignation(childPattern))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool ContainsVariableDesignation(SyntaxNode node)
+    {
+        if (node is SingleVariableDesignationSyntax)
+            return true;
+
+        foreach (var child in node.ChildNodes())
+        {
+            if (ContainsVariableDesignation(child))
+                return true;
+        }
+
+        return false;
+    }
+
+    private readonly record struct MergeCandidate(MergeIsPatternChecksCommon.MergeTarget Target, PatternSyntax? Pattern);
 }

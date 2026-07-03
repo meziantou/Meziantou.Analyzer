@@ -119,6 +119,28 @@ public sealed class MergeIsPatternChecksAnalyzerTests
     }
 
     [Fact]
+    public async Task Indexer_SameArgument_NotPatternWithDeclaration_DoNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  var cList = new System.Collections.Generic.List<object?> { "" };
+                  _ = cList[0] is not null || cList[0] is not string cy;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LogicalOr_DeclarationPattern_DoNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  object? value = "";
+                  _ = value is string text || value is null;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task AlreadyMerged_DoNotReport()
     {
         await CreateProjectBuilder()
