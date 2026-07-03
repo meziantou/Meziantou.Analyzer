@@ -4,6 +4,7 @@ using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
@@ -61,7 +62,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         switch (nodeToFix)
         {
             case ObjectCreationExpressionSyntax creationExpression:
-                editor.ReplaceNode(creationExpression, creationExpression.AddArgumentListArguments(newArgument));
+                editor.ReplaceNode(creationExpression, AddArgument(creationExpression, newArgument));
                 break;
 
             case ImplicitObjectCreationExpressionSyntax implicitCreationExpression:
@@ -77,5 +78,16 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         }
 
         return editor.GetChangedDocument();
+    }
+
+    private static ObjectCreationExpressionSyntax AddArgument(ObjectCreationExpressionSyntax creationExpression, ArgumentSyntax argument)
+    {
+        if (creationExpression.ArgumentList is not null)
+            return creationExpression.AddArgumentListArguments(argument);
+
+        var trailingTrivia = creationExpression.Type.GetTrailingTrivia();
+        return creationExpression
+            .WithType(creationExpression.Type.WithoutTrailingTrivia())
+            .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(argument)).WithTrailingTrivia(trailingTrivia));
     }
 }
