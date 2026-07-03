@@ -158,6 +158,39 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public async Task Dictionary_String_WithoutArgumentListAndWithInitializer_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|new System.Collections.Generic.Dictionary<string, object?>
+                    {
+                        ["c"] = true,
+                    }|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.Dictionary<string, object?>(System.StringComparer.Ordinal)
+                    {
+                        ["c"] = true,
+                    };
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ConcurrentDictionary_String_ShouldReportDiagnostic()
     {
         const string SourceCode = """
