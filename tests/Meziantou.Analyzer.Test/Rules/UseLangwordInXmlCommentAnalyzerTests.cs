@@ -35,6 +35,7 @@ class Sample { }
     [InlineData("<i>in</i>")]
     [InlineData("null")]
     [InlineData("this is null")]
+    [InlineData("<c language=\"json\">null</c>")]
     public async Task ValidateSummary_Valid(string comment)
     {
         await CreateProjectBuilder()

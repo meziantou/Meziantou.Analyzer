@@ -154,6 +154,9 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
                         var elementName = elementSyntax.StartTag.Name.LocalName.Text;
                         if (string.Equals(elementName, "c", StringComparison.OrdinalIgnoreCase) || string.Equals(elementName, "code", StringComparison.OrdinalIgnoreCase))
                         {
+                            if (elementSyntax.StartTag.Attributes.Count > 0)
+                                continue;
+
                             var item = elementSyntax.Content.SingleOrDefaultIfMultiple();
                             if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
                             {
