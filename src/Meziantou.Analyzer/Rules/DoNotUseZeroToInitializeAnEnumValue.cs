@@ -1,4 +1,6 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -35,7 +37,7 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         if (!operation.IsImplicit)
             return;
 
-        if (operation.Type is not INamedTypeSymbol { EnumUnderlyingType: not null and var enumType })
+        if (operation.Type is not INamedTypeSymbol { EnumUnderlyingType: not null and var enumType } enumSymbol)
             return;
 
         if (operation.Operand is IDefaultValueOperation)
@@ -49,10 +51,21 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
             return;
 #endif
 
-        if (operation.ConstantValue is { HasValue: true, Value: not null and var value } && IsZero(enumType, value))
+        if (operation.ConstantValue is not { HasValue: true, Value: not null and var value } || !IsZero(enumType, value))
+            return;
+
+        var reportOn = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".report_on", defaultValue: "all");
+        if (string.Equals(reportOn, "argument", StringComparison.OrdinalIgnoreCase))
         {
-            context.ReportDiagnostic(Rule, operation, operation.Type.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat));
+            if (operation.Parent is not IArgumentOperation)
+                return;
         }
+
+        var excludeEnumWithoutZeroMember = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".exclude_enum_without_zero_member", defaultValue: false);
+        if (excludeEnumWithoutZeroMember && !HasZeroMember(enumSymbol, enumType))
+            return;
+
+        context.ReportDiagnostic(Rule, operation, operation.Type.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat));
 
         static bool IsZero(ITypeSymbol enumType, object value)
         {
@@ -68,6 +81,14 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
                 SpecialType.System_UInt64 => value is ulong converted && converted == 0uL,
                 _ => false,
             };
+        }
+
+        static bool HasZeroMember(INamedTypeSymbol enumSymbol, ITypeSymbol enumType)
+        {
+            return enumSymbol.GetMembers()
+                .OfType<IFieldSymbol>()
+                .Where(f => f.HasConstantValue)
+                .Any(f => IsZero(enumType, f.ConstantValue!));
         }
     }
 }

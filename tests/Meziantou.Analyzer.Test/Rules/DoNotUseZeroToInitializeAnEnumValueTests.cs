@@ -456,4 +456,106 @@ public class MyClass
 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
+    public async Task ExcludeEnumWithoutZeroMember_NoZeroMember_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0099.exclude_enum_without_zero_member", "true")
+              .WithSourceCode("""
+enum MyEnum { A = 1, B = 2 }
+
+class Test
+{
+    void M()
+    {
+        MyEnum a = 0;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
+    public async Task ExcludeEnumWithoutZeroMember_HasZeroMember_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0099.exclude_enum_without_zero_member", "true")
+              .WithSourceCode("""
+enum MyEnum { A = 0, B = 1 }
+
+class Test
+{
+    void M()
+    {
+        MyEnum a = [|0|];
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
+    public async Task ReportOnArgument_ZeroInArgument_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0099.report_on", "argument")
+              .WithSourceCode("""
+enum MyEnum { A = 0, B = 1 }
+
+class Test
+{
+    void M(MyEnum x) { }
+
+    void A()
+    {
+        M([|0|]);
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
+    public async Task ReportOnArgument_ZeroInAssignment_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0099.report_on", "argument")
+              .WithSourceCode("""
+enum MyEnum { A = 0, B = 1 }
+
+class Test
+{
+    void M()
+    {
+        MyEnum a = 0;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
+    public async Task ReportOnArgument_ZeroInOptionalParameterDefault_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0099.report_on", "argument")
+              .WithSourceCode("""
+enum MyEnum { A = 0, B = 1 }
+
+class Test
+{
+    void M(MyEnum x = 0)
+    {
+        M();
+    }
+}
+""")
+              .ValidateAsync();
+    }
 }
