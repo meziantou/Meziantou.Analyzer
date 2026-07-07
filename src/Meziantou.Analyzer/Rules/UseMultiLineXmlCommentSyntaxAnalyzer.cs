@@ -15,7 +15,7 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
         RuleCategories.Style,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,
-        description: "",
+        description: "Enforce multi-line XML documentation comment syntax for consistency.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseMultiLineXmlCommentSyntax));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
@@ -34,7 +34,7 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
         if (symbol.IsImplicitlyDeclared)
             return;
 
-        if (symbol is INamedTypeSymbol namedTypeSymbol && (namedTypeSymbol.IsImplicitClass || symbol.Name.Contains('$', StringComparison.Ordinal)))
+        if (IsCompilerGeneratedType(symbol))
             return;
 
         foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
@@ -91,5 +91,10 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
                 }
             }
         }
+    }
+
+    private static bool IsCompilerGeneratedType(ISymbol symbol)
+    {
+        return symbol is INamedTypeSymbol namedTypeSymbol && (namedTypeSymbol.IsImplicitClass || symbol.Name.Contains('$', StringComparison.Ordinal));
     }
 }
