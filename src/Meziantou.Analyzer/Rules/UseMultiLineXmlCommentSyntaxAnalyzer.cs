@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -67,7 +68,7 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
                         {
                             foreach (var token in textSyntax.TextTokens)
                             {
-                                if (token.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.XmlTextLiteralNewLineToken))
+                                if (token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken))
                                     continue;
 
                                 var text = token.Text.Trim();

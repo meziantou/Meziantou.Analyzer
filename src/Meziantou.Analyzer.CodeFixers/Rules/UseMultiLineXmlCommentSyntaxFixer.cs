@@ -61,9 +61,6 @@ public sealed class UseMultiLineXmlCommentSyntaxFixer : CodeFixProvider
 
             foreach (var token in textSyntax.TextTokens)
             {
-                if (token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken))
-                    continue;
-
                 var text = token.Text.Trim();
                 if (string.IsNullOrWhiteSpace(text))
                     continue;
