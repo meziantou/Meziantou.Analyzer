@@ -626,5 +626,5 @@ dotnet_diagnostic.MA0209.severity = none
 # MA0210: Use in keyword to call the in overload
 dotnet_diagnostic.MA0210.severity = none
 
-# MA0211: Use multi-line XML comment syntax
+# MA0211: Use multi-line syntax for XML summary comments
 dotnet_diagnostic.MA0211.severity = none

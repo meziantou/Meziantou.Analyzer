@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -11,12 +10,12 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseMultiLineXmlCommentSyntax,
-        title: "Use multi-line XML comment syntax",
-        messageFormat: "Use multi-line XML comment syntax",
+        title: "Use multi-line syntax for XML summary comments",
+        messageFormat: "Use multi-line syntax for XML summary comments",
         RuleCategories.Style,
         DiagnosticSeverity.Info,
         isEnabledByDefault: false,
-        description: "Enforce multi-line XML documentation comment syntax for consistency.",
+        description: "Enforce multi-line XML documentation comment syntax for <summary> elements.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseMultiLineXmlCommentSyntax));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
@@ -55,40 +54,16 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
                     if (childNode is not XmlElementSyntax elementSyntax)
                         continue;
 
+                    if (!string.Equals(elementSyntax.StartTag.Name.LocalName.ValueText, "summary", StringComparison.Ordinal))
+                        continue;
+
                     var startLine = elementSyntax.StartTag.GetLocation().GetLineSpan().StartLinePosition.Line;
                     var endLine = elementSyntax.EndTag.GetLocation().GetLineSpan().EndLinePosition.Line;
                     if (endLine != startLine)
                         continue;
 
-                    var hasCDataOrOtherElements = false;
-                    var meaningfulTextTokenCount = 0;
-                    foreach (var content in elementSyntax.Content)
-                    {
-                        if (content is XmlTextSyntax textSyntax)
-                        {
-                            foreach (var token in textSyntax.TextTokens)
-                            {
-                                if (token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken))
-                                    continue;
-
-                                var text = token.Text.Trim();
-                                if (!string.IsNullOrWhiteSpace(text))
-                                {
-                                    meaningfulTextTokenCount++;
-                                }
-                            }
-                        }
-                        else if (content is XmlCDataSectionSyntax || content is XmlElementSyntax)
-                        {
-                            hasCDataOrOtherElements = true;
-                            break;
-                        }
-                    }
-
-                    if (!hasCDataOrOtherElements && meaningfulTextTokenCount <= 1)
-                    {
+                    if (!string.IsNullOrWhiteSpace(string.Concat(elementSyntax.Content.Select(static content => content.ToFullString()))))
                         context.ReportDiagnostic(Diagnostic.Create(Rule, elementSyntax.GetLocation()));
-                    }
                 }
             }
         }

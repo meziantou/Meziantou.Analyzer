@@ -1,10 +1,8 @@
 using System.Collections.Immutable;
 using System.Composition;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
@@ -24,11 +22,14 @@ public sealed class UseMultiLineXmlCommentSyntaxFixer : CodeFixProvider
         if (nodeToFix is not XmlElementSyntax elementSyntax)
             return;
 
+        if (!string.Equals(elementSyntax.StartTag.Name.LocalName.ValueText, "summary", StringComparison.Ordinal))
+            return;
+
         var sourceText = await context.Document.GetTextAsync(context.CancellationToken).ConfigureAwait(false);
         if (!TryCreateReplacementText(sourceText, elementSyntax, out var replacementText))
             return;
 
-        var title = "Use multi-line XML comment syntax";
+        var title = "Use multi-line syntax for XML summary comments";
         var codeAction = CodeAction.Create(
             title,
             cancellationToken => FixAsync(context.Document, elementSyntax.Span, replacementText, cancellationToken),
@@ -53,32 +54,13 @@ public sealed class UseMultiLineXmlCommentSyntaxFixer : CodeFixProvider
             lineBreak = "\n";
         }
 
-        var contentText = new StringBuilder();
-        foreach (var content in elementSyntax.Content)
-        {
-            if (content is not XmlTextSyntax textSyntax)
-                continue;
-
-            foreach (var token in textSyntax.TextTokens)
-            {
-                var text = token.Text.Trim();
-                if (string.IsNullOrWhiteSpace(text))
-                    continue;
-
-                if (contentText.Length > 0)
-                {
-                    contentText.Append(' ');
-                }
-
-                contentText.Append(text);
-            }
-        }
+        var contentText = string.Concat(elementSyntax.Content.Select(static content => content.ToFullString())).Trim();
+        if (contentText.Length == 0)
+            return false;
 
         var startTagText = elementSyntax.StartTag.ToString();
         var endTagText = elementSyntax.EndTag.ToString();
-        replacementText = contentText.Length == 0
-            ? startTagText + lineBreak + commentPrefix + endTagText
-            : startTagText + lineBreak + commentPrefix + contentText + lineBreak + commentPrefix + endTagText;
+        replacementText = startTagText + lineBreak + commentPrefix + contentText + lineBreak + commentPrefix + endTagText;
         return true;
     }
 

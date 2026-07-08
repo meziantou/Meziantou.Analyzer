@@ -32,22 +32,58 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzerTests
     }
 
     [Fact]
-    public async Task ParamSingleLine_ShouldReportDiagnostic()
+    public async Task SingleLineSummaryWithNestedElement_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// {|MA0211:<summary>This has <c>code</c> inside</summary>|}
+                  class Sample { }
+                  """)
+              .ShouldFixCodeWith("""
+                  /// <summary>
+                  /// This has <c>code</c> inside
+                  /// </summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SingleLineSummaryWithCData_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// {|MA0211:<summary><![CDATA[Sample]]></summary>|}
+                  class Sample { }
+                  """)
+              .ShouldFixCodeWith("""
+                  /// <summary>
+                  /// <![CDATA[Sample]]>
+                  /// </summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EmptyContent_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// <summary></summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ParamSingleLine_ShouldNotReportDiagnostic()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
                   class Sample
                   {
-                      /// {|MA0211:<param name="value">The value</param>|}
-                      public void Method(int value) { }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class Sample
-                  {
-                      /// <param name="value">
-                      /// The value
-                      /// </param>
+                      /// <param name="value">The value</param>
                       public void Method(int value) { }
                   }
                   """)
@@ -55,16 +91,11 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzerTests
     }
 
     [Fact]
-    public async Task EmptyContent_ShouldReportDiagnostic()
+    public async Task SummaryContainingOnlyWhitespace_ShouldNotReportDiagnostic()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-                  /// {|MA0211:<summary></summary>|}
-                  class Sample { }
-                  """)
-              .ShouldFixCodeWith("""
-                  /// <summary>
-                  /// </summary>
+                  /// <summary>   </summary>
                   class Sample { }
                   """)
               .ValidateAsync();
@@ -84,22 +115,13 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzerTests
     }
 
     [Fact]
-    public async Task InnerXmlElements_ShouldNotReportDiagnostic()
+    public async Task MultiLineSummaryWithNestedElement_ShouldNotReportDiagnostic()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
-                  /// <summary>This has <c>code</c> inside</summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CDataSection_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <summary><![CDATA[Sample]]></summary>
+                  /// <summary>
+                  /// This has <c>code</c> inside
+                  /// </summary>
                   class Sample { }
                   """)
               .ValidateAsync();
