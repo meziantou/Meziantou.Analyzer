@@ -126,4 +126,17 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzerTests
                   """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task MultiLineSummaryWithCData_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// <summary>
+                  /// <![CDATA[Sample]]>
+                  /// </summary>
+                  class Sample { }
+                  """)
+              .ValidateAsync();
+    }
 }
