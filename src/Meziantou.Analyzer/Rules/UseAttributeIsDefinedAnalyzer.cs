@@ -81,13 +81,23 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         {
             var operation = (IIsPatternOperation)context.Operation;
 
-            if (operation.Pattern is not (IConstantPatternOperation or INegatedPatternOperation))
+            if (!IsNullPattern(operation.Pattern))
                 return;
 
             if (!IsGetCustomAttributeInvocation(operation.Value, out var invocation))
                 return;
 
             context.ReportDiagnostic(Rule, operation, invocation!.TargetMethod.Name);
+        }
+
+        private static bool IsNullPattern(IPatternOperation pattern)
+        {
+            return pattern switch
+            {
+                IConstantPatternOperation { Value.ConstantValue: { HasValue: true, Value: null } } => true,
+                INegatedPatternOperation { Pattern: IConstantPatternOperation { Value.ConstantValue: { HasValue: true, Value: null } } } => true,
+                _ => false,
+            };
         }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)

@@ -347,6 +347,50 @@ class TestClass
     }
 
     [Fact]
+    public async Task GetCustomAttribute_IsNotDeclarationPattern_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+using System;
+using System.Reflection;
+
+class TestClass
+{
+    string Test(Type type)
+    {
+        if (type.GetCustomAttribute<ObsoleteAttribute>() is not ObsoleteAttribute attribute)
+            throw new ArgumentException(nameof(type));
+
+        return attribute.Message;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GetCustomAttribute_IsDeclarationPattern_ShouldNotReport()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+using System;
+using System.Reflection;
+
+class TestClass
+{
+    string Test(Type type)
+    {
+        if (type.GetCustomAttribute<ObsoleteAttribute>() is ObsoleteAttribute attribute)
+            return attribute.Message;
+
+        return string.Empty;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task GetCustomAttributes_WithPredicate_ShouldNotReport()
     {
         await CreateProjectBuilder()
