@@ -191,6 +191,43 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public async Task DefaultLiteral_WithoutOptions_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    A(default);
+                    void A(object value) { }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DefaultLiteral_WithOptions_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    A([|default|]);
+                    void A(object value) { }
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "default")
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task String_WithOptions_ShouldReportDiagnostic()
     {
         const string SourceCode = """

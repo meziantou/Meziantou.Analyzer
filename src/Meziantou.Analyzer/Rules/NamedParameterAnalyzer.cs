@@ -19,6 +19,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     private const string ExcludedMethodsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods";
     private const string MinimumMethodParametersConfigurationKey = RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters";
     private const string ExpressionKindsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".expression_kinds";
+    private const ArgumentExpressionKinds DefaultExpressionKinds = ArgumentExpressionKinds.Null | ArgumentExpressionKinds.Boolean;
 
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseNamedParameter,
@@ -102,6 +103,11 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                 else if (expression.IsKind(SyntaxKind.NumericLiteralExpression))
                 {
                     if (!MustCheckExpressionKind(syntaxContext, expression, ArgumentExpressionKinds.Numeric))
+                        return;
+                }
+                else if (expression.IsKind(SyntaxKind.DefaultLiteralExpression))
+                {
+                    if (!MustCheckExpressionKind(syntaxContext, expression, ArgumentExpressionKinds.Default))
                         return;
                 }
                 else if (IsBooleanExpression(expression))
@@ -339,11 +345,23 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
         if (options.TryGetValue(ExpressionKindsConfigurationKey, out var value))
         {
-            if (Enum.TryParse<ArgumentExpressionKinds>(value, ignoreCase: true, out var result))
-                return result;
+            var result = ArgumentExpressionKinds.None;
+            foreach (var rawExpressionKind in value.Split([',', '|'], StringSplitOptions.RemoveEmptyEntries))
+            {
+                var expressionKind = rawExpressionKind.Trim();
+                if (Enum.TryParse<ArgumentExpressionKinds>(expressionKind, ignoreCase: true, out var parsedExpressionKind))
+                {
+                    result |= parsedExpressionKind;
+                    continue;
+                }
+
+                return DefaultExpressionKinds;
+            }
+
+            return result;
         }
 
-        return ArgumentExpressionKinds.Default;
+        return DefaultExpressionKinds;
     }
 
     private static bool MustCheckExpressionKind(SyntaxNodeAnalysisContext context, SyntaxNode expression, ArgumentExpressionKinds kind)
@@ -386,6 +404,6 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         Boolean = 2,
         Numeric = 4,
         String = 8,
-        Default = Null | Boolean,
+        Default = 16,
     }
 }
