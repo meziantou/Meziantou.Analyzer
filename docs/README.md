@@ -210,7 +210,7 @@
 |[MA0209](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0209.md)|Performance|Use in keyword for in parameter|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0210](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0210.md)|Performance|Use in keyword to call the in overload|<span title='Info'>ℹ️</span>|❌|✔️|
 |[MA0211](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0211.md)|Style|Use multi-line syntax for XML summary comments|<span title='Info'>ℹ️</span>|❌|✔️|
-|[MA0212](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0212.md)|Usage|Use MemoryMarshal.GetReference instead of indexing at 0|<span title='Warning'>⚠️</span>|✔️|✔️|
+|[MA0212](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0212.md)|Usage|Use MemoryMarshal.GetReference instead of indexing at 0|<span title='Warning'>⚠️</span>|❌|✔️|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
