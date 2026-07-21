@@ -628,3 +628,6 @@ dotnet_diagnostic.MA0210.severity = none
 
 # MA0211: Use multi-line syntax for XML summary comments
 dotnet_diagnostic.MA0211.severity = none
+
+# MA0212: Use MemoryMarshal.GetReference instead of indexing at 0
+dotnet_diagnostic.MA0212.severity = none
