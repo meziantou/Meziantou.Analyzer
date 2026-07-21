@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -34,10 +33,13 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
             if (!analyzerContext.IsValid)
                 return;
 
-            // Handles: ref span[0], ref array[0] used in ref-return, ref-local, etc.
-            compilationContext.RegisterSyntaxNodeAction(analyzerContext.AnalyzeRefExpression, SyntaxKind.RefExpression);
+            // Handles: ref T local = ref span[0]
+            compilationContext.RegisterOperationAction(analyzerContext.AnalyzeVariableDeclarator, OperationKind.VariableDeclarator);
 
-            // Handles: Method(ref span[0]), Method(in span[0]), Method(ref readonly span[0])
+            // Handles: return ref span[0]
+            compilationContext.RegisterOperationAction(analyzerContext.AnalyzeReturn, OperationKind.Return);
+
+            // Handles: Method(ref span[0]), Method(in span[0])
             compilationContext.RegisterOperationAction(analyzerContext.AnalyzeArgument, OperationKind.Argument);
         });
     }
@@ -55,48 +57,60 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
 
         public bool IsValid => _spanType is not null || _readOnlySpanType is not null;
 
-        public void AnalyzeRefExpression(SyntaxNodeAnalysisContext context)
+        public void AnalyzeVariableDeclarator(OperationAnalysisContext context)
         {
-            var refExpression = (RefExpressionSyntax)context.Node;
-
-            if (refExpression.Expression is not ElementAccessExpressionSyntax elementAccess)
+            var declarator = (IVariableDeclaratorOperation)context.Operation;
+            if (!declarator.Symbol.IsRef)
                 return;
 
-            if (!IsIndexZero(context, elementAccess.ArgumentList))
+            var initValue = declarator.Initializer?.Value.UnwrapConversionOperations();
+            if (initValue is null)
                 return;
 
-            var receiverTypeInfo = context.SemanticModel.GetTypeInfo(elementAccess.Expression, context.CancellationToken);
-            if (!IsSpanOrArray(receiverTypeInfo.Type))
+            ReportIfMatch(context, initValue);
+        }
+
+        public void AnalyzeReturn(OperationAnalysisContext context)
+        {
+            var returnsByRef = context.ContainingSymbol switch
+            {
+                IMethodSymbol method => method.ReturnsByRef || method.ReturnsByRefReadonly,
+                IPropertySymbol property => property.ReturnsByRef || property.ReturnsByRefReadonly,
+                _ => false,
+            };
+            if (!returnsByRef)
                 return;
 
-            context.ReportDiagnostic(Rule, elementAccess);
+            var returnedValue = ((IReturnOperation)context.Operation).ReturnedValue?.UnwrapConversionOperations();
+            if (returnedValue is null)
+                return;
+
+            ReportIfMatch(context, returnedValue);
         }
 
         public void AnalyzeArgument(OperationAnalysisContext context)
         {
             var argument = (IArgumentOperation)context.Operation;
 
-            if (argument.Syntax is not ArgumentSyntax { RefKindKeyword: var refKindToken })
+            var refKind = argument.Parameter?.RefKind ?? RefKind.None;
+            if (refKind is RefKind.None or RefKind.Out)
                 return;
 
-            // Only care about by-reference arguments (ref, in, ref readonly)
-            if (refKindToken.IsKind(SyntaxKind.None))
-                return;
+            ReportIfMatch(context, argument.Value.UnwrapConversionOperations());
+        }
 
-            var value = argument.Value.UnwrapConversionOperations();
-
+        private void ReportIfMatch(OperationAnalysisContext context, IOperation value)
+        {
             IOperation? receiverOp;
             IOperation? indexOp;
 
             if (value is IArrayElementReferenceOperation { Indices: [var arrayIdx], ArrayReference: var arrayRef })
             {
-                // True array: T[]
                 receiverOp = arrayRef;
                 indexOp = arrayIdx;
             }
             else if (value is IPropertyReferenceOperation { Property.IsIndexer: true, Arguments: [{ Value: var propIdx }], Instance: var instance })
             {
-                // Span<T> / ReadOnlySpan<T> indexer
                 receiverOp = instance;
                 indexOp = propIdx;
             }
@@ -125,23 +139,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
             if (type.TypeKind is TypeKind.Array)
                 return true;
 
-            if (type.OriginalDefinition.IsEqualToAny(_spanType, _readOnlySpanType))
-                return true;
-
-            return false;
-        }
-
-        private static bool IsIndexZero(SyntaxNodeAnalysisContext context, BracketedArgumentListSyntax argumentList)
-        {
-            if (argumentList.Arguments.Count != 1)
-                return false;
-
-            var argument = argumentList.Arguments[0];
-            if (!argument.RefKindKeyword.IsKind(SyntaxKind.None))
-                return false;
-
-            var constantValue = context.SemanticModel.GetConstantValue(argument.Expression, context.CancellationToken);
-            return constantValue.HasValue && constantValue.Value is 0;
+            return type.OriginalDefinition.IsEqualToAny(_spanType, _readOnlySpanType);
         }
     }
 }
