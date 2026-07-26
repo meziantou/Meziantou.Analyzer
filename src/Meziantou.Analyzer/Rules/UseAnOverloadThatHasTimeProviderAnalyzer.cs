@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -78,6 +77,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true), [TimeProviderSymbol]);
             if (overload is not null)
             {
+                parameterInfo = null;
                 for (var i = 0; i < overload.Parameters.Length; i++)
                 {
                     if (overload.Parameters[i].Type.IsEqualTo(TimeProviderSymbol))
@@ -87,8 +87,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                     }
                 }
 
-                Debug.Assert(parameterInfo != null);
-                return true;
+                return parameterInfo is not null;
             }
 
             return false;

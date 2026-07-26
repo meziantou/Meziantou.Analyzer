@@ -218,6 +218,44 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public async Task ImmutableDictionary_CreateBuilder_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableDictionary.[|CreateBuilder<string, string>()|];
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableDictionary_CreateBuilder_String_WithComparer_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableDictionary.CreateBuilder<string, string>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task EnumerableContains_String_ShouldReportDiagnostic()
     {
         const string SourceCode = @"using System.Linq;
