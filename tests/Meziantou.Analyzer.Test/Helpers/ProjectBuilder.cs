@@ -225,10 +225,10 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers(params string[] ruleIds)
     {
         AddNuGetReference("Microsoft.Bcl.AsyncInterfaces", "9.0.7", "lib/netstandard2.1/");
-#if ROSLYN_5_6_OR_GREATER
+#if ROSLYN_5_3_OR_GREATER
         return WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
-            "5.6.0",
+            "5.3.0",
             paths: ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"],
             ruleIds);
 #elif ROSLYN5_0
