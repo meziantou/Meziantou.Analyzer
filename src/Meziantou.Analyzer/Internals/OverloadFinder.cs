@@ -214,13 +214,6 @@ internal sealed class OverloadFinder(Compilation compilation)
                     break;
 
                 var additionalParameter = additionalParameterTypes[additionalParameterIndex];
-                if (IsCompatibleWithAdditionalType(methodParameter.Type, additionalParameter))
-                {
-                    additionalParameterIndex++;
-                    i++;
-                    continue;
-                }
-
                 if (IsCompatibleWithAdditionalType(otherMethodParameter.Type, additionalParameter))
                 {
                     additionalParameterIndex++;
