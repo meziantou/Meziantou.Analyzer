@@ -293,7 +293,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 left,
                 method,
                 otherMethod,
-                options,
+                options with { AllowNumericConversion = false, AllowInterfaceConversions = false, AllowBaseTypeConversions = false },
                 _ienumerableOfTSymbol,
                 _halfSymbol,
                 new Dictionary<ITypeParameterSymbol, ITypeSymbol>(SymbolEqualityComparer.Default));
@@ -438,7 +438,8 @@ internal sealed class OverloadFinder(Compilation compilation)
                 }
             }
 
-            if (methodNamedType is INamedTypeSymbol directCandidate &&
+            if (options.AllowBaseTypeConversions &&
+                methodNamedType is INamedTypeSymbol directCandidate &&
                 directCandidate.BaseType is INamedTypeSymbol baseTypeCandidate &&
                 baseTypeCandidate.OriginalDefinition.IsEqualTo(otherMethodNamedType.OriginalDefinition) &&
                 baseTypeCandidate.TypeArguments.Length == otherMethodNamedType.TypeArguments.Length)
