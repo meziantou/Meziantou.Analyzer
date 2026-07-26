@@ -6,6 +6,8 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStringComparerAnalyzerTests
 {
+    private const string ReportCollectionExpressionsConfigurationName = "MA0002.report_collection_expressions";
+
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
@@ -13,6 +15,16 @@ public sealed class UseStringComparerAnalyzerTests
             .WithAnalyzer<UseStringComparerAnalyzer>()
             .WithCodeFixProvider<UseStringComparerFixer>();
     }
+
+#if CSHARP15_OR_GREATER
+    private static ProjectBuilder CreatePreviewProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
+            .WithAnalyzer<UseStringComparerAnalyzer>()
+            .WithCodeFixProvider<UseStringComparerFixer>();
+    }
+#endif
 
     [Fact]
     public async Task HashSet_Int32_ShouldNotReportDiagnostic()
@@ -190,6 +202,72 @@ public sealed class UseStringComparerAnalyzerTests
               .ValidateAsync();
     }
 
+#if CSHARP12_OR_GREATER && ROSLYN_5_6_OR_GREATER
+    [Fact]
+    public async Task Dictionary_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.Dictionary<string, int> a = [];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Dictionary_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.Dictionary<string, int> a = [|[]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+#endif
+
+#if CSHARP15_OR_GREATER
+    [Fact]
+    public async Task Dictionary_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.Dictionary<string, int> a = [|[]|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.Dictionary<string, int> a = [with(global::System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+#endif
+
     [Fact]
     public async Task ConcurrentDictionary_String_ShouldReportDiagnostic()
     {
@@ -214,6 +292,44 @@ public sealed class UseStringComparerAnalyzerTests
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableDictionary_CreateBuilder_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableDictionary.[|CreateBuilder<string, string>()|];
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableDictionary_CreateBuilder_String_WithComparer_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableDictionary.CreateBuilder<string, string>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
 

@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
@@ -114,6 +113,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), [CancellationTokenSymbol]);
             if (overload is not null)
             {
+                parameterInfo = null;
                 for (var i = 0; i < overload.Parameters.Length; i++)
                 {
                     if (overload.Parameters[i].Type.IsEqualTo(CancellationTokenSymbol))
@@ -123,8 +123,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     }
                 }
 
-                Debug.Assert(parameterInfo != null);
-                return true;
+                return parameterInfo is not null;
             }
 
             return false;
