@@ -16,7 +16,7 @@ public sealed class UseStringComparerAnalyzerTests
             .WithCodeFixProvider<UseStringComparerFixer>();
     }
 
-#if CSHARP_PREVIEW
+#if CSHARP15_OR_GREATER
     private static ProjectBuilder CreatePreviewProjectBuilder()
     {
         return new ProjectBuilder()
@@ -202,7 +202,7 @@ public sealed class UseStringComparerAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER && ROSLYN_5_0_OR_GREATER
+#if CSHARP12_OR_GREATER
     [Fact]
     public async Task Dictionary_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
@@ -239,7 +239,7 @@ public sealed class UseStringComparerAnalyzerTests
     }
 #endif
 
-#if CSHARP_PREVIEW
+#if CSHARP15_OR_GREATER
     [Fact]
     public async Task Dictionary_String_CollectionExpression_Preview_ShouldReportDiagnostic()
     {

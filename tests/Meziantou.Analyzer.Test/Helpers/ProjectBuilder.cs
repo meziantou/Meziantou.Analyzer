@@ -234,7 +234,7 @@ public sealed partial class ProjectBuilder
 #elif ROSLYN5_0
         return WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
-            "5.0.0-2.final",
+            "5.0.0",
             paths: ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"],
             ruleIds);
 #else

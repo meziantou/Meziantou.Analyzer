@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 {
     private const DiagnosticInvocationReportOptions DefaultDiagnosticInvocationReportOptions = DiagnosticInvocationReportOptions.ReportOnMember | DiagnosticInvocationReportOptions.ReportOnArguments;
-#if ROSLYN_5_0_OR_GREATER
+#if CSHARP15_OR_GREATER
     private const string ReportCollectionExpressionsConfigurationSuffix = ".report_collection_expressions";
 #endif
 
@@ -67,7 +67,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeConstructor, OperationKind.ObjectCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
-#if ROSLYN_5_0_OR_GREATER
+#if CSHARP15_OR_GREATER
             ctx.RegisterOperationAction(analyzerContext.AnalyzeCollectionExpression, OperationKind.CollectionExpression);
 #endif
         });
@@ -175,7 +175,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             }
         }
 
-#if ROSLYN_5_0_OR_GREATER
+#if CSHARP15_OR_GREATER
         public void AnalyzeCollectionExpression(OperationAnalysisContext ctx)
         {
             var operation = (ICollectionExpressionOperation)ctx.Operation;
@@ -227,19 +227,15 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-#if ROSLYN_5_0_OR_GREATER
+#if CSHARP15_OR_GREATER
         private static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
         {
-#if CSHARP_PREVIEW
-            if (operation.GetCSharpLanguageVersion() == LanguageVersion.Preview)
-                return true;
-#endif
-
-            return context.Options.GetConfigurationValue(operation, Rule.Id + ReportCollectionExpressionsConfigurationSuffix, defaultValue: false);
+            var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
+            return context.Options.GetConfigurationValue(operation, Rule.Id + ReportCollectionExpressionsConfigurationSuffix, defaultValue);
         }
 #endif
 
-#if ROSLYN_5_0_OR_GREATER
+#if CSHARP15_OR_GREATER
         private bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
         {
             foreach (var constructor in targetType.Constructors)

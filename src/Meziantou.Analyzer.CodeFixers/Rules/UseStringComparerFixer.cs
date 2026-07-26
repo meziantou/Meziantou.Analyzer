@@ -37,7 +37,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         if (stringComparerSymbol is null)
             return;
 
-#if CSHARP_PREVIEW
+#if CSHARP15_OR_GREATER
         if (nodeToFix is CollectionExpressionSyntax collectionExpression && !CanFixCollectionExpression(collectionExpression))
             return;
 #endif
@@ -81,7 +81,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
                 editor.ReplaceNode(invocationExpression, invocationExpression.AddArgumentListArguments(newArgument));
                 break;
 
-#if CSHARP_PREVIEW
+#if CSHARP15_OR_GREATER
             case CollectionExpressionSyntax collectionExpression:
                 editor.ReplaceNode(collectionExpression, AddCollectionArgument(collectionExpression, stringComparer, comparerName));
                 break;
@@ -110,13 +110,13 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         return nodeToFix is ObjectCreationExpressionSyntax
             or ImplicitObjectCreationExpressionSyntax
             or InvocationExpressionSyntax
-#if CSHARP_PREVIEW
+#if CSHARP15_OR_GREATER
             or CollectionExpressionSyntax
 #endif
             ;
     }
 
-#if CSHARP_PREVIEW
+#if CSHARP15_OR_GREATER
     private static bool CanFixCollectionExpression(CollectionExpressionSyntax collectionExpression)
     {
         return collectionExpression.Elements.Count == 0;
