@@ -214,14 +214,16 @@ internal sealed class OverloadFinder(Compilation compilation)
                     break;
 
                 var additionalParameter = additionalParameterTypes[additionalParameterIndex];
-                if (IsEqualTo(methodParameter.Type, additionalParameter))
+                if (IsCompatibleWithAdditionalType(methodParameter.Type, additionalParameter))
                 {
+                    additionalParameterIndex++;
                     i++;
                     continue;
                 }
 
-                if (IsEqualTo(otherMethodParameter.Type, additionalParameter))
+                if (IsCompatibleWithAdditionalType(otherMethodParameter.Type, additionalParameter))
                 {
+                    additionalParameterIndex++;
                     j++;
                     continue;
                 }
@@ -261,7 +263,7 @@ internal sealed class OverloadFinder(Compilation compilation)
                 var found = false;
                 for (var i = 0; i < unmatchedOtherMethodParameters.Length; i++)
                 {
-                    if (IsEqualTo(unmatchedOtherMethodParameters[i].Type, paramType))
+                    if (IsCompatibleWithAdditionalType(unmatchedOtherMethodParameters[i].Type, paramType))
                     {
                         unmatchedOtherMethodParameters = unmatchedOtherMethodParameters.RemoveAt(i);
                         found = true;
@@ -285,11 +287,23 @@ internal sealed class OverloadFinder(Compilation compilation)
             return false;
         }
 
-        static bool IsEqualTo(ITypeSymbol left, OverloadParameterType right)
+        bool IsCompatibleWithAdditionalType(ITypeSymbol left, OverloadParameterType right)
         {
-            return right.AllowInherits
-                ? left.IsOrInheritFrom(right.Symbol)
-                : left.IsEqualTo(right.Symbol);
+            if (right.Symbol is null)
+                return false;
+
+            if (right.AllowInherits && left.IsOrInheritFrom(right.Symbol))
+                return true;
+
+            return AreTypesCompatible(
+                right.Symbol,
+                left,
+                method,
+                otherMethod,
+                options,
+                _ienumerableOfTSymbol,
+                _halfSymbol,
+                new Dictionary<ITypeParameterSymbol, ITypeSymbol>(SymbolEqualityComparer.Default));
         }
 
         static bool HaveCompatibleGenericSignatures(IMethodSymbol method, IMethodSymbol otherMethod)
