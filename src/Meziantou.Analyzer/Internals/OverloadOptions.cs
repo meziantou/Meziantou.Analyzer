@@ -13,4 +13,5 @@ internal record struct OverloadOptions(
     bool AllowParamsToNonParamsCompatibility = true,
     bool AllowInModifierCompatibility = true,
     bool AllowInterfaceConversions = true,
+    bool AllowBaseTypeConversions = true,
     Func<IMethodSymbol, bool>? ShouldCheckMethod = null);
