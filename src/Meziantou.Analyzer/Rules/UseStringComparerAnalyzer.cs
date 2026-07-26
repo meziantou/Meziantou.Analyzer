@@ -12,7 +12,6 @@ namespace Meziantou.Analyzer.Rules;
 public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 {
     private const DiagnosticInvocationReportOptions DefaultDiagnosticInvocationReportOptions = DiagnosticInvocationReportOptions.ReportOnMember | DiagnosticInvocationReportOptions.ReportOnArguments;
-    private const string ReportCollectionExpressionsConfigurationSuffix = ".report_collection_expressions";
 
     private static readonly string[] EnumerableMethods =
     [
@@ -199,7 +198,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
             {
                 var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
-                return context.Options.GetConfigurationValue(operation, Rule.Id + ReportCollectionExpressionsConfigurationSuffix, defaultValue);
+                return context.Options.GetConfigurationValue(operation, Rule.Id + ".report_collection_expressions", defaultValue);
             }
 
             bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
