@@ -168,6 +168,32 @@ public sealed class UseIFormatProviderAnalyzerTests
     }
 
     [Fact]
+    public async Task ObjectEquals_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            public static class Program { public static void Main() { } }
+
+            public abstract class ValueObject
+            {
+                public override bool Equals(object? obj)
+                {
+                    if (obj is null || obj.GetType() != GetType())
+                    {
+                        return false;
+                    }
+
+                    return true;
+                }
+
+                public override int GetHashCode() => 0;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task StringBuilder_AppendLine_AllStringParams()
     {
         const string SourceCode = """
