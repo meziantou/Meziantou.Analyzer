@@ -196,6 +196,12 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 ctx.ReportDiagnostic(Rule, operation);
             }
 
+            static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
+            {
+                var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
+                return context.Options.GetConfigurationValue(operation, Rule.Id + ReportCollectionExpressionsConfigurationSuffix, defaultValue);
+            }
+
             bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
             {
                 foreach (var constructor in targetType.Constructors)
@@ -240,12 +246,6 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             }
 
             return false;
-        }
-
-        private static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
-        {
-            var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
-            return context.Options.GetConfigurationValue(operation, Rule.Id + ReportCollectionExpressionsConfigurationSuffix, defaultValue);
         }
 
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
