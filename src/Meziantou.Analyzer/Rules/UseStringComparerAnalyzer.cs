@@ -12,7 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 {
     private const DiagnosticInvocationReportOptions DefaultDiagnosticInvocationReportOptions = DiagnosticInvocationReportOptions.ReportOnMember | DiagnosticInvocationReportOptions.ReportOnArguments;
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_0_OR_GREATER
     private const string ReportCollectionExpressionsConfigurationSuffix = ".report_collection_expressions";
 #endif
 
@@ -67,7 +67,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeConstructor, OperationKind.ObjectCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_0_OR_GREATER
             ctx.RegisterOperationAction(analyzerContext.AnalyzeCollectionExpression, OperationKind.CollectionExpression);
 #endif
         });
@@ -175,7 +175,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             }
         }
 
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_0_OR_GREATER
         public void AnalyzeCollectionExpression(OperationAnalysisContext ctx)
         {
             var operation = (ICollectionExpressionOperation)ctx.Operation;
@@ -227,7 +227,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_0_OR_GREATER
         private static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
         {
             var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
@@ -235,7 +235,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         }
 #endif
 
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_0_OR_GREATER
         private bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
         {
             foreach (var constructor in targetType.Constructors)
