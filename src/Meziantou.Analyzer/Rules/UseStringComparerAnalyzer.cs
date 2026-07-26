@@ -239,6 +239,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         }
 #endif
 
+#if ROSLYN_5_0_OR_GREATER
         private bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
         {
             foreach (var constructor in targetType.Constructors)
@@ -255,6 +256,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
             return false;
         }
+#endif
 
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
         {
