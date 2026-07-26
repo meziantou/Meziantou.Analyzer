@@ -64,6 +64,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeConstructor, OperationKind.ObjectCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+#if ROSLYN_4_14_OR_GREATER
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeCollectionExpression, OperationKind.CollectionExpression);
+#endif
         });
     }
 
@@ -78,6 +81,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? ISetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+        public INamedTypeSymbol? DictionaryType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.Dictionary`2");
 
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {
@@ -167,6 +171,54 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 }
             }
         }
+
+#if ROSLYN_4_14_OR_GREATER
+        public void AnalyzeCollectionExpression(OperationAnalysisContext ctx)
+        {
+            var operation = (ICollectionExpressionOperation)ctx.Operation;
+            if (!ShouldReportCollectionExpression(ctx, operation))
+                return;
+
+            // Without collection arguments (`with(...)`), empty collection expressions pick the parameterless constructor.
+            // So report only when a comparer-aware constructor exists and the key type is string.
+            if (operation is not { Elements.Length: 0, Type: INamedTypeSymbol targetType })
+                return;
+
+            if (DictionaryType is null || !targetType.ConstructedFrom.IsEqualTo(DictionaryType))
+                return;
+
+            if (targetType.TypeArguments.Length == 0 || !targetType.TypeArguments[0].IsString())
+                return;
+
+            if (HasConstructorWithStringComparer(targetType))
+            {
+                ctx.ReportDiagnostic(Rule, operation);
+            }
+
+            static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
+            {
+                var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
+                return context.Options.GetConfigurationValue(operation, Rule.Id + ".report_collection_expressions", defaultValue);
+            }
+
+            bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
+            {
+                foreach (var constructor in targetType.Constructors)
+                {
+                    if (constructor.Parameters.Any(parameter =>
+                    {
+                        var parameterType = parameter.Type;
+                        return parameterType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i));
+                    }))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+#endif
 
         private static bool IsQueryOperator(IOperation operation)
         {

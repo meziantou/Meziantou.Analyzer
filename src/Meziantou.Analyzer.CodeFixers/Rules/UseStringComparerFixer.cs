@@ -20,10 +20,13 @@ public sealed class UseStringComparerFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        // In case the ArrayCreationExpressionSyntax is wrapped in an ArgumentSyntax or some other node with the same span,
+        // In case the target expression is wrapped in another node with the same span,
         // get the innermost node for ties.
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
         if (nodeToFix is null)
+            return;
+
+        if (!CanFix(nodeToFix))
             return;
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
@@ -33,6 +36,11 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
         if (stringComparerSymbol is null)
             return;
+
+#if CSHARP15_OR_GREATER
+        if (nodeToFix is CollectionExpressionSyntax collectionExpression && !CanFixCollectionExpression(collectionExpression))
+            return;
+#endif
 
         RegisterCodeFix(nameof(StringComparer.Ordinal));
         RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
@@ -73,6 +81,12 @@ public sealed class UseStringComparerFixer : CodeFixProvider
                 editor.ReplaceNode(invocationExpression, invocationExpression.AddArgumentListArguments(newArgument));
                 break;
 
+#if CSHARP15_OR_GREATER
+            case CollectionExpressionSyntax collectionExpression:
+                editor.ReplaceNode(collectionExpression, AddCollectionArgument(collectionExpression, stringComparer, comparerName));
+                break;
+#endif
+
             default:
                 return document;
         }
@@ -90,4 +104,29 @@ public sealed class UseStringComparerFixer : CodeFixProvider
             .WithType(creationExpression.Type.WithoutTrailingTrivia())
             .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(argument)).WithTrailingTrivia(trailingTrivia));
     }
+
+    private static bool CanFix(SyntaxNode nodeToFix)
+    {
+        return nodeToFix is ObjectCreationExpressionSyntax
+            or ImplicitObjectCreationExpressionSyntax
+            or InvocationExpressionSyntax
+#if CSHARP15_OR_GREATER
+            or CollectionExpressionSyntax
+#endif
+            ;
+    }
+
+#if CSHARP15_OR_GREATER
+    private static bool CanFixCollectionExpression(CollectionExpressionSyntax collectionExpression)
+    {
+        return collectionExpression.Elements.Count == 0;
+    }
+
+    private static CollectionExpressionSyntax AddCollectionArgument(CollectionExpressionSyntax collectionExpression, INamedTypeSymbol stringComparer, string comparerName)
+    {
+        var comparerType = stringComparer.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var replacement = SyntaxFactory.ParseExpression($"[with({comparerType}.{comparerName})]");
+        return replacement.WithTriviaFrom(collectionExpression) as CollectionExpressionSyntax ?? collectionExpression;
+    }
+#endif
 }
