@@ -272,6 +272,36 @@ public sealed class UseIFormatProviderAnalyzerTests
     }
 
     [Fact]
+    public async Task Equals_ObjectOverload_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            class Program
+            {
+                static void Main()
+                {
+                }
+            }
+
+            abstract class ValueObject
+            {
+                public override bool Equals(object? obj)
+                {
+                    if (obj is null)
+                        return false;
+
+                    return EqualsCore(obj);
+                }
+
+                protected bool EqualsCore(object other) => Equals(other);
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task CultureInsensitiveTypeAttribute_Assembly()
     {
         var sourceCode = """

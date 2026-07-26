@@ -97,7 +97,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             if (_cultureSensitiveContext.CultureInfoSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.CultureInfoSymbol))
             {
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false), [_cultureSensitiveContext.CultureInfoSymbol]);
-                if (overload is not null)
+                if (overload is not null && HasParameterOfTypeOrDerivedType(overload, _cultureSensitiveContext.CultureInfoSymbol))
                 {
                     if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
                     {
@@ -107,6 +107,17 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
                 }
             }
+        }
+
+        private static bool HasParameterOfTypeOrDerivedType(IMethodSymbol method, ITypeSymbol parameterType)
+        {
+            foreach (var parameter in method.Parameters)
+            {
+                if (parameter.Type.IsOrInheritFrom(parameterType))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsExcludedMethod(OperationAnalysisContext context, IInvocationOperation operation)
