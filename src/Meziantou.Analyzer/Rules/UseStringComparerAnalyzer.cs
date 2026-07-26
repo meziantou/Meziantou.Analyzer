@@ -65,7 +65,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeConstructor, OperationKind.ObjectCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
-#if ROSLYN_5_6_OR_GREATER
+#if ROSLYN_4_14_OR_GREATER
             ctx.RegisterOperationAction(analyzerContext.AnalyzeCollectionExpression, OperationKind.CollectionExpression);
 #endif
         });
@@ -173,6 +173,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             }
         }
 
+#if ROSLYN_4_14_OR_GREATER
         public void AnalyzeCollectionExpression(OperationAnalysisContext ctx)
         {
             var operation = (ICollectionExpressionOperation)ctx.Operation;
@@ -194,7 +195,25 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             {
                 ctx.ReportDiagnostic(Rule, operation);
             }
+
+            bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
+            {
+                foreach (var constructor in targetType.Constructors)
+                {
+                    if (constructor.Parameters.Any(parameter =>
+                    {
+                        var parameterType = parameter.Type;
+                        return parameterType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i));
+                    }))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
+#endif
 
         private static bool IsQueryOperator(IOperation operation)
         {
@@ -227,23 +246,6 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         {
             var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
             return context.Options.GetConfigurationValue(operation, Rule.Id + ReportCollectionExpressionsConfigurationSuffix, defaultValue);
-        }
-
-        private bool HasConstructorWithStringComparer(INamedTypeSymbol targetType)
-        {
-            foreach (var constructor in targetType.Constructors)
-            {
-                if (constructor.Parameters.Any(parameter =>
-                {
-                    var parameterType = parameter.Type;
-                    return parameterType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i));
-                }))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
