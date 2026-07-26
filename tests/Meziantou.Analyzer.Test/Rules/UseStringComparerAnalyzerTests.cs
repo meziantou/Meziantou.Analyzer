@@ -202,7 +202,7 @@ public sealed class UseStringComparerAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER && ROSLYN_5_0_OR_GREATER
+#if CSHARP12_OR_GREATER && ROSLYN_5_6_OR_GREATER
     [Fact]
     public async Task Dictionary_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
