@@ -82,8 +82,6 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? ISetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
-        public INamedTypeSymbol? DictionaryType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.Dictionary`2");
-
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {
             var operation = (IObjectCreationOperation)ctx.Operation;
@@ -196,12 +194,6 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 return;
 #pragma warning restore RSEXPERIMENTAL006
 #endif
-
-            if (DictionaryType is null || !targetType.ConstructedFrom.IsEqualTo(DictionaryType))
-                return;
-
-            if (targetType.TypeArguments.Length == 0 || !targetType.TypeArguments[0].IsString())
-                return;
 
             if (HasConstructorWithStringComparer(targetType))
             {
