@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -111,8 +112,11 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
         private static bool IsExcludedMethod(OperationAnalysisContext context, IInvocationOperation operation)
         {
+            if (operation.TargetMethod.Name.EndsWith("OrDefault", StringComparison.Ordinal))
+                return true;
+
             // ToString show culture-sensitive data by default
-            if (operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
+            if (operation.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
             {
                 return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.exclude_tostring_methods", defaultValue: true);
             }

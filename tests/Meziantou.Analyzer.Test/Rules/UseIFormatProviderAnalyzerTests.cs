@@ -156,6 +156,38 @@ public sealed class UseIFormatProviderAnalyzerTests
     }
 
     [Fact]
+    public async Task ListOfCultureInfo_FirstOrDefault_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Globalization;
+            using System.Linq;
+
+            List<CultureInfo> values = new();
+            _ = values.FirstOrDefault();
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ListOfCultureInfo_LastOrDefault_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Globalization;
+            using System.Linq;
+
+            List<CultureInfo> values = new();
+            _ = values.LastOrDefault();
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task EnumToString()
     {
         const string SourceCode = """
