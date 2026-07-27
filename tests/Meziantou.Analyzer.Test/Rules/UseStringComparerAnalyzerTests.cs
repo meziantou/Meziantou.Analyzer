@@ -221,6 +221,23 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public async Task HashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Dictionary_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
         await CreateProjectBuilder()
@@ -232,6 +249,24 @@ public sealed class UseStringComparerAnalyzerTests
                       public void Test()
                       {
                           System.Collections.Generic.Dictionary<string, int> a = [|[]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [|[]|];
                       }
                   }
                   """)
@@ -268,6 +303,33 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public async Task HashSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [|[]|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Dictionary_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
     {
         await CreatePreviewProjectBuilder()
@@ -277,6 +339,22 @@ public sealed class UseStringComparerAnalyzerTests
                       public void Test()
                       {
                           System.Collections.Generic.Dictionary<string, int> a = [with(System.StringComparer.Ordinal)];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HashSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [with(System.StringComparer.Ordinal)];
                       }
                   }
                   """)
