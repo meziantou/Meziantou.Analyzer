@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -36,11 +37,6 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
         if (stringComparerSymbol is null)
             return;
-
-#if CSHARP15_OR_GREATER
-        if (nodeToFix is CollectionExpressionSyntax collectionExpression && !CanFixCollectionExpression(collectionExpression))
-            return;
-#endif
 
         RegisterCodeFix(nameof(StringComparer.Ordinal));
         RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
@@ -117,16 +113,13 @@ public sealed class UseStringComparerFixer : CodeFixProvider
     }
 
 #if CSHARP15_OR_GREATER
-    private static bool CanFixCollectionExpression(CollectionExpressionSyntax collectionExpression)
-    {
-        return collectionExpression.Elements.Count == 0;
-    }
-
     private static CollectionExpressionSyntax AddCollectionArgument(CollectionExpressionSyntax collectionExpression, INamedTypeSymbol stringComparer, string comparerName)
     {
         var comparerType = stringComparer.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var replacement = SyntaxFactory.ParseExpression($"[with({comparerType}.{comparerName})]");
-        return replacement.WithTriviaFrom(collectionExpression) as CollectionExpressionSyntax ?? collectionExpression;
+        var parsed = (CollectionExpressionSyntax)SyntaxFactory.ParseExpression($"[with({comparerType}.{comparerName})]");
+        var withElement = parsed.Elements[0].WithAdditionalAnnotations(Simplifier.Annotation);
+        var newElements = collectionExpression.Elements.Insert(0, withElement);
+        return collectionExpression.WithElements(newElements);
     }
 #endif
 }

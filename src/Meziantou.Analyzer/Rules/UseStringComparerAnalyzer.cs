@@ -182,9 +182,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (!ShouldReportCollectionExpression(ctx, operation))
                 return;
 
-            // Without collection arguments (`with(...)`), empty collection expressions pick the parameterless constructor.
-            // So report only when a comparer-aware constructor exists and the key type is string.
-            if (operation is not { Elements.Length: 0, Type: INamedTypeSymbol targetType })
+            if (operation.Type is not INamedTypeSymbol targetType)
                 return;
 
 #if ROSLYN_5_6_OR_GREATER
