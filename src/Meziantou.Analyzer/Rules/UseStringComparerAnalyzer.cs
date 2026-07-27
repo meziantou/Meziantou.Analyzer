@@ -78,6 +78,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? EqualityComparerStringType { get; } = GetIEqualityComparerString(compilation);
         public INamedTypeSymbol? ComparerStringType { get; } = GetIComparerString(compilation);
         public INamedTypeSymbol? EnumerableType { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
+        public INamedTypeSymbol? QueryableType { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Queryable");
         public INamedTypeSymbol? ISetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
@@ -128,6 +129,10 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             }
 
             if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
+                return;
+
+            // Queryable comparer overloads are often not translatable by providers.
+            if (QueryableType is not null && method.ContainingType.IsEqualTo(QueryableType))
                 return;
 
             if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [EqualityComparerStringType])) ||
