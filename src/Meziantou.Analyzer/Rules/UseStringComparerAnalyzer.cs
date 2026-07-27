@@ -189,6 +189,14 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (operation is not { Elements.Length: 0, Type: INamedTypeSymbol targetType })
                 return;
 
+#if ROSLYN_5_6_OR_GREATER
+            // [with(StringComparer.Ordinal)] already provides a comparer — no diagnostic needed.
+#pragma warning disable RSEXPERIMENTAL006
+            if (HasEqualityComparerConstructArgument(operation.ConstructArguments))
+                return;
+#pragma warning restore RSEXPERIMENTAL006
+#endif
+
             if (DictionaryType is null || !targetType.ConstructedFrom.IsEqualTo(DictionaryType))
                 return;
 
@@ -251,6 +259,25 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
             return false;
         }
+
+#if ROSLYN_5_6_OR_GREATER
+#pragma warning disable RSEXPERIMENTAL006
+        private bool HasEqualityComparerConstructArgument(ImmutableArray<IOperation> constructArguments)
+        {
+            foreach (var arg in constructArguments)
+            {
+                var argumentType = arg is IArgumentOperation argOp ? argOp.Value.Type : arg.Type;
+                if (argumentType is null)
+                    continue;
+
+                if (argumentType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i)))
+                    return true;
+            }
+
+            return false;
+        }
+#pragma warning restore RSEXPERIMENTAL006
+#endif
 
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
         {

@@ -266,6 +266,38 @@ public sealed class UseStringComparerAnalyzerTests
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Dictionary_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.Dictionary<string, int> a = [with(System.StringComparer.Ordinal)];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Dictionary_String_CollectionExpression_WithCapacityNoComparer_ShouldReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.Dictionary<string, int> a = [|[with(10)]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
 #endif
 
     [Fact]
