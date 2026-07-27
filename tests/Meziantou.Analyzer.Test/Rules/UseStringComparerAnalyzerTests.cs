@@ -272,6 +272,24 @@ public sealed class UseStringComparerAnalyzerTests
                   """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task HashSet_String_CollectionExpression_WithElements_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
 #endif
 
 #if CSHARP15_OR_GREATER
@@ -371,6 +389,101 @@ public sealed class UseStringComparerAnalyzerTests
                       public void Test()
                       {
                           System.Collections.Generic.Dictionary<string, int> a = [|[with(10)]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HashSet_String_CollectionExpression_WithElements_ShouldReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), "a", "b"];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HashSet_String_CollectionExpression_WithSpread_ShouldReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          var other = new string[] { "a", "b" };
+                          System.Collections.Generic.HashSet<string> a = [|[.. other]|];
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          var other = new string[] { "a", "b" };
+                          System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), .. other];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HashSet_String_CollectionExpression_WithComparerAndElements_ShouldNotReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [with(System.StringComparer.Ordinal), "a", "b"];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Dictionary_String_CollectionExpression_WithElements_ShouldReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          var other = new string[] { "a", "b" };
+                          System.Collections.Generic.HashSet<string> a = [|[.. other, "c"]|];
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          var other = new string[] { "a", "b" };
+                          System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), .. other, "c"];
                       }
                   }
                   """)
