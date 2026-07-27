@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -116,11 +117,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
     {
         var comparerType = stringComparer.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var parsed = (CollectionExpressionSyntax)SyntaxFactory.ParseExpression($"[with({comparerType}.{comparerName})]");
-
-        if (collectionExpression.Elements.Count == 0)
-            return parsed.WithTriviaFrom(collectionExpression);
-
-        var withElement = parsed.Elements[0];
+        var withElement = parsed.Elements[0].WithAdditionalAnnotations(Simplifier.Annotation);
         var newElements = collectionExpression.Elements.Insert(0, withElement);
         return collectionExpression.WithElements(newElements);
     }
