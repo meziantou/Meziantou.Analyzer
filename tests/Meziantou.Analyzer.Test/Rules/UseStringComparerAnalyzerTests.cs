@@ -393,6 +393,94 @@ class TypeName
     }
 
     [Fact]
+    public async Task EnumerableDistinct_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|Distinct()|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.Distinct(System.StringComparer.Ordinal);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task QueryableDistinct_String_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    IQueryable<string?> obj = null;
+                    obj.Distinct();
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task QueryableContains_String_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    IQueryable<string?> obj = null;
+                    obj.Contains("");
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task QueryableOrderBy_String_ShouldNotReportDiagnostic()
+    {
+        const string SourceCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    IQueryable<string?> obj = null;
+                    obj.OrderBy(p => p);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task EnumerableToDictionary_String_ShouldReportDiagnostic()
     {
         const string SourceCode = @"using System.Linq;
