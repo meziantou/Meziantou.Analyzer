@@ -290,6 +290,76 @@ public sealed class UseStringComparerAnalyzerTests
                   """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task FrozenSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Frozen.FrozenSet<string> a = [];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FrozenSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Frozen.FrozenSet<string> a = [|[]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableHashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableHashSet<string> a = [];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableHashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
 #endif
 
 #if CSHARP15_OR_GREATER
@@ -484,6 +554,88 @@ public sealed class UseStringComparerAnalyzerTests
                       {
                           var other = new string[] { "a", "b" };
                           System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), .. other, "c"];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FrozenSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Frozen.FrozenSet<string> a = [|[]|];
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Frozen.FrozenSet<string> a = [with(global::System.StringComparer.Ordinal)];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FrozenSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Frozen.FrozenSet<string> a = [with(System.StringComparer.Ordinal)];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableHashSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
+                      }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableHashSet<string> a = [with(global::System.StringComparer.Ordinal)];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableHashSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    {
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableHashSet<string> a = [with(System.StringComparer.Ordinal)];
                       }
                   }
                   """)
