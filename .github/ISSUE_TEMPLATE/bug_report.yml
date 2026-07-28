@@ -34,10 +34,18 @@ body:
   id: language
   attributes:
     label: "C# Language version"
-    description: "If you are unsure you can use `#error` in your code to get the version. See [Getting Roslyn (C# compiler) and Language versions](https://www.meziantou.net/getting-roslyn-csharp-compiler-and-language-versions.htm) for more information."
+    description: "If you are unsure you can use `#error version` in your code to get the version. See [Getting Roslyn (C# compiler) and Language versions](https://www.meziantou.net/getting-roslyn-csharp-compiler-and-language-versions.htm) for more information."
     placeholder: "C# 13.0"
   validations:
     required: true
+
+- type: input
+  id: dotnet-sdk
+  attributes:
+    label: .NET SDK version
+    placeholder: "10.0.100, use `dotnet --version` or `dotnet --info`"
+  validations:
+    required: false
 
 - type: textarea
   id: description
