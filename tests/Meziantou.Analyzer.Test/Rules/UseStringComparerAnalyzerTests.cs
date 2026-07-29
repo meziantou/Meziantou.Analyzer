@@ -1360,4 +1360,82 @@ class TypeName
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task CodeFix_InsertComparerBeforeMessage_Issue1249()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class Sample
+            {
+                void Test()
+                {
+                    AreEqual[|("a", "b", "message")|];
+                }
+
+                static void AreEqual(string expected, string actual, string message) { }
+                static void AreEqual(string expected, string actual, IComparer<string> comparer, string message) { }
+            }
+            """;
+        const string CodeFix = """
+            using System.Collections.Generic;
+            class Sample
+            {
+                void Test()
+                {
+                    AreEqual("a", "b", System.StringComparer.Ordinal, "message");
+                }
+
+                static void AreEqual(string expected, string actual, string message) { }
+                static void AreEqual(string expected, string actual, IComparer<string> comparer, string message) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_InsertComparerBeforeCancellationToken_Issue1250()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            class Sample
+            {
+                void Test(CancellationToken ct)
+                {
+                    var list = new string[0];
+                    list.[|ToDictionaryCustom(s => s, ct)|];
+                }
+            }
+            static class Extensions
+            {
+                public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, CancellationToken ct) => throw null;
+                public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer, CancellationToken ct) => throw null;
+            }
+            """;
+        const string CodeFix = """
+            using System.Collections.Generic;
+            using System.Threading;
+            class Sample
+            {
+                void Test(CancellationToken ct)
+                {
+                    var list = new string[0];
+                    list.ToDictionaryCustom(s => s, System.StringComparer.Ordinal, ct);
+                }
+            }
+            static class Extensions
+            {
+                public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, CancellationToken ct) => throw null;
+                public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer, CancellationToken ct) => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 }
