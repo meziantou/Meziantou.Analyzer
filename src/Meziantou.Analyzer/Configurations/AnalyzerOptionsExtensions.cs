@@ -5,18 +5,45 @@ namespace Meziantou.Analyzer.Configurations;
 
 public static class AnalyzerOptionsExtensions
 {
+    public static T GetConfigurationValue<T>(this AnalyzerOptions options, SyntaxTree syntaxTree, ConfigurationDefinition<T> configuration)
+    {
+        if (!configuration.HasDefaultValue)
+            throw new InvalidOperationException($"Configuration value for '{configuration.Key}' is not set and has no default value.");
+
+        if (TryGetConfigurationValue(options, syntaxTree, configuration.Key, out var value))
+        {
+            if(typeof(T) == typeof(bool))
+            {
+                return (T)(object)ChangeType(value, (bool)(object)configuration.DefaultValue);
+            }
+            else if (typeof(T) == typeof(int))
+            {
+                return (T)(object)ChangeType(value, (int)(object)configuration.DefaultValue);
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                return (T)(object)value;
+            }
+            else if (typeof(T) == typeof(ReportDiagnostic?))
+            {
+                if (value is not null && Enum.TryParse<ReportDiagnostic>(value, ignoreCase: true, out var result))
+                    return (T)(object)result;
+            }
+            else
+            {
+                throw new NotSupportedException($"Configuration value for '{configuration.Key}' has an unsupported type '{typeof(T)}'.");
+            }
+        }
+
+        return configuration.DefaultValue;
+    }
+
     public static string GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, string defaultValue)
     {
-        var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
-        if (configuration.TryGetValue(key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, key, out var value))
             return value;
 
         return defaultValue;
-    }
-
-    public static string GetConfigurationValue(this AnalyzerOptions options, SyntaxNode syntaxNode, string key, string defaultValue)
-    {
-        return GetConfigurationValue(options, syntaxNode.SyntaxTree, key, defaultValue);
     }
 
     public static string GetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, string defaultValue)
@@ -26,8 +53,7 @@ public static class AnalyzerOptionsExtensions
 
     public static bool GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, bool defaultValue)
     {
-        var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
-        if (configuration.TryGetValue(key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, key, out var value))
             return ChangeType(value, defaultValue);
 
         return defaultValue;
@@ -42,8 +68,7 @@ public static class AnalyzerOptionsExtensions
     [return: NotNullIfNotNull(nameof(defaultValue))]
     public static bool? GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, bool? defaultValue)
     {
-        var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
-        if (configuration.TryGetValue(key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, key, out var value))
             return ChangeType(value, defaultValue);
 
         return defaultValue;
@@ -51,22 +76,8 @@ public static class AnalyzerOptionsExtensions
 
     public static int GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, int defaultValue)
     {
-        var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
-        if (configuration.TryGetValue(key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, key, out var value))
             return ChangeType(value, defaultValue);
-
-        return defaultValue;
-    }
-
-    [return: NotNullIfNotNull(nameof(defaultValue))]
-    public static ReportDiagnostic? GetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, ReportDiagnostic? defaultValue)
-    {
-        var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
-        if (configuration.TryGetValue(key, out var value))
-        {
-            if (value is not null && Enum.TryParse<ReportDiagnostic>(value, ignoreCase: true, out var result))
-                return result;
-        }
 
         return defaultValue;
     }
@@ -100,11 +111,6 @@ public static class AnalyzerOptionsExtensions
     {
         var configuration = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
         return configuration.TryGetValue(key, out value);
-    }
-
-    public static bool TryGetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, [NotNullWhen(true)] out string? value)
-    {
-        return TryGetConfigurationValue(options, operation.Syntax.SyntaxTree, key, out value);
     }
 
     public static bool GetConfigurationValue(this AnalyzerOptions options, IOperation operation, string key, bool defaultValue)
