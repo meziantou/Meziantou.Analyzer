@@ -80,6 +80,86 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     }
 
     [Fact]
+    public async Task FieldSummarySingleLine_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      /// [|<summary>
+                      /// description
+                      /// </summary>|]
+                      public int Value;
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class Sample
+                  {
+                      /// <summary>description</summary>
+                      public int Value;
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PropertySummarySingleLine_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      /// [|<summary>
+                      /// description
+                      /// </summary>|]
+                      public int Value { get; set; }
+                  }
+                  """)
+              .ShouldFixCodeWith("""
+                  class Sample
+                  {
+                      /// <summary>description</summary>
+                      public int Value { get; set; }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StructSummarySingleLine_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// [|<summary>
+                  /// description
+                  /// </summary>|]
+                  struct Sample { }
+                  """)
+              .ShouldFixCodeWith("""
+                  /// <summary>description</summary>
+                  struct Sample { }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task RecordSummarySingleLine_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  /// [|<summary>
+                  /// description
+                  /// </summary>|]
+                  record Sample;
+                  """)
+              .ShouldFixCodeWith("""
+                  /// <summary>description</summary>
+                  record Sample;
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task RemarksSingleLine_ShouldReportDiagnostic()
     {
         await CreateProjectBuilder()
