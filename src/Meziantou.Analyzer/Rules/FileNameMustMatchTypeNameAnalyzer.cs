@@ -30,6 +30,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FileNameMustMatchTypeName));
 
+    private static readonly ConfigurationDefinition<string> ExcludedSymbolNamesConfiguration = new("dotnet_diagnostic." + Rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -65,8 +67,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             var symbolName = symbol.Name;
 
             // dotnet_diagnostic.MA0048.excluded_symbol_names
-            ConfigurationDefinition<string> excludedSymbolNamesConfiguration = new("dotnet_diagnostic." + Rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
-            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, excludedSymbolNamesConfiguration);
+            var excludedSymbolNames = context.Options.GetConfigurationValue(location.SourceTree, ExcludedSymbolNamesConfiguration);
             if (!string.IsNullOrEmpty(excludedSymbolNames))
             {
                 var symbolDeclarationId = DocumentationCommentId.CreateDeclarationId(symbol);
