@@ -23,7 +23,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<bool> OnlyConsiderPublicSymbolsConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> UsePreviewTypesConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
     private static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", defaultValue: "^System($|\\.)");
-    private static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)");
+    private static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)") { IsHidden = true };
 
     private static Dictionary<string, List<string>>? s_types;
     private static Dictionary<string, List<string>>? s_typesPreview;

@@ -19,6 +19,7 @@ if (!FullPath.CurrentDirectory().TryFindGitRepositoryRoot(out var outputFolder))
     return 1;
 }
 var fileWritten = 0;
+var documentationValidationErrorCount = 0;
 
 var assemblies = new[] { typeof(Meziantou.Analyzer.Rules.CommaAnalyzer).Assembly, typeof(Meziantou.Analyzer.Rules.CommaFixer).Assembly };
 var diagnosticAnalyzers = assemblies.SelectMany(assembly => assembly.GetExportedTypes())
@@ -79,6 +80,21 @@ Console.WriteLine(sb.ToString());
 
 // Update title in rule pages and add links to source code
 {
+    void ValidateRuleDocumentationContainsConfigurationKeys(FullPath path, string ruleId, string content)
+    {
+        if (!ruleConfigurationKeys.TryGetValue(ruleId, out var configurationKeys))
+            return;
+
+        foreach (var configurationKey in configurationKeys)
+        {
+            if (content.Contains(configurationKey, StringComparison.Ordinal))
+                continue;
+
+            documentationValidationErrorCount++;
+            Console.Error.WriteLine($"Missing configuration key '{configurationKey}' in {path.MakePathRelativeTo(outputFolder)}");
+        }
+    }
+
     var rules = new HashSet<string>(StringComparer.Ordinal);
     foreach (var diagnosticAnalyzer in diagnosticAnalyzers)
     {
@@ -156,11 +172,13 @@ Console.WriteLine(sb.ToString());
                 sourceLinks.Sort(StringComparer.Ordinal);
                 newContent = Regex.Replace(newContent, "(?<=<!-- sources -->\\r?\\n).*(?=<!-- sources -->)", (sourceLinks.Count == 1 ? "Source: " : "Sources: ") + string.Join(", ", sourceLinks) + "\n", RegexOptions.Singleline);
 
+                ValidateRuleDocumentationContainsConfigurationKeys(detailPath, diagnostic.Id, newContent);
                 WriteFileIfChanged(detailPath, newContent);
             }
             else
             {
                 WriteFileIfChanged(detailPath, title);
+                ValidateRuleDocumentationContainsConfigurationKeys(detailPath, diagnostic.Id, title);
             }
         }
     }
@@ -208,6 +226,13 @@ if (fileWritten > 0)
     process.BeginErrorReadLine();
     await process.WaitForExitAsync();
 }
+
+if (documentationValidationErrorCount > 0)
+{
+    Console.Error.WriteLine($"{documentationValidationErrorCount} documentation validation error(s) found.");
+    return 1;
+}
+
 return fileWritten;
 
 void WriteFileIfChanged(FullPath path, string content)
@@ -438,6 +463,7 @@ static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKe
 {
     var configurationDefinitionType = typeof(ConfigurationDefinition<bool>).GetGenericTypeDefinition();
     var keyPropertyName = nameof(ConfigurationDefinition<bool>.Key);
+    var isHiddenPropertyName = nameof(ConfigurationDefinition<bool>.IsHidden);
     var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
 
     foreach (var type in assemblies.SelectMany(assembly => assembly.GetTypes()))
@@ -449,6 +475,9 @@ static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKe
 
             var fieldValue = field.GetValue(null);
             if (fieldValue is null)
+                continue;
+
+            if (field.FieldType.GetProperty(isHiddenPropertyName)?.GetValue(fieldValue) is bool isHidden && isHidden)
                 continue;
 
             if (field.FieldType.GetProperty(keyPropertyName)?.GetValue(fieldValue) is not string key)

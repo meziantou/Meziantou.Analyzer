@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Meziantou.Analyzer.Configurations;
 
 public sealed class ConfigurationDefinition<T>
@@ -18,4 +20,5 @@ public sealed class ConfigurationDefinition<T>
     public string Key { get; }
     public bool HasDefaultValue { get; }
     public T DefaultValue { get; } = default!;
+    public bool IsHidden { get; set; }
 }
