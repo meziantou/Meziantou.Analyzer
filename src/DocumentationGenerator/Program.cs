@@ -2,8 +2,11 @@
 #pragma warning disable CA1849
 #pragma warning disable MA0004
 #pragma warning disable MA0009
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Framework;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -38,9 +41,11 @@ var diagnosticSuppressors = assemblies.SelectMany(assembly => assembly.GetExport
   .Select(type => (DiagnosticSuppressor)Activator.CreateInstance(type)!)
   .ToList();
 
+var ruleConfigurationKeys = GetRuleConfigurationKeys(assemblies);
+
 var sb = new StringBuilder();
 sb.Append("# ").Append(assemblies[0].GetName().Name).Append("'s rules\n");
-var rulesTable = GenerateRulesTable(diagnosticAnalyzers, codeFixProviders);
+var rulesTable = GenerateRulesTable(diagnosticAnalyzers, codeFixProviders, ruleConfigurationKeys);
 sb.Append(rulesTable);
 
 var suppressorsTable = GenerateSuppressorsTable(diagnosticSuppressors);
@@ -59,7 +64,7 @@ Console.WriteLine(sb.ToString());
     // nuget.org's markdown support is limited. Raw html in table is not supported.
     var readmePath = outputFolder / "README.md";
     var readmeContent = await File.ReadAllTextAsync(readmePath);
-    var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + GenerateRulesTable(diagnosticAnalyzers, codeFixProviders, addTitle: false) + "\n", RegexOptions.Singleline);
+    var newContent = Regex.Replace(readmeContent, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + GenerateRulesTable(diagnosticAnalyzers, codeFixProviders, ruleConfigurationKeys, addTitle: false) + "\n", RegexOptions.Singleline);
     newContent = Regex.Replace(newContent, "(?<=<!-- suppressions -->\\r?\\n).*(?=<!-- suppressions -->)", "\n" + GenerateSuppressorsTable(diagnosticSuppressors) + "\n", RegexOptions.Singleline);
     newContent = Regex.Replace(newContent, "(?<=<!-- refactorings -->\\r?\\n).*(?=<!-- refactorings -->)", "\n" + GenerateRefactoringsTable(codeRefactoringProviders) + "\n", RegexOptions.Singleline);
     WriteFileIfChanged(readmePath, newContent);
@@ -227,11 +232,11 @@ void WriteFileIfChanged(FullPath path, string content)
     }
 }
 
-static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, List<CodeFixProvider> codeFixProviders, bool addTitle = true)
+static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, List<CodeFixProvider> codeFixProviders, IReadOnlyDictionary<string, IReadOnlyList<string>> ruleConfigurationKeys, bool addTitle = true)
 {
     var sb = new StringBuilder();
-    sb.Append("|Id|Category|Description|Severity|Is enabled|Code fix|\n");
-    sb.Append("|--|--------|-----------|:------:|:--------:|:------:|\n");
+    sb.Append("|Id|Category|Description|Severity|Is enabled|Code fix|Configurable|\n");
+    sb.Append("|--|--------|-----------|:------:|:--------:|:------:|:----------:|\n");
 
     foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id, StringComparer.Ordinal))
     {
@@ -263,12 +268,30 @@ static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, L
             sb.Append(GetSeverity(diagnostic.DefaultSeverity));
         }
 
+            ruleConfigurationKeys.TryGetValue(diagnostic.Id, out var configurationKeys);
+            configurationKeys ??= [];
+
         sb.Append('|')
           .Append(GetBoolean(diagnostic.IsEnabledByDefault))
           .Append('|')
           .Append(GetBoolean(hasCodeFix))
-          .Append('|')
-          .Append('\n');
+                    .Append('|');
+
+                if (configurationKeys.Count > 0 && addTitle)
+                {
+                        sb.Append("<span title='")
+                            .Append(HtmlEncoder.Default.Encode(string.Join("\n", configurationKeys)))
+                            .Append("'>")
+                            .Append(GetBoolean(true))
+                            .Append("</span>");
+                }
+                else
+                {
+                        sb.Append(GetBoolean(configurationKeys.Count > 0));
+                }
+
+                sb.Append('|')
+                    .Append('\n');
     }
 
     return sb.ToString();
@@ -409,4 +432,65 @@ static string EscapeMarkdown(string text)
 static string GetBoolean(bool value)
 {
     return value ? "✔️" : "❌";
+}
+
+static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKeys(IEnumerable<Assembly> assemblies)
+{
+    var configurationDefinitionType = typeof(ConfigurationDefinition<bool>).GetGenericTypeDefinition();
+    var keyPropertyName = nameof(ConfigurationDefinition<bool>.Key);
+    var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
+    foreach (var type in assemblies.SelectMany(assembly => assembly.GetTypes()))
+    {
+        foreach (var field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+        {
+            if (!field.FieldType.IsGenericType || field.FieldType.GetGenericTypeDefinition() != configurationDefinitionType)
+                continue;
+
+            var fieldValue = field.GetValue(null);
+            if (fieldValue is null)
+                continue;
+
+            if (field.FieldType.GetProperty(keyPropertyName)?.GetValue(fieldValue) is not string key)
+                continue;
+
+            if (TryGetRuleIdPrefix(key, out var ruleId) is false)
+                continue;
+
+            if (!result.TryGetValue(ruleId, out var keys))
+            {
+                keys = [];
+                result.Add(ruleId, keys);
+            }
+
+            keys.Add(key);
+        }
+    }
+
+    var output = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+    foreach (var item in result)
+    {
+        output[item.Key] = [.. item.Value.Order(StringComparer.Ordinal)];
+    }
+
+    return output;
+}
+
+static bool TryGetRuleIdPrefix(string key, [NotNullWhen(true)] out string? ruleId)
+{
+    ruleId = null;
+    if (key.Length < 6)
+        return false;
+
+    if (key[0] != 'M' || key[1] != 'A')
+        return false;
+
+    if (!char.IsAsciiDigit(key[2]) || !char.IsAsciiDigit(key[3]) || !char.IsAsciiDigit(key[4]) || !char.IsAsciiDigit(key[5]))
+        return false;
+
+    if (key.Length > 6 && key[6] != '.')
+        return false;
+
+    ruleId = key.Substring(0, 6);
+    return true;
 }
