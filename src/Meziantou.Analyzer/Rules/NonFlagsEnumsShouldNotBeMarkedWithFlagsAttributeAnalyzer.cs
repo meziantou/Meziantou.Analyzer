@@ -19,6 +19,8 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute));
 
+    private static readonly ConfigurationDefinition<bool> AllowAllBitsSetValueConfiguration = new(RuleIdentifiers.NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute + ".allow_all_bits_set_value", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -58,7 +60,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
             if (member.IsSingleBitSet || member.IsZero)
                 continue;
 
-            if (IsAllBitsSet(member.member.ConstantValue) && context.Options.GetConfigurationValue(member.member, RuleIdentifiers.NonFlagsEnumsShouldNotBeMarkedWithFlagsAttribute + ".allow_all_bits_set_value", defaultValue: false))
+            if (IsAllBitsSet(member.member.ConstantValue) && context.Options.GetConfigurationValue(member.member, AllowAllBitsSetValueConfiguration))
                 continue;
 
             var value = member.member.ConstantValue!;

@@ -31,6 +31,12 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FileNameMustMatchTypeName));
 
     private static readonly ConfigurationDefinition<string> ExcludedSymbolNamesConfiguration = new("dotnet_diagnostic." + Rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
+    private static readonly ConfigurationDefinition<bool> ExcludeFileLocalTypesConfiguration = new(Rule.Id + ".exclude_file_local_types", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> OnlyValidateFirstTypeConfiguration = new(Rule.Id + ".only_validate_first_type", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> AllowOfTForAllGenericTypesConfiguration = new(Rule.Id + ".allow_oft_for_all_generic_types", defaultValue: false);
+    private static readonly ConfigurationDefinition<string> ModeConfiguration = new(Rule.Id + ".mode", defaultValue: string.Empty);
+    private static readonly ConfigurationDefinition<bool> AllowTypeNamePrefixConfiguration = new(Rule.Id + ".allow_type_name_prefix", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> UseLongestTypeNamePrefixConfiguration = new(Rule.Id + ".use_longest_type_name_prefix", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -60,7 +66,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             var typeNameMatchMode = GetTypeNameMatchMode(context, location.SourceTree);
 
 #if ROSLYN_4_4_OR_GREATER
-            if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".exclude_file_local_types", defaultValue: true))
+            if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, ExcludeFileLocalTypesConfiguration))
                 continue;
 #endif
 
@@ -86,7 +92,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             }
 
             // MA0048.only_validate_first_type
-            if (context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".only_validate_first_type", defaultValue: false))
+            if (context.Options.GetConfigurationValue(location.SourceTree, OnlyValidateFirstTypeConfiguration))
             {
                 var root = location.SourceTree.GetRoot(context.CancellationToken);
                 var symbolNode = root.FindNode(location.SourceSpan);
@@ -132,7 +138,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                     continue;
             }
 
-            if (symbol.Arity == 1 || (symbol.Arity > 1 && context.Options.GetConfigurationValue(location.SourceTree, Rule.Id + ".allow_oft_for_all_generic_types", defaultValue: false)))
+            if (symbol.Arity == 1 || (symbol.Arity > 1 && context.Options.GetConfigurationValue(location.SourceTree, AllowOfTForAllGenericTypesConfiguration)))
             {
                 // TypeOfT
                 if (fileName.Equals((symbolName + "OfT").AsSpan(), StringComparison.OrdinalIgnoreCase))
@@ -160,7 +166,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
     private static TypeNameMatchMode GetTypeNameMatchMode(SymbolAnalysisContext context, SyntaxTree sourceTree)
     {
-        var mode = context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".mode", defaultValue: string.Empty);
+        var mode = context.Options.GetConfigurationValue(sourceTree, ModeConfiguration);
         if (mode.Equals(nameof(TypeNameMatchMode.Exact), StringComparison.OrdinalIgnoreCase))
             return TypeNameMatchMode.Exact;
 
@@ -171,10 +177,10 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             return TypeNameMatchMode.LongestCommonPrefix;
 
         // Backward compatibility
-        if (!context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".allow_type_name_prefix", defaultValue: false))
+        if (!context.Options.GetConfigurationValue(sourceTree, AllowTypeNamePrefixConfiguration))
             return TypeNameMatchMode.Exact;
 
-        return context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".use_longest_type_name_prefix", defaultValue: false)
+        return context.Options.GetConfigurationValue(sourceTree, UseLongestTypeNamePrefixConfiguration)
             ? TypeNameMatchMode.LongestCommonPrefix
             : TypeNameMatchMode.Prefix;
     }
@@ -220,7 +226,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         List<string>? typeNames = null;
 
 #if ROSLYN_4_4_OR_GREATER
-        var excludeFileLocalTypes = context.Options.GetConfigurationValue(sourceTree, Rule.Id + ".exclude_file_local_types", defaultValue: true);
+        var excludeFileLocalTypes = context.Options.GetConfigurationValue(sourceTree, ExcludeFileLocalTypesConfiguration);
 #endif
 
         foreach (var node in root.DescendantNodesAndSelf(descendIntoChildren: static node => !IsTypeDeclaration(node)))

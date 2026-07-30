@@ -17,5 +17,5 @@ public sealed class ConfigurationDefinition<T>
 
     public string Key { get; }
     public bool HasDefaultValue { get; }
-    public T DefaultValue { get; }
+    public T DefaultValue { get; } = default!;
 }

@@ -63,6 +63,9 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_MissingConfiguration));
 
+    private static readonly ConfigurationDefinition<bool> AllowNonConstantFormatConfiguration = new(Rule.Id + ".allow_non_constant_formats", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> AllowNonConstantFormatSerilogConfiguration = new(RuleSerilog.Id + ".allow_non_constant_formats", defaultValue: true);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RuleSerilog, RuleInvalid, RuleDuplicate, RuleMissingConfiguration);
 
     public override void Initialize(AnalysisContext context)
@@ -442,9 +445,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
             if (formatExpression is not null && argumentTypes is not null)
             {
-                var diagnosticDescriptor = isSerilog ? RuleSerilog : Rule;
-
-                var allowNonConstantFormat = context.Options.GetConfigurationValue(formatExpression, diagnosticDescriptor.Id + ".allow_non_constant_formats", defaultValue: true);
+                var configuration = isSerilog ? AllowNonConstantFormatSerilogConfiguration : AllowNonConstantFormatConfiguration;
+                var allowNonConstantFormat = context.Options.GetConfigurationValue(formatExpression, configuration);
                 var format = TryGetFormatText(formatExpression, allowNonConstantFormat);
                 if (format is null)
                     return;

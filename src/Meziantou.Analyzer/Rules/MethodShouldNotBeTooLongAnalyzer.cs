@@ -21,6 +21,10 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodShouldNotBeTooLong));
 
+    private static readonly ConfigurationDefinition<bool> SkipLocalFunctionsConfiguration = new(Rule.Id + ".skip_local_functions", defaultValue: false);
+    private static readonly ConfigurationDefinition<int> MaximumStatementsPerMethodConfiguration = new(Rule.Id + ".maximum_statements_per_method", defaultValue: 40);
+    private static readonly ConfigurationDefinition<int> MaximumLinesPerMethodConfiguration = new(Rule.Id + ".maximum_lines_per_method", defaultValue: 60);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -169,7 +173,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
     private static bool GetSkipLocalFunctions(SyntaxNodeAnalysisContext context)
     {
         var syntaxTree = context.Node?.SyntaxTree;
-        if (syntaxTree is not null && context.Options is not null && context.Options.GetConfigurationValue(syntaxTree, $"{Rule.Id}.skip_local_functions", defaultValue: false))
+        if (syntaxTree is not null && context.Options is not null && context.Options.GetConfigurationValue(syntaxTree, SkipLocalFunctionsConfiguration))
             return true;
 
         return false;
@@ -178,12 +182,12 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
     private static int GetMaximumNumberOfStatements(SyntaxNodeAnalysisContext context)
     {
         var syntaxTree = context.Node.SyntaxTree;
-        return context.Options.GetConfigurationValue(syntaxTree, $"{Rule.Id}.maximum_statements_per_method", defaultValue: 40);
+        return context.Options.GetConfigurationValue(syntaxTree, MaximumStatementsPerMethodConfiguration);
     }
 
     private static int GetMaximumNumberOfLines(SyntaxNodeAnalysisContext context)
     {
         var syntaxTree = context.Node.SyntaxTree;
-        return context.Options.GetConfigurationValue(syntaxTree, $"{Rule.Id}.maximum_lines_per_method", 60);
+        return context.Options.GetConfigurationValue(syntaxTree, MaximumLinesPerMethodConfiguration);
     }
 }

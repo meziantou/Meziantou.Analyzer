@@ -50,6 +50,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MethodsNotReturningIAsyncEnumerableMustNotHaveTheAsyncSuffix));
 
+    private static readonly ConfigurationDefinition<bool> ExcludeTestMethodsConfiguration = new("MA0137.exclude_test_methods", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> ExcludePropertyAccessorsConfiguration = new("MA0137.exclude_property_accessors", defaultValue: true);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AsyncSuffixRule, NotAsyncSuffixRule, AsyncSuffixRuleAsyncEnumerable, NotAsyncSuffixRuleAsyncEnumerable);
 
     public override void Initialize(AnalysisContext context)
@@ -158,13 +161,13 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
             if (symbol.HasAttribute(_benchmarkSymbol))
                 return true;
 
-            var excludeTestMethods = options.GetConfigurationValue(symbol, "MA0137.exclude_test_methods", defaultValue: true);
+            var excludeTestMethods = options.GetConfigurationValue(symbol, ExcludeTestMethodsConfiguration);
             if (excludeTestMethods && symbol.IsUnitTestMethod())
                 return true;
 
             if (symbol.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove)
             {
-                var excludePropertyAccessors = options.GetConfigurationValue(symbol, "MA0137.exclude_property_accessors", defaultValue: true);
+                var excludePropertyAccessors = options.GetConfigurationValue(symbol, ExcludePropertyAccessorsConfiguration);
                 if (excludePropertyAccessors)
                     return true;
             }

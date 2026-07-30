@@ -10,7 +10,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyzer
 {
-    private const string ReportDiscardedConfigurationKey = RuleIdentifiers.AwaitAwaitableMethodInSyncMethod + ".report_discarded";
+    private static readonly ConfigurationDefinition<bool> ReportDiscardedConfiguration = new(RuleIdentifiers.AwaitAwaitableMethodInSyncMethod + ".report_discarded", defaultValue: false);
 
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.AwaitAwaitableMethodInSyncMethod,
@@ -42,7 +42,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
     private static void AnalyzeOperation(OperationAnalysisContext context, OperationUtilities operationUtilities, AwaitableTypes awaitableTypes)
     {
         var operation = (IInvocationOperation)context.Operation;
-        var reportDiscarded = context.Options.GetConfigurationValue(operation, ReportDiscardedConfigurationKey, defaultValue: false);
+        var reportDiscarded = context.Options.GetConfigurationValue(operation, ReportDiscardedConfiguration);
 
         var parent = operation.Parent;
 

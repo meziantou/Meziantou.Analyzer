@@ -52,6 +52,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparer));
 
+    private static readonly ConfigurationDefinition<bool> ExcludeQueryOperatorSyntaxesConfiguration = new(Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> ReportCollectionExpressionsConfiguration = new(Rule.Id + ".report_collection_expressions", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -126,7 +129,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                     return;
             }
 
-            if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false))
+            if (operation.IsImplicit && IsQueryOperator(operation) && ctx.Options.GetConfigurationValue(operation, ExcludeQueryOperatorSyntaxesConfiguration))
                 return;
 
             // Queryable comparer overloads are often not translatable by providers.
@@ -207,7 +210,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
             {
                 var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
-                return context.Options.GetConfigurationValue(operation, Rule.Id + ".report_collection_expressions", defaultValue);
+                return context.Options.GetConfigurationValue(operation, ReportCollectionExpressionsConfiguration, defaultValue);
             }
         }
 #endif

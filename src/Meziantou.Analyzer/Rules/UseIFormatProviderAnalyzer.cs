@@ -21,6 +21,9 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseIFormatProviderParameter));
 
+    private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsConfiguration = new(RuleIdentifiers.UseIFormatProviderParameter + ".exclude_tostring_methods", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> ConsiderNullableTypesConfiguration = new(RuleIdentifiers.UseIFormatProviderParameter + ".consider_nullable_types", defaultValue: true);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -118,7 +121,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             // ToString show culture-sensitive data by default
             if (operation.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
             {
-                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.exclude_tostring_methods", defaultValue: true);
+                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, ExcludeToStringMethodsConfiguration);
             }
 
             return false;
@@ -126,7 +129,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
         private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, IOperation operation)
         {
-            return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, "MA0011.consider_nullable_types", defaultValue: true);
+            return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, ConsiderNullableTypesConfiguration);
         }
     }
 }

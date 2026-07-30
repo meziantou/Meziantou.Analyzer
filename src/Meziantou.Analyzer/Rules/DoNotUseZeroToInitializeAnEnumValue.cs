@@ -21,6 +21,9 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue));
 
+    private static readonly ConfigurationDefinition<string> ReportOnConfiguration = new(RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".report_on", defaultValue: "all");
+    private static readonly ConfigurationDefinition<bool> ExcludeEnumWithoutZeroMemberConfiguration = new(RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".exclude_enum_without_zero_member", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -54,14 +57,14 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
         if (operation.ConstantValue is not { HasValue: true, Value: not null and var value } || !IsZero(enumType, value))
             return;
 
-        var reportOn = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".report_on", defaultValue: "all");
+        var reportOn = context.Options.GetConfigurationValue(operation, ReportOnConfiguration);
         if (string.Equals(reportOn, "argument", StringComparison.OrdinalIgnoreCase))
         {
             if (operation.Parent is not IArgumentOperation)
                 return;
         }
 
-        var excludeEnumWithoutZeroMember = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".exclude_enum_without_zero_member", defaultValue: false);
+        var excludeEnumWithoutZeroMember = context.Options.GetConfigurationValue(operation, ExcludeEnumWithoutZeroMemberConfiguration);
         if (excludeEnumWithoutZeroMember && !HasZeroMember(enumSymbol, enumType))
             return;
 
