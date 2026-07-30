@@ -22,6 +22,8 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseConfigureAwaitFalse));
 
+    private static readonly ConfigurationDefinition<string> ReportModeConfiguration = new(RuleIdentifiers.UseConfigureAwaitFalse + ".report", defaultValue: "");
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -211,7 +213,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
         private bool MustUseConfigureAwait(SemanticModel semanticModel, AnalyzerOptions options, SyntaxNode node, CancellationToken cancellationToken)
         {
-            var modeValue = options.GetConfigurationValue(node.SyntaxTree, RuleIdentifiers.UseConfigureAwaitFalse + ".report", "");
+            var modeValue = options.GetConfigurationValue(node.SyntaxTree, ReportModeConfiguration);
             if (Enum.TryParse<ReportMode>(modeValue, ignoreCase: true, out var mode))
             {
                 if (mode == ReportMode.Always)

@@ -21,6 +21,8 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseUnknownParameterForRazorComponent));
 
+    private static readonly ConfigurationDefinition<bool> ReportPascalCaseUnmatchedParameterConfiguration = new("MA0115.ReportPascalCaseUnmatchedParameter", defaultValue: true);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -81,7 +83,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                                     var value = invocation.Arguments[1].Value.ConstantValue;
                                     if (value.HasValue && value.Value is string parameterName)
                                     {
-                                        var reportPascalCaseUnmatchedParameter = context.Options.GetConfigurationValue(operation, "MA0115.ReportPascalCaseUnmatchedParameter", defaultValue: true);
+                                        var reportPascalCaseUnmatchedParameter = context.Options.GetConfigurationValue(operation, ReportPascalCaseUnmatchedParameterConfiguration);
                                         if (!IsValidAttribute(currentComponent, parameterName, reportPascalCaseUnmatchedParameter))
                                         {
                                             var availableParameters = string.Join(", ", GetComponentDescriptor(currentComponent).Parameters.Order(StringComparer.Ordinal));

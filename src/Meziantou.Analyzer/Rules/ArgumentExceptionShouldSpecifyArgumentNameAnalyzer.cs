@@ -31,6 +31,8 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNameofOperator));
 
+    private static readonly ConfigurationDefinition<bool> ConsiderMemberAccessAsParameterConfiguration = new(RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName + ".consider_member_access_as_parameter", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, NameofRule);
 
     public override void Initialize(AnalysisContext context)
@@ -208,7 +210,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         }
 
         private static bool ConsiderMemberAccessAsParameter(OperationAnalysisContext context, IOperation operation)
-            => context.Options.GetConfigurationValue(operation, RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName + ".consider_member_access_as_parameter", defaultValue: false);
+            => context.Options.GetConfigurationValue(operation, ConsiderMemberAccessAsParameterConfiguration);
 
         private static void ValidateParamNameArgument(OperationAnalysisContext context, IArgumentOperation paramNameArgument)
         {

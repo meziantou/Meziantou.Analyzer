@@ -15,10 +15,6 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 {
-    private const string ExcludedMethodsRegexConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex";
-    private const string ExcludedMethodsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".excluded_methods";
-    private const string MinimumMethodParametersConfigurationKey = RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters";
-    private const string ExpressionKindsConfigurationKey = RuleIdentifiers.UseNamedParameter + ".expression_kinds";
     private const ArgumentExpressionKinds DefaultExpressionKinds = ArgumentExpressionKinds.Null | ArgumentExpressionKinds.Boolean;
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -30,6 +26,11 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNamedParameter));
+
+    private static readonly ConfigurationDefinition<string> ExcludedMethodsRegexConfiguration = new(RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex");
+    private static readonly ConfigurationDefinition<string> ExcludedMethodsConfiguration = new(RuleIdentifiers.UseNamedParameter + ".excluded_methods");
+    private static readonly ConfigurationDefinition<string> MinimumMethodParametersConfiguration = new(RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters", defaultValue: string.Empty);
+    private static readonly ConfigurationDefinition<string> ExpressionKindsConfiguration = new(RuleIdentifiers.UseNamedParameter + ".expression_kinds", defaultValue: string.Empty);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -279,7 +280,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (operation is not null && !operation.GetCSharpLanguageVersion().IsCSharp14OrAbove() && operationUtilities.IsInExpressionContext(operation))
                             return;
 
-                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsRegexConfigurationKey, out var excludedMethodsRegex))
+                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex))
                         {
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
                             if (declarationId is not null)
@@ -290,7 +291,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                             }
                         }
 
-                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfigurationKey, out var excludedMethods))
+                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods))
                         {
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
                             if (declarationId is not null)
@@ -330,8 +331,8 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
     private static int GetMinimumMethodArgumentsConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
     {
-        var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
-        if (options.TryGetValue(MinimumMethodParametersConfigurationKey, out var value))
+        var value = analyzerOptions.GetConfigurationValue(node.SyntaxTree, MinimumMethodParametersConfiguration);
+        if (!string.IsNullOrEmpty(value))
         {
             if (int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var result))
                 return result;
@@ -342,8 +343,8 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
     private static ArgumentExpressionKinds GetExpressionKindsConfiguration(AnalyzerOptions analyzerOptions, SyntaxNode node)
     {
-        var options = analyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(node.SyntaxTree);
-        if (options.TryGetValue(ExpressionKindsConfigurationKey, out var value))
+        var value = analyzerOptions.GetConfigurationValue(node.SyntaxTree, ExpressionKindsConfiguration);
+        if (!string.IsNullOrEmpty(value))
         {
             var result = ArgumentExpressionKinds.None;
             foreach (var rawExpressionKind in value.Split([',', '|'], StringSplitOptions.RemoveEmptyEntries))

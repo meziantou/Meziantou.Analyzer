@@ -20,6 +20,11 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DotNotUseNameFromBCL));
 
+    private static readonly ConfigurationDefinition<bool> OnlyConsiderPublicSymbolsConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> UsePreviewTypesConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
+    private static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", defaultValue: "^System($|\\.)");
+    private static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)") { IsHidden = true };
+
     private static Dictionary<string, List<string>>? s_types;
     private static Dictionary<string, List<string>>? s_typesPreview;
 
@@ -44,15 +49,20 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
         if (!symbol.IsVisibleOutsideOfAssembly())
         {
-            if (context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true))
+            if (context.Options.GetConfigurationValue(symbol, OnlyConsiderPublicSymbolsConfiguration))
                 return;
         }
 
-        var usePreviewTypes = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
+        var usePreviewTypes = context.Options.GetConfigurationValue(symbol, UsePreviewTypesConfiguration);
         var types = usePreviewTypes ? s_typesPreview : s_types;
         if (types!.TryGetValue(symbol.MetadataName, out var namespaces))
         {
-            var regex = context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", context.Options.GetConfigurationValue(symbol, RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", "^System($|\\.)"));
+            var regex = context.Options.GetConfigurationValue(symbol, LegacyNamepacesRegexConfiguration);
+            if (context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out var configuredRegex))
+            {
+                regex = configuredRegex;
+            }
+
             var namespaceRegex = RegexCache.GetOrCreate(regex, RegexOptions.None, Timeout.InfiniteTimeSpan);
             foreach (var ns in namespaces)
             {

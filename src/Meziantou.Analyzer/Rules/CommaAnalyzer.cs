@@ -21,6 +21,8 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingCommaInObjectInitializer));
 
+    private static readonly ConfigurationDefinition<bool> IgnoreCatchAllArmConfiguration = new(Rule.Id + ".IgnoreCatchAllArm", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     private static readonly ImmutableArray<SyntaxKind> ObjectInitializerKinds = ImmutableArray.Create(SyntaxKind.ObjectInitializerExpression, SyntaxKind.ArrayInitializerExpression, SyntaxKind.CollectionInitializerExpression);
@@ -75,7 +77,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
     private void HandleSwitchExpression(SyntaxNodeAnalysisContext context)
     {
         var node = (SwitchExpressionSyntax)context.Node;
-        var options = context.Options.GetConfigurationValue(node, Rule.Id + ".IgnoreCatchAllArm", defaultValue: false);
+        var options = context.Options.GetConfigurationValue(node, IgnoreCatchAllArmConfiguration);
         if (options is true)
         {
             var last = node.Arms.LastOrDefault();

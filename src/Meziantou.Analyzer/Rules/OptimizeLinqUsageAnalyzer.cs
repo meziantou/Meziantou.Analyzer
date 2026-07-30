@@ -102,6 +102,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeEnumerable_UseOrder));
 
+    private static readonly ConfigurationDefinition<bool> ReportWhenConversionNeededConfiguration = new(ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         ListMethodsRule,
         IndexerInsteadOfElementAtRule,
@@ -329,7 +331,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             }
             else
             {
-                if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                if (!context.Options.GetConfigurationValue(operation, ReportWhenConversionNeededConfiguration))
                     return;
 
                 properties = CreateProperties(OptimizeLinqUsageData.UseFindMethodWithConversion);
@@ -360,7 +362,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                    if (!context.Options.GetConfigurationValue(operation, ReportWhenConversionNeededConfiguration))
                         return;
 
                     properties = CreateProperties(OptimizeLinqUsageData.UseTrueForAllMethodWithConversion);
@@ -392,7 +394,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (!context.Options.GetConfigurationValue(operation, ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false))
+                    if (!context.Options.GetConfigurationValue(operation, ReportWhenConversionNeededConfiguration))
                         return;
 
                     properties = CreateProperties(OptimizeLinqUsageData.UseExistsMethodWithConversion);

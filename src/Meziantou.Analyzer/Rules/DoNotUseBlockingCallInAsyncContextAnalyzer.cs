@@ -31,6 +31,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBlockingCall));
 
+    private static readonly ConfigurationDefinition<bool> EnableSqliteSpecialCasesInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".enable_sqlite_special_cases", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> EnableSqliteSpecialCasesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".enable_sqlite_special_cases", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> EnableDbSpecialCasesInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".enable_db_special_cases", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> EnableDbSpecialCasesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".enable_db_special_cases", defaultValue: true);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, Rule2);
 
     public override void Initialize(AnalysisContext context)
@@ -332,14 +337,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private static bool IsSqliteSpecialCasesEnabled(OperationAnalysisContext context, IOperation operation)
         {
-            var defaultValue = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".enable_sqlite_special_cases", defaultValue: true);
-            return context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCall + ".enable_sqlite_special_cases", defaultValue);
+            var defaultValue = context.Options.GetConfigurationValue(operation, EnableSqliteSpecialCasesInAsyncContextConfiguration);
+            return context.Options.GetConfigurationValue(operation, EnableSqliteSpecialCasesConfiguration, defaultValue);
         }
 
         private static bool IsDbSpecialCasesEnabled(OperationAnalysisContext context, IOperation operation)
         {
-            var defaultValue = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".enable_db_special_cases", defaultValue: true);
-            return context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotUseBlockingCall + ".enable_db_special_cases", defaultValue);
+            var defaultValue = context.Options.GetConfigurationValue(operation, EnableDbSpecialCasesInAsyncContextConfiguration);
+            return context.Options.GetConfigurationValue(operation, EnableDbSpecialCasesConfiguration, defaultValue);
         }
 
         private static HashSet<ISymbol> CreateExcludedDiagnosticSymbols(Compilation compilation)

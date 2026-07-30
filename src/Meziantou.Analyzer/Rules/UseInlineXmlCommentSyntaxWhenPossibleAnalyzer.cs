@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -8,6 +9,8 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAnalyzer
 {
+    private static readonly ConfigurationDefinition<string> MaxLineLengthConfiguration = new("max_line_length");
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseSingleLineXmlCommentSyntaxWhenPossible,
         title: "Use single-line XML comment syntax when possible",
@@ -117,8 +120,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
     private static bool WouldFitInMaxLineLength(SymbolAnalysisContext context, XmlElementSyntax elementSyntax)
     {
         // Get max_line_length from .editorconfig
-        var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(elementSyntax.SyntaxTree);
-        if (!options.TryGetValue("max_line_length", out var maxLineLengthValue))
+        if (!context.Options.TryGetConfigurationValue(elementSyntax.SyntaxTree, MaxLineLengthConfiguration, out var maxLineLengthValue))
             return true; // No limit configured, allow the change
 
         if (!int.TryParse(maxLineLengthValue, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var maxLineLength) || maxLineLength <= 0)

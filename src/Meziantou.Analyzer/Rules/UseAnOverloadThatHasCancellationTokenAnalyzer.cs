@@ -54,6 +54,8 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable));
 
+    private static readonly ConfigurationDefinition<bool> AllowOverloadsWithOptionalParametersConfiguration = new("MA0032.allowOverloadsWithOptionalParameters", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasCancellationTokenRule, UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, FlowCancellationTokenInAwaitForEachRule, FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 
     public override void Initialize(AnalysisContext context)
@@ -109,7 +111,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (IsArgumentImplicitlyDeclared(operation, CancellationTokenSymbol, out parameterInfo))
                 return true;
 
-            var allowOptionalParameters = context.Options.GetConfigurationValue(operation, "MA0032.allowOverloadsWithOptionalParameters", defaultValue: false);
+            var allowOptionalParameters = context.Options.GetConfigurationValue(operation, AllowOverloadsWithOptionalParametersConfiguration);
             var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), [CancellationTokenSymbol]);
             if (overload is not null)
             {

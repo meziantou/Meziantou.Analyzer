@@ -20,6 +20,8 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotLogClassifiedData));
 
+    private static readonly ConfigurationDefinition<bool> ReportTypesWithDataClassificationAttributesConfiguration = new(RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", defaultValue: false);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
@@ -62,7 +64,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
             var operation = (IInvocationOperation)context.Operation;
             if (operation.TargetMethod.ContainingType.IsEqualTo(LoggerExtensionsSymbol) && FindLogParameters(operation.TargetMethod, out var argumentsParameter))
             {
-                var reportTypesWithDataClassification = context.Options.GetConfigurationValue(operation, RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", defaultValue: false);
+                var reportTypesWithDataClassification = context.Options.GetConfigurationValue(operation, ReportTypesWithDataClassificationAttributesConfiguration);
 
                 foreach (var argument in operation.Arguments)
                 {
