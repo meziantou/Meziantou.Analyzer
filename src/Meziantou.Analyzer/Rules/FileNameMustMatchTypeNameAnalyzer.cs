@@ -31,7 +31,9 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FileNameMustMatchTypeName));
 
     private static readonly ConfigurationDefinition<string> ExcludedSymbolNamesConfiguration = new("dotnet_diagnostic." + Rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
+#if ROSLYN_4_4_OR_GREATER
     private static readonly ConfigurationDefinition<bool> ExcludeFileLocalTypesConfiguration = new(Rule.Id + ".exclude_file_local_types", defaultValue: true);
+#endif
     private static readonly ConfigurationDefinition<bool> OnlyValidateFirstTypeConfiguration = new(Rule.Id + ".only_validate_first_type", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> AllowOfTForAllGenericTypesConfiguration = new(Rule.Id + ".allow_oft_for_all_generic_types", defaultValue: false);
     private static readonly ConfigurationDefinition<string> ModeConfiguration = new(Rule.Id + ".mode", defaultValue: string.Empty);

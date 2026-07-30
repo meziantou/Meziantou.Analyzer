@@ -53,7 +53,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparer));
 
     private static readonly ConfigurationDefinition<bool> ExcludeQueryOperatorSyntaxesConfiguration = new(Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false);
+#if ROSLYN_4_14_OR_GREATER
     private static readonly ConfigurationDefinition<bool> ReportCollectionExpressionsConfiguration = new(Rule.Id + ".report_collection_expressions", defaultValue: false);
+#endif
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
