@@ -63,6 +63,40 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
         .ValidateAsync();
 
     [Fact]
+    public Task DifferentXmlCommentsOnly() => CreateProjectBuilder()
+        .WithSourceCode("""
+            class C
+            {
+            #if A
+                /// <summary>net8</summary>
+            #else
+                /// <summary>net9</summary>
+            #endif
+                void M() { }
+            }
+
+            static class Program { static void Main() { } }
+            """)
+        .ValidateAsync();
+
+    [Fact]
+    public Task SameXmlCommentsOnly() => CreateProjectBuilder()
+        .WithSourceCode("""
+            class C
+            {
+            #if A
+                /// <summary>text</summary>
+            {|MA0202:#else|}
+                /// <summary>text</summary>
+            #endif
+                void M() { }
+            }
+
+            static class Program { static void Main() { } }
+            """)
+        .ValidateAsync();
+
+    [Fact]
     public Task DifferentBranches() => CreateProjectBuilder()
         .WithSourceCode("""
             #if A
