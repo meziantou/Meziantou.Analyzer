@@ -534,7 +534,7 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
-    public async Task Dictionary_String_CollectionExpression_WithElements_ShouldReportDiagnostic()
+    public async Task HashSet_String_CollectionExpression_WithElements_Spread_ShouldReportDiagnostic()
     {
         await CreatePreviewProjectBuilder()
               .WithSourceCode("""

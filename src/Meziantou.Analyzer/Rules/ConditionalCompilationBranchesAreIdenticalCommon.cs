@@ -89,6 +89,9 @@ internal static class ConditionalCompilationBranchesAreIdenticalCommon
             builder.Append(';');
         }
 
+        if (builder.Length == 0)
+            return text.Trim();
+
         return builder.ToString();
     }
 
