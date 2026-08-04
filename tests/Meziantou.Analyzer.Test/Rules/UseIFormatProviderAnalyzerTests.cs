@@ -732,4 +732,19 @@ class A
               .ShouldFixCodeWith(invariantFix)
               .ValidateAsync();
     }
+
+
+    [Fact]
+    public async Task Enum_ParseWithoutFormatProvider_ShouldNotReportDiagnostic()
+    {
+       const string SourceCode = """
+           var color = System.Enum.Parse(typeof(Color), "Red");
+
+           enum Color { Red, Green, Blue }
+           """;
+       await CreateProjectBuilder()
+             .WithSourceCode(SourceCode)
+             .ValidateAsync();
+    }
+
 }
