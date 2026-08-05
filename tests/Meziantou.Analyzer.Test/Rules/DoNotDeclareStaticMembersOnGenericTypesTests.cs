@@ -137,7 +137,6 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task StaticAbstract()
     {
@@ -153,5 +152,4 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-#endif
 }

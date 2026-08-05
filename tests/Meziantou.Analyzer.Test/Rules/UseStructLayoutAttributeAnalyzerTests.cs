@@ -288,7 +288,6 @@ struct TypeName
             .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task RecordStruct()
     {
@@ -308,5 +307,4 @@ struct TypeName
             .ShouldFixCodeWith(CodeFix)
             .ValidateAsync();
     }
-#endif
 }

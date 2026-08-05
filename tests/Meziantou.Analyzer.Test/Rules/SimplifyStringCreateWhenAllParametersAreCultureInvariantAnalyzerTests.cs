@@ -14,7 +14,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             .WithTargetFramework(TargetFramework.Net6_0);
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task StringCreateWithInvariantCulture_OnlyCultureInvariantParameters_ShouldReport()
     {
@@ -408,5 +407,4 @@ class TypeName
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-#endif
 }

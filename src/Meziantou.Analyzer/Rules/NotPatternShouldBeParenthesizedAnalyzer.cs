@@ -1,5 +1,4 @@
-﻿#if CSHARP9_OR_GREATER
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -45,4 +44,3 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzer : DiagnosticAnalyzer
         }
     }
 }
-#endif

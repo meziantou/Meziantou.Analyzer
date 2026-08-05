@@ -132,7 +132,6 @@ class TestClass
     [Fact]
     public async Task GeneratedRegex_WithoutTimeout()
     {
-#if ROSLYN_4_4_OR_GREATER
         const string SourceCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
@@ -141,20 +140,6 @@ class TestClass
                 private static partial Regex Test();
             }
             """;
-#else
-        const string SourceCode = """
-            using System.Text.RegularExpressions;
-            partial class TestClass
-            {
-                [[|GeneratedRegex("pattern", RegexOptions.None)|]]
-                private static partial Regex Test();
-            }
-            partial class TestClass
-            {
-                private static partial Regex Test() => throw null;
-            }
-            """;
-#endif
 
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
@@ -167,25 +152,14 @@ class TestClass
     [Fact]
     public async Task GeneratedRegex_WithTimeout()
     {
-#if ROSLYN_4_4_OR_GREATER
-        const string SourceCode = @"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [GeneratedRegex(""pattern"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Test();
-}";
-#else
-        const string SourceCode = @"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [GeneratedRegex(""pattern"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Test();
-}
-partial class TestClass
-{
-    private static partial Regex Test() => throw null;
-}";
-#endif
+        const string SourceCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [GeneratedRegex("pattern", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex Test();
+            }
+            """;
 
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
@@ -198,25 +172,14 @@ partial class TestClass
     [Fact]
     public async Task GeneratedRegex_WithoutTimeout_NonBacktracking()
     {
-#if ROSLYN_4_4_OR_GREATER
-        const string SourceCode = @"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [GeneratedRegex(""pattern"", RegexOptions.NonBacktracking)]
-    private static partial Regex Test();
-}";
-#else
-        const string SourceCode = @"using System.Text.RegularExpressions;
-partial class TestClass
-{
-    [GeneratedRegex(""pattern"", RegexOptions.NonBacktracking)]
-    private static partial Regex Test();
-}
-partial class TestClass
-{
-    private static partial Regex Test() => throw null;
-}";
-#endif
+        const string SourceCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [GeneratedRegex("pattern", RegexOptions.NonBacktracking)]
+                private static partial Regex Test();
+            }
+            """;
 
         var project = CreateProjectBuilder()
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)

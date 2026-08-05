@@ -446,7 +446,6 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task PrimaryConstructor()
     {
@@ -463,7 +462,6 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task ThrowIfNull_ValidParameter_ShouldNotReportError()

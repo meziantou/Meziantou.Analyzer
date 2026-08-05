@@ -158,7 +158,6 @@ Name;System.String
               .ValidateAsync();
     }
 
-#if ROSLYN_4_2_OR_GREATER
     [Fact]
     public async Task Logger_LogTrace_InvalidParameterType_FormattableString()
     {
@@ -175,7 +174,6 @@ Prop;System.String
 """)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task Logger_LogTrace_InvalidParameterType_StringConcat()
@@ -318,9 +316,7 @@ logger.LogInformation("{Prop}", [|(int?)null|]);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-#if ROSLYN_4_6_OR_GREATER
               .ShouldReportDiagnosticWithMessage("""Log parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.Nullable<global::System.Int32>'""")
-#endif
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.Nullable{System.String}
 """)
@@ -338,9 +334,7 @@ logger.LogInformation("{Prop}", [|(string?)null|]);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-#if ROSLYN_4_6_OR_GREATER
               .ShouldReportDiagnosticWithMessage("""Log parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.String'""")
-#endif
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.Nullable{System.String}
 """)

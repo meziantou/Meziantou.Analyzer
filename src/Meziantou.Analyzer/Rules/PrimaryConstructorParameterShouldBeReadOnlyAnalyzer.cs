@@ -1,4 +1,3 @@
-#if CSHARP12_OR_GREATER
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -128,4 +127,3 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzer : Diagno
                methodSymbol.IsPrimaryConstructor(cancellationToken);
     }
 }
-#endif

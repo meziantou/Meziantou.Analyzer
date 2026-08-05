@@ -179,7 +179,6 @@ class Test
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InterpolatedStringDiagnostic_CodeFix()
     {
@@ -243,7 +242,6 @@ class Test
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-#endif
 
     [Theory]
     [InlineData("abc")]
@@ -270,7 +268,6 @@ class Test
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Theory]
     [InlineData("abc{(nint)1}")]
     public async Task InterpolatedStringNoDiagnostic_CSharp11(string content)
@@ -285,7 +282,6 @@ class Test
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task FormattableString()

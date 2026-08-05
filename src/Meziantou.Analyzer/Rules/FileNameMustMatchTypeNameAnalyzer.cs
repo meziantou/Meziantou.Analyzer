@@ -31,9 +31,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FileNameMustMatchTypeName));
 
     private static readonly ConfigurationDefinition<string> ExcludedSymbolNamesConfiguration = new("dotnet_diagnostic." + Rule.Id + ".excluded_symbol_names", defaultValue: string.Empty);
-#if ROSLYN_4_4_OR_GREATER
     private static readonly ConfigurationDefinition<bool> ExcludeFileLocalTypesConfiguration = new(Rule.Id + ".exclude_file_local_types", defaultValue: true);
-#endif
     private static readonly ConfigurationDefinition<bool> OnlyValidateFirstTypeConfiguration = new(Rule.Id + ".only_validate_first_type", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> AllowOfTForAllGenericTypesConfiguration = new(Rule.Id + ".allow_oft_for_all_generic_types", defaultValue: false);
     private static readonly ConfigurationDefinition<string> ModeConfiguration = new(Rule.Id + ".mode", defaultValue: string.Empty);
@@ -67,10 +65,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
 
             var typeNameMatchMode = GetTypeNameMatchMode(context, location.SourceTree);
 
-#if ROSLYN_4_4_OR_GREATER
             if (symbol.IsFileLocal && context.Options.GetConfigurationValue(location.SourceTree, ExcludeFileLocalTypesConfiguration))
                 continue;
-#endif
 
             var symbolName = symbol.Name;
 
@@ -227,19 +223,15 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         var root = sourceTree.GetRoot(context.CancellationToken);
         List<string>? typeNames = null;
 
-#if ROSLYN_4_4_OR_GREATER
         var excludeFileLocalTypes = context.Options.GetConfigurationValue(sourceTree, ExcludeFileLocalTypesConfiguration);
-#endif
 
         foreach (var node in root.DescendantNodesAndSelf(descendIntoChildren: static node => !IsTypeDeclaration(node)))
         {
             if (!TryGetTypeDeclarationName(node, out var typeName))
                 continue;
 
-#if ROSLYN_4_4_OR_GREATER
             if (excludeFileLocalTypes && IsFileLocalType(node))
                 continue;
-#endif
 
             typeNames ??= new List<string>();
             typeNames.Add(typeName);
@@ -298,7 +290,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
         }
     }
 
-#if ROSLYN_4_4_OR_GREATER
     private static bool IsFileLocalType(SyntaxNode node)
     {
         return node switch
@@ -308,7 +299,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             _ => false,
         };
     }
-#endif
 
     /// <summary>
     /// Implemented wildcard pattern match
@@ -326,13 +316,9 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     {
         return symbol.TypeKind switch
         {
-#if CSHARP10_OR_GREATER
             TypeKind.Class when symbol.IsRecord => "record",
-#endif
             TypeKind.Class => "class",
-#if CSHARP10_OR_GREATER
             TypeKind.Struct when symbol.IsRecord => "record struct",
-#endif
             TypeKind.Struct => "struct",
             TypeKind.Interface => "interface",
             TypeKind.Enum => "enum",

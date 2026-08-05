@@ -43,8 +43,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantFixe
             return document;
 
         var interpolatedStringArgument = op.Arguments[1];
-
-#if CSHARP10_OR_GREATER
         if (interpolatedStringArgument.Value is IInterpolatedStringHandlerCreationOperation handlerCreation)
         {
             // The Content property contains the interpolated string operation
@@ -58,7 +56,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantFixe
                 }
             }
         }
-#endif
 
         return editor.GetChangedDocument();
     }

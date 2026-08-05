@@ -164,10 +164,9 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
         if (kind is RefKind.Ref or RefKind.In)
             return true;
 
-#if CSHARP12_OR_GREATER
         if (kind is RefKind.RefReadOnlyParameter)
             return true;
-#endif
+
         return false;
     }
 

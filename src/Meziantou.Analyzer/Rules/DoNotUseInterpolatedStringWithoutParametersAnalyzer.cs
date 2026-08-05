@@ -43,11 +43,9 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
         if (operation.Parts.Any(part => part is IInterpolationOperation))
             return;
 
-#if CSHARP10_OR_GREATER
         // If there are IInterpolatedStringAppendOperation parts, it means a custom handler is being used
         if (operation.Parts.Any(part => part is IInterpolatedStringAppendOperation))
             return;
-#endif
 
         // Check if the operation itself is typed as a custom handler (for empty strings)
         if (IsInterpolatedStringHandler(operation.Type, interpolatedStringHandlerAttributeSymbol))

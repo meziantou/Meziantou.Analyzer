@@ -1,4 +1,3 @@
-#if CSHARP11_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -160,4 +159,3 @@ _ = str is "bar";
               .ValidateAsync();
     }
 }
-#endif

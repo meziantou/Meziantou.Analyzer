@@ -1,4 +1,3 @@
-#if CSHARP12_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis.CSharp;
@@ -255,4 +254,3 @@ class MyComponent(NavigationManager navigation, ILogger<MyComponent> logger) : C
               .ValidateAsync();
     }
 }
-#endif

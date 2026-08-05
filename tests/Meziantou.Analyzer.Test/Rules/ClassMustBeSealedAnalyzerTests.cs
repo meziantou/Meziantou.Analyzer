@@ -391,7 +391,6 @@ public sealed class ClassMustBeSealedAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_10()
     {
@@ -405,5 +404,4 @@ public sealed class ClassMustBeSealedAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-#endif
 }

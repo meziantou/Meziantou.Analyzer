@@ -70,13 +70,11 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationFixer : CodeFixProvi
         if (typeDeclaration is RecordDeclarationSyntax)
             return true;
 
-#if CSHARP12_OR_GREATER
         if (!typeDeclaration.GetCSharpLanguageVersion().IsCSharp12OrAbove())
             return false;
 
         if (typeDeclaration is ClassDeclarationSyntax or StructDeclarationSyntax)
             return true;
-#endif
 
         return false;
     }

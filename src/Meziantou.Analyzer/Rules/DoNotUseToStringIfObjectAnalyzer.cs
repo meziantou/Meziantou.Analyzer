@@ -63,7 +63,6 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
                 {
                     AnalyzeExpression(context, content.Expression);
                 }
-#if CSHARP10_OR_GREATER
                 else if (part is IInterpolatedStringAppendOperation { AppendCall: IInvocationOperation { TargetMethod.ContainingType: var containingType, Arguments: [{ Value: var content2 }] } })
                 {
                     if (!containingType.IsEqualToAny(InterpolatedStringHandlerSymbols))
@@ -71,7 +70,6 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
 
                     AnalyzeExpression(context, content2);
                 }
-#endif
             }
         }
 

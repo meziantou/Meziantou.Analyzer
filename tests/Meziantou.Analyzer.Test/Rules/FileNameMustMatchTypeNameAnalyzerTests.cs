@@ -121,7 +121,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task DoesMatchFileName_RecordStructWithArityGreaterThan1UsingOfT_WithConfiguration()
     {
@@ -133,7 +132,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
               .AddAnalyzerConfiguration("MA0048.allow_oft_for_all_generic_types", "true")
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task NestedTypeDoesMatchFileName_Ok()
@@ -347,7 +345,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task MatchOnlyFirstType_RecordStruct()
     {
@@ -360,7 +357,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task MatchOnlyFirstType_Struct()
@@ -389,7 +385,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task MatchOnlyFirstType_TypeWithFileScopedNamespaceDeclaration()
     {
@@ -402,7 +397,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
               .AddAnalyzerConfiguration("MA0048.only_validate_first_type", "true")
               .ValidateAsync();
     }
-#endif
 
     [Theory]
     [InlineData("Sample")]
@@ -476,7 +470,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
              .ValidateAsync();
     }
 
-#if ROSLYN_4_4_OR_GREATER
     [Fact]
     public async Task FileLocalTypes()
     {
@@ -575,7 +568,6 @@ record [|Sample|];
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task TypeKindIncludedInMessage_RecordStruct()
     {
@@ -587,7 +579,6 @@ record struct [|Sample|];
               .ShouldReportDiagnosticWithMessage("File name must match type name (record struct Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task TypeKindIncludedInMessage_Delegate()
@@ -599,5 +590,4 @@ delegate void [|Sample|]();
               .ShouldReportDiagnosticWithMessage("File name must match type name (delegate Sample), expected file name: 'Sample'")
               .ValidateAsync();
     }
-#endif
 }

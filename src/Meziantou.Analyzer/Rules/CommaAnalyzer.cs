@@ -39,9 +39,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(HandleWithExpression, SyntaxKind.WithExpression);
         context.RegisterSyntaxNodeAction(HandleSwitchExpression, SyntaxKind.SwitchExpression);
         context.RegisterSyntaxNodeAction(HandleRecursivePattern, SyntaxKind.RecursivePattern);
-#if CSHARP12_OR_GREATER
         context.RegisterSyntaxNodeAction(HandleCollectionExpression, SyntaxKind.CollectionExpression);
-#endif
     }
 
     private static void HandleSeparatedList<T>(SyntaxNodeAnalysisContext context, SyntaxNode node, SeparatedSyntaxList<T> elements) where T : SyntaxNode
@@ -56,7 +54,6 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Rule, lastMember);
     }
 
-#if CSHARP12_OR_GREATER
     private void HandleCollectionExpression(SyntaxNodeAnalysisContext context)
     {
         var node = (CollectionExpressionSyntax)context.Node;
@@ -72,7 +69,6 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
 
         context.ReportDiagnostic(Rule, lastElement);
     }
-#endif
 
     private void HandleSwitchExpression(SyntaxNodeAnalysisContext context)
     {

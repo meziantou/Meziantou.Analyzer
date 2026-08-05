@@ -99,6 +99,33 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public async Task SortedDictionary_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|new System.Collections.Generic.SortedDictionary<string, int>()|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.SortedDictionary<string, int>(System.StringComparer.Ordinal);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task HashSet_String__ShortNew_ShouldReportDiagnostic()
     {
         const string SourceCode = """
@@ -202,7 +229,7 @@ public sealed class UseStringComparerAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER && ROSLYN_5_6_OR_GREATER
+#if  ROSLYN_5_6_OR_GREATER
     [Fact]
     public async Task Dictionary_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {

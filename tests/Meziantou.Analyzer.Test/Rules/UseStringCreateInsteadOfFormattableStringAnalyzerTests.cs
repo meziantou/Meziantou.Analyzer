@@ -74,7 +74,6 @@ class TypeName
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task FormattableStringInvariant()
     {
@@ -144,5 +143,4 @@ class TypeName
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
-#endif
 }

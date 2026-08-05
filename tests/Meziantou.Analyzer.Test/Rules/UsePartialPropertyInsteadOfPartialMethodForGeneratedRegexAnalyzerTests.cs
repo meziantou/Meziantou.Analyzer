@@ -27,7 +27,6 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task CSharp12_NoDiagnostic()
     {
@@ -44,7 +43,6 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
                 """)
             .ValidateAsync();
     }
-#endif
 
 #if CSHARP13_OR_GREATER
     [Fact]

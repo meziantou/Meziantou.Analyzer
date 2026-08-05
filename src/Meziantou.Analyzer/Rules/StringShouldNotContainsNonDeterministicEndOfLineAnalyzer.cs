@@ -39,20 +39,14 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
 
         context.RegisterSyntaxNodeAction(AnalyzeStringLiteralExpression, SyntaxKind.StringLiteralExpression);
         context.RegisterSyntaxNodeAction(AnalyzeInterpolatedString, SyntaxKind.InterpolatedStringExpression);
-#if CSHARP11_OR_GREATER
         context.RegisterSyntaxNodeAction(AnalyzeStringLiteralExpression, SyntaxKind.Utf8StringLiteralExpression);
-#endif
     }
 
     private static void AnalyzeInterpolatedString(SyntaxNodeAnalysisContext context)
     {
         var node = (InterpolatedStringExpressionSyntax)context.Node;
-        var isRawString =
-#if CSHARP10_OR_GREATER
-            node.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken);
-#else
-            false;
-#endif
+        var isRawString = node.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken);
+
         foreach (var item in node.Contents)
         {
             if (item is InterpolatedStringTextSyntax text)
@@ -70,24 +64,14 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
     private static void AnalyzeStringLiteralExpression(SyntaxNodeAnalysisContext context)
     {
         var node = (LiteralExpressionSyntax)context.Node;
-#if CSHARP10_OR_GREATER
         if (node.Token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken))
             return;
-#endif
 
         var position = node.GetLocation().GetLineSpan();
         var startLine = position.StartLinePosition.Line;
         var endLine = position.EndLinePosition.Line;
 
-        var isRawString = false;
-#if CSHARP11_OR_GREATER
-        isRawString = isRawString || node.Token.IsKind(SyntaxKind.Utf8MultiLineRawStringLiteralToken);
-#endif
-
-#if CSHARP10_OR_GREATER
-        isRawString = isRawString || node.Token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken);
-#endif
-
+        var isRawString = node.Token.IsKind(SyntaxKind.Utf8MultiLineRawStringLiteralToken) || node.Token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken);
         if (isRawString)
         {
             startLine++;

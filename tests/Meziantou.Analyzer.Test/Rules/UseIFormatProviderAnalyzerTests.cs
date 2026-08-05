@@ -253,7 +253,6 @@ public sealed class UseIFormatProviderAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task StringBuilder_AppendLine_Int32Params_Net7()
     {
@@ -267,7 +266,6 @@ public sealed class UseIFormatProviderAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-#endif
 
     [Theory]
     [InlineData("o")]
@@ -289,7 +287,6 @@ public sealed class UseIFormatProviderAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task StringBuilder_AppendLine_DateTime_Net7()
     {
@@ -303,7 +300,6 @@ public sealed class UseIFormatProviderAnalyzerTests
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task NullableInt32ToStringWithoutCultureInfo()
@@ -446,7 +442,6 @@ class Location
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InterpolatedStringHandler_CultureSensitiveFormat_ShouldReport()
     {
@@ -599,7 +594,6 @@ class A
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task FormattableString_CultureSensitiveFormat_ShouldReport()
@@ -732,4 +726,19 @@ class A
               .ShouldFixCodeWith(invariantFix)
               .ValidateAsync();
     }
+
+
+    [Fact]
+    public async Task Enum_ParseWithoutFormatProvider_ShouldNotReportDiagnostic()
+    {
+       const string SourceCode = """
+           var color = System.Enum.Parse(typeof(Color), "Red");
+
+           enum Color { Red, Green, Blue }
+           """;
+       await CreateProjectBuilder()
+             .WithSourceCode(SourceCode)
+             .ValidateAsync();
+    }
+
 }

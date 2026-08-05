@@ -1,4 +1,3 @@
-#if CSHARP12_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 
@@ -222,4 +221,3 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
               .ValidateAsync();
     }
 }
-#endif

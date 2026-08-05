@@ -1,4 +1,3 @@
-#if CSHARP10_OR_GREATER
 using System.Collections.Immutable;
 using System.Composition;
 using Microsoft.CodeAnalysis;
@@ -48,4 +47,3 @@ public sealed class RecordClassDeclarationShouldBeExplicitFixer : CodeFixProvide
         return editor.GetChangedDocument();
     }
 }
-#endif

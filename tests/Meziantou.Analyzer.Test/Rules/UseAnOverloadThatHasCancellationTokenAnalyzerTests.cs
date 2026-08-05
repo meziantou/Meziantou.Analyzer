@@ -241,7 +241,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task CallingMethodWithStructRecordCtorThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
@@ -266,9 +265,7 @@ record struct HttpRequest(System.Threading.CancellationToken RequestAborted);
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task CallingMethodWithStructRecordPropsThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
@@ -296,7 +293,6 @@ record struct HttpRequest
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: request.RequestAborted")
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task CallingMethodWithProperty_ShouldReportDiagnostic()
@@ -583,7 +579,6 @@ record struct HttpRequest
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task RecordStruct_ShouldReportDiagnosticWithProperty()
     {
@@ -605,9 +600,7 @@ record struct Test
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task RecordStructCtor_ShouldReportDiagnosticWithProperty()
     {
@@ -627,7 +620,6 @@ record struct Test(System.Threading.CancellationToken a)
               .ShouldReportDiagnosticWithMessage("Use an overload with a CancellationToken, available tokens: a")
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task InterfaceImplicit_ShouldReportDiagnosticWithProperty()

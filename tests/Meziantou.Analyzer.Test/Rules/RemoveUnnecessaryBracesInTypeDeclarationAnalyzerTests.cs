@@ -91,7 +91,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
             .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task ClassPrimaryConstructor_WithEmptyBraces()
     {
@@ -170,5 +169,4 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
                 """)
             .ValidateAsync();
     }
-#endif
 }

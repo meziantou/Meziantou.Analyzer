@@ -1,4 +1,3 @@
-#if CSHARP12_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis.CSharp;
@@ -144,4 +143,3 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
             .ValidateAsync();
     }
 }
-#endif

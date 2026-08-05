@@ -235,7 +235,6 @@ public sealed class CommaAnalyzerTests
             .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnNextLine()
     {
@@ -338,7 +337,6 @@ class TypeName
                 }
                 """)
             .ValidateAsync();
-#endif
 
     [Fact]
     public Task SwitchExpressionWithoutLeadingComma_CatchAll()

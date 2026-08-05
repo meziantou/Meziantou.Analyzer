@@ -605,9 +605,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
             var format = SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
                 SymbolDisplayMiscellaneousOptions.ExpandNullable |
-#if ROSLYN_4_6_OR_GREATER
                 SymbolDisplayMiscellaneousOptions.ExpandValueTuple |
-#endif
                 SymbolDisplayMiscellaneousOptions.UseErrorTypeSymbolName);
             return typeSymbol.ToDisplayString(format);
         }

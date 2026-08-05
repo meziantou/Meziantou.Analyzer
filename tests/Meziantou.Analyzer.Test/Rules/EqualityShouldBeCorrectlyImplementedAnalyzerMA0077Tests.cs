@@ -56,7 +56,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task RefStruct_CSharp12()
     {
@@ -72,7 +71,6 @@ ref struct Test
               .WithSourceCode(originalCode)
               .ValidateAsync();
     }
-#endif
 
 #if CSHARP13_OR_GREATER
     [Fact]
