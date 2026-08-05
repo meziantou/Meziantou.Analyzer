@@ -1,4 +1,3 @@
-#if CSHARP10_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using Meziantou.Analyzer.Test.Helpers;
 using TestHelper;
@@ -179,4 +178,3 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
             .ValidateAsync();
     }
 }
-#endif

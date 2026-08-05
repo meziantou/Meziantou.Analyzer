@@ -71,7 +71,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
         // Check if the second argument (interpolated string handler) has only culture-invariant parameters
         var interpolatedStringArgument = operation.Arguments[1].Value;
 
-#if CSHARP10_OR_GREATER
         if (interpolatedStringArgument is IInterpolatedStringHandlerCreationOperation handlerCreation)
         {
             var interpolatedStringContent = handlerCreation.Content;
@@ -81,7 +80,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
                 context.ReportDiagnostic(Rule, operation);
             }
         }
-#endif
     }
 
     private static bool IsCultureInfoInvariantCulture(IOperation operation, IPropertySymbol cultureInfoInvariantCultureProperty)

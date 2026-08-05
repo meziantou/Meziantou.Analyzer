@@ -248,7 +248,6 @@ public sealed class NamedParameterAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task SingleLineRawString_WithOptions_ShouldReportDiagnostic()
     {
@@ -340,7 +339,6 @@ public sealed class NamedParameterAnalyzerTests
               .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task Int32_WithOptions_ShouldReportDiagnostic()

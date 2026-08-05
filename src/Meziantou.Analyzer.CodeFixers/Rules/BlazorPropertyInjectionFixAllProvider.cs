@@ -1,4 +1,3 @@
-#if CSHARP12_OR_GREATER
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -62,4 +61,3 @@ internal sealed class BlazorPropertyInjectionFixAllProvider : FixAllProvider
         return solution;
     }
 }
-#endif

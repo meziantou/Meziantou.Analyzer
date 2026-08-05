@@ -39,26 +39,21 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         // Check if this is a raw string literal (C# 11+)
-#if CSHARP10_OR_GREATER
         var isRawString = interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken) ||
                           interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedSingleLineRawStringStartToken);
-#else
-        var isRawString = false;
-#endif
-
         if (isRawString)
         {
             // For raw strings, simply remove the $ prefix from the start token
             // $""" text """ -> """ text """
             var originalText = interpolatedString.ToFullString();
-            
+
             // Find the position of $ in the start token and remove it
             var dollarIndex = originalText.IndexOf('$', StringComparison.Ordinal);
             if (dollarIndex >= 0)
             {
                 var newText = originalText.Remove(dollarIndex, 1);
                 var newNode = SyntaxFactory.ParseExpression(newText);
-                
+
                 editor.ReplaceNode(interpolatedString, newNode.WithTriviaFrom(interpolatedString));
             }
         }

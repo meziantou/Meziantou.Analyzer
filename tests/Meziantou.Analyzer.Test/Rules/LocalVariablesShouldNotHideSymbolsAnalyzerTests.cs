@@ -71,7 +71,6 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task LocalVariableHidePrimaryConstructorParameter()
     {
@@ -125,7 +124,6 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task LocalVariableHideNotVisibleFieldFromParentClass()

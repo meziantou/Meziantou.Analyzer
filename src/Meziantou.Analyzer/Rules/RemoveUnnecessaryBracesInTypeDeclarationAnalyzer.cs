@@ -29,10 +29,8 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSyntaxNodeAction(AnalyzeTypeDeclaration, SyntaxKind.RecordDeclaration);
-#if CSHARP12_OR_GREATER
         context.RegisterSyntaxNodeAction(AnalyzeTypeDeclaration, SyntaxKind.ClassDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeTypeDeclaration, SyntaxKind.StructDeclaration);
-#endif
     }
 
     private static void AnalyzeTypeDeclaration(SyntaxNodeAnalysisContext context)
@@ -63,13 +61,11 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
         if (typeDeclaration is RecordDeclarationSyntax)
             return true;
 
-#if CSHARP12_OR_GREATER
         if (!languageVersion.IsCSharp12OrAbove())
             return false;
 
         if (typeDeclaration is ClassDeclarationSyntax or StructDeclarationSyntax)
             return true;
-#endif
 
         return false;
     }

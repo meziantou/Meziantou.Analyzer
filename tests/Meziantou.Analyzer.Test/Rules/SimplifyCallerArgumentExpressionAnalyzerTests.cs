@@ -12,9 +12,7 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
             .WithAnalyzer<SimplifyCallerArgumentExpressionAnalyzer>()
             .WithCodeFixProvider<SimplifyCallerArgumentExpressionFixer>()
             .WithTargetFramework(TargetFramework.Net6_0)
-#if CSHARP10_OR_GREATER
             .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-#endif
             ;
     }
 
@@ -39,7 +37,6 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task ReportDiagnostic()
     {
@@ -145,5 +142,4 @@ class Sample
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-#endif
 }

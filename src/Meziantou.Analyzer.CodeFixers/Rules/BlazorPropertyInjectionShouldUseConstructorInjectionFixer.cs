@@ -1,4 +1,3 @@
-#if CSHARP12_OR_GREATER
 using System.Collections.Immutable;
 using System.Composition;
 using System.Text;
@@ -234,4 +233,3 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionFixer : 
         return sb.ToString();
     }
 }
-#endif

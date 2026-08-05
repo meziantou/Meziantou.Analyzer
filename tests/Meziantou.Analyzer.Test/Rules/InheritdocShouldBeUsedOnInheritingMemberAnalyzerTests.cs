@@ -114,7 +114,6 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task NoDiagnostic_WhenInheritdocIsOnTypeWithPrimaryConstructor()
     {
@@ -125,7 +124,6 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
                   """)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task NoDiagnostic_MethodIsOverride()

@@ -149,7 +149,6 @@ _ = $"{o}";
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InterpolatedString_Struct_Interpolation_Net8()
     {
@@ -190,7 +189,6 @@ public struct CustomStringHandler
               .WithTargetFramework(TargetFramework.Net8_0)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task Object_Concat()

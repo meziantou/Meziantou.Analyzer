@@ -185,7 +185,6 @@ class Test
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Theory]
     [InlineData(@"""abc""")]
     [InlineData(@"$""abc""")]
@@ -208,7 +207,6 @@ class Test
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .ValidateAsync();
     }
-#endif
 
     [Theory]
     [InlineData(@"$""a{1}""")]

@@ -7,12 +7,10 @@ namespace Meziantou.Analyzer.Internals;
 
 internal static class OperationExtensions
 {
-#if ROSLYN_4_2_OR_GREATER
     public static IOperation.OperationList GetChildOperations(this IOperation operation)
     {
         return operation.ChildOperations;
     }
-#endif
 
     public static LanguageVersion GetCSharpLanguageVersion(this IOperation operation)
     {

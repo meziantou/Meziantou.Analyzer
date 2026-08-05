@@ -1,4 +1,3 @@
-#if ROSLYN_4_8_OR_GREATER
 using Meziantou.Analyzer.Rules;
 using TestHelper;
 
@@ -30,9 +29,9 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
     public async Task StructNotReadOnly_in()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("""              
+              .WithSourceCode("""
                   A(default);
-                  
+
                   void A(in Foo [|foo|]) { }
                   struct Foo { }
                   """)
@@ -43,9 +42,9 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
     public async Task StructNotReadOnly_ref_readonly()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("""              
+              .WithSourceCode("""
                   A(default);
-                  
+
                   void A(ref readonly Foo [|foo|]) { }
                   struct Foo { }
                   """)
@@ -56,9 +55,9 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
     public async Task StructReadOnly()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("""              
+              .WithSourceCode("""
                   A(default);
-                  
+
                   void A(in Foo foo) { }
                   readonly struct Foo { }
                   """)
@@ -69,9 +68,9 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
     public async Task StructNotReadOnly_Generic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("""              
+              .WithSourceCode("""
                   A([|new Foo()|]);
-                  
+
                   void A<T>(in T foo) where T: struct { }
                   struct Foo { }
                   """)
@@ -82,13 +81,12 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
     public async Task StructReadOnly_Generic()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("""              
+              .WithSourceCode("""
                   A(new Foo());
-                  
+
                   void A<T>(in T foo) where T: struct { }
                   readonly struct Foo { }
                   """)
               .ValidateAsync();
     }
 }
-#endif

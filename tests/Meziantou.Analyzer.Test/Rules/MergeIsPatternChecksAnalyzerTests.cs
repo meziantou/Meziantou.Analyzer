@@ -305,7 +305,6 @@ public sealed class MergeIsPatternChecksAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP12_OR_GREATER
     [Fact]
     public async Task PrimaryConstructorParameter()
     {
@@ -329,7 +328,6 @@ public sealed class MergeIsPatternChecksAnalyzerTests
                   """)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public void Rule_SeverityAndDefault()

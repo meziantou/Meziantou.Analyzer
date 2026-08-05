@@ -107,7 +107,6 @@ class TypeName
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task InterpolatedStringWithoutParameters_CustomInterpolatedStringHandler_ShouldNotReportDiagnostic()
     {
@@ -175,7 +174,6 @@ public struct CustomInterpolatedStringHandler
               .WithTargetFramework(TargetFramework.Net6_0)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task InterpolatedStringWithoutParameters_InReturnStatement_ShouldReportDiagnostic()
@@ -291,7 +289,6 @@ class TypeName
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RawInterpolatedStringWithoutParameters_ShouldReportDiagnostic()
     {
@@ -325,5 +322,4 @@ class TypeName
               .ShouldFixCodeWith(FixedCode)
               .ValidateAsync();
     }
-#endif
 }

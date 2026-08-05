@@ -120,7 +120,6 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
 
     private static IEnumerable<ISymbol> GetSymbols(INamedTypeSymbol? type, string name, CancellationToken cancellationToken)
     {
-#if CSHARP12_OR_GREATER
         if (type?.InstanceConstructors is not null)
         {
             foreach (var constructor in type.InstanceConstructors)
@@ -135,7 +134,6 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
                 }
             }
         }
-#endif
 
         while (type is not null)
         {

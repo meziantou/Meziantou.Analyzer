@@ -1,4 +1,3 @@
-#if ROSLYN_4_8_OR_GREATER
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -83,4 +82,3 @@ public sealed class UseReadOnlyStructForRefReadOnlyParametersAnalyzer : Diagnost
         return true;
     }
 }
-#endif

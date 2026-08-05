@@ -175,13 +175,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             return true;
         }
 
-#if CSHARP10_OR_GREATER
         if (operation is IInterpolatedStringHandlerCreationOperation handler)
             return IsCultureSensitiveOperation(handler.Content, options);
 
         if (operation is IInterpolatedStringAdditionOperation interpolatedStringAddition)
             return IsCultureSensitiveOperation(interpolatedStringAddition.Left, options) || IsCultureSensitiveOperation(interpolatedStringAddition.Right, options);
-#endif
 
         if (operation is IInterpolationOperation content)
             return IsCultureSensitiveType(content.Expression.Type, content.FormatString, content.Expression, options);
@@ -189,7 +187,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (operation is IInterpolatedStringTextOperation)
             return false;
 
-#if CSHARP10_OR_GREATER
         if (operation is IInterpolatedStringAppendOperation append)
         {
             if (append.AppendCall is IInvocationOperation appendInvocation)
@@ -209,7 +206,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 return true;
             }
         }
-#endif
 
         if (operation is IConversionOperation interpolatedConversion && interpolatedConversion.Type.IsEqualTo(FormattableStringSymbol))
             return IsCultureSensitiveOperation(interpolatedConversion.Operand, options);

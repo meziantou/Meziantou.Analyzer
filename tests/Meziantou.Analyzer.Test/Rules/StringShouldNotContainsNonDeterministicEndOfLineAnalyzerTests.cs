@@ -118,7 +118,6 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task U8String()
     {
@@ -269,5 +268,4 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
-#endif
 }

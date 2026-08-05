@@ -52,7 +52,6 @@ public sealed class DeclareTypesInNamespacesAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP10_OR_GREATER
     [Fact]
     public async Task TopLevelProgram_10()
     {
@@ -78,5 +77,4 @@ public sealed class DeclareTypesInNamespacesAnalyzerTests
                 """)
               .ValidateAsync();
     }
-#endif
 }

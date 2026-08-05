@@ -17,7 +17,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
             .WithNoFixCompilation(); // requires the regex source generator
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NewRegex_Options_Timeout()
     {
@@ -51,9 +50,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NewRegex_Options()
     {
@@ -87,9 +84,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NewRegex()
     {
@@ -123,9 +118,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexIsMatch_Options_Timeout()
     {
@@ -159,9 +152,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexIsMatch_Options()
     {
@@ -195,9 +186,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexIsMatch()
     {
@@ -231,9 +220,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace_Options_Timeout()
     {
@@ -267,9 +254,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace_Options()
     {
@@ -303,9 +288,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace()
     {
@@ -339,9 +322,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task RegexReplace_MatchEvaluator()
     {
@@ -375,9 +356,7 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Theory]
     [InlineData("TimeSpan.FromMilliseconds(10)", "10")]
     [InlineData("TimeSpan.FromSeconds(10.5)", "10500")]
@@ -421,9 +400,7 @@ partial class Test
                   codeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Theory]
     [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
     [InlineData("Regex.InfiniteMatchTimeout")]
@@ -459,9 +436,7 @@ partial class Test
                   codeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Theory]
     [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
     [InlineData("Regex.InfiniteMatchTimeout")]
@@ -497,9 +472,7 @@ partial class Test
                   codeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task GenerateUniqueMethodName()
     {
@@ -536,7 +509,6 @@ partial class Test
                   codeFix)
               .ValidateAsync();
     }
-#endif
 
     [Fact]
     public async Task NonConstantPattern()
@@ -556,7 +528,6 @@ partial class Test
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task NestedTypeShouldAddPartialToAllAncestorTypes()
     {
@@ -602,7 +573,6 @@ partial class Sample
                   codeFix)
               .ValidateAsync();
     }
-#endif
 
 #if CSHARP14_OR_GREATER
     [Fact]
@@ -878,7 +848,6 @@ partial class Sample
     }
 #endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Field_SuggestFieldName()
     {
@@ -922,9 +891,7 @@ partial class Sample
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Field_SuggestFieldNameWithoutRegexSuffix()
     {
@@ -968,9 +935,7 @@ partial class Sample
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Variable_SuggestPascalCaseName()
     {
@@ -1012,9 +977,7 @@ partial class Foo
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task Variable_AlreadyPascalCase()
     {
@@ -1056,9 +1019,7 @@ partial class Foo
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task StaticMethod_UseDefaultName()
     {
@@ -1092,7 +1053,6 @@ partial class Test
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
 #if CSHARP14_OR_GREATER
     [Fact]
@@ -1425,7 +1385,6 @@ partial class Sample
     }
 #endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_NewRegex_PartialMethod()
     {
@@ -1457,7 +1416,6 @@ partial class Program
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
 #if CSHARP14_OR_GREATER
     [Fact]
@@ -1570,7 +1528,6 @@ partial class Program
     }
 #endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task TopLevelStatement_StaticMethod_PartialMethod()
     {
@@ -1600,9 +1557,7 @@ partial class Program
                   CodeFix)
               .ValidateAsync();
     }
-#endif
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task BatchFix_MultipleRegex()
     {
@@ -1648,5 +1603,4 @@ partial class Test2
               .ShouldBatchFixCodeWith(CodeFix)
               .ValidateAsync();
     }
-#endif
 }

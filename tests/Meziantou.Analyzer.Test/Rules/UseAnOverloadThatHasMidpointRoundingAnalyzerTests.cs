@@ -179,7 +179,6 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
               .ValidateAsync();
     }
 
-#if CSHARP11_OR_GREATER
     [Fact]
     public async Task FloatingPointImplementationsRoundWithoutMode_ReportDiagnostic()
     {
@@ -267,5 +266,4 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
                   """)
               .ValidateAsync();
     }
-#endif
 }
