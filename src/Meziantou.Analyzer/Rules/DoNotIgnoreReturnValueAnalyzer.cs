@@ -39,133 +39,125 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var doNotIgnoreAttributeSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.DoNotIgnoreAttribute");
-
-            var streamSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.IO.Stream");
-            var textReaderSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.IO.TextReader");
-            var binaryReaderSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.IO.BinaryReader");
-
-            compilationContext.RegisterOperationAction(
-                operationContext => AnalyzeInvocation(operationContext, doNotIgnoreAttributeSymbol, streamSymbol, textReaderSymbol, binaryReaderSymbol),
-                OperationKind.Invocation);
+            var analyzerContext = new AnalyzerContext(compilationContext.Compilation);
+            compilationContext.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
         });
     }
 
-    private static void AnalyzeInvocation(
-        OperationAnalysisContext context,
-        INamedTypeSymbol? doNotIgnoreAttributeSymbol,
-        INamedTypeSymbol? streamSymbol,
-        INamedTypeSymbol? textReaderSymbol,
-        INamedTypeSymbol? binaryReaderSymbol)
+    private sealed class AnalyzerContext(Compilation compilation)
     {
-        var invocation = (IInvocationOperation)context.Operation;
-        var targetMethod = invocation.TargetMethod;
+        private INamedTypeSymbol? DoNotIgnoreAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.DoNotIgnoreAttribute");
+        private INamedTypeSymbol? StreamSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.Stream");
+        private INamedTypeSymbol? TextReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.TextReader");
+        private INamedTypeSymbol? BinaryReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.BinaryReader");
 
-        // Check out parameters with [DoNotIgnore]
-        if (doNotIgnoreAttributeSymbol is not null)
+        public void AnalyzeInvocation(OperationAnalysisContext context)
         {
-            foreach (var argument in invocation.Arguments)
+            var invocation = (IInvocationOperation)context.Operation;
+            var targetMethod = invocation.TargetMethod;
+
+            // Check out parameters with [DoNotIgnore]
+            if (DoNotIgnoreAttributeSymbol is not null)
             {
-                if (argument.Parameter is { RefKind: RefKind.Out } outParam
-                    && argument.Value is IDiscardOperation
-                    && outParam.HasAttribute(doNotIgnoreAttributeSymbol))
+                foreach (var argument in invocation.Arguments)
                 {
-                    var message = GetMessage(outParam.GetAttributes(), doNotIgnoreAttributeSymbol);
-                    context.ReportDiagnostic(OutParameterRule, invocation,
-                        outParam.Name, targetMethod.Name, message is null ? "" : ": " + message);
+                    if (argument.Parameter is { RefKind: RefKind.Out } outParam
+                        && argument.Value is IDiscardOperation
+                        && outParam.HasAttribute(DoNotIgnoreAttributeSymbol))
+                    {
+                        var message = GetMessage(outParam.GetAttributes(), DoNotIgnoreAttributeSymbol);
+                        context.ReportDiagnostic(OutParameterRule, invocation,
+                            outParam.Name, targetMethod.Name, message is null ? "" : ": " + message);
+                    }
                 }
+            }
+
+            // Check return value
+            if (!IsReturnValueIgnored(invocation))
+                return;
+
+            // Check attribute on return value
+            if (DoNotIgnoreAttributeSymbol is not null)
+            {
+                var returnAttrs = targetMethod.GetReturnTypeAttributes();
+                foreach (var attr in returnAttrs)
+                {
+                    if (attr.AttributeClass is not null && attr.AttributeClass.IsOrInheritFrom(DoNotIgnoreAttributeSymbol))
+                    {
+                        var message = GetMessageFromAttributeData(attr);
+                        context.ReportDiagnostic(ReturnValueRule, invocation,
+                            targetMethod.Name, message is null ? "" : ": " + message);
+                        return;
+                    }
+                }
+            }
+
+            // Check built-in CLR list
+            if (IsBuiltInMethod(targetMethod))
+            {
+                context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
             }
         }
 
-        // Check return value
-        if (!IsReturnValueIgnored(invocation))
-            return;
-
-        // Check attribute on return value
-        if (doNotIgnoreAttributeSymbol is not null)
+        private static bool IsReturnValueIgnored(IInvocationOperation invocation)
         {
-            var returnAttrs = targetMethod.GetReturnTypeAttributes();
-            foreach (var attr in returnAttrs)
+            var parent = invocation.Parent;
+            if (parent is IAwaitOperation)
+            {
+                parent = parent.Parent;
+            }
+
+            return parent is null or IBlockOperation or IExpressionStatementOperation;
+        }
+
+        private bool IsBuiltInMethod(IMethodSymbol method)
+        {
+            var containingType = method.ContainingType;
+
+            if (StreamSymbol is not null && containingType.IsOrInheritFrom(StreamSymbol))
+            {
+                return method.Name is
+                    nameof(System.IO.Stream.Read) or
+                    "ReadAsync" or
+                    "ReadAtLeast" or
+                    "ReadAtLeastAsync";
+            }
+
+            if (TextReaderSymbol is not null && containingType.IsOrInheritFrom(TextReaderSymbol))
+            {
+                return method.Name is
+                    nameof(System.IO.TextReader.Read) or
+                    "ReadAsync";
+            }
+
+            if (BinaryReaderSymbol is not null && containingType.IsOrInheritFrom(BinaryReaderSymbol))
+            {
+                return method.Name is nameof(System.IO.BinaryReader.Read);
+            }
+
+            return false;
+        }
+
+        private static string? GetMessage(ImmutableArray<AttributeData> attributes, INamedTypeSymbol doNotIgnoreAttributeSymbol)
+        {
+            foreach (var attr in attributes)
             {
                 if (attr.AttributeClass is not null && attr.AttributeClass.IsOrInheritFrom(doNotIgnoreAttributeSymbol))
-                {
-                    var message = GetMessageFromAttributeData(attr);
-                    context.ReportDiagnostic(ReturnValueRule, invocation,
-                        targetMethod.Name, message is null ? "" : ": " + message);
-                    return;
-                }
+                    return GetMessageFromAttributeData(attr);
             }
+
+            return null;
         }
 
-        // Check built-in CLR list
-        if (IsBuiltInMethod(targetMethod, streamSymbol, textReaderSymbol, binaryReaderSymbol))
+        private static string? GetMessageFromAttributeData(AttributeData attr)
         {
-            context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
+            foreach (var namedArg in attr.NamedArguments)
+            {
+                if (namedArg.Key == "Message" && namedArg.Value.Value is string msg)
+                    return msg;
+            }
+
+            return null;
         }
-    }
-
-    private static bool IsReturnValueIgnored(IInvocationOperation invocation)
-    {
-        var parent = invocation.Parent;
-        if (parent is IAwaitOperation)
-        {
-            parent = parent.Parent;
-        }
-
-        return parent is null or IBlockOperation or IExpressionStatementOperation;
-    }
-
-    private static bool IsBuiltInMethod(
-        IMethodSymbol method,
-        INamedTypeSymbol? streamSymbol,
-        INamedTypeSymbol? textReaderSymbol,
-        INamedTypeSymbol? binaryReaderSymbol)
-    {
-        var containingType = method.ContainingType;
-
-        if (streamSymbol is not null && containingType.IsOrInheritFrom(streamSymbol))
-        {
-            return method.Name is
-                nameof(System.IO.Stream.Read) or
-                "ReadAsync" or
-                "ReadAtLeast" or
-                "ReadAtLeastAsync";
-        }
-
-        if (textReaderSymbol is not null && containingType.IsOrInheritFrom(textReaderSymbol))
-        {
-            return method.Name is
-                nameof(System.IO.TextReader.Read) or
-                "ReadAsync";
-        }
-
-        if (binaryReaderSymbol is not null && containingType.IsOrInheritFrom(binaryReaderSymbol))
-        {
-            return method.Name is nameof(System.IO.BinaryReader.Read);
-        }
-
-        return false;
-    }
-
-    private static string? GetMessage(ImmutableArray<AttributeData> attributes, INamedTypeSymbol doNotIgnoreAttributeSymbol)
-    {
-        foreach (var attr in attributes)
-        {
-            if (attr.AttributeClass is not null && attr.AttributeClass.IsOrInheritFrom(doNotIgnoreAttributeSymbol))
-                return GetMessageFromAttributeData(attr);
-        }
-
-        return null;
-    }
-
-    private static string? GetMessageFromAttributeData(AttributeData attr)
-    {
-        foreach (var namedArg in attr.NamedArguments)
-        {
-            if (namedArg.Key == "Message" && namedArg.Value.Value is string msg)
-                return msg;
-        }
-
-        return null;
     }
 }
