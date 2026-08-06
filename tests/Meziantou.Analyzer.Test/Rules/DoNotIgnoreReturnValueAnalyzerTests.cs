@@ -102,7 +102,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
-    public async Task TextReader_ReadLine_ReturnValueNotUsed()
+    public async Task TextReader_ReadLine_ReturnValueNotUsed_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
@@ -112,7 +112,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                       void A()
                       {
                           var reader = new StringReader("test");
-                          [|reader.ReadLine()|];
+                          reader.ReadLine();
                       }
                   }
                   """)

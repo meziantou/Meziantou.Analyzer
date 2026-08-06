@@ -138,7 +138,6 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             return method.Name is
                 nameof(System.IO.TextReader.Read) or
                 "ReadAsync" or
-                nameof(System.IO.TextReader.ReadLine) or
                 "ReadLineAsync";
         }
 
