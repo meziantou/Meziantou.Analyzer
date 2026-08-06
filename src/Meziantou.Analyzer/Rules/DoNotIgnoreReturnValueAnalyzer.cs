@@ -48,6 +48,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private INamedTypeSymbol? DoNotIgnoreAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.DoNotIgnoreAttribute");
+        private INamedTypeSymbol? PureAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Diagnostics.Contracts.PureAttribute")
+            ?? compilation.GetBestTypeByMetadataName("JetBrains.Annotations.PureAttribute");
         private INamedTypeSymbol? StreamSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.Stream");
         private INamedTypeSymbol? TextReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.TextReader");
         private INamedTypeSymbol? BinaryReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.BinaryReader");
@@ -94,6 +96,13 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                         targetMethod.Name, message is null ? "" : ": " + message);
                     return;
                 }
+            }
+
+            // Check [Pure] attribute on the method
+            if (PureAttributeSymbol is not null && targetMethod.HasAttribute(PureAttributeSymbol))
+            {
+                context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
+                return;
             }
 
             // Check built-in CLR list

@@ -252,6 +252,68 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task Pure_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Diagnostics.Contracts;
+                  class Test
+                  {
+                      [Pure]
+                      static int Compute() => 0;
+
+                      void A()
+                      {
+                          [|Compute()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Pure_ReturnValueUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Diagnostics.Contracts;
+                  class Test
+                  {
+                      [Pure]
+                      static int Compute() => 0;
+
+                      void A()
+                      {
+                          var result = Compute();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Pure_OnClass_NoMethodDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Diagnostics.Contracts;
+                  [Pure]
+                  class MyClass
+                  {
+                      public int Compute() => 0;
+                  }
+                  class Test
+                  {
+                      void A(MyClass obj)
+                      {
+                          obj.Compute();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
     private const string DoNotIgnoreAttributeSource = """
 
         namespace Meziantou.Analyzer.Annotations
