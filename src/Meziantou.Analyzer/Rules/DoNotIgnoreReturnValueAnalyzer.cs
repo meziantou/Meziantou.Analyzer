@@ -143,25 +143,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
 
         if (binaryReaderSymbol is not null && containingType.IsOrInheritFrom(binaryReaderSymbol))
         {
-            return method.Name is
-                nameof(System.IO.BinaryReader.Read) or
-                nameof(System.IO.BinaryReader.ReadBoolean) or
-                nameof(System.IO.BinaryReader.ReadByte) or
-                nameof(System.IO.BinaryReader.ReadBytes) or
-                nameof(System.IO.BinaryReader.ReadChar) or
-                nameof(System.IO.BinaryReader.ReadChars) or
-                nameof(System.IO.BinaryReader.ReadDecimal) or
-                nameof(System.IO.BinaryReader.ReadDouble) or
-                "ReadHalf" or
-                nameof(System.IO.BinaryReader.ReadInt16) or
-                nameof(System.IO.BinaryReader.ReadInt32) or
-                nameof(System.IO.BinaryReader.ReadInt64) or
-                nameof(System.IO.BinaryReader.ReadSByte) or
-                nameof(System.IO.BinaryReader.ReadSingle) or
-                nameof(System.IO.BinaryReader.ReadString) or
-                nameof(System.IO.BinaryReader.ReadUInt16) or
-                nameof(System.IO.BinaryReader.ReadUInt32) or
-                nameof(System.IO.BinaryReader.ReadUInt64);
+            return method.Name is nameof(System.IO.BinaryReader.Read);
         }
 
         return false;

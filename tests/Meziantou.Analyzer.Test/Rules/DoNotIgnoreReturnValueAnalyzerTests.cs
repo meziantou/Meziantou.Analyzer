@@ -138,7 +138,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
-    public async Task BinaryReader_ReadInt32_ReturnValueNotUsed()
+    public async Task BinaryReader_ReadInt32_ReturnValueNotUsed_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
@@ -147,7 +147,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                   {
                       void A(BinaryReader reader)
                       {
-                          [|reader.ReadInt32()|];
+                          reader.ReadInt32();
                       }
                   }
                   """)
