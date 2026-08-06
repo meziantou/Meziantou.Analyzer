@@ -136,8 +136,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
         {
             return method.Name is
                 nameof(System.IO.TextReader.Read) or
-                "ReadAsync" or
-                "ReadLineAsync";
+                "ReadAsync";
         }
 
         if (binaryReaderSymbol is not null && containingType.IsOrInheritFrom(binaryReaderSymbol))
