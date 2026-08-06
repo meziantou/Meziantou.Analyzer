@@ -81,6 +81,9 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             var invocation = (IInvocationOperation)context.Operation;
             var targetMethod = invocation.TargetMethod;
 
+            if (targetMethod.ReturnsVoid)
+                return;
+
             // Check return value
             if (!IsReturnValueIgnored(invocation))
                 return;
