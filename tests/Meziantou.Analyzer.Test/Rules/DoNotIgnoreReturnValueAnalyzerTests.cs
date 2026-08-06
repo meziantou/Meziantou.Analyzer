@@ -498,6 +498,157 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public async Task Stream_ReadAtLeast_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.IO;
+                  class Test
+                  {
+                      void A(Stream stream, byte[] buffer)
+                      {
+                          [|stream.ReadAtLeast(buffer, 1)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TextReader_Read_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.IO;
+                  class Test
+                  {
+                      void A(TextReader reader)
+                      {
+                          [|reader.Read()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task BinaryReader_Read_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.IO;
+                  class Test
+                  {
+                      void A(BinaryReader reader)
+                      {
+                          [|reader.Read()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task String_ToUpper_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A(string s)
+                      {
+                          [|s.ToUpper()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task String_Join_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          [|string.Join(", ", "a", "b")|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableDictionary_Add_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableDictionary<string, int> dict)
+                      {
+                          [|dict.Add("key", 1)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableQueue_Enqueue_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableQueue<int> queue)
+                      {
+                          [|queue.Enqueue(1)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableSet_Add_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableHashSet<int> set)
+                      {
+                          [|set.Add(1)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableArrayBuilder_IndexOf_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableArray<int>.Builder builder)
+                      {
+                          [|builder.IndexOf(1)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task HResult_ReturnValueNotUsed()
     {
         await CreateProjectBuilder()
