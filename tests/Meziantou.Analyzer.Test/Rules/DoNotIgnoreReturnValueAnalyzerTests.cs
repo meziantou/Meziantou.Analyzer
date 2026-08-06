@@ -226,7 +226,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                       void A()
                       {
-                          [|TryGet(out _)|];
+                          TryGet({|MA0060:out _|});
                       }
                   }
                   """ + DoNotIgnoreAttributeSource)

@@ -41,6 +41,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
         {
             var analyzerContext = new AnalyzerContext(compilationContext.Compilation);
             compilationContext.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+            compilationContext.RegisterOperationAction(analyzerContext.AnalyzeArgument, OperationKind.Argument);
         });
     }
 
@@ -51,26 +52,31 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
         private INamedTypeSymbol? TextReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.TextReader");
         private INamedTypeSymbol? BinaryReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.BinaryReader");
 
+        public void AnalyzeArgument(OperationAnalysisContext context)
+        {
+            if (DoNotIgnoreAttributeSymbol is null)
+                return;
+
+            var argument = (IArgumentOperation)context.Operation;
+            if (argument.Parameter is not { RefKind: RefKind.Out } outParam)
+                return;
+
+            if (argument.Value is not IDiscardOperation)
+                return;
+
+            if (!outParam.HasAttribute(DoNotIgnoreAttributeSymbol))
+                return;
+
+            var methodName = argument.Parent is IInvocationOperation inv ? inv.TargetMethod.Name : "?";
+            var message = GetMessage(outParam.GetAttributes(), DoNotIgnoreAttributeSymbol);
+            context.ReportDiagnostic(OutParameterRule, argument,
+                outParam.Name, methodName, message is null ? "" : ": " + message);
+        }
+
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var invocation = (IInvocationOperation)context.Operation;
             var targetMethod = invocation.TargetMethod;
-
-            // Check out parameters with [DoNotIgnore]
-            if (DoNotIgnoreAttributeSymbol is not null)
-            {
-                foreach (var argument in invocation.Arguments)
-                {
-                    if (argument.Parameter is { RefKind: RefKind.Out } outParam
-                        && argument.Value is IDiscardOperation
-                        && outParam.HasAttribute(DoNotIgnoreAttributeSymbol))
-                    {
-                        var message = GetMessage(outParam.GetAttributes(), DoNotIgnoreAttributeSymbol);
-                        context.ReportDiagnostic(OutParameterRule, invocation,
-                            outParam.Name, targetMethod.Name, message is null ? "" : ": " + message);
-                    }
-                }
-            }
 
             // Check return value
             if (!IsReturnValueIgnored(invocation))
