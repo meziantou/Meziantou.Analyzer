@@ -53,6 +53,15 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
         private INamedTypeSymbol? StreamSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.Stream");
         private INamedTypeSymbol? TextReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.TextReader");
         private INamedTypeSymbol? BinaryReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.BinaryReader");
+        private INamedTypeSymbol? StringSymbol { get; } = compilation.GetSpecialType(SpecialType.System_String);
+        private INamedTypeSymbol? IImmutableDictionarySymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableDictionary`2");
+        private INamedTypeSymbol? IImmutableListSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableList`1");
+        private INamedTypeSymbol? IImmutableQueueSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableQueue`1");
+        private INamedTypeSymbol? IImmutableSetSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1");
+        private INamedTypeSymbol? IImmutableStackSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableStack`1");
+        private INamedTypeSymbol? ImmutableArraySymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableArray");
+        private INamedTypeSymbol? ImmutableArrayBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableArray`1+Builder")
+            ?? compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableArray`1.Builder");
 
         public void AnalyzeArgument(OperationAnalysisContext context)
         {
@@ -151,7 +160,75 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 return method.Name is nameof(System.IO.BinaryReader.Read);
             }
 
-            return false;
+            if (StringSymbol is not null && containingType.IsEqualTo(StringSymbol))
+            {
+                return method.Name is
+                    nameof(string.ToUpper) or
+                    nameof(string.ToLower) or
+                    nameof(string.Trim) or
+                    nameof(string.TrimEnd) or
+                    nameof(string.TrimStart) or
+                    nameof(string.ToUpperInvariant) or
+                    nameof(string.ToLowerInvariant) or
+                    nameof(string.Clone) or
+                    nameof(string.Format) or
+                    nameof(string.Concat) or
+                    nameof(string.Copy) or
+                    nameof(string.Insert) or
+                    nameof(string.Join) or
+                    nameof(string.Normalize) or
+                    nameof(string.Remove) or
+                    nameof(string.Replace) or
+                    nameof(string.Split) or
+                    nameof(string.PadLeft) or
+                    nameof(string.PadRight) or
+                    nameof(string.Substring);
+            }
+
+            if (IImmutableDictionarySymbol is not null && (containingType.ImplementsGenericInterface(IImmutableDictionarySymbol) || containingType.OriginalDefinition.IsEqualTo(IImmutableDictionarySymbol)))
+            {
+                return method.Name is "Clear" or "Add" or "AddRange" or "SetItem" or "SetItems" or "RemoveRange" or "Remove" or "Contains" or "TryGetKey";
+            }
+
+            if (IImmutableListSymbol is not null && (containingType.ImplementsGenericInterface(IImmutableListSymbol) || containingType.OriginalDefinition.IsEqualTo(IImmutableListSymbol)))
+            {
+                return method.Name is "Clear" or "IndexOf" or "LastIndexOf" or "Add" or "AddRange" or "Insert" or "InsertRange" or "Remove" or "RemoveAll" or "RemoveRange" or "RemoveAt" or "SetItem" or "Replace";
+            }
+
+            if (IImmutableQueueSymbol is not null && (containingType.ImplementsGenericInterface(IImmutableQueueSymbol) || containingType.OriginalDefinition.IsEqualTo(IImmutableQueueSymbol)))
+            {
+                return method.Name is "Clear" or "Peek" or "Enqueue" or "Dequeue";
+            }
+
+            if (IImmutableSetSymbol is not null && (containingType.ImplementsGenericInterface(IImmutableSetSymbol) || containingType.OriginalDefinition.IsEqualTo(IImmutableSetSymbol)))
+            {
+                return method.Name is "Clear" or "Contains" or "Add" or "Remove" or "TryGetValue" or "Intersect" or "Except" or "SymmetricExcept" or "Union" or "SetEquals" or "IsProperSubsetOf" or "IsProperSupersetOf" or "IsSubsetOf" or "IsSupersetOf" or "Overlaps";
+            }
+
+            if (IImmutableStackSymbol is not null && (containingType.ImplementsGenericInterface(IImmutableStackSymbol) || containingType.OriginalDefinition.IsEqualTo(IImmutableStackSymbol)))
+            {
+                return method.Name is "Clear" or "Push" or "Pop" or "Peek";
+            }
+
+            if (ImmutableArraySymbol is not null && containingType.IsEqualTo(ImmutableArraySymbol))
+            {
+                return method.Name is "Create" or "CreateRange" or "CreateBuilder" or "ToImmutableArray" or "BinarySearch";
+            }
+
+            if (ImmutableArrayBuilderSymbol is not null && containingType.OriginalDefinition.IsEqualTo(ImmutableArrayBuilderSymbol))
+            {
+                return method.Name is "IndexOf" or "LastIndexOf";
+            }
+
+            return IsTryParseMethod(method);
+        }
+
+        private static bool IsTryParseMethod(IMethodSymbol method)
+        {
+            return method.Name.StartsWith("TryParse", StringComparison.Ordinal) &&
+                method.ReturnType.SpecialType == SpecialType.System_Boolean &&
+                method.Parameters.Length >= 2 &&
+                method.Parameters[method.Parameters.Length - 1].RefKind != RefKind.None;
         }
 
         private static string? GetMessageFromAttributeData(AttributeData attr)

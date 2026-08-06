@@ -314,6 +314,189 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task String_Trim_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A(string s)
+                      {
+                          [|s.Trim()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task String_Trim_ReturnValueUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A(string s)
+                      {
+                          var trimmed = s.Trim();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task String_Replace_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A(string s)
+                      {
+                          [|s.Replace("a", "b")|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TryParse_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          [|int.TryParse("42", out _)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TryParse_ReturnValueUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          if (int.TryParse("42", out var value)) { }
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TryParse_CustomMethod_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      static bool TryParseItem(string s, out int result) { result = 0; return true; }
+
+                      void A()
+                      {
+                          [|TryParseItem("42", out _)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableList_Add_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableList<int> list)
+                      {
+                          [|list.Add(1)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableList_Add_ReturnValueUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableList<int> list)
+                      {
+                          var newList = list.Add(1);
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableDictionary_Remove_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableDictionary<string, int> dict)
+                      {
+                          [|dict.Remove("key")|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableStack_Push_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A(ImmutableStack<int> stack)
+                      {
+                          [|stack.Push(1)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ImmutableArray_Create_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Collections.Immutable;
+                  class Test
+                  {
+                      void A()
+                      {
+                          [|ImmutableArray.Create(1, 2, 3)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
     private const string DoNotIgnoreAttributeSource = """
 
         namespace Meziantou.Analyzer.Annotations
