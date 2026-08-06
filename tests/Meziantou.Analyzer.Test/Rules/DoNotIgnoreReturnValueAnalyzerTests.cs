@@ -84,7 +84,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
-    public async Task Stream_ReadByte_ReturnValueNotUsed()
+    public async Task Stream_ReadByte_ReturnValueNotUsed_NoDiagnostic()
     {
         await CreateProjectBuilder()
               .WithSourceCode("""
@@ -94,7 +94,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                       void A()
                       {
                           var stream = File.OpenRead("");
-                          [|stream.ReadByte()|];
+                          stream.ReadByte();
                       }
                   }
                   """)
