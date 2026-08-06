@@ -68,7 +68,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 return;
 
             var methodName = argument.Parent is IInvocationOperation inv ? inv.TargetMethod.Name : "?";
-            var message = GetMessage(outParam.GetAttributes(), DoNotIgnoreAttributeSymbol);
+            var attr = outParam.GetAttribute(DoNotIgnoreAttributeSymbol);
+            var message = attr is not null ? GetMessageFromAttributeData(attr) : null;
             context.ReportDiagnostic(OutParameterRule, argument,
                 outParam.Name, methodName, message is null ? "" : ": " + message);
         }
@@ -85,16 +86,13 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             // Check attribute on return value
             if (DoNotIgnoreAttributeSymbol is not null)
             {
-                var returnAttrs = targetMethod.GetReturnTypeAttributes();
-                foreach (var attr in returnAttrs)
+                var attr = targetMethod.GetReturnTypeAttribute(DoNotIgnoreAttributeSymbol);
+                if (attr is not null)
                 {
-                    if (attr.AttributeClass is not null && attr.AttributeClass.IsOrInheritFrom(DoNotIgnoreAttributeSymbol))
-                    {
-                        var message = GetMessageFromAttributeData(attr);
-                        context.ReportDiagnostic(ReturnValueRule, invocation,
-                            targetMethod.Name, message is null ? "" : ": " + message);
-                        return;
-                    }
+                    var message = GetMessageFromAttributeData(attr);
+                    context.ReportDiagnostic(ReturnValueRule, invocation,
+                        targetMethod.Name, message is null ? "" : ": " + message);
+                    return;
                 }
             }
 
@@ -142,17 +140,6 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             }
 
             return false;
-        }
-
-        private static string? GetMessage(ImmutableArray<AttributeData> attributes, INamedTypeSymbol doNotIgnoreAttributeSymbol)
-        {
-            foreach (var attr in attributes)
-            {
-                if (attr.AttributeClass is not null && attr.AttributeClass.IsOrInheritFrom(doNotIgnoreAttributeSymbol))
-                    return GetMessageFromAttributeData(attr);
-            }
-
-            return null;
         }
 
         private static string? GetMessageFromAttributeData(AttributeData attr)
