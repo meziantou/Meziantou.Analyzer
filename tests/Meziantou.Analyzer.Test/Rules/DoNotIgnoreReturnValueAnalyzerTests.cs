@@ -363,6 +363,32 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public async Task String_Format_ArrowVoidMethod_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A() => [|string.Format("{0}", 1)|];
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task String_Format_ArrowStringMethod_ReturnValueUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      string A() => string.Format("{0}", 1);
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task TryParse_ReturnValueNotUsed()
     {
         await CreateProjectBuilder()
