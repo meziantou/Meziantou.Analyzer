@@ -497,6 +497,52 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task HResult_ReturnValueNotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          [|NativeMethod()|];
+                      }
+
+                      Windows.Win32.Foundation.HRESULT NativeMethod() => default;
+                  }
+
+                  namespace Windows.Win32.Foundation
+                  {
+                      public struct HRESULT { }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HResult_ReturnValueUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          var hr = NativeMethod();
+                      }
+
+                      Windows.Win32.Foundation.HRESULT NativeMethod() => default;
+                  }
+
+                  namespace Windows.Win32.Foundation
+                  {
+                      public struct HRESULT { }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
     private const string DoNotIgnoreAttributeSource = """
 
         namespace Meziantou.Analyzer.Annotations
