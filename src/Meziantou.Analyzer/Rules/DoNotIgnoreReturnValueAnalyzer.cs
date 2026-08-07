@@ -52,8 +52,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext(Compilation compilation, AnalyzerOptions options)
     {
         private INamedTypeSymbol? DoNotIgnoreAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.DoNotIgnoreAttribute");
-        private INamedTypeSymbol? PureAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Diagnostics.Contracts.PureAttribute")
-            ?? compilation.GetBestTypeByMetadataName("JetBrains.Annotations.PureAttribute");
+        private INamedTypeSymbol? SystemDiagnosticsContractsPureAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Diagnostics.Contracts.PureAttribute");
+        private INamedTypeSymbol? JetBrainsAnnotationsPureAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("JetBrains.Annotations.PureAttribute");
         private INamedTypeSymbol? StreamSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.Stream");
         private INamedTypeSymbol? TextReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.TextReader");
         private INamedTypeSymbol? BinaryReaderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.BinaryReader");
@@ -126,7 +126,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             }
 
             // Check [Pure] attribute on the method
-            if (PureAttributeSymbol is not null && targetMethod.HasAttribute(PureAttributeSymbol))
+            if ((SystemDiagnosticsContractsPureAttributeSymbol is not null && targetMethod.HasAttribute(SystemDiagnosticsContractsPureAttributeSymbol)) ||
+                (JetBrainsAnnotationsPureAttributeSymbol is not null && targetMethod.HasAttribute(JetBrainsAnnotationsPureAttributeSymbol)))
             {
                 context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
                 return;

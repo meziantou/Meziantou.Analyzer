@@ -316,6 +316,35 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public async Task Pure_JetBrainsAttribute_IsAlsoSupported_WhenSystemDiagnosticsContractsPureExists()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  using System.Diagnostics.Contracts;
+
+                  namespace JetBrains.Annotations
+                  {
+                      [System.AttributeUsage(System.AttributeTargets.Method)]
+                      sealed class PureAttribute : System.Attribute
+                      {
+                      }
+                  }
+
+                  class Test
+                  {
+                      [JetBrains.Annotations.Pure]
+                      static int Compute() => 0;
+
+                      void A()
+                      {
+                          [|Compute()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task String_Trim_ReturnValueNotUsed()
     {
         await CreateProjectBuilder()
