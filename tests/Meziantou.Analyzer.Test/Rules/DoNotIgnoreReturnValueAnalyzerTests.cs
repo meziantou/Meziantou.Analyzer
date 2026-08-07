@@ -440,6 +440,46 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public async Task TryParse_ReturnValueNotUsed_DisabledUsingConfiguration()
+    {
+        await CreateProjectBuilder()
+              .WithAnalyzerConfiguration(new Dictionary<string, string>
+              {
+                  ["MA0060.enable_tryparse_pattern"] = "false",
+              })
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          int.TryParse("42", out _);
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task TryParse_ReturnValueNotUsed_InvalidConfiguration_UsesDefaultValue()
+    {
+        await CreateProjectBuilder()
+              .WithAnalyzerConfiguration(new Dictionary<string, string>
+              {
+                  ["MA0060.enable_tryparse_pattern"] = "invalid",
+              })
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          [|int.TryParse("42", out _)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ImmutableList_Add_ReturnValueNotUsed()
     {
         await CreateProjectBuilder()
