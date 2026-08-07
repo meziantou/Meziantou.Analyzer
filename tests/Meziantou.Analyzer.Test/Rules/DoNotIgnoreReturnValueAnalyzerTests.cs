@@ -8,7 +8,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     private static ProjectBuilder CreateProjectBuilder()
     {
         return new ProjectBuilder()
-            .WithAnalyzer<DoNotIgnoreReturnValueAnalyzer>();
+            .WithAnalyzer<DoNotIgnoreReturnValueAnalyzer>()
+            .AddMeziantouAttributes();
     }
 
     [Fact]
@@ -170,7 +171,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           [|Compute()|];
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -190,7 +191,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           var result = Compute();
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -210,7 +211,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           [|Compute()|];
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -229,7 +230,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           TryGet({|MA0060:out _|});
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -248,7 +249,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           TryGet(out int x);
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -735,7 +736,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           [|Sample()|];
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -754,7 +755,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           var value = Sample();
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -776,7 +777,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           [|Nested.Sample()|];
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -795,7 +796,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           [|Sample()|];
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -814,7 +815,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           [|Sample<int>()|];
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
@@ -836,22 +837,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                           [|SampleB()|];
                       }
                   }
-                  """ + DoNotIgnoreAttributeSource)
+                  """)
               .ValidateAsync();
     }
 
-    private const string DoNotIgnoreAttributeSource = """
-
-        namespace Meziantou.Analyzer.Annotations
-        {
-            [System.AttributeUsage(System.AttributeTargets.ReturnValue | System.AttributeTargets.Parameter | System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
-            public sealed class DoNotIgnoreAttribute : System.Attribute
-            {
-                public DoNotIgnoreAttribute() {}
-                public DoNotIgnoreAttribute(string xmlDocumentationId) {}
-                public string? XmlDocumentationId { get; }
-                public string? Message { get; set; }
-            }
-        }
-        """;
 }
