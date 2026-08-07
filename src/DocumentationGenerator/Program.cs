@@ -263,7 +263,7 @@ static string GenerateRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers, L
     sb.Append("|Id|Category|Description|Severity|Is enabled|Code fix|Configurable|\n");
     sb.Append("|--|--------|-----------|:------:|:--------:|:------:|:----------:|\n");
 
-    foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+    foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id, StringComparer.Ordinal).OrderBy(diag => diag.Id, StringComparer.Ordinal))
     {
         if (!diagnostic.HelpLinkUri.Contains(diagnostic.Id, StringComparison.Ordinal))
         {
@@ -329,7 +329,7 @@ static string GenerateSuppressorsTable(List<DiagnosticSuppressor> diagnosticSupp
     sb.Append("|Id|Suppressed rule|Justification|\n");
     sb.Append("|--|---------------|-------------|\n");
 
-    foreach (var suppression in diagnosticSuppressors.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedSuppressions).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+    foreach (var suppression in diagnosticSuppressors.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedSuppressions).DistinctBy(diag => diag.Id, StringComparer.Ordinal).OrderBy(diag => diag.Id, StringComparer.Ordinal))
     {
         sb.Append("|`")
           .Append(suppression.Id)
@@ -394,7 +394,7 @@ static void GenerateEditorConfig(StringBuilder sb, List<DiagnosticAnalyzer> anal
     }
 
     var first = true;
-    foreach (var diagnostic in analyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+    foreach (var diagnostic in analyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id, StringComparer.Ordinal).OrderBy(diag => diag.Id, StringComparer.Ordinal))
     {
         if (!first)
         {
@@ -488,7 +488,7 @@ static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKe
 
             if (!result.TryGetValue(ruleId, out var keys))
             {
-                keys = [];
+                keys = [with(StringComparer.Ordinal)];
                 result.Add(ruleId, keys);
             }
 

@@ -372,14 +372,14 @@ public sealed partial class ProjectBuilder
 
     public ProjectBuilder AddAnalyzerConfiguration(string key, string value)
     {
-        AnalyzerConfiguration ??= [];
+        AnalyzerConfiguration ??= [with(StringComparer.Ordinal)];
         AnalyzerConfiguration[key] = value;
         return this;
     }
 
     public ProjectBuilder AddAdditionalFile(string path, string content)
     {
-        AdditionalFiles ??= [];
+        AdditionalFiles ??= [with(StringComparer.Ordinal)];
         AdditionalFiles[path] = content;
         return this;
     }

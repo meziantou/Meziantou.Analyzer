@@ -5,7 +5,7 @@ namespace Meziantou.Analyzer.Test.Helpers;
 
 internal sealed class TestAnalyzerConfigOptionsProvider(Dictionary<string, string>? values) : AnalyzerConfigOptionsProvider
 {
-    private readonly Dictionary<string, string> _values = values ?? [];
+    private readonly Dictionary<string, string> _values = values ?? [with(StringComparer.Ordinal)];
 
     public override AnalyzerConfigOptions GlobalOptions => new TestAnalyzerConfigOptions(_values);
     public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => new TestAnalyzerConfigOptions(_values);
