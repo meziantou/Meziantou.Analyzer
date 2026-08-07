@@ -176,7 +176,7 @@ dotnet_diagnostic.MA0058.severity = suggestion
 # MA0059: Class name should end with 'EventArgs'
 dotnet_diagnostic.MA0059.severity = suggestion
 
-# MA0060: The value returned by Stream.Read/Stream.ReadAsync is not used
+# MA0060: The return value of the method should be used
 dotnet_diagnostic.MA0060.severity = warning
 
 # MA0061: Method overrides should not change default values

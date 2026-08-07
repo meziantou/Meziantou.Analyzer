@@ -177,6 +177,39 @@ internal static class TypeSymbolExtensions
         return GetAttribute(symbol, attributeType, inherits) is not null;
     }
 
+    public static AttributeData? GetReturnTypeAttribute(this IMethodSymbol method, ITypeSymbol? attributeType, bool inherits = true)
+    {
+        if (attributeType is null)
+            return null;
+
+        if (attributeType.IsSealed)
+            inherits = false;
+
+        foreach (var attribute in method.GetReturnTypeAttributes())
+        {
+            if (attribute.AttributeClass is null)
+                continue;
+
+            if (inherits)
+            {
+                if (attribute.AttributeClass.IsOrInheritFrom(attributeType))
+                    return attribute;
+            }
+            else
+            {
+                if (attributeType.IsEqualTo(attribute.AttributeClass))
+                    return attribute;
+            }
+        }
+
+        return null;
+    }
+
+    public static bool HasReturnTypeAttribute(this IMethodSymbol method, [NotNullWhen(true)] ITypeSymbol? attributeType, bool inherits = true)
+    {
+        return GetReturnTypeAttribute(method, attributeType, inherits) is not null;
+    }
+
     public static bool IsOrInheritFrom(this ITypeSymbol symbol, [NotNullWhen(true)] ITypeSymbol? expectedType)
     {
         return IsOrInheritFrom(symbol, expectedType, visitedTypeParameters: null);

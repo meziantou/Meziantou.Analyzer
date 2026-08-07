@@ -114,4 +114,26 @@ internal static class AnnotationAttributes
             }
         };
     }
+
+    public static bool IsDoNotIgnoreAttributeSymbol(ITypeSymbol? symbol)
+    {
+        // Meziantou.Analyzer.Annotations.DoNotIgnoreAttribute
+        return symbol is INamedTypeSymbol
+        {
+            Name: "DoNotIgnoreAttribute",
+            ContainingSymbol: INamespaceSymbol
+            {
+                Name: "Annotations",
+                ContainingSymbol: INamespaceSymbol
+                {
+                    Name: "Analyzer",
+                    ContainingSymbol: INamespaceSymbol
+                    {
+                        Name: "Meziantou",
+                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
+                    }
+                }
+            }
+        };
+    }
 }
