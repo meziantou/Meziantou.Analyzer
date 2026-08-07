@@ -191,14 +191,14 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private static ImmutableDictionary<string, string?> CreateProperties(OptimizeLinqUsageData data)
         {
-            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
             builder.Add("Data", data.ToString());
             return builder.ToImmutable();
         }
 
         private static ImmutableDictionary<string, string?> CreateLinqChainProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string methodName)
         {
-            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
             builder.Add("Data", data.ToString());
             builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
             builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
@@ -210,7 +210,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private static ImmutableDictionary<string, string?> CreateSingleOperationProperties(OptimizeLinqUsageData data, IInvocationOperation operation)
         {
-            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
             builder.Add("Data", data.ToString());
             builder.Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
             builder.Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
@@ -219,7 +219,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private static ImmutableDictionary<string, string?> CreateDuplicateOrderByProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string expectedMethodName, string methodName)
         {
-            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+            var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
             builder.Add("Data", data.ToString());
             builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
             builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));

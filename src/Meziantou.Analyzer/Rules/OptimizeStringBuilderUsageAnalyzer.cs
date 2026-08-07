@@ -116,7 +116,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
         private static ImmutableDictionary<string, string?> CreateProperties(OptimizeStringBuilderUsageData data)
         {
-            return ImmutableDictionary.Create<string, string?>().Add("Data", data.ToString());
+            return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal).Add("Data", data.ToString());
         }
 
         private void AnalyzeAppendFormat(OperationAnalysisContext context, IInvocationOperation operation)
