@@ -12,6 +12,7 @@ namespace Meziantou.Analyzer.Rules;
 public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
 {
     private static readonly ConfigurationDefinition<bool> EnableTryParsePatternConfiguration = new(RuleIdentifiers.DoNotIgnoreReturnValue + ".enable_tryparse_pattern", defaultValue: true);
+
     private static readonly DiagnosticDescriptor ReturnValueRule = new(
         RuleIdentifiers.DoNotIgnoreReturnValue,
         title: "The return value of the method should be used",
