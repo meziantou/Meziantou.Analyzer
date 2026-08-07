@@ -720,14 +720,136 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task AssemblyAttribute_SimpleMethod_NotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample")]
+                  class Test
+                  {
+                      static int Sample() => 42;
+
+                      void A()
+                      {
+                          [|Sample()|];
+                      }
+                  }
+                  """ + DoNotIgnoreAttributeSource)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AssemblyAttribute_SimpleMethod_Used()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample")]
+                  class Test
+                  {
+                      static int Sample() => 42;
+
+                      void A()
+                      {
+                          var value = Sample();
+                      }
+                  }
+                  """ + DoNotIgnoreAttributeSource)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AssemblyAttribute_NestedTypeMethod_NotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Nested.Sample")]
+                  class Test
+                  {
+                      class Nested
+                      {
+                          public static int Sample() => 42;
+                      }
+
+                      void A()
+                      {
+                          [|Nested.Sample()|];
+                      }
+                  }
+                  """ + DoNotIgnoreAttributeSource)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AssemblyAttribute_GenericTypeMethod_NotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test`1.Sample")]
+                  class Test<T>
+                  {
+                      static int Sample() => 42;
+
+                      void A()
+                      {
+                          [|Sample()|];
+                      }
+                  }
+                  """ + DoNotIgnoreAttributeSource)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AssemblyAttribute_GenericMethod_NotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample``1")]
+                  class Test
+                  {
+                      static int Sample<T>() => 42;
+
+                      void A()
+                      {
+                          [|Sample<int>()|];
+                      }
+                  }
+                  """ + DoNotIgnoreAttributeSource)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AssemblyAttribute_MultipleEntries_NotUsed()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.SampleA")]
+                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.SampleB")]
+                  class Test
+                  {
+                      static int SampleA() => 1;
+                      static int SampleB() => 2;
+
+                      void A()
+                      {
+                          [|SampleA()|];
+                          [|SampleB()|];
+                      }
+                  }
+                  """ + DoNotIgnoreAttributeSource)
+              .ValidateAsync();
+    }
+
     private const string DoNotIgnoreAttributeSource = """
 
         namespace Meziantou.Analyzer.Annotations
         {
-            [System.AttributeUsage(System.AttributeTargets.ReturnValue | System.AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+            [System.AttributeUsage(System.AttributeTargets.ReturnValue | System.AttributeTargets.Parameter | System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
             public sealed class DoNotIgnoreAttribute : System.Attribute
             {
                 public DoNotIgnoreAttribute() {}
+                public DoNotIgnoreAttribute(string xmlDocumentationId) {}
+                public string? XmlDocumentationId { get; }
                 public string? Message { get; set; }
             }
         }
