@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
@@ -33,39 +32,35 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
 
             context.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
             context.RegisterOperationAction(analyzerContext.AnalyzeInterpolation, OperationKind.InterpolatedString);
-            context.RegisterOperationAction(analyzerContext.AnalyzeAdd, OperationKind.Binary);
+            context.RegisterOperationAction(AnalyzerContext.AnalyzeAdd, OperationKind.Binary);
         });
     }
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly ConcurrentDictionary<ITypeSymbol, bool> _overrideToStringCache = new(SymbolEqualityComparer.Default);
+        private readonly CultureSensitiveFormattingContext _cultureSensitiveFormattingContext = new(compilation);
 
         public IMethodSymbol? ObjectToStringSymbol { get; } = compilation.GetSpecialType(SpecialType.System_Object).GetMembers("ToString").OfType<IMethodSymbol>().FirstOrDefault(member => member.Parameters.Length == 0);
         public IMethodSymbol? ValueTypeToStringSymbol { get; } = compilation.GetSpecialType(SpecialType.System_ValueType).GetMembers("ToString").OfType<IMethodSymbol>().FirstOrDefault(member => member.Parameters.Length == 0);
 
-        // StringHandler that format values to string
-        public INamedTypeSymbol?[] InterpolatedStringHandlerSymbols { get; } = [
-                compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler"),
-                compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler"),
-                compilation.GetBestTypeByMetadataName("System.Diagnostics.Debug+AssertInterpolatedStringHandler"),
-                compilation.GetBestTypeByMetadataName("System.Diagnostics.Debug+WriteIfInterpolatedStringHandler"),
-                compilation.GetBestTypeByMetadataName("System.MemoryExtensions+TryWriteInterpolatedStringHandler"),
-                compilation.GetBestTypeByMetadataName("System.Text.Unicode.Utf8+TryWriteInterpolatedStringHandler"),
-            ];
-
         public void AnalyzeInterpolation(OperationAnalysisContext context)
         {
             var operation = (IInterpolatedStringOperation)context.Operation;
+            if (IsCustomInterpolatedStringHandler(operation))
+                return;
+
             foreach (var part in operation.Parts)
             {
                 if (part is IInterpolationOperation content)
                 {
                     AnalyzeExpression(context, content.Expression);
                 }
-                else if (part is IInterpolatedStringAppendOperation { AppendCall: IInvocationOperation { TargetMethod.ContainingType: var containingType, Arguments: [{ Value: var content2 }] } })
+                else if (part is IInterpolatedStringAppendOperation { AppendCall: IInvocationOperation appendCall })
                 {
-                    if (!containingType.IsEqualToAny(InterpolatedStringHandlerSymbols))
+                    if (!ShouldAnalyzeInterpolatedStringHandler(appendCall.TargetMethod.ContainingType))
+                        continue;
+
+                    if (appendCall.Arguments is not [{ Value: var content2 }])
                         continue;
 
                     AnalyzeExpression(context, content2);
@@ -95,7 +90,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        internal void AnalyzeAdd(OperationAnalysisContext context)
+        internal static void AnalyzeAdd(OperationAnalysisContext context)
         {
             var operation = (IBinaryOperation)context.Operation;
             if (!operation.Type.IsString())
@@ -105,7 +100,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             AnalyzeExpression(context, operation.RightOperand);
         }
 
-        private void AnalyzeExpression(DiagnosticReporter reporter, IOperation operation)
+        private static void AnalyzeExpression(DiagnosticReporter reporter, IOperation operation)
         {
             var actualType = operation.UnwrapImplicitConversionOperations().Type;
             if (actualType is null)
@@ -114,43 +109,49 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (actualType.IsAnonymousType)
                 return;
 
-            if (actualType.IsSealed)  // Method cannot be overridden
+            if (CultureSensitiveFormattingContext.UsesObjectToString(actualType))
             {
-                if (!OverrideToString(actualType))
-                {
-                    reporter.ReportDiagnostic(Rule, operation, [actualType.ToDisplayString()]);
-                }
+                reporter.ReportDiagnostic(Rule, operation, [actualType.ToDisplayString()]);
             }
-        }
-
-        private bool OverrideToString(ITypeSymbol? type)
-        {
-            if (type is null)
-                return false;
-
-            var originalType = type;
-            var overrideToString = false;
-
-            while (type is not null)
-            {
-                if (_overrideToStringCache.TryGetValue(type, out overrideToString))
-                    break;
-
-                var method = type.GetMembers("ToString").OfType<IMethodSymbol>().Where(m => !IsDefaultToString(m) && m.Override(ObjectToStringSymbol));
-                overrideToString = method.Any();
-                if (overrideToString)
-                    break;
-
-                type = type.BaseType;
-            }
-
-            _overrideToStringCache.TryAdd(originalType, overrideToString);
-            return overrideToString;
         }
 
         private bool IsDefaultToString(IMethodSymbol method)
         {
             return method.IsEqualTo(ObjectToStringSymbol) || method.IsEqualTo(ValueTypeToStringSymbol);
+        }
+
+        private bool ShouldAnalyzeInterpolatedStringHandler(INamedTypeSymbol containingType)
+        {
+            if (_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(containingType))
+                return true;
+
+            return _cultureSensitiveFormattingContext.IsInterpolatedStringHandlerType(containingType);
+        }
+
+        private bool IsCustomInterpolatedStringHandler(IInterpolatedStringOperation operation)
+        {
+            if (_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol is null)
+                return false;
+
+            if (operation.Type is { } operationType &&
+                operationType.HasAttribute(_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol) &&
+                !_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(operationType))
+                return true;
+
+            for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+            {
+                if (parent is IArgumentOperation { Parameter.Type: var parameterType } &&
+                    parameterType.HasAttribute(_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol) &&
+                    !_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(parameterType))
+                    return true;
+
+                if (parent is IConversionOperation { Type: var conversionType } &&
+                    conversionType?.HasAttribute(_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol) == true &&
+                    !_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(conversionType))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

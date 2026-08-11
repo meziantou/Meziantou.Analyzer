@@ -369,6 +369,59 @@ class Test
     }
 
     [Fact]
+    public async Task ObjectToString_InterpolatedString()
+    {
+        var sourceCode = """
+            sealed class Sample {}
+
+            class Test
+            {
+                void A()
+                {
+                    var sample = new Sample();
+                    _ = $"Value: {[|sample|]}";
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ObjectToString_InterpolatedStringHandler_NoDiagnostic()
+    {
+        var sourceCode = """
+            using System.Runtime.CompilerServices;
+
+            class Test
+            {
+                void A()
+                {
+                    var sample = new Sample();
+                    Write($"Value: {sample}");
+                }
+
+                static void Write(CustomHandler handler) { }
+            }
+
+            sealed class Sample {}
+
+            [InterpolatedStringHandler]
+            ref struct CustomHandler
+            {
+                public CustomHandler(int literalLength, int formattedCount) { }
+                public void AppendLiteral(string value) { }
+                public void AppendFormatted<T>(T value) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Int32ToString()
     {
         var sourceCode = """

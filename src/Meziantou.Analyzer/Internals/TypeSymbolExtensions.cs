@@ -353,12 +353,12 @@ internal static class TypeSymbolExtensions
         return symbol.SpecialType == SpecialType.System_DateTime;
     }
 
-    public static bool IsEnumeration([NotNullWhen(returnValue: true)] this ITypeSymbol? symbol)
+    public static bool IsEnum([NotNullWhen(returnValue: true)] this ITypeSymbol? symbol)
     {
-        return symbol is not null && GetEnumerationType(symbol) is not null;
+        return symbol is not null && GetEnumType(symbol) is not null;
     }
 
-    public static INamedTypeSymbol? GetEnumerationType(this ITypeSymbol? symbol)
+    public static INamedTypeSymbol? GetEnumType(this ITypeSymbol? symbol)
     {
         return (symbol as INamedTypeSymbol)?.EnumUnderlyingType;
     }

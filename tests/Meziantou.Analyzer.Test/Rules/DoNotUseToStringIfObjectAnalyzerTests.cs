@@ -249,6 +249,31 @@ public struct CustomStringHandler
     }
 
     [Fact]
+    public async Task InterpolatedString_SealedType_CustomStringHandler()
+    {
+        var sourceCode = """
+var o = new A();
+Foo($"foo{o}bar");
+
+void Foo(CustomStringHandler handler) => throw null;
+
+public sealed class A { }
+
+[System.Runtime.CompilerServices.InterpolatedStringHandler]
+public struct CustomStringHandler
+{
+    public CustomStringHandler(int literalLength, int formattedCount) => throw null;
+    public void AppendLiteral(string value) => throw null;
+    public void AppendFormatted<T>(T value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Object_Concat()
     {
         var sourceCode = """

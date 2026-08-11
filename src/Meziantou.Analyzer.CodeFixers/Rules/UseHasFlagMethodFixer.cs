@@ -210,7 +210,7 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
 
         if (potentialFlag is IFieldReferenceOperation firstFieldReference &&
             firstFieldReference.Field.HasConstantValue &&
-            firstFieldReference.Field.ContainingType.IsEnumeration())
+            firstFieldReference.Field.ContainingType.IsEnum())
         {
             if (comparedOperand is IFieldReferenceOperation secondFieldReference &&
                 secondFieldReference.Field.HasConstantValue &&
@@ -239,10 +239,10 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
         if (enumValueOperation.Type is null || flagOperation.Type is null)
             return false;
 
-        if (!enumValueOperation.Type.IsEnumeration())
+        if (!enumValueOperation.Type.IsEnum())
             return false;
 
-        if (!flagOperation.Type.IsEnumeration())
+        if (!flagOperation.Type.IsEnum())
             return false;
 
         return enumValueOperation.Type.IsEqualTo(flagOperation.Type);
