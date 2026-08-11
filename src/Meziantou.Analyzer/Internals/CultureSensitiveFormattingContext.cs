@@ -316,13 +316,18 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsAnonymousType)
             return false;
 
-        foreach (var member in typeSymbol.GetMembers(nameof(ToString)).OfType<IMethodSymbol>())
+        // Look at the whole type hierarchy, as a sealed type may inherit a ToString override from a base class.
+        // Stop before System.Object / System.ValueType, whose own ToString() is the "default" implementation this rule warns about.
+        for (var current = typeSymbol; current is not null && current.SpecialType is not (SpecialType.System_Object or SpecialType.System_ValueType); current = current.BaseType)
         {
-            if (member.Parameters.Length != 0)
-                continue;
+            foreach (var member in current.GetMembers(nameof(ToString)).OfType<IMethodSymbol>())
+            {
+                if (member.Parameters.Length != 0)
+                    continue;
 
-            if (member.IsOverride)
-                return false;
+                if (member.IsOverride)
+                    return false;
+            }
         }
 
         return true;
