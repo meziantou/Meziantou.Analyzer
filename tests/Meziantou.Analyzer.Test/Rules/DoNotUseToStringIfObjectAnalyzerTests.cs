@@ -82,6 +82,64 @@ public sealed class A { public override string ToString() => throw null;}
     }
 
     [Fact]
+    public async Task Struct_NoToStringOverride()
+    {
+        var sourceCode = """
+Sample a = new Sample();
+[|a.ToString()|];
+
+struct Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Struct_ToStringOverride()
+    {
+        var sourceCode = """
+Sample a = new Sample();
+a.ToString();
+
+struct Sample { public override string ToString() => throw null; }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonSealedBaseType_RuntimeTypeOverridesToString()
+    {
+        var sourceCode = """
+Sample a = new Derived();
+a.ToString();
+
+class Sample { }
+class Derived : Sample { public override string ToString() => "test"; }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_RuntimeTypeOverridesToString()
+    {
+        var sourceCode = """
+var a = new Derived();
+[|a.ToString()|];
+
+class Sample { }
+sealed class Derived : Sample {  }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task InterpolatedString_Sealed_Interpolation()
     {
         var sourceCode = """

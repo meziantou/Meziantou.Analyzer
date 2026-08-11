@@ -79,7 +79,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (operation.Instance?.Type?.IsAnonymousType is true)
                 return;
 
-            if (IsDefaultToString(operation.TargetMethod))
+            if (!IsDefaultToString(operation.TargetMethod))
                 return;
 
             if (operation.Instance is null)
@@ -89,7 +89,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (actualType is null)
                 return;
 
-            if (actualType.IsSealed)  // Method cannot be overridden
+            if (actualType.IsSealed) // Method cannot be overridden
             {
                 context.ReportDiagnostic(Rule, operation, actualType.ToDisplayString());
             }
@@ -136,7 +136,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
                 if (_overrideToStringCache.TryGetValue(type, out overrideToString))
                     break;
 
-                var method = type.GetMembers("ToString").OfType<IMethodSymbol>().Where(m => IsDefaultToString(m) && m.Override(ObjectToStringSymbol));
+                var method = type.GetMembers("ToString").OfType<IMethodSymbol>().Where(m => !IsDefaultToString(m) && m.Override(ObjectToStringSymbol));
                 overrideToString = method.Any();
                 if (overrideToString)
                     break;
@@ -150,7 +150,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
 
         private bool IsDefaultToString(IMethodSymbol method)
         {
-            return !method.IsEqualTo(ObjectToStringSymbol) && !method.IsEqualTo(ValueTypeToStringSymbol);
+            return method.IsEqualTo(ObjectToStringSymbol) || method.IsEqualTo(ValueTypeToStringSymbol);
         }
     }
 }
