@@ -18,7 +18,7 @@ internal static class UsePatternMatchingForEqualityComparisonsCommon
         if (operation is ILiteralOperation { ConstantValue.HasValue: true })
             return true;
 
-        if (operation is IFieldReferenceOperation fieldReference && fieldReference.Member.ContainingType.IsEnumeration())
+        if (operation is IFieldReferenceOperation fieldReference && fieldReference.Member.ContainingType.IsEnum())
             return true;
 
         return false;

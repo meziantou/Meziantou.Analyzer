@@ -165,7 +165,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
         if (potentialFlag is not IFieldReferenceOperation firstFieldReference ||
             !firstFieldReference.Field.HasConstantValue ||
-            !firstFieldReference.Field.ContainingType.IsEnumeration() ||
+            !firstFieldReference.Field.ContainingType.IsEnum() ||
             !NumericHelpers.IsZero(firstFieldReference.Field.ConstantValue))
         {
             enumType = null!;
@@ -215,7 +215,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
             return false;
 
         var enumValueOperation = operation.Instance.UnwrapImplicitConversionOperations();
-        if (enumValueOperation.Type is null || !enumValueOperation.Type.IsEnumeration())
+        if (enumValueOperation.Type is null || !enumValueOperation.Type.IsEnum())
             return false;
 
         return IsComparedOperandZero(operation.Arguments[0].Value, enumValueOperation.Type);
@@ -317,7 +317,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
         if (potentialFlag is IFieldReferenceOperation firstFieldReference &&
             firstFieldReference.Field.HasConstantValue &&
-            firstFieldReference.Field.ContainingType.IsEnumeration())
+            firstFieldReference.Field.ContainingType.IsEnum())
         {
             if (comparedOperand is IFieldReferenceOperation secondFieldReference &&
                 secondFieldReference.Field.HasConstantValue &&
@@ -352,10 +352,10 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         if (enumValueOperation.Type is null)
             return false;
 
-        if (!enumValueOperation.Type.IsEnumeration())
+        if (!enumValueOperation.Type.IsEnum())
             return false;
 
-        if (!flagType.IsEnumeration())
+        if (!flagType.IsEnum())
             return false;
 
         return enumValueOperation.Type.IsEqualTo(flagType);

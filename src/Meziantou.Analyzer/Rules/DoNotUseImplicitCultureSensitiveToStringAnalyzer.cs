@@ -120,6 +120,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (IsExcludedMethod(context, ExcludeToStringMethodsInterpolationConfiguration, operation))
                 return;
 
+            if (_cultureSensitiveContext.IsInInterpolatedStringHandlerContext(operation))
+                return;
+
             var options = MustUnwrapNullableTypes(context, StringInterpolationRule, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
 
             var parent = operation.Parent;
@@ -140,6 +143,11 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 if (_cultureSensitiveContext.IsCultureSensitiveOperation(part, options | CultureSensitiveOptions.UseInvocationReturnType))
                 {
                     context.ReportDiagnostic(StringInterpolationRule, part);
+                }
+
+                if (CultureSensitiveFormattingContext.UsesObjectToString(type))
+                {
+                    context.ReportDiagnostic(ObjectToStringRule, expression);
                 }
             }
         }

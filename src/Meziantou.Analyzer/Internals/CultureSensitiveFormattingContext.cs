@@ -255,6 +255,63 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return true;
     }
 
+    public bool IsInInterpolatedStringHandlerContext(IInterpolatedStringOperation operation)
+    {
+        if (InterpolatedStringHandlerAttributeSymbol is null)
+            return false;
+
+        if (IsInterpolatedStringHandlerType(operation.Type))
+            return true;
+
+        var current = operation.Parent;
+        while (current is not null)
+        {
+            if (current is IConversionOperation conversionOperation && IsInterpolatedStringHandlerType(conversionOperation.Type))
+                return true;
+
+            if (current is IArgumentOperation { Parameter.Type: var parameterType } && IsInterpolatedStringHandlerType(parameterType))
+                return true;
+
+            if (current is IVariableInitializerOperation && current.Parent is IVariableDeclaratorOperation { Symbol.Type: var symbolType } && IsInterpolatedStringHandlerType(symbolType))
+                return true;
+
+            current = current.Parent;
+        }
+
+        return false;
+    }
+
+    public bool IsInterpolatedStringHandlerType(ITypeSymbol? typeSymbol)
+    {
+        return typeSymbol is not null && InterpolatedStringHandlerAttributeSymbol is not null && typeSymbol.HasAttribute(InterpolatedStringHandlerAttributeSymbol);
+    }
+
+    public static bool UsesObjectToString(ITypeSymbol? typeSymbol)
+    {
+        if (typeSymbol is null)
+            return false;
+
+        if (typeSymbol.IsEnum())
+            return false;
+
+        if (!typeSymbol.IsSealed)
+            return false;
+
+        if (typeSymbol.IsAnonymousType)
+            return false;
+
+        foreach (var member in typeSymbol.GetMembers(nameof(ToString)).OfType<IMethodSymbol>())
+        {
+            if (member.Parameters.Length != 0)
+                continue;
+
+            if (member.IsOverride)
+                return false;
+        }
+
+        return true;
+    }
+
     private bool IsCultureSensitiveType(ITypeSymbol? typeSymbol, CultureSensitiveOptions options)
     {
         if (typeSymbol is null)
@@ -265,7 +322,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             typeSymbol = typeSymbol.GetUnderlyingNullableTypeOrSelf();
         }
 
-        if (typeSymbol.IsEnumeration())
+        if (typeSymbol.IsEnum())
             return false;
 
         if (typeSymbol.SpecialType == SpecialType.System_Boolean)

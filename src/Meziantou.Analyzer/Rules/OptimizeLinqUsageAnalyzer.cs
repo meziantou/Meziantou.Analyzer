@@ -877,7 +877,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 // Handle enums: source.Select<MyEnum, byte>(item => (byte)item);
                 // Using Cast<T> is only possible when the enum underlying type is the same as the conversion type
                 var operandActualType = op.Operand.GetActualType();
-                var enumerationType = operandActualType.GetEnumerationType();
+                var enumerationType = operandActualType.GetEnumType();
                 if (enumerationType is not null)
                 {
                     if (!enumerationType.IsEqualTo(op.Type))
