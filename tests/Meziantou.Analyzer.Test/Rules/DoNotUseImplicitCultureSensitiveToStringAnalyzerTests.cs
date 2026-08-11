@@ -675,6 +675,23 @@ class Test
     }
 
     [Fact]
+    public async Task GenericTypeParameterConstrainedToISpanFormattable()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T item) where T : System.ISpanFormattable
+    {
+        _ = "abc" + [|item|];
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task GenericTypeParameterConstrainedToTypeThatImplementsIFormattable()
     {
         var sourceCode = """
@@ -689,6 +706,34 @@ class Test
 class Sample : System.IFormattable
 {
     public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericTypeParameterConstrainedToTypeThatImplementsISpanFormattable()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T item) where T : Sample
+    {
+        _ = "abc" + [|item|];
+    }
+}
+
+class Sample : System.ISpanFormattable
+{
+    public override string ToString() => "abc";
+    public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
+    public bool TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider? provider)
+    {
+        charsWritten = 0;
+        return true;
+    }
 }
 """;
         await CreateProjectBuilder()
