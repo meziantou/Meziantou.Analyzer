@@ -1104,6 +1104,7 @@ public sealed class NamedParameterAnalyzerTests
     public async Task CallerMustUseNamedArgument()
     {
         await CreateProjectBuilder()
+              .AddMeziantouAttributes()
               .WithSourceCode("""
                 class Test
                 {
@@ -1114,12 +1115,6 @@ public sealed class NamedParameterAnalyzerTests
                         _ = new Test([|new object()|]);
                     }
                 }
-
-                namespace Meziantou.Analyzer.Annotations
-                {
-                    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-                    internal class RequireNamedArgumentAttribute : System.Attribute {}
-                }
                 """)
               .ValidateAsync();
     }
@@ -1128,6 +1123,7 @@ public sealed class NamedParameterAnalyzerTests
     public async Task CallerMustUseNamedArgument_False()
     {
         await CreateProjectBuilder()
+              .AddMeziantouAttributes()
               .WithSourceCode("""
                 class Test
                 {
@@ -1138,16 +1134,6 @@ public sealed class NamedParameterAnalyzerTests
                         _ = new Test(new object());
                     }
                 }
-
-                namespace Meziantou.Analyzer.Annotations
-                {
-                    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-                    internal class RequireNamedArgumentAttribute : System.Attribute
-                    {
-                        public RequireNamedArgumentAttribute() {}
-                        public RequireNamedArgumentAttribute(bool value) {}
-                    }
-                }
                 """)
               .ValidateAsync();
     }
@@ -1156,6 +1142,7 @@ public sealed class NamedParameterAnalyzerTests
     public async Task CallerMustUseNamedArgument_True()
     {
         await CreateProjectBuilder()
+              .AddMeziantouAttributes()
               .WithSourceCode("""
                 class Test
                 {
@@ -1164,16 +1151,6 @@ public sealed class NamedParameterAnalyzerTests
                     void A()
                     {
                         _ = new Test([|new object()|]);
-                    }
-                }
-
-                namespace Meziantou.Analyzer.Annotations
-                {
-                    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-                    internal class RequireNamedArgumentAttribute : System.Attribute
-                    {
-                        public RequireNamedArgumentAttribute() {}
-                        public RequireNamedArgumentAttribute(bool value) {}
                     }
                 }
                 """)
@@ -1184,6 +1161,7 @@ public sealed class NamedParameterAnalyzerTests
     public async Task MinimumNumberOfParameters_2_RequireNamedArgumentAttribute()
     {
         await CreateProjectBuilder()
+              .AddMeziantouAttributes()
               .AddAnalyzerConfiguration("MA0003.minimum_method_parameters", "2")
               .WithSourceCode("""
                 class Test
@@ -1193,16 +1171,6 @@ public sealed class NamedParameterAnalyzerTests
                     void A()
                     {
                         _ = new Test([|new object()|]);
-                    }
-                }
-
-                namespace Meziantou.Analyzer.Annotations
-                {
-                    [System.AttributeUsage(System.AttributeTargets.Parameter)]
-                    internal class RequireNamedArgumentAttribute : System.Attribute
-                    {
-                        public RequireNamedArgumentAttribute() {}
-                        public RequireNamedArgumentAttribute(bool value) {}
                     }
                 }
                 """)
