@@ -23,6 +23,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     public INamedTypeSymbol? TimeSpanSymbol { get; } = compilation.GetBestTypeByMetadataName("System.TimeSpan");
     public INamedTypeSymbol? VersionSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Version");
     public INamedTypeSymbol? SystemIFormattableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormattable");
+    public INamedTypeSymbol? SystemISpanFormattableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.ISpanFormattable");
     public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.FontStretch");
     public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush");
     public INamedTypeSymbol? NuGetVersioningSemanticVersionSymbol { get; } = compilation.GetBestTypeByMetadataName("NuGet.Versioning.SemanticVersion");
@@ -398,7 +399,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         bool IsFormattableType(ITypeSymbol type)
         {
-            if (type.Implements(SystemIFormattableSymbol))
+            if (type.Implements(SystemIFormattableSymbol) || type.Implements(SystemISpanFormattableSymbol))
                 return true;
 
             // May have ToString(IFormatProvider) even if IFormattable is not implemented directly
@@ -410,7 +411,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             {
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    if (HasToStringWithFormatProvider(constraintType))
+                    if (constraintType.Implements(SystemIFormattableSymbol) || constraintType.Implements(SystemISpanFormattableSymbol) || HasToStringWithFormatProvider(constraintType))
                         return true;
                 }
             }

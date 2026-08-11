@@ -385,6 +385,24 @@ class Sample : System.IFormattable
     }
 
     [Fact]
+    public async Task ToString_ISpanFormattable()
+    {
+        var sourceCode = """
+_ = [|new Sample().ToString()|];
+
+class Sample : System.ISpanFormattable
+{
+    public override string ToString() => throw null;
+    public string ToString(string? format, System.IFormatProvider? formatProvider) => throw null;
+    public bool TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider formatProvider) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ToString_IFormattable_CodeFix()
     {
         var sourceCode = """
