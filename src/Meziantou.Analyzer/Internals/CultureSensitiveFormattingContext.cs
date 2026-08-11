@@ -388,6 +388,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsOrInheritFrom(NuGetVersioningSemanticVersionSymbol))
             return false;
 
+        // The runtime type behind an opaque compile-time type (object, interface, unconstrained generic parameter)
+        // may implement IFormattable and format culture-sensitively, so treat it as culture-sensitive when requested.
+        if ((options & CultureSensitiveOptions.TreatOpaqueRuntimeTypesAsCultureSensitive) == CultureSensitiveOptions.TreatOpaqueRuntimeTypesAsCultureSensitive && IsOpaqueRuntimeType(typeSymbol))
+            return IsCultureSensitiveTypeUsingAttribute(typeSymbol);
+
         if (!IsFormattableType(typeSymbol))
             return false;
 
@@ -407,6 +412,31 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
             return false;
         }
+    }
+
+    private static bool IsOpaqueRuntimeType(ITypeSymbol typeSymbol)
+    {
+        // object: the boxed runtime value may be any type, possibly IFormattable
+        if (typeSymbol.SpecialType == SpecialType.System_Object)
+            return true;
+
+        // Any interface: a runtime implementation may also implement IFormattable
+        if (typeSymbol.TypeKind == TypeKind.Interface)
+            return true;
+
+        // Generic type parameter: opaque unless a constraint narrows it to a non-opaque type
+        if (typeSymbol is ITypeParameterSymbol typeParameter)
+        {
+            foreach (var constraintType in typeParameter.ConstraintTypes)
+            {
+                if (!IsOpaqueRuntimeType(constraintType))
+                    return false;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol)

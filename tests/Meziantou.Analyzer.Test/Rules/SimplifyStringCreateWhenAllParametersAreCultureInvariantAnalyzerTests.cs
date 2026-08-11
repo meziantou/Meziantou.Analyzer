@@ -407,4 +407,115 @@ class TypeName
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_WithObjectParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        object value = 42.5;
+        var x = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_WithInterfaceParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(IComparable value)
+    {
+        var x = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_WithUnconstrainedGenericParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test<T>(T value)
+    {
+        var x = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_WithGenericConstrainedToNonFormattableClass_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class Base
+{
+}
+
+class TypeName
+{
+    public void Test<T>(T value) where T : Base
+    {
+        var x = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+    }
+}
+""";
+
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class Base
+{
+}
+
+class TypeName
+{
+    public void Test<T>(T value) where T : Base
+    {
+        var x = $"Value: {value}";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
 }
