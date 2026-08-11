@@ -472,10 +472,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     public async Task TryParse_ReturnValueNotUsed_DisabledUsingConfiguration()
     {
         await CreateProjectBuilder()
-              .WithAnalyzerConfiguration(new Dictionary<string, string>
-              {
-                  ["MA0060.enable_tryparse_pattern"] = "false",
-              })
+              .AddAnalyzerConfiguration("MA0060.enable_tryparse_pattern", "false")
               .WithSourceCode("""
                   class Test
                   {
@@ -492,10 +489,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     public async Task TryParse_ReturnValueNotUsed_InvalidConfiguration_UsesDefaultValue()
     {
         await CreateProjectBuilder()
-              .WithAnalyzerConfiguration(new Dictionary<string, string>
-              {
-                  ["MA0060.enable_tryparse_pattern"] = "invalid",
-              })
+              .AddAnalyzerConfiguration("MA0060.enable_tryparse_pattern", "invalid")
               .WithSourceCode("""
                   class Test
                   {
