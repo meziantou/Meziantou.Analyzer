@@ -84,7 +84,11 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (actualType is null)
                 return;
 
-            if (actualType.IsSealed) // Method cannot be overridden
+            var targetMethod = operation.TargetMethod;
+            if (targetMethod.ContainingType is null || targetMethod.ContainingType.IsObject())
+                return;
+
+            if (actualType.IsSealed && targetMethod.IsOverride && !SymbolEqualityComparer.Default.Equals(targetMethod.ContainingType, actualType))
             {
                 context.ReportDiagnostic(Rule, operation, actualType.ToDisplayString());
             }

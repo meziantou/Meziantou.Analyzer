@@ -30,7 +30,7 @@ o.ToString();
     {
         var sourceCode = """
 var o = new A();
-[|o.ToString()|];
+o.ToString();
 
 public struct A{ }
 """;
@@ -58,7 +58,7 @@ public sealed record A();
     {
         var sourceCode = """
 var o = new A();
-[|o.ToString()|];
+o.ToString();
 
 public sealed class A {}
 """;
@@ -86,7 +86,7 @@ public sealed class A { public override string ToString() => throw null;}
     {
         var sourceCode = """
 Sample a = new Sample();
-[|a.ToString()|];
+a.ToString();
 
 struct Sample { }
 """;
@@ -129,10 +129,25 @@ class Derived : Sample { public override string ToString() => "test"; }
     {
         var sourceCode = """
 var a = new Derived();
-[|a.ToString()|];
+a.ToString();
 
 class Sample { }
 sealed class Derived : Sample {  }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_InheritsBaseToStringOverride()
+    {
+        var sourceCode = """
+var a = new Derived();
+a.ToString();
+
+class Base { public override string ToString() => "test"; }
+sealed class Derived : Base { }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
@@ -318,7 +333,7 @@ public sealed record A();
     {
         var sourceCode = """
 var o = new A();
-_ = "" + [|o.ToString()|];
+_ = "" + o;
 
 public sealed class A {}
 """;
