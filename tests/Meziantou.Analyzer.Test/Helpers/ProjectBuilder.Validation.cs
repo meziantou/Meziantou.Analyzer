@@ -204,7 +204,7 @@ public sealed partial class ProjectBuilder
                 break;
 
             case TargetFramework.Net11_0:
-                AddNuGetReference("Microsoft.NETCore.App.Ref", "11.0.0-preview.4.26230.115", "ref/net11.0/");
+                AddNuGetReference("Microsoft.NETCore.App.Ref", "11.0.0-preview.7.26381.103", "ref/net11.0/");
                 break;
 
             case TargetFramework.AspNetCore5_0:
