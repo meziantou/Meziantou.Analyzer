@@ -402,11 +402,24 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 return true;
 
             // May have ToString(IFormatProvider) even if IFormattable is not implemented directly
-            if (type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public))
+            if (HasToStringWithFormatProvider(type))
                 return true;
+
+            // For type parameters, also check the constraint types
+            if (type is ITypeParameterSymbol typeParameter)
+            {
+                foreach (var constraintType in typeParameter.ConstraintTypes)
+                {
+                    if (HasToStringWithFormatProvider(constraintType))
+                        return true;
+                }
+            }
 
             return false;
         }
+
+        bool HasToStringWithFormatProvider(ITypeSymbol type)
+            => type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public);
     }
 
     private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol)
@@ -432,6 +445,15 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (attribute.ConstructorArguments[0].Value is INamedTypeSymbol attributeType && attributeType.IsEqualTo(typeSymbol))
             {
                 if (attribute.ConstructorArguments.Length == 1)
+                    return false;
+            }
+        }
+
+        if (typeSymbol is ITypeParameterSymbol typeParameter)
+        {
+            foreach (var constraintType in typeParameter.ConstraintTypes)
+            {
+                if (!IsCultureSensitiveTypeUsingAttribute(constraintType))
                     return false;
             }
         }
@@ -489,6 +511,15 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                 var attrFormat = attrValue as string;
                 if (attrFormat == format)
                     return false; // no format is set, so the type is culture insensitive
+            }
+        }
+
+        if (typeSymbol is ITypeParameterSymbol typeParameter)
+        {
+            foreach (var constraintType in typeParameter.ConstraintTypes)
+            {
+                if (!IsCultureSensitiveTypeUsingAttribute(constraintType, hasFormat, format))
+                    return false;
             }
         }
 

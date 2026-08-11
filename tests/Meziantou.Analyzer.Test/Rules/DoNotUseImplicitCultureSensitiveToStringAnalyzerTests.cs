@@ -656,4 +656,88 @@ class Sample : System.IFormattable
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task GenericTypeParameterConstrainedToIFormattable()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T item) where T : System.IFormattable
+    {
+        _ = "abc" + [|item|];
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericTypeParameterConstrainedToTypeThatImplementsIFormattable()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T item) where T : Sample
+    {
+        _ = "abc" + [|item|];
+    }
+}
+
+class Sample : System.IFormattable
+{
+    public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericTypeParameterConstrainedToTypeThatHasToStringWithIFormatProvider()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T item) where T : Sample
+    {
+        _ = "abc" + [|item|];
+    }
+}
+
+class Sample
+{
+    public string ToString(System.IFormatProvider? formatProvider) => "abc";
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task GenericTypeParameterConstrainedToTypeWithCultureInsensitiveAttribute()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T item) where T : Sample
+    {
+        _ = "abc" + item;
+    }
+}
+
+[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+class Sample : System.IFormattable
+{
+    public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 }
