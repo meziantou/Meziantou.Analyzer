@@ -482,18 +482,9 @@ ILogger logger = null;
 logger.LogInformation("{Prop}", [|2|]);
 logger.LogInformation("{Prop}", 2L);
 logger.LogInformation("{Prop}", "");
-
-namespace Meziantou.Analyzer.Annotations
-{
-    [System.Diagnostics.ConditionalAttribute("MEZIANTOU_ANALYZER_ATTRIBUTES")]
-    [System.AttributeUsageAttribute(System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
-    internal sealed class StructuredLogFieldAttribute : System.Attribute
-    {
-        public StructuredLogFieldAttribute(string parameterName, params System.Type[] allowedTypes) { }
-    }
-}
 """;
         await CreateProjectBuilder()
+              .AddMeziantouAttributes()
               .WithSourceCode(SourceCode)
               .AddAdditionalFile("LoggerParameterTypes.txt", """
 Prop;System.Int32
