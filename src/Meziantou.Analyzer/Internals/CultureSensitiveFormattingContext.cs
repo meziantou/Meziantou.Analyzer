@@ -29,6 +29,21 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     public INamedTypeSymbol? FormattableStringSymbol { get; } = compilation.GetBestTypeByMetadataName("System.FormattableString");
     public INamedTypeSymbol? InterpolatedStringHandlerAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
 
+    /// <summary>Known .NET interpolated string handlers that format values to strings.</summary>
+    private INamedTypeSymbol?[] KnownInterpolatedStringHandlerSymbols { get; } = [
+        compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler"),
+        compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler"),
+        compilation.GetBestTypeByMetadataName("System.Diagnostics.Debug+AssertInterpolatedStringHandler"),
+        compilation.GetBestTypeByMetadataName("System.Diagnostics.Debug+WriteIfInterpolatedStringHandler"),
+        compilation.GetBestTypeByMetadataName("System.MemoryExtensions+TryWriteInterpolatedStringHandler"),
+        compilation.GetBestTypeByMetadataName("System.Text.Unicode.Utf8+TryWriteInterpolatedStringHandler"),
+    ];
+
+    public bool IsInterpolatedStringHandlerThatFormatsStringValues(ITypeSymbol namedTypeSymbol)
+    {
+        return namedTypeSymbol.IsEqualToAny(KnownInterpolatedStringHandlerSymbols);
+    }
+
     private static HashSet<ISymbol> CreateExcludedMethods(Compilation compilation)
     {
         var result = new HashSet<ISymbol>(SymbolEqualityComparer.Default);

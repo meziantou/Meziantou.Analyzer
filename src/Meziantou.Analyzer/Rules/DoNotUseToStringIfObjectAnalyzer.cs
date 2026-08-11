@@ -46,22 +46,24 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
         public void AnalyzeInterpolation(OperationAnalysisContext context)
         {
             var operation = (IInterpolatedStringOperation)context.Operation;
+            if (IsCustomInterpolatedStringHandler(operation))
+                return;
+
             foreach (var part in operation.Parts)
             {
                 if (part is IInterpolationOperation content)
                 {
                     AnalyzeExpression(context, content.Expression);
                 }
-                else if (part is IInterpolatedStringAppendOperation
+                else if (part is IInterpolatedStringAppendOperation { AppendCall: IInvocationOperation appendCall })
                 {
-                    AppendCall: IInvocationOperation
-                    {
-                        TargetMethod.ContainingType: var containingType,
-                        Arguments: [{ Value: var value }],
-                    },
-                } && !_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerType(containingType))
-                {
-                    AnalyzeExpression(context, value);
+                    if (!ShouldAnalyzeInterpolatedStringHandler(appendCall.TargetMethod.ContainingType))
+                        continue;
+
+                    if (appendCall.Arguments is not [{ Value: var content2 }])
+                        continue;
+
+                    AnalyzeExpression(context, content2);
                 }
             }
         }
@@ -116,6 +118,40 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
         private bool IsDefaultToString(IMethodSymbol method)
         {
             return method.IsEqualTo(ObjectToStringSymbol) || method.IsEqualTo(ValueTypeToStringSymbol);
+        }
+
+        private bool ShouldAnalyzeInterpolatedStringHandler(INamedTypeSymbol containingType)
+        {
+            if (_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(containingType))
+                return true;
+
+            return _cultureSensitiveFormattingContext.IsInterpolatedStringHandlerType(containingType);
+        }
+
+        private bool IsCustomInterpolatedStringHandler(IInterpolatedStringOperation operation)
+        {
+            if (_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol is null)
+                return false;
+
+            if (operation.Type is { } operationType &&
+                operationType.HasAttribute(_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol) &&
+                !_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(operationType))
+                return true;
+
+            for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+            {
+                if (parent is IArgumentOperation { Parameter.Type: var parameterType } &&
+                    parameterType.HasAttribute(_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol) &&
+                    !_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(parameterType))
+                    return true;
+
+                if (parent is IConversionOperation { Type: var conversionType } &&
+                    conversionType?.HasAttribute(_cultureSensitiveFormattingContext.InterpolatedStringHandlerAttributeSymbol) == true &&
+                    !_cultureSensitiveFormattingContext.IsInterpolatedStringHandlerThatFormatsStringValues(conversionType))
+                    return true;
+            }
+
+            return false;
         }
     }
 }
