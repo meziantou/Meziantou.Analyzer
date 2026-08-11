@@ -140,6 +140,21 @@ sealed class Derived : Sample {  }
     }
 
     [Fact]
+    public async Task SealedType_InheritsBaseToStringOverride()
+    {
+        var sourceCode = """
+var a = new Derived();
+a.ToString();
+
+class Base { public override string ToString() => "test"; }
+sealed class Derived : Base { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task InterpolatedString_Sealed_Interpolation()
     {
         var sourceCode = """
@@ -147,6 +162,21 @@ var o = new A();
 _ = $"{[|o|]}";
 
 public sealed class A { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedString_SealedType_InheritsBaseToStringOverride()
+    {
+        var sourceCode = """
+var a = new Derived();
+_ = $"{a}";
+
+class Base { public override string ToString() => "test"; }
+sealed class Derived : Base { }
 """;
         await CreateProjectBuilder()
               .WithSourceCode(sourceCode)
