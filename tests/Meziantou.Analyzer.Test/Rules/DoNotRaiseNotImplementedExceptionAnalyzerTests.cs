@@ -55,4 +55,23 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task RaiseNotImplementedException_FlowedFromLocal_ShouldReportErrorAsync()
+    {
+        const string SourceCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
+                {
+                    Exception exception = new NotImplementedException();
+                    [|throw exception;|]
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

@@ -54,7 +54,7 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzer : DiagnosticAnalyzer
         if (operation is null || operation.Exception is null)
             return;
 
-        var exceptionType = operation.Exception.GetActualType();
+        var exceptionType = operation.Exception.GetActualType(context.CancellationToken);
         if (exceptionType is null)
             return;
 

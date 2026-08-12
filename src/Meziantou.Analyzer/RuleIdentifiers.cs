@@ -212,6 +212,7 @@ internal static class RuleIdentifiers
     public const string UseInKeywordToSelectInOverload = "MA0210";
     public const string UseMultiLineXmlCommentSyntax = "MA0211";
     public const string UseMemoryMarshalGetReferenceForEmptyBuffers = "MA0212";
+    public const string SimplifyNegatedBooleanExpression = "MA0213";
 
     public static string GetHelpUri(string identifier)
     {

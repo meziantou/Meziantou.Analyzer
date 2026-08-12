@@ -59,10 +59,9 @@ public sealed class UseTimeSpanZeroAnalyzer : DiagnosticAnalyzer
         // Check if the argument is a constant value of 0
         foreach (var argument in operation.Arguments)
         {
-            if (!argument.Value.ConstantValue.HasValue)
+            if (!argument.Value.TryGetConstantValue(out var constantValue, context.CancellationToken))
                 return;
 
-            var constantValue = argument.Value.ConstantValue.Value;
             if (!NumericHelpers.IsZero(constantValue))
                 return;
         }

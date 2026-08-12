@@ -186,7 +186,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (!op.IsAsynchronous)
                 return;
 
-            var collectionType = op.Collection.GetActualType();
+            var collectionType = op.Collection.GetActualType(context.CancellationToken);
             if (collectionType.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
                 return;
 

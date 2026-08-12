@@ -23,8 +23,8 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor ExplicitCaptureRule = new(
         RuleIdentifiers.UseRegexExplicitCaptureOptions,
-        title: "Add RegexOptions.ExplicitCapture",
-        messageFormat: "Add RegexOptions.ExplicitCapture to prevent capturing unneeded groups",
+        title: "Use RegexOptions.ExplicitCapture or named groups",
+        messageFormat: "Use RegexOptions.ExplicitCapture or named groups to prevent capturing unneeded groups",
         RuleCategories.Performance,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -150,7 +150,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                 if (patternArgumentIndex < arguments.Length)
                 {
                     var argument = arguments[patternArgumentIndex];
-                    if (argument.Value is not null && argument.Value.ConstantValue.HasValue && argument.Value.ConstantValue.Value is string pattern)
+                    if (argument.Value is not null && argument.Value.TryGetConstantValue(out var value, context.CancellationToken) && value is string pattern)
                         return pattern;
                 }
 
@@ -163,10 +163,10 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                     return (null, null);
 
                 var arg = arguments.FirstOrDefault(a => a.Parameter is not null && a.Parameter.Type.IsEqualTo(regexOptionsSymbol));
-                if (arg is null || arg.Value is null || !arg.Value.ConstantValue.HasValue)
+                if (arg is null || arg.Value is null || !arg.Value.TryGetConstantValue(out var value, context.CancellationToken))
                     return (null, arg);
 
-                return ((RegexOptions)arg.Value.ConstantValue.Value!, arg);
+                return ((RegexOptions)value!, arg);
             }
         }
 

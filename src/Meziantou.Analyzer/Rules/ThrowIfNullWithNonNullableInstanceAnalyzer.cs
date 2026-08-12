@@ -49,7 +49,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
                     return;
 
                 var instance = operation.Arguments[0].Value;
-                var type = instance.GetActualType();
+                var type = instance.GetActualType(context.CancellationToken);
                 if (type is null)
                     return;
 

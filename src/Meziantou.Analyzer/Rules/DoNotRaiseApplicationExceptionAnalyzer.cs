@@ -42,7 +42,7 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
         if (operation is null || operation.Exception is null)
             return;
 
-        var exceptionType = operation.Exception.GetActualType();
+        var exceptionType = operation.Exception.GetActualType(context.CancellationToken);
         if (exceptionType.IsEqualTo(reservedExceptionType))
         {
             context.ReportDiagnostic(Rule, operation);

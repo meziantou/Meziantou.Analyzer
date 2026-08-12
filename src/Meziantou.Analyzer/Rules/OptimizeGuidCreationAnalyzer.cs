@@ -46,7 +46,7 @@ public sealed class OptimizeGuidCreationAnalyzer : DiagnosticAnalyzer
         if (!creation.Constructor.ContainingType.IsEqualTo(type))
             return;
 
-        if (creation is { Arguments: [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }] })
+        if (creation.Arguments is [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }])
         {
             if (Guid.TryParse(value, out _))
             {

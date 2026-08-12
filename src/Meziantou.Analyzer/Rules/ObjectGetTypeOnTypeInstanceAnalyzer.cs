@@ -37,7 +37,7 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
                 var operation = (IInvocationOperation)context.Operation;
                 if (operation.Instance is not null && operation.TargetMethod.Name == "GetType" && operation.TargetMethod.ContainingType.IsObject())
                 {
-                    var instanceType = operation.Instance.GetActualType();
+                    var instanceType = operation.Instance.GetActualType(context.CancellationToken);
                     if (instanceType is null)
                         return;
 

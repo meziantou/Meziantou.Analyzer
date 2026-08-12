@@ -45,7 +45,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeArrayCreationOperation(OperationAnalysisContext context)
     {
         var operation = (IArrayCreationOperation)context.Operation;
-        if (IsZeroLengthArrayCreation(operation))
+        if (IsZeroLengthArrayCreation(operation, context.CancellationToken))
         {
             // Cannot use Array.Empty<T>() as an attribute parameter
             if (IsInAttribute(operation))
@@ -58,13 +58,12 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsZeroLengthArrayCreation(IArrayCreationOperation operation)
+    private static bool IsZeroLengthArrayCreation(IArrayCreationOperation operation, CancellationToken cancellationToken)
     {
         if (operation.DimensionSizes.Length != 1)
             return false;
 
-        var dimensionSize = operation.DimensionSizes[0].ConstantValue;
-        return dimensionSize.HasValue && IsZero(dimensionSize.Value);
+        return operation.DimensionSizes[0].TryGetConstantValue(out var dimensionSize, cancellationToken) && IsZero(dimensionSize);
 
         static bool IsZero(object? value)
         {

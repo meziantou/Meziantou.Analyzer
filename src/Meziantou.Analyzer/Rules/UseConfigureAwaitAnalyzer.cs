@@ -90,7 +90,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 return;
 
             // ConfiguredCancelableAsyncEnumerable
-            var collectionType = operation.Collection.GetActualType();
+            var collectionType = operation.Collection.GetActualType(context.CancellationToken);
             if (collectionType is null)
                 return;
 
@@ -196,7 +196,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                         continue;
 
                     // ConfiguredCancelableAsyncEnumerable
-                    var variableType = declarator.Initializer.Value.GetActualType();
+                    var variableType = declarator.Initializer.Value.GetActualType(context.CancellationToken);
                     if (variableType is null || variableType.IsEqualTo(ConfiguredAsyncDisposableSymbol))
                         return;
 
