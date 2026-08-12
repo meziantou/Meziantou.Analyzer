@@ -23,8 +23,8 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor ExplicitCaptureRule = new(
         RuleIdentifiers.UseRegexExplicitCaptureOptions,
-        title: "Add RegexOptions.ExplicitCapture",
-        messageFormat: "Add RegexOptions.ExplicitCapture to prevent capturing unneeded groups",
+        title: "Use RegexOptions.ExplicitCapture or named groups",
+        messageFormat: "Use RegexOptions.ExplicitCapture or named groups to prevent capturing unneeded groups",
         RuleCategories.Performance,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,

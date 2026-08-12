@@ -68,7 +68,7 @@ dotnet_diagnostic.MA0021.severity = warning
 # MA0022: Return Task.FromResult instead of returning null
 dotnet_diagnostic.MA0022.severity = warning
 
-# MA0023: Add RegexOptions.ExplicitCapture
+# MA0023: Use RegexOptions.ExplicitCapture or named groups
 dotnet_diagnostic.MA0023.severity = warning
 
 # MA0024: Use an explicit StringComparer when possible

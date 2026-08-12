@@ -43,7 +43,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0020](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0020.md)|Performance|Use direct methods instead of LINQ methods|ℹ️|✔️|✔️|✔️|
 |[MA0021](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0021.md)|Usage|Use StringComparer.GetHashCode instead of string.GetHashCode|⚠️|✔️|✔️|❌|
 |[MA0022](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0022.md)|Design|Return Task.FromResult instead of returning null|⚠️|✔️|✔️|❌|
-|[MA0023](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0023.md)|Performance|Add RegexOptions.ExplicitCapture|⚠️|✔️|✔️|❌|
+|[MA0023](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0023.md)|Performance|Use RegexOptions.ExplicitCapture or named groups|⚠️|✔️|✔️|❌|
 |[MA0024](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0024.md)|Usage|Use an explicit StringComparer when possible|⚠️|✔️|✔️|❌|
 |[MA0025](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0025.md)|Design|Implement the functionality instead of throwing NotImplementedException|⚠️|✔️|❌|❌|
 |[MA0026](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0026.md)|Design|Fix TODO comment|⚠️|✔️|❌|❌|
