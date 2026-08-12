@@ -50,7 +50,9 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (operation.Arguments is [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }])
+        if (operation.Arguments is [{ Value: { Type.SpecialType: SpecialType.System_String } argumentValue }] &&
+            argumentValue.TryGetConstantValue(out var constantValue, context.CancellationToken) &&
+            constantValue is string value)
         {
             if (System.Guid.TryParse(value, out var guid) && guid == System.Guid.Empty)
             {
@@ -60,17 +62,17 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (operation.Arguments.Length == 11 && IsAllZero(operation.Arguments))
+        if (operation.Arguments.Length == 11 && IsAllZero(operation.Arguments, context.CancellationToken))
         {
             context.ReportDiagnostic(Rule, operation);
         }
     }
 
-    private static bool IsAllZero(ImmutableArray<IArgumentOperation> arguments)
+    private static bool IsAllZero(ImmutableArray<IArgumentOperation> arguments, CancellationToken cancellationToken)
     {
         foreach (var argument in arguments)
         {
-            if (!argument.Value.ConstantValue.HasValue || !NumericHelpers.IsZero(argument.Value.ConstantValue.Value))
+            if (!argument.Value.TryGetConstantValue(out var value, cancellationToken) || !NumericHelpers.IsZero(value))
                 return false;
         }
 
@@ -83,7 +85,9 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
         if (!invocation.TargetMethod.ContainingType.IsEqualTo(guidType))
             return;
 
-        if (invocation is { TargetMethod.Name: "Parse", Arguments: [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }] })
+        if (invocation is { TargetMethod.Name: "Parse", Arguments: [{ Value: { Type.SpecialType: SpecialType.System_String } argumentValue }] } &&
+            argumentValue.TryGetConstantValue(out var constantValue, context.CancellationToken) &&
+            constantValue is string value)
         {
             if (System.Guid.TryParse(value, out var guid) && guid == System.Guid.Empty)
             {

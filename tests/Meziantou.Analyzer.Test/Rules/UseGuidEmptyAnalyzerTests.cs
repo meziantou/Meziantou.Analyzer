@@ -47,6 +47,33 @@ class TestClass
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task ShouldReportError_FlowedFromLocal()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+class TestClass
+{
+    void Test()
+    {
+        var value = "00000000-0000-0000-0000-000000000000";
+        _ = [|System.Guid.Parse(value)|];
+    }
+}
+""")
+              .ShouldFixCodeWith("""
+class TestClass
+{
+    void Test()
+    {
+        var value = "00000000-0000-0000-0000-000000000000";
+        _ = System.Guid.Empty;
+    }
+}
+""")
+              .ValidateAsync();
+    }
+
     [Theory]
     [InlineData("new System.Guid(\"\")")]
     [InlineData("new System.Guid(\"10752bc4-c151-50f5-f27b-df92d8af5a61\")")]

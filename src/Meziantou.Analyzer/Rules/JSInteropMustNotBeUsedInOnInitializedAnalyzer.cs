@@ -100,7 +100,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
                     return;
             }
 
-            var type = instance.GetActualType();
+            var type = instance.GetActualType(context.CancellationToken);
             if (type is null)
                 return;
 

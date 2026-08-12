@@ -108,4 +108,31 @@ class TestClass
 """)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ShouldReportDiagnostic_FlowedFromLocal()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+class TestClass
+{
+    void Test()
+    {
+        var value = 0;
+        _ = [|System.TimeSpan.FromSeconds(value)|];
+    }
+}
+""")
+              .ShouldFixCodeWith("""
+class TestClass
+{
+    void Test()
+    {
+        var value = 0;
+        _ = System.TimeSpan.Zero;
+    }
+}
+""")
+              .ValidateAsync();
+    }
 }

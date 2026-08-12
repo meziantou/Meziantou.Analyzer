@@ -104,6 +104,155 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
     }
 
     [Fact]
+    public async Task StringFormat_WithConstantFormatStringFromLocal_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        var format = "value without placeholder";
+                        var result = [|string.Format(format, 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithConstantFormatStringFromLocalAssignment_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method()
+                    {
+                        string format;
+                        format = "value without placeholder";
+                        var result = [|string.Format(format, 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithReassignedFormatString_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    void Method(string other)
+                    {
+                        var format = "value without placeholder";
+                        format = other;
+                        var result = string.Format(format, 123);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithPrivateGetOnlyPropertyFormatString_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    private string Format { get; } = "value without placeholder";
+
+                    void Method()
+                    {
+                        var result = [|string.Format(Format, 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithPrivateGetOnlyPropertyFormatString_AssignedInConstructor_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    private string Format { get; } = "value without placeholder";
+
+                    public Test(string format)
+                    {
+                        Format = format;
+                    }
+
+                    void Method()
+                    {
+                        var result = string.Format(Format, 123);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithPrivateReadonlyFieldFormatString_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    private readonly string _format = "value without placeholder";
+
+                    void Method()
+                    {
+                        var result = [|string.Format(_format, 123)|];
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringFormat_WithPrivateReadonlyFieldFormatString_AssignedInConstructor_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+
+                class Test
+                {
+                    private readonly string _format = "value without placeholder";
+
+                    public Test(string format)
+                    {
+                        _format = format;
+                    }
+
+                    void Method()
+                    {
+                        var result = string.Format(_format, 123);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task StringFormat_WithIFormatProvider_NoPlaceholder_ShouldReportDiagnostic()
     {
         await CreateProjectBuilder()

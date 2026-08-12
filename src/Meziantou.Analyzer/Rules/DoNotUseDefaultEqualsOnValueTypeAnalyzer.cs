@@ -90,7 +90,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 
             if (operation.TargetMethod.Name == nameof(ValueType.GetHashCode))
             {
-                var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType();
+                var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType(context.CancellationToken);
                 if (actualType is null)
                     return;
 
@@ -101,7 +101,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             }
             else if (operation.TargetMethod.Name == nameof(ValueType.Equals))
             {
-                var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType();
+                var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType(context.CancellationToken);
                 if (actualType is null)
                     return;
 

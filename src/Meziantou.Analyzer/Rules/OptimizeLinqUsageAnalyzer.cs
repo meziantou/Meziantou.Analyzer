@@ -257,7 +257,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 if (ICollectionOfTSymbol is null && IReadOnlyCollectionOfTSymbol is null)
                     return;
 
-                var actualType = operation.Arguments[0].Value.GetActualType();
+                var actualType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
                 if (actualType is null)
                     return;
 
@@ -295,7 +295,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             }
             else if (operation.TargetMethod.Name == nameof(Enumerable.LongCount))
             {
-                var actualType = operation.Arguments[0].Value.GetActualType();
+                var actualType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
                 if (actualType is not null && actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
@@ -312,7 +312,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != 2)
                 return;
 
-            var firstArgumentType = operation.Arguments[0].Value.GetActualType();
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
             if (firstArgumentType is null)
                 return;
 
@@ -348,7 +348,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != 2)
                 return;
 
-            var firstArgumentType = operation.Arguments[0].Value.GetActualType();
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
             if (firstArgumentType is null)
                 return;
 
@@ -380,7 +380,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != 2)
                 return;
 
-            var firstArgumentType = operation.Arguments[0].Value.GetActualType();
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
             if (firstArgumentType is null)
                 return;
 
@@ -434,7 +434,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (IListOfTSymbol is null && IReadOnlyListOfTSymbol is null)
                 return;
 
-            var actualType = operation.Arguments[0].Value.GetActualType();
+            var actualType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
             if (actualType is null)
                 return;
 
@@ -869,14 +869,14 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             var castType = castOp.Type.ToMinimalDisplayString(semanticModel, nullableFlowState, operation.Syntax.SpanStart);
             context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCastInsteadOfSelect, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, castType);
 
-            static bool CanReplaceByCast(IConversionOperation op)
+            bool CanReplaceByCast(IConversionOperation op)
             {
                 if (op.Conversion.IsUserDefined || op.Conversion.IsNumeric)
                     return false;
 
                 // Handle enums: source.Select<MyEnum, byte>(item => (byte)item);
                 // Using Cast<T> is only possible when the enum underlying type is the same as the conversion type
-                var operandActualType = op.Operand.GetActualType();
+                var operandActualType = op.Operand.GetActualType(context.CancellationToken);
                 var enumerationType = operandActualType.GetEnumType();
                 if (enumerationType is not null)
                 {
@@ -896,7 +896,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments.Length >= 2)
                     return;
 
-                var operandType = operation.Arguments[0].Value.GetActualType();
+                var operandType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
                 if (operandType is null)
                     return;
 

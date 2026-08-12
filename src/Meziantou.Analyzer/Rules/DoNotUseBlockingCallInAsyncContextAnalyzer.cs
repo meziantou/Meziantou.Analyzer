@@ -192,14 +192,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 return;
 
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
-            var isSqliteSpecialCaseMethod = IsSqliteSpecialCaseMethod(operation);
+            var isSqliteSpecialCaseMethod = IsSqliteSpecialCaseMethod(operation, context.CancellationToken);
 
             // The cache only contains methods with no async equivalent methods.
             // This optimizes the best-case scenario where code is correctly written according to this analyzer.
             if (!isSqliteSpecialCaseMethod && _symbolsWithNoAsyncOverloads.Contains(targetMethod))
                 return;
 
-            if (HasAsyncEquivalent(operation, sqliteSpecialCasesEnabled, out var diagnosticMessage))
+            if (HasAsyncEquivalent(operation, sqliteSpecialCasesEnabled, context.CancellationToken, out var diagnosticMessage))
             {
                 ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage);
             }
@@ -209,7 +209,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
         }
 
-        private bool HasAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, [NotNullWhen(true)] out DiagnosticData? data)
+        private bool HasAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, CancellationToken cancellationToken, [NotNullWhen(true)] out DiagnosticData? data)
         {
             data = null;
             var targetMethod = operation.TargetMethod;
@@ -295,7 +295,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Async APIs in Microsoft.Data.Sqlite have documented limitations.
             // Ignore any invocation on SqliteConnection, SqliteCommand, or SqliteDataReader by default.
             // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/async
-            else if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(operation))
+            else if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(operation, cancellationToken))
             {
                 return false;
             }
@@ -306,7 +306,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
 
             // SemaphoreSlim.Wait(0) is a non-blocking try-acquire pattern, skip it
-            else if (SemaphoreSlimSymbol is not null && targetMethod.Name == "Wait" && targetMethod.ContainingType.IsEqualTo(SemaphoreSlimSymbol) && IsSemaphoreSlimWaitWithZeroTimeout(operation))
+            else if (SemaphoreSlimSymbol is not null && targetMethod.Name == "Wait" && targetMethod.ContainingType.IsEqualTo(SemaphoreSlimSymbol) && IsSemaphoreSlimWaitWithZeroTimeout(operation, cancellationToken))
             {
                 return false;
             }
@@ -484,7 +484,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return type.IsEqualToAny(SqliteConnectionSymbol, SqliteCommandSymbol, SqliteDataReaderSymbol);
         }
 
-        private bool IsSqliteSpecialCaseMethod(IInvocationOperation operation)
+        private bool IsSqliteSpecialCaseMethod(IInvocationOperation operation, CancellationToken cancellationToken)
         {
             if (IsSqliteSpecialCaseType(operation.TargetMethod.ContainingType))
                 return true;
@@ -495,7 +495,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.TargetMethod.IsStatic)
                 return false;
 
-            if (operation.Instance?.GetActualType() is not INamedTypeSymbol type)
+            if (operation.Instance?.GetActualType(cancellationToken) is not INamedTypeSymbol type)
                 return false;
 
             return IsSqliteSpecialCaseType(type);
@@ -550,16 +550,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return true;
         }
 
-        private bool IsSemaphoreSlimWaitWithZeroTimeout(IInvocationOperation operation)
+        private bool IsSemaphoreSlimWaitWithZeroTimeout(IInvocationOperation operation, CancellationToken cancellationToken)
         {
             if (operation.Arguments.Length == 0)
                 return false;
 
             var firstArgument = operation.Arguments[0];
-            var constantValue = firstArgument.Value.ConstantValue;
-
             // Check for Wait(0) - integer literal 0
-            if (constantValue.HasValue && constantValue.Value is int intValue && intValue == 0)
+            if (firstArgument.Value.TryGetConstantValue(out var constantValue, cancellationToken) && constantValue is int intValue && intValue == 0)
                 return true;
 
             // Check for Wait(TimeSpan.Zero)
@@ -698,16 +696,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        private bool CanBeAwaitUsing(IOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled)
+        private bool CanBeAwaitUsing(IOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled, CancellationToken cancellationToken)
         {
             var unwrappedOperation = operation.UnwrapImplicitConversionOperations();
             if (unwrappedOperation is IInvocationOperation invocationOperation)
             {
-                if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(invocationOperation))
+                if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(invocationOperation, cancellationToken))
                     return false;
             }
 
-            if (operation.GetActualType() is not INamedTypeSymbol type)
+            if (operation.GetActualType(cancellationToken) is not INamedTypeSymbol type)
                 return false;
 
             if (IsNonAsyncDisposableType(type))
@@ -794,7 +792,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if ((declaration.Initializer?.Value) is not null)
                 {
-                    if (CanBeAwaitUsing(declaration.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
+                    if (CanBeAwaitUsing(declaration.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, context.CancellationToken))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
@@ -804,7 +802,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
                 foreach (var declarator in declaration.Declarators)
                 {
-                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
+                    if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, context.CancellationToken))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.UsingDeclarator);
                         ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
@@ -830,7 +828,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     return;
             }
 
-            if (CanBeAwaitUsing(operation.Resources, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
+            if (CanBeAwaitUsing(operation.Resources, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, context.CancellationToken))
             {
                 var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
                 ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage);

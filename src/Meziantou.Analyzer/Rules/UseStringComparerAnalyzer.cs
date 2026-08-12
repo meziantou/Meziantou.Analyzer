@@ -127,7 +127,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 if (method.ContainingType.IsOrImplements(type))
                     return;
 
-                if (operation.Instance is not null && operation.Instance.GetActualType()?.IsOrImplements(type) is true)
+                if (operation.Instance is not null && operation.Instance.GetActualType(ctx.CancellationToken)?.IsOrImplements(type) is true)
                     return;
             }
 

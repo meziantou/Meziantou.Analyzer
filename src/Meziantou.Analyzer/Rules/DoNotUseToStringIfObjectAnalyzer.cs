@@ -53,7 +53,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             {
                 if (part is IInterpolationOperation content)
                 {
-                    AnalyzeExpression(context, content.Expression);
+                    AnalyzeExpression(context, content.Expression, context.CancellationToken);
                 }
                 else if (part is IInterpolatedStringAppendOperation { AppendCall: IInvocationOperation appendCall })
                 {
@@ -63,7 +63,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
                     if (appendCall.Arguments is not [{ Value: var content2 }])
                         continue;
 
-                    AnalyzeExpression(context, content2);
+                    AnalyzeExpression(context, content2, context.CancellationToken);
                 }
             }
         }
@@ -80,7 +80,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (operation.Instance is null)
                 return;
 
-            var actualType = operation.Instance.GetActualType();
+            var actualType = operation.Instance.GetActualType(context.CancellationToken);
             if (actualType is null)
                 return;
 
@@ -96,13 +96,13 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (!operation.Type.IsString())
                 return;
 
-            AnalyzeExpression(context, operation.LeftOperand);
-            AnalyzeExpression(context, operation.RightOperand);
+            AnalyzeExpression(context, operation.LeftOperand, context.CancellationToken);
+            AnalyzeExpression(context, operation.RightOperand, context.CancellationToken);
         }
 
-        private static void AnalyzeExpression(DiagnosticReporter reporter, IOperation operation)
+        private static void AnalyzeExpression(DiagnosticReporter reporter, IOperation operation, CancellationToken cancellationToken)
         {
-            var actualType = operation.UnwrapImplicitConversionOperations().Type;
+            var actualType = operation.GetActualType(cancellationToken);
             if (actualType is null)
                 return;
 

@@ -99,7 +99,7 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         }
 
         // Case 2: Has formatting arguments but constant format string has no placeholders
-        if (formatArgument.Value.ConstantValue.HasValue && formatArgument.Value.ConstantValue.Value is string formatString)
+        if (formatArgument.Value.TryGetConstantValue(out var constantValue, context.CancellationToken) && constantValue is string formatString)
         {
             if (!HasPlaceholders(formatString))
             {
