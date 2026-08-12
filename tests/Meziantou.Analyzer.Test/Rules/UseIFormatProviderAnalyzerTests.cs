@@ -652,6 +652,49 @@ class A
     }
 
     [Fact]
+    public async Task FormattableString_PolymorphicValues_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(object objectValue, IValue interfaceValue, IFormattable formattableValue, BaseValue baseValue, SealedValue sealedValue)
+    {
+        [|Formatter.Print($"Value: {objectValue}")|];
+        [|Formatter.Print($"Value: {interfaceValue}")|];
+        [|Formatter.Print($"Value: {formattableValue}")|];
+        [|Formatter.Print($"Value: {baseValue}")|];
+        Formatter.Print($"Value: {sealedValue}");
+    }
+}
+
+interface IValue { }
+
+class BaseValue { }
+
+sealed class SealedValue
+{
+    public override string ToString() => string.Empty;
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task FormattableString_IFormatProviderNotLast_CodeFix()
     {
         var sourceCode = """

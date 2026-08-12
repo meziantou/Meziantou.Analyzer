@@ -658,6 +658,48 @@ class Sample : System.IFormattable
     }
 
     [Fact]
+    public async Task PolymorphicTypes()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(object objectValue, IValue interfaceValue, System.IFormattable formattableValue, BaseValue baseValue, SealedValue sealedValue)
+    {
+        _ = "Value: " + [|objectValue|];
+        _ = "Value: " + [|interfaceValue|];
+        _ = "Value: " + [|formattableValue|];
+        _ = "Value: " + [|baseValue|];
+        _ = "Value: " + sealedValue;
+
+        _ = $"Value: [|{objectValue}|]";
+        _ = $"Value: [|{interfaceValue}|]";
+        _ = $"Value: [|{formattableValue}|]";
+        _ = $"Value: [|{baseValue}|]";
+        _ = $"Value: {sealedValue}";
+    }
+
+    void B<T>(T value)
+    {
+        _ = "Value: " + [|value|];
+        _ = $"Value: [|{value}|]";
+    }
+}
+
+interface IValue { }
+
+class BaseValue { }
+
+sealed class SealedValue
+{
+    public override string ToString() => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task GenericTypeParameterConstrainedToIFormattable()
     {
         var sourceCode = """

@@ -165,19 +165,21 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
         private bool IsNonCultureSensitiveOperand(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operand)
         {
-            // Implicit conversion from a type number
             if (operand is null)
                 return true;
 
-            if (operand is IConversionOperation conversion && conversion.IsImplicit && conversion.Type.IsObject() && conversion.Operand.Type is not null)
-            {
-                var value = conversion.Operand;
-                var options = MustUnwrapNullableTypes(context, rule, operand) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
-                if (_cultureSensitiveContext.IsCultureSensitiveOperation(value, options | CultureSensitiveOptions.UseInvocationReturnType))
-                    return false;
-            }
+            // Interpolated strings are analyzed by MA0076.
+            if (operand is IInterpolatedStringOperation)
+                return true;
 
-            return true;
+            // String concatenation inserts an implicit conversion to object for many value types.
+            // Analyze the value before this conversion, but preserve explicitly object-typed values.
+            var value = operand is IConversionOperation { IsImplicit: true, Type: { SpecialType: SpecialType.System_Object }, Operand.Type: not null } conversion
+                ? conversion.Operand
+                : operand;
+            var options = MustUnwrapNullableTypes(context, rule, operand) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
+
+            return !_cultureSensitiveContext.IsCultureSensitiveOperation(value, options | CultureSensitiveOptions.UseInvocationReturnType);
         }
 
         private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)

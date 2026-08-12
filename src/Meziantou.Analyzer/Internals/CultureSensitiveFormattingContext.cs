@@ -394,17 +394,16 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsOrInheritFrom(NuGetVersioningSemanticVersionSymbol))
             return false;
 
-        if (!IsFormattableType(typeSymbol))
-            return false;
-
         if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol))
             return false;
 
-        return true;
+        // Formatting may use the runtime type. A type is culture-insensitive only when
+        // it is sealed and does not support culture-aware formatting.
+        return IsFormattableType(typeSymbol) || !typeSymbol.IsSealed;
 
         bool IsFormattableType(ITypeSymbol type)
         {
-            if (type.Implements(SystemIFormattableSymbol) || type.Implements(SystemISpanFormattableSymbol))
+            if (type.IsOrImplements(SystemIFormattableSymbol) || type.IsOrImplements(SystemISpanFormattableSymbol))
                 return true;
 
             // May have ToString(IFormatProvider) even if IFormattable is not implemented directly
@@ -416,7 +415,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             {
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    if (constraintType.Implements(SystemIFormattableSymbol) || constraintType.Implements(SystemISpanFormattableSymbol) || HasToStringWithFormatProvider(constraintType))
+                    if (constraintType.IsOrImplements(SystemIFormattableSymbol) || constraintType.IsOrImplements(SystemISpanFormattableSymbol) || HasToStringWithFormatProvider(constraintType))
                         return true;
                 }
             }

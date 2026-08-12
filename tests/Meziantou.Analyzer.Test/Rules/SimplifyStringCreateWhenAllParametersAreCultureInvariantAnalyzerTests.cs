@@ -337,6 +337,67 @@ class TypeName
     }
 
     [Fact]
+    public async Task StringCreateWithInvariantCulture_PolymorphicValues_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(object objectValue, IValue interfaceValue, IFormattable formattableValue, BaseValue baseValue, SealedValue sealedValue)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {objectValue}");
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {interfaceValue}");
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {formattableValue}");
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {baseValue}");
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {sealedValue}")|];
+    }
+}
+
+interface IValue { }
+
+class BaseValue { }
+
+sealed class SealedValue
+{
+    public override string ToString() => string.Empty;
+}
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(object objectValue, IValue interfaceValue, IFormattable formattableValue, BaseValue baseValue, SealedValue sealedValue)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {objectValue}");
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {interfaceValue}");
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {formattableValue}");
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {baseValue}");
+        _ = $"Value: {sealedValue}";
+    }
+}
+
+interface IValue { }
+
+class BaseValue { }
+
+sealed class SealedValue
+{
+    public override string ToString() => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task StringCreateWithInvariantCulture_EmptyString_ShouldReport()
     {
         const string SourceCode = """
