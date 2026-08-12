@@ -652,6 +652,226 @@ class A
     }
 
     [Fact]
+    public async Task FormattableString_Object_NoDiagnostic()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(object value)
+    {
+        Formatter.Print($"Value: {value}");
+    }
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_Object_ReportMaybeCultureSensitive_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(object value)
+    {
+        [|Formatter.Print($"Value: {value}")|];
+    }
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0011.report_maybe_culture_sensitive", "true")
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_Interface_NoDiagnostic()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(IValue value)
+    {
+        Formatter.Print($"Value: {value}");
+    }
+}
+
+interface IValue { }
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_IFormattable_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(IFormattable value)
+    {
+        [|Formatter.Print($"Value: {value}")|];
+    }
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_NonSealedType_NoDiagnostic()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(Value value)
+    {
+        Formatter.Print($"Value: {value}");
+    }
+}
+
+class Value { }
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_SealedNonFormattableType_NoDiagnostic()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(Value value)
+    {
+        Formatter.Print($"Value: {value}");
+    }
+}
+
+sealed class Value
+{
+    public override string ToString() => string.Empty;
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_UnconstrainedTypeParameter_NoDiagnostic()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A<T>(T value)
+    {
+        Formatter.Print($"Value: {value}");
+    }
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task FormattableString_IFormatProviderNotLast_CodeFix()
     {
         var sourceCode = """

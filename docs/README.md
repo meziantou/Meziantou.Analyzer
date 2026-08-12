@@ -11,7 +11,7 @@
 |[MA0008](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0008.md)|Performance|Add StructLayoutAttribute|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
 |[MA0009](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0009.md)|Security|Add regex evaluation timeout|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0010](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0010.md)|Design|Mark attributes with AttributeUsageAttribute|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
-|[MA0011](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0011.md)|Usage|IFormatProvider is missing|<span title='Warning'>⚠️</span>|✔️|✔️|<span title='MA0011.consider_nullable_types&#xA;MA0011.exclude_tostring_methods'>✔️</span>|
+|[MA0011](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0011.md)|Usage|IFormatProvider is missing|<span title='Warning'>⚠️</span>|✔️|✔️|<span title='MA0011.consider_nullable_types&#xA;MA0011.exclude_tostring_methods&#xA;MA0011.report_maybe_culture_sensitive'>✔️</span>|
 |[MA0012](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0012.md)|Design|Do not raise reserved exception type|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0013](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0013.md)|Design|Types should not extend System.ApplicationException|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0014](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0014.md)|Design|Do not raise System.ApplicationException type|<span title='Warning'>⚠️</span>|✔️|❌|❌|
@@ -74,8 +74,8 @@
 |[MA0072](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0072.md)|Design|Do not throw from a finally block|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0073](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0073.md)|Style|Avoid comparison with bool constant|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0074](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0074.md)|Usage|Avoid implicit culture-sensitive methods|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
-|[MA0075](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0075.md)|Design|Do not use implicit culture-sensitive ToString|<span title='Info'>ℹ️</span>|✔️|❌|<span title='MA0075.consider_nullable_types&#xA;MA0075.exclude_tostring_methods'>✔️</span>|
-|[MA0076](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0076.md)|Design|Do not use implicit culture-sensitive ToString in interpolated strings|<span title='Info'>ℹ️</span>|✔️|✔️|<span title='MA0076.consider_nullable_types&#xA;MA0076.exclude_tostring_methods'>✔️</span>|
+|[MA0075](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0075.md)|Design|Do not use implicit culture-sensitive ToString|<span title='Info'>ℹ️</span>|✔️|❌|<span title='MA0075.consider_nullable_types&#xA;MA0075.exclude_tostring_methods&#xA;MA0075.report_maybe_culture_sensitive'>✔️</span>|
+|[MA0076](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0076.md)|Design|Do not use implicit culture-sensitive ToString in interpolated strings|<span title='Info'>ℹ️</span>|✔️|✔️|<span title='MA0076.consider_nullable_types&#xA;MA0076.exclude_tostring_methods&#xA;MA0076.report_maybe_culture_sensitive'>✔️</span>|
 |[MA0077](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0077.md)|Design|A class that provides Equals(T) should implement IEquatable\<T\>|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
 |[MA0078](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0078.md)|Performance|Use 'Cast' instead of 'Select' to cast|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0079](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0079.md)|Usage|Forward the CancellationToken using .WithCancellation()|<span title='Info'>ℹ️</span>|✔️|✔️|❌|

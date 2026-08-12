@@ -11,6 +11,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
         return new ProjectBuilder()
             .WithAnalyzer<SimplifyStringCreateWhenAllParametersAreCultureInvariantAnalyzer>()
             .WithCodeFixProvider<SimplifyStringCreateWhenAllParametersAreCultureInvariantFixer>()
+            .AddMeziantouAttributes()
             .WithTargetFramework(TargetFramework.Net6_0);
     }
 
@@ -333,6 +334,212 @@ class TypeName
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_Object_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(object value)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_Interface_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(IValue value)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+
+interface IValue { }
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_IFormattable_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(IFormattable value)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_NonSealedType_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(Value value)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+
+class Value { }
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_UnconstrainedTypeParameter_NoDiagnostic()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test<T>(T value)
+    {
+        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_SealedNonFormattableType_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(Value value)
+    {
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+    }
+}
+
+sealed class Value
+{
+    public override string ToString() => string.Empty;
+}
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(Value value)
+    {
+        _ = $"Value: {value}";
+    }
+}
+
+sealed class Value
+{
+    public override string ToString() => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_CultureInsensitiveTypeAttribute_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(Value value)
+    {
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+    }
+}
+
+[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+class Value : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+}
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(Value value)
+    {
+        _ = $"Value: {value}";
+    }
+}
+
+[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+class Value : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
