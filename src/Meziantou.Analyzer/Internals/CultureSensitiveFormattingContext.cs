@@ -68,6 +68,27 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return (options & CultureSensitiveOptions.UnwrapNullableOfT) == CultureSensitiveOptions.UnwrapNullableOfT;
     }
 
+    public static bool IsCultureSensitive(CultureSensitivity cultureSensitivity, CultureSensitiveOptions options)
+    {
+        if ((cultureSensitivity & CultureSensitivity.CultureSensitive) == CultureSensitivity.CultureSensitive)
+            return true;
+
+        if ((options & CultureSensitiveOptions.TreatOpaqueRuntimeTypesAsCultureSensitive) == CultureSensitiveOptions.TreatOpaqueRuntimeTypesAsCultureSensitive &&
+            (cultureSensitivity & CultureSensitivity.MaybeCultureSensitiveOpaqueRuntimeType) == CultureSensitivity.MaybeCultureSensitiveOpaqueRuntimeType)
+            return true;
+
+        if ((options & CultureSensitiveOptions.TreatUnsealedTypesAsCultureSensitive) == CultureSensitiveOptions.TreatUnsealedTypesAsCultureSensitive &&
+            (cultureSensitivity & CultureSensitivity.MaybeCultureSensitiveUnsealedType) == CultureSensitivity.MaybeCultureSensitiveUnsealedType)
+            return true;
+
+        return false;
+    }
+
+    public static bool IsCultureInsensitive(CultureSensitivity cultureSensitivity, CultureSensitiveOptions options)
+    {
+        return !IsCultureSensitive(cultureSensitivity, options);
+    }
+
     public CultureSensitivity GetCultureSensitivity(IOperation operation, CultureSensitiveOptions options)
     {
         // Unwrap implicit conversion to Nullable<T>
@@ -337,12 +358,15 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     private CultureSensitivity GetCultureSensitivity(ITypeSymbol? typeSymbol, CultureSensitiveOptions options)
     {
         if (typeSymbol is null)
-            return CultureSensitivity.MaybeCultureSensitive;
+            return CultureSensitivity.MaybeCultureSensitiveOpaqueRuntimeType;
 
         if (MustUnwrapNullableOfT(options))
         {
             typeSymbol = typeSymbol.GetUnderlyingNullableTypeOrSelf();
         }
+
+        if (typeSymbol is ITypeParameterSymbol typeParameter)
+            return GetCultureSensitivity(typeParameter, options);
 
         if (typeSymbol.IsEnum())
             return CultureSensitivity.CultureInsensitive;
@@ -401,12 +425,15 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (IsFormattableType(typeSymbol))
             return CultureSensitivity.CultureSensitive;
 
+        if (IsOpaqueRuntimeType(typeSymbol))
+            return CultureSensitivity.MaybeCultureSensitiveOpaqueRuntimeType;
+
         // A sealed type cannot use a more derived runtime type for formatting.
         if (typeSymbol.IsSealed)
             return CultureSensitivity.CultureInsensitive;
 
         // Formatting may use a runtime type that supports culture-aware formatting.
-        return CultureSensitivity.MaybeCultureSensitive;
+        return CultureSensitivity.MaybeCultureSensitiveUnsealedType;
 
         bool IsFormattableType(ITypeSymbol type)
         {
@@ -432,6 +459,19 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         bool HasToStringWithFormatProvider(ITypeSymbol type)
             => type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public);
+    }
+
+    private CultureSensitivity GetCultureSensitivity(ITypeParameterSymbol typeParameter, CultureSensitiveOptions options)
+    {
+        if (typeParameter.ConstraintTypes.IsEmpty)
+            return CultureSensitivity.MaybeCultureSensitiveOpaqueRuntimeType;
+
+        return GetCultureSensitivity(typeParameter.ConstraintTypes, options);
+    }
+
+    private static bool IsOpaqueRuntimeType(ITypeSymbol typeSymbol)
+    {
+        return typeSymbol.SpecialType == SpecialType.System_Object || typeSymbol.TypeKind == TypeKind.Interface;
     }
 
     private bool IsCultureSensitiveTypeUsingAttribute(ITypeSymbol typeSymbol)
@@ -645,9 +685,20 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return cultureSensitivity;
     }
 
+    private CultureSensitivity GetCultureSensitivity(IEnumerable<ITypeSymbol> typeSymbols, CultureSensitiveOptions options)
+    {
+        var cultureSensitivity = CultureSensitivity.CultureInsensitive;
+        foreach (var typeSymbol in typeSymbols)
+        {
+            cultureSensitivity = Combine(cultureSensitivity, GetCultureSensitivity(typeSymbol, options));
+        }
+
+        return cultureSensitivity;
+    }
+
     private static CultureSensitivity Combine(CultureSensitivity left, CultureSensitivity right)
     {
-        return left > right ? left : right;
+        return left | right;
     }
 
     private CultureSensitivity? GetInterpolatedStringArgumentCultureSensitivity(IInvocationOperation invocation, CultureSensitiveOptions options)

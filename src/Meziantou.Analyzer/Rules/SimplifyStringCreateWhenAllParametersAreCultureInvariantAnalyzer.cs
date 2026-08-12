@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -18,6 +19,9 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SimplifyStringCreateWhenAllParametersAreCultureInvariant));
+
+    private static readonly ConfigurationDefinition<bool> TreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.SimplifyStringCreateWhenAllParametersAreCultureInvariant + ".treat_opaque_runtime_types_as_culture_sensitive", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> TreatUnsealedTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.SimplifyStringCreateWhenAllParametersAreCultureInvariant + ".treat_unsealed_types_as_culture_sensitive", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -75,11 +79,25 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
         {
             var interpolatedStringContent = handlerCreation.Content;
             // Use UnwrapNullableOfT to check the underlying type of nullable types
-            if (cultureSensitiveContext.GetCultureSensitivity(interpolatedStringContent, CultureSensitiveOptions.UnwrapNullableOfT) == CultureSensitivity.CultureInsensitive)
+            var options = GetOptions(context);
+            if (CultureSensitiveFormattingContext.IsCultureInsensitive(cultureSensitiveContext.GetCultureSensitivity(interpolatedStringContent, options), options))
             {
                 context.ReportDiagnostic(Rule, operation);
             }
         }
+    }
+
+    private static CultureSensitiveOptions GetOptions(OperationAnalysisContext context)
+    {
+        var options = CultureSensitiveOptions.UnwrapNullableOfT;
+
+        if (context.Options.GetConfigurationValue(context.Operation.Syntax.SyntaxTree, TreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration))
+            options |= CultureSensitiveOptions.TreatOpaqueRuntimeTypesAsCultureSensitive;
+
+        if (context.Options.GetConfigurationValue(context.Operation.Syntax.SyntaxTree, TreatUnsealedTypesAsCultureSensitiveConfiguration))
+            options |= CultureSensitiveOptions.TreatUnsealedTypesAsCultureSensitive;
+
+        return options;
     }
 
     private static bool IsCultureInfoInvariantCulture(IOperation operation, IPropertySymbol cultureInfoInvariantCultureProperty)

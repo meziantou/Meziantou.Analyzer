@@ -682,7 +682,7 @@ static class Formatter
     }
 
     [Fact]
-    public async Task FormattableString_Object_ReportMaybeCultureSensitive_ShouldReport()
+    public async Task FormattableString_Object_TreatOpaqueRuntimeTypesAsCultureSensitive_ShouldReport()
     {
         var sourceCode = """
 using System;
@@ -707,7 +707,7 @@ static class Formatter
 }
 """;
         await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0011.report_maybe_culture_sensitive", "true")
+              .AddAnalyzerConfiguration("MA0011.treat_opaque_runtime_types_as_culture_sensitive", "true")
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
@@ -802,6 +802,39 @@ static class Formatter
 }
 """;
         await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_NonSealedType_TreatUnsealedTypesAsCultureSensitive_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(Value value)
+    {
+        [|Formatter.Print($"Value: {value}")|];
+    }
+}
+
+class Value { }
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0011.treat_unsealed_types_as_culture_sensitive", "true")
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }

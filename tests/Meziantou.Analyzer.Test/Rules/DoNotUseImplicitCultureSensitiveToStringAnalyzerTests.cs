@@ -692,7 +692,7 @@ class Test
     }
 
     [Fact]
-    public async Task Object_Concat_ReportMaybeCultureSensitive()
+    public async Task Object_Concat_TreatOpaqueRuntimeTypesAsCultureSensitive()
     {
         var sourceCode = """
 class Test
@@ -704,13 +704,13 @@ class Test
 }
 """;
         await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0075.report_maybe_culture_sensitive", "true")
+              .AddAnalyzerConfiguration("MA0075.treat_opaque_runtime_types_as_culture_sensitive", "true")
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task Object_InterpolatedString_ReportMaybeCultureSensitive()
+    public async Task Object_InterpolatedString_TreatOpaqueRuntimeTypesAsCultureSensitive()
     {
         var sourceCode = """
 class Test
@@ -722,7 +722,7 @@ class Test
 }
 """;
         await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0076.report_maybe_culture_sensitive", "true")
+              .AddAnalyzerConfiguration("MA0076.treat_opaque_runtime_types_as_culture_sensitive", "true")
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
@@ -819,6 +819,26 @@ class Value { }
     }
 
     [Fact]
+    public async Task NonSealedType_Concat_TreatUnsealedTypesAsCultureSensitive()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Value value)
+    {
+        _ = "Value: " + [|value|];
+    }
+}
+
+class Value { }
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0075.treat_unsealed_types_as_culture_sensitive", "true")
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NonSealedType_InterpolatedString_NoDiagnostic()
     {
         var sourceCode = """
@@ -833,6 +853,26 @@ class Test
 class Value { }
 """;
         await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonSealedType_InterpolatedString_TreatUnsealedTypesAsCultureSensitive()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Value value)
+    {
+        _ = $"Value: [|{value}|]";
+    }
+}
+
+class Value { }
+""";
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0076.treat_unsealed_types_as_culture_sensitive", "true")
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
