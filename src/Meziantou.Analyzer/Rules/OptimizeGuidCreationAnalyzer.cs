@@ -46,9 +46,7 @@ public sealed class OptimizeGuidCreationAnalyzer : DiagnosticAnalyzer
         if (!creation.Constructor.ContainingType.IsEqualTo(type))
             return;
 
-        if (creation.Arguments is [{ Value: { Type.SpecialType: SpecialType.System_String } argumentValue }] &&
-            argumentValue.TryGetConstantValue(out var constantValue, symbolContext.CancellationToken) &&
-            constantValue is string value)
+        if (creation.Arguments is [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }])
         {
             if (Guid.TryParse(value, out _))
             {
@@ -63,9 +61,7 @@ public sealed class OptimizeGuidCreationAnalyzer : DiagnosticAnalyzer
         if (!invocation.TargetMethod.ContainingType.IsEqualTo(guidType))
             return;
 
-        if (invocation is { TargetMethod.Name: "Parse", Arguments: [{ Value: { Type.SpecialType: SpecialType.System_String } argumentValue }] } &&
-            argumentValue.TryGetConstantValue(out var constantValue, context.CancellationToken) &&
-            constantValue is string value)
+        if (invocation is { TargetMethod.Name: "Parse", Arguments: [{ Value.Type.SpecialType: SpecialType.System_String, Value.ConstantValue: { HasValue: true, Value: string value } }] })
         {
             if (Guid.TryParse(value, out _))
             {
