@@ -652,7 +652,7 @@ class A
     }
 
     [Fact]
-    public async Task FormattableString_PolymorphicValues_ShouldReport()
+    public async Task FormattableString_Object_ShouldReport()
     {
         var sourceCode = """
 using System;
@@ -664,21 +664,137 @@ public static class Program
 
 class Test
 {
-    void A(object objectValue, IValue interfaceValue, IFormattable formattableValue, BaseValue baseValue, SealedValue sealedValue)
+    void A(object value)
     {
-        [|Formatter.Print($"Value: {objectValue}")|];
-        [|Formatter.Print($"Value: {interfaceValue}")|];
-        [|Formatter.Print($"Value: {formattableValue}")|];
-        [|Formatter.Print($"Value: {baseValue}")|];
-        Formatter.Print($"Value: {sealedValue}");
+        [|Formatter.Print($"Value: {value}")|];
+    }
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_Interface_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(IValue value)
+    {
+        [|Formatter.Print($"Value: {value}")|];
     }
 }
 
 interface IValue { }
 
-class BaseValue { }
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 
-sealed class SealedValue
+    [Fact]
+    public async Task FormattableString_IFormattable_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(IFormattable value)
+    {
+        [|Formatter.Print($"Value: {value}")|];
+    }
+}
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_NonSealedType_ShouldReport()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(Value value)
+    {
+        [|Formatter.Print($"Value: {value}")|];
+    }
+}
+
+class Value { }
+
+static class Formatter
+{
+    public static void Print(FormattableString value) => throw null;
+    public static void Print(IFormatProvider format, FormattableString value) => throw null;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_SealedNonFormattableType_NoDiagnostic()
+    {
+        var sourceCode = """
+using System;
+
+public static class Program
+{
+    public static void Main() { }
+}
+
+class Test
+{
+    void A(Value value)
+    {
+        Formatter.Print($"Value: {value}");
+    }
+}
+
+sealed class Value
 {
     public override string ToString() => string.Empty;
 }

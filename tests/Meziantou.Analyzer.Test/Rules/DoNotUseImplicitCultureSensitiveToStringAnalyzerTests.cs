@@ -658,40 +658,220 @@ class Sample : System.IFormattable
     }
 
     [Fact]
-    public async Task PolymorphicTypes()
+    public async Task Object_Concat()
     {
         var sourceCode = """
 class Test
 {
-    void A(object objectValue, IValue interfaceValue, System.IFormattable formattableValue, BaseValue baseValue, SealedValue sealedValue)
-    {
-        _ = "Value: " + [|objectValue|];
-        _ = "Value: " + [|interfaceValue|];
-        _ = "Value: " + [|formattableValue|];
-        _ = "Value: " + [|baseValue|];
-        _ = "Value: " + sealedValue;
-
-        _ = $"Value: [|{objectValue}|]";
-        _ = $"Value: [|{interfaceValue}|]";
-        _ = $"Value: [|{formattableValue}|]";
-        _ = $"Value: [|{baseValue}|]";
-        _ = $"Value: {sealedValue}";
-    }
-
-    void B<T>(T value)
+    void A(object value)
     {
         _ = "Value: " + [|value|];
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Object_InterpolatedString()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(object value)
+    {
+        _ = $"Value: [|{value}|]";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Interface_Concat()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(IValue value)
+    {
+        _ = "Value: " + [|value|];
+    }
+}
+
+interface IValue { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Interface_InterpolatedString()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(IValue value)
+    {
         _ = $"Value: [|{value}|]";
     }
 }
 
 interface IValue { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 
-class BaseValue { }
+    [Fact]
+    public async Task IFormattable_Concat()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(System.IFormattable value)
+    {
+        _ = "Value: " + [|value|];
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
 
-sealed class SealedValue
+    [Fact]
+    public async Task IFormattable_InterpolatedString()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(System.IFormattable value)
+    {
+        _ = $"Value: [|{value}|]";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonSealedType_Concat()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Value value)
+    {
+        _ = "Value: " + [|value|];
+    }
+}
+
+class Value { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NonSealedType_InterpolatedString()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Value value)
+    {
+        _ = $"Value: [|{value}|]";
+    }
+}
+
+class Value { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedNonFormattableType_Concat_NoDiagnostic()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Value value)
+    {
+        _ = "Value: " + value;
+    }
+}
+
+sealed class Value
 {
     public override string ToString() => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedNonFormattableType_InterpolatedString_NoDiagnostic()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Value value)
+    {
+        _ = $"Value: {value}";
+    }
+}
+
+sealed class Value
+{
+    public override string ToString() => string.Empty;
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnconstrainedTypeParameter_Concat()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T value)
+    {
+        _ = "Value: " + [|value|];
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task UnconstrainedTypeParameter_InterpolatedString()
+    {
+        var sourceCode = """
+class Test
+{
+    void A<T>(T value)
+    {
+        _ = $"Value: [|{value}|]";
+    }
 }
 """;
         await CreateProjectBuilder()
