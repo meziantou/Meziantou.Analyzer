@@ -23,6 +23,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsConfiguration = new(RuleIdentifiers.UseIFormatProviderParameter + ".exclude_tostring_methods", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> ConsiderNullableTypesConfiguration = new(RuleIdentifiers.UseIFormatProviderParameter + ".consider_nullable_types", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> ReportMaybeCultureSensitiveConfiguration = new(RuleIdentifiers.UseIFormatProviderParameter + ".report_maybe_culture_sensitive", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -52,7 +53,8 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 return;
 
             var options = MustUnwrapNullableTypes(context, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
-            if (!_cultureSensitiveContext.IsCultureSensitiveOperation(operation, options))
+            var reportMaybeCultureSensitive = context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, ReportMaybeCultureSensitiveConfiguration);
+            if (!ShouldReport(_cultureSensitiveContext.GetCultureSensitivity(operation, options), reportMaybeCultureSensitive))
                 return;
 
             if (_cultureSensitiveContext.FormatProviderSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.FormatProviderSymbol))
@@ -66,7 +68,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true), [_cultureSensitiveContext.FormatProviderSymbol]);
                 if (overload is not null)
                 {
-                    if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
+                    if (ShouldReport(_cultureSensitiveContext.GetCultureSensitivity(operation, CultureSensitiveOptions.None), reportMaybeCultureSensitive))
                     {
                         context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
                     }
@@ -103,7 +105,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false), [_cultureSensitiveContext.CultureInfoSymbol]);
                 if (overload is not null)
                 {
-                    if (_cultureSensitiveContext.IsCultureSensitiveOperation(operation, CultureSensitiveOptions.None))
+                    if (ShouldReport(_cultureSensitiveContext.GetCultureSensitivity(operation, CultureSensitiveOptions.None), reportMaybeCultureSensitive))
                     {
                         context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.CultureInfoSymbol.ToDisplayString());
                     }
@@ -130,6 +132,11 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, IOperation operation)
         {
             return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, ConsiderNullableTypesConfiguration);
+        }
+
+        private static bool ShouldReport(CultureSensitivity cultureSensitivity, bool reportMaybeCultureSensitive)
+        {
+            return cultureSensitivity == CultureSensitivity.CultureSensitive || (reportMaybeCultureSensitive && cultureSensitivity == CultureSensitivity.MaybeCultureSensitive);
         }
     }
 }

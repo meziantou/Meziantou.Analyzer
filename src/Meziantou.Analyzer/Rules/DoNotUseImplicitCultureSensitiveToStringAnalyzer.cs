@@ -43,6 +43,8 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
     private static readonly ConfigurationDefinition<bool> StringConcatConsiderNullableTypesConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".consider_nullable_types", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> StringInterpolationConsiderNullableTypesConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".consider_nullable_types", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> StringConcatReportMaybeCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".report_maybe_culture_sensitive", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> StringInterpolationReportMaybeCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".report_maybe_culture_sensitive", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".exclude_tostring_methods", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsInterpolationConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".exclude_tostring_methods", defaultValue: true);
 
@@ -98,12 +100,12 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (IsExcludedMethod(context, ExcludeToStringMethodsConfiguration, operation))
                 return;
 
-            if (!IsNonCultureSensitiveOperand(context, StringConcatRule, operation.LeftOperand))
+            if (ShouldReportCultureSensitiveOperand(context, StringConcatRule, operation.LeftOperand))
             {
                 context.ReportDiagnostic(StringConcatRule, operation.LeftOperand);
             }
 
-            if (!IsNonCultureSensitiveOperand(context, StringConcatRule, operation.RightOperand))
+            if (ShouldReportCultureSensitiveOperand(context, StringConcatRule, operation.RightOperand))
             {
                 context.ReportDiagnostic(StringConcatRule, operation.RightOperand);
             }
@@ -124,6 +126,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 return;
 
             var options = MustUnwrapNullableTypes(context, StringInterpolationRule, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
+            var reportMaybeCultureSensitive = MustReportMaybeCultureSensitive(context, StringInterpolationRule, operation);
 
             var parent = operation.Parent;
             if (parent is IConversionOperation conversionOperation)
@@ -140,7 +143,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 if (expression is null || type is null)
                     continue;
 
-                if (_cultureSensitiveContext.IsCultureSensitiveOperation(part, options | CultureSensitiveOptions.UseInvocationReturnType))
+                if (ShouldReport(_cultureSensitiveContext.GetCultureSensitivity(part, options | CultureSensitiveOptions.UseInvocationReturnType), reportMaybeCultureSensitive))
                 {
                     context.ReportDiagnostic(StringInterpolationRule, part);
                 }
@@ -163,14 +166,14 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             return false;
         }
 
-        private bool IsNonCultureSensitiveOperand(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operand)
+        private bool ShouldReportCultureSensitiveOperand(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operand)
         {
             if (operand is null)
-                return true;
+                return false;
 
             // Interpolated strings are analyzed by MA0076.
             if (operand is IInterpolatedStringOperation)
-                return true;
+                return false;
 
             // String concatenation inserts an implicit conversion to object for many value types.
             // Analyze the value before this conversion, but preserve explicitly object-typed values.
@@ -179,7 +182,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 : operand;
             var options = MustUnwrapNullableTypes(context, rule, operand) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
 
-            return !_cultureSensitiveContext.IsCultureSensitiveOperation(value, options | CultureSensitiveOptions.UseInvocationReturnType);
+            return ShouldReport(_cultureSensitiveContext.GetCultureSensitivity(value, options | CultureSensitiveOptions.UseInvocationReturnType), MustReportMaybeCultureSensitive(context, rule, operand));
         }
 
         private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
@@ -197,6 +200,28 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             }
 
             return false;
+        }
+
+        private static bool MustReportMaybeCultureSensitive(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
+        {
+            // Avoid an allocation when creating the key
+            if (StringConcatRule.Equals(rule))
+            {
+                Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString);
+                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringConcatReportMaybeCultureSensitiveConfiguration);
+            }
+            else if (StringInterpolationRule.Equals(rule))
+            {
+                Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation);
+                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringInterpolationReportMaybeCultureSensitiveConfiguration);
+            }
+
+            return false;
+        }
+
+        private static bool ShouldReport(CultureSensitivity cultureSensitivity, bool reportMaybeCultureSensitive)
+        {
+            return cultureSensitivity == CultureSensitivity.CultureSensitive || (reportMaybeCultureSensitive && cultureSensitivity == CultureSensitivity.MaybeCultureSensitive);
         }
     }
 }

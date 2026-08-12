@@ -658,7 +658,41 @@ class Sample : System.IFormattable
     }
 
     [Fact]
-    public async Task Object_Concat()
+    public async Task Object_Concat_NoDiagnostic()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(object value)
+    {
+        _ = "Value: " + value;
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Object_InterpolatedString_NoDiagnostic()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(object value)
+    {
+        _ = $"Value: {value}";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Object_Concat_ReportMaybeCultureSensitive()
     {
         var sourceCode = """
 class Test
@@ -670,12 +704,13 @@ class Test
 }
 """;
         await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0075.report_maybe_culture_sensitive", "true")
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task Object_InterpolatedString()
+    public async Task Object_InterpolatedString_ReportMaybeCultureSensitive()
     {
         var sourceCode = """
 class Test
@@ -687,19 +722,20 @@ class Test
 }
 """;
         await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0076.report_maybe_culture_sensitive", "true")
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task Interface_Concat()
+    public async Task Interface_Concat_NoDiagnostic()
     {
         var sourceCode = """
 class Test
 {
     void A(IValue value)
     {
-        _ = "Value: " + [|value|];
+        _ = "Value: " + value;
     }
 }
 
@@ -711,14 +747,14 @@ interface IValue { }
     }
 
     [Fact]
-    public async Task Interface_InterpolatedString()
+    public async Task Interface_InterpolatedString_NoDiagnostic()
     {
         var sourceCode = """
 class Test
 {
     void A(IValue value)
     {
-        _ = $"Value: [|{value}|]";
+        _ = $"Value: {value}";
     }
 }
 
@@ -764,14 +800,14 @@ class Test
     }
 
     [Fact]
-    public async Task NonSealedType_Concat()
+    public async Task NonSealedType_Concat_NoDiagnostic()
     {
         var sourceCode = """
 class Test
 {
     void A(Value value)
     {
-        _ = "Value: " + [|value|];
+        _ = "Value: " + value;
     }
 }
 
@@ -783,14 +819,14 @@ class Value { }
     }
 
     [Fact]
-    public async Task NonSealedType_InterpolatedString()
+    public async Task NonSealedType_InterpolatedString_NoDiagnostic()
     {
         var sourceCode = """
 class Test
 {
     void A(Value value)
     {
-        _ = $"Value: [|{value}|]";
+        _ = $"Value: {value}";
     }
 }
 
@@ -846,14 +882,14 @@ sealed class Value
     }
 
     [Fact]
-    public async Task UnconstrainedTypeParameter_Concat()
+    public async Task UnconstrainedTypeParameter_Concat_NoDiagnostic()
     {
         var sourceCode = """
 class Test
 {
     void A<T>(T value)
     {
-        _ = "Value: " + [|value|];
+        _ = "Value: " + value;
     }
 }
 """;
@@ -863,14 +899,14 @@ class Test
     }
 
     [Fact]
-    public async Task UnconstrainedTypeParameter_InterpolatedString()
+    public async Task UnconstrainedTypeParameter_InterpolatedString_NoDiagnostic()
     {
         var sourceCode = """
 class Test
 {
     void A<T>(T value)
     {
-        _ = $"Value: [|{value}|]";
+        _ = $"Value: {value}";
     }
 }
 """;

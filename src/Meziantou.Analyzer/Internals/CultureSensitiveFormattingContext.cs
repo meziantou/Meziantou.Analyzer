@@ -68,7 +68,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return (options & CultureSensitiveOptions.UnwrapNullableOfT) == CultureSensitiveOptions.UnwrapNullableOfT;
     }
 
-    public bool IsCultureSensitiveOperation(IOperation operation, CultureSensitiveOptions options)
+    public CultureSensitivity GetCultureSensitivity(IOperation operation, CultureSensitiveOptions options)
     {
         // Unwrap implicit conversion to Nullable<T>
         if (MustUnwrapNullableOfT(options) && operation is IConversionOperation { Conversion.IsNullable: true, Operand: var conversionOperand })
@@ -79,10 +79,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (operation is IInvocationOperation invocation)
         {
             if (_excludedMethods.Contains(invocation.TargetMethod))
-                return false;
+                return CultureSensitivity.CultureInsensitive;
 
             if (invocation.HasArgumentOfType(FormatProviderSymbol, inherits: true))
-                return false;
+                return CultureSensitivity.CultureInsensitive;
 
             var methodName = invocation.TargetMethod.Name;
             if (methodName is "ToString")
@@ -106,7 +106,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                     }
                 }
 
-                return IsCultureSensitiveType(invocation.TargetMethod.ContainingType, format, instance: invocation.Instance, options);
+                return GetCultureSensitivity(invocation.TargetMethod.ContainingType, format, instance: invocation.Instance, options);
             }
 
             if (methodName is "Parse" or "TryParse")
@@ -115,160 +115,161 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
                 // Guid.Parse / Guid.TryParse are culture insensitive
                 if (type.IsEqualTo(GuidSymbol))
-                    return false;
+                    return CultureSensitivity.CultureInsensitive;
 
                 // Char.Parse / Char.TryParse are culture insensitive
                 if (type.IsChar())
-                    return false;
+                    return CultureSensitivity.CultureInsensitive;
 
-                return IsCultureSensitiveType(type, format: null, instance: null, options);
+                return GetCultureSensitivity(type, format: null, instance: null, options);
             }
             else if (methodName is "Append" or "AppendLine" && invocation.TargetMethod.ContainingType.IsEqualTo(StringBuilderSymbol))
             {
                 // StringBuilder.AppendLine($"foo{bar}") when bar is a string
-                if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && !IsCultureSensitiveOperation(invocation.Arguments[0].Value, options))
-                    return false;
+                if (invocation.Arguments.Length == 1 && invocation.Arguments[0].Value.Type.IsEqualTo(StringBuilder_AppendInterpolatedStringHandlerSymbol) && GetCultureSensitivity(invocation.Arguments[0].Value, options) == CultureSensitivity.CultureInsensitive)
+                    return CultureSensitivity.CultureInsensitive;
             }
             else if (methodName is "AppendFormat" && invocation.TargetMethod.ContainingType.IsEqualTo(StringBuilderSymbol) && invocation.Arguments.Length > 0)
             {
                 if (invocation.Arguments.Length == 1)
-                    return false;
+                    return CultureSensitivity.CultureInsensitive;
 
                 if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Parameter?.Type is IArrayTypeSymbol && invocation.Arguments[1].Value is IArrayCreationOperation appendFormatArrayCreation)
                 {
                     var initializer = appendFormatArrayCreation.Initializer;
                     if (initializer is null)
-                        return true;
+                        return CultureSensitivity.CultureSensitive;
 
-                    return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                    return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
                 }
 #if ROSLYN_4_14_OR_GREATER
                 else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation appendFormatCollectionExpression)
                 {
-                    return appendFormatCollectionExpression.Elements.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                    return GetCultureSensitivity(appendFormatCollectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
                 }
 #endif
                 else
                 {
-                    return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
+                    return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversionOperations()), options);
                 }
             }
             else if (methodName is "Format" && invocation.TargetMethod.IsStatic && invocation.TargetMethod.ContainingType.IsString() && invocation.Arguments.Length > 0)
             {
                 if (invocation.TargetMethod.Parameters[0].Type.IsEqualTo(FormatProviderSymbol))
-                    return false;
+                    return CultureSensitivity.CultureInsensitive;
 
                 if (invocation.Arguments.Length == 1)
-                    return false;
+                    return CultureSensitivity.CultureInsensitive;
 
                 if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Parameter?.Type is IArrayTypeSymbol && invocation.Arguments[1].Value is IArrayCreationOperation arrayCreation)
                 {
                     var initializer = arrayCreation.Initializer;
                     if (initializer is null)
-                        return true;
+                        return CultureSensitivity.CultureSensitive;
 
-                    return initializer.ElementValues.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                    return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
                 }
 #if ROSLYN_4_14_OR_GREATER
                 else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation collectionExpression)
                 {
-                    return collectionExpression.Elements.Any(arg => IsCultureSensitiveOperation(arg.UnwrapImplicitConversionOperations(), options));
+                    return GetCultureSensitivity(collectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
                 }
 #endif
                 else
                 {
-                    return invocation.Arguments.Skip(1).Any(arg => IsCultureSensitiveOperation(arg.Value.UnwrapImplicitConversionOperations(), options));
+                    return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversionOperations()), options);
                 }
             }
 
-            // Check if all interpolated string arguments are culture-invariant
-            if (HasOnlyCultureInvariantInterpolatedStringArguments(invocation, options))
-                return false;
+            // Check interpolated string arguments that are formatted by the invocation.
+            var interpolatedStringArgumentCultureSensitivity = GetInterpolatedStringArgumentCultureSensitivity(invocation, options);
+            if (interpolatedStringArgumentCultureSensitivity is not null)
+                return interpolatedStringArgumentCultureSensitivity.Value;
 
             if ((options & CultureSensitiveOptions.UseInvocationReturnType) == CultureSensitiveOptions.UseInvocationReturnType)
-                return IsCultureSensitiveType(invocation.Type, options);
+                return GetCultureSensitivity(invocation.Type, options);
 
-            return true;
+            return CultureSensitivity.CultureSensitive;
         }
 
         if (operation is IInterpolatedStringHandlerCreationOperation handler)
-            return IsCultureSensitiveOperation(handler.Content, options);
+            return GetCultureSensitivity(handler.Content, options);
 
         if (operation is IInterpolatedStringAdditionOperation interpolatedStringAddition)
-            return IsCultureSensitiveOperation(interpolatedStringAddition.Left, options) || IsCultureSensitiveOperation(interpolatedStringAddition.Right, options);
+            return Combine(GetCultureSensitivity(interpolatedStringAddition.Left, options), GetCultureSensitivity(interpolatedStringAddition.Right, options));
 
         if (operation is IInterpolationOperation content)
-            return IsCultureSensitiveType(content.Expression.Type, content.FormatString, content.Expression, options);
+            return GetCultureSensitivity(content.Expression.Type, content.FormatString, content.Expression, options);
 
         if (operation is IInterpolatedStringTextOperation)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (operation is IInterpolatedStringAppendOperation append)
         {
             if (append.AppendCall is IInvocationOperation appendInvocation)
             {
                 if (appendInvocation.Arguments.Length == 1)
-                    return IsCultureSensitiveType(appendInvocation.Arguments[0].Value.Type, format: null, instance: null, options);
+                    return GetCultureSensitivity(appendInvocation.Arguments[0].Value.Type, format: null, instance: null, options);
 
                 if (appendInvocation.Arguments.Length == 2)
-                    return IsCultureSensitiveType(appendInvocation.Arguments[0].Value.Type, format: appendInvocation.Arguments[1].Value, instance: null, options);
+                    return GetCultureSensitivity(appendInvocation.Arguments[0].Value.Type, format: appendInvocation.Arguments[1].Value, instance: null, options);
 
                 // Unknown case
-                return true;
+                return CultureSensitivity.CultureSensitive;
             }
             else
             {
                 // Unknown case
-                return true;
+                return CultureSensitivity.CultureSensitive;
             }
         }
 
         if (operation is IConversionOperation interpolatedConversion && interpolatedConversion.Type.IsEqualTo(FormattableStringSymbol))
-            return IsCultureSensitiveOperation(interpolatedConversion.Operand, options);
+            return GetCultureSensitivity(interpolatedConversion.Operand, options);
 
         if (operation is IInterpolatedStringOperation interpolatedString)
         {
             if (interpolatedString.Parts.Length == 0)
-                return false;
+                return CultureSensitivity.CultureInsensitive;
 
+            var cultureSensitivity = CultureSensitivity.CultureInsensitive;
             foreach (var part in interpolatedString.Parts)
             {
-                if (IsCultureSensitiveOperation(part, options))
-                    return true;
+                cultureSensitivity = Combine(cultureSensitivity, GetCultureSensitivity(part, options));
             }
 
-            return false;
+            return cultureSensitivity;
         }
 
         if (operation is ILocalReferenceOperation localReference)
-            return IsCultureSensitiveType(localReference.Type, options);
+            return GetCultureSensitivity(localReference.Type, options);
 
         if (operation is IParameterReferenceOperation parameterReference)
-            return IsCultureSensitiveType(parameterReference.Type, options);
+            return GetCultureSensitivity(parameterReference.Type, options);
 
         if (operation is IMemberReferenceOperation memberReference)
-            return IsCultureSensitiveType(memberReference.Type, options);
+            return GetCultureSensitivity(memberReference.Type, options);
 
         if (operation is ILiteralOperation literal)
-            return IsCultureSensitiveType(literal.Type, format: null, literal, options);
+            return GetCultureSensitivity(literal.Type, format: null, literal, options);
 
         if (operation is IConversionOperation conversion)
-            return IsCultureSensitiveType(conversion.Type, format: null, instance: operation, options);
+            return GetCultureSensitivity(conversion.Type, format: null, instance: operation, options);
 
         if (operation is IObjectCreationOperation objectCreation)
-            return IsCultureSensitiveType(objectCreation.Type, format: null, instance: null, options);
+            return GetCultureSensitivity(objectCreation.Type, format: null, instance: null, options);
 
         if (operation is IDefaultValueOperation defaultValue)
-            return IsCultureSensitiveType(defaultValue.Type, format: null, instance: null, options);
+            return GetCultureSensitivity(defaultValue.Type, format: null, instance: null, options);
 
         if (operation is IArrayElementReferenceOperation arrayElementReference)
-            return IsCultureSensitiveType(arrayElementReference.Type, format: null, instance: null, options);
+            return GetCultureSensitivity(arrayElementReference.Type, format: null, instance: null, options);
 
         if (operation is IBinaryOperation binaryOperation)
-            return IsCultureSensitiveType(binaryOperation.Type, format: null, instance: null, options);
+            return GetCultureSensitivity(binaryOperation.Type, format: null, instance: null, options);
 
         // Unknown operation
-        return true;
+        return CultureSensitivity.CultureSensitive;
     }
 
     public bool IsInInterpolatedStringHandlerContext(IInterpolatedStringOperation operation)
@@ -333,10 +334,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return true;
     }
 
-    private bool IsCultureSensitiveType(ITypeSymbol? typeSymbol, CultureSensitiveOptions options)
+    private CultureSensitivity GetCultureSensitivity(ITypeSymbol? typeSymbol, CultureSensitiveOptions options)
     {
         if (typeSymbol is null)
-            return true;
+            return CultureSensitivity.MaybeCultureSensitive;
 
         if (MustUnwrapNullableOfT(options))
         {
@@ -344,62 +345,68 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         }
 
         if (typeSymbol.IsEnum())
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_Boolean)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_Byte)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_Char)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_String)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_UInt16)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_UInt32)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_UInt64)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_UIntPtr)
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsOrInheritFrom(StringBuilderSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsEqualTo(UInt128Symbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsEqualTo(GuidSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsEqualTo(VersionSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsEqualTo(UriSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsEqualTo(SystemWindowsFontStretchSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsOrInheritFrom(SystemWindowsMediaBrushSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsOrInheritFrom(NuGetVersioningSemanticVersionSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
-        // Formatting may use the runtime type. A type is culture-insensitive only when
-        // it is sealed and does not support culture-aware formatting.
-        return IsFormattableType(typeSymbol) || !typeSymbol.IsSealed;
+        if (IsFormattableType(typeSymbol))
+            return CultureSensitivity.CultureSensitive;
+
+        // A sealed type cannot use a more derived runtime type for formatting.
+        if (typeSymbol.IsSealed)
+            return CultureSensitivity.CultureInsensitive;
+
+        // Formatting may use a runtime type that supports culture-aware formatting.
+        return CultureSensitivity.MaybeCultureSensitive;
 
         bool IsFormattableType(ITypeSymbol type)
         {
@@ -531,10 +538,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return true;
     }
 
-    private bool IsCultureSensitiveType(ITypeSymbol? symbol, IOperation? format, IOperation? instance, CultureSensitiveOptions options)
+    private CultureSensitivity GetCultureSensitivity(ITypeSymbol? symbol, IOperation? format, IOperation? instance, CultureSensitiveOptions options)
     {
-        if (!IsCultureSensitiveType(symbol, options))
-            return false;
+        var cultureSensitivity = GetCultureSensitivity(symbol, options);
+        if (cultureSensitivity == CultureSensitivity.CultureInsensitive)
+            return CultureSensitivity.CultureInsensitive;
 
         var hasFormatString = format is { ConstantValue.HasValue: true };
         var formatString = format?.ConstantValue.Value as string;
@@ -542,27 +550,27 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (instance is not null)
         {
             if (IsConstantPositiveNumber(instance) && string.IsNullOrEmpty(formatString))
-                return false;
+                return CultureSensitivity.CultureInsensitive;
         }
 
         if (symbol.IsNumberType() && formatString is "B" or ['x', ..] or ['X', ..])
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
         if (symbol.IsDateTime() || symbol.IsEqualToAny(DateTimeOffsetSymbol, DateOnlySymbol, TimeOnlySymbol))
         {
             if (IsInvariantDateTimeFormat(format))
-                return false;
+                return CultureSensitivity.CultureInsensitive;
         }
         else if (symbol.IsEqualTo(TimeSpanSymbol))
         {
             if (IsInvariantTimeSpanFormat(format))
-                return false;
+                return CultureSensitivity.CultureInsensitive;
         }
 
         if (symbol is not null && !IsCultureSensitiveTypeUsingAttribute(symbol, hasFormatString, formatString))
-            return false;
+            return CultureSensitivity.CultureInsensitive;
 
-        return true;
+        return cultureSensitivity;
     }
 
     private static bool IsInvariantDateTimeFormat(IOperation? valueOperation)
@@ -626,9 +634,26 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return false;
     }
 
-    private bool HasOnlyCultureInvariantInterpolatedStringArguments(IInvocationOperation invocation, CultureSensitiveOptions options)
+    private CultureSensitivity GetCultureSensitivity(IEnumerable<IOperation> operations, CultureSensitiveOptions options)
+    {
+        var cultureSensitivity = CultureSensitivity.CultureInsensitive;
+        foreach (var operation in operations)
+        {
+            cultureSensitivity = Combine(cultureSensitivity, GetCultureSensitivity(operation, options));
+        }
+
+        return cultureSensitivity;
+    }
+
+    private static CultureSensitivity Combine(CultureSensitivity left, CultureSensitivity right)
+    {
+        return left > right ? left : right;
+    }
+
+    private CultureSensitivity? GetInterpolatedStringArgumentCultureSensitivity(IInvocationOperation invocation, CultureSensitiveOptions options)
     {
         var hasInterpolatedStringParam = false;
+        var cultureSensitivity = CultureSensitivity.CultureInsensitive;
 
         foreach (var argument in invocation.Arguments)
         {
@@ -639,15 +664,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             if (IsInterpolatedStringType(argumentType))
             {
                 hasInterpolatedStringParam = true;
-
-                // If any interpolated string argument is culture-sensitive, return false
-                if (IsCultureSensitiveOperation(argument.Value, options))
-                    return false;
+                cultureSensitivity = Combine(cultureSensitivity, GetCultureSensitivity(argument.Value, options));
             }
         }
 
-        // Return true only if we found interpolated string parameters and all were culture-invariant
-        return hasInterpolatedStringParam;
+        return hasInterpolatedStringParam ? cultureSensitivity : null;
     }
 
     private bool IsInterpolatedStringType(ITypeSymbol typeSymbol)
