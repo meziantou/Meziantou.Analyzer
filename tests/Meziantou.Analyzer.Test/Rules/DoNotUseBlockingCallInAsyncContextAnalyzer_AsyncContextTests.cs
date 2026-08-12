@@ -19,6 +19,32 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    public async Task SemaphoreSlim_Wait_FieldTimeoutFromOtherSyntaxTree()
+    {
+        var builder = CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+
+                partial class Test
+                {
+                    public async Task A(SemaphoreSlim semaphore)
+                    {
+                        semaphore.Wait(Timeout);
+                    }
+                }
+                """);
+        builder.ApiReferences.Add("""
+            partial class Test
+            {
+                private readonly int Timeout = 0;
+            }
+            """);
+
+        await builder.ValidateAsync();
+    }
+
+    [Fact]
     public async Task Async_Wait_Diagnostic()
     {
         await CreateProjectBuilder()

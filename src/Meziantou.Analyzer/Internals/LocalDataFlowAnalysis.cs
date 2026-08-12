@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -103,7 +104,12 @@ internal static class LocalDataFlowAnalysis
         foreach (var syntaxReference in local.DeclaringSyntaxReferences)
         {
             if (syntaxReference.GetSyntax(cancellationToken) is VariableDeclaratorSyntax { Initializer.Value: { } value })
-                return semanticModel.GetOperation(value, cancellationToken);
+            {
+                if (!TryGetSemanticModel(semanticModel, value, out var initializerSemanticModel))
+                    return null;
+
+                return initializerSemanticModel.GetOperation(value, cancellationToken);
+            }
         }
 
         return null;
@@ -127,7 +133,10 @@ internal static class LocalDataFlowAnalysis
             if (HasAssignmentOutsideInitializer(semanticModel, field, value, cancellationToken))
                 return null;
 
-            return semanticModel.GetOperation(value, cancellationToken);
+            if (!TryGetSemanticModel(semanticModel, value, out var initializerSemanticModel))
+                return null;
+
+            return initializerSemanticModel.GetOperation(value, cancellationToken);
         }
 
         return null;
@@ -151,7 +160,10 @@ internal static class LocalDataFlowAnalysis
             if (HasAssignmentOutsideInitializer(semanticModel, property, value, cancellationToken))
                 return null;
 
-            return semanticModel.GetOperation(value, cancellationToken);
+            if (!TryGetSemanticModel(semanticModel, value, out var initializerSemanticModel))
+                return null;
+
+            return initializerSemanticModel.GetOperation(value, cancellationToken);
         }
 
         return null;
@@ -166,10 +178,13 @@ internal static class LocalDataFlowAnalysis
 
             foreach (var assignment in typeDeclaration.DescendantNodes().OfType<AssignmentExpressionSyntax>())
             {
-                if (initializer.Span.Contains(assignment.Span))
+                if (assignment.SyntaxTree == initializer.SyntaxTree && initializer.Span.Contains(assignment.Span))
                     continue;
 
-                var targetSymbol = semanticModel.GetSymbolInfo(assignment.Left, cancellationToken).Symbol;
+                if (!TryGetSemanticModel(semanticModel, assignment, out var assignmentSemanticModel))
+                    return true;
+
+                var targetSymbol = assignmentSemanticModel.GetSymbolInfo(assignment.Left, cancellationToken).Symbol;
                 if (targetSymbol.IsEqualTo(symbol))
                     return true;
             }
@@ -190,6 +205,9 @@ internal static class LocalDataFlowAnalysis
 
     private static bool HasWriteBetween(SemanticModel semanticModel, ISymbol symbol, SyntaxNode source, SyntaxNode destination, CancellationToken cancellationToken)
     {
+        if (source.SyntaxTree != destination.SyntaxTree)
+            return true;
+
         if (!TryGetStatementRange(source, destination, out var firstStatement, out var lastStatement))
             return true;
 
@@ -210,6 +228,9 @@ internal static class LocalDataFlowAnalysis
 
     private static bool HasWriteBetweenBySyntax(SemanticModel semanticModel, ISymbol symbol, SyntaxNode source, SyntaxNode destination, CancellationToken cancellationToken)
     {
+        if (source.SyntaxTree != destination.SyntaxTree)
+            return true;
+
         var sourceEnd = source.Span.End;
         var destinationStart = destination.SpanStart;
         foreach (var assignment in destination.SyntaxTree.GetRoot(cancellationToken).DescendantNodes())
@@ -236,6 +257,24 @@ internal static class LocalDataFlowAnalysis
         }
 
         return false;
+    }
+
+    private static bool TryGetSemanticModel(SemanticModel semanticModel, SyntaxNode syntax, [NotNullWhen(true)] out SemanticModel? result)
+    {
+        if (semanticModel.SyntaxTree == syntax.SyntaxTree)
+        {
+            result = semanticModel;
+            return true;
+        }
+
+        if (!semanticModel.Compilation.ContainsSyntaxTree(syntax.SyntaxTree))
+        {
+            result = null;
+            return false;
+        }
+
+        result = semanticModel.Compilation.GetSemanticModel(syntax.SyntaxTree);
+        return true;
     }
 
     private static bool TryGetStatementRange(SyntaxNode source, SyntaxNode destination, out SyntaxNode? firstStatement, out SyntaxNode? lastStatement)

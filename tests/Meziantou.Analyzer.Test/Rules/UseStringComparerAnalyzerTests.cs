@@ -27,6 +27,38 @@ public sealed class UseStringComparerAnalyzerTests
 #endif
 
     [Fact]
+    public async Task MethodOnSetStoredInPrivateReadonlyFieldInOtherSyntaxTree_ShouldNotReportDiagnostic()
+    {
+        var builder = CreateProjectBuilder()
+              .WithSourceCode("""
+                partial class TypeName
+                {
+                    public void Test()
+                    {
+                        _ = Values.Contains("a");
+                    }
+                }
+                """);
+        builder.ApiReferences.Add("""
+            interface IContainer
+            {
+                bool Contains(string value);
+            }
+
+            sealed class CustomSet : System.Collections.Generic.HashSet<string>, IContainer
+            {
+            }
+
+            partial class TypeName
+            {
+                private readonly IContainer Values = new CustomSet();
+            }
+            """);
+
+        await builder.ValidateAsync();
+    }
+
+    [Fact]
     public async Task HashSet_Int32_ShouldNotReportDiagnostic()
     {
         const string SourceCode = """
