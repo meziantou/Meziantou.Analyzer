@@ -231,6 +231,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0210](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0210.md)|Performance|Use in keyword to call the in overload|ℹ️|❌|✔️|❌|
 |[MA0211](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0211.md)|Style|Use multi-line syntax for XML summary comments|ℹ️|❌|✔️|❌|
 |[MA0212](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0212.md)|Usage|Use MemoryMarshal.GetReference instead of indexing at 0|⚠️|❌|✔️|❌|
+|[MA0213](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0213.md)|Style|Simplify negated boolean expression|ℹ️|❌|✔️|❌|
 
 <!-- rules -->
 
