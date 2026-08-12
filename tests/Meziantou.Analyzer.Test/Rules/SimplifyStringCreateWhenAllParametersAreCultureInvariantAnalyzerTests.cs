@@ -338,7 +338,42 @@ class TypeName
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_Object_NoDiagnostic()
+    public async Task StringCreateWithInvariantCulture_Object_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(object value)
+    {
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+    }
+}
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(object value)
+    {
+        _ = $"Value: {value}";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_Object_TreatOpaqueRuntimeTypesAsCultureSensitive_NoDiagnostic()
     {
         const string SourceCode = """
 using System;
@@ -353,6 +388,7 @@ class TypeName
 }
 """;
         await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0185.treat_opaque_runtime_types_as_culture_sensitive", "true")
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)
@@ -360,7 +396,7 @@ class TypeName
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_Interface_NoDiagnostic()
+    public async Task StringCreateWithInvariantCulture_Interface_ShouldReport()
     {
         const string SourceCode = """
 using System;
@@ -370,7 +406,21 @@ class TypeName
 {
     public void Test(IValue value)
     {
-        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+    }
+}
+
+interface IValue { }
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(IValue value)
+    {
+        _ = $"Value: {value}";
     }
 }
 
@@ -380,6 +430,7 @@ interface IValue { }
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 
@@ -406,7 +457,46 @@ class TypeName
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_NonSealedType_NoDiagnostic()
+    public async Task StringCreateWithInvariantCulture_NonSealedType_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(Value value)
+    {
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+    }
+}
+
+class Value { }
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(Value value)
+    {
+        _ = $"Value: {value}";
+    }
+}
+
+class Value { }
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StringCreateWithInvariantCulture_NonSealedType_TreatUnsealedTypesAsCultureSensitive_NoDiagnostic()
     {
         const string SourceCode = """
 using System;
@@ -423,6 +513,7 @@ class TypeName
 class Value { }
 """;
         await CreateProjectBuilder()
+              .AddAnalyzerConfiguration("MA0185.treat_unsealed_types_as_culture_sensitive", "true")
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)
@@ -430,7 +521,7 @@ class Value { }
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_UnconstrainedTypeParameter_NoDiagnostic()
+    public async Task StringCreateWithInvariantCulture_UnconstrainedTypeParameter_ShouldReport()
     {
         const string SourceCode = """
 using System;
@@ -440,7 +531,19 @@ class TypeName
 {
     public void Test<T>(T value)
     {
-        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+    }
+}
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test<T>(T value)
+    {
+        _ = $"Value: {value}";
     }
 }
 """;
@@ -448,6 +551,7 @@ class TypeName
               .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
               .WithTargetFramework(TargetFramework.Net6_0)
               .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
 

@@ -43,8 +43,10 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
 
     private static readonly ConfigurationDefinition<bool> StringConcatConsiderNullableTypesConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".consider_nullable_types", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> StringInterpolationConsiderNullableTypesConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".consider_nullable_types", defaultValue: true);
-    private static readonly ConfigurationDefinition<bool> StringConcatReportMaybeCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".report_maybe_culture_sensitive", defaultValue: false);
-    private static readonly ConfigurationDefinition<bool> StringInterpolationReportMaybeCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".report_maybe_culture_sensitive", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> StringConcatTreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".treat_opaque_runtime_types_as_culture_sensitive", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> StringInterpolationTreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".treat_opaque_runtime_types_as_culture_sensitive", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> StringConcatTreatUnsealedTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".treat_unsealed_types_as_culture_sensitive", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> StringInterpolationTreatUnsealedTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".treat_unsealed_types_as_culture_sensitive", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".exclude_tostring_methods", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsInterpolationConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".exclude_tostring_methods", defaultValue: true);
 
@@ -125,8 +127,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (_cultureSensitiveContext.IsInInterpolatedStringHandlerContext(operation))
                 return;
 
-            var options = MustUnwrapNullableTypes(context, StringInterpolationRule, operation) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
-            var reportMaybeCultureSensitive = MustReportMaybeCultureSensitive(context, StringInterpolationRule, operation);
+            var options = GetOptions(context, StringInterpolationRule, operation);
 
             var parent = operation.Parent;
             if (parent is IConversionOperation conversionOperation)
@@ -143,7 +144,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 if (expression is null || type is null)
                     continue;
 
-                if (ShouldReport(_cultureSensitiveContext.GetCultureSensitivity(part, options | CultureSensitiveOptions.UseInvocationReturnType), reportMaybeCultureSensitive))
+                if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(part, options | CultureSensitiveOptions.UseInvocationReturnType), options))
                 {
                     context.ReportDiagnostic(StringInterpolationRule, part);
                 }
@@ -180,48 +181,46 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             var value = operand is IConversionOperation { IsImplicit: true, Type: { SpecialType: SpecialType.System_Object }, Operand.Type: not null } conversion
                 ? conversion.Operand
                 : operand;
-            var options = MustUnwrapNullableTypes(context, rule, operand) ? CultureSensitiveOptions.UnwrapNullableOfT : CultureSensitiveOptions.None;
+            var options = GetOptions(context, rule, operand);
 
-            return ShouldReport(_cultureSensitiveContext.GetCultureSensitivity(value, options | CultureSensitiveOptions.UseInvocationReturnType), MustReportMaybeCultureSensitive(context, rule, operand));
+            return CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(value, options | CultureSensitiveOptions.UseInvocationReturnType), options);
         }
 
-        private static bool MustUnwrapNullableTypes(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
+        private static CultureSensitiveOptions GetOptions(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
         {
+            var options = CultureSensitiveOptions.None;
+
             // Avoid an allocation when creating the key
             if (StringConcatRule.Equals(rule))
             {
                 Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString);
-                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringConcatConsiderNullableTypesConfiguration);
+                if (context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringConcatConsiderNullableTypesConfiguration))
+                    options |= CultureSensitiveOptions.UnwrapNullableOfT;
+
+                if (context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringConcatTreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration))
+                    options |= CultureSensitiveOptions.TreatOpaqueRuntimeTypesAsCultureSensitive;
+
+                if (context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringConcatTreatUnsealedTypesAsCultureSensitiveConfiguration))
+                    options |= CultureSensitiveOptions.TreatUnsealedTypesAsCultureSensitive;
+
+                return options;
             }
             else if (StringInterpolationRule.Equals(rule))
             {
                 Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation);
-                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringInterpolationConsiderNullableTypesConfiguration);
+                if (context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringInterpolationConsiderNullableTypesConfiguration))
+                    options |= CultureSensitiveOptions.UnwrapNullableOfT;
+
+                if (context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringInterpolationTreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration))
+                    options |= CultureSensitiveOptions.TreatOpaqueRuntimeTypesAsCultureSensitive;
+
+                if (context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringInterpolationTreatUnsealedTypesAsCultureSensitiveConfiguration))
+                    options |= CultureSensitiveOptions.TreatUnsealedTypesAsCultureSensitive;
+
+                return options;
             }
 
-            return false;
-        }
-
-        private static bool MustReportMaybeCultureSensitive(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operation)
-        {
-            // Avoid an allocation when creating the key
-            if (StringConcatRule.Equals(rule))
-            {
-                Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString);
-                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringConcatReportMaybeCultureSensitiveConfiguration);
-            }
-            else if (StringInterpolationRule.Equals(rule))
-            {
-                Debug.Assert(rule.Id == RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation);
-                return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringInterpolationReportMaybeCultureSensitiveConfiguration);
-            }
-
-            return false;
-        }
-
-        private static bool ShouldReport(CultureSensitivity cultureSensitivity, bool reportMaybeCultureSensitive)
-        {
-            return cultureSensitivity == CultureSensitivity.CultureSensitive || (reportMaybeCultureSensitive && cultureSensitivity == CultureSensitivity.MaybeCultureSensitive);
+            return options;
         }
     }
 }

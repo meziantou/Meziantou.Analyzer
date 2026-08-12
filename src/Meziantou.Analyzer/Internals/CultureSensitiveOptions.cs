@@ -6,4 +6,6 @@ internal enum CultureSensitiveOptions
     None,
     UnwrapNullableOfT = 1,
     UseInvocationReturnType = 2,
+    TreatOpaqueRuntimeTypesAsCultureSensitive = 4,
+    TreatUnsealedTypesAsCultureSensitive = 8,
 }
