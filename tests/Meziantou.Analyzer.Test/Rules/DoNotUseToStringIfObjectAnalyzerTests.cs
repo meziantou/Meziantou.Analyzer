@@ -140,6 +140,157 @@ sealed class Derived : Sample {  }
     }
 
     [Fact]
+    public async Task SealedType_FlowedFromLocalInitializer()
+    {
+        var sourceCode = """
+Sample a = new Derived();
+[|a.ToString()|];
+
+class Sample { }
+sealed class Derived : Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_FlowedFromLocalAssignment()
+    {
+        var sourceCode = """
+Sample a;
+a = new Derived();
+[|a.ToString()|];
+
+class Sample { }
+sealed class Derived : Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_FlowedFromLocalInitializer_Reassigned()
+    {
+        var sourceCode = """
+Sample a = new Derived();
+a = Get();
+a.ToString();
+
+Sample Get() => new Sample();
+
+class Sample { }
+sealed class Derived : Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_FlowedFromPrivateReadonlyFieldInitializer()
+    {
+        var sourceCode = """
+class Test
+{
+    private readonly Sample _value = new Derived();
+
+    void M()
+    {
+        [|_value.ToString()|];
+    }
+}
+
+class Sample { }
+sealed class Derived : Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_PrivateReadonlyFieldInitializer_AssignedInConstructor()
+    {
+        var sourceCode = """
+class Test
+{
+    private readonly Sample _value = new Derived();
+
+    public Test()
+    {
+        _value = new Sample();
+    }
+
+    void M()
+    {
+        _value.ToString();
+    }
+}
+
+class Sample { }
+sealed class Derived : Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_FlowedFromPrivateGetOnlyPropertyInitializer()
+    {
+        var sourceCode = """
+class Test
+{
+    private Sample Value { get; } = new Derived();
+
+    void M()
+    {
+        [|Value.ToString()|];
+    }
+}
+
+class Sample { }
+sealed class Derived : Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SealedType_PrivateGetOnlyPropertyInitializer_AssignedInConstructor()
+    {
+        var sourceCode = """
+class Test
+{
+    private Sample Value { get; } = new Derived();
+
+    public Test()
+    {
+        Value = new Sample();
+    }
+
+    void M()
+    {
+        Value.ToString();
+    }
+}
+
+class Sample { }
+sealed class Derived : Sample { }
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task SealedType_InheritsBaseToStringOverride()
     {
         var sourceCode = """

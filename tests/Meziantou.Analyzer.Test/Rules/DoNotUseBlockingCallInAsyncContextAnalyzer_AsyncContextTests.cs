@@ -2433,6 +2433,26 @@ class Sample
     }
 
     [Fact]
+    public async Task SemaphoreSlim_Wait_FlowedZero_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Threading;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    public async Task A()
+                    {
+                        var semaphore = new SemaphoreSlim(1);
+                        var timeout = 0;
+                        semaphore.Wait(timeout);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task SemaphoreSlim_Wait_TimeSpanZero_NoDiagnostic()
     {
         await CreateProjectBuilder()

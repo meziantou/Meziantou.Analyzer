@@ -58,7 +58,7 @@ public sealed class UseArrayEmptyAnalyzerTests
     }
 
     [Fact]
-    public async Task Length_ShouldNotReportError()
+    public async Task Length_FlowedFromLocal_ShouldReportError()
     {
         const string SourceCode = """
             class TestClass
@@ -66,12 +66,22 @@ public sealed class UseArrayEmptyAnalyzerTests
                 void Test()
                 {
                     int length = 0;
-                    var a = new int[length];
+                    var a = [|new int[length]|];
                 }
             }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith("""
+            class TestClass
+            {
+                void Test()
+                {
+                    int length = 0;
+                    var a = System.Array.Empty<int>();
+                }
+            }
+            """)
               .ValidateAsync();
     }
 

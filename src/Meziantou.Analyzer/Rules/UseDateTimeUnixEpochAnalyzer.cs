@@ -65,7 +65,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         public void AnalyzeDateTimeObjectCreation(OperationAnalysisContext context)
         {
             var operation = (IObjectCreationOperation)context.Operation;
-            if (IsDateTimeUnixEpoch(operation))
+            if (IsDateTimeUnixEpoch(operation, context.CancellationToken))
             {
                 context.ReportDiagnostic(DateTimeRule, operation);
             }
@@ -86,7 +86,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
 
                 if (operation.Arguments.Length == 1)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L]))
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L], context.CancellationToken))
                         return true;
 
                     if (IsUnixEpochProperty(operation.Arguments[0]))
@@ -94,7 +94,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
                 }
                 else if (operation.Arguments.Length == 2)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L]) && IsTimeSpanZero(operation.Arguments[1]))
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[1]))
                         return true;
 
                     if (IsUnixEpochProperty(operation.Arguments[0]) && IsTimeSpanZero(operation.Arguments[1]))
@@ -102,17 +102,17 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
                 }
                 else if (operation.Arguments.Length == 7)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[6]))
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[6]))
                         return true;
                 }
                 else if (operation.Arguments.Length == 8)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 7), [1970, 1, 1, 0, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[7]))
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 7), [1970, 1, 1, 0, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[7]))
                         return true;
                 }
                 else if (operation.Arguments.Length == 9)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 8), [1970, 1, 1, 0, 0, 0, 0, 0]) && IsTimeSpanZero(operation.Arguments[8]))
+                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 8), [1970, 1, 1, 0, 0, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[8]))
                         return true;
                 }
 
@@ -131,57 +131,57 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private bool IsDateTimeUnixEpoch(IObjectCreationOperation operation)
+        private bool IsDateTimeUnixEpoch(IObjectCreationOperation operation, CancellationToken cancellationToken)
         {
             if (!operation.Type.IsEqualTo(_dateTimeSymbol))
                 return false;
 
             if (operation.Arguments.Length == 1)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L], cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 2)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L]) && IsDateTimeKindUtc(operation.Arguments[1]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L], cancellationToken) && IsDateTimeKindUtc(operation.Arguments[1], cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 3)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1], cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 6)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1, 0, 0, 0]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1, 0, 0, 0], cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 7)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0]) && IsDateTimeKindUtc(operation.Arguments[6]))
+                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0], cancellationToken) && IsDateTimeKindUtc(operation.Arguments[6], cancellationToken))
                     return true;
             }
 
             return false;
         }
 
-        private bool IsDateTimeKindUtc(IArgumentOperation argument)
+        private bool IsDateTimeKindUtc(IArgumentOperation argument, CancellationToken cancellationToken)
         {
             if (_dateTimeKindSymbol is null)
                 return false;
 
-            return argument.Value.ConstantValue.HasValue && (DateTimeKind)argument.Value.ConstantValue.Value! == DateTimeKind.Utc;
+            return argument.Value.TryGetConstantValue(out var value, cancellationToken) && (DateTimeKind)value! == DateTimeKind.Utc;
         }
 
-        private static bool ArgumentsEquals(ReadOnlySpan<IArgumentOperation> arguments, object[] expectedValues)
+        private static bool ArgumentsEquals(ReadOnlySpan<IArgumentOperation> arguments, object[] expectedValues, CancellationToken cancellationToken)
         {
             for (var i = 0; i < arguments.Length; i++)
             {
                 var argument = arguments[i];
-                if (!argument.Value.ConstantValue.HasValue)
+                if (!argument.Value.TryGetConstantValue(out var value, cancellationToken))
                     return false;
 
-                if (!Equals(argument.Value.ConstantValue.Value, expectedValues[i]))
+                if (!Equals(value, expectedValues[i]))
                     return false;
             }
 
