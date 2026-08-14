@@ -61,31 +61,40 @@ public sealed class UseAwaitInsteadOfReturningTaskFixer : CodeFixProvider
             newFunction = function.ReplaceNode(value, awaitExpression);
         }
 
-        newFunction = AddAsyncModifier(newFunction, generator);
+        newFunction = AddAsyncModifier(newFunction);
         editor.ReplaceNode(function, newFunction.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 
-    private static SyntaxNode AddAsyncModifier(SyntaxNode function, SyntaxGenerator generator)
+    private static SyntaxNode AddAsyncModifier(SyntaxNode function)
     {
+        var asyncKeyword = Token(SyntaxKind.AsyncKeyword);
+
         switch (function)
         {
-            case MethodDeclarationSyntax:
-            case LocalFunctionStatementSyntax:
-                return generator.WithModifiers(function, generator.GetModifiers(function).WithAsync(isAsync: true));
+            case MethodDeclarationSyntax method:
+                return method.Modifiers.Count > 0
+                    ? method.WithModifiers(method.Modifiers.Add(asyncKeyword.WithTrailingTrivia(Space)))
+                    : method.WithReturnType(method.ReturnType.WithoutLeadingTrivia())
+                        .WithModifiers(TokenList(asyncKeyword.WithLeadingTrivia(method.ReturnType.GetLeadingTrivia()).WithTrailingTrivia(Space)));
+
+            case LocalFunctionStatementSyntax localFunction:
+                return localFunction.Modifiers.Count > 0
+                    ? localFunction.WithModifiers(localFunction.Modifiers.Add(asyncKeyword.WithTrailingTrivia(Space)))
+                    : localFunction.WithReturnType(localFunction.ReturnType.WithoutLeadingTrivia())
+                        .WithModifiers(TokenList(asyncKeyword.WithLeadingTrivia(localFunction.ReturnType.GetLeadingTrivia()).WithTrailingTrivia(Space)));
 
             case ParenthesizedLambdaExpressionSyntax or SimpleLambdaExpressionSyntax or AnonymousMethodExpressionSyntax:
                 {
-                    var leadingTrivia = function.GetLeadingTrivia();
-                    var asyncKeyword = Token(SyntaxKind.AsyncKeyword)
-                        .WithLeadingTrivia(leadingTrivia)
+                    var lambdaAsyncKeyword = asyncKeyword
+                        .WithLeadingTrivia(function.GetLeadingTrivia())
                         .WithTrailingTrivia(Space);
 
                     return function switch
                     {
-                        ParenthesizedLambdaExpressionSyntax lambda => lambda.WithoutLeadingTrivia().WithAsyncKeyword(asyncKeyword),
-                        SimpleLambdaExpressionSyntax lambda => lambda.WithoutLeadingTrivia().WithAsyncKeyword(asyncKeyword),
-                        AnonymousMethodExpressionSyntax anonymousMethod => anonymousMethod.WithoutLeadingTrivia().WithAsyncKeyword(asyncKeyword),
+                        ParenthesizedLambdaExpressionSyntax lambda => lambda.WithoutLeadingTrivia().WithAsyncKeyword(lambdaAsyncKeyword),
+                        SimpleLambdaExpressionSyntax lambda => lambda.WithoutLeadingTrivia().WithAsyncKeyword(lambdaAsyncKeyword),
+                        AnonymousMethodExpressionSyntax anonymousMethod => anonymousMethod.WithoutLeadingTrivia().WithAsyncKeyword(lambdaAsyncKeyword),
                         _ => function,
                     };
                 }
