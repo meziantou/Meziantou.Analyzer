@@ -371,6 +371,25 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public async Task HashSet_String_CollectionExpression_WithElements_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = ["a", "b"];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task FrozenSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
         await CreateProjectBuilder()
