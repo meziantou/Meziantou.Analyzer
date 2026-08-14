@@ -2,7 +2,7 @@
 |Id|Category|Description|Severity|Is enabled|Code fix|Configurable|
 |--|--------|-----------|:------:|:--------:|:------:|:----------:|
 |[MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md)|Usage|StringComparison is missing|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
-|[MA0002](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0002.md)|Usage|IEqualityComparer\<string\> or IComparer\<string\> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|<span title='MA0002.exclude_query_operator_syntaxes&#xA;MA0002.report_collection_expressions'>✔️</span>|
+|[MA0002](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0002.md)|Usage|IEqualityComparer\<string\> or IComparer\<string\> is missing|<span title='Warning'>⚠️</span>|✔️|✔️|<span title='MA0002.exclude_query_operator_syntaxes&#xA;MA0002.report_collection_expressions&#xA;MA0002.report_only_non_ordinal'>✔️</span>|
 |[MA0003](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0003.md)|Style|Add parameter name to improve readability|<span title='Info'>ℹ️</span>|✔️|✔️|<span title='MA0003.excluded_methods&#xA;MA0003.excluded_methods_regex&#xA;MA0003.expression_kinds&#xA;MA0003.minimum_method_parameters'>✔️</span>|
 |[MA0004](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0004.md)|Usage|Use Task.ConfigureAwait|<span title='Warning'>⚠️</span>|✔️|✔️|<span title='MA0004.report'>✔️</span>|
 |[MA0005](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0005.md)|Performance|Use Array.Empty\<T\>()|<span title='Warning'>⚠️</span>|✔️|✔️|❌|

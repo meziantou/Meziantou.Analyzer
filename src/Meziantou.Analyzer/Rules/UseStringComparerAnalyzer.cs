@@ -42,6 +42,48 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         { "ToLookup", 1 },
     };
 
+    // Methods whose default string comparison is ordinal (equality-based). Ordering methods
+    // (Order/OrderBy/OrderByDescending/ThenBy/ThenByDescending) are intentionally excluded because
+    // their default is Comparer<string>.Default (= StringComparer.CurrentCulture, culture-sensitive).
+    private static readonly HashSet<string> KnownOrdinalMethodNames = new(StringComparer.Ordinal)
+    {
+        // System.Linq.Enumerable / System.Linq.Queryable (methods taking IEqualityComparer<string>).
+        // Ordering methods (Order/OrderBy/OrderByDescending/OrderDescending/ThenBy/ThenByDescending) and
+        // Min/Max/MinBy/MaxBy take IComparer<string> (culture-sensitive) and are intentionally excluded.
+        "AggregateBy",
+        "Contains",
+        "CountBy",
+        "Distinct",
+        "DistinctBy",
+        "Except",
+        "ExceptBy",
+        "GroupBy",
+        "GroupJoin",
+        "Intersect",
+        "IntersectBy",
+        "Join",
+        "LeftJoin",
+        "RightJoin",
+        "SequenceEqual",
+        "ToDictionary",
+        "ToHashSet",
+        "ToLookup",
+        "Union",
+        "UnionBy",
+
+        // System.Collections.Immutable / System.Collections.Frozen factory methods. These names also
+        // exist on the Sorted variants (IComparer<string>, culture-sensitive), but those are excluded
+        // by scoping to the containers in BuildKnownOrdinalContainerTypes.
+        "Create",
+        "CreateBuilder",
+        "CreateRange",
+        "CreateRangeWithOverwrite",
+        "ToImmutableDictionary",
+        "ToImmutableHashSet",
+        "ToFrozenDictionary",
+        "ToFrozenSet",
+    };
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseStringComparer,
         title: "IEqualityComparer<string> or IComparer<string> is missing",
@@ -53,6 +95,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparer));
 
     private static readonly ConfigurationDefinition<bool> ExcludeQueryOperatorSyntaxesConfiguration = new(Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> ReportOnlyNonOrdinalConfiguration = new(Rule.Id + ".report_only_non_ordinal", defaultValue: false);
 #if ROSLYN_4_14_OR_GREATER
     private static readonly ConfigurationDefinition<bool> ReportCollectionExpressionsConfiguration = new(Rule.Id + ".report_collection_expressions", defaultValue: false);
 #endif
@@ -80,6 +123,15 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         private readonly OverloadFinder _overloadFinder = new(compilation);
         private readonly OperationUtilities _operationUtilities = new(compilation);
 
+        // Types whose default string comparison is ordinal (equality-based collections). Ordering
+        // collections (SortedDictionary/SortedList/SortedSet) are intentionally excluded because their
+        // default is Comparer<string>.Default (= StringComparer.CurrentCulture, culture-sensitive).
+        private readonly HashSet<INamedTypeSymbol> _knownOrdinalTypes = BuildKnownOrdinalTypes(compilation);
+
+        // Static classes hosting the known-ordinal methods, used to avoid suppressing unrelated
+        // user-defined methods that happen to share a name with a BCL method.
+        private readonly HashSet<INamedTypeSymbol> _knownOrdinalContainerTypes = BuildKnownOrdinalContainerTypes(compilation);
+
         public INamedTypeSymbol? EqualityComparerStringType { get; } = GetIEqualityComparerString(compilation);
         public INamedTypeSymbol? ComparerStringType { get; } = GetIComparerString(compilation);
         public INamedTypeSymbol? EnumerableType { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
@@ -102,6 +154,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, [EqualityComparerStringType])) ||
                 (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, [ComparerStringType])))
             {
+                if (ctx.Options.GetConfigurationValue(operation, ReportOnlyNonOrdinalConfiguration) && IsKnownOrdinalType(operation.Type))
+                    return;
+
                 ctx.ReportDiagnostic(Rule, operation);
             }
         }
@@ -116,8 +171,6 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 return;
 
             var method = operation.TargetMethod;
-            if (method.ContainingType.IsEqualTo(MeziantouFrameworkAssertType))
-                return;
 
             // Most ISet implementation already configured the IEqualityComparer in this constructor,
             // so it should be ok to skip method calls on those types.
@@ -145,6 +198,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [EqualityComparerStringType])) ||
                 (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [ComparerStringType])))
             {
+                if (IsInvocationReportSuppressedByOrdinalOption(ctx, operation, method))
+                    return;
+
                 ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 return;
             }
@@ -179,6 +235,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
                 if (!HasEqualityComparerArgument(operation.Arguments))
                 {
+                    if (IsInvocationReportSuppressedByOrdinalOption(ctx, operation, method))
+                        return;
+
                     ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 }
             }
@@ -210,6 +269,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(constructMethod, options: default, [EqualityComparerStringType])) ||
                 (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(constructMethod, options: default, [ComparerStringType])))
             {
+                if (ctx.Options.GetConfigurationValue(operation, ReportOnlyNonOrdinalConfiguration) && IsKnownOrdinalType(operation.Type))
+                    return;
+
                 ctx.ReportDiagnostic(Rule, operation);
             }
 
@@ -266,6 +328,50 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         }
 #pragma warning restore RSEXPERIMENTAL006
 #endif
+
+        private bool IsInvocationReportSuppressedByOrdinalOption(OperationAnalysisContext ctx, IInvocationOperation operation, IMethodSymbol method)
+        {
+            if (!ctx.Options.GetConfigurationValue(operation, ReportOnlyNonOrdinalConfiguration))
+                return false;
+
+            if (method.ContainingType.IsEqualTo(MeziantouFrameworkAssertType))
+                return true;
+
+            return KnownOrdinalMethodNames.Contains(method.Name)
+                && _knownOrdinalContainerTypes.Contains(method.ContainingType.OriginalDefinition);
+        }
+
+        private bool IsKnownOrdinalType(ITypeSymbol? type)
+        {
+            return type is INamedTypeSymbol namedType
+                && _knownOrdinalTypes.Contains(namedType.OriginalDefinition);
+        }
+
+        private static HashSet<INamedTypeSymbol> BuildKnownOrdinalTypes(Compilation compilation)
+        {
+            var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.HashSet`1"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.OrderedDictionary`2"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary`2"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet`1"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenDictionary`2"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenSet`1"));
+            return result;
+        }
+
+        private static HashSet<INamedTypeSymbol> BuildKnownOrdinalContainerTypes(Compilation compilation)
+        {
+            var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Linq.Enumerable"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Linq.Queryable"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenDictionary"));
+            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenSet"));
+            return result;
+        }
 
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
         {

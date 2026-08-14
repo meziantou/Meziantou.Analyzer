@@ -7,6 +7,7 @@ namespace Meziantou.Analyzer.Test.Rules;
 public sealed class UseStringComparerAnalyzerTests
 {
     private const string ReportCollectionExpressionsConfigurationName = "MA0002.report_collection_expressions";
+    private const string ReportOnlyNonOrdinalConfigurationName = "MA0002.report_only_non_ordinal";
 
     private static ProjectBuilder CreateProjectBuilder()
     {
@@ -326,6 +327,25 @@ public sealed class UseStringComparerAnalyzerTests
                       public void Test()
                       {
                           System.Collections.Generic.HashSet<string> a = [|[]|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task HashSet_String_CollectionExpression_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
+              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.HashSet<string> a = [];
                       }
                   }
                   """)
@@ -768,7 +788,77 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
-    public async Task MeziantouFrameworkAssertions_Assert_ShouldNotReportDiagnostic()
+    public async Task ImmutableDictionary_Create_String_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableDictionary.[|Create<string, string>()|];
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MeziantouFrameworkAssertions_Assert_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  namespace Meziantou.Framework.Assertions
+                  {
+                      static class Assert
+                      {
+                          public static void AreEqual(string expected, string actual) { }
+                          public static void AreEqual(string expected, string actual, System.Collections.Generic.IEqualityComparer<string> comparer) { }
+                      }
+                  }
+
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          Meziantou.Framework.Assertions.Assert.[|AreEqual("a", "b")|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MeziantouFrameworkAssertions_Assert_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  namespace Meziantou.Framework.Assertions
+                  {
+                      static class Assert
+                      {
+                          public static void AreEqual(string expected, string actual) { }
+                          public static void AreEqual(string expected, string actual, System.Collections.Generic.IEqualityComparer<string> comparer) { }
+                      }
+                  }
+
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          Meziantou.Framework.Assertions.Assert.AreEqual("a", "b");
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MeziantouFrameworkAssertions_Assert_WithoutComparerOverload_ShouldNotReportDiagnostic()
     {
         await CreateProjectBuilder()
               .WithTargetFramework(TargetFramework.Net10_0)
@@ -780,6 +870,205 @@ public sealed class UseStringComparerAnalyzerTests
                       {
                           System.Collections.Generic.ICollection<string> values = new[] { "abc" };
                           Meziantou.Framework.Assertions.Assert.Contains("abc", values);
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_HashSet_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          new System.Collections.Generic.HashSet<string>();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_Dictionary_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          new System.Collections.Generic.Dictionary<string, int>();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_ConcurrentDictionary_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_EnumerableDistinct_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.IEnumerable<string> obj = null;
+                          obj.Distinct();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_EnumerableToDictionary_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.IEnumerable<string> obj = null;
+                          obj.ToDictionary(p => p);
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_ImmutableDictionaryCreateBuilder_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableDictionary.CreateBuilder<string, string>();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_ImmutableDictionaryCreate_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableDictionary.Create<string, string>();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_ImmutableSortedDictionaryCreate_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net4_8)
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Immutable.ImmutableSortedDictionary.[|Create<string, string>()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_SortedDictionary_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          [|new System.Collections.Generic.SortedDictionary<string, int>()|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_OrderBy_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.IEnumerable<string> obj = null;
+                          obj.[|OrderBy(p => p)|];
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportOnlyNonOrdinal_Order_ShouldReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net7_0)
+              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
+              .WithSourceCode("""
+                  using System.Linq;
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.IEnumerable<string> obj = null;
+                          obj.[|Order()|];
                       }
                   }
                   """)
