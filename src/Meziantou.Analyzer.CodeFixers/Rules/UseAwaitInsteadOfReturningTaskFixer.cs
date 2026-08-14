@@ -183,9 +183,9 @@ public sealed class UseAwaitInsteadOfReturningTaskFixer : CodeFixProvider
                 {
                     statements.AddRange(Expand(returnStatement));
                 }
-                else
+                else if (Visit(statement) is StatementSyntax visitedStatement)
                 {
-                    statements.Add((StatementSyntax)Visit(statement)!);
+                    statements.Add(visitedStatement);
                 }
             }
 
