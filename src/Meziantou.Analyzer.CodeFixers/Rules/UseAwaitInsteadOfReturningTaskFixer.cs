@@ -23,47 +23,75 @@ public sealed class UseAwaitInsteadOfReturningTaskFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        if (nodeToFix is not ExpressionSyntax)
             return;
 
-        var function = nodeToFix.FirstAncestorOrSelf<SyntaxNode>(IsFunction);
-        if (function is null)
+        if (nodeToFix.FirstAncestorOrSelf<SyntaxNode>(IsFunction) is null)
             return;
 
         const string Title = "Use await";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => FixAsync(context.Document, nodeToFix, function, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => FixAsync(context.Document, nodeToFix, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, SyntaxNode function, CancellationToken cancellationToken)
+    private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
         var semanticModel = editor.SemanticModel;
 
         if (nodeToFix is not ExpressionSyntax value)
             return document;
 
+        var function = value.FirstAncestorOrSelf<SyntaxNode>(IsFunction);
+        if (function is null)
+            return document;
+
         var isGeneric = IsGenericTaskLike(semanticModel.Compilation, semanticModel.GetTypeInfo(value, cancellationToken).ConvertedType);
 
-        var awaitExpression = ((ExpressionSyntax)generator.AwaitExpression(value.WithoutTrivia())).WithTriviaFrom(value);
+        var (expressionBody, block) = GetBody(function);
 
         SyntaxNode newFunction;
-        if (value.Parent is ReturnStatementSyntax returnStatement && !isGeneric)
+        if (expressionBody is not null)
         {
-            // "return X;" cannot be turned into "return await X;" for a non-generic task: drop the return
-            var expressionStatement = ExpressionStatement(awaitExpression).WithTriviaFrom(returnStatement);
-            newFunction = function.ReplaceNode(returnStatement, expressionStatement);
+            newFunction = function.ReplaceNode(expressionBody, MakeAwait(expressionBody));
+        }
+        else if (block is not null)
+        {
+            var tail = block.Statements.LastOrDefault() as ReturnStatementSyntax;
+            if (tail is { Expression: null })
+                tail = null;
+
+            var rewriter = new AwaitReturnRewriter(isGeneric, tail);
+            newFunction = function.ReplaceNode(block, rewriter.Visit(block));
         }
         else
         {
-            newFunction = function.ReplaceNode(value, awaitExpression);
+            return document;
         }
 
         newFunction = AddAsyncModifier(newFunction);
         editor.ReplaceNode(function, newFunction.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
+    }
+
+    private static (ExpressionSyntax? ExpressionBody, BlockSyntax? Block) GetBody(SyntaxNode function)
+    {
+        return function switch
+        {
+            MethodDeclarationSyntax method => (method.ExpressionBody?.Expression, method.Body),
+            LocalFunctionStatementSyntax localFunction => (localFunction.ExpressionBody?.Expression, localFunction.Body),
+            ParenthesizedLambdaExpressionSyntax lambda => lambda.Body is BlockSyntax lambdaBlock ? (null, lambdaBlock) : (lambda.Body as ExpressionSyntax, null),
+            SimpleLambdaExpressionSyntax lambda => lambda.Body is BlockSyntax lambdaBlock ? (null, lambdaBlock) : (lambda.Body as ExpressionSyntax, null),
+            AnonymousMethodExpressionSyntax anonymousMethod => (null, anonymousMethod.Block),
+            _ => (null, null),
+        };
+    }
+
+    private static AwaitExpressionSyntax MakeAwait(ExpressionSyntax expression)
+    {
+        var operand = ((ExpressionSyntax)expression.WithoutTrivia()).Parentheses();
+        return AwaitExpression(Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(Space), operand).WithTriviaFrom(expression);
     }
 
     private static SyntaxNode AddAsyncModifier(SyntaxNode function)
@@ -124,5 +152,73 @@ public sealed class UseAwaitInsteadOfReturningTaskFixer : CodeFixProvider
     private static bool IsFunction(SyntaxNode node)
     {
         return node is MethodDeclarationSyntax or LocalFunctionStatementSyntax or ParenthesizedLambdaExpressionSyntax or SimpleLambdaExpressionSyntax or AnonymousMethodExpressionSyntax;
+    }
+
+    private sealed class AwaitReturnRewriter : CSharpSyntaxRewriter
+    {
+        private readonly bool _isGeneric;
+        private readonly ReturnStatementSyntax? _tailReturn;
+
+        public AwaitReturnRewriter(bool isGeneric, ReturnStatementSyntax? tailReturn)
+        {
+            _isGeneric = isGeneric;
+            _tailReturn = tailReturn;
+        }
+
+        // Do not descend into nested functions
+        public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) => node;
+
+        public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) => node;
+
+        public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) => node;
+
+        public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) => node;
+
+        public override SyntaxNode? VisitBlock(BlockSyntax node)
+        {
+            var statements = new List<StatementSyntax>();
+            foreach (var statement in node.Statements)
+            {
+                if (statement is ReturnStatementSyntax { Expression: not null } returnStatement)
+                {
+                    statements.AddRange(Expand(returnStatement));
+                }
+                else
+                {
+                    statements.Add((StatementSyntax)Visit(statement)!);
+                }
+            }
+
+            return node.WithStatements(List(statements));
+        }
+
+        public override SyntaxNode? VisitReturnStatement(ReturnStatementSyntax node)
+        {
+            // Only reached for embedded returns (e.g. "if (c) return X;"); block children are handled in VisitBlock
+            if (node.Expression is null)
+                return base.VisitReturnStatement(node);
+
+            var expanded = Expand(node).ToList();
+            return expanded.Count == 1 ? expanded[0] : Block(expanded);
+        }
+
+        private IEnumerable<StatementSyntax> Expand(ReturnStatementSyntax returnStatement)
+        {
+            var awaitExpression = MakeAwait(returnStatement.Expression!);
+
+            if (_isGeneric)
+            {
+                yield return ReturnStatement(awaitExpression).WithTriviaFrom(returnStatement);
+            }
+            else if (returnStatement == _tailReturn)
+            {
+                yield return ExpressionStatement(awaitExpression).WithTriviaFrom(returnStatement);
+            }
+            else
+            {
+                yield return ExpressionStatement(awaitExpression);
+                yield return ReturnStatement();
+            }
+        }
     }
 }

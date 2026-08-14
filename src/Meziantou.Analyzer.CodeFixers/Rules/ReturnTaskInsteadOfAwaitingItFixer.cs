@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Composition;
-using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -24,18 +23,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
-            return;
-
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-            return;
-
-        var awaitOperation = FindAwait(semanticModel, nodeToFix, context.CancellationToken);
-        if (awaitOperation?.Syntax is not AwaitExpressionSyntax awaitExpression)
-            return;
-
-        if (awaitExpression.FirstAncestorOrSelf<SyntaxNode>(IsFunction) is null)
+        if (nodeToFix?.FirstAncestorOrSelf<SyntaxNode>(IsFunction) is null)
             return;
 
         const string Title = "Return the task directly";
@@ -47,35 +35,43 @@ public sealed class ReturnTaskInsteadOfAwaitingItFixer : CodeFixProvider
     private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var semanticModel = editor.SemanticModel;
 
-        var awaitOperation = FindAwait(editor.SemanticModel, nodeToFix, cancellationToken);
-        if (awaitOperation?.Syntax is not AwaitExpressionSyntax awaitExpression)
-            return document;
-
-        var function = awaitExpression.FirstAncestorOrSelf<SyntaxNode>(IsFunction);
+        var function = nodeToFix.FirstAncestorOrSelf<SyntaxNode>(IsFunction);
         if (function is null)
             return document;
 
-        // Recover the underlying task, ignoring a trailing ConfigureAwait call
-        var innerExpression = awaitExpression.Expression;
-        if (awaitOperation.Operation is IInvocationOperation { Instance: { } instance, TargetMethod.Name: "ConfigureAwait" } &&
-            instance.Syntax is ExpressionSyntax instanceExpression)
+        // Every await in the function (excluding nested functions) can be removed
+        var awaitExpressions = function
+            .DescendantNodesAndSelf(descendIntoChildren: node => node == function || !IsFunction(node))
+            .OfType<AwaitExpressionSyntax>()
+            .ToList();
+
+        var replacements = new Dictionary<SyntaxNode, SyntaxNode>();
+        foreach (var awaitExpression in awaitExpressions)
         {
-            innerExpression = instanceExpression;
+            var innerExpression = awaitExpression.Expression;
+            if (semanticModel.GetOperation(awaitExpression, cancellationToken) is IAwaitOperation { Operation: IInvocationOperation { Instance: { } instance, TargetMethod.Name: "ConfigureAwait" } } &&
+                instance.Syntax is ExpressionSyntax instanceExpression)
+            {
+                innerExpression = instanceExpression;
+            }
+
+            if (awaitExpression.Parent is ExpressionStatementSyntax expressionStatement)
+            {
+                // "await X;" => "return X;"
+                replacements[expressionStatement] = ReturnStatement(innerExpression.WithoutTrivia()).WithTriviaFrom(expressionStatement);
+            }
+            else
+            {
+                replacements[awaitExpression] = innerExpression.WithTriviaFrom(awaitExpression);
+            }
         }
 
-        SyntaxNode newFunction;
-        if (awaitExpression.Parent is ExpressionStatementSyntax expressionStatement)
-        {
-            // "await X;" => "return X;"
-            var returnStatement = ReturnStatement(innerExpression.WithoutTrivia()).WithTriviaFrom(expressionStatement);
-            newFunction = function.ReplaceNode(expressionStatement, returnStatement);
-        }
-        else
-        {
-            newFunction = function.ReplaceNode(awaitExpression, innerExpression.WithTriviaFrom(awaitExpression));
-        }
+        if (replacements.Count == 0)
+            return document;
 
+        var newFunction = function.ReplaceNodes(replacements.Keys, (original, _) => replacements[original]);
         newFunction = RemoveAsyncModifier(newFunction, editor.Generator);
         editor.ReplaceNode(function, newFunction.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
@@ -101,17 +97,6 @@ public sealed class ReturnTaskInsteadOfAwaitingItFixer : CodeFixProvider
             default:
                 return function;
         }
-    }
-
-    private static IAwaitOperation? FindAwait(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken)
-    {
-        foreach (var candidate in node.AncestorsAndSelf())
-        {
-            if (semanticModel.GetOperation(candidate, cancellationToken) is IAwaitOperation awaitOperation)
-                return awaitOperation;
-        }
-
-        return null;
     }
 
     private static bool IsFunction(SyntaxNode node)

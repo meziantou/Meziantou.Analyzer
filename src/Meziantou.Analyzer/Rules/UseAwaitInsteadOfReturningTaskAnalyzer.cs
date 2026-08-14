@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -33,88 +34,123 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
                 return;
 
             var operationUtilities = new OperationUtilities(context.Compilation);
-            context.RegisterOperationAction(context => AnalyzeReturn(context, awaitableTypes, operationUtilities), OperationKind.Return);
+
+            context.RegisterOperationAction(context =>
+            {
+                var operation = (IMethodBodyOperation)context.Operation;
+                if (context.ContainingSymbol is IMethodSymbol method)
+                    AnalyzeFunction(context, method, operation, awaitableTypes, operationUtilities);
+            }, OperationKind.MethodBody);
+
+            context.RegisterOperationAction(context =>
+            {
+                var operation = (ILocalFunctionOperation)context.Operation;
+                AnalyzeFunction(context, operation.Symbol, operation, awaitableTypes, operationUtilities);
+            }, OperationKind.LocalFunction);
+
+            context.RegisterOperationAction(context =>
+            {
+                var operation = (IAnonymousFunctionOperation)context.Operation;
+                AnalyzeFunction(context, operation.Symbol, operation, awaitableTypes, operationUtilities);
+            }, OperationKind.AnonymousFunction);
         });
     }
 
-    private static void AnalyzeReturn(OperationAnalysisContext context, AwaitableTypes awaitableTypes, OperationUtilities operationUtilities)
+    private static void AnalyzeFunction(OperationAnalysisContext context, IMethodSymbol method, IOperation functionOperation, AwaitableTypes awaitableTypes, OperationUtilities operationUtilities)
     {
-        var operation = (IReturnOperation)context.Operation;
-
-        // Ignore "yield return" and "return;"
-        if (operation.ReturnedValue is null)
-            return;
-
-        var value = operation.ReturnedValue;
-
-        // Do not report when returning null or default as they cannot be awaited
-        var unwrappedValue = value;
-        while (unwrappedValue is IConversionOperation conversion)
-        {
-            unwrappedValue = conversion.Operand;
-        }
-
-        if (unwrappedValue is IDefaultValueOperation or IThrowOperation)
-            return;
-
-        if (unwrappedValue.ConstantValue is { HasValue: true, Value: null })
-            return;
-
-        // The returned value must be awaitable
-        if (!awaitableTypes.IsAwaitable(value.Type, operation.SemanticModel!, value.Syntax.SpanStart))
-            return;
-
-        var function = GetEnclosingFunction(operation, context);
-        if (function is null || function.IsAsync)
+        if (method.IsAsync)
             return;
 
         // Only members that support the 'async' keyword can be reported. Property/event accessors, operators,
         // constructors, etc. cannot be async even though they may return an awaitable type.
-        if (function.MethodKind is not (MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.LocalFunction or MethodKind.LambdaMethod or MethodKind.AnonymousFunction))
+        if (method.MethodKind is not (MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.LocalFunction or MethodKind.LambdaMethod or MethodKind.AnonymousFunction))
             return;
 
         // The function must return an awaitable type that can be used with the 'async' keyword
-        if (!awaitableTypes.IsAsyncBuildableAndNotVoid(function.ReturnType))
+        if (!awaitableTypes.IsAsyncBuildableAndNotVoid(method.ReturnType))
             return;
 
         // 'await' cannot be used in expression trees
-        if (operationUtilities.IsInExpressionContext(operation))
+        if (operationUtilities.IsInExpressionContext(functionOperation))
             return;
 
-        // Only report when the return statement is the whole method body ("return X;" or "=> X"). Otherwise,
-        // converting "return X;" to "await X;" for a non-generic task would require rewriting the control flow,
-        // and the rule is meant for simple task-forwarding methods.
-        if (!IsSoleBodyStatement(operation))
-            return;
+        var returns = new List<IReturnOperation>();
+        CollectReturns(functionOperation, returns);
 
-        context.ReportDiagnostic(Rule, value);
-    }
-
-    private static bool IsSoleBodyStatement(IReturnOperation operation)
-    {
-        if (operation.Parent is not IBlockOperation block)
-            return false;
-
-        if (block.Operations.Length != 1)
-            return false;
-
-        return block.Parent is IMethodBodyOperation or ILocalFunctionOperation or IAnonymousFunctionOperation;
-    }
-
-    private static IMethodSymbol? GetEnclosingFunction(IOperation operation, OperationAnalysisContext context)
-    {
-        foreach (var ancestor in operation.Ancestors())
+        var hasValueToAwait = false;
+        foreach (var returnOperation in returns)
         {
-            switch (ancestor)
-            {
-                case IAnonymousFunctionOperation anonymousFunction:
-                    return anonymousFunction.Symbol;
+            if (returnOperation.ReturnedValue is null)
+                continue;
 
-                case ILocalFunctionOperation localFunction:
-                    return localFunction.Symbol;
+            var value = returnOperation.ReturnedValue;
+            var unwrappedValue = value;
+            while (unwrappedValue is IConversionOperation conversion)
+            {
+                unwrappedValue = conversion.Operand;
             }
+
+            // Cannot await null/default/throw. Report only when every return can be updated.
+            if (unwrappedValue is IDefaultValueOperation or IThrowOperation)
+                return;
+
+            if (unwrappedValue.ConstantValue is { HasValue: true, Value: null })
+                return;
+
+            if (!awaitableTypes.IsAwaitable(value.Type, value.SemanticModel!, value.Syntax.SpanStart))
+                return;
+
+            // Do not report inside try/using (would change exception/disposal semantics) or lock/fixed
+            // (where 'await' is not even allowed).
+            if (IsInProtectedContext(returnOperation.Syntax, functionOperation.Syntax))
+                return;
+
+            hasValueToAwait = true;
         }
 
-        return context.ContainingSymbol as IMethodSymbol;
+        if (!hasValueToAwait)
+            return;
+
+        foreach (var returnOperation in returns)
+        {
+            if (returnOperation.ReturnedValue is not null)
+                context.ReportDiagnostic(Rule, returnOperation.ReturnedValue);
+        }
+    }
+
+    private static bool IsInProtectedContext(SyntaxNode returnSyntax, SyntaxNode functionSyntax)
+    {
+        for (var node = returnSyntax.Parent; node is not null && node != functionSyntax; node = node.Parent)
+        {
+            if (node is TryStatementSyntax or UsingStatementSyntax or LockStatementSyntax or FixedStatementSyntax)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static void CollectReturns(IOperation root, List<IReturnOperation> returns)
+    {
+        foreach (var child in root.GetChildOperations())
+        {
+            CollectReturnsCore(child, returns);
+        }
+    }
+
+    private static void CollectReturnsCore(IOperation operation, List<IReturnOperation> returns)
+    {
+        // Do not descend into nested functions; they are analyzed on their own
+        if (operation is IAnonymousFunctionOperation or ILocalFunctionOperation)
+            return;
+
+        if (operation is IReturnOperation returnOperation)
+        {
+            returns.Add(returnOperation);
+        }
+
+        foreach (var child in operation.GetChildOperations())
+        {
+            CollectReturnsCore(child, returns);
+        }
     }
 }

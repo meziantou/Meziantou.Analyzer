@@ -473,7 +473,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
     }
 
     [Fact]
-    public async Task ExtraStatementBefore_NoDiagnostic()
+    public async Task PrecedingStatement()
     {
         await CreateProjectBuilder()
             .WithSourceCode("""
@@ -484,7 +484,136 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                     async Task<int> A()
                     {
                         System.Console.WriteLine();
+                        return [|await Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> A()
+                    {
+                        System.Console.WriteLine();
+                        return Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MultipleReturns_TaskOfT()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> A(bool condition)
+                    {
+                        if (condition)
+                            return [|await Inner()|];
+
+                        return [|await Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> A(bool condition)
+                    {
+                        if (condition)
+                            return Inner();
+
+                        return Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task OtherAwaitInMethod_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> A()
+                    {
+                        await Task.Yield();
                         return await Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SomeReturnsNotAwaited_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> A(bool condition)
+                    {
+                        if (condition)
+                            return await Inner();
+
+                        return 0;
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReturnAwaitInUsingBlock_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> A(IDisposable d)
+                    {
+                        using (d)
+                        {
+                            return await Inner();
+                        }
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReturnAwaitWithUsingDeclaration_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner(IDisposable d) => throw null;
+                    async Task<int> A()
+                    {
+                        using var d = (IDisposable)null;
+                        return await Inner(d);
                     }
                 }
                 """)

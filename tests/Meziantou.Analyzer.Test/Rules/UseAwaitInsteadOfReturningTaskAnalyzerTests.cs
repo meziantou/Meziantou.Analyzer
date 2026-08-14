@@ -422,6 +422,28 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
     }
 
     [Fact]
+    public async Task ReturnInsideLock_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    private readonly object _gate = new();
+                    Task Inner() => throw null;
+                    Task A()
+                    {
+                        lock (_gate)
+                        {
+                            return Inner();
+                        }
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task AlreadyAsync_NoDiagnostic()
     {
         await CreateProjectBuilder()
@@ -451,7 +473,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
     }
 
     [Fact]
-    public async Task MultipleStatements_NoDiagnostic()
+    public async Task PrecedingStatement_TaskOfT()
     {
         await CreateProjectBuilder()
             .WithSourceCode("""
@@ -462,7 +484,113 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                     Task<int> A()
                     {
                         System.Console.WriteLine();
-                        return Inner();
+                        return [|Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> A()
+                    {
+                        System.Console.WriteLine();
+                        return await Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MultipleReturns_TaskOfT()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> A(bool condition)
+                    {
+                        if (condition)
+                            return [|Inner()|];
+
+                        return [|Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> A(bool condition)
+                    {
+                        if (condition)
+                            return await Inner();
+
+                        return await Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MultipleReturns_NonGenericTask()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task Inner() => throw null;
+                    Task A(bool condition)
+                    {
+                        if (condition)
+                            return [|Inner()|];
+
+                        return [|Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task Inner() => throw null;
+                    async Task A(bool condition)
+                    {
+                        if (condition)
+                        {
+                            await Inner();
+                            return;
+                        }
+
+                        await Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SomeReturnsNotAwaitable_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> A(bool condition)
+                    {
+                        if (condition)
+                            return Inner();
+
+                        return null;
                     }
                 }
                 """)
