@@ -785,6 +785,32 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public async Task HResult_ThrowOnFailure_ReturnValueNotUsed_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Test
+                  {
+                      void A()
+                      {
+                          NativeMethod().ThrowOnFailure();
+                      }
+
+                      Windows.Win32.Foundation.HRESULT NativeMethod() => default;
+                  }
+
+                  namespace Windows.Win32.Foundation
+                  {
+                      public struct HRESULT
+                      {
+                          public HRESULT ThrowOnFailure() => this;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task AssemblyAttribute_SimpleMethod_NotUsed()
     {
         await CreateProjectBuilder()
