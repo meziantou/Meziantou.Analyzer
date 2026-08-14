@@ -768,6 +768,25 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public async Task MeziantouFrameworkAssertions_Assert_ShouldNotReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net10_0)
+              .AddNuGetReference("Meziantou.Framework.Assertions", "2.0.1", "lib/net10.0/")
+              .WithSourceCode("""
+                  class TypeName
+                  {
+                      public void Test()
+                      {
+                          System.Collections.Generic.ICollection<string> values = new[] { "abc" };
+                          Meziantou.Framework.Assertions.Assert.Contains("abc", values);
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task EnumerableContains_String_ShouldReportDiagnostic()
     {
         const string SourceCode = @"using System.Linq;
