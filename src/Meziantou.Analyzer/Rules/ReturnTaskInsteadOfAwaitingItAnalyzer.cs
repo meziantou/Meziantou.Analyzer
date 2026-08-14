@@ -85,7 +85,6 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
 
             var returns = new List<IReturnOperation>();
             var awaits = new List<IAwaitOperation>();
-            var hasUsingDeclaration = false;
 
             void Collect(IOperation operation)
             {
@@ -100,9 +99,6 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
                         break;
                     case IAwaitOperation awaitOperation:
                         awaits.Add(awaitOperation);
-                        break;
-                    case IUsingDeclarationOperation:
-                        hasUsingDeclaration = true;
                         break;
                 }
 
@@ -123,7 +119,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
             var returnsWithValue = returns.Where(r => r.ReturnedValue is not null).ToList();
             if (returnsWithValue.Count > 0)
             {
-                AnalyzeReturningFunction(context, method, functionOperation, returnsWithValue, awaits, hasUsingDeclaration);
+                AnalyzeReturningFunction(context, method, functionOperation, returnsWithValue, awaits);
             }
             else
             {
@@ -132,11 +128,8 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
         }
 
         // Task<T>/ValueTask<T>: every return must be "return await X;" and there must be no other await in the method
-        private void AnalyzeReturningFunction(OperationAnalysisContext context, IMethodSymbol method, IOperation functionOperation, List<IReturnOperation> returnsWithValue, List<IAwaitOperation> awaits, bool hasUsingDeclaration)
+        private void AnalyzeReturningFunction(OperationAnalysisContext context, IMethodSymbol method, IOperation functionOperation, List<IReturnOperation> returnsWithValue, List<IAwaitOperation> awaits)
         {
-            if (hasUsingDeclaration)
-                return;
-
             // Every await must be the value of a return statement, otherwise it cannot be removed
             foreach (var awaitOperation in awaits)
             {
@@ -223,15 +216,31 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
             return parent is IReturnOperation;
         }
 
+        // A return "await X" cannot be simplified when it runs inside a try/using/lock, or while a 'using'
+        // declaration is still in scope, because that would change exception handling or disposal timing.
         private static bool IsInProtectedRegion(IOperation operation, IOperation functionOperation)
         {
-            foreach (var ancestor in operation.Ancestors())
+            var current = operation;
+            for (var parent = current.Parent; parent is not null && !ReferenceEquals(parent, functionOperation); parent = parent.Parent)
             {
-                if (ReferenceEquals(ancestor, functionOperation))
-                    break;
-
-                if (ancestor is ITryOperation or IUsingOperation or ILockOperation)
+                if (parent is ITryOperation or IUsingOperation or ILockOperation)
                     return true;
+
+                // A 'using' declaration disposes at the end of its enclosing block. It is in scope only for the
+                // statements that follow it in that same block; declarations in child blocks are already disposed.
+                if (parent is IBlockOperation block)
+                {
+                    foreach (var statement in block.Operations)
+                    {
+                        if (ReferenceEquals(statement, current))
+                            break;
+
+                        if (statement is IUsingDeclarationOperation)
+                            return true;
+                    }
+                }
+
+                current = parent;
             }
 
             return false;

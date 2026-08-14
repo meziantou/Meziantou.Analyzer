@@ -601,6 +601,49 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
     }
 
     [Fact]
+    public async Task UsingDeclarationInChildBlock_OutOfScope()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> A(bool condition)
+                    {
+                        if (condition)
+                        {
+                            using var d = (IDisposable)null;
+                            d.ToString();
+                        }
+
+                        return [|await Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> A(bool condition)
+                    {
+                        if (condition)
+                        {
+                            using var d = (IDisposable)null;
+                            d.ToString();
+                        }
+
+                        return Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ReturnAwaitWithUsingDeclaration_NoDiagnostic()
     {
         await CreateProjectBuilder()
