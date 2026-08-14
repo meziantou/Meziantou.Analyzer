@@ -87,6 +87,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? ISetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+        public INamedTypeSymbol? MeziantouFrameworkAssertType { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Framework.Assertions.Assert");
+
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {
             var operation = (IObjectCreationOperation)ctx.Operation;
@@ -114,6 +116,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 return;
 
             var method = operation.TargetMethod;
+            if (method.ContainingType.IsEqualTo(MeziantouFrameworkAssertType))
+                return;
 
             // Most ISet implementation already configured the IEqualityComparer in this constructor,
             // so it should be ok to skip method calls on those types.
