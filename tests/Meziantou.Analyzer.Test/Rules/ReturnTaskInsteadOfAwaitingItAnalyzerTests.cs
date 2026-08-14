@@ -539,6 +539,119 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
     }
 
     [Fact]
+    public async Task NestedLocalFunctionAwait_DoesNotAffectParent()
+    {
+        // The local function has a non-removable await (Task.Yield) but must not prevent the parent from being reported
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> Parent()
+                    {
+                        async Task<int> Local()
+                        {
+                            await Task.Yield();
+                            return await Inner();
+                        }
+
+                        return [|await Local()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> Parent()
+                    {
+                        async Task<int> Local()
+                        {
+                            await Task.Yield();
+                            return await Inner();
+                        }
+
+                        return Local();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalFunctionReported_ParentIsNot()
+    {
+        // The parent has a non-removable await (Task.Yield); only the local function is reported
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> Parent()
+                    {
+                        async Task<int> Local() => [|await Inner()|];
+
+                        await Task.Yield();
+                        return await Local();
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> Parent()
+                    {
+                        Task<int> Local() => Inner();
+
+                        await Task.Yield();
+                        return await Local();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NestedLambdaAwait_DoesNotAffectParent()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    async Task<int> Parent()
+                    {
+                        Func<Task> f = async () => await Task.Yield();
+                        _ = f();
+                        return [|await Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> Parent()
+                    {
+                        Func<Task> f = async () => await Task.Yield();
+                        _ = f();
+                        return Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task OtherAwaitInMethod_NoDiagnostic()
     {
         await CreateProjectBuilder()
