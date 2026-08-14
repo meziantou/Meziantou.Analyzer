@@ -186,6 +186,199 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
     }
 
     [Fact]
+    public async Task ExpressionBody_ValueTaskOfT()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    ValueTask<int> Inner() => throw null;
+                    ValueTask<int> A() => [|Inner()|];
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    ValueTask<int> Inner() => throw null;
+                    async ValueTask<int> A() => await Inner();
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ExpressionBody_NonGenericValueTask()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    ValueTask Inner() => throw null;
+                    ValueTask A() => [|Inner()|];
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    ValueTask Inner() => throw null;
+                    async ValueTask A() => await Inner();
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MethodWithAccessModifier()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    public Task<int> A() => [|Inner()|];
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    public async Task<int> A() => await Inner();
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task StaticLocalFunction()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    static Task<int> Inner() => throw null;
+                    void A()
+                    {
+                        static Task<int> Local() => [|Inner()|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    static Task<int> Inner() => throw null;
+                    void A()
+                    {
+                        static async Task<int> Local() => await Inner();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SimpleLambda()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner(int x) => throw null;
+                    void A()
+                    {
+                        Func<int, Task<int>> f = x => [|Inner(x)|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner(int x) => throw null;
+                    void A()
+                    {
+                        Func<int, Task<int>> f = async x => await Inner(x);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AnonymousMethod()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    void A()
+                    {
+                        Func<Task<int>> f = delegate { return [|Inner()|]; };
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    void A()
+                    {
+                        Func<Task<int>> f = async delegate { return await Inner(); };
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PropertyGetter_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task<int> P
+                    {
+                        get { return Inner(); }
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Operator_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    static Task<int> Inner() => throw null;
+                    public static Task<int> operator +(Test a, Test b) => Inner();
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task AlreadyAsync_NoDiagnostic()
     {
         await CreateProjectBuilder()

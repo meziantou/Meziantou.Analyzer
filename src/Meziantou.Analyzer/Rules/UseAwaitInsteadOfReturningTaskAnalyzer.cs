@@ -68,6 +68,11 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
         if (function is null || function.IsAsync)
             return;
 
+        // Only members that support the 'async' keyword can be reported. Property/event accessors, operators,
+        // constructors, etc. cannot be async even though they may return an awaitable type.
+        if (function.MethodKind is not (MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.LocalFunction or MethodKind.LambdaMethod or MethodKind.AnonymousFunction))
+            return;
+
         // The function must return an awaitable type that can be used with the 'async' keyword
         if (!awaitableTypes.IsAsyncBuildableAndNotVoid(function.ReturnType))
             return;
