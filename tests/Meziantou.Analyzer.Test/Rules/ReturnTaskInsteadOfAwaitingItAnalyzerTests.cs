@@ -430,6 +430,49 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
     }
 
     [Fact]
+    public async Task MultipleMethods_BatchFix()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task Inner2() => throw null;
+                    async Task<int> A() => [|await Inner()|];
+                    async Task B() => [|await Inner2()|];
+                    async Task<int> C()
+                    {
+                        return [|await Inner()|];
+                    }
+                    async Task D()
+                    {
+                        [|await Inner2()|];
+                    }
+                }
+                """)
+            .ShouldBatchFixCodeWith("""
+                using System.Threading.Tasks;
+                class Test
+                {
+                    Task<int> Inner() => throw null;
+                    Task Inner2() => throw null;
+                    Task<int> A() => Inner();
+                    Task B() => Inner2();
+                    Task<int> C()
+                    {
+                        return Inner();
+                    }
+                    Task D()
+                    {
+                        return Inner2();
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ExtraStatementBefore_NoDiagnostic()
     {
         await CreateProjectBuilder()
