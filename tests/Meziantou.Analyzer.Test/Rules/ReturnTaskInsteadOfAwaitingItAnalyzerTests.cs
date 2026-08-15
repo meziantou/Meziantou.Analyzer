@@ -22,6 +22,39 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
     }
 
     [Fact]
+    public async Task Issue1280_StaticVoidTaskWithConfigureAwaitAndLambdaArgument()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    static Task InvokeDialogActionAsync(Action action) => throw null;
+
+                    internal static async Task CloseNotifyIconAsync()
+                    {
+                        [|await InvokeDialogActionAsync(() => { }).ConfigureAwait(false)|];
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                using System;
+                using System.Threading.Tasks;
+                class Test
+                {
+                    static Task InvokeDialogActionAsync(Action action) => throw null;
+
+                    internal static Task CloseNotifyIconAsync()
+                    {
+                        return InvokeDialogActionAsync(() => { });
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ReturnAwait_TaskOfT()
     {
         await CreateProjectBuilder()
