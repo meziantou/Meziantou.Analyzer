@@ -212,6 +212,8 @@
 |[MA0211](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0211.md)|Style|Use multi-line syntax for XML summary comments|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 |[MA0212](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0212.md)|Usage|Use MemoryMarshal.GetReference instead of indexing at 0|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 |[MA0213](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0213.md)|Style|Simplify negated boolean expression|<span title='Info'>ℹ️</span>|❌|✔️|❌|
+|[MA0214](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0214.md)|Design|Use 'await' instead of returning the task|<span title='Info'>ℹ️</span>|❌|✔️|❌|
+|[MA0215](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0215.md)|Performance|Return the task instead of awaiting it|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|

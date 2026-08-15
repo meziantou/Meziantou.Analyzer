@@ -634,3 +634,9 @@ dotnet_diagnostic.MA0212.severity = error
 
 # MA0213: Simplify negated boolean expression
 dotnet_diagnostic.MA0213.severity = error
+
+# MA0214: Use 'await' instead of returning the task
+dotnet_diagnostic.MA0214.severity = error
+
+# MA0215: Return the task instead of awaiting it
+dotnet_diagnostic.MA0215.severity = error
