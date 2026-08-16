@@ -19,17 +19,17 @@ public sealed partial class ProjectBuilder
     {
         if (DiagnosticAnalyzer is null)
         {
-            Assert.Fail("DiagnosticAnalyzer is not configured");
+            Xunit.Assert.Fail("DiagnosticAnalyzer is not configured");
         }
 
         if (ExpectedFixedCode is not null && CodeFixProvider is null)
         {
-            Assert.Fail("CodeFixProvider is not configured");
+            Xunit.Assert.Fail("CodeFixProvider is not configured");
         }
 
         if (ExpectedDiagnosticResults is null)
         {
-            Assert.Fail("ExpectedDiagnostic is not configured");
+            Xunit.Assert.Fail("ExpectedDiagnostic is not configured");
         }
 
         await VerifyDiagnostic(ExpectedDiagnosticResults).ConfigureAwait(false);
