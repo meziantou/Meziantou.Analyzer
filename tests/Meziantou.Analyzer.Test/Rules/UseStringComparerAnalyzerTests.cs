@@ -6,7 +6,9 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStringComparerAnalyzerTests
 {
+#if ROSLYN_5_6_OR_GREATER
     private const string ReportCollectionExpressionsConfigurationName = "MA0002.report_collection_expressions";
+#endif
     private const string ReportOnlyNonOrdinalConfigurationName = "MA0002.report_only_non_ordinal";
 
     private static ProjectBuilder CreateProjectBuilder()
