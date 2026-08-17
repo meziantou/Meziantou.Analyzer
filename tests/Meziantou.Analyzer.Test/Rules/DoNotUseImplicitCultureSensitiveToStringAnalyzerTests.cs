@@ -1083,4 +1083,235 @@ class Sample : System.IFormattable
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+#if CSHARP15_OR_GREATER
+    private static ProjectBuilder CreateUnionProjectBuilder()
+    {
+        return CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
+    }
+
+    [Fact]
+    public async Task Union_AllCaseTypesAreCultureInsensitive()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + value;
+    }
+}
+
+union Sample(bool, string);
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_OneCaseTypeIsCultureSensitive()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + [|value|];
+    }
+}
+
+union Sample(bool, double);
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_CaseTypeIsAUnionWithACultureSensitiveCaseType()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + [|value|];
+    }
+}
+
+union Sample(bool, Inner);
+union Inner(string, double);
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_CaseTypesReferenceEachOther()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + value;
+    }
+}
+
+union Sample(bool, Inner);
+union Inner(string, Sample);
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_NullableCaseType()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + [|value|];
+    }
+}
+
+union Sample(bool, double?);
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_CultureInsensitiveTypeAttribute()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + value;
+    }
+}
+
+[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+union Sample(bool, double);
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_CustomUnionType()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + [|value|];
+    }
+}
+
+[System.Runtime.CompilerServices.Union]
+struct Sample : System.Runtime.CompilerServices.IUnion
+{
+    private readonly object _value;
+
+    public Sample(bool value) => _value = value;
+    public Sample(double value) => _value = value;
+
+    public object Value => _value;
+}
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_UnionMemberProvider()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = "abc" + [|value|];
+    }
+}
+
+[System.Runtime.CompilerServices.Union]
+struct Sample : Sample.IUnionMembers
+{
+    private readonly object _value;
+
+    private Sample(object value) => _value = value;
+
+    public interface IUnionMembers
+    {
+        static Sample Create(bool value) => new(value);
+        static Sample Create(double value) => new(value);
+        object Value { get; }
+    }
+
+    object IUnionMembers.Value => _value;
+}
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_InterpolatedStringWithCultureSensitiveCaseType()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = $"[|{value}|]";
+    }
+}
+
+union Sample(bool, System.DateTime)
+{
+    public override string ToString() => "";
+}
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Union_InterpolatedStringWithCultureInsensitiveFormat()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(Sample value)
+    {
+        _ = $"{value:o}";
+    }
+}
+
+union Sample(bool, System.DateTime)
+{
+    public override string ToString() => "";
+}
+""";
+        await CreateUnionProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+#endif
 }

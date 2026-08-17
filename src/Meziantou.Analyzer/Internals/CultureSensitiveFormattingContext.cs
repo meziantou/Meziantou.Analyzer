@@ -480,6 +480,12 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol))
             return CultureSensitivity.CultureInsensitive;
 
+#if ROSLYN_5_9_OR_GREATER
+        // A union is culture-sensitive when at least one of its case types is culture-sensitive
+        if (typeSymbol.IsUnionType() && GetUnionCultureSensitivity(typeSymbol, options, caseType => GetCultureSensitivity(caseType, options)) is { } unionCultureSensitivity)
+            return unionCultureSensitivity;
+#endif
+
         if (IsFormattableType(typeSymbol))
             return CultureSensitivity.CultureSensitive;
 
@@ -668,8 +674,53 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (symbol is not null && !IsCultureSensitiveTypeUsingAttribute(symbol, hasFormatString, formatString))
             return CultureSensitivity.CultureInsensitive;
 
+#if ROSLYN_5_9_OR_GREATER
+        // The format is applied to the value of the union, so it must be evaluated against the case types
+        if (symbol.IsUnionType() && GetUnionCultureSensitivity(symbol, options, caseType => GetCultureSensitivity(caseType, format, instance: null, options)) is { } unionCultureSensitivity)
+            return unionCultureSensitivity;
+#endif
+
         return cultureSensitivity;
     }
+
+#if ROSLYN_5_9_OR_GREATER
+    /// <summary>Combines the culture sensitivity of all the case types of a union. Returns <see langword="null"/> when the case types cannot be determined.</summary>
+    private static CultureSensitivity? GetUnionCultureSensitivity(ITypeSymbol unionType, CultureSensitiveOptions options, Func<ITypeSymbol, CultureSensitivity> getCultureSensitivity)
+    {
+        var caseTypes = new Stack<ITypeSymbol>(unionType.GetUnionCaseTypes());
+        if (caseTypes.Count == 0)
+            return null;
+
+        // A case type can be a union, potentially leading to cycles, so the unions are expanded using a set of visited types
+        var visitedTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default) { unionType };
+        var cultureSensitivity = CultureSensitivity.CultureInsensitive;
+        while (caseTypes.Count > 0)
+        {
+            var caseType = caseTypes.Pop();
+            if (MustUnwrapNullableOfT(options))
+            {
+                caseType = caseType.GetUnderlyingNullableTypeOrSelf();
+            }
+
+            if (!visitedTypes.Add(caseType))
+                continue;
+
+            if (caseType.IsUnionType())
+            {
+                foreach (var nestedCaseType in caseType.GetUnionCaseTypes())
+                {
+                    caseTypes.Push(nestedCaseType);
+                }
+
+                continue;
+            }
+
+            cultureSensitivity = Combine(cultureSensitivity, getCultureSensitivity(caseType));
+        }
+
+        return cultureSensitivity;
+    }
+#endif
 
     private static bool IsInvariantDateTimeFormat(IOperation? valueOperation)
     {
