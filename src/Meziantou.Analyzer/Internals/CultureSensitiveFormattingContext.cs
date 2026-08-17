@@ -324,7 +324,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         return typeSymbol is not null && InterpolatedStringHandlerAttributeSymbol is not null && typeSymbol.HasAttribute(InterpolatedStringHandlerAttributeSymbol);
     }
 
-    public static bool UsesObjectToString(ITypeSymbol? typeSymbol)
+    public static bool UsesObjectToString(ITypeSymbol? typeSymbol, CancellationToken cancellationToken)
     {
         if (typeSymbol is null)
             return false;
@@ -332,27 +332,85 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsEnum())
             return false;
 
-        if (!typeSymbol.IsSealed)
+        if (typeSymbol.IsAnonymousType)
             return false;
 
-        if (typeSymbol.IsAnonymousType)
+        // A non-sealed type may be instantiated by a derived type overriding ToString, unless the whole set of derived types is known (closed hierarchy).
+        if (!typeSymbol.IsSealed && !IsClosedHierarchyWithoutToStringOverride(typeSymbol, cancellationToken))
             return false;
 
         // Look at the whole type hierarchy, as a sealed type may inherit a ToString override from a base class.
         // Stop before System.Object / System.ValueType, whose own ToString() is the "default" implementation this rule warns about.
         for (var current = typeSymbol; current is not null && current.SpecialType is not (SpecialType.System_Object or SpecialType.System_ValueType); current = current.BaseType)
         {
-            foreach (var member in current.GetMembers(nameof(ToString)).OfType<IMethodSymbol>())
-            {
-                if (member.Parameters.Length != 0)
-                    continue;
-
-                if (member.IsOverride)
-                    return false;
-            }
+            if (DeclaresToStringOverride(current))
+                return false;
         }
 
         return true;
+    }
+
+    private static bool DeclaresToStringOverride(ITypeSymbol typeSymbol)
+    {
+        foreach (var member in typeSymbol.GetMembers(nameof(ToString)).OfType<IMethodSymbol>())
+        {
+            if (member.Parameters.Length != 0)
+                continue;
+
+            if (member.IsOverride)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A <c>closed</c> type cannot be inherited from outside its containing module, so the compiler knows every possible runtime type.
+    /// When no type of that hierarchy overrides <c>ToString</c>, the call is guaranteed to use <c>object.ToString</c>, just like for a sealed type.
+    /// </summary>
+    private static bool IsClosedHierarchyWithoutToStringOverride(ITypeSymbol typeSymbol, CancellationToken cancellationToken)
+    {
+#if ROSLYN_5_9_OR_GREATER
+#pragma warning disable RSEXPERIMENTAL006
+        const int MaxClosedHierarchyDepth = 32;
+
+        if (!typeSymbol.IsClosed)
+            return false;
+
+        return VisitDerivedTypes(typeSymbol, depth: 0, cancellationToken);
+
+        static bool VisitDerivedTypes(ITypeSymbol typeSymbol, int depth, CancellationToken cancellationToken)
+        {
+            // Generic closed hierarchies can expand indefinitely, so give up instead of recursing forever
+            if (depth > MaxClosedHierarchyDepth)
+                return false;
+
+            var derivedTypeInfo = typeSymbol.GetClosedDerivedTypeInfo(cancellationToken);
+            if (!derivedTypeInfo.IsComplete)
+                return false;
+
+            foreach (var derivedType in derivedTypeInfo.ClosedDerivedTypes)
+            {
+                if (DeclaresToStringOverride(derivedType))
+                    return false;
+
+                if (derivedType.IsSealed)
+                    continue;
+
+                // A derived type that is neither sealed nor closed can be inherited by an unknown type overriding ToString
+                if (!derivedType.IsClosed)
+                    return false;
+
+                if (!VisitDerivedTypes(derivedType, depth + 1, cancellationToken))
+                    return false;
+            }
+
+            return true;
+        }
+#pragma warning restore RSEXPERIMENTAL006
+#else
+        return false;
+#endif
     }
 
     private CultureSensitivity GetCultureSensitivity(ITypeSymbol? typeSymbol, CultureSensitiveOptions options)

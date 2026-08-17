@@ -149,7 +149,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                     context.ReportDiagnostic(StringInterpolationRule, part);
                 }
 
-                if (CultureSensitiveFormattingContext.UsesObjectToString(type))
+                if (CultureSensitiveFormattingContext.UsesObjectToString(type, context.CancellationToken))
                 {
                     context.ReportDiagnostic(ObjectToStringRule, expression);
                 }

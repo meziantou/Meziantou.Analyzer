@@ -13,6 +13,14 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
     }
 
+#if CSHARP15_OR_GREATER
+    private static ProjectBuilder CreatePreviewProjectBuilder()
+    {
+        return CreateProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
+    }
+#endif
+
     [Fact]
     public async Task Object_ToString()
     {
@@ -291,6 +299,18 @@ sealed class Derived : Sample { }
     }
 
     [Fact]
+    public async Task SealedType_FlowedFromLocalInitializer_InheritsBaseToStringOverride()
+    {
+        var sourceCode = """
+object o = "abc";
+o.ToString();
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task SealedType_InheritsBaseToStringOverride()
     {
         var sourceCode = """
@@ -304,6 +324,185 @@ sealed class Derived : Base { }
               .WithSourceCode(sourceCode)
               .ValidateAsync();
     }
+
+#if CSHARP15_OR_GREATER
+    [Fact]
+    public async Task ClosedType_NoToStringOverrideInHierarchy()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+[|((Shape)a).ToString()|];
+
+closed class Shape;
+sealed class Circle : Shape;
+sealed class Square : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedType_DerivedTypeOverridesToString()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+((Shape)a).ToString();
+
+closed class Shape;
+sealed class Circle : Shape;
+sealed class Square : Shape { public override string ToString() => "square"; }
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedType_NestedClosedHierarchy_NoToStringOverride()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+[|((Shape)a).ToString()|];
+
+closed class Shape;
+closed class Round : Shape;
+sealed class Circle : Round;
+sealed class Square : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedType_NestedClosedHierarchy_LeafOverridesToString()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+((Shape)a).ToString();
+
+closed class Shape;
+closed class Round : Shape;
+sealed class Circle : Round { public override string ToString() => "circle"; }
+sealed class Square : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedType_NestedClosedHierarchy_IntermediateTypeOverridesToString()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+((Shape)a).ToString();
+
+closed class Shape;
+closed class Round : Shape { public override string ToString() => "round"; }
+sealed class Circle : Round;
+sealed class Square : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedType_DerivedTypeIsNeitherSealedNorClosed()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+((Shape)a).ToString();
+
+closed class Shape;
+class Circle : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedType_OverridesToString()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+((Shape)a).ToString();
+
+closed class Shape { public override string ToString() => "shape"; }
+sealed class Circle : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedType_UnspeakableDerivedType()
+    {
+        var sourceCode = """
+class Test
+{
+    void M<T>(Shape<T> value) => value.ToString();
+}
+
+closed class Shape<T>;
+sealed class Circle : Shape<int>;
+sealed class Square<T> : Shape<T[]>;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedString_ClosedType_NoToStringOverrideInHierarchy()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+_ = $"{[|(Shape)a|]}";
+
+closed class Shape;
+sealed class Circle : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedString_ClosedType_DerivedTypeOverridesToString()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+_ = $"{(Shape)a}";
+
+closed class Shape;
+sealed class Circle : Shape { public override string ToString() => "circle"; }
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_ClosedType_NoToStringOverrideInHierarchy()
+    {
+        var sourceCode = """
+Shape a = new Circle();
+_ = "" + [|(Shape)a|];
+
+closed class Shape;
+sealed class Circle : Shape;
+""";
+        await CreatePreviewProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+#endif
 
     [Fact]
     public async Task InterpolatedString_Sealed_Interpolation()
