@@ -640,3 +640,6 @@ dotnet_diagnostic.MA0214.severity = none
 
 # MA0215: Return the task instead of awaiting it
 dotnet_diagnostic.MA0215.severity = none
+
+# MA0216: Remove unnecessary closed modifier
+dotnet_diagnostic.MA0216.severity = suggestion
