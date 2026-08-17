@@ -1837,47 +1837,6 @@ class TypeName
     }
 
     [Fact]
-    public async Task CodeFix_InsertComparerBeforeOptionalParameters_Issue1249()
-    {
-        const string SourceCode = """
-            using System.Collections.Generic;
-            using System.Runtime.CompilerServices;
-            class Sample
-            {
-                void Test()
-                {
-                    Assert.[|AreEqual("a", "b", "message")|];
-                }
-            }
-            static class Assert
-            {
-                public static void AreEqual<T>(T expected, T actual, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
-                public static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
-            }
-            """;
-        const string CodeFix = """
-            using System.Collections.Generic;
-            using System.Runtime.CompilerServices;
-            class Sample
-            {
-                void Test()
-                {
-                    Assert.AreEqual("a", "b", System.StringComparer.Ordinal, "message");
-                }
-            }
-            static class Assert
-            {
-                public static void AreEqual<T>(T expected, T actual, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
-                public static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
-    }
-
-    [Fact]
     public async Task CodeFix_MSTestAreEqualWithMessage_Issue1249()
     {
         const string SourceCode = """
@@ -1939,32 +1898,26 @@ class TypeName
     public async Task CodeFix_UseNamedArgumentWhenArgumentsAreNamed()
     {
         const string SourceCode = """
-            using System.Collections.Generic;
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
-                void Test()
+                void Test(string[] fields)
                 {
-                    AreEqual[|(actual: "b", expected: "a")|];
+                    Assert.[|AreEqual(actual: fields[0], expected: "id")|];
                 }
-
-                static void AreEqual<T>(T expected, T actual) { }
-                static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer) { }
             }
             """;
         const string CodeFix = """
-            using System.Collections.Generic;
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
-                void Test()
+                void Test(string[] fields)
                 {
-                    AreEqual(actual: "b", expected: "a", comparer: System.StringComparer.Ordinal);
+                    Assert.AreEqual(actual: fields[0], expected: "id", comparer: System.StringComparer.Ordinal);
                 }
-
-                static void AreEqual<T>(T expected, T actual) { }
-                static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer) { }
             }
             """;
-        await CreateProjectBuilder()
+        await CreateMSTestProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
