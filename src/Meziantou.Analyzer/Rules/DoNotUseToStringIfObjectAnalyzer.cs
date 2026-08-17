@@ -84,7 +84,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (actualType is null)
                 return;
 
-            if (actualType.IsSealed) // Method cannot be overridden
+            if (CultureSensitiveFormattingContext.UsesObjectToString(actualType, context.CancellationToken))
             {
                 context.ReportDiagnostic(Rule, operation, actualType.ToDisplayString());
             }
@@ -109,7 +109,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (actualType.IsAnonymousType)
                 return;
 
-            if (CultureSensitiveFormattingContext.UsesObjectToString(actualType))
+            if (CultureSensitiveFormattingContext.UsesObjectToString(actualType, cancellationToken))
             {
                 reporter.ReportDiagnostic(Rule, operation, [actualType.ToDisplayString()]);
             }
