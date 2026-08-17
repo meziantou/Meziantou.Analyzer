@@ -29,6 +29,17 @@ public sealed class UseStringComparerAnalyzerTests
     }
 #endif
 
+    // MSTest 4 declares the comparer before the message and after the interpolated string handler,
+    // so the code fix must use the real overloads to compute where the comparer must be inserted.
+    private static ProjectBuilder CreateMSTestProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+            .WithAnalyzer<UseStringComparerAnalyzer>()
+            .WithCodeFixProvider<UseStringComparerFixer>()
+            .AddNuGetReference("MSTest.TestFramework", "4.3.3", "lib/netstandard2.0/");
+    }
+
     [Fact]
     public async Task MethodOnSetStoredInPrivateReadonlyFieldInOtherSyntaxTree_ShouldNotReportDiagnostic()
     {
@@ -1822,6 +1833,93 @@ class TypeName
             }
             """;
         await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_MSTestAreEqualWithMessage_Issue1249()
+    {
+        const string SourceCode = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.[|AreEqual("id", fields[0], "First field should be the ID")|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.AreEqual("id", fields[0], System.StringComparer.Ordinal, "First field should be the ID");
+                }
+            }
+            """;
+        await CreateMSTestProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_MSTestAreEqualWithInterpolatedMessage_Issue1249()
+    {
+        const string SourceCode = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.[|AreEqual("id", fields[0], $"First field should be the ID but was {fields[0]}")|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.AreEqual("id", fields[0], System.StringComparer.Ordinal, $"First field should be the ID but was {fields[0]}");
+                }
+            }
+            """;
+        await CreateMSTestProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_UseNamedArgumentWhenArgumentsAreNamed()
+    {
+        const string SourceCode = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.[|AreEqual(actual: fields[0], expected: "id")|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.AreEqual(actual: fields[0], expected: "id", comparer: System.StringComparer.Ordinal);
+                }
+            }
+            """;
+        await CreateMSTestProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
