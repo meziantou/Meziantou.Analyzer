@@ -115,19 +115,19 @@ private static async Task<Document> FixAsync(Document document, BinaryExpression
 
 This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are configured in `Directory.Build.targets`:
 
-- `roslyn4.2` - Roslyn 4.2.0 (C# 9, C# 10)
-- `roslyn4.4` - Roslyn 4.4.0 (C# 9, C# 10, C# 11)
-- `roslyn4.6` - Roslyn 4.6.0 (C# 9, C# 10, C# 11)
-- `roslyn4.8` - Roslyn 4.8.0 (C# 9, C# 10, C# 11, C# 12)
-- `roslyn4.14` - Roslyn 4.14.0 (C# 9, C# 10, C# 11, C# 12, C# 13)
-- `default` - Roslyn 5.0.0 (latest, C# 9, C# 10, C# 11, C# 12, C# 13, C# 14)
+- `roslyn4.8` - Roslyn 4.8.0
+- `roslyn4.14` - Roslyn 4.14.0
+- `roslyn5.0` - Roslyn 5.0.0
+- `roslyn5.6` - Roslyn 5.6.0
+- `roslyn5.9` - Roslyn 5.9.0
+- `default` - Roslyn 5.9.0
 
 ### Building with a specific Roslyn version
 
 To build the project with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild property:
 
 ```bash
-dotnet build /p:RoslynVersion=roslyn4.2
+dotnet build /p:RoslynVersion=roslyn4.8
 dotnet build /p:RoslynVersion=roslyn4.14
 dotnet build # Uses default (latest) version
 ```
@@ -138,11 +138,11 @@ To run tests with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild 
 
 ```bash
 # Test with a specific Roslyn version
-dotnet test /p:RoslynVersion=roslyn4.2
-dotnet test /p:RoslynVersion=roslyn4.4
-dotnet test /p:RoslynVersion=roslyn4.6
 dotnet test /p:RoslynVersion=roslyn4.8
 dotnet test /p:RoslynVersion=roslyn4.14
+dotnet test /p:RoslynVersion=roslyn5.0
+dotnet test /p:RoslynVersion=roslyn5.6
+dotnet test /p:RoslynVersion=roslyn5.9
 
 # Test with default (latest) Roslyn version
 dotnet test
@@ -152,10 +152,10 @@ You can also filter tests to run only specific test classes or methods:
 
 ```bash
 # Run only tests from a specific test class
-dotnet test /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
+dotnet test /p:RoslynVersion=roslyn4.8 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
 
 # Run a specific test method
-dotnet test /p:RoslynVersion=roslyn4.2 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
+dotnet test /p:RoslynVersion=roslyn4.8 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
 ```
 
 ### When to test with multiple Roslyn versions
