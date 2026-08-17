@@ -27,6 +27,17 @@ public sealed class UseStringComparerAnalyzerTests
     }
 #endif
 
+    // MSTest 4 declares the comparer before the message and after the interpolated string handler,
+    // so the code fix must use the real overloads to compute where the comparer must be inserted.
+    private static ProjectBuilder CreateMSTestProjectBuilder()
+    {
+        return new ProjectBuilder()
+            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+            .WithAnalyzer<UseStringComparerAnalyzer>()
+            .WithCodeFixProvider<UseStringComparerFixer>()
+            .AddNuGetReference("MSTest.TestFramework", "4.3.3", "lib/netstandard2.0/");
+    }
+
     [Fact]
     public async Task MethodOnSetStoredInPrivateReadonlyFieldInOtherSyntaxTree_ShouldNotReportDiagnostic()
     {
@@ -1817,6 +1828,140 @@ class TypeName
             {
                 public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, CancellationToken ct) => throw null;
                 public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer, CancellationToken ct) => throw null;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_InsertComparerBeforeOptionalParameters_Issue1249()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void Test()
+                {
+                    Assert.[|AreEqual("a", "b", "message")|];
+                }
+            }
+            static class Assert
+            {
+                public static void AreEqual<T>(T expected, T actual, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
+                public static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
+            }
+            """;
+        const string CodeFix = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void Test()
+                {
+                    Assert.AreEqual("a", "b", System.StringComparer.Ordinal, "message");
+                }
+            }
+            static class Assert
+            {
+                public static void AreEqual<T>(T expected, T actual, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
+                public static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer, string message = "", [CallerArgumentExpression("expected")] string expectedExpression = "", [CallerArgumentExpression("actual")] string actualExpression = "") { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_MSTestAreEqualWithMessage_Issue1249()
+    {
+        const string SourceCode = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.[|AreEqual("id", fields[0], "First field should be the ID")|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.AreEqual("id", fields[0], System.StringComparer.Ordinal, "First field should be the ID");
+                }
+            }
+            """;
+        await CreateMSTestProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_MSTestAreEqualWithInterpolatedMessage_Issue1249()
+    {
+        const string SourceCode = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.[|AreEqual("id", fields[0], $"First field should be the ID but was {fields[0]}")|];
+                }
+            }
+            """;
+        const string CodeFix = """
+            using Microsoft.VisualStudio.TestTools.UnitTesting;
+            class Sample
+            {
+                void Test(string[] fields)
+                {
+                    Assert.AreEqual("id", fields[0], System.StringComparer.Ordinal, $"First field should be the ID but was {fields[0]}");
+                }
+            }
+            """;
+        await CreateMSTestProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CodeFix_UseNamedArgumentWhenArgumentsAreNamed()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            class Sample
+            {
+                void Test()
+                {
+                    AreEqual[|(actual: "b", expected: "a")|];
+                }
+
+                static void AreEqual<T>(T expected, T actual) { }
+                static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer) { }
+            }
+            """;
+        const string CodeFix = """
+            using System.Collections.Generic;
+            class Sample
+            {
+                void Test()
+                {
+                    AreEqual(actual: "b", expected: "a", comparer: System.StringComparer.Ordinal);
+                }
+
+                static void AreEqual<T>(T expected, T actual) { }
+                static void AreEqual<T>(T expected, T actual, IEqualityComparer<T> comparer) { }
             }
             """;
         await CreateProjectBuilder()

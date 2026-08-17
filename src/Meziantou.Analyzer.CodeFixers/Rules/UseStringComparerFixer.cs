@@ -76,6 +76,11 @@ public sealed class UseStringComparerFixer : CodeFixProvider
             }
         }
 
+        // When the argument list uses named arguments, the comparer must be named too. Without the
+        // name of the parameter, the fix would generate code that doesn't compile.
+        if (parameterName.Length == 0 && GetArguments(nodeToFix).Any(argument => argument.NameColon is not null))
+            return;
+
         RegisterCodeFix(nameof(StringComparer.Ordinal));
         RegisterCodeFix(nameof(StringComparer.OrdinalIgnoreCase));
 
@@ -180,24 +185,14 @@ public sealed class UseStringComparerFixer : CodeFixProvider
 
             case ImplicitObjectCreationExpressionSyntax implicitCreationExpression:
             {
-                var args = implicitCreationExpression.ArgumentList.Arguments;
-                var newArguments = insertionIndex >= 0 && insertionIndex < args.Count
-                    ? args.Insert(insertionIndex, (ArgumentSyntax)generator.Argument(comparerExpression))
-                    : args.Add(insertionIndex > args.Count
-                        ? (ArgumentSyntax)generator.Argument(parameterName, RefKind.None, comparerExpression)
-                        : (ArgumentSyntax)generator.Argument(comparerExpression));
+                var newArguments = AddArgument(implicitCreationExpression.ArgumentList.Arguments, comparerExpression, insertionIndex, parameterName, generator);
                 editor.ReplaceNode(implicitCreationExpression, implicitCreationExpression.WithArgumentList(implicitCreationExpression.ArgumentList.WithArguments(newArguments)));
                 break;
             }
 
             case InvocationExpressionSyntax invocationExpression:
             {
-                var args = invocationExpression.ArgumentList.Arguments;
-                var newArguments = insertionIndex >= 0 && insertionIndex < args.Count
-                    ? args.Insert(insertionIndex, (ArgumentSyntax)generator.Argument(comparerExpression))
-                    : args.Add(insertionIndex > args.Count
-                        ? (ArgumentSyntax)generator.Argument(parameterName, RefKind.None, comparerExpression)
-                        : (ArgumentSyntax)generator.Argument(comparerExpression));
+                var newArguments = AddArgument(invocationExpression.ArgumentList.Arguments, comparerExpression, insertionIndex, parameterName, generator);
                 editor.ReplaceNode(invocationExpression, invocationExpression.WithArgumentList(invocationExpression.ArgumentList.WithArguments(newArguments)));
                 break;
             }
@@ -219,12 +214,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
     {
         if (creationExpression.ArgumentList is not null)
         {
-            var args = creationExpression.ArgumentList.Arguments;
-            var newArguments = insertionIndex >= 0 && insertionIndex < args.Count
-                ? args.Insert(insertionIndex, (ArgumentSyntax)generator.Argument(comparerExpression))
-                : args.Add(insertionIndex > args.Count
-                    ? (ArgumentSyntax)generator.Argument(parameterName, RefKind.None, comparerExpression)
-                    : (ArgumentSyntax)generator.Argument(comparerExpression));
+            var newArguments = AddArgument(creationExpression.ArgumentList.Arguments, comparerExpression, insertionIndex, parameterName, generator);
             return creationExpression.WithArgumentList(creationExpression.ArgumentList.WithArguments(newArguments));
         }
 
@@ -233,6 +223,31 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         return creationExpression
             .WithType(creationExpression.Type.WithoutTrailingTrivia())
             .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(newArgument)).WithTrailingTrivia(trailingTrivia));
+    }
+
+    private static SeparatedSyntaxList<ArgumentSyntax> AddArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, SyntaxNode comparerExpression, int insertionIndex, string parameterName, SyntaxGenerator generator)
+    {
+        // The comparer must be named when it cannot be added at its own position, or when the argument list
+        // already contains named arguments as adding an unnamed argument may not compile (CS8323).
+        var useNamedArgument = insertionIndex > arguments.Count || arguments.Any(argument => argument.NameColon is not null);
+        var newArgument = useNamedArgument
+            ? (ArgumentSyntax)generator.Argument(parameterName, RefKind.None, comparerExpression)
+            : (ArgumentSyntax)generator.Argument(comparerExpression);
+
+        return insertionIndex >= 0 && insertionIndex < arguments.Count
+            ? arguments.Insert(insertionIndex, newArgument)
+            : arguments.Add(newArgument);
+    }
+
+    private static SeparatedSyntaxList<ArgumentSyntax> GetArguments(SyntaxNode nodeToFix)
+    {
+        return nodeToFix switch
+        {
+            ObjectCreationExpressionSyntax creationExpression => creationExpression.ArgumentList?.Arguments ?? default,
+            ImplicitObjectCreationExpressionSyntax implicitCreationExpression => implicitCreationExpression.ArgumentList.Arguments,
+            InvocationExpressionSyntax invocationExpression => invocationExpression.ArgumentList.Arguments,
+            _ => default,
+        };
     }
 
     private static bool CanFix(SyntaxNode nodeToFix)

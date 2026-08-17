@@ -144,6 +144,12 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {
             var operation = (IObjectCreationOperation)ctx.Operation;
+
+            // Compiler-generated creations, such as interpolated string handlers, have no argument list
+            // in the source code where a comparer could be added.
+            if (operation.IsImplicit)
+                return;
+
             if (HasEqualityComparerArgument(operation.Arguments))
                 return;
 
