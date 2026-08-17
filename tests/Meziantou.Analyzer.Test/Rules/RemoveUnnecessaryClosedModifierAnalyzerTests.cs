@@ -223,6 +223,185 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
     }
 
     [Fact]
+    public async Task ClosedClass_WithoutDerivedType_CanBeFixedWithSealed()
+    {
+        const string SourceCode = """
+            [|closed|] class Sample
+            {
+            }
+            """;
+
+        const string CodeFix = """
+            sealed class Sample
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedRecord_WithoutDerivedType_CanBeFixedWithSealed()
+    {
+        const string SourceCode = """
+            [|closed|] record Sample;
+            """;
+
+        const string CodeFix = """
+            sealed record Sample;
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedClass_WithOtherModifiers_CanBeFixedWithSealed()
+    {
+        const string SourceCode = """
+            public /*sample*/[|closed|] partial class Sample
+            {
+            }
+            """;
+
+        const string CodeFix = """
+            public /*sample*/sealed partial class Sample
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedClass_ImplementingAllInterfaceMembers_CanBeFixedWithSealed()
+    {
+        const string SourceCode = """
+            interface ISample
+            {
+                void Method();
+            }
+
+            [|closed|] class Sample : ISample
+            {
+                public void Method() { }
+            }
+            """;
+
+        const string CodeFix = """
+            interface ISample
+            {
+                void Method();
+            }
+
+            sealed class Sample : ISample
+            {
+                public void Method() { }
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedClass_OverridingAllAbstractMembers_CanBeFixedWithSealed()
+    {
+        const string SourceCode = """
+            abstract class BaseSample
+            {
+                public abstract void Method();
+            }
+
+            [|closed|] class Sample : BaseSample
+            {
+                public override void Method() { }
+            }
+            """;
+
+        const string CodeFix = """
+            abstract class BaseSample
+            {
+                public abstract void Method();
+            }
+
+            sealed class Sample : BaseSample
+            {
+                public override void Method() { }
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 1, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedClass_WithAbstractMember_IsFixedWithAbstract()
+    {
+        const string SourceCode = """
+            [|closed|] class Sample
+            {
+                public abstract int Value { get; }
+            }
+            """;
+
+        const string CodeFix = """
+            abstract class Sample
+            {
+                public abstract int Value { get; }
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 0, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ClosedClass_WithNotOverriddenAbstractMember_IsFixedWithAbstract()
+    {
+        const string SourceCode = """
+            abstract class BaseSample
+            {
+                public abstract void Method();
+            }
+
+            [|closed|] class Sample : BaseSample
+            {
+            }
+            """;
+
+        const string CodeFix = """
+            abstract class BaseSample
+            {
+                public abstract void Method();
+            }
+
+            abstract class Sample : BaseSample
+            {
+            }
+            """;
+
+        await CreateProjectBuilder()
+            .WithSourceCode(SourceCode)
+            .ShouldFixCodeWith(index: 0, CodeFix)
+            .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ClosedDerivedType_WithoutDerivedType_ReportsDiagnostic()
     {
         const string SourceCode = """
