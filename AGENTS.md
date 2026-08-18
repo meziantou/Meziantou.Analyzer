@@ -133,7 +133,7 @@ Those projects pin their own Roslyn version (using `TreatAsLocalProperty="Roslyn
 
 `Meziantou.Analyzer.csproj` and `Meziantou.Analyzer.CodeFixers.csproj` are the development projects: they honor `/p:RoslynVersion` and are the ones referenced by the tests and by `DocumentationGenerator`. When adding a file or a package reference, update the `Directory.Build.props` of the folder so that all Roslyn versions get it.
 
-`Meziantou.Analyzer.Pack.csproj` references every `roslyn<version>` project with `ReferenceOutputAssembly="false" PrivateAssets="all"`, so building or packing it builds all Roslyn versions in the right order without adding them as NuGet package dependencies.
+`Meziantou.Analyzer.Pack.csproj` discovers the `roslyn<version>` projects with a wildcard and references them with `ReferenceOutputAssembly="false" PrivateAssets="all"`, so building or packing it builds all Roslyn versions in the right order without adding them as NuGet package dependencies. Its `AddAnalyzersToPackage` target then asks each project for the assembly it produces (`GetTargetPath`) and packs it under `analyzers/dotnet/<roslyn version>/cs`. Adding support for a new Roslyn version therefore only requires adding its entry in `Directory.Build.targets` and its two projects.
 
 ### Output folders
 
