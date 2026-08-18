@@ -152,24 +152,45 @@ jobs:
 
   build_and_test:
     runs-on: ${{ matrix.runs-on }}
+    name: build_and_test (${{ matrix.runs-on }}, ${{ matrix.configuration }}, ${{ matrix.roslyn-version }}, shard ${{ matrix.shard-index }})
     env:
       TestResultsDirectory: ${{ github.workspace}}/TestResults
+      TotalShards: 2
+      # Options added by Meziantou.NET.Sdk.Test to every test run. They are set explicitly because
+      # 'EnableDefaultTestSettings' has to be disabled: sharded-test lists the tests before running them,
+      # and both '--report-trx' and '--minimum-expected-tests' make 'dotnet test --list-tests' report no test.
+      # The trx report is passed on the sharded-test command line instead, so it is removed from the discovery
+      # step and each batch writes a report with a distinct file name.
+      MtpArguments: --report-gh --report-gh-slow-test-notices off --coverage --crashdump --crashdump-type mini --hangdump --hangdump-timeout 10m --hangdump-type mini
     strategy:
       matrix:
         runs-on: [ ubuntu-latest ]
         configuration: [ Release ]
         roslyn-version: [ 'roslyn4.8', 'roslyn4.14', 'roslyn5.0', 'roslyn5.6', 'roslyn5.9', 'default' ]
+        shard-index: [ 1, 2 ]
       fail-fast: false
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core (global.json)
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-    - run: dotnet test --configuration ${{ matrix.configuration }} --results-directory "${{ env.TestResultsDirectory }}" /p:RoslynVersion=${{ matrix.roslyn-version}}
+    - run: dotnet tool install --global Meziantou.ShardedTest --version 1.1.0
+      name: Install sharded-test
+    - run: >
+        sharded-test
+        --shard-index ${{ matrix.shard-index }}
+        --total-shards ${{ env.TotalShards }}
+        --project tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.csproj
+        --configuration ${{ matrix.configuration }}
+        --results-directory "${{ env.TestResultsDirectory }}"
+        /p:RoslynVersion=${{ matrix.roslyn-version}}
+        /p:EnableDefaultTestSettings=false
+        "/p:TestingPlatformCommandLineArguments=${{ env.MtpArguments }}"
+        --report-trx --report-trx-filename "report_{pid}.trx"
       name: Run tests
     - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       if: always()
       with:
-        name: test-results-${{ matrix.runs-on }}-${{ matrix.roslyn-version }}-${{ matrix.configuration }}
+        name: test-results-${{ matrix.runs-on }}-${{ matrix.roslyn-version }}-${{ matrix.configuration }}-shard${{ matrix.shard-index }}
         if-no-files-found: error
         retention-days: 3
         path: ${{ env.TestResultsDirectory }}/**/*
