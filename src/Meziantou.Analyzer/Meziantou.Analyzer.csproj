@@ -1,48 +1,5 @@
 ﻿<Project Sdk="Meziantou.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <Version>1.0.1</Version>
-    
-    <!-- Cannot use Meziantou.Analyzer, so the analyzer can be added to this project -->
-    <PackageId>Dummy</PackageId>
-    <GenerateDependencyFile>false</GenerateDependencyFile>
-    <developmentDependency>true</developmentDependency>
-    <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
-    <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
-    
-    <BaseOutputPath>bin\$(RoslynVersion)\</BaseOutputPath>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)..\..\docs\**\*" LinkBase="docs" />
-    <EmbeddedResource Include="Resources\*.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />    
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Internals\ContextExtensions.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>ContextExtensions.g.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Internals\ContextExtensions.g.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ContextExtensions.tt</DependentUpon>
-    </Compile>
-  </ItemGroup>
+  <!-- Development project. The Roslyn version can be selected with the RoslynVersion property.
+       The projects used to build the NuGet package are the Meziantou.Analyzer.roslyn*.csproj ones.
+       The content of the project is defined in Directory.Build.props. -->
 </Project>

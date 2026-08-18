@@ -66,22 +66,9 @@ jobs:
 
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
 
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn4.8.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn4.8.binlog
+    # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them in the right order
+    - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.build.binlog
 
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.14 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn4.14.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.14 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn4.14.binlog
-
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn5.0 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn5.0.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn5.0 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn5.0.binlog
-
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn5.6 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn5.6.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn5.6 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn5.6.binlog
-
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn5.9 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn5.9.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn5.9 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn5.9.binlog
-
-    - run: dotnet restore src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj -bl:Meziantou.Analyzer.Pack.restore.binlog
     - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release --no-build /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
     - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /bl:Meziantou.Analyzer.Annotations.pack.binlog
 
@@ -111,6 +98,43 @@ jobs:
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
+      - name: Validate the content of the analyzer package
+        run: |
+          $packages = @(Get-ChildItem "${{ env.NuGetDirectory }}" -Recurse -Filter *.nupkg | Where-Object { $_.Name -match '^Meziantou\.Analyzer\.\d' })
+          if ($packages.Count -ne 1) {
+            Write-Host "::error::Expected 1 Meziantou.Analyzer package, found $($packages.Count)"
+            exit 1
+          }
+
+          # The expected Roslyn versions are the ones that have a project, the same way Meziantou.Analyzer.Pack discovers them
+          $versions = @(Get-ChildItem "src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn*.csproj" | ForEach-Object { $_.BaseName -replace '^.*\.(roslyn.*)$', '$1' })
+          if ($versions.Count -eq 0) {
+            Write-Host "::error::No Roslyn version specific project found"
+            exit 1
+          }
+
+          $expected = $versions | ForEach-Object {
+            "analyzers/dotnet/$_/cs/Meziantou.Analyzer.dll"
+            "analyzers/dotnet/$_/cs/Meziantou.Analyzer.CodeFixers.dll"
+          }
+
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($packages[0].FullName)
+          try { $entries = @($zip.Entries.FullName) } finally { $zip.Dispose() }
+
+          $analyzers = @($entries | Where-Object { $_ -like 'analyzers/*' })
+          $errors = @()
+          $errors += $expected | Where-Object { $_ -notin $analyzers } | ForEach-Object { "Missing from the package: $_" }
+          $errors += $analyzers | Where-Object { $_ -notin $expected } | ForEach-Object { "Unexpected analyzer in the package: $_" }
+          # The analyzers must not be shipped as a regular library
+          $errors += $entries | Where-Object { $_ -like 'lib/*' } | ForEach-Object { "The package must not contain any assembly under lib: $_" }
+
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Host "::error::$_" }
+            exit 1
+          }
+
+          Write-Host "$($packages[0].Name) contains the analyzers for: $($versions -join ', ')"
+
       - name: Run dotnet validate
         run: |
           dotnet tool update Meziantou.Framework.NuGetPackageValidation.Tool --global

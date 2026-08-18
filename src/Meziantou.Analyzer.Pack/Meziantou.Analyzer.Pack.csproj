@@ -14,6 +14,8 @@
     <PackageTags>Meziantou.Analyzer, csharp, roslyn, static-analysis, analyzer, code-quality, analyzers, roslyn-analyzers</PackageTags>
 
     <SearchReadmeFileAbove>true</SearchReadmeFileAbove>
+
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddAnalyzersToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,20 +24,29 @@
     <None Include="buildTransitive/**" Pack="true" PackagePath="buildTransitive" />
 
     <None Include="configuration/*.editorconfig" Pack="true" PackagePath="configuration" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.8\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs/" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn4.14\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn4.14\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.14/cs/" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn5.0\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn5.0\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs/" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn5.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.6/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn5.6\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.6/cs/" />
-
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\bin\roslyn5.9\$(Configuration)\netstandard2.0\Meziantou.Analyzer.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.9/cs/" />
-    <None Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer.CodeFixers\bin\roslyn5.9\$(Configuration)\netstandard2.0\Meziantou.Analyzer.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn5.9/cs/" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Discover the projects instead of listing them, so adding a Roslyn version only means adding its projects -->
+    <AnalyzerProject Include="..\Meziantou.Analyzer\Meziantou.Analyzer.roslyn*.csproj" />
+    <AnalyzerProject Include="..\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.roslyn*.csproj" />
+
+    <!-- Build order only: the assemblies are packed by AddAnalyzersToPackage, and PrivateAssets="all" keeps those projects out of the NuGet package dependencies -->
+    <ProjectReference Include="@(AnalyzerProject)" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Ask each project for the assembly it produces instead of guessing its output folder -->
+  <Target Name="AddAnalyzersToPackage">
+    <Error Condition="'@(AnalyzerProject)' == ''" Text="No Roslyn version specific project found. The package would not contain any analyzer." />
+
+    <MSBuild Projects="@(AnalyzerProject)" Targets="GetTargetPath" Properties="TargetFramework=netstandard2.0;Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="_AnalyzerAssembly" />
+    </MSBuild>
+
+    <ItemGroup>
+      <!-- The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn4.8.csproj -->
+      <TfmSpecificPackageFile Include="@(_AnalyzerAssembly)"
+                              PackagePath="analyzers/dotnet/$([System.Text.RegularExpressions.Regex]::Replace('%(MSBuildSourceProjectFile)', '^.*\.(roslyn.*)\.csproj$', '$1'))/cs/" />
+    </ItemGroup>
+  </Target>
 </Project>

@@ -1,6 +1,14 @@
 <Project>
 
   <PropertyGroup>
+    <!-- https://learn.microsoft.com/en-us/dotnet/core/sdk/artifacts-output -->
+    <!-- ArtifactsPath is set explicitly because some folders have their own Directory.Build.props,
+         and the default location is the folder of the Directory.Build.props found for the project -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <LangVersion>preview</LangVersion>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <MeziantouPolyfill_IncludedPolyfills>*</MeziantouPolyfill_IncludedPolyfills>
