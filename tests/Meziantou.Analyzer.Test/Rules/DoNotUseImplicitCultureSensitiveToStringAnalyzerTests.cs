@@ -658,6 +658,146 @@ class Sample : System.IFormattable
     }
 
     [Fact]
+    public async Task Concat_ConditionalExpression_CultureInsensitiveBranches_NoDiagnostic()
+    {
+        var sourceCode = """
+using System;
+using System.Globalization;
+class Test
+{
+    void A(DateTime? date)
+    {
+        _ = "test" + (date.HasValue ? date.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_ConditionalExpression_CultureSensitiveType()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(bool condition, double a, double b)
+    {
+        _ = "test" + ([|condition ? a : b|]);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_CoalesceExpression_NoDiagnostic()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(string value)
+    {
+        _ = "test" + (value ?? "");
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_CoalesceExpression_CultureSensitiveType()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(double? value)
+    {
+        _ = "test" + ([|value ?? 1.5|]);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_SwitchExpression_NoDiagnostic()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(int value)
+    {
+        _ = "test" + (value switch { 0 => "a", _ => "b" });
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_SwitchExpression_CultureSensitiveType()
+    {
+        var sourceCode = """
+class Test
+{
+    void A(int value)
+    {
+        _ = "test" + ([|value switch { 0 => 1.5, _ => 2.5 }|]);
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_AwaitExpression_NoDiagnostic()
+    {
+        var sourceCode = """
+using System.Threading.Tasks;
+class Test
+{
+    async Task A(Task<string> task)
+    {
+        _ = "test" + await task;
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_AwaitExpression_CultureSensitiveType()
+    {
+        var sourceCode = """
+using System.Threading.Tasks;
+class Test
+{
+    async Task A(Task<double> task)
+    {
+        _ = "test" + [|await task|];
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Object_Concat_NoDiagnostic()
     {
         var sourceCode = """

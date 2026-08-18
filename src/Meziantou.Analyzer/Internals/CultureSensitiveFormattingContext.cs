@@ -289,8 +289,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (operation is IBinaryOperation binaryOperation)
             return GetCultureSensitivity(binaryOperation.Type, format: null, instance: null, options);
 
-        // Unknown operation
-        return CultureSensitivity.CultureSensitive;
+        // Unknown operation (conditional expression, coalesce expression, switch expression, await expression, ...).
+        // The formatting depends on the type of the value, so use it to determine the culture sensitivity.
+        return GetCultureSensitivity(operation.Type, format: null, instance: operation, options);
     }
 
     public bool IsInInterpolatedStringHandlerContext(IInterpolatedStringOperation operation)
