@@ -1,0 +1,49 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+    <AssemblyName>Meziantou.Analyzer</AssemblyName>
+    <RootNamespace>Meziantou.Analyzer</RootNamespace>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Only Meziantou.Analyzer.Pack produces a NuGet package, and all the projects of this folder would use the same package output folder -->
+    <IsPackable>false</IsPackable>
+    <Version>1.0.1</Version>
+
+    <!-- Cannot use Meziantou.Analyzer, so the analyzer can be added to this project -->
+    <PackageId>Dummy</PackageId>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <developmentDependency>true</developmentDependency>
+    <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
+    <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\docs\**\*" LinkBase="docs" />
+    <EmbeddedResource Include="Resources\*.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Internals\ContextExtensions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ContextExtensions.g.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Internals\ContextExtensions.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ContextExtensions.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+</Project>

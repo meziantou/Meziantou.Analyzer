@@ -1,0 +1,42 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+    <AssemblyName>Meziantou.Analyzer.CodeFixers</AssemblyName>
+    <RootNamespace>Meziantou.Analyzer</RootNamespace>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Only Meziantou.Analyzer.Pack produces a NuGet package, and all the projects of this folder would use the same package output folder -->
+    <IsPackable>false</IsPackable>
+    <Version>1.0.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\BannedSymbols.txt" />
+
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\RuleIdentifiers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\CompilationExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\EnumerableExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LanguageVersionExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LocationExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\MethodSymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\NamespaceSymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\ObjectPool.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OperationExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\StringExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\SymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadFinder.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadOptions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadParameterType.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\TypeSymbolExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\DoNotUseBlockingCallInAsyncContextData.cs" LinkBase="Rules" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\OptimizeLinqUsageData.cs" LinkBase="Rules" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\OptimizeStringBuilderUsageData.cs" LinkBase="Rules" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\*Common.cs" LinkBase="Rules" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

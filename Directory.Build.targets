@@ -1,10 +1,6 @@
 <Project>
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
-  <PropertyGroup>
-    <RoslynVersion></RoslynVersion>
-  </PropertyGroup>
-
   <Choose>
     <!-- https://learn.microsoft.com/en-us/visualstudio/extensibility/roslyn-version-support?WT.mc_id=DT-MVP-5003978 -->
     <!-- https://learn.microsoft.com/en-us/visualstudio/releases/2026/servicing-vs?WT.mc_id=DT-MVP-5003978#support-for-older-versions -->

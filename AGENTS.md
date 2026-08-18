@@ -122,6 +122,23 @@ This project supports multiple versions of Roslyn to ensure compatibility with d
 - `roslyn5.9` - Roslyn 5.9.0
 - `default` - Roslyn 5.9.0
 
+### Project layout
+
+There is one project per Roslyn version for both the analyzer and the code fixers:
+
+- `src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn<version>.csproj`
+- `src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn<version>.csproj`
+
+Those projects pin their own Roslyn version (using `TreatAsLocalProperty="RoslynVersion"`), so `/p:RoslynVersion` has no effect on them. That property is all they set: everything else is defined in the `Directory.Build.props` of their folder, which is shared by all the projects of the folder and imports the `Directory.Build.props` of the repository root.
+
+`Meziantou.Analyzer.csproj` and `Meziantou.Analyzer.CodeFixers.csproj` are the development projects: they honor `/p:RoslynVersion` and are the ones referenced by the tests and by `DocumentationGenerator`. When adding a file or a package reference, update the `Directory.Build.props` of the folder so that all Roslyn versions get it.
+
+`Meziantou.Analyzer.Pack.csproj` references every `roslyn<version>` project with `ReferenceOutputAssembly="false" PrivateAssets="all"`, so building or packing it builds all Roslyn versions in the right order without adding them as NuGet package dependencies.
+
+### Output folders
+
+The repository uses the [artifacts output layout](https://learn.microsoft.com/en-us/dotnet/core/sdk/artifacts-output), enabled in the `Directory.Build.props` of the repository root. There is no `bin` or `obj` folder next to the projects: the build output is in `artifacts/bin/<project name>/<configuration>_<target framework>`, the intermediate output in `artifacts/obj/<project name>/<configuration>_<target framework>`, and the NuGet packages in `artifacts/package/<configuration>`. This is what keeps the outputs of the Roslyn-specific projects separate, as they share their source folder.
+
 ### Building with a specific Roslyn version
 
 To build the project with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild property:

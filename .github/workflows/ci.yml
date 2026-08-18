@@ -66,22 +66,9 @@ jobs:
 
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
 
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn4.8.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.8 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn4.8.binlog
+    # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them in the right order
+    - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.build.binlog
 
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn4.14 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn4.14.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn4.14 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn4.14.binlog
-
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn5.0 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn5.0.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn5.0 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn5.0.binlog
-
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn5.6 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn5.6.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn5.6 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn5.6.binlog
-
-    - run: dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.csproj --configuration Release /p:RoslynVersion=roslyn5.9 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.roslyn5.9.binlog
-    - run: dotnet build src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj --configuration Release /p:RoslynVersion=roslyn5.9 /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.CodeFixers.roslyn5.9.binlog
-
-    - run: dotnet restore src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj -bl:Meziantou.Analyzer.Pack.restore.binlog
     - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release --no-build /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
     - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /bl:Meziantou.Analyzer.Annotations.pack.binlog
 
