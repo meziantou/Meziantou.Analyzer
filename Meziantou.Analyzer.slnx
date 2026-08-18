@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path=".config/dotnet-tools.json" />
     <File Path=".editorconfig" />
     <File Path=".github/workflows/ci.yml" />
     <File Path="CHANGELOG.md" />

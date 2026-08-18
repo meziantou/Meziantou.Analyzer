@@ -173,10 +173,10 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core (global.json)
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-    - run: dotnet tool install --global Meziantou.ShardedTest --version 1.1.0
-      name: Install sharded-test
+    - run: dotnet tool restore
+      name: Restore the local tools
     - run: >
-        sharded-test
+        dotnet sharded-test
         --shard-index ${{ matrix.shard-index }}
         --total-shards ${{ env.TotalShards }}
         --project tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.csproj
