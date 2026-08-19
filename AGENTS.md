@@ -182,6 +182,17 @@ dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.cspr
 dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
 ```
 
+### Limiting the number of concurrent tests
+
+Every test compiles code with Roslyn, so running one test per CPU thread uses a lot of memory. [`tests/Meziantou.Analyzer.Test/testconfig.json`](/tests/Meziantou.Analyzer.Test/testconfig.json) limits the number of tests running at the same time in a test project (`xUnit.maxParallelThreads`). It is shared by all the Roslyn versions, as they are in the same folder, and `Microsoft.Testing.Platform.MSBuild` copies it to the output folder of each project as `Meziantou.Analyzer.Test.testconfig.json`.
+
+The test projects still run in parallel when they run together, which multiplies the memory usage by the number of projects. Use `--max-parallel-test-modules` to limit them:
+
+```bash
+# Run at most 2 test projects at the same time
+dotnet test --max-parallel-test-modules 2
+```
+
 ### When to test with multiple Roslyn versions
 
 You SHOULD test with multiple Roslyn versions when:
