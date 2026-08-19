@@ -9,6 +9,17 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <!-- The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn4.8.csproj.
+         The projects that are not specific to a Roslyn version use the default version.
+         The version specific projects use TreatAsLocalProperty="RoslynVersion" so that /p:RoslynVersion cannot override it. -->
+    <RoslynVersion>$([System.Text.RegularExpressions.Regex]::Match($(MSBuildProjectName), 'roslyn[0-9.]+$'))</RoslynVersion>
+    <RoslynVersion Condition="'$(RoslynVersion)' == ''">roslyn5.9</RoslynVersion>
+
+    <!-- The Roslyn packages are versioned after the Roslyn version, e.g. roslyn4.8 uses 4.8.0 ("roslyn" is 6 characters) -->
+    <RoslynPackageVersion>$(RoslynVersion.Substring(6)).0</RoslynPackageVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <LangVersion>preview</LangVersion>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <MeziantouPolyfill_IncludedPolyfills>*</MeziantouPolyfill_IncludedPolyfills>

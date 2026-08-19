@@ -113,27 +113,31 @@ private static async Task<Document> FixAsync(Document document, BinaryExpression
 
 ## Testing with different Roslyn versions
 
-This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are configured in `Directory.Build.targets`:
+This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are the ones that have a `When` block in `Directory.Build.targets`:
 
 - `roslyn4.8` - Roslyn 4.8.0
 - `roslyn4.14` - Roslyn 4.14.0
 - `roslyn5.0` - Roslyn 5.0.0
 - `roslyn5.6` - Roslyn 5.6.0
-- `roslyn5.9` - Roslyn 5.9.0
-- `default` - Roslyn 5.9.0
+- `roslyn5.9` - Roslyn 5.9.0 (the default version, used by the projects that are not specific to a Roslyn version)
+
+The default version must always be the latest supported one, and the CI fails if it is not.
+
+The version of the `Microsoft.CodeAnalysis.*` packages is not listed anywhere: it is derived from `RoslynVersion` in the `Directory.Build.props` of the repository root (`roslyn4.8` uses `4.8.0`). What remains version specific in `Directory.Build.targets` is the `DefineConstants` and the warnings to disable. Building a project named after a version that has no `When` block fails with an explicit error instead of silently compiling without any `ROSLYN_*` constant.
 
 ### Project layout
 
-There is one project per Roslyn version for both the analyzer and the code fixers:
+There is one project per Roslyn version for the analyzer, the code fixers, and the tests:
 
 - `src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn<version>.csproj`
 - `src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn<version>.csproj`
+- `tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn<version>.csproj`
 
-Those projects pin their own Roslyn version (using `TreatAsLocalProperty="RoslynVersion"`), so `/p:RoslynVersion` has no effect on them. That property is all they set: everything else is defined in the `Directory.Build.props` of their folder, which is shared by all the projects of the folder and imports the `Directory.Build.props` of the repository root.
+Those project files are empty: the `RoslynVersion` property is derived from the name of the project file by the `Directory.Build.props` of the repository root, and everything else is defined in the `Directory.Build.props` of their folder, which is shared by all the projects of the folder. They use `TreatAsLocalProperty="RoslynVersion"` so that `/p:RoslynVersion` cannot override the version they are named after. Each test project references the analyzer and the code fixers of its own Roslyn version, using `$(RoslynVersion)` in the `Directory.Build.props` of the test folder.
 
-`Meziantou.Analyzer.csproj` and `Meziantou.Analyzer.CodeFixers.csproj` are the development projects: they honor `/p:RoslynVersion` and are the ones referenced by the tests and by `DocumentationGenerator`. When adding a file or a package reference, update the `Directory.Build.props` of the folder so that all Roslyn versions get it.
+There is no development project that would not be tied to a Roslyn version: `DocumentationGenerator` is not specific to a Roslyn version, so its `RoslynVersion` is the default one and it references `Meziantou.Analyzer.$(RoslynVersion).csproj`. When adding a file or a package reference, update the `Directory.Build.props` of the folder so that all Roslyn versions get it.
 
-`Meziantou.Analyzer.Pack.csproj` discovers the `roslyn<version>` projects with a wildcard and references them with `ReferenceOutputAssembly="false" PrivateAssets="all"`, so building or packing it builds all Roslyn versions in the right order without adding them as NuGet package dependencies. Its `AddAnalyzersToPackage` target then asks each project for the assembly it produces (`GetTargetPath`) and packs it under `analyzers/dotnet/<roslyn version>/cs`. Adding support for a new Roslyn version therefore only requires adding its entry in `Directory.Build.targets` and its two projects.
+`Meziantou.Analyzer.Pack.csproj` discovers the `roslyn<version>` projects with a wildcard and references them with `ReferenceOutputAssembly="false" PrivateAssets="all"`, so building or packing it builds all Roslyn versions in the right order without adding them as NuGet package dependencies. Its `AddAnalyzersToPackage` target then asks each project for the assembly it produces (`GetTargetPath`) and packs it under `analyzers/dotnet/<roslyn version>/cs`. Adding support for a new Roslyn version therefore only requires adding its entry in `Directory.Build.targets`, its three projects, and the default `RoslynVersion` of the `Directory.Build.props` of the repository root when the new version is the latest one. The `list_test_projects` job of the CI fails if a version is missing one of its projects, or if the default version is not the latest one.
 
 ### Output folders
 
@@ -141,27 +145,30 @@ The repository uses the [artifacts output layout](https://learn.microsoft.com/en
 
 ### Building with a specific Roslyn version
 
-To build the project with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild property:
+To build with a specific Roslyn version, build the project of that version:
 
 ```bash
-dotnet build /p:RoslynVersion=roslyn4.8
-dotnet build /p:RoslynVersion=roslyn4.14
-dotnet build # Uses default (latest) version
+# Build a specific Roslyn version
+dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn4.8.csproj
+dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn4.14.csproj
+
+# Build every Roslyn version, as all the projects are in the solution
+dotnet build
 ```
 
 ### Running tests with a specific Roslyn version
 
-To run tests with a specific Roslyn version, use the `/p:RoslynVersion` MSBuild property:
+To run tests with a specific Roslyn version, run the test project of that version:
 
 ```bash
 # Test with a specific Roslyn version
-dotnet test /p:RoslynVersion=roslyn4.8
-dotnet test /p:RoslynVersion=roslyn4.14
-dotnet test /p:RoslynVersion=roslyn5.0
-dotnet test /p:RoslynVersion=roslyn5.6
-dotnet test /p:RoslynVersion=roslyn5.9
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.14.csproj
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.0.csproj
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.6.csproj
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.9.csproj
 
-# Test with default (latest) Roslyn version
+# Test with every Roslyn version, as all the test projects are in the solution
 dotnet test
 ```
 
@@ -169,10 +176,10 @@ You can also filter tests to run only specific test classes or methods:
 
 ```bash
 # Run only tests from a specific test class
-dotnet test /p:RoslynVersion=roslyn4.8 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
 
 # Run a specific test method
-dotnet test /p:RoslynVersion=roslyn4.8 --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
 ```
 
 ### When to test with multiple Roslyn versions
@@ -191,4 +198,4 @@ You do NOT need to test with multiple Roslyn versions when:
 
 ### CI and Roslyn versions
 
-The CI pipeline (`.github/workflows/ci.yml`) automatically tests with all supported Roslyn versions as part of the `build_and_test` job. All Roslyn versions must pass before a PR can be merged.
+The CI pipeline (`.github/workflows/ci.yml`) automatically tests with all supported Roslyn versions as part of the `build_and_test` job. Its matrix is not hardcoded: the `list_test_projects` job first checks that every Roslyn version has an analyzer, a code fixer and a test project and that the default version is the latest one, then discovers the test projects of the `tests/Meziantou.Analyzer.Test` folder, and `build_and_test` runs one job per discovered project. All Roslyn versions must pass before a PR can be merged.

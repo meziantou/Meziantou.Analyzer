@@ -7,12 +7,13 @@
 
   <ItemGroup>
     <PackageReference Include="Meziantou.Framework.FullPath" Version="3.0.1" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.csproj" />
-    <ProjectReference Include="..\Meziantou.Analyzer\Meziantou.Analyzer.csproj" />
+    <!-- This project is not specific to a Roslyn version, so RoslynVersion is the default version -->
+    <ProjectReference Include="..\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.$(RoslynVersion).csproj" />
+    <ProjectReference Include="..\Meziantou.Analyzer\Meziantou.Analyzer.$(RoslynVersion).csproj" />
   </ItemGroup>
 
 </Project>

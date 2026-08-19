@@ -1,5 +1,0 @@
-﻿<Project Sdk="Meziantou.NET.Sdk">
-  <!-- Development project. The Roslyn version can be selected with the RoslynVersion property.
-       The projects used to build the NuGet package are the Meziantou.Analyzer.CodeFixers.roslyn*.csproj ones.
-       The content of the project is defined in Directory.Build.props. -->
-</Project>

@@ -12,18 +12,20 @@
   <Project Path="src/DocumentationGenerator/DocumentationGenerator.csproj" />
   <Project Path="src/ListDotNetTypes/ListDotNetTypes.csproj" />
   <Project Path="src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj" />
-  <Project Path="src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.csproj" />
   <Project Path="src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn4.8.csproj" />
   <Project Path="src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn4.14.csproj" />
   <Project Path="src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn5.0.csproj" />
   <Project Path="src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn5.6.csproj" />
   <Project Path="src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn5.9.csproj" />
   <Project Path="src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj" />
-  <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.csproj" />
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn4.8.csproj" />
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn4.14.csproj" />
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.0.csproj" />
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.6.csproj" />
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.9.csproj" />
-  <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.csproj" />
+  <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj" />
+  <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.14.csproj" />
+  <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.0.csproj" />
+  <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.6.csproj" />
+  <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.9.csproj" />
 </Solution>
