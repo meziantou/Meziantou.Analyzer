@@ -12,27 +12,19 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAnalyzer
 {
+    private const string StaticConstructorReason = " because it is assigned in the static constructor, which runs after the static field initializers";
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseNotYetInitializedStaticField,
         title: "Do not use static fields before they are initialized",
-        messageFormat: "Static field '{0}' may not be initialized yet",
+        messageFormat: "Static field '{0}' may not be initialized yet{1}",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseNotYetInitializedStaticField));
 
-    private static readonly DiagnosticDescriptor RuleStaticConstructor = new(
-        RuleIdentifiers.DoNotUseNotYetInitializedStaticField,
-        title: "Do not use static fields before they are initialized",
-        messageFormat: "Static field '{0}' is assigned in the static constructor, which runs after the static field initializers",
-        RuleCategories.Usage,
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseNotYetInitializedStaticField));
-
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RuleStaticConstructor);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -110,14 +102,14 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
                     if (!_fieldsAssignedInStaticConstructor.ContainsKey(referencedField))
                         continue;
 
-                    context.ReportDiagnostic(RuleStaticConstructor, location, [referencedField.Name]);
+                    context.ReportDiagnostic(Rule, location, referencedField.Name, StaticConstructorReason);
                     continue;
                 }
 
                 if (!ShouldReport(currentFieldInfo.Value, referencedFieldInfo.Value))
                     continue;
 
-                context.ReportDiagnostic(Rule, location, [referencedField.Name]);
+                context.ReportDiagnostic(Rule, location, referencedField.Name, "");
             }
         }
 

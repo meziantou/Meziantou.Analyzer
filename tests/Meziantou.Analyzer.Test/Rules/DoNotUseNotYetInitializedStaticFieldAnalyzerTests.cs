@@ -141,7 +141,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
                       }
                   }
                   """)
-              .ShouldReportDiagnosticWithMessage("Static field 'Other' is assigned in the static constructor, which runs after the static field initializers")
+              .ShouldReportDiagnosticWithMessage("Static field 'Other' may not be initialized yet because it is assigned in the static constructor, which runs after the static field initializers")
               .ValidateAsync();
     }
 
