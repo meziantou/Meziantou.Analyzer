@@ -1,6 +1,11 @@
 <Project>
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
+  <!-- https://learn.microsoft.com/en-us/visualstudio/extensibility/roslyn-version-support?WT.mc_id=DT-MVP-5003978 -->
+  <!-- https://learn.microsoft.com/en-us/visualstudio/releases/2026/servicing-vs?WT.mc_id=DT-MVP-5003978#support-for-older-versions -->
+  <!-- Visual Studio 2022: 4.14 (Lifecycle stage "Extended" is not considered) -->
+  <!-- .NET SDK 8.0.129:   4.8 -->
+  <!-- Minimum version to support: 4.8 -->
   <!-- The version of the packages is derived from RoslynVersion, see the Directory.Build.props of the repository root -->
   <ItemGroup>
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynPackageVersion)" />
@@ -8,52 +13,15 @@
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynPackageVersion)" />
   </ItemGroup>
 
-  <Choose>
-    <!-- https://learn.microsoft.com/en-us/visualstudio/extensibility/roslyn-version-support?WT.mc_id=DT-MVP-5003978 -->
-    <!-- https://learn.microsoft.com/en-us/visualstudio/releases/2026/servicing-vs?WT.mc_id=DT-MVP-5003978#support-for-older-versions -->
-    <!-- Visual Studio 2022: 4.14 (Lifecycle stage "Extended" is not considered) -->
-    <!-- .NET SDK 8.0.129:   4.8 -->
-    <!-- Minimum version to support: 4.8 -->
-    <When Condition="$(RoslynVersion) == 'roslyn4.8'">
-      <PropertyGroup>
-        <RoslynVersionSupported>true</RoslynVersionSupported>
-        <NoWarn>$(NoWarn);nullable</NoWarn>
-      </PropertyGroup>
-    </When>
+  <!-- The nullable annotations of the Roslyn APIs change from one version to another, and the code is written against
+       the default version, so the warnings of the other versions are noise -->
+  <PropertyGroup Condition="'$(RoslynVersion)' != '$(DefaultRoslynVersion)'">
+    <NoWarn>$(NoWarn);nullable</NoWarn>
+  </PropertyGroup>
 
-    <When Condition="$(RoslynVersion) == 'roslyn4.14'">
-      <PropertyGroup>
-        <RoslynVersionSupported>true</RoslynVersionSupported>
-        <NoWarn>$(NoWarn);nullable</NoWarn>
-      </PropertyGroup>
-    </When>
-
-    <When Condition="$(RoslynVersion) == 'roslyn5.0'">
-      <PropertyGroup>
-        <RoslynVersionSupported>true</RoslynVersionSupported>
-      </PropertyGroup>
-    </When>
-
-    <When Condition="$(RoslynVersion) == 'roslyn5.6'">
-      <PropertyGroup>
-        <RoslynVersionSupported>true</RoslynVersionSupported>
-        <NoWarn>$(NoWarn);CS0618</NoWarn>
-      </PropertyGroup>
-    </When>
-
-    <When Condition="$(RoslynVersion) == 'roslyn5.9'">
-      <PropertyGroup>
-        <RoslynVersionSupported>true</RoslynVersionSupported>
-      </PropertyGroup>
-    </When>
-  </Choose>
-
-  <!-- The ROSLYN_* and CSHARP*_OR_GREATER constants come from the Meziantou.Framework.Roslyn package, which derives them
-       from the version of the Microsoft.CodeAnalysis.* packages. Only the version specific warnings remain here.
-       Without this check, a project named after an unknown Roslyn version would silently compile with the wrong warnings -->
-  <Target Name="EnsureRoslynVersionIsSupported" BeforeTargets="BeforeBuild" Condition="'$(RoslynVersionSupported)' != 'true'">
-    <Error Text="The Roslyn version '$(RoslynVersion)' is not supported. Add it to the Directory.Build.targets of the repository root." />
-  </Target>
+  <PropertyGroup Condition="'$(RoslynVersion)' == 'roslyn5.6'">
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
 
   <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
