@@ -11,7 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The helpers are [Embedded], so the ones of Meziantou.Analyzer are not visible here even through InternalsVisibleTo: compile them -->
     <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.0.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.10" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />
