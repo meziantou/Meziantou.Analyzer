@@ -19,10 +19,6 @@
     <NoWarn>$(NoWarn);nullable</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(RoslynVersion)' == 'roslyn5.6'">
-    <NoWarn>$(NoWarn);CS0618</NoWarn>
-  </PropertyGroup>
-
   <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <NoWarn>$(NoWarn);nullable;IDE0370</NoWarn>
