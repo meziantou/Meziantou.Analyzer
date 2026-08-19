@@ -12,10 +12,12 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAnalyzer
 {
+    private const string StaticConstructorReason = " because it is assigned in the static constructor, which runs after the static field initializers";
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotUseNotYetInitializedStaticField,
         title: "Do not use static fields before they are initialized",
-        messageFormat: "Static field '{0}' may not be initialized yet",
+        messageFormat: "Static field '{0}' may not be initialized yet{1}",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -32,45 +34,118 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
         context.RegisterCompilationStartAction(context =>
         {
             var fieldDeclarationInfos = new ConcurrentDictionary<IFieldSymbol, FieldDeclarationInfo?>(SymbolEqualityComparer.Default);
-            context.RegisterOperationAction(context => AnalyzeFieldReference(context, fieldDeclarationInfos), OperationKind.FieldReference);
+
+            context.RegisterSymbolStartAction(context =>
+            {
+                // Delegates have no field, and all the fields of an enum are const, so they can never report anything.
+                // Most other types have no static field either, so this avoids allocating the analyzer context for them.
+                var symbol = (INamedTypeSymbol)context.Symbol;
+                if (!HasCandidateStaticField(symbol))
+                    return;
+
+                var analyzerContext = new AnalyzerContext(symbol, fieldDeclarationInfos);
+                context.RegisterOperationAction(analyzerContext.AnalyzeFieldReference, OperationKind.FieldReference);
+                context.RegisterSymbolEndAction(analyzerContext.ReportDiagnostics);
+            }, SymbolKind.NamedType);
         });
     }
 
-    private static void AnalyzeFieldReference(OperationAnalysisContext context, ConcurrentDictionary<IFieldSymbol, FieldDeclarationInfo?> fieldDeclarationInfos)
+    private static bool HasCandidateStaticField(INamedTypeSymbol symbol)
     {
-        var fieldReferenceOperation = (IFieldReferenceOperation)context.Operation;
-        if (fieldReferenceOperation.IsInNameofOperation())
-            return;
+        foreach (var member in symbol.GetMembers())
+        {
+            if (member is IFieldSymbol { IsImplicitlyDeclared: false, IsStatic: true, IsConst: false })
+                return true;
+        }
 
-        if (IsInDeferredExecutionContext(fieldReferenceOperation))
-            return;
-
-        var referencedField = fieldReferenceOperation.Field;
-        if (referencedField is not { IsImplicitlyDeclared: false, IsStatic: true, IsConst: false })
-            return;
-
-        if (!TryGetContainingFieldInitializerField(fieldReferenceOperation, out var currentField))
-            return;
-
-        if (!referencedField.ContainingType.IsEqualTo(currentField.ContainingType))
-            return;
-
-        if (referencedField.IsEqualTo(currentField))
-            return;
-
-        var currentFieldInfo = GetFieldDeclarationInfo(currentField, fieldDeclarationInfos, context.CancellationToken);
-        if (currentFieldInfo is null)
-            return;
-
-        var referencedFieldInfo = GetFieldDeclarationInfo(referencedField, fieldDeclarationInfos, context.CancellationToken);
-        if (referencedFieldInfo is null || referencedFieldInfo.Value.Initializer is null)
-            return;
-
-        if (!ShouldReport(currentFieldInfo.Value, referencedFieldInfo.Value))
-            return;
-
-        context.ReportDiagnostic(Rule, fieldReferenceOperation, referencedField.Name);
+        return false;
     }
+
+    private sealed class AnalyzerContext(INamedTypeSymbol containingType, ConcurrentDictionary<IFieldSymbol, FieldDeclarationInfo?> fieldDeclarationInfos)
+    {
+        private readonly ConcurrentBag<FieldReferenceInfo> _candidates = [];
+        private readonly ConcurrentDictionary<IFieldSymbol, bool> _fieldsAssignedInStaticConstructor = new(SymbolEqualityComparer.Default);
+
+        public void AnalyzeFieldReference(OperationAnalysisContext context)
+        {
+            var fieldReferenceOperation = (IFieldReferenceOperation)context.Operation;
+            if (fieldReferenceOperation.IsInNameofOperation())
+                return;
+
+            if (IsInDeferredExecutionContext(fieldReferenceOperation))
+                return;
+
+            var referencedField = fieldReferenceOperation.Field;
+            if (referencedField is not { IsImplicitlyDeclared: false, IsStatic: true, IsConst: false })
+                return;
+
+            if (!TryGetContainingFieldInitializerField(fieldReferenceOperation, out var currentField))
+            {
+                if (referencedField.ContainingType.IsEqualTo(containingType) && IsWrittenInStaticConstructor(context, fieldReferenceOperation))
+                {
+                    _fieldsAssignedInStaticConstructor.TryAdd(referencedField, true);
+                }
+
+                return;
+            }
+
+            if (!referencedField.ContainingType.IsEqualTo(currentField.ContainingType))
+                return;
+
+            if (referencedField.IsEqualTo(currentField))
+                return;
+
+            _candidates.Add(new(fieldReferenceOperation.Syntax.GetLocation(), referencedField, currentField));
+        }
+
+        public void ReportDiagnostics(SymbolAnalysisContext context)
+        {
+            foreach (var (location, referencedField, currentField) in _candidates)
+            {
+                context.CancellationToken.ThrowIfCancellationRequested();
+
+                var currentFieldInfo = GetFieldDeclarationInfo(currentField, fieldDeclarationInfos, context.CancellationToken);
+                if (currentFieldInfo is null)
+                    continue;
+
+                var referencedFieldInfo = GetFieldDeclarationInfo(referencedField, fieldDeclarationInfos, context.CancellationToken);
+                if (referencedFieldInfo is null)
+                    continue;
+
+                if (referencedFieldInfo.Value.Initializer is null)
+                {
+                    // A field with no initializer is only observed as not-yet-initialized when the static constructor
+                    // assigns it, as the static constructor body runs after all the static field initializers.
+                    if (!_fieldsAssignedInStaticConstructor.ContainsKey(referencedField))
+                        continue;
+
+                    context.ReportDiagnostic(Rule, location, referencedField.Name, StaticConstructorReason);
+                    continue;
+                }
+
+                if (!ShouldReport(currentFieldInfo.Value, referencedFieldInfo.Value))
+                    continue;
+
+                context.ReportDiagnostic(Rule, location, referencedField.Name, "");
+            }
+        }
+
+        private static bool IsWrittenInStaticConstructor(OperationAnalysisContext context, IFieldReferenceOperation operation)
+        {
+            if (context.ContainingSymbol is not IMethodSymbol { MethodKind: MethodKind.StaticConstructor })
+                return false;
+
+            return operation.Parent switch
+            {
+                IAssignmentOperation assignment => assignment.Target == operation,
+                IIncrementOrDecrementOperation incrementOrDecrement => incrementOrDecrement.Target == operation,
+                IArgumentOperation { Parameter.RefKind: RefKind.Ref or RefKind.Out } => true,
+                _ => false,
+            };
+        }
+    }
+
+    private readonly record struct FieldReferenceInfo(Location Location, IFieldSymbol ReferencedField, IFieldSymbol CurrentField);
 
     private static bool IsInDeferredExecutionContext(IOperation operation)
     {
