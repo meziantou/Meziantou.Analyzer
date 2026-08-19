@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The helper sources are already visible through InternalsVisibleTo, only the ROSLYN_* and CSHARP*_OR_GREATER constants are needed here -->
-    <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.0.1" PrivateAssets="all" ExcludeAssets="contentfiles" />
+    <!-- The helpers are [Embedded], so the ones of Meziantou.Analyzer are not visible here even through InternalsVisibleTo: compile them -->
+    <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.0.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.10" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.4" />
