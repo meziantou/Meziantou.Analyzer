@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -27,7 +27,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzer : DiagnosticAnaly
 
         context.RegisterCompilationStartAction(context =>
         {
-            if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp12OrAbove())
+            if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp12OrGreater())
                 return;
 
             var inlineArrayAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InlineArrayAttribute");

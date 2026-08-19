@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -44,7 +45,7 @@ public sealed class SimplifyCallerArgumentExpressionAnalyzer : DiagnosticAnalyze
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
-            if (!operation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
+            if (!operation.GetCSharpLanguageVersion().IsCSharp10OrGreater())
                 return;
 
             foreach (var argument in operation.Arguments)

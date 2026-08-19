@@ -113,7 +113,7 @@ private static async Task<Document> FixAsync(Document document, BinaryExpression
 
 ## Testing with different Roslyn versions
 
-This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are the ones that have a `When` block in `Directory.Build.targets`:
+This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are the ones that have a project per version (see the project layout below):
 
 - `roslyn4.8` - Roslyn 4.8.0
 - `roslyn4.14` - Roslyn 4.14.0
@@ -123,7 +123,7 @@ This project supports multiple versions of Roslyn to ensure compatibility with d
 
 The default version must always be the latest supported one, and the CI fails if it is not.
 
-The version of the `Microsoft.CodeAnalysis.*` packages is not listed anywhere: it is derived from `RoslynVersion` in the `Directory.Build.props` of the repository root (`roslyn4.8` uses `4.8.0`). What remains version specific in `Directory.Build.targets` is the `DefineConstants` and the warnings to disable. Building a project named after a version that has no `When` block fails with an explicit error instead of silently compiling without any `ROSLYN_*` constant.
+The version of the `Microsoft.CodeAnalysis.*` packages is not listed anywhere: it is derived from `RoslynVersion` in the `Directory.Build.props` of the repository root (`roslyn4.8` uses `4.8.0`). The `ROSLYN_*_OR_GREATER` and `CSHARP*_OR_GREATER` constants are not defined by this repository: they come from the [`Meziantou.Framework.Roslyn`](https://github.com/meziantou/Meziantou.Framework/blob/main/src/Meziantou.Framework.Roslyn/readme.md) package, which derives them from the version of the referenced `Microsoft.CodeAnalysis.*` packages. Note that this package considers `CSHARP15_OR_GREATER` to start at Roslyn 5.6, while the `closed` types and the union types are only supported from Roslyn 5.9: guard those with `ROSLYN_5_9_OR_GREATER`. What remains version specific in `Directory.Build.targets` is the warnings to disable: the `nullable` warnings are only reported for `DefaultRoslynVersion`, as the nullable annotations of the Roslyn APIs change from one version to another. A project named after a version that does not exist fails the restore, since no `Microsoft.CodeAnalysis.*` package matches the derived version.
 
 ### Project layout
 
@@ -137,7 +137,7 @@ Those project files are empty: the `RoslynVersion` property is derived from the 
 
 There is no development project that would not be tied to a Roslyn version: `DocumentationGenerator` is not specific to a Roslyn version, so its `RoslynVersion` is the default one and it references `Meziantou.Analyzer.$(RoslynVersion).csproj`. When adding a file or a package reference, update the `Directory.Build.props` of the folder so that all Roslyn versions get it.
 
-`Meziantou.Analyzer.Pack.csproj` discovers the `roslyn<version>` projects with a wildcard and references them with `ReferenceOutputAssembly="false" PrivateAssets="all"`, so building or packing it builds all Roslyn versions in the right order without adding them as NuGet package dependencies. Its `AddAnalyzersToPackage` target then asks each project for the assembly it produces (`GetTargetPath`) and packs it under `analyzers/dotnet/<roslyn version>/cs`. Adding support for a new Roslyn version therefore only requires adding its entry in `Directory.Build.targets`, its three projects, and the default `RoslynVersion` of the `Directory.Build.props` of the repository root when the new version is the latest one. The `list_test_projects` job of the CI fails if a version is missing one of its projects, or if the default version is not the latest one.
+`Meziantou.Analyzer.Pack.csproj` discovers the `roslyn<version>` projects with a wildcard and references them with `ReferenceOutputAssembly="false" PrivateAssets="all"`, so building or packing it builds all Roslyn versions in the right order without adding them as NuGet package dependencies. Its `AddAnalyzersToPackage` target then asks each project for the assembly it produces (`GetTargetPath`) and packs it under `analyzers/dotnet/<roslyn version>/cs`. Adding support for a new Roslyn version therefore only requires adding its three projects, and the `DefaultRoslynVersion` of the `Directory.Build.props` of the repository root when the new version is the latest one. The `list_test_projects` job of the CI fails if a version is missing one of its projects, or if the default version is not the latest one.
 
 ### Output folders
 

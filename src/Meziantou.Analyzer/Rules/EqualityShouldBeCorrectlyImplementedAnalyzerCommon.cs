@@ -1,4 +1,5 @@
 ﻿using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Rules;

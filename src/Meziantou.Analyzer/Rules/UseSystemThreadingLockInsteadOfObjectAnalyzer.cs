@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -34,7 +34,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
             if (context.Compilation.GetBestTypeByMetadataName("System.Threading.Lock") is null)
                 return;
 
-            if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp13OrAbove())
+            if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp13OrGreater())
                 return;
 
             context.RegisterOperationBlockStartAction(context =>

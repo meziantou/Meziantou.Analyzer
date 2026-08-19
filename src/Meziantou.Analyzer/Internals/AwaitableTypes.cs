@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 

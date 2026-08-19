@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -308,7 +309,7 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
             return false;
         }
 
-        operation = operation.UnwrapConversionOperations();
+        operation = operation.UnwrapConversions();
 
         if (operation is IAnonymousFunctionOperation anonymousFunctionOperation)
         {
@@ -348,7 +349,7 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
 
     private static bool TryGetLocalOrParameterSymbol(IArgumentOperation argumentOperation, [NotNullWhen(true)] out ISymbol? symbol)
     {
-        var operation = argumentOperation.Value.UnwrapConversionOperations();
+        var operation = argumentOperation.Value.UnwrapConversions();
         if (operation is ILocalReferenceOperation localReferenceOperation)
         {
             symbol = localReferenceOperation.Local;

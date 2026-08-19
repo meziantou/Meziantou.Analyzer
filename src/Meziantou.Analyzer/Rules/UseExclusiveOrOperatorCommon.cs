@@ -1,4 +1,4 @@
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -14,10 +14,10 @@ internal static class UseExclusiveOrOperatorCommon
         if (operation.OperatorKind is not BinaryOperatorKind.ConditionalOr || !operation.Type.IsBoolean())
             return false;
 
-        if (operation.LeftOperand.UnwrapImplicitConversionOperations() is not IBinaryOperation leftOperation)
+        if (operation.LeftOperand.UnwrapImplicitConversions() is not IBinaryOperation leftOperation)
             return false;
 
-        if (operation.RightOperand.UnwrapImplicitConversionOperations() is not IBinaryOperation rightOperation)
+        if (operation.RightOperand.UnwrapImplicitConversions() is not IBinaryOperation rightOperation)
             return false;
 
         if (!TryGetExclusiveOrBranch(leftOperation, out var leftPositiveOperand, out var leftNegativeOperand))
@@ -52,8 +52,8 @@ internal static class UseExclusiveOrOperatorCommon
         if (operation.OperatorKind is not BinaryOperatorKind.ConditionalAnd || !operation.Type.IsBoolean())
             return false;
 
-        var left = operation.LeftOperand.UnwrapImplicitConversionOperations();
-        var right = operation.RightOperand.UnwrapImplicitConversionOperations();
+        var left = operation.LeftOperand.UnwrapImplicitConversions();
+        var right = operation.RightOperand.UnwrapImplicitConversions();
         if (TryGetNegatedOperand(left, out var leftNegatedOperand))
         {
             positiveOperand = right;
@@ -74,10 +74,10 @@ internal static class UseExclusiveOrOperatorCommon
 
     private static bool TryGetNegatedOperand(IOperation operation, out IOperation operand)
     {
-        operation = operation.UnwrapImplicitConversionOperations();
+        operation = operation.UnwrapImplicitConversions();
         if (operation is IUnaryOperation { OperatorKind: UnaryOperatorKind.Not } unaryOperation)
         {
-            operand = unaryOperation.Operand.UnwrapImplicitConversionOperations();
+            operand = unaryOperation.Operand.UnwrapImplicitConversions();
             return true;
         }
 
@@ -92,7 +92,7 @@ internal static class UseExclusiveOrOperatorCommon
 
     private static ISymbol? GetReferenceSymbol(IOperation operation)
     {
-        operation = operation.UnwrapImplicitConversionOperations();
+        operation = operation.UnwrapImplicitConversions();
         return operation switch
         {
             ILocalReferenceOperation localReference => localReference.Local,

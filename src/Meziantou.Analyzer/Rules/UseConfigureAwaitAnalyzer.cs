@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -103,7 +104,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 // Check if it's a variable reference that is already configured
                 // note: this doesn't check if the value is well-configured
                 // https://github.com/meziantou/Meziantou.Analyzer/issues/232
-                if (operation.Collection.UnwrapImplicitConversionOperations() is ILocalReferenceOperation)
+                if (operation.Collection.UnwrapImplicitConversions() is ILocalReferenceOperation)
                     return;
             }
 

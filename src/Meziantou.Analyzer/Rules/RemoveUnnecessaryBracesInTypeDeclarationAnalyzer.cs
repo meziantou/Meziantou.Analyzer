@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -61,7 +61,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
         if (typeDeclaration is RecordDeclarationSyntax)
             return true;
 
-        if (!languageVersion.IsCSharp12OrAbove())
+        if (!languageVersion.IsCSharp12OrGreater())
             return false;
 
         if (typeDeclaration is ClassDeclarationSyntax or StructDeclarationSyntax)

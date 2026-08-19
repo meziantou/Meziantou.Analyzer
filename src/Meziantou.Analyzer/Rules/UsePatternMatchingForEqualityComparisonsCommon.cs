@@ -1,12 +1,12 @@
-﻿using Microsoft.CodeAnalysis.Operations;
+﻿using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
-using Meziantou.Analyzer.Internals;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules;
 internal static class UsePatternMatchingForEqualityComparisonsCommon
 {
     public static bool IsNull(IOperation operation)
-        => operation.UnwrapConversionOperations() is ILiteralOperation { ConstantValue: { HasValue: true, Value: null } };
+        => operation.UnwrapConversions() is ILiteralOperation { ConstantValue: { HasValue: true, Value: null } };
 
     public static bool IsConstantLiteral(IOperation operation)
     {

@@ -1,3 +1,4 @@
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -28,7 +29,7 @@ internal sealed class TimeSpanOperation(Compilation compilation)
         const double HoursToMilliseconds = 60 * 60 * 1000;
         const double DaysToMilliseconds = 24 * 60 * 60 * 1000;
 
-        op = op.UnwrapImplicitConversionOperations();
+        op = op.UnwrapImplicitConversions();
         if (op.ConstantValue.HasValue)
         {
             if (op.ConstantValue.HasValue && op.ConstantValue.Value is long int64Value)

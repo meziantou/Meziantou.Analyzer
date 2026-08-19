@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 
 namespace Meziantou.Analyzer.Suppressors;
 
@@ -47,7 +48,7 @@ public sealed class CA1822DecoratedMethodSuppressor : DiagnosticSuppressor
 
     private static void ProcessDiagnostic(SuppressionAnalysisContext context, SuppressionDescriptor descriptor, INamedTypeSymbol attributeSymbol, Diagnostic diagnostic)
     {
-        var node = diagnostic.TryFindNode(context.CancellationToken);
+        var node = diagnostic.FindNode(context.CancellationToken);
         if (node is null)
             return;
 

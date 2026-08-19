@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -128,7 +129,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
                         if (member is IPropertySymbol property)
                         {
                             // https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.components.parameterattribute?view=aspnetcore-6.0&WT.mc_id=DT-MVP-5003978
-                            var parameterAttribute = property.GetAttribute(ParameterSymbol, inherits: false); // the attribute is sealed
+                            var parameterAttribute = property.GetFirstAttribute(ParameterSymbol, inherits: false); // the attribute is sealed
                             if (parameterAttribute is null)
                                 continue;
 

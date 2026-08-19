@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -79,7 +80,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
             if (context.OwningSymbol is not IMethodSymbol methodSymbol)
                 return;
 
-            if (methodSymbol.Override(OnInitializedMethodSymbol) || methodSymbol.Override(OnInitializedAsyncMethodSymbol))
+            if (methodSymbol.Overrides(OnInitializedMethodSymbol) || methodSymbol.Overrides(OnInitializedAsyncMethodSymbol))
             {
                 context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
             }
@@ -104,7 +105,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
             if (type is null)
                 return;
 
-            if (type.IsEqualTo(IJSRuntimeSymbol) || type.IsEqualTo(JSRuntimeSymbol) || type.IsOrInheritFrom(ProtectedBrowserStorageSymbol))
+            if (type.IsEqualTo(IJSRuntimeSymbol) || type.IsEqualTo(JSRuntimeSymbol) || type.IsOrInheritsFrom(ProtectedBrowserStorageSymbol))
             {
                 context.ReportDiagnostic(Rule, operation, type.Name);
             }

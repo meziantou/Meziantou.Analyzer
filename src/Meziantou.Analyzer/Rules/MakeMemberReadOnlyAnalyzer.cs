@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -118,7 +118,7 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
     private static bool EnsureLanguageVersion(IOperation operation)
     {
         // Readonly instance members are available with C# 8
-        return operation.GetCSharpLanguageVersion().IsCSharp8OrAbove();
+        return operation.GetCSharpLanguageVersion().IsCSharp8OrGreater();
     }
 
     private static bool CouldBeReadOnly(ISymbol symbol)

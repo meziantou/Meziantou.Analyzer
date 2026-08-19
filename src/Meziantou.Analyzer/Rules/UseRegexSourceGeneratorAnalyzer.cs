@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -50,7 +51,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                 return false;
 
             // https://github.com/dotnet/runtime/pull/66111
-            if (!operation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
+            if (!operation.GetCSharpLanguageVersion().IsCSharp10OrGreater())
                 return false;
 
             return true;

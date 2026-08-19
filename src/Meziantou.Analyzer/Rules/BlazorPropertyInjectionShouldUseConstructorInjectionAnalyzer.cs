@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -57,7 +57,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
 
         public void AnalyzeProperty(SymbolAnalysisContext context)
         {
-            if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp12OrAbove())
+            if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp12OrGreater())
                 return;
 
             var property = (IPropertySymbol)context.Symbol;

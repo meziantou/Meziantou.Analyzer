@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis.Operations;
-
 namespace Meziantou.Analyzer.Configurations;
 
 public sealed class ConfigurationDefinition<T>

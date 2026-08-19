@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -35,7 +36,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var isCSharp14OrAbove = false;
         if (context.Document.Project.ParseOptions is CSharpParseOptions parseOptions)
         {
-            isCSharp14OrAbove = parseOptions.LanguageVersion.IsCSharp14OrAbove();
+            isCSharp14OrAbove = parseOptions.LanguageVersion.IsCSharp14OrGreater();
         }
 
         // Offer partial property first if C# 14 or later

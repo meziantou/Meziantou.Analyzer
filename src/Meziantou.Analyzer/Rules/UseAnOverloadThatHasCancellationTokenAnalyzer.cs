@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -308,7 +309,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
             foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
             {
-                if (symbol is IMethodSymbol)
+                if (symbol is IMethodSymbol or ITypeSymbol)
                     continue;
 
                 var symbolType = symbol.GetSymbolType();

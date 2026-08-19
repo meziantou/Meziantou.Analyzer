@@ -1,3 +1,4 @@
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -161,17 +162,17 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                     if (initializer is null)
                         return CultureSensitivity.CultureSensitive;
 
-                    return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
+                    return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
 #if ROSLYN_4_14_OR_GREATER
                 else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation appendFormatCollectionExpression)
                 {
-                    return GetCultureSensitivity(appendFormatCollectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
+                    return GetCultureSensitivity(appendFormatCollectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
 #endif
                 else
                 {
-                    return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversionOperations()), options);
+                    return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversions()), options);
                 }
             }
             else if (methodName is "Format" && invocation.TargetMethod.IsStatic && invocation.TargetMethod.ContainingType.IsString() && invocation.Arguments.Length > 0)
@@ -188,17 +189,17 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
                     if (initializer is null)
                         return CultureSensitivity.CultureSensitive;
 
-                    return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
+                    return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
 #if ROSLYN_4_14_OR_GREATER
                 else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation collectionExpression)
                 {
-                    return GetCultureSensitivity(collectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversionOperations()), options);
+                    return GetCultureSensitivity(collectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
 #endif
                 else
                 {
-                    return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversionOperations()), options);
+                    return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversions()), options);
                 }
             }
 
@@ -454,7 +455,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.SpecialType == SpecialType.System_UIntPtr)
             return CultureSensitivity.CultureInsensitive;
 
-        if (typeSymbol.IsOrInheritFrom(StringBuilderSymbol))
+        if (typeSymbol.IsOrInheritsFrom(StringBuilderSymbol))
             return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.IsEqualTo(UInt128Symbol))
@@ -472,10 +473,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol.IsEqualTo(SystemWindowsFontStretchSymbol))
             return CultureSensitivity.CultureInsensitive;
 
-        if (typeSymbol.IsOrInheritFrom(SystemWindowsMediaBrushSymbol))
+        if (typeSymbol.IsOrInheritsFrom(SystemWindowsMediaBrushSymbol))
             return CultureSensitivity.CultureInsensitive;
 
-        if (typeSymbol.IsOrInheritFrom(NuGetVersioningSemanticVersionSymbol))
+        if (typeSymbol.IsOrInheritsFrom(NuGetVersioningSemanticVersionSymbol))
             return CultureSensitivity.CultureInsensitive;
 
         if (!IsCultureSensitiveTypeUsingAttribute(typeSymbol))
@@ -523,7 +524,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         }
 
         bool HasToStringWithFormatProvider(ITypeSymbol type)
-            => type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public);
+            => type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritsFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public);
     }
 
     private CultureSensitivity GetCultureSensitivity(ITypeParameterSymbol typeParameter, CultureSensitiveOptions options)

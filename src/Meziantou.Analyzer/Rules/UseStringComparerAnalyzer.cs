@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -283,7 +284,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
             static bool ShouldReportCollectionExpression(OperationAnalysisContext context, IOperation operation)
             {
-                var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrAbove();
+                var defaultValue = operation.GetCSharpLanguageVersion().IsCSharp15OrGreater();
                 return context.Options.GetConfigurationValue(operation, ReportCollectionExpressionsConfiguration, defaultValue);
             }
         }
@@ -309,7 +310,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 if (argumentType is null)
                     continue;
 
-                if (argumentType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i)))
+                if (argumentType.GetAllInterfacesIncludingSelf().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i)))
                     return true;
             }
 
@@ -326,7 +327,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 if (argumentType is null)
                     continue;
 
-                if (argumentType.GetAllInterfacesIncludingThis().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i)))
+                if (argumentType.GetAllInterfacesIncludingSelf().Any(i => EqualityComparerStringType.IsEqualTo(i) || ComparerStringType.IsEqualTo(i)))
                     return true;
             }
 

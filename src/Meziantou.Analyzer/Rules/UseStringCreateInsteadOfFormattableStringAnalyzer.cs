@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -28,7 +29,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            if (!ctx.Compilation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
+            if (!ctx.Compilation.GetCSharpLanguageVersion().IsCSharp10OrGreater())
                 return;
 
             var formatProviderSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
@@ -53,7 +54,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
                 if (!method.ContainingType.IsEqualTo(formattableStringSymbol))
                     return;
 
-                if (method.Name is "Invariant" or "CurrentCulture" && method.Parameters.Length == 1 && operation.Arguments[0].Value.UnwrapImplicitConversionOperations() is IInterpolatedStringOperation)
+                if (method.Name is "Invariant" or "CurrentCulture" && method.Parameters.Length == 1 && operation.Arguments[0].Value.UnwrapImplicitConversions() is IInterpolatedStringOperation)
                 {
                     context.ReportDiagnostic(Rule, operation);
                     return;

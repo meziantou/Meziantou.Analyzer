@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -104,7 +105,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
 
     private static bool IsVariableReference(IOperation operation)
     {
-        operation = operation.UnwrapConversionOperations();
+        operation = operation.UnwrapConversions();
 
         return operation.Kind switch
         {

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -205,7 +206,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
             foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
             {
-                if (symbol is IMethodSymbol)
+                if (symbol is IMethodSymbol or ITypeSymbol)
                     continue;
 
                 var symbolType = symbol.GetSymbolType();

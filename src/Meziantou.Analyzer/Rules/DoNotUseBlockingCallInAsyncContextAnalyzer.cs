@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -698,7 +699,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private bool CanBeAwaitUsing(IOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled, CancellationToken cancellationToken)
         {
-            var unwrappedOperation = operation.UnwrapImplicitConversionOperations();
+            var unwrappedOperation = operation.UnwrapImplicitConversions();
             if (unwrappedOperation is IInvocationOperation invocationOperation)
             {
                 if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(invocationOperation, cancellationToken))

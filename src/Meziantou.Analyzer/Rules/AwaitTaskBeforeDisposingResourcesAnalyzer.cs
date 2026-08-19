@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -51,7 +52,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             if (returnedValue is null)
                 return;
 
-            var returnType = returnedValue.UnwrapImplicitConversionOperations().Type;
+            var returnType = returnedValue.UnwrapImplicitConversions().Type;
             if (!_awaitableTypes.IsAwaitable(returnType, returnedValue.SemanticModel!, returnedValue.Syntax.GetLocation().SourceSpan.End))
                 return;
 
@@ -72,7 +73,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         /// </summary>
         private bool IsInUsingOperation(IOperation operation)
         {
-            foreach (var parent in operation.Ancestors().Select(operation => operation.UnwrapLabelOperations()))
+            foreach (var parent in operation.Ancestors().Select(operation => operation.UnwrapLabels()))
             {
                 if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
                     return false;
@@ -89,7 +90,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 
                 if (parent is IBlockOperation block)
                 {
-                    foreach (var blockOperation in block.Operations.Select(operation => operation.UnwrapLabelOperations()))
+                    foreach (var blockOperation in block.Operations.Select(operation => operation.UnwrapLabels()))
                     {
                         if (blockOperation == operation)
                             break;

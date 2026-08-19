@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -32,7 +33,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            if (!ctx.Compilation.GetCSharpLanguageVersion().IsCSharp10OrAbove())
+            if (!ctx.Compilation.GetCSharpLanguageVersion().IsCSharp10OrGreater())
                 return;
 
             var formatProviderSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
@@ -102,7 +103,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
 
     private static bool IsCultureInfoInvariantCulture(IOperation operation, IPropertySymbol cultureInfoInvariantCultureProperty)
     {
-        operation = operation.UnwrapImplicitConversionOperations();
+        operation = operation.UnwrapImplicitConversions();
 
         if (operation is IPropertyReferenceOperation propertyReference)
         {

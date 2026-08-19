@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -71,10 +71,10 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         if (!targetMethod.Parameters[0].Type.IsObject())
             return;
 
-        if (!targetMethod.Parameters[1].Type.IsOrInheritFrom(eventArgsSymbol))
+        if (!targetMethod.Parameters[1].Type.IsOrInheritsFrom(eventArgsSymbol))
             return;
 
-        if (!targetMethod.ContainingType.IsOrInheritFrom(multicastDelegateSymbol))
+        if (!targetMethod.ContainingType.IsOrInheritsFrom(multicastDelegateSymbol))
             return;
 
         var instance = operation.Instance;

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -254,10 +255,10 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
 
     private static IOperation UnwrapOperation(IOperation operation)
     {
-        operation = operation.UnwrapConversionOperations();
+        operation = operation.UnwrapConversions();
         while (operation is IParenthesizedOperation parenthesizedOperation)
         {
-            operation = parenthesizedOperation.Operand.UnwrapConversionOperations();
+            operation = parenthesizedOperation.Operand.UnwrapConversions();
         }
 
         return operation;

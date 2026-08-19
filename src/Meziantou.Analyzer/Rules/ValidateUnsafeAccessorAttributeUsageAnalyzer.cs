@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -63,7 +63,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
     // https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.unsafeaccessorattribute
     private static void AnalyzeMethodSymbol(IMethodSymbol methodSymbol, INamedTypeSymbol attributeSymbol, DiagnosticReporter diagnosticReporter)
     {
-        var attribute = methodSymbol.GetAttribute(attributeSymbol, inherits: false);
+        var attribute = methodSymbol.GetFirstAttribute(attributeSymbol, inherits: false);
         if (attribute is null)
             return;
 

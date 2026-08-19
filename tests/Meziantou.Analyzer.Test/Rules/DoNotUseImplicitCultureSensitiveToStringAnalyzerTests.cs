@@ -1224,7 +1224,7 @@ class Sample : System.IFormattable
               .ValidateAsync();
     }
 
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_9_OR_GREATER
     private static ProjectBuilder CreateUnionProjectBuilder()
     {
         return CreateProjectBuilder()

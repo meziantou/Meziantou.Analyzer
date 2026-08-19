@@ -206,7 +206,7 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
-#if ROSLYN5_0
+#if ROSLYN_5_0_OR_GREATER
     public ProjectBuilder WithMicrosoftCodeAnalysisNetAnalyzers(params string[] ruleIds) =>
         WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.NetAnalyzers",
@@ -237,7 +237,7 @@ public sealed partial class ProjectBuilder
             "5.6.0",
             paths: ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"],
             ruleIds);
-#elif ROSLYN5_0
+#elif ROSLYN_5_0_OR_GREATER
         return WithAnalyzerFromNuGet(
             "Microsoft.CodeAnalysis.CSharp.CodeStyle",
             "5.0.0",

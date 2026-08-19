@@ -13,7 +13,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
             .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
     }
 
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_9_OR_GREATER
     private static ProjectBuilder CreatePreviewProjectBuilder()
     {
         return CreateProjectBuilder()
@@ -325,7 +325,7 @@ sealed class Derived : Base { }
               .ValidateAsync();
     }
 
-#if CSHARP15_OR_GREATER
+#if ROSLYN_5_9_OR_GREATER
     [Fact]
     public async Task ClosedType_NoToStringOverrideInHierarchy()
     {
