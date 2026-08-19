@@ -1,6 +1,4 @@
 <Project Sdk="Meziantou.NET.Sdk" TreatAsLocalProperty="RoslynVersion">
-  <!-- The content of the project is defined in Directory.Build.props -->
-  <PropertyGroup>
-    <RoslynVersion>roslyn4.8</RoslynVersion>
-  </PropertyGroup>
+  <!-- The Roslyn version is derived from the name of this file in the Directory.Build.props of the repository root.
+       The content of the project is defined in the Directory.Build.props of this folder. -->
 </Project>

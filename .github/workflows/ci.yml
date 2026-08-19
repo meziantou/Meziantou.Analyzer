@@ -150,26 +150,88 @@ jobs:
             exit 1
           }
 
+  list_test_projects:
+    runs-on: ubuntu-latest
+    outputs:
+      test_projects: ${{ steps.list-test-projects.outputs.test_projects }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - name: Setup .NET Core (global.json)
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+    - name: Validate the Roslyn version specific projects
+      run: |
+        # The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn4.8.csproj
+        function Get-RoslynVersions($pattern) {
+          @(Get-ChildItem $pattern | ForEach-Object { $_.BaseName -replace '^.*\.(roslyn[0-9.]+)$', '$1' } | Sort-Object)
+        }
+
+        $analyzers = Get-RoslynVersions "src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn*.csproj"
+        if ($analyzers.Count -eq 0) {
+          Write-Host "::error::No Roslyn version specific project found"
+          exit 1
+        }
+
+        # Every analyzer project must have a code fixer project and a test project of the same Roslyn version, and nothing more
+        $expected = @{
+          "src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.<version>.csproj" = Get-RoslynVersions "src/Meziantou.Analyzer.CodeFixers/Meziantou.Analyzer.CodeFixers.roslyn*.csproj"
+          "tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.<version>.csproj" = Get-RoslynVersions "tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn*.csproj"
+        }
+
+        $errors = @()
+        foreach ($entry in $expected.GetEnumerator()) {
+          $errors += $analyzers | Where-Object { $_ -notin $entry.Value } | ForEach-Object { "Missing project: $($entry.Key -replace '<version>', $_)" }
+          $errors += $entry.Value | Where-Object { $_ -notin $analyzers } | ForEach-Object { "$($entry.Key -replace '<version>', $_) has no matching src/Meziantou.Analyzer/Meziantou.Analyzer.$_.csproj" }
+        }
+
+        if ($errors.Count -gt 0) {
+          $errors | ForEach-Object { Write-Host "::error::$_" }
+          exit 1
+        }
+
+        Write-Host "Every Roslyn version has an analyzer, a code fixer and a test project: $($analyzers -join ', ')"
+
+        # The default version is the one the projects that are not specific to a Roslyn version resolve to
+        $latest = @($analyzers | Sort-Object { [version]($_ -replace '^roslyn', '') })[-1]
+        $default = "$(dotnet msbuild src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj -getProperty:RoslynVersion)".Trim()
+        if ($default -ne $latest) {
+          Write-Host "::error::The default Roslyn version is '$default' but the latest supported version is '$latest'. Update the RoslynVersion of the Directory.Build.props of the repository root."
+          exit 1
+        }
+
+        Write-Host "The default Roslyn version is the latest supported one: $default"
+
+    - id: list-test-projects
+      name: List the test projects
+      run: |
+        # There is one test project per Roslyn version
+        $projects = @(Get-ChildItem "tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn*.csproj" | ForEach-Object { $_.BaseName } | Sort-Object)
+        if ($projects.Count -eq 0) {
+          Write-Host "::error::No test project found"
+          exit 1
+        }
+
+        Write-Host "Test projects: $($projects -join ', ')"
+        "test_projects=$($projects | ConvertTo-Json -Compress -AsArray)" >> $env:GITHUB_OUTPUT
+
   build_and_test:
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ubuntu-latest
+    needs: [ list_test_projects ]
     env:
       TestResultsDirectory: ${{ github.workspace}}/TestResults
     strategy:
       matrix:
-        runs-on: [ ubuntu-latest ]
-        configuration: [ Release ]
-        roslyn-version: [ 'roslyn4.8', 'roslyn4.14', 'roslyn5.0', 'roslyn5.6', 'roslyn5.9', 'default' ]
+        test-project: ${{ fromJSON(needs.list_test_projects.outputs.test_projects) }}
       fail-fast: false
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core (global.json)
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-    - run: dotnet test --configuration ${{ matrix.configuration }} --results-directory "${{ env.TestResultsDirectory }}" /p:RoslynVersion=${{ matrix.roslyn-version}}
+    - run: dotnet test tests/Meziantou.Analyzer.Test/${{ matrix.test-project }}.csproj --configuration Release --results-directory "${{ env.TestResultsDirectory }}"
       name: Run tests
     - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       if: always()
       with:
-        name: test-results-${{ matrix.runs-on }}-${{ matrix.roslyn-version }}-${{ matrix.configuration }}
+        name: test-results-${{ matrix.test-project }}
         if-no-files-found: error
         retention-days: 3
         path: ${{ env.TestResultsDirectory }}/**/*

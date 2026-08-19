@@ -1,0 +1,27 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- All the projects of this folder share the same source files, and Meziantou.Analyzer exposes its internals to Meziantou.Analyzer.Test -->
+    <AssemblyName>Meziantou.Analyzer.Test</AssemblyName>
+    <RootNamespace>Meziantou.Analyzer.Test</RootNamespace>
+
+    <!-- The report is named after the assembly, so the projects would all write the same file when they run together -->
+    <TestingPlatformCommandLineArguments>--report-trx-filename $(MSBuildProjectName).trx</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.10" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.4" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeRefactoring.Testing" Version="1.1.4" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+  </ItemGroup>
+
+  <!-- Each test project tests the projects of its own Roslyn version -->
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\src\Meziantou.Analyzer.Annotations\Meziantou.Analyzer.Annotations.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\src\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.$(RoslynVersion).csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.$(RoslynVersion).csproj" />
+  </ItemGroup>
+</Project>

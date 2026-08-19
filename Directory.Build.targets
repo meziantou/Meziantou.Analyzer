@@ -1,6 +1,13 @@
 <Project>
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/ -->
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
+  <!-- The version of the packages is derived from RoslynVersion, see the Directory.Build.props of the repository root -->
+  <ItemGroup>
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynPackageVersion)" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(RoslynPackageVersion)" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynPackageVersion)" />
+  </ItemGroup>
+
   <Choose>
     <!-- https://learn.microsoft.com/en-us/visualstudio/extensibility/roslyn-version-support?WT.mc_id=DT-MVP-5003978 -->
     <!-- https://learn.microsoft.com/en-us/visualstudio/releases/2026/servicing-vs?WT.mc_id=DT-MVP-5003978#support-for-older-versions -->
@@ -8,12 +15,8 @@
     <!-- .NET SDK 8.0.129:   4.8 -->
     <!-- Minimum version to support: 4.8 -->
     <When Condition="$(RoslynVersion) == 'roslyn4.8'">
-      <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.8.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />
-      </ItemGroup>
       <PropertyGroup>
+        <RoslynVersionSupported>true</RoslynVersionSupported>
         <DefineConstants>$(DefineConstants);ROSLYN_4_8;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER</DefineConstants>
         <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);nullable</NoWarn>
@@ -21,12 +24,8 @@
     </When>
 
     <When Condition="$(RoslynVersion) == 'roslyn4.14'">
-      <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.14.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
-      </ItemGroup>
       <PropertyGroup>
+        <RoslynVersionSupported>true</RoslynVersionSupported>
         <DefineConstants>$(DefineConstants);ROSLYN_4_8;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_14_OR_GREATER</DefineConstants>
         <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);nullable</NoWarn>
@@ -34,24 +33,16 @@
     </When>
 
     <When Condition="$(RoslynVersion) == 'roslyn5.0'">
-      <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.0.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
-      </ItemGroup>
       <PropertyGroup>
+        <RoslynVersionSupported>true</RoslynVersionSupported>
         <DefineConstants>$(DefineConstants);ROSLYN5_0;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_10_OR_GREATER;ROSLYN_4_14_OR_GREATER;ROSLYN_5_0_OR_GREATER</DefineConstants>
         <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER;CSHARP14_OR_GREATER</DefineConstants>
       </PropertyGroup>
     </When>
 
     <When Condition="$(RoslynVersion) == 'roslyn5.6'">
-      <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.6.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.6.0" />
-      </ItemGroup>
       <PropertyGroup>
+        <RoslynVersionSupported>true</RoslynVersionSupported>
         <DefineConstants>$(DefineConstants);ROSLYN5_6;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_10_OR_GREATER;ROSLYN_4_14_OR_GREATER;ROSLYN_5_0_OR_GREATER;ROSLYN_5_6_OR_GREATER</DefineConstants>
         <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER;CSHARP14_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);CS0618</NoWarn>
@@ -59,29 +50,18 @@
     </When>
 
     <When Condition="$(RoslynVersion) == 'roslyn5.9'">
-      <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.9.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
-      </ItemGroup>
       <PropertyGroup>
+        <RoslynVersionSupported>true</RoslynVersionSupported>
         <DefineConstants>$(DefineConstants);ROSLYN5_9;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_10_OR_GREATER;ROSLYN_4_14_OR_GREATER;ROSLYN_5_0_OR_GREATER;ROSLYN_5_6_OR_GREATER;ROSLYN_5_9_OR_GREATER</DefineConstants>
         <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER;CSHARP14_OR_GREATER;CSHARP15_OR_GREATER</DefineConstants>
       </PropertyGroup>
     </When>
-
-    <Otherwise>
-      <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.9.0" />
-        <PackageReference Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
-      </ItemGroup>
-      <PropertyGroup>
-        <DefineConstants>$(DefineConstants);ROSLYN5_9;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_10_OR_GREATER;ROSLYN_4_14_OR_GREATER;ROSLYN_5_0_OR_GREATER;ROSLYN_5_6_OR_GREATER;ROSLYN_5_9_OR_GREATER</DefineConstants>
-        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER;CSHARP14_OR_GREATER;CSHARP15_OR_GREATER</DefineConstants>
-      </PropertyGroup>
-    </Otherwise>
   </Choose>
+
+  <!-- Without this, a project named after an unknown Roslyn version would silently compile without any ROSLYN_* constant -->
+  <Target Name="EnsureRoslynVersionIsSupported" BeforeTargets="BeforeBuild" Condition="'$(RoslynVersionSupported)' != 'true'">
+    <Error Text="The Roslyn version '$(RoslynVersion)' is not supported. Add it to the Directory.Build.targets of the repository root." />
+  </Target>
 
   <!-- disable the nullable warnings when compiling for .NET Standard 2.0 -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
