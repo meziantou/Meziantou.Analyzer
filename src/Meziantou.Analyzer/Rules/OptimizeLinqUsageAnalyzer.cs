@@ -258,7 +258,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 if (ICollectionOfTSymbol is null && IReadOnlyCollectionOfTSymbol is null)
                     return;
 
-                var actualType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
+                // The reported member must be available on the type of the expression as written in the source code (IEnumerable<int> a = new List<int>())
+                var actualType = operation.Arguments[0].Value.GetActualType(useDataFlowAnalysis: false, context.CancellationToken);
                 if (actualType is null)
                     return;
 
@@ -296,7 +297,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             }
             else if (operation.TargetMethod.Name == nameof(Enumerable.LongCount))
             {
-                var actualType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
+                // The reported member must be available on the type of the expression as written in the source code (IEnumerable<int> a = new List<int>())
+                var actualType = operation.Arguments[0].Value.GetActualType(useDataFlowAnalysis: false, context.CancellationToken);
                 if (actualType is not null && actualType.TypeKind == TypeKind.Array)
                 {
                     var properties = CreateProperties(OptimizeLinqUsageData.UseLongLengthProperty);
@@ -313,7 +315,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != 2)
                 return;
 
-            var firstArgumentType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
+            // The reported member must be available on the type of the expression as written in the source code (IEnumerable<int> a = new List<int>())
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType(useDataFlowAnalysis: false, context.CancellationToken);
             if (firstArgumentType is null)
                 return;
 
@@ -349,7 +352,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != 2)
                 return;
 
-            var firstArgumentType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
+            // The reported member must be available on the type of the expression as written in the source code (IEnumerable<int> a = new List<int>())
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType(useDataFlowAnalysis: false, context.CancellationToken);
             if (firstArgumentType is null)
                 return;
 
@@ -381,7 +385,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != 2)
                 return;
 
-            var firstArgumentType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
+            // The reported member must be available on the type of the expression as written in the source code (IEnumerable<int> a = new List<int>())
+            var firstArgumentType = operation.Arguments[0].Value.GetActualType(useDataFlowAnalysis: false, context.CancellationToken);
             if (firstArgumentType is null)
                 return;
 
@@ -435,7 +440,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (IListOfTSymbol is null && IReadOnlyListOfTSymbol is null)
                 return;
 
-            var actualType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
+            // The reported member must be available on the type of the expression as written in the source code (IEnumerable<int> a = new List<int>())
+            var actualType = operation.Arguments[0].Value.GetActualType(useDataFlowAnalysis: false, context.CancellationToken);
             if (actualType is null)
                 return;
 
@@ -897,7 +903,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments.Length >= 2)
                     return;
 
-                var operandType = operation.Arguments[0].Value.GetActualType(context.CancellationToken);
+                // The reported member must be available on the type of the expression as written in the source code (IEnumerable<int> a = new List<int>())
+                var operandType = operation.Arguments[0].Value.GetActualType(useDataFlowAnalysis: false, context.CancellationToken);
                 if (operandType is null)
                     return;
 
