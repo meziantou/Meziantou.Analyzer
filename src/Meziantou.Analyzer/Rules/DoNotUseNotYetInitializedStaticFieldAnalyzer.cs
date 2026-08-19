@@ -37,14 +37,31 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
 
             context.RegisterSymbolStartAction(context =>
             {
-                var analyzerContext = new AnalyzerContext(fieldDeclarationInfos);
+                // Delegates have no field, and all the fields of an enum are const, so they can never report anything.
+                // Most other types have no static field either, so this avoids allocating the analyzer context for them.
+                var symbol = (INamedTypeSymbol)context.Symbol;
+                if (!HasCandidateStaticField(symbol))
+                    return;
+
+                var analyzerContext = new AnalyzerContext(symbol, fieldDeclarationInfos);
                 context.RegisterOperationAction(analyzerContext.AnalyzeFieldReference, OperationKind.FieldReference);
                 context.RegisterSymbolEndAction(analyzerContext.ReportDiagnostics);
             }, SymbolKind.NamedType);
         });
     }
 
-    private sealed class AnalyzerContext(ConcurrentDictionary<IFieldSymbol, FieldDeclarationInfo?> fieldDeclarationInfos)
+    private static bool HasCandidateStaticField(INamedTypeSymbol symbol)
+    {
+        foreach (var member in symbol.GetMembers())
+        {
+            if (member is IFieldSymbol { IsImplicitlyDeclared: false, IsStatic: true, IsConst: false })
+                return true;
+        }
+
+        return false;
+    }
+
+    private sealed class AnalyzerContext(INamedTypeSymbol containingType, ConcurrentDictionary<IFieldSymbol, FieldDeclarationInfo?> fieldDeclarationInfos)
     {
         private readonly ConcurrentBag<FieldReferenceInfo> _candidates = [];
         private readonly ConcurrentDictionary<IFieldSymbol, bool> _fieldsAssignedInStaticConstructor = new(SymbolEqualityComparer.Default);
@@ -64,7 +81,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
 
             if (!TryGetContainingFieldInitializerField(fieldReferenceOperation, out var currentField))
             {
-                if (IsWrittenInStaticConstructor(context, fieldReferenceOperation))
+                if (referencedField.ContainingType.IsEqualTo(containingType) && IsWrittenInStaticConstructor(context, fieldReferenceOperation))
                 {
                     _fieldsAssignedInStaticConstructor.TryAdd(referencedField, true);
                 }

@@ -248,6 +248,39 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
     }
 
     [Fact]
+    public async Task ReportDiagnostic_WhenTypeIsAnInterface()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  interface ISample
+                  {
+                      private static readonly int Other;
+                      private static readonly int Value = [|Other|];
+
+                      static ISample()
+                      {
+                          Other = 42;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_ForEnumMembers()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  enum Sample
+                  {
+                      A = 1,
+                      B = A + 1,
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NoDiagnostic_WhenReferenceIsInLambda()
     {
         await CreateProjectBuilder()
