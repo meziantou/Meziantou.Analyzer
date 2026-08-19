@@ -126,6 +126,128 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
     }
 
     [Fact]
+    public async Task ReportDiagnostic_WhenReferencedFieldIsOnlyAssignedInStaticConstructor()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      private static readonly int Other;
+                      private static readonly int Value = [|Other|];
+
+                      static Sample()
+                      {
+                          Other = 42;
+                      }
+                  }
+                  """)
+              .ShouldReportDiagnosticWithMessage("Static field 'Other' is assigned in the static constructor, which runs after the static field initializers")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_WhenReferencedFieldAssignedInStaticConstructorIsUsedInMethodCall()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      private static readonly string Path;
+                      private static readonly string Value = Compute([|Path|]);
+
+                      static Sample()
+                      {
+                          Path = "path";
+                      }
+
+                      private static string Compute(string? path = null) => path ?? "default";
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ReportDiagnostic_WhenReferencedFieldIsAssignedInStaticConstructorOfAnotherPartialDeclaration()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  partial class Sample
+                  {
+                      private static readonly int Value = [|Other|];
+                  }
+
+                  partial class Sample
+                  {
+                      private static readonly int Other;
+
+                      static Sample()
+                      {
+                          Other = 42;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_WhenFieldIsOnlyReadInStaticConstructor()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      private static readonly int Other;
+                      private static int Value;
+
+                      static Sample()
+                      {
+                          Value = Other;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_WhenReferencedFieldIsAssignedInAnInstanceConstructor()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      private static int Other;
+                      private static readonly int Value = Other;
+
+                      public Sample()
+                      {
+                          Other = 42;
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task NoDiagnostic_WhenReferencedFieldIsAssignedInAStaticConstructorLambda()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                  class Sample
+                  {
+                      private static int Other;
+                      private static readonly int Value = Other;
+
+                      static Sample()
+                      {
+                          System.Action action = () => Other = 42;
+                          action();
+                      }
+                  }
+                  """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task NoDiagnostic_WhenReferenceIsInLambda()
     {
         await CreateProjectBuilder()
