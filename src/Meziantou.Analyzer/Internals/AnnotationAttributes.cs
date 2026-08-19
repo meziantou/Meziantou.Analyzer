@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-
 namespace Meziantou.Analyzer.Internals;
 
 // The attribute can be defined in multiple assemblies, so it's identified by its full name only

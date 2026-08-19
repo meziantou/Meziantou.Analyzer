@@ -1,7 +1,5 @@
 #if ROSLYN_4_10_OR_GREATER
 using Meziantou.Analyzer.Suppressors;
-using Meziantou.Analyzer.Test.Helpers;
-using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Suppressors;
 public sealed class CA1822DecoratedMethodSuppressorTests

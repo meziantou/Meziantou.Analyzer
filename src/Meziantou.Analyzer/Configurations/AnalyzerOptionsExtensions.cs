@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-
 namespace Meziantou.Analyzer.Configurations;
 
 public static class AnalyzerOptionsExtensions

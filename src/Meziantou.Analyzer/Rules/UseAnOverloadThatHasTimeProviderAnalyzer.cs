@@ -1,11 +1,5 @@
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using System.Runtime.InteropServices;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Rules;
 

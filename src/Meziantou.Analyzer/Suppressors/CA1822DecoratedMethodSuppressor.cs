@@ -1,10 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis;
-using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
-
-namespace Meziantou.Analyzer.Suppressors;
+﻿namespace Meziantou.Analyzer.Suppressors;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CA1822DecoratedMethodSuppressor : DiagnosticSuppressor

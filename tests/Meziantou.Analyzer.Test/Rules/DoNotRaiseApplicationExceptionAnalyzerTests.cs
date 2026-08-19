@@ -1,6 +1,4 @@
 #pragma warning disable CA1030 // Use events where appropriate
-using Meziantou.Analyzer.Rules;
-using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
 

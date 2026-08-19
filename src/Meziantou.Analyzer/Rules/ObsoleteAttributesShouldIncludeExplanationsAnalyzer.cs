@@ -1,10 +1,4 @@
-﻿using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-
-namespace Meziantou.Analyzer.Rules;
+﻿namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : DiagnosticAnalyzer

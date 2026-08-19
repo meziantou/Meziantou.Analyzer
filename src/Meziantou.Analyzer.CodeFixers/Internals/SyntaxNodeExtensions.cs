@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-
 namespace Meziantou.Analyzer.Internals;
 internal static class SyntaxNodeExtensions
 {

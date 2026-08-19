@@ -19,6 +19,16 @@
     <NoPackageAnalysis>true</NoPackageAnalysis>
   </PropertyGroup>
 
+  <!-- Global using directives shared by all the files of this project -->
+  <ItemGroup>
+    <Using Include="System.Collections.Immutable" />
+    <Using Include="Meziantou.Analyzer.Internals" />
+    <Using Include="Meziantou.Framework.Roslyn" />
+    <Using Include="Microsoft.CodeAnalysis" />
+    <Using Include="Microsoft.CodeAnalysis.Diagnostics" />
+    <Using Include="Microsoft.CodeAnalysis.Operations" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\..\docs\**\*" LinkBase="docs" />
     <EmbeddedResource Include="Resources\*.txt" />

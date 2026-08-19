@@ -1,8 +1,5 @@
 #if ROSLYN_5_9_OR_GREATER
-using Meziantou.Analyzer.Rules;
-using Meziantou.Analyzer.Test.Helpers;
 using Microsoft.CodeAnalysis.CSharp;
-using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
 

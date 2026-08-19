@@ -1,7 +1,5 @@
-using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
 

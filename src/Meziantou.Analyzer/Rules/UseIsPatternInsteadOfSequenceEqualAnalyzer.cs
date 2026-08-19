@@ -1,10 +1,3 @@
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis;
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis.Operations;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
-
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

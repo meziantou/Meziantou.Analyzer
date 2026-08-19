@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Rules;
 internal static class ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon

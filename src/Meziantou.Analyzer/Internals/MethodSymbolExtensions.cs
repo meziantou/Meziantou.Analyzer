@@ -1,6 +1,3 @@
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-
 namespace Meziantou.Analyzer.Internals;
 
 internal static class MethodSymbolExtensions

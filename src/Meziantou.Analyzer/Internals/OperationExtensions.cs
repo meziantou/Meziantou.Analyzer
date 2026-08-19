@@ -1,8 +1,5 @@
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace Meziantou.Analyzer.Internals;
 
