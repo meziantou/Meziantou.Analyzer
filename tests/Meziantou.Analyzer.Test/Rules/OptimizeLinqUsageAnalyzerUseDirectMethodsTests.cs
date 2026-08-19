@@ -423,4 +423,46 @@ class Test
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Count_VariableTypedAsEnumerableAssignedToList()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<int> list = new List<int>();
+                    _ = list.Count();
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Exists_VariableTypedAsEnumerableAssignedToList()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<int> list = new List<int>();
+                    _ = list.Any(x => x == 0);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

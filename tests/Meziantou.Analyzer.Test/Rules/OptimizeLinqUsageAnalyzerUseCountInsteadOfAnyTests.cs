@@ -156,4 +156,45 @@ class Test
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Any_VariableTypedAsEnumerableAssignedToList()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                void A()
+                {
+                    IEnumerable<int> collection = new List<int>();
+                    _ = collection.Any();
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Any_ExplicitCastToEnumerable()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                void A(List<int> collection)
+                {
+                    _ = ((IEnumerable<int>)collection).Any();
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }

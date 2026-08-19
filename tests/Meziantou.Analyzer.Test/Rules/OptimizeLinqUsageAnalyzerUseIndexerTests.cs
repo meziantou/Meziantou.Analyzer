@@ -248,4 +248,25 @@ class Test
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ElementAt_VariableTypedAsEnumerableAssignedToList()
+    {
+        const string SourceCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<int> list = new List<int>();
+                    _ = list.ElementAt(0);
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
 }
