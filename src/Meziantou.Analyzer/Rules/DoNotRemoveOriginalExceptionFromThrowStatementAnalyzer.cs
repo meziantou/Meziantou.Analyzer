@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -35,7 +35,7 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
         if (operation.Exception is null)
             return;
 
-        if (operation.Exception.UnwrapImplicitConversionOperations() is not ILocalReferenceOperation localReferenceOperation)
+        if (operation.Exception.UnwrapImplicitConversions() is not ILocalReferenceOperation localReferenceOperation)
             return;
 
         var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();

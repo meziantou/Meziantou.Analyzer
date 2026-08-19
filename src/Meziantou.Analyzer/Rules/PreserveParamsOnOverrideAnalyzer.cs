@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -45,7 +45,7 @@ public sealed class PreserveParamsOnOverrideAnalyzer : DiagnosticAnalyzer
         }
         else
         {
-            baseSymbol = method.GetImplementingInterfaceSymbol();
+            baseSymbol = method.GetImplementedInterfaceMember();
         }
 
         if (baseSymbol is null)

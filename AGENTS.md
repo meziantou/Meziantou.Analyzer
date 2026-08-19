@@ -123,7 +123,7 @@ This project supports multiple versions of Roslyn to ensure compatibility with d
 
 The default version must always be the latest supported one, and the CI fails if it is not.
 
-The version of the `Microsoft.CodeAnalysis.*` packages is not listed anywhere: it is derived from `RoslynVersion` in the `Directory.Build.props` of the repository root (`roslyn4.8` uses `4.8.0`). What remains version specific in `Directory.Build.targets` is the `DefineConstants` and the warnings to disable. Building a project named after a version that has no `When` block fails with an explicit error instead of silently compiling without any `ROSLYN_*` constant.
+The version of the `Microsoft.CodeAnalysis.*` packages is not listed anywhere: it is derived from `RoslynVersion` in the `Directory.Build.props` of the repository root (`roslyn4.8` uses `4.8.0`). The `ROSLYN_*_OR_GREATER` and `CSHARP*_OR_GREATER` constants are not defined by this repository: they come from the [`Meziantou.Framework.Roslyn`](https://github.com/meziantou/Meziantou.Framework/blob/main/src/Meziantou.Framework.Roslyn/readme.md) package, which derives them from the version of the referenced `Microsoft.CodeAnalysis.*` packages. Note that this package considers `CSHARP15_OR_GREATER` to start at Roslyn 5.6, while the `closed` types and the union types are only supported from Roslyn 5.9: guard those with `ROSLYN_5_9_OR_GREATER`. What remains version specific in `Directory.Build.targets` is the warnings to disable. Building a project named after a version that has no `When` block fails with an explicit error instead of silently compiling with the wrong warnings.
 
 ### Project layout
 

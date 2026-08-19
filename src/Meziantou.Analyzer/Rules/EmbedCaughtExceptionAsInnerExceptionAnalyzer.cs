@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -68,6 +69,6 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
         if (parameter is null)
             return false;
 
-        return parameter.Type.IsOrInheritFrom(exceptionSymbol);
+        return parameter.Type.IsOrInheritsFrom(exceptionSymbol);
     }
 }

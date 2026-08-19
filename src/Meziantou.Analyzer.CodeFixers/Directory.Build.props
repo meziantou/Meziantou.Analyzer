@@ -15,12 +15,7 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\BannedSymbols.txt" />
 
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\RuleIdentifiers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\CompilationExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\EnumerableExtensions.cs" LinkBase="Internals" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LanguageVersionExtensions.cs" LinkBase="Internals" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\LocationExtensions.cs" LinkBase="Internals" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\MethodSymbolExtensions.cs" LinkBase="Internals" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\NamespaceSymbolExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\ObjectPool.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OperationExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\StringExtensions.cs" LinkBase="Internals" />
@@ -28,7 +23,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadFinder.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadOptions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OverloadParameterType.cs" LinkBase="Internals" />
-    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\TypeSymbolExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\DoNotUseBlockingCallInAsyncContextData.cs" LinkBase="Rules" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\OptimizeLinqUsageData.cs" LinkBase="Rules" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Rules\OptimizeStringBuilderUsageData.cs" LinkBase="Rules" />
@@ -36,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.0.1" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all" />
   </ItemGroup>

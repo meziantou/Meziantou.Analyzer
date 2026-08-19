@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -106,7 +107,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                 {
                     var targetMethod = operation.TargetMethod;
                     return targetMethod.IsStatic &&
-                        targetMethod.ContainingType.IsOrInheritFrom(_argumentExceptionSymbol) &&
+                        targetMethod.ContainingType.IsOrInheritsFrom(_argumentExceptionSymbol) &&
                         targetMethod.Name.StartsWith("Throw", System.StringComparison.Ordinal);
                 }
             }
@@ -127,7 +128,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
                 return false;
 
             var type = context.SemanticModel.GetTypeInfo(exceptionExpression, context.CancellationToken).Type;
-            return type is not null && type.IsOrInheritFrom(_argumentExceptionSymbol);
+            return type is not null && type.IsOrInheritsFrom(_argumentExceptionSymbol);
         }
 
         private static bool FilterDescendants(SyntaxNode node)

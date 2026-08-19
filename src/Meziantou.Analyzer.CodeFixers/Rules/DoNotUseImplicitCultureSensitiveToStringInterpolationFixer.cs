@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -20,7 +21,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        if (context.Document.Project.ParseOptions is not CSharpParseOptions parseOptions || !parseOptions.LanguageVersion.IsCSharp10OrAbove())
+        if (context.Document.Project.ParseOptions is not CSharpParseOptions parseOptions || !parseOptions.LanguageVersion.IsCSharp10OrGreater())
             return;
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);

@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -90,7 +90,7 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
 
         private bool IsEventArgsType(ITypeSymbol type)
         {
-            return type.IsOrInheritFrom(EventArgsSymbol);
+            return type.IsOrInheritsFrom(EventArgsSymbol);
         }
     }
 }

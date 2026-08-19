@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Operations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -37,7 +38,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnaly
                 return;
 
             var syntax = compilation.SyntaxTrees.FirstOrDefault();
-            if (syntax is null || !syntax.GetCSharpLanguageVersion().IsCSharp11OrAbove())
+            if (syntax is null || !syntax.GetCSharpLanguageVersion().IsCSharp11OrGreater())
                 return;
 
             context.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, spanCharSymbol, readOnlySpanCharSymbol, memoryExtensionsSymbol, stringComparisonSymbol), OperationKind.Invocation);
@@ -68,7 +69,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnaly
 
         static bool IsConstantValue(IOperation operation)
         {
-            operation = operation.UnwrapImplicitConversionOperations();
+            operation = operation.UnwrapImplicitConversions();
             return operation is { ConstantValue: { HasValue: true, Value: string } };
         }
 

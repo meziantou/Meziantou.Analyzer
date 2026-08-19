@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -130,7 +131,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
 
     private static IInvocationOperation? GetGetCustomAttributeInvocation(IOperation operation)
     {
-        if (operation.UnwrapConversionOperations() is IInvocationOperation invocation &&
+        if (operation.UnwrapConversions() is IInvocationOperation invocation &&
             (invocation.TargetMethod.Name == "GetCustomAttribute" || invocation.TargetMethod.Name == "GetCustomAttributes"))
         {
             return invocation;

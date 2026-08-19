@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -122,8 +123,8 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetZeroValuedFlagPattern(IBinaryOperation operation)
     {
-        var leftOperand = operation.LeftOperand.UnwrapImplicitConversionOperations();
-        var rightOperand = operation.RightOperand.UnwrapImplicitConversionOperations();
+        var leftOperand = operation.LeftOperand.UnwrapImplicitConversions();
+        var rightOperand = operation.RightOperand.UnwrapImplicitConversions();
         if (leftOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.And } leftBitwiseAnd &&
             IsZeroValuedFlagCheck(leftBitwiseAnd, rightOperand))
         {
@@ -141,9 +142,9 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
     private static bool IsZeroValuedFlagCheck(IBinaryOperation bitwiseAndOperation, IOperation comparedOperand)
     {
-        var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversionOperations();
-        var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversionOperations();
-        comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
+        var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversions();
+        var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversions();
+        comparedOperand = comparedOperand.UnwrapImplicitConversions();
         if (TryGetZeroValuedEnumFlagType(rightOperand, comparedOperand, out var enumType) &&
             IsValidPattern(leftOperand, enumType))
         {
@@ -161,8 +162,8 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetZeroValuedEnumFlagType(IOperation potentialFlag, IOperation comparedOperand, out ITypeSymbol enumType)
     {
-        potentialFlag = potentialFlag.UnwrapImplicitConversionOperations();
-        comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
+        potentialFlag = potentialFlag.UnwrapImplicitConversions();
+        comparedOperand = comparedOperand.UnwrapImplicitConversions();
         if (potentialFlag is not IFieldReferenceOperation firstFieldReference ||
             !firstFieldReference.Field.HasConstantValue ||
             !firstFieldReference.Field.ContainingType.IsEnum() ||
@@ -184,7 +185,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
     private static bool IsComparedOperandZero(IOperation comparedOperand, ITypeSymbol enumType)
     {
-        comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
+        comparedOperand = comparedOperand.UnwrapImplicitConversions();
         if (comparedOperand is IFieldReferenceOperation comparedFieldReference &&
             comparedFieldReference.Field.HasConstantValue &&
             comparedFieldReference.Field.ContainingType.IsEqualTo(enumType) &&
@@ -214,7 +215,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length is not 1 || operation.Instance is null)
             return false;
 
-        var enumValueOperation = operation.Instance.UnwrapImplicitConversionOperations();
+        var enumValueOperation = operation.Instance.UnwrapImplicitConversions();
         if (enumValueOperation.Type is null || !enumValueOperation.Type.IsEnum())
             return false;
 
@@ -269,8 +270,8 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
     private static HasFlagPattern? GetFromBinaryComparison(IBinaryOperation operation)
     {
-        var leftOperand = operation.LeftOperand.UnwrapImplicitConversionOperations();
-        var rightOperand = operation.RightOperand.UnwrapImplicitConversionOperations();
+        var leftOperand = operation.LeftOperand.UnwrapImplicitConversions();
+        var rightOperand = operation.RightOperand.UnwrapImplicitConversions();
 
         if (leftOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.And } leftBitwiseAnd)
         {
@@ -291,9 +292,9 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
     private static HasFlagPattern? GetFromBitwiseAnd(IBinaryOperation bitwiseAndOperation, IOperation comparedOperand)
     {
-        var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversionOperations();
-        var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversionOperations();
-        comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
+        var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversions();
+        var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversions();
+        comparedOperand = comparedOperand.UnwrapImplicitConversions();
 
         if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation) &&
             IsValidPattern(leftOperand, flagOperation))
@@ -312,8 +313,8 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IFieldReferenceOperation? flagOperation)
     {
-        potentialFlag = potentialFlag.UnwrapImplicitConversionOperations();
-        comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
+        potentialFlag = potentialFlag.UnwrapImplicitConversions();
+        comparedOperand = comparedOperand.UnwrapImplicitConversions();
 
         if (potentialFlag is IFieldReferenceOperation firstFieldReference &&
             firstFieldReference.Field.HasConstantValue &&

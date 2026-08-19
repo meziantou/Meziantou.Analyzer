@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -74,13 +75,13 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
             if (methodSymbol.MethodKind is MethodKind.Constructor or MethodKind.Destructor or MethodKind.StaticConstructor)
                 return;
 
-            if (methodSymbol.ContainingType.IsOrInheritFrom(ComponentBaseSymbol))
+            if (methodSymbol.ContainingType.IsOrInheritsFrom(ComponentBaseSymbol))
             {
-                if (methodSymbol.Override(OnInitializedMethodSymbol) ||
-                    methodSymbol.Override(OnInitializedAsyncMethodSymbol) ||
-                    methodSymbol.Override(SetParametersAsyncMethodSymbol) ||
-                    (IDisposable_DisposeMethodSymbol is not null && methodSymbol.GetImplementingInterfaceSymbol().IsEqualTo(IDisposable_DisposeMethodSymbol)) ||
-                    (IAsyncDisposable_DisposeAsyncMethodSymbol is not null && methodSymbol.GetImplementingInterfaceSymbol().IsEqualTo(IAsyncDisposable_DisposeAsyncMethodSymbol)))
+                if (methodSymbol.Overrides(OnInitializedMethodSymbol) ||
+                    methodSymbol.Overrides(OnInitializedAsyncMethodSymbol) ||
+                    methodSymbol.Overrides(SetParametersAsyncMethodSymbol) ||
+                    (IDisposable_DisposeMethodSymbol is not null && methodSymbol.GetImplementedInterfaceMember().IsEqualTo(IDisposable_DisposeMethodSymbol)) ||
+                    (IAsyncDisposable_DisposeAsyncMethodSymbol is not null && methodSymbol.GetImplementedInterfaceMember().IsEqualTo(IAsyncDisposable_DisposeAsyncMethodSymbol)))
                 {
                     return;
                 }

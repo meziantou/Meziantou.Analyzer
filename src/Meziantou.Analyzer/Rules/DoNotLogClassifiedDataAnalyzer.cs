@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -97,7 +98,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
 
             static void ValidateDataClassification(DiagnosticReporter diagnosticReporter, IOperation operation, IOperation reportOperation, INamedTypeSymbol dataClassificationAttributeSymbol, bool reportTypesWithDataClassification)
             {
-                operation = operation.UnwrapConversionOperations();
+                operation = operation.UnwrapConversions();
                 if (operation is IParameterReferenceOperation { Parameter: var parameter })
                 {
                     if (parameter.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || parameter.Type.HasAttribute(dataClassificationAttributeSymbol, inherits: true))

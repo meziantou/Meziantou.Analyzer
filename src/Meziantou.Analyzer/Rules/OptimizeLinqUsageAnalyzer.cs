@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -498,7 +499,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Type is null || !operation.Type.OriginalDefinition.IsEqualTo(ExpressionOfTSymbol))
                 return false;
 
-            operation = operation.UnwrapImplicitConversionOperations();
+            operation = operation.UnwrapImplicitConversions();
 
             return operation.Kind is not OperationKind.AnonymousFunction;
         }
@@ -877,7 +878,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 // Handle enums: source.Select<MyEnum, byte>(item => (byte)item);
                 // Using Cast<T> is only possible when the enum underlying type is the same as the conversion type
                 var operandActualType = op.Operand.GetActualType(context.CancellationToken);
-                var enumerationType = operandActualType.GetEnumType();
+                var enumerationType = operandActualType.GetEnumUnderlyingType();
                 if (enumerationType is not null)
                 {
                     if (!enumerationType.IsEqualTo(op.Type))
@@ -900,7 +901,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 if (operandType is null)
                     return;
 
-                var implementedInterfaces = operandType.GetAllInterfacesIncludingThis().Select(i => i.OriginalDefinition);
+                var implementedInterfaces = operandType.GetAllInterfacesIncludingSelf().Select(i => i.OriginalDefinition);
                 if (implementedInterfaces.Any(i => i.IsEqualTo(ICollectionOfTSymbol) || i.IsEqualTo(ICollectionSymbol) || i.IsEqualTo(IReadOnlyCollectionOfTSymbol)))
                 {
                     context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCountInsteadOfAny, operation);

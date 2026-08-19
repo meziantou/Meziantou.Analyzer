@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -88,7 +89,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 return;
 
             var methodName = argument.Parent is IInvocationOperation inv ? inv.TargetMethod.Name : "?";
-            var attr = outParam.GetAttribute(DoNotIgnoreAttributeSymbol);
+            var attr = outParam.GetFirstAttribute(DoNotIgnoreAttributeSymbol);
             var message = attr is not null ? GetMessageFromAttributeData(attr) : null;
             context.ReportDiagnostic(OutParameterRule, argument,
                 outParam.Name, methodName, message is null ? "" : ": " + message);
@@ -165,7 +166,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
         {
             var containingType = method.ContainingType;
 
-            if (StreamSymbol is not null && containingType.IsOrInheritFrom(StreamSymbol))
+            if (StreamSymbol is not null && containingType.IsOrInheritsFrom(StreamSymbol))
             {
                 return method.Name is
                     nameof(System.IO.Stream.Read) or
@@ -174,14 +175,14 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                     "ReadAtLeastAsync";
             }
 
-            if (TextReaderSymbol is not null && containingType.IsOrInheritFrom(TextReaderSymbol))
+            if (TextReaderSymbol is not null && containingType.IsOrInheritsFrom(TextReaderSymbol))
             {
                 return method.Name is
                     nameof(System.IO.TextReader.Read) or
                     "ReadAsync";
             }
 
-            if (BinaryReaderSymbol is not null && containingType.IsOrInheritFrom(BinaryReaderSymbol))
+            if (BinaryReaderSymbol is not null && containingType.IsOrInheritsFrom(BinaryReaderSymbol))
             {
                 return method.Name is nameof(System.IO.BinaryReader.Read);
             }

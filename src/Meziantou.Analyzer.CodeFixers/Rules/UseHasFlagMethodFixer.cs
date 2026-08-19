@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -154,8 +155,8 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
 
     private static HasFlagPattern? GetFromBinaryComparison(IBinaryOperation operation)
     {
-        var leftOperand = operation.LeftOperand.UnwrapImplicitConversionOperations();
-        var rightOperand = operation.RightOperand.UnwrapImplicitConversionOperations();
+        var leftOperand = operation.LeftOperand.UnwrapImplicitConversions();
+        var rightOperand = operation.RightOperand.UnwrapImplicitConversions();
         var negate = operation.OperatorKind is BinaryOperatorKind.NotEquals;
 
         if (operation.Syntax is not ExpressionSyntax operationExpression)
@@ -180,9 +181,9 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
 
     private static HasFlagPattern? GetFromBitwiseAnd(IBinaryOperation bitwiseAndOperation, IOperation comparedOperand, ExpressionSyntax operationExpression, bool negate)
     {
-        var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversionOperations();
-        var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversionOperations();
-        comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
+        var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversions();
+        var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversions();
+        comparedOperand = comparedOperand.UnwrapImplicitConversions();
 
         if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation, out var comparedWithZero) &&
             IsValidPattern(leftOperand, flagOperation) &&
@@ -205,8 +206,8 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
 
     private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IFieldReferenceOperation? flagOperation, out bool comparedWithZero)
     {
-        potentialFlag = potentialFlag.UnwrapImplicitConversionOperations();
-        comparedOperand = comparedOperand.UnwrapImplicitConversionOperations();
+        potentialFlag = potentialFlag.UnwrapImplicitConversions();
+        comparedOperand = comparedOperand.UnwrapImplicitConversions();
 
         if (potentialFlag is IFieldReferenceOperation firstFieldReference &&
             firstFieldReference.Field.HasConstantValue &&

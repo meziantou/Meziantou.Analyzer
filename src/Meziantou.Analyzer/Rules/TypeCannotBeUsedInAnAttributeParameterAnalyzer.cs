@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -81,7 +82,7 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzer : DiagnosticA
 
         public bool IsAttribute(ISymbol methodSymbol)
         {
-            return methodSymbol.ContainingType.IsOrInheritFrom(_attributeSymbol);
+            return methodSymbol.ContainingType.IsOrInheritsFrom(_attributeSymbol);
         }
 
         public bool IsTypeValid(ITypeSymbol type)
@@ -113,7 +114,7 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzer : DiagnosticA
                 if (type.IsEqualTo(_typeSymbol))
                     return true;
 
-                if (type.IsOrInheritFrom(_enumSymbol))
+                if (type.IsOrInheritsFrom(_enumSymbol))
                     return true;
 
                 if (allowArray && type is IArrayTypeSymbol array && array.Rank is 1 && IsTypeValid(array.ElementType, allowArray: false))

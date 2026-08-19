@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -63,7 +64,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
             if (!declarator.Symbol.IsRef)
                 return;
 
-            var initValue = declarator.Initializer?.Value.UnwrapConversionOperations();
+            var initValue = declarator.Initializer?.Value.UnwrapConversions();
             if (initValue is null)
                 return;
 
@@ -81,7 +82,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
             if (!returnsByRef)
                 return;
 
-            var returnedValue = ((IReturnOperation)context.Operation).ReturnedValue?.UnwrapConversionOperations();
+            var returnedValue = ((IReturnOperation)context.Operation).ReturnedValue?.UnwrapConversions();
             if (returnedValue is null)
                 return;
 
@@ -96,7 +97,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
             if (refKind is RefKind.None or RefKind.Out)
                 return;
 
-            ReportIfMatch(context, argument.Value.UnwrapConversionOperations());
+            ReportIfMatch(context, argument.Value.UnwrapConversions());
         }
 
         private void ReportIfMatch(OperationAnalysisContext context, IOperation value)

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -44,7 +45,7 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
                     if (operation.Arguments[0].Value.Type is not { IsReferenceType: true })
                         return;
 
-                    var value = operation.Arguments[1].Value.UnwrapImplicitConversionOperations();
+                    var value = operation.Arguments[1].Value.UnwrapImplicitConversions();
                     if (value is IObjectCreationOperation or ILocalReferenceOperation)
                     {
                         context.ReportDiagnostic(Rule, operation);

@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
@@ -48,10 +48,10 @@ internal static class MergeIsPatternChecksCommon
 
     private static IOperation UnwrapOperation(IOperation operation)
     {
-        operation = operation.UnwrapConversionOperations();
+        operation = operation.UnwrapConversions();
         while (operation is IParenthesizedOperation parenthesizedOperation)
         {
-            operation = parenthesizedOperation.Operand.UnwrapConversionOperations();
+            operation = parenthesizedOperation.Operand.UnwrapConversions();
         }
 
         return operation;

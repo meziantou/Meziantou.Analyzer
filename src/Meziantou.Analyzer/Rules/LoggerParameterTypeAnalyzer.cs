@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Text;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis.CSharp;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -247,7 +248,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             var method = (IMethodSymbol)context.Symbol;
 
             // Check if method has LoggerMessageAttribute
-            var loggerMessageAttribute = method.GetAttribute(LoggerMessageAttributeSymbol);
+            var loggerMessageAttribute = method.GetFirstAttribute(LoggerMessageAttributeSymbol);
             if (loggerMessageAttribute is null)
                 return;
 
@@ -361,7 +362,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                         {
                             if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
                             {
-                                argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax))];
+                                argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversions().Type, v.Syntax))];
                             }
                         }
                     }
@@ -380,13 +381,13 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                         var argument = operation.Arguments[templateIndex + 1];
                         if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
                         {
-                            argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversionOperations().Type, v.Syntax))];
+                            argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversions().Type, v.Syntax))];
                         }
                     }
 
                     if (operation.Arguments.Length >= templateIndex && argumentTypes is null)
                     {
-                        argumentTypes = [.. operation.Arguments.Skip(templateIndex + 1).Select(v => (v.Value.UnwrapImplicitConversionOperations().Type, v.Syntax))];
+                        argumentTypes = [.. operation.Arguments.Skip(templateIndex + 1).Select(v => (v.Value.UnwrapImplicitConversions().Type, v.Syntax))];
                     }
                 }
 
@@ -406,7 +407,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
                 {
                     var value = operation.Arguments[1].Value;
-                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax), isSerilog: true);
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversions().Type, value.Syntax), isSerilog: true);
                 }
 
                 return;
@@ -416,7 +417,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
                 {
                     var value = operation.Arguments[1].Value;
-                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax), isSerilog: true);
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversions().Type, value.Syntax), isSerilog: true);
                 }
 
                 return;
@@ -426,7 +427,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 if (operation.Arguments[0].Value.ConstantValue is { HasValue: true, Value: string valueName })
                 {
                     var value = operation.Arguments[1].Value;
-                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversionOperations().Type, value.Syntax), isSerilog: true);
+                    ValidateLogParameter(context, operation.Arguments[0].Value, SerilogPrefixes, valueName, (value.UnwrapImplicitConversions().Type, value.Syntax), isSerilog: true);
                 }
 
                 return;

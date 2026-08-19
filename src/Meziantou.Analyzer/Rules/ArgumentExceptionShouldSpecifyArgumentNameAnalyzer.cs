@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -76,7 +77,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             if (type is null)
                 return;
 
-            if (!type.IsOrInheritFrom(ArgumentExceptionType))
+            if (!type.IsOrInheritsFrom(ArgumentExceptionType))
                 return;
 
             var parameterName = "paramName";
@@ -174,7 +175,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                 if (!parameter.Type.IsString())
                     continue;
 
-                var attribute = parameter.GetAttribute(CallerArgumentExpressionAttribute);
+                var attribute = parameter.GetFirstAttribute(CallerArgumentExpressionAttribute);
                 if (attribute is null)
                     continue;
 
@@ -246,7 +247,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             if (argument.Value is null)
                 return;
 
-            var unwrappedValue = argument.Value.UnwrapImplicitConversionOperations();
+            var unwrappedValue = argument.Value.UnwrapImplicitConversions();
             if (unwrappedValue is IParameterReferenceOperation)
             {
                 // Parameter references are always valid - no need to validate the name
@@ -270,7 +271,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                 if (memberRef.Instance is null)
                     return false;
 
-                current = memberRef.Instance.UnwrapImplicitConversionOperations();
+                current = memberRef.Instance.UnwrapImplicitConversions();
             }
 
             return current is IParameterReferenceOperation;

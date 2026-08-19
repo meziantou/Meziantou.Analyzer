@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -70,7 +70,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationFixer : CodeFixProvi
         if (typeDeclaration is RecordDeclarationSyntax)
             return true;
 
-        if (!typeDeclaration.GetCSharpLanguageVersion().IsCSharp12OrAbove())
+        if (!typeDeclaration.GetCSharpLanguageVersion().IsCSharp12OrGreater())
             return false;
 
         if (typeDeclaration is ClassDeclarationSyntax or StructDeclarationSyntax)

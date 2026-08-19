@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using System.Linq.Expressions;
 
 namespace Meziantou.Analyzer.Rules;

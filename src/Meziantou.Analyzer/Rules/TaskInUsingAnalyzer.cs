@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -77,8 +77,8 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            operation = operation.UnwrapImplicitConversionOperations();
-            if (operation.Type is not null && operation.Type.IsOrInheritFrom(taskSymbol))
+            operation = operation.UnwrapImplicitConversions();
+            if (operation.Type is not null && operation.Type.IsOrInheritsFrom(taskSymbol))
             {
                 context.ReportDiagnostic(Rule, operation);
             }

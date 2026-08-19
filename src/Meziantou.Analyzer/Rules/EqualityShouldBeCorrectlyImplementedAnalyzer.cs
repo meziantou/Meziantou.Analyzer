@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -85,7 +86,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         public INamedTypeSymbol? IComparableSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable");
         public INamedTypeSymbol? IComparableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable`1");
         public INamedTypeSymbol? IEquatableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IEquatable`1");
-        public bool SupportRefStructs { get; } = compilation.GetCSharpLanguageVersion().IsCSharp13OrAbove() && compilation.IsNet9OrGreater();
+        public bool SupportRefStructs { get; } = compilation.GetCSharpLanguageVersion().IsCSharp13OrGreater() && compilation.IsNet9OrGreater();
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {

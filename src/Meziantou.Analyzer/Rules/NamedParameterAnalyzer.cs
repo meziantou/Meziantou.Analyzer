@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Meziantou.Analyzer.Configurations;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -274,10 +275,10 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                             return;
 
                         // e.g. SyntaxNode.WithElse
-                        if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritFrom(syntaxNodeType))
+                        if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritsFrom(syntaxNodeType))
                             return;
 
-                        if (operation is not null && !operation.GetCSharpLanguageVersion().IsCSharp14OrAbove() && operationUtilities.IsInExpressionContext(operation))
+                        if (operation is not null && !operation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(operation))
                             return;
 
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex))

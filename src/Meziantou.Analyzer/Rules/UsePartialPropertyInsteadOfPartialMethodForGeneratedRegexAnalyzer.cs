@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -45,7 +46,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
 
         // Check language version from the symbol's actual syntax tree
         var syntaxTree = method.Locations.FirstOrDefault()?.SourceTree;
-        if (syntaxTree is null || !syntaxTree.GetCSharpLanguageVersion().IsCSharp13OrAbove())
+        if (syntaxTree is null || !syntaxTree.GetCSharpLanguageVersion().IsCSharp13OrGreater())
             return;
 
         // Must be a partial definition (not the implementation)

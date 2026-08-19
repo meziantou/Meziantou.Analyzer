@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -48,7 +48,7 @@ public sealed class ValidateFixedAddressValueTypeAttributeUsageAnalyzer : Diagno
     private static void Analyze(SymbolAnalysisContext context, ITypeSymbol attributeType)
     {
         var field = (IFieldSymbol)context.Symbol;
-        if (field.GetAttribute(attributeType, inherits: false) is null)
+        if (field.GetFirstAttribute(attributeType, inherits: false) is null)
             return;
 
         if (!field.IsStatic)

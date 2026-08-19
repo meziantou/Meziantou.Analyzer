@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -38,7 +39,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionFixer : CodeFixProvider
             return;
 
         var catchVariableSymbol = semanticModel.GetDeclaredSymbol(catchClause.Declaration, context.CancellationToken) as ILocalSymbol;
-        if (catchVariableSymbol?.Type.IsOrInheritFrom(exceptionSymbol) is not true)
+        if (catchVariableSymbol?.Type.IsOrInheritsFrom(exceptionSymbol) is not true)
             return;
 
         var overloadFinder = new OverloadFinder(semanticModel.Compilation);
@@ -89,10 +90,10 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionFixer : CodeFixProvider
         for (var i = 0; i < overload.Parameters.Length; i++)
         {
             var parameter = overload.Parameters[i];
-            if (!parameter.Type.IsOrInheritFrom(exceptionSymbol))
+            if (!parameter.Type.IsOrInheritsFrom(exceptionSymbol))
                 continue;
 
-            if (i >= method.Parameters.Length || !method.Parameters[i].Type.IsOrInheritFrom(exceptionSymbol))
+            if (i >= method.Parameters.Length || !method.Parameters[i].Type.IsOrInheritsFrom(exceptionSymbol))
             {
                 insertionIndex = i;
                 parameterName = parameter.Name;

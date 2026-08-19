@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis;
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Suppressors;
@@ -21,7 +22,7 @@ public sealed class CA1507SerializationPropertyNameSuppressor : DiagnosticSuppre
     {
         foreach (var diagnostic in context.ReportedDiagnostics)
         {
-            var node = diagnostic.TryFindNode(context.CancellationToken);
+            var node = diagnostic.FindNode(context.CancellationToken);
             if (node is null)
                 return;
 

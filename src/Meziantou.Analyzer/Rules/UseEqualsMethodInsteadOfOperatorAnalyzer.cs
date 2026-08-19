@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -47,7 +48,7 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
             if (IsNull(operation.LeftOperand) || IsNull(operation.RightOperand))
                 return;
 
-            var leftType = operation.LeftOperand.UnwrapImplicitConversionOperations().Type;
+            var leftType = operation.LeftOperand.UnwrapImplicitConversions().Type;
             if (operation.IsLifted)
             {
                 leftType = leftType.GetUnderlyingNullableTypeOrSelf();
@@ -71,7 +72,7 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
             if (leftType.IsEqualTo(cultureInfoSymbol))
                 return;
 
-            var overrideEqualsSymbol = leftType.GetMembers("Equals").OfType<IMethodSymbol>().FirstOrDefault(m => m.IsOrOverrideMethod(objectEqualsSymbol));
+            var overrideEqualsSymbol = leftType.GetMembers("Equals").OfType<IMethodSymbol>().FirstOrDefault(m => m.IsOrOverrides(objectEqualsSymbol));
             if (overrideEqualsSymbol is not null)
             {
                 context.ReportDiagnostic(Rule, operation);
@@ -80,5 +81,5 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
     }
 
     public static bool IsNull(IOperation operation)
-        => operation.UnwrapConversionOperations() is ILiteralOperation { ConstantValue: { HasValue: true, Value: null } };
+        => operation.UnwrapConversions() is ILiteralOperation { ConstantValue: { HasValue: true, Value: null } };
 }

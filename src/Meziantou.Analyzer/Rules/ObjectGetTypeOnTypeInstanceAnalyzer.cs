@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -41,7 +42,7 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
                     if (instanceType is null)
                         return;
 
-                    if (instanceType.IsOrInheritFrom(typeSymbol))
+                    if (instanceType.IsOrInheritsFrom(typeSymbol))
                     {
                         context.ReportDiagnostic(Rule, operation);
                     }

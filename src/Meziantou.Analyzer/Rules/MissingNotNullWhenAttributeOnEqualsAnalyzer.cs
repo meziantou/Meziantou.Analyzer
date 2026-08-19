@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -137,7 +138,7 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
                         {
                             if (method.IsInterfaceImplementation())
                             {
-                                var interfaceMethod = method.GetImplementingInterfaceSymbol();
+                                var interfaceMethod = method.GetImplementedInterfaceMember();
                                 if (interfaceMethod is not null &&
                                     interfaceMethod.ContainingType is INamedTypeSymbol interfaceType &&
                                     interfaceType.ConstructedFrom.IsEqualTo(iequatableOfTSymbol))

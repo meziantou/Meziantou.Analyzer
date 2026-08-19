@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -115,7 +116,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             {
                 expression = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
             }
-            else if (parameter.Type.IsOrInheritFrom(formatProviderSymbol))
+            else if (parameter.Type.IsOrInheritsFrom(formatProviderSymbol))
             {
                 expression = SyntaxFactory.ParseExpression(formatProviderExpression);
             }
@@ -137,10 +138,10 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         for (var i = 0; i < overload.Parameters.Length; i++)
         {
             var parameter = overload.Parameters[i];
-            if (!parameter.Type.IsOrInheritFrom(formatProviderSymbol))
+            if (!parameter.Type.IsOrInheritsFrom(formatProviderSymbol))
                 continue;
 
-            if (i >= method.Parameters.Length || !method.Parameters[i].Type.IsOrInheritFrom(formatProviderSymbol))
+            if (i >= method.Parameters.Length || !method.Parameters[i].Type.IsOrInheritsFrom(formatProviderSymbol))
             {
                 insertionIndex = i;
                 parameterName = parameter.Name;
@@ -159,7 +160,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             return false;
 
         return overload.Parameters.Any(parameter => parameter.Type.IsString()) &&
-               overload.Parameters.Any(parameter => parameter.Type.IsOrInheritFrom(formatProviderSymbol)) &&
-               overload.Parameters.All(parameter => parameter.Type.IsString() || parameter.Type.IsOrInheritFrom(formatProviderSymbol));
+               overload.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)) &&
+               overload.Parameters.All(parameter => parameter.Type.IsString() || parameter.Type.IsOrInheritsFrom(formatProviderSymbol));
     }
 }

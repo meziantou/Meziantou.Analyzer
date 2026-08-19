@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -214,7 +215,7 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 
         private bool IsGetCustomAttributeInvocation(IOperation operation, out IInvocationOperation? invocation)
         {
-            invocation = operation.UnwrapConversionOperations() as IInvocationOperation;
+            invocation = operation.UnwrapConversions() as IInvocationOperation;
             if (invocation is null)
                 return false;
 
@@ -303,10 +304,10 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
             if (type is null)
                 return false;
 
-            return type.IsOrInheritFrom(_assemblySymbol) ||
-                   type.IsOrInheritFrom(_moduleSymbol) ||
-                   type.IsOrInheritFrom(_memberInfoSymbol) ||
-                   type.IsOrInheritFrom(_typeSymbol);
+            return type.IsOrInheritsFrom(_assemblySymbol) ||
+                   type.IsOrInheritsFrom(_moduleSymbol) ||
+                   type.IsOrInheritsFrom(_memberInfoSymbol) ||
+                   type.IsOrInheritsFrom(_typeSymbol);
         }
     }
 }

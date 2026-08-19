@@ -17,8 +17,6 @@
     <When Condition="$(RoslynVersion) == 'roslyn4.8'">
       <PropertyGroup>
         <RoslynVersionSupported>true</RoslynVersionSupported>
-        <DefineConstants>$(DefineConstants);ROSLYN_4_8;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER</DefineConstants>
-        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);nullable</NoWarn>
       </PropertyGroup>
     </When>
@@ -26,8 +24,6 @@
     <When Condition="$(RoslynVersion) == 'roslyn4.14'">
       <PropertyGroup>
         <RoslynVersionSupported>true</RoslynVersionSupported>
-        <DefineConstants>$(DefineConstants);ROSLYN_4_8;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_14_OR_GREATER</DefineConstants>
-        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);nullable</NoWarn>
       </PropertyGroup>
     </When>
@@ -35,16 +31,12 @@
     <When Condition="$(RoslynVersion) == 'roslyn5.0'">
       <PropertyGroup>
         <RoslynVersionSupported>true</RoslynVersionSupported>
-        <DefineConstants>$(DefineConstants);ROSLYN5_0;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_10_OR_GREATER;ROSLYN_4_14_OR_GREATER;ROSLYN_5_0_OR_GREATER</DefineConstants>
-        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER;CSHARP14_OR_GREATER</DefineConstants>
       </PropertyGroup>
     </When>
 
     <When Condition="$(RoslynVersion) == 'roslyn5.6'">
       <PropertyGroup>
         <RoslynVersionSupported>true</RoslynVersionSupported>
-        <DefineConstants>$(DefineConstants);ROSLYN5_6;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_10_OR_GREATER;ROSLYN_4_14_OR_GREATER;ROSLYN_5_0_OR_GREATER;ROSLYN_5_6_OR_GREATER</DefineConstants>
-        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER;CSHARP14_OR_GREATER</DefineConstants>
         <NoWarn>$(NoWarn);CS0618</NoWarn>
       </PropertyGroup>
     </When>
@@ -52,13 +44,13 @@
     <When Condition="$(RoslynVersion) == 'roslyn5.9'">
       <PropertyGroup>
         <RoslynVersionSupported>true</RoslynVersionSupported>
-        <DefineConstants>$(DefineConstants);ROSLYN5_9;ROSLYN_4_2_OR_GREATER;ROSLYN_4_4_OR_GREATER;ROSLYN_4_5_OR_GREATER;ROSLYN_4_6_OR_GREATER;ROSLYN_4_8_OR_GREATER;ROSLYN_4_10_OR_GREATER;ROSLYN_4_14_OR_GREATER;ROSLYN_5_0_OR_GREATER;ROSLYN_5_6_OR_GREATER;ROSLYN_5_9_OR_GREATER</DefineConstants>
-        <DefineConstants>$(DefineConstants);CSHARP9_OR_GREATER;CSHARP10_OR_GREATER;CSHARP11_OR_GREATER;CSHARP12_OR_GREATER;CSHARP13_OR_GREATER;CSHARP14_OR_GREATER;CSHARP15_OR_GREATER</DefineConstants>
       </PropertyGroup>
     </When>
   </Choose>
 
-  <!-- Without this, a project named after an unknown Roslyn version would silently compile without any ROSLYN_* constant -->
+  <!-- The ROSLYN_* and CSHARP*_OR_GREATER constants come from the Meziantou.Framework.Roslyn package, which derives them
+       from the version of the Microsoft.CodeAnalysis.* packages. Only the version specific warnings remain here.
+       Without this check, a project named after an unknown Roslyn version would silently compile with the wrong warnings -->
   <Target Name="EnsureRoslynVersionIsSupported" BeforeTargets="BeforeBuild" Condition="'$(RoslynVersionSupported)' != 'true'">
     <Error Text="The Roslyn version '$(RoslynVersion)' is not supported. Add it to the Directory.Build.targets of the repository root." />
   </Target>

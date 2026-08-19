@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using Meziantou.Analyzer.Internals;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -672,7 +673,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 return generator.ValueReturningLambdaExpression(newParameterName,
                     generator.LogicalAndExpression(left, right));
             }
-            else if (argument1.Value.UnwrapConversionOperations() is IAnonymousFunctionOperation anonymousMethod1 && argument2.Value.UnwrapImplicitConversionOperations() is IAnonymousFunctionOperation anonymousMethod2)
+            else if (argument1.Value.UnwrapConversions() is IAnonymousFunctionOperation anonymousMethod1 && argument2.Value.UnwrapImplicitConversions() is IAnonymousFunctionOperation anonymousMethod2)
             {
                 var newParameterName =
                     anonymousMethod1.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??

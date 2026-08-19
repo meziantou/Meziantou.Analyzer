@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -285,7 +286,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (right.Symbol is null)
                 return false;
 
-            if (right.AllowInherits && left.IsOrInheritFrom(right.Symbol))
+            if (right.AllowInherits && left.IsOrInheritsFrom(right.Symbol))
                 return true;
 
             return AreTypesCompatible(
@@ -413,7 +414,7 @@ internal sealed class OverloadFinder(Compilation compilation)
 
             if (options.AllowInterfaceConversions)
             {
-                foreach (var candidate in methodNamedType.GetAllInterfacesIncludingThis().OfType<INamedTypeSymbol>())
+                foreach (var candidate in methodNamedType.GetAllInterfacesIncludingSelf().OfType<INamedTypeSymbol>())
                 {
                     if (!candidate.OriginalDefinition.IsEqualTo(otherMethodNamedType.OriginalDefinition))
                         continue;
@@ -529,7 +530,7 @@ internal sealed class OverloadFinder(Compilation compilation)
 
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    if (!inferredTypeArgument.IsOrInheritFrom(constraintType) && !inferredTypeArgument.Implements(constraintType))
+                    if (!inferredTypeArgument.IsOrInheritsFrom(constraintType) && !inferredTypeArgument.Implements(constraintType))
                         return false;
                 }
             }

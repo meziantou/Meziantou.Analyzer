@@ -1,3 +1,4 @@
+using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -12,63 +13,6 @@ internal static class OperationExtensions
         return operation.ChildOperations;
     }
 
-    public static LanguageVersion GetCSharpLanguageVersion(this IOperation operation)
-    {
-        if (operation.Syntax.SyntaxTree.Options is CSharpParseOptions options)
-            return options.LanguageVersion;
-
-        return LanguageVersion.Default;
-    }
-
-    public static LanguageVersion GetCSharpLanguageVersion(this SyntaxNode syntaxNode)
-    {
-        if (syntaxNode.SyntaxTree.Options is CSharpParseOptions options)
-            return options.LanguageVersion;
-
-        return LanguageVersion.Default;
-    }
-
-    public static LanguageVersion GetCSharpLanguageVersion(this SyntaxTree syntaxTree)
-    {
-        if (syntaxTree.Options is CSharpParseOptions options)
-            return options.LanguageVersion;
-
-        return LanguageVersion.Default;
-    }
-
-    public static LanguageVersion GetCSharpLanguageVersion(this Compilation compilation)
-    {
-        var syntaxTree = compilation.SyntaxTrees.FirstOrDefault();
-        if (syntaxTree?.Options is CSharpParseOptions options)
-            return options.LanguageVersion;
-
-        return LanguageVersion.Default;
-    }
-
-    public static IEnumerable<IOperation> Ancestors(this IOperation operation)
-    {
-        var parent = operation.Parent;
-        while (parent is not null)
-        {
-            yield return parent;
-            parent = parent.Parent;
-        }
-    }
-
-    public static bool IsInNameofOperation(this IOperation operation)
-    {
-        var parent = operation.Parent;
-        while (parent is not null)
-        {
-            if (parent.Kind == OperationKind.NameOf)
-                return true;
-
-            parent = parent.Parent;
-        }
-
-        return false;
-    }
-
     public static ITypeSymbol? GetActualType(this IOperation operation)
     {
         if (operation is IConversionOperation conversionOperation)
@@ -77,39 +21,6 @@ internal static class OperationExtensions
         }
 
         return operation.Type;
-    }
-
-    public static IOperation UnwrapImplicitConversionOperations(this IOperation operation)
-    {
-        if (operation is IConversionOperation conversionOperation && conversionOperation.IsImplicit)
-        {
-            return UnwrapImplicitConversionOperations(conversionOperation.Operand);
-        }
-
-        return operation;
-    }
-
-    public static IOperation UnwrapConversionOperations(this IOperation operation)
-    {
-        if (operation is IConversionOperation conversionOperation)
-        {
-            return UnwrapImplicitConversionOperations(conversionOperation.Operand);
-        }
-
-        return operation;
-    }
-
-    public static IOperation? UnwrapLabelOperations(this IOperation operation)
-    {
-        if (operation is ILabeledOperation label)
-        {
-            if (label.Operation is null)
-                return null;
-
-            return UnwrapLabelOperations(label.Operation);
-        }
-
-        return operation;
     }
 
     public static bool HasArgumentOfType(this IInvocationOperation operation, ITypeSymbol? argumentTypeSymbol, bool inherits = false)
@@ -126,7 +37,7 @@ internal static class OperationExtensions
         {
             if (inherits)
             {
-                if (arg.Value.Type is not null && arg.Value.Type.IsOrInheritFrom(argumentTypeSymbol))
+                if (arg.Value.Type is not null && arg.Value.Type.IsOrInheritsFrom(argumentTypeSymbol))
                     return true;
             }
             else if (argumentTypeSymbol.IsEqualTo(arg.Value.Type))
@@ -134,20 +45,6 @@ internal static class OperationExtensions
         }
 
         return false;
-    }
-
-    public static IMethodSymbol? GetContainingMethod(this IOperation operation, CancellationToken cancellationToken)
-    {
-        if (operation.SemanticModel is null)
-            return null;
-
-        foreach (var syntax in operation.Syntax.AncestorsAndSelf())
-        {
-            if (syntax is MethodDeclarationSyntax method)
-                return operation.SemanticModel.GetDeclaredSymbol(method, cancellationToken);
-        }
-
-        return null;
     }
 
     public static bool IsInStaticContext(this IOperation operation, CancellationToken cancellationToken) => IsInStaticContext(operation, cancellationToken, out _);
