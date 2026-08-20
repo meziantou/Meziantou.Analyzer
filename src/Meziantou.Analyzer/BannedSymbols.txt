@@ -1,1 +1,2 @@
 ﻿M:Microsoft.CodeAnalysis.Compilation.GetTypeByMetadataName(System.String); Use GetBestTypeByMetadataName instead
+M:Microsoft.CodeAnalysis.Diagnostics.AnalysisContext.ConfigureGeneratedCodeAnalysis(Microsoft.CodeAnalysis.Diagnostics.GeneratedCodeAnalysisFlags); Use ConfigureAnalysisOfGeneratedCode instead, so users can opt in to analyzing generated code

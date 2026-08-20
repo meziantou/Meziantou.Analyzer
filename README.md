@@ -279,3 +279,22 @@ Supported values are:
     <MeziantouAnalysisMode>all-warnings</MeziantouAnalysisMode>
   </PropertyGroup>
 </Project>
+```
+
+## Analyzing generated code
+
+By default, most rules do not report diagnostics in generated code. Set the `MEZIANTOU_ANALYZER_GENERATED_CODE`
+environment variable to `true` (or `1`) to make all the rules analyze and report on generated code:
+
+```bash
+MEZIANTOU_ANALYZER_GENERATED_CODE=true
+```
+
+The variable can only add analysis, never remove it: the rules that already analyze generated code, such as the
+Blazor rules, are unaffected and cannot be disabled with it.
+
+Note that the analyzers run in a long-lived process. After changing the variable, run `dotnet build-server shutdown`
+and rebuild, or restart your IDE.
+
+See [Analyzing generated code](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/generated-code.md)
+for the details and for the `.editorconfig` alternative.

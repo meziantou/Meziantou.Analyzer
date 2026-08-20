@@ -18,7 +18,7 @@ public sealed class DoNotUseFinalizerAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSymbolAction(AnalyzeMethodSymbol, SymbolKind.Method);
     }
