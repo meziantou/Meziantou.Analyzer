@@ -643,3 +643,6 @@ dotnet_diagnostic.MA0215.severity = none
 
 # MA0216: Remove unnecessary closed modifier
 dotnet_diagnostic.MA0216.severity = none
+
+# MA0217: Use a static lambda
+dotnet_diagnostic.MA0217.severity = none
