@@ -364,38 +364,20 @@ _ = new System.DateTime().ToString(format: null);
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Method()
-    {
-        var sourceCode = """
-            _ = Sample.GetInvariantValue("");
-            _ = [|Sample.GetValue("")|];
-
-            static class Sample
-            {
-                [Meziantou.Analyzer.Annotations.CultureInsensitive]
-                public static double GetInvariantValue(string value) => 0;
-                public static double GetInvariantValue(string value, System.IFormatProvider provider) => 0;
-
-                public static double GetValue(string value) => 0;
-                public static double GetValue(string value, System.IFormatProvider provider) => 0;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CultureInsensitiveAttribute_Property()
+    public async Task CultureInsensitiveAttribute_Member()
     {
         var sourceCode = """
             _ = Sample.Value.ToString();
+            _ = Sample.Field.ToString();
             _ = [|Sample.OtherValue.ToString()|];
 
             static class Sample
             {
                 [Meziantou.Analyzer.Annotations.CultureInsensitive]
                 public static double Value => 0;
+
+                [Meziantou.Analyzer.Annotations.CultureInsensitive]
+                public static double Field;
 
                 public static double OtherValue => 0;
             }

@@ -629,69 +629,6 @@ class Sample : System.IFormattable
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Method()
-    {
-        var sourceCode = """
-            class Test
-            {
-                void A()
-                {
-                    _ = "abc" + GetValue();
-                    _ = $"abc{GetValue()}";
-                    _ = GetValue().ToString();
-                }
-
-                [Meziantou.Analyzer.Annotations.CultureInsensitive]
-                double GetValue() => 0;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CultureInsensitiveAttribute_ReturnValue()
-    {
-        var sourceCode = """
-            class Test
-            {
-                void A()
-                {
-                    _ = "abc" + GetValue();
-                    _ = $"abc{GetValue()}";
-                }
-
-                [return: Meziantou.Analyzer.Annotations.CultureInsensitive]
-                double GetValue() => 0;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CultureInsensitiveAttribute_NotAnnotatedMethod()
-    {
-        var sourceCode = """
-            class Test
-            {
-                void A()
-                {
-                    _ = "abc" + [|GetValue()|];
-                    _ = $"abc[|{GetValue()}|]";
-                }
-
-                double GetValue() => 0;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
     public async Task CultureInsensitiveAttribute_Property()
     {
         var sourceCode = """
@@ -701,10 +638,15 @@ class Sample : System.IFormattable
                 {
                     _ = "abc" + Value;
                     _ = $"abc{Value}";
+                    _ = Value.ToString();
+                    _ = "abc" + [|OtherValue|];
+                    _ = $"abc[|{OtherValue}|]";
                 }
 
                 [Meziantou.Analyzer.Annotations.CultureInsensitive]
                 double Value => 0;
+
+                double OtherValue => 0;
             }
             """;
         await CreateProjectBuilder()
@@ -830,41 +772,21 @@ class Sample : System.IFormattable
     public async Task CultureInsensitiveAttribute_AssemblyAttribute()
     {
         var sourceCode = """
-            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("M:Test.GetValue")]
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("P:Test.Value")]
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("F:Test.Field")]
 
             class Test
             {
                 void A()
                 {
-                    _ = "abc" + GetValue();
-                    _ = "abc" + [|GetOtherValue()|];
+                    _ = "abc" + Value;
+                    _ = "abc" + Field;
+                    _ = "abc" + [|OtherValue|];
                 }
 
-                static double GetValue() => 0;
-                static double GetOtherValue() => 0;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CultureInsensitiveAttribute_AssemblyAttribute_Overloads()
-    {
-        var sourceCode = """
-            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("M:Test.GetValue(System.Int32)")]
-
-            class Test
-            {
-                void A()
-                {
-                    _ = "abc" + GetValue(0);
-                    _ = "abc" + [|GetValue()|];
-                }
-
-                static double GetValue() => 0;
-                static double GetValue(int value) => 0;
+                static double Value => 0;
+                static double Field;
+                static double OtherValue => 0;
             }
             """;
         await CreateProjectBuilder()

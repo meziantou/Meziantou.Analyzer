@@ -92,7 +92,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
         return operation.UnwrapImplicitConversions() switch
         {
-            IInvocationOperation invocation => IsAnnotatedAsCultureInsensitive(invocation.TargetMethod),
             IParameterReferenceOperation parameterReference => IsAnnotatedAsCultureInsensitive(parameterReference.Parameter),
             IMemberReferenceOperation memberReference => IsAnnotatedAsCultureInsensitive(memberReference.Member),
             _ => false,
@@ -130,9 +129,6 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             return true;
 
         if (HasCultureInsensitiveAttribute(symbol.GetAttributes()))
-            return true;
-
-        if (symbol is IMethodSymbol method && HasCultureInsensitiveAttribute(method.GetReturnTypeAttributes()))
             return true;
 
         return false;

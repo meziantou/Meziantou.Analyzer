@@ -1,6 +1,6 @@
 # CultureInsensitiveAttribute
 
-The `CultureInsensitiveAttribute` is used to mark the value of a member as culture-insensitive, even when the type of the value is culture-sensitive. This attribute can be used to suppress culture-related analyzer rules ([MA0011](Rules/MA0011.md), [MA0075](Rules/MA0075.md), [MA0076](Rules/MA0076.md)) for a specific method, property, field, or parameter.
+The `CultureInsensitiveAttribute` is used to mark the value of a property, a field, or a parameter as culture-insensitive, even when the type of the value is culture-sensitive. This attribute can be used to suppress culture-related analyzer rules ([MA0011](Rules/MA0011.md), [MA0075](Rules/MA0075.md), [MA0076](Rules/MA0076.md)) for that value.
 
 Use [CultureInsensitiveTypeAttribute](CultureInsensitiveTypeAttribute.md) when a whole type is culture-insensitive, and `CultureInsensitiveAttribute` when only some values of a culture-sensitive type are known to be culture-insensitive.
 
@@ -9,24 +9,6 @@ Use [CultureInsensitiveTypeAttribute](CultureInsensitiveTypeAttribute.md) when a
 The attribute is available through the [`Meziantou.Analyzer.Annotations`](https://www.nuget.org/packages/Meziantou.Analyzer.Annotations/) NuGet package.
 
 Alternatively, you can define the attribute in your own assembly instead of using the package. The analyzer only looks for the attribute by name and namespace, so you can copy the [attribute definition](https://github.com/meziantou/Meziantou.Analyzer/blob/main/src/Meziantou.Analyzer.Annotations/CultureInsensitiveAttribute.cs) into your project.
-
-### Marking the Return Value of a Method
-
-```csharp
-using Meziantou.Analyzer.Annotations;
-
-class Sample
-{
-    [CultureInsensitive] // Equivalent to [return: CultureInsensitive]
-    public static double GetInvariantValue() => 0;
-
-    public static double GetValue() => 0;
-}
-
-// Usage
-_ = $"{Sample.GetInvariantValue()}";     // OK - The returned value is marked as culture-insensitive
-_ = "value: " + Sample.GetValue();       // Warning - MA0075
-```
 
 ### Marking a Property or a Field
 
@@ -40,11 +22,16 @@ class Sample
 
     [CultureInsensitive]
     public double Field;
+
+    public double OtherValue { get; set; }
 }
 
-// Usage - no warning
-_ = $"{sample.Value} {sample.Field}";
+// Usage
+_ = $"{sample.Value} {sample.Field}"; // OK - Both values are marked as culture-insensitive
+_ = "value: " + sample.OtherValue;    // Warning - MA0075
 ```
+
+Methods cannot be annotated: the attribute marks a value, not the way a method computes it. When a method returns a culture-insensitive value of a culture-sensitive type, mark the type with [CultureInsensitiveTypeAttribute](CultureInsensitiveTypeAttribute.md), or assign the result to an annotated property or field.
 
 ### Marking a Parameter
 
@@ -74,27 +61,21 @@ Only the closest argument is considered, so a value nested in another invocation
 
 ### Assembly-Level Annotation for External Members
 
-When you cannot modify the source member (e.g., third-party libraries), use the assembly-level attribute with the [XML documentation id](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/#id-strings) of the member:
+When you cannot modify the source member (e.g., third-party libraries), use the assembly-level attribute with the [XML documentation id](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/#id-strings) of the property or the field:
 
 ```csharp
 using Meziantou.Analyzer.Annotations;
 
-// Mark a single overload as culture-insensitive
-[assembly: CultureInsensitive("M:Sample.StringHelper.CreateInvariant(System.Double)")]
-
-// Omit the parameter list to mark all the overloads of a method
-[assembly: CultureInsensitive("M:Sample.StringHelper.CreateInvariant")]
-
-// Properties and fields are also supported
 [assembly: CultureInsensitive("P:Sample.StringHelper.InvariantValue")]
+[assembly: CultureInsensitive("F:Sample.StringHelper.InvariantField")]
 ```
 
 ## Constructors
 
 | Constructor | Description |
 |-------------|-------------|
-| `CultureInsensitive()` | Marks the value of the member on which the attribute is applied as culture-insensitive |
-| `CultureInsensitive(string xmlDocumentationId)` | Assembly-level: marks the value of the member matching the XML documentation id as culture-insensitive |
+| `CultureInsensitive()` | Marks the value of the property, the field, or the parameter on which the attribute is applied as culture-insensitive |
+| `CultureInsensitive(string xmlDocumentationId)` | Assembly-level: marks the value of the property or the field matching the XML documentation id as culture-insensitive |
 
 ## Related Rules
 

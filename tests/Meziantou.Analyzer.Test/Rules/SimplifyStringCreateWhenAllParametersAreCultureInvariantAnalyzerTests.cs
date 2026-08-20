@@ -654,11 +654,11 @@ class TypeName
 {
     public void Test()
     {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {GetValue()}")|];
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {Value}")|];
     }
 
     [Meziantou.Analyzer.Annotations.CultureInsensitive]
-    static double GetValue() => 0;
+    static double Value => 0;
 }
 """;
         const string Fix = """
@@ -669,11 +669,11 @@ class TypeName
 {
     public void Test()
     {
-        _ = $"Value: {GetValue()}";
+        _ = $"Value: {Value}";
     }
 
     [Meziantou.Analyzer.Annotations.CultureInsensitive]
-    static double GetValue() => 0;
+    static double Value => 0;
 }
 """;
         await CreateProjectBuilder()
