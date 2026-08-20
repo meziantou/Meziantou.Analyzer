@@ -15,6 +15,10 @@ namespace TestHelper;
 public sealed partial class ProjectBuilder
 {
     private static readonly ConcurrentDictionary<string, Lazy<Task<string[]>>> NuGetPackagesCache = new(StringComparer.Ordinal);
+
+    // HttpClient.Timeout does not apply to reading the response stream, so a stalled connection would hang forever.
+    // The result is shared by all the tests through NuGetPackagesCache, so it would hang the whole test run.
+    private static readonly TimeSpan NuGetDownloadTimeout = TimeSpan.FromSeconds(60);
     private readonly AnalyzerAssemblyLoader _analyzerAssemblyLoader = new();
 
     private int _diagnosticMessageIndex;
@@ -94,7 +98,7 @@ public sealed partial class ProjectBuilder
                 }
 
                 static bool IsLastAttempt(int attempt) => attempt >= MaxAttempts;
-                static bool IsTransientException(Exception exception) => exception is HttpRequestException or IOException or InvalidDataException;
+                static bool IsTransientException(Exception exception) => exception is HttpRequestException or IOException or InvalidDataException or OperationCanceledException or TimeoutException;
             }
 
             async Task DownloadPackage()
@@ -103,8 +107,23 @@ public sealed partial class ProjectBuilder
                 try
                 {
                     Directory.CreateDirectory(tempFolder);
-                    await using var stream = await SharedHttpClient.Instance.GetStreamAsync(new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}")).ConfigureAwait(false);
-                    await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+                    var url = new Uri($"https://www.nuget.org/api/v2/package/{packageName}/{version}");
+                    var content = new MemoryStream();
+                    using (var cts = new CancellationTokenSource(NuGetDownloadTimeout))
+                    {
+                        try
+                        {
+                            await using var stream = await SharedHttpClient.Instance.GetStreamAsync(url, cts.Token).ConfigureAwait(false);
+                            await stream.CopyToAsync(content, cts.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException ex) when (cts.IsCancellationRequested)
+                        {
+                            throw new TimeoutException($"Downloading '{url}' timed out after {NuGetDownloadTimeout}", ex);
+                        }
+                    }
+
+                    content.Seek(0, SeekOrigin.Begin);
+                    await using var zip = new ZipArchive(content, ZipArchiveMode.Read);
 
                     foreach (var entry in zip.Entries.Where(file => includedPaths.Any(path => file.FullName.StartsWith(path, StringComparison.Ordinal))))
                     {
