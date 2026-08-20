@@ -1,13 +1,7 @@
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis.CSharp;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
 
 namespace Meziantou.Analyzer.Rules;
 

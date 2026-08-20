@@ -1,9 +1,3 @@
-using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-
 namespace Meziantou.Analyzer.Rules;
 
 // https://learn.microsoft.com/en-us/dotnet/api/system.windows.markup.constructorargumentattribute?view=netcore-3.1

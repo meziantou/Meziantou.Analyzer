@@ -10,6 +10,13 @@
     <TestingPlatformCommandLineArguments>--report-trx-filename $(MSBuildProjectName).trx</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
+  <!-- Global using directives shared by all the files of this project -->
+  <ItemGroup>
+    <Using Include="Meziantou.Analyzer.Rules" />
+    <Using Include="Meziantou.Analyzer.Test.Helpers" />
+    <Using Include="TestHelper" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.0.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.10" />

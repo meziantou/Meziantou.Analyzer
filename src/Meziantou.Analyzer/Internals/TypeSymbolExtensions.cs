@@ -1,6 +1,3 @@
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-
 namespace Meziantou.Analyzer.Internals;
 
 // http://source.roslyn.io/#Microsoft.CodeAnalysis.Workspaces/Shared/Extensions/ITypeSymbolExtensions.cs,190b4ed0932458fd,references

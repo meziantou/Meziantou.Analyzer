@@ -1,5 +1,4 @@
 using System.Reflection.Metadata.Ecma335;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Internals;

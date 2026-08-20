@@ -1,7 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-
-namespace Meziantou.Analyzer.Rules;
+﻿namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class GeneratedRegexAttributeUsageAnalyzer : RegexUsageAnalyzerBase

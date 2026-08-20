@@ -1,4 +1,3 @@
-using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Test;

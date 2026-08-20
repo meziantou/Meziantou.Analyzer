@@ -1,8 +1,3 @@
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
-using Microsoft.CodeAnalysis.CodeFixes;
-
 namespace Meziantou.Analyzer.Rules;
 
 internal sealed class BlazorPropertyInjectionFixAllProvider : FixAllProvider

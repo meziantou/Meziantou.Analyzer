@@ -1,8 +1,3 @@
-using System.Collections.Immutable;
-using System.Linq;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-
 namespace Meziantou.Analyzer.Rules;
 
 internal sealed class NamedParameterFixAllProvider : DocumentBasedFixAllProvider

@@ -1,7 +1,3 @@
-using Meziantou.Analyzer.Rules;
-using Meziantou.Analyzer.Test.Helpers;
-using TestHelper;
-
 namespace Meziantou.Analyzer.Test.Rules;
 
 public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTests_MA0105

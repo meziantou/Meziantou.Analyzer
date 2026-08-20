@@ -1,6 +1,4 @@
-using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
-using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
 public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests

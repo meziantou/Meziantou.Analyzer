@@ -1,6 +1,3 @@
-using System;
-using Microsoft.CodeAnalysis;
-
 namespace Meziantou.Analyzer.Internals;
 
 internal record struct OverloadOptions(

@@ -1,7 +1,3 @@
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Meziantou.Analyzer.Rules;
 
 internal static class UseExclusiveOrOperatorCommon

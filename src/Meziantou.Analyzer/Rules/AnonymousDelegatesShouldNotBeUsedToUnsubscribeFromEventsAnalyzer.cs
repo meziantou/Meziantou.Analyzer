@@ -1,10 +1,4 @@
-﻿using System.Collections.Immutable;
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
-
-namespace Meziantou.Analyzer.Rules;
+﻿namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzer : DiagnosticAnalyzer

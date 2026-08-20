@@ -1,12 +1,4 @@
-using System.Collections.Immutable;
-using System.Composition;
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Simplification;
 
 namespace Meziantou.Analyzer.Rules;

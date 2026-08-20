@@ -1,8 +1,3 @@
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis;
-using System.Collections.Immutable;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Suppressors;

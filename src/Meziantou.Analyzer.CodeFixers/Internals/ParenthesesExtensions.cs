@@ -1,7 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Simplification;
-using Microsoft.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
 internal static class ParenthesesExtensions

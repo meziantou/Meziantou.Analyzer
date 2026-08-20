@@ -1,9 +1,4 @@
-using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using Meziantou.Analyzer.Internals;
-using Meziantou.Framework.Roslyn;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Meziantou.Analyzer.Rules;
 

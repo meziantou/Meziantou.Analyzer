@@ -1,10 +1,6 @@
 using System.Collections.Immutable;
-using System.IO;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using Meziantou.Analyzer.Rules;
-using Meziantou.Analyzer.Test.Helpers;
-using TestHelper;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
