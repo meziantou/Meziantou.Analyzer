@@ -644,6 +644,47 @@ class Value : IFormattable
     }
 
     [Fact]
+    public async Task StringCreateWithInvariantCulture_CultureInsensitiveAttribute_ShouldReport()
+    {
+        const string SourceCode = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {GetValue()}")|];
+    }
+
+    [Meziantou.Analyzer.Annotations.CultureInsensitive]
+    static double GetValue() => 0;
+}
+""";
+        const string Fix = """
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test()
+    {
+        _ = $"Value: {GetValue()}";
+    }
+
+    [Meziantou.Analyzer.Annotations.CultureInsensitive]
+    static double GetValue() => 0;
+}
+""";
+        await CreateProjectBuilder()
+              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
+              .WithTargetFramework(TargetFramework.Net6_0)
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(Fix)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task StringCreateWithInvariantCulture_EmptyString_ShouldReport()
     {
         const string SourceCode = """
