@@ -235,6 +235,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0214](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0214.md)|Design|Use 'await' instead of returning the task|ℹ️|❌|✔️|❌|
 |[MA0215](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0215.md)|Performance|Return the task instead of awaiting it|ℹ️|❌|✔️|❌|
 |[MA0216](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0216.md)|Design|Remove unnecessary closed modifier|ℹ️|✔️|❌|❌|
+|[MA0217](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0217.md)|Design|Use a static lambda|ℹ️|❌|✔️|❌|
 
 <!-- rules -->
 

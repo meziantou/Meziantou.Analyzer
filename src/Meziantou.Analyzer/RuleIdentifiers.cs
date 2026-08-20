@@ -216,6 +216,7 @@ internal static class RuleIdentifiers
     public const string UseAwaitInsteadOfReturningTask = "MA0214";
     public const string ReturnTaskInsteadOfAwaitingIt = "MA0215";
     public const string RemoveUnnecessaryClosedModifier = "MA0216";
+    public const string UseStaticLambda = "MA0217";
 
     public static string GetHelpUri(string identifier)
     {

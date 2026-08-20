@@ -215,6 +215,7 @@
 |[MA0214](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0214.md)|Design|Use 'await' instead of returning the task|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 |[MA0215](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0215.md)|Performance|Return the task instead of awaiting it|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 |[MA0216](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0216.md)|Design|Remove unnecessary closed modifier|<span title='Info'>ℹ️</span>|✔️|❌|❌|
+|[MA0217](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0217.md)|Design|Use a static lambda|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
