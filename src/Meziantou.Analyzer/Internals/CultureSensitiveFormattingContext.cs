@@ -210,6 +210,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             return CultureSensitivity.CultureSensitive;
         }
 
+        // "value?.ToString()" formats the value when it is not null, so the culture sensitivity is the one of the accessed value
+        if (operation is IConditionalAccessOperation conditionalAccess)
+            return GetCultureSensitivity(conditionalAccess.WhenNotNull, options);
+
         if (operation is IInterpolatedStringHandlerCreationOperation handler)
             return GetCultureSensitivity(handler.Content, options);
 
@@ -425,6 +429,11 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             return GetCultureSensitivity(typeParameter, options);
 
         if (typeSymbol.IsEnum())
+            return CultureSensitivity.CultureInsensitive;
+
+        // The ToString overloads of an enum are declared on System.Enum, so the containing type of an invocation
+        // such as 'enumValue.ToString("G")' is System.Enum. They ignore the format provider, so they are culture-insensitive.
+        if (typeSymbol.IsEqualTo(EnumSymbol))
             return CultureSensitivity.CultureInsensitive;
 
         if (typeSymbol.SpecialType == SpecialType.System_Boolean)
