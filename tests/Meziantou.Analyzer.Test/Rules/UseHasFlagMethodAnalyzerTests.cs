@@ -497,7 +497,7 @@ public sealed class UseHasFlagMethodAnalyzerTests
 
                 static class MyEnumExtensions
                 {
-                    public static bool HasFlags(this MyEnum value, MyEnum flags) => (value & flags) == flags;
+                    public static bool HasFlags(this MyEnum value, MyEnum flags) => {|MA0192:(value & flags) == flags|};
                 }
 
                 class Sample
@@ -604,4 +604,290 @@ public sealed class UseHasFlagMethodAnalyzerTests
             .ValidateAsync();
     }
 
+    [Fact]
+    public async Task ParameterFlag_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value, MyEnum comparand) => {|MA0192:(value & comparand) == comparand|};
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                    Flag2 = 2,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value, MyEnum comparand) => value.HasFlag(comparand);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ParameterFlag_ReversedAndOperands_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value, MyEnum comparand) => {|MA0192:(comparand & value) == comparand|};
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value, MyEnum comparand) => value.HasFlag(comparand);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ParameterFlag_NotEquals_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value, MyEnum comparand) => {|MA0192:(value & comparand) != comparand|};
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value, MyEnum comparand) => !value.HasFlag(comparand);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task LocalFlag_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value)
+                    {
+                        var comparand = MyEnum.Flag1;
+                        return {|MA0192:(value & comparand) == comparand|};
+                    }
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value)
+                    {
+                        var comparand = MyEnum.Flag1;
+                        return value.HasFlag(comparand);
+                    }
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FieldFlag_ReportDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    private MyEnum _comparand;
+
+                    bool M(MyEnum value) => {|MA0192:(value & _comparand) == this._comparand|};
+                }
+                """)
+            .ShouldFixCodeWith("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    private MyEnum _comparand;
+
+                    bool M(MyEnum value) => value.HasFlag(this._comparand);
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DifferentParameters_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    bool M(MyEnum value, MyEnum comparand, MyEnum other) => (value & comparand) == other;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task DifferentInstanceFields_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    private MyEnum _comparand;
+
+                    bool M(MyEnum value, Sample other) => (value & _comparand) == other._comparand;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task VolatileFieldFlag_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    private volatile MyEnum _comparand;
+
+                    bool M(MyEnum value) => (value & _comparand) == _comparand;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task PropertyFlag_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    private MyEnum Comparand => MyEnum.Flag1;
+
+                    bool M(MyEnum value) => (value & Comparand) == Comparand;
+                }
+                """)
+            .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task MethodCallFlag_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .WithSourceCode("""
+                [System.Flags]
+                enum MyEnum
+                {
+                    None = 0,
+                    Flag1 = 1,
+                }
+
+                class Sample
+                {
+                    private MyEnum GetComparand() => MyEnum.Flag1;
+
+                    bool M(MyEnum value) => (value & GetComparand()) == GetComparand();
+                }
+                """)
+            .ValidateAsync();
+    }
 }
