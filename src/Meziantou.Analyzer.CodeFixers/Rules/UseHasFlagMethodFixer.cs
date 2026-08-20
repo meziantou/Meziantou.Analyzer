@@ -193,7 +193,7 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
         return null;
     }
 
-    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IFieldReferenceOperation? flagOperation, out bool comparedWithZero)
+    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IOperation? flagOperation, out bool comparedWithZero)
     {
         potentialFlag = potentialFlag.UnwrapImplicitConversions();
         comparedOperand = comparedOperand.UnwrapImplicitConversions();
@@ -217,6 +217,13 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
                 comparedWithZero = true;
                 return true;
             }
+        }
+
+        if (!potentialFlag.IsConstantZero() && UseHasFlagMethodCommon.AreEquivalentOperands(potentialFlag, comparedOperand))
+        {
+            flagOperation = comparedOperand;
+            comparedWithZero = false;
+            return true;
         }
 
         flagOperation = null;

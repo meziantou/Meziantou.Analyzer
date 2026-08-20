@@ -304,7 +304,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IFieldReferenceOperation? flagOperation)
+    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IOperation? flagOperation)
     {
         potentialFlag = potentialFlag.UnwrapImplicitConversions();
         comparedOperand = comparedOperand.UnwrapImplicitConversions();
@@ -327,6 +327,12 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
                 flagOperation = firstFieldReference;
                 return true;
             }
+        }
+
+        if (!potentialFlag.IsConstantZero() && UseHasFlagMethodCommon.AreEquivalentOperands(potentialFlag, comparedOperand))
+        {
+            flagOperation = comparedOperand;
+            return true;
         }
 
         flagOperation = null;
