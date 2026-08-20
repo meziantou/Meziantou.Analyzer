@@ -714,4 +714,42 @@ class TypeName
               .ShouldFixCodeWith(Fix)
               .ValidateAsync();
     }
+
+    [Theory]
+    [InlineData("{value}")]
+    [InlineData("{value:G}")]
+    [InlineData("{value.ToString()}")]
+    [InlineData("{value.ToString(\"G\")}")]
+    public async Task StringCreateWithInvariantCulture_Enum_ShouldReport(string content)
+    {
+        var sourceCode = $$"""
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(StringComparison value)
+    {
+        var x = [|string.Create(CultureInfo.InvariantCulture, $"abc{{content}}")|];
+    }
+}
+""";
+
+        var fix = $$"""
+using System;
+using System.Globalization;
+
+class TypeName
+{
+    public void Test(StringComparison value)
+    {
+        var x = $"abc{{content}}";
+    }
+}
+""";
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ShouldFixCodeWith(fix)
+              .ValidateAsync();
+    }
 }

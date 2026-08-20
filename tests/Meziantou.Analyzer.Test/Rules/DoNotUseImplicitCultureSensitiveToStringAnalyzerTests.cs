@@ -1220,6 +1220,215 @@ class Sample : System.IFormattable
               .ValidateAsync();
     }
 
+    [Theory]
+    [InlineData("value")]
+    [InlineData("value.ToString()")]
+    [InlineData("value.ToString(\"G\")")]
+    [InlineData("value.ToString(\"g\")")]
+    [InlineData("value.ToString(\"F\")")]
+    [InlineData("value.ToString(\"f\")")]
+    [InlineData("value.ToString(\"D\")")]
+    [InlineData("value.ToString(\"d\")")]
+    [InlineData("value.ToString(\"X\")")]
+    [InlineData("value.ToString(\"x\")")]
+    [InlineData("value.ToString(default(string))")]
+    [InlineData("value.ToString(format)")]
+    public async Task Concat_Enum_NoDiagnostic(string expression)
+    {
+        var sourceCode = $$"""
+            using System;
+            class Test
+            {
+                void A(StringComparison value, string format) { _ = "abc" + {{expression}}; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("value")]
+    [InlineData("value.ToString()")]
+    [InlineData("value?.ToString(\"G\")")]
+    [InlineData("value.Value.ToString(\"G\")")]
+    public async Task Concat_NullableEnum_NoDiagnostic(string expression)
+    {
+        var sourceCode = $$"""
+            using System;
+            class Test
+            {
+                void A(StringComparison? value) { _ = "abc" + {{expression}}; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("value.ToString()")]
+    [InlineData("value.ToString(\"G\")")]
+    public async Task Concat_SystemEnum_NoDiagnostic(string expression)
+    {
+        var sourceCode = $$"""
+            using System;
+            class Test
+            {
+                void A(Enum value) { _ = "abc" + {{expression}}; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("value.ToString(\"G\")")]
+    [InlineData("value.ToString(\"F\")")]
+    public async Task Concat_UserDefinedEnum_NoDiagnostic(string expression)
+    {
+        var sourceCode = $$"""
+            class Test
+            {
+                void A(Sample value) { _ = "abc" + {{expression}}; }
+            }
+
+            enum Sample { A }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("{value}")]
+    [InlineData("{value:G}")]
+    [InlineData("{value:F}")]
+    [InlineData("{value.ToString()}")]
+    [InlineData("{value.ToString(\"G\")}")]
+    public async Task InterpolatedString_Enum_NoDiagnostic(string content)
+    {
+        var sourceCode = $$"""
+            using System;
+            class Test
+            {
+                void A(StringComparison value) { _ = $"abc{{content}}"; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("value.ToString()")]
+    [InlineData("value.ToString(\"G\")")]
+    public async Task Concat_EnumInGenericMethod_NoDiagnostic(string expression)
+    {
+        var sourceCode = $$"""
+            using System;
+            class Test
+            {
+                void A<T>(T value) where T : struct, Enum { _ = "abc" + {{expression}}; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("value?.ToString()")]
+    [InlineData("value?.ToString(\"F\")")]
+    [InlineData("value?.ToString(format)")]
+    [InlineData("value?.Date.ToString(\"F\")")]
+    [InlineData("value?.Ticks.ToString()")]
+    public async Task Concat_ConditionalAccess_Diagnostic(string expression)
+    {
+        var sourceCode = $$"""
+            using System;
+            class Test
+            {
+                void A(DateTime? value, string format) { _ = "abc" + [|{{expression}}|]; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Theory]
+    [InlineData("value?.ToString(\"o\")")]
+    [InlineData("value?.ToString(System.Globalization.CultureInfo.InvariantCulture)")]
+    [InlineData("value?.Ticks.ToString(\"X\")")]
+    [InlineData("value?.Kind.ToString(\"G\")")]
+    public async Task Concat_ConditionalAccess_NoDiagnostic(string expression)
+    {
+        var sourceCode = $$"""
+            using System;
+            class Test
+            {
+                void A(DateTime? value) { _ = "abc" + {{expression}}; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_NestedConditionalAccess_Diagnostic()
+    {
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void A(Test value) { _ = "abc" + [|value?.Child?.Value.ToString("F")|]; }
+
+                Test Child { get; }
+                DateTime Value { get; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Concat_ConditionalAccessToCultureSensitiveMember_Diagnostic()
+    {
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void A(Test value) { _ = "abc" + [|value?.Value|]; }
+
+                DateTime Value { get; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InterpolatedString_ConditionalAccess_Diagnostic()
+    {
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void A(Test value) { _ = $"abc[|{value?.Value}|]"; }
+
+                DateTime Value { get; }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
 #if ROSLYN_5_9_OR_GREATER
     private static ProjectBuilder CreateUnionProjectBuilder()
     {
