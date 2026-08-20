@@ -18,7 +18,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
         context.RegisterOperationAction(AnalyzeInterpolation, OperationKind.Interpolation);

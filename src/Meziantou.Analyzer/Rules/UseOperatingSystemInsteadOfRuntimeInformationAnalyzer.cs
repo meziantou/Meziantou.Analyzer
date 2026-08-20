@@ -18,7 +18,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationAnalyzer : Diag
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterCompilationStartAction(context =>
         {
             var isOSPlatformSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform)", context.Compilation);

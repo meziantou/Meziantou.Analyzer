@@ -30,7 +30,7 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
     {
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(ctx =>

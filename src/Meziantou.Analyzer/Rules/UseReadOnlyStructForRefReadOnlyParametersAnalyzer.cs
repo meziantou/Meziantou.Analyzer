@@ -18,7 +18,7 @@ public sealed class UseReadOnlyStructForRefReadOnlyParametersAnalyzer : Diagnost
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSymbolAction(context =>
         {

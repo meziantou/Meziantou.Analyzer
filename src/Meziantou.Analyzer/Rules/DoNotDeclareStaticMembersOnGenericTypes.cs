@@ -18,7 +18,7 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSymbolAction(Analyze, SymbolKind.NamedType);
     }

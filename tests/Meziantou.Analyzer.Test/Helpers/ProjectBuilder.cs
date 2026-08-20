@@ -42,6 +42,7 @@ public sealed partial class ProjectBuilder
     public string? ExpectedFixedCode { get; private set; }
     public int? CodeFixIndex { get; private set; }
     public bool UseBatchFixer { get; private set; }
+    public GeneratedCodeAnalysisFlags? GeneratedCodeAnalysisFlags { get; private set; }
     public string? DefaultAnalyzerId { get; set; }
     public string? DefaultAnalyzerMessage { get; set; }
 
@@ -295,6 +296,16 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder WithOutputKind(OutputKind outputKind)
     {
         OutputKind = outputKind;
+        return this;
+    }
+
+    /// <summary>
+    /// Overrides how the analyzers handle generated code, the way the <c>MEZIANTOU_ANALYZER_GENERATED_CODE</c>
+    /// environment variable does.
+    /// </summary>
+    public ProjectBuilder WithGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags flags)
+    {
+        GeneratedCodeAnalysisFlags = flags;
         return this;
     }
 

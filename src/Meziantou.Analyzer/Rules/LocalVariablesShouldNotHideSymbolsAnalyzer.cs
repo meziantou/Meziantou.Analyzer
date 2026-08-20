@@ -20,7 +20,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
         context.RegisterOperationAction(AnalyzeVariableDeclaration, OperationKind.VariableDeclarator);
     }
 

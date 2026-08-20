@@ -371,8 +371,12 @@ public sealed partial class ProjectBuilder
 
             var analyzerOptionsProvider = new TestAnalyzerConfigOptionsProvider(AnalyzerConfiguration);
 
+            var effectiveAnalyzers = GeneratedCodeAnalysisFlags is { } generatedCodeAnalysisFlags
+                ? analyzers.Select(analyzer => (DiagnosticAnalyzer)new GeneratedCodeAnalysisAnalyzer(analyzer, generatedCodeAnalysisFlags)).ToArray()
+                : analyzers;
+
             var compilationWithAnalyzers = compilation.WithAnalyzers(
-                ImmutableArray.CreateRange(analyzers),
+                ImmutableArray.CreateRange(effectiveAnalyzers),
                 new AnalyzerOptions(additionalFiles, analyzerOptionsProvider));
             var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(CancellationToken.None).ConfigureAwait(false);
             foreach (var diag in diags)

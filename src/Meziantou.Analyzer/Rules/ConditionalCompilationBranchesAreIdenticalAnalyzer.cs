@@ -20,7 +20,7 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzer : Diagnos
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSyntaxTreeAction(AnalyzeSyntaxTree);
     }

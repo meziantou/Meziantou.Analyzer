@@ -18,7 +18,7 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
         context.RegisterCompilationStartAction(compilationStartContext =>
         {
             var formatProviderType = compilationStartContext.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");

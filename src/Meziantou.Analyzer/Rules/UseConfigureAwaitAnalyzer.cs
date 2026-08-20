@@ -24,7 +24,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(ctx =>
         {
