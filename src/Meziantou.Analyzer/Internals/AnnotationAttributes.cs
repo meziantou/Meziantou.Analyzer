@@ -25,6 +25,28 @@ internal static class AnnotationAttributes
         };
     }
 
+    public static bool IsCultureInsensitiveAttributeSymbol(ITypeSymbol? symbol)
+    {
+        // Meziantou.Analyzer.Annotations.CultureInsensitiveAttribute
+        return symbol is INamedTypeSymbol
+        {
+            Name: "CultureInsensitiveAttribute",
+            ContainingSymbol: INamespaceSymbol
+            {
+                Name: "Annotations",
+                ContainingSymbol: INamespaceSymbol
+                {
+                    Name: "Analyzer",
+                    ContainingSymbol: INamespaceSymbol
+                    {
+                        Name: "Meziantou",
+                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
+                    }
+                }
+            }
+        };
+    }
+
     public static bool IsRequireNamedArgumentAttributeSymbol(ITypeSymbol? symbol)
     {
         // Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute        

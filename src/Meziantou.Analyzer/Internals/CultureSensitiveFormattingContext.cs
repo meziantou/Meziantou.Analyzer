@@ -3,6 +3,7 @@ namespace Meziantou.Analyzer.Internals;
 internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 {
     private readonly HashSet<ISymbol> _excludedMethods = CreateExcludedMethods(compilation);
+    private readonly HashSet<ISymbol> _cultureInsensitiveMembers = CreateCultureInsensitiveMembers(compilation);
 
     public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
     public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
@@ -60,6 +61,91 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         }
     }
 
+    private static HashSet<ISymbol> CreateCultureInsensitiveMembers(Compilation compilation)
+    {
+        var result = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        foreach (var attribute in compilation.Assembly.GetAttributes())
+        {
+            if (!AnnotationAttributes.IsCultureInsensitiveAttributeSymbol(attribute.AttributeClass))
+                continue;
+
+            if (attribute.ConstructorArguments is not [{ Kind: TypedConstantKind.Primitive, Value: string documentationId }])
+                continue;
+
+            foreach (var symbol in DocumentationCommentId.GetSymbolsForDeclarationId(documentationId, compilation))
+            {
+                result.Add(symbol);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Indicates whether the value of the operation is annotated with <c>Meziantou.Analyzer.Annotations.CultureInsensitiveAttribute</c>,
+    /// which means the value is culture insensitive even when its type is culture sensitive.
+    /// </summary>
+    private bool IsAnnotatedAsCultureInsensitive(IOperation? operation)
+    {
+        if (operation is null)
+            return false;
+
+        return operation.UnwrapImplicitConversions() switch
+        {
+            IParameterReferenceOperation parameterReference => IsAnnotatedAsCultureInsensitive(parameterReference.Parameter),
+            IMemberReferenceOperation memberReference => IsAnnotatedAsCultureInsensitive(memberReference.Member),
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Indicates whether the operation is part of an argument of a parameter annotated with
+    /// <c>Meziantou.Analyzer.Annotations.CultureInsensitiveAttribute</c>, which means the value is formatted in a culture-insensitive way.
+    /// </summary>
+    public bool IsInCultureInsensitiveParameterContext(IOperation operation)
+    {
+        // Only consider the closest argument, so a value nested in another invocation is not impacted
+        for (var current = operation.Parent; current is not null; current = current.Parent)
+        {
+            if (current is not IArgumentOperation argument)
+                continue;
+
+            if (argument.Parameter is not null && IsAnnotatedAsCultureInsensitive(argument.Parameter))
+                return true;
+
+            // The compiler generates the calls to AppendFormatted, so continue with the parameter of the annotated method
+            if (argument.Parent is IInvocationOperation { Parent: IInterpolatedStringAppendOperation })
+                continue;
+
+            return false;
+        }
+
+        return false;
+    }
+
+    private bool IsAnnotatedAsCultureInsensitive(ISymbol symbol)
+    {
+        if (_cultureInsensitiveMembers.Count > 0 && (_cultureInsensitiveMembers.Contains(symbol) || _cultureInsensitiveMembers.Contains(symbol.OriginalDefinition)))
+            return true;
+
+        if (HasCultureInsensitiveAttribute(symbol.GetAttributes()))
+            return true;
+
+        return false;
+
+        static bool HasCultureInsensitiveAttribute(ImmutableArray<AttributeData> attributes)
+        {
+            foreach (var attribute in attributes)
+            {
+                // The constructor with a documentation id only applies to assembly-level attributes
+                if (AnnotationAttributes.IsCultureInsensitiveAttributeSymbol(attribute.AttributeClass) && attribute.ConstructorArguments.IsEmpty)
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
     private static bool MustUnwrapNullableOfT(CultureSensitiveOptions options)
     {
         return (options & CultureSensitiveOptions.UnwrapNullableOfT) == CultureSensitiveOptions.UnwrapNullableOfT;
@@ -94,6 +180,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             operation = conversionOperand;
         }
 
+        if (IsAnnotatedAsCultureInsensitive(operation))
+            return CultureSensitivity.CultureInsensitive;
+
         if (operation is IInvocationOperation invocation)
         {
             if (_excludedMethods.Contains(invocation.TargetMethod))
@@ -105,6 +194,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             var methodName = invocation.TargetMethod.Name;
             if (methodName is "ToString")
             {
+                // The formatted value is annotated, so the result does not depend on the culture
+                if (IsAnnotatedAsCultureInsensitive(invocation.Instance))
+                    return CultureSensitivity.CultureInsensitive;
+
                 // Try get the format. Most of ToString have only 1 string parameter to define the format
                 IOperation? format = null;
                 if (invocation.Arguments.Length > 0)
@@ -221,7 +314,12 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             return Combine(GetCultureSensitivity(interpolatedStringAddition.Left, options), GetCultureSensitivity(interpolatedStringAddition.Right, options));
 
         if (operation is IInterpolationOperation content)
+        {
+            if (IsAnnotatedAsCultureInsensitive(content.Expression))
+                return CultureSensitivity.CultureInsensitive;
+
             return GetCultureSensitivity(content.Expression.Type, content.FormatString, content.Expression, options);
+        }
 
         if (operation is IInterpolatedStringTextOperation)
             return CultureSensitivity.CultureInsensitive;
@@ -230,6 +328,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         {
             if (append.AppendCall is IInvocationOperation appendInvocation)
             {
+                if (appendInvocation.Arguments.Length > 0 && IsAnnotatedAsCultureInsensitive(appendInvocation.Arguments[0].Value))
+                    return CultureSensitivity.CultureInsensitive;
+
                 if (appendInvocation.Arguments.Length == 1)
                     return GetCultureSensitivity(appendInvocation.Arguments[0].Value.Type, format: null, instance: null, options);
 

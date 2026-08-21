@@ -364,6 +364,30 @@ _ = new System.DateTime().ToString(format: null);
     }
 
     [Fact]
+    public async Task CultureInsensitiveAttribute_Member()
+    {
+        var sourceCode = """
+            _ = Sample.Value.ToString();
+            _ = Sample.Field.ToString();
+            _ = [|Sample.OtherValue.ToString()|];
+
+            static class Sample
+            {
+                [Meziantou.Analyzer.Annotations.CultureInsensitive]
+                public static double Value => 0;
+
+                [Meziantou.Analyzer.Annotations.CultureInsensitive]
+                public static double Field;
+
+                public static double OtherValue => 0;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task ToString_IFormattable()
     {
         var sourceCode = """

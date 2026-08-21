@@ -97,6 +97,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (IsExcludedMethod(context, ExcludeToStringMethodsConfiguration, operation))
                 return;
 
+            if (_cultureSensitiveContext.IsInCultureInsensitiveParameterContext(operation))
+                return;
+
             if (ShouldReportCultureSensitiveOperand(context, StringConcatRule, operation.LeftOperand))
             {
                 context.ReportDiagnostic(StringConcatRule, operation.LeftOperand);
@@ -120,6 +123,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 return;
 
             if (_cultureSensitiveContext.IsInInterpolatedStringHandlerContext(operation))
+                return;
+
+            if (_cultureSensitiveContext.IsInCultureInsensitiveParameterContext(operation))
                 return;
 
             var options = GetOptions(context, StringInterpolationRule, operation);

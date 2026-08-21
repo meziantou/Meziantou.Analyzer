@@ -629,6 +629,172 @@ class Sample : System.IFormattable
     }
 
     [Fact]
+    public async Task CultureInsensitiveAttribute_Property()
+    {
+        var sourceCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = "abc" + Value;
+                    _ = $"abc{Value}";
+                    _ = Value.ToString();
+                    _ = "abc" + [|OtherValue|];
+                    _ = $"abc[|{OtherValue}|]";
+                }
+
+                [Meziantou.Analyzer.Annotations.CultureInsensitive]
+                double Value => 0;
+
+                double OtherValue => 0;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CultureInsensitiveAttribute_Field()
+    {
+        var sourceCode = """
+            class Test
+            {
+                [Meziantou.Analyzer.Annotations.CultureInsensitive]
+                double _value;
+
+                void A()
+                {
+                    _ = "abc" + _value;
+                    _ = $"abc{_value}";
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CultureInsensitiveAttribute_Parameter()
+    {
+        var sourceCode = """
+            class Test
+            {
+                void A([Meziantou.Analyzer.Annotations.CultureInsensitive] double value, double other)
+                {
+                    _ = "abc" + value;
+                    _ = $"abc{value}";
+                    _ = "abc" + [|other|];
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CultureInsensitiveAttribute_Parameter_Argument()
+    {
+        var sourceCode = """
+            class Test
+            {
+                void A(double value)
+                {
+                    Write($"abc{value}");
+                    Write("abc" + value);
+                    WriteOther($"abc[|{value}|]");
+                    WriteOther("abc" + [|value|]);
+                }
+
+                static void Write([Meziantou.Analyzer.Annotations.CultureInsensitive] string value) { }
+                static void WriteOther(string value) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CultureInsensitiveAttribute_Parameter_InterpolatedStringHandlerArgument()
+    {
+        var sourceCode = """
+            using System.Runtime.CompilerServices;
+
+            class Test
+            {
+                void A(double value)
+                {
+                    Write($"abc{"x" + value}");
+                    WriteOther($"abc{"x" + [|value|]}");
+                }
+
+                static void Write([Meziantou.Analyzer.Annotations.CultureInsensitive] CustomHandler handler) { }
+                static void WriteOther(CustomHandler handler) { }
+            }
+
+            [InterpolatedStringHandler]
+            ref struct CustomHandler
+            {
+                public CustomHandler(int literalLength, int formattedCount) { }
+                public void AppendLiteral(string value) { }
+                public void AppendFormatted<T>(T value) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CultureInsensitiveAttribute_Parameter_NestedArgument()
+    {
+        var sourceCode = """
+            class Test
+            {
+                void A(double value)
+                {
+                    Write(Identity($"abc[|{value}|]"));
+                }
+
+                static string Identity(string value) => value;
+                static void Write([Meziantou.Analyzer.Annotations.CultureInsensitive] string value) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CultureInsensitiveAttribute_AssemblyAttribute()
+    {
+        var sourceCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("P:Test.Value")]
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("F:Test.Field")]
+
+            class Test
+            {
+                void A()
+                {
+                    _ = "abc" + Value;
+                    _ = "abc" + Field;
+                    _ = "abc" + [|OtherValue|];
+                }
+
+                static double Value => 0;
+                static double Field;
+                static double OtherValue => 0;
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task CustomTypeImplementingIFormattable()
     {
         var sourceCode = """
