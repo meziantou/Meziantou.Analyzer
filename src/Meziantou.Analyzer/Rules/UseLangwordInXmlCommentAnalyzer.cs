@@ -99,7 +99,27 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseLangwordInXmlComment));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    private static readonly DiagnosticDescriptor EmptyLanguageAttributeRule = new(
+        RuleIdentifiers.EmptyLanguageAttributeInXmlComment,
+        title: "The language attribute is empty",
+        messageFormat: "The '{0}' attribute is empty",
+        RuleCategories.Design,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EmptyLanguageAttributeInXmlComment));
+
+    private static readonly DiagnosticDescriptor MissingLanguageAttributeRule = new(
+        RuleIdentifiers.MissingLanguageAttributeInXmlComment,
+        title: "Set the language attribute in XML comment",
+        messageFormat: "Set the language attribute in XML comment",
+        RuleCategories.Design,
+        DiagnosticSeverity.Hidden,
+        isEnabledByDefault: true,
+        description: "",
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingLanguageAttributeInXmlComment));
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, EmptyLanguageAttributeRule, MissingLanguageAttributeRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -150,15 +170,19 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
                         var elementName = elementSyntax.StartTag.Name.LocalName.Text;
                         if (string.Equals(elementName, "c", StringComparison.OrdinalIgnoreCase) || string.Equals(elementName, "code", StringComparison.OrdinalIgnoreCase))
                         {
-                            if (elementSyntax.StartTag.Attributes.Count > 0)
-                                continue;
-
-                            var item = elementSyntax.Content.SingleOrDefaultIfMultiple();
-                            if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
+                            if (elementSyntax.StartTag.Attributes.Count == 0)
                             {
-                                var properties = ImmutableDictionary<string, string?>.Empty.Add("keyword", codeText.Text);
-                                context.ReportDiagnostic(Rule, properties, elementSyntax);
+                                var item = elementSyntax.Content.SingleOrDefaultIfMultiple();
+                                if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
+                                {
+                                    // The langword attribute is the way to document a keyword, so the language is not needed
+                                    var properties = ImmutableDictionary<string, string?>.Empty.Add("keyword", codeText.Text);
+                                    context.ReportDiagnostic(Rule, properties, elementSyntax);
+                                    continue;
+                                }
                             }
+
+                            AnalyzeLanguageAttributes(context, elementSyntax);
                         }
                         else
                         {
@@ -172,6 +196,34 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
 
                 NodeQueuePool.Return(queue);
             }
+        }
+    }
+
+    private static void AnalyzeLanguageAttributes(SymbolAnalysisContext context, XmlElementSyntax elementSyntax)
+    {
+        var hasLanguageAttribute = false;
+        foreach (var attribute in elementSyntax.StartTag.Attributes)
+        {
+            var attributeName = attribute.Name.LocalName.Text;
+            if (string.Equals(attributeName, "langword", StringComparison.OrdinalIgnoreCase))
+            {
+                hasLanguageAttribute = true;
+                continue;
+            }
+
+            if (!string.Equals(attributeName, "lang", StringComparison.OrdinalIgnoreCase) && !string.Equals(attributeName, "language", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            hasLanguageAttribute = true;
+            if (attribute is XmlTextAttributeSyntax textAttribute && textAttribute.TextTokens.All(token => string.IsNullOrWhiteSpace(token.ValueText)))
+            {
+                context.ReportDiagnostic(EmptyLanguageAttributeRule, attribute, attributeName);
+            }
+        }
+
+        if (!hasLanguageAttribute)
+        {
+            context.ReportDiagnostic(MissingLanguageAttributeRule, elementSyntax);
         }
     }
 }

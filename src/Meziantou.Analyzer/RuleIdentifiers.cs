@@ -217,6 +217,8 @@ internal static class RuleIdentifiers
     public const string ReturnTaskInsteadOfAwaitingIt = "MA0215";
     public const string RemoveUnnecessaryClosedModifier = "MA0216";
     public const string UseStaticLambda = "MA0217";
+    public const string EmptyLanguageAttributeInXmlComment = "MA0218";
+    public const string MissingLanguageAttributeInXmlComment = "MA0219";
 
     public static string GetHelpUri(string identifier)
     {
