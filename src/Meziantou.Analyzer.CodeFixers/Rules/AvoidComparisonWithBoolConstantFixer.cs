@@ -48,7 +48,10 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
 
         if (logicalNotOperatorNeeded)
         {
-            nodeToKeep = PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, (ExpressionSyntax)nodeToKeep);
+            // The operand may bind less tightly than '!' (e.g. "o is string" or "a < b"), so it must be parenthesized.
+            // The Simplifier annotation removes the parentheses when they are redundant.
+            var operand = nodeToKeep is ParenthesizedExpressionSyntax parenthesizedExpression ? parenthesizedExpression : ((ExpressionSyntax)nodeToKeep).Parentheses();
+            nodeToKeep = PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, operand);
         }
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
