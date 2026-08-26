@@ -138,7 +138,7 @@ public sealed partial class ProjectBuilder
     private async Task<Diagnostic[]> GetSortedDiagnostics(IList<DiagnosticAnalyzer> analyzers)
     {
         var documents = await GetDocuments().ConfigureAwait(false);
-        return await GetSortedDiagnosticsFromDocuments(analyzers, documents, compileSolution: true).ConfigureAwait(false);
+        return await GetSortedDiagnosticsFromDocuments(analyzers, documents, compileSolution: IsValidCode).ConfigureAwait(false);
     }
 
     private async Task<Document[]> GetDocuments()

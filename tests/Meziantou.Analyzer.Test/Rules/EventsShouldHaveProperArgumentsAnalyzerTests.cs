@@ -312,4 +312,45 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task CyclicLocalInitializers()
+    {
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void OnEvent()
+                {
+                    EventHandler a = b;
+                    EventHandler b = a;
+                    a.Invoke(this, EventArgs.Empty);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithNoCompilation()
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task SelfReferencingLocalInitializer()
+    {
+        const string SourceCode = """
+            using System;
+            class Test
+            {
+                void OnEvent()
+                {
+                    EventHandler a = a;
+                    a.Invoke(this, EventArgs.Empty);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .WithNoCompilation()
+              .ValidateAsync();
+    }
 }

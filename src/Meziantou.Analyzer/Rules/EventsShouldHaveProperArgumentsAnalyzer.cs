@@ -75,7 +75,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         if (instance is null)
             return;
 
-        var ev = FindEvent(instance);
+        var ev = FindEvent(instance, context.CancellationToken);
         if (ev is null)
             return;
 
@@ -119,15 +119,17 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         return value is IInstanceReferenceOperation;
     }
 
-    private static IEventSymbol? FindEvent(IOperation operation)
+    private static IEventSymbol? FindEvent(IOperation operation, CancellationToken cancellationToken)
     {
-        var eventFinder = new EventReferenceVisitor();
+        var eventFinder = new EventReferenceVisitor(cancellationToken);
         eventFinder.Visit(operation);
         return eventFinder.EventSymbol;
     }
 
-    private sealed class EventReferenceVisitor : OperationVisitor
+    private sealed class EventReferenceVisitor(CancellationToken cancellationToken) : OperationVisitor
     {
+        private readonly HashSet<ISymbol> _visitedLocals = new(SymbolEqualityComparer.Default);
+
         public IEventSymbol? EventSymbol { get; set; }
 
         public override void VisitEventReference(IEventReferenceOperation operation)
@@ -150,15 +152,20 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
                 }
                 else if (symbol is ILocalSymbol localSymbol)
                 {
-                    FindFromLocalSymbol(semanticModel, localSymbol, CancellationToken.None);
+                    FindFromLocalSymbol(semanticModel, localSymbol);
                 }
             }
 
             base.VisitConditionalAccessInstance(operation);
         }
 
-        private void FindFromLocalSymbol(SemanticModel semanticModel, ILocalSymbol localSymbol, CancellationToken cancellationToken)
+        private void FindFromLocalSymbol(SemanticModel semanticModel, ILocalSymbol localSymbol)
         {
+            // The initializer of a local can reference the local itself or another local that references it back,
+            // so keep track of the visited locals to avoid an infinite recursion
+            if (!_visitedLocals.Add(localSymbol))
+                return;
+
             foreach (var symbolLocation in localSymbol.DeclaringSyntaxReferences)
             {
                 var variableDeclarator = symbolLocation.GetSyntax(cancellationToken) as Microsoft.CodeAnalysis.CSharp.Syntax.VariableDeclaratorSyntax;
@@ -172,7 +179,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
                     }
                     else if (initializerSymbol is ILocalSymbol initializerLocalSymbol)
                     {
-                        FindFromLocalSymbol(semanticModel, initializerLocalSymbol, cancellationToken);
+                        FindFromLocalSymbol(semanticModel, initializerLocalSymbol);
                     }
                 }
             }
@@ -182,7 +189,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         {
             if (operation.SemanticModel is not null)
             {
-                FindFromLocalSymbol(operation.SemanticModel, operation.Local, CancellationToken.None);
+                FindFromLocalSymbol(operation.SemanticModel, operation.Local);
             }
 
             base.VisitLocalReference(operation);
