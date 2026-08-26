@@ -79,6 +79,168 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
               .ValidateAsync();
     }
 
+    [Fact]
+    public async Task IsPatternComparedWithFalse_ParenthesizesExpression()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = o is string [|==|] false;
+                }
+            }
+            """;
+        var modifiedCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = !(o is string);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(modifiedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IsPatternComparedWithTrue_KeepsExpression()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = o is string [|==|] true;
+                }
+            }
+            """;
+        var modifiedCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = o is string;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(modifiedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IsPatternNotEqualToTrue_ParenthesizesExpression()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = o is string [|!=|] true;
+                }
+            }
+            """;
+        var modifiedCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = !(o is string);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(modifiedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task IsPatternNotEqualToFalse_KeepsExpression()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = o is string [|!=|] false;
+                }
+            }
+            """;
+        var modifiedCode = """
+            class TestClass
+            {
+                void Test(object o)
+                {
+                    _ = o is string;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(modifiedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ComparisonComparedWithFalse_ParenthesizesExpression()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                void Test(int a, int b)
+                {
+                    _ = a < b [|==|] false;
+                }
+            }
+            """;
+        var modifiedCode = """
+            class TestClass
+            {
+                void Test(int a, int b)
+                {
+                    _ = !(a < b);
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(modifiedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task ComparisonComparedWithTrue_KeepsExpression()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                void Test(int a, int b)
+                {
+                    _ = a < b [|==|] true;
+                }
+            }
+            """;
+        var modifiedCode = """
+            class TestClass
+            {
+                void Test(int a, int b)
+                {
+                    _ = a < b;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ShouldFixCodeWith(modifiedCode)
+              .ValidateAsync();
+    }
+
     [Theory]
     [InlineData("==", "true", null)]
     [InlineData("==", "false", "!")]
