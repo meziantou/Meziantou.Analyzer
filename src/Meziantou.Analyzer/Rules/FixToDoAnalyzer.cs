@@ -41,7 +41,11 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
             else if (node.IsKind(SyntaxKind.MultiLineCommentTrivia))
             {
                 var nodeText = node.ToString().AsSpan();
-                nodeText = nodeText[2..^2]; // Remove leading "/*" and trailing "*/"
+                nodeText = nodeText[2..]; // Remove leading "/*"
+                if (nodeText.EndsWith("*/".AsSpan(), StringComparison.Ordinal))
+                {
+                    nodeText = nodeText[..^2]; // Remove trailing "*/"
+                }
 
                 var startIndex = node.SpanStart + 2;
                 foreach (var line in nodeText.SplitLines())
