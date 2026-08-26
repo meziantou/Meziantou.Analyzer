@@ -219,6 +219,7 @@ internal static class RuleIdentifiers
     public const string UseStaticLambda = "MA0217";
     public const string EmptyLanguageAttributeInXmlComment = "MA0218";
     public const string MissingLanguageAttributeInXmlComment = "MA0219";
+    public const string InvalidRegexConfiguration = "MA0220";
 
     public static string GetHelpUri(string identifier)
     {

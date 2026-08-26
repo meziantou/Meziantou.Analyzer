@@ -22,7 +22,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseNamedParameter));
 
-    private static readonly ConfigurationDefinition<string> ExcludedMethodsRegexConfiguration = new(RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex");
+    internal static readonly ConfigurationDefinition<string> ExcludedMethodsRegexConfiguration = new(RuleIdentifiers.UseNamedParameter + ".excluded_methods_regex");
     private static readonly ConfigurationDefinition<string> ExcludedMethodsConfiguration = new(RuleIdentifiers.UseNamedParameter + ".excluded_methods");
     private static readonly ConfigurationDefinition<string> MinimumMethodParametersConfiguration = new(RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters", defaultValue: string.Empty);
     private static readonly ConfigurationDefinition<string> ExpressionKindsConfiguration = new(RuleIdentifiers.UseNamedParameter + ".expression_kinds", defaultValue: string.Empty);
@@ -278,12 +278,8 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex))
                         {
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
-                            if (declarationId is not null)
-                            {
-                                var regex = RegexCache.GetOrCreate(excludedMethodsRegex, RegexOptions.Compiled, Timeout.InfiniteTimeSpan);
-                                if (regex.IsMatch(declarationId))
-                                    return;
-                            }
+                            if (declarationId is not null && RegexCache.IsMatch(excludedMethodsRegex, RegexOptions.None, declarationId, defaultValue: false))
+                                return;
                         }
 
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods))
