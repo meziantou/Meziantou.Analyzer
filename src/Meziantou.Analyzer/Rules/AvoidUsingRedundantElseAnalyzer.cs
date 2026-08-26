@@ -93,7 +93,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
     {
         foreach (var child in node.DescendantNodes())
         {
-#pragma warning disable 
+#pragma warning disable IDE0010 // Add missing cases
             switch (child)
             {
                 case VariableDeclaratorSyntax variableDeclarator:
