@@ -68,5 +68,22 @@ public sealed class CA1507SerializationPropertyNameSuppressorTests
                 """)
             .ValidateAsync();
     }
+
+    [Fact]
+    public async Task CA1507_NewtonsoftJson_JsonPropertyName_AfterAnUnrelatedDiagnostic()
+    {
+        await CreateProjectBuilder()
+            .AddNuGetReference("Newtonsoft.Json", "13.0.3", "lib/netstandard2.0/")
+            .WithSourceCode("""
+                internal class Test
+                {
+                    public void Foo(string name) => throw new System.ArgumentException("dummy", [|"name"|]);
+
+                    [Newtonsoft.Json.JsonProperty("Bar")]
+                    public int Bar { get; set; }
+                }
+                """)
+            .ValidateAsync();
+    }
 }
 #endif
