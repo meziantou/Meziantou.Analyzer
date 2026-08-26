@@ -46,6 +46,14 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeStringBuilderUsageData.SplitAddOperator:
+                var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                if (semanticModel?.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation { Arguments: [{ Value: IBinaryOperation binaryOperation }, ..] })
+                    return;
+
+                // "value" + charArray uses char[].ToString(), whereas Append(char[]) appends the content of the array
+                if (IsCharArray(binaryOperation.LeftOperand) || IsCharArray(binaryOperation.RightOperand))
+                    return;
+
                 context.RegisterCodeFix(CodeAction.Create(title, ct => SplitAddOperator(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
@@ -166,10 +174,36 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var binaryOperation = (IBinaryOperation)operation.Arguments[0].Value;
 
         var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "Append"), binaryOperation.LeftOperand.Syntax);
-        newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, isAppendLine ? "AppendLine" : "Append"), binaryOperation.RightOperand.Syntax);
+        if (isAppendLine && !IsString(binaryOperation.RightOperand))
+        {
+            // AppendLine has no overload for the type of the operand, so the value must be appended before the line terminator
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "Append"), binaryOperation.RightOperand.Syntax);
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
+        }
+        else
+        {
+            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, isAppendLine ? "AppendLine" : "Append"), binaryOperation.RightOperand.Syntax);
+        }
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
+    }
+
+    private static bool IsString(IOperation operation)
+    {
+        // An operand of a string concatenation has no type when it is the 'null' or 'default' literal, in which case it is converted to string
+        return operation.Type is null || operation.Type.IsString();
+    }
+
+    private static bool IsCharArray(IOperation operation)
+    {
+        // A non-string operand of a string concatenation is implicitly converted to object
+        if (operation is IConversionOperation { IsImplicit: true, Type.SpecialType: SpecialType.System_Object } conversion)
+        {
+            operation = conversion.Operand;
+        }
+
+        return operation.Type is IArrayTypeSymbol { Rank: 1, ElementType.SpecialType: SpecialType.System_Char };
     }
 
     private static async Task<Document> RemoveToString(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)

@@ -543,6 +543,141 @@ class Test
     }
 
     [Fact]
+    public async Task AppendLine_StringAdd_NonStringRightOperand()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A(int count)
+                    {
+                        [|new StringBuilder().AppendLine("a" + count)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A(int count)
+                    {
+                        new StringBuilder().Append("a").Append(count).AppendLine();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Append_StringAdd_NonStringRightOperand()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A(int count)
+                    {
+                        [|new StringBuilder().Append("a" + count)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A(int count)
+                    {
+                        new StringBuilder().Append("a").Append(count);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AppendLine_StringAdd_NonStringLeftOperand()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A(int count, string suffix)
+                    {
+                        [|new StringBuilder().AppendLine(count + suffix)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A(int count, string suffix)
+                    {
+                        new StringBuilder().Append(count).AppendLine(suffix);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AppendLine_StringAdd_NullRightOperand()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A(string prefix)
+                    {
+                        [|new StringBuilder().AppendLine(prefix + null)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A(string prefix)
+                    {
+                        new StringBuilder().Append(prefix).AppendLine(null);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task AppendLine_StringAdd_CharArrayOperand_NoCodeFix()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode("""
+                using System.Text;
+                class Test
+                {
+                    void A(char[] value)
+                    {
+                        [|new StringBuilder().AppendLine("a" + value)|];
+                    }
+                }
+                """)
+              .ShouldFixCodeWith("""
+                using System.Text;
+                class Test
+                {
+                    void A(char[] value)
+                    {
+                        new StringBuilder().AppendLine("a" + value);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task Append_ToString()
     {
         await CreateProjectBuilder()
