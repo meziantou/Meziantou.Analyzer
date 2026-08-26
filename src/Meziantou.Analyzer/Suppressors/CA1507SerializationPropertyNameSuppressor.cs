@@ -17,7 +17,6 @@ public sealed class CA1507SerializationPropertyNameSuppressor : DiagnosticSuppre
     {
         // Resolved on the first diagnostic located in an attribute, so the symbol is not loaded when there is none
         INamedTypeSymbol? jsonPropertyAttributeSymbol = null;
-        var jsonPropertyAttributeSymbolResolved = false;
 
         foreach (var diagnostic in context.ReportedDiagnostics)
         {
@@ -34,14 +33,13 @@ public sealed class CA1507SerializationPropertyNameSuppressor : DiagnosticSuppre
             if (info.Symbol is not IMethodSymbol methodSymbol)
                 continue;
 
-            if (!jsonPropertyAttributeSymbolResolved)
-            {
-                jsonPropertyAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.JsonPropertyAttribute");
-                jsonPropertyAttributeSymbolResolved = true;
-            }
 
             if (jsonPropertyAttributeSymbol is null)
-                return;
+            {
+                jsonPropertyAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.JsonPropertyAttribute");
+                if (jsonPropertyAttributeSymbol is null)
+                    return;
+            }
 
             if (methodSymbol.ContainingType.IsEqualTo(jsonPropertyAttributeSymbol))
             {
