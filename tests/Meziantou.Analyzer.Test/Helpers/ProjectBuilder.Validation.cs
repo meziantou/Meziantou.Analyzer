@@ -615,8 +615,18 @@ public sealed partial class ProjectBuilder
 
         if (mustCompile)
         {
+            // Compile the text the user actually gets, not the syntax tree built by the fixer. A tree can be
+            // structurally valid while its serialization re-parses differently (missing parentheses, missing
+            // separators, ...), so the text must be re-parsed before being compiled.
+            var solutionToCompile = solution;
+            foreach (var documentId in solution.GetChanges(document.Project.Solution).GetProjectChanges().SelectMany(projectChange => projectChange.GetChangedDocuments().Concat(projectChange.GetAddedDocuments())))
+            {
+                var text = await GetStringFromDocument(solution.GetDocument(documentId)!).ConfigureAwait(false);
+                solutionToCompile = solutionToCompile.WithDocumentText(documentId, SourceText.From(text, Encoding.UTF8));
+            }
+
             var options = new CSharpCompilationOptions(OutputKind, allowUnsafe: true, metadataImportOptions: MetadataImportOptions.All);
-            var project = solution.Projects.Single();
+            var project = solutionToCompile.Projects.Single();
             var compilation = (await project.GetCompilationAsync().ConfigureAwait(false))!.WithOptions(options);
 
             using var ms = new MemoryStream();
@@ -627,7 +637,7 @@ public sealed partial class ProjectBuilder
                 var firstDocument = project.Documents.FirstOrDefault();
                 if (firstDocument is not null)
                 {
-                    sourceCode = (await firstDocument.GetSyntaxRootAsync().ConfigureAwait(false))!.ToFullString();
+                    sourceCode = (await firstDocument.GetTextAsync().ConfigureAwait(false)).ToString();
                 }
 
                 Assert.Fail("The fixed code doesn't compile. " + string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)) + Environment.NewLine + sourceCode);
