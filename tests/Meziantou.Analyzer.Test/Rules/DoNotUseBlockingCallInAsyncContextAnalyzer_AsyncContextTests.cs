@@ -2205,6 +2205,52 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     }
 
     [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1333")]
+    public async Task DbConnectionAssignedFromSqliteConnection_NoDiagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using System.Data.Common;
+                using System.Threading.Tasks;
+                using Microsoft.Data.Sqlite;
+
+                class Test
+                {
+                    public async Task A()
+                    {
+                        DbConnection connection = new SqliteConnection();
+                        connection.Close();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1333")]
+    public async Task DbConnectionNotAssignedFromSqliteConnection_Diagnostic()
+    {
+        await CreateProjectBuilder()
+              .WithTargetFramework(TargetFramework.Net8_0)
+              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
+              .WithSourceCode("""
+                using System.Data.Common;
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A(DbConnection connection)
+                    {
+                        [|connection.Close()|];
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task IAsyncEnumerable()
     {
         await CreateProjectBuilder()

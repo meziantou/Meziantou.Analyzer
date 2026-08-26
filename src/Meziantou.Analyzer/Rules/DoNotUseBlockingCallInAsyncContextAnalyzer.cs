@@ -147,6 +147,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private INamedTypeSymbol? SqliteConnectionSymbol { get; }
         private INamedTypeSymbol? SqliteCommandSymbol { get; }
         private INamedTypeSymbol? SqliteDataReaderSymbol { get; }
+
+        /// <summary>
+        /// Indicates whether the compilation references <c>Microsoft.Data.Sqlite</c>. When it does not, the Sqlite special cases can never apply.
+        /// </summary>
+        private bool HasSqliteSymbols => SqliteConnectionSymbol is not null || SqliteCommandSymbol is not null || SqliteDataReaderSymbol is not null;
+
         private ISymbol[] ConsoleErrorAndOutSymbols { get; }
         private INamedTypeSymbol? CancellationTokenSymbol { get; }
         private INamedTypeSymbol? ObsoleteAttributeSymbol { get; }
@@ -186,19 +192,19 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (IsExcludedDiagnosticSymbol(targetMethod))
                 return;
 
-            var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
-            var isSqliteSpecialCaseMethod = IsSqliteSpecialCaseMethod(operation, context.CancellationToken);
-
             // The cache only contains methods with no async equivalent methods.
             // This optimizes the best-case scenario where code is correctly written according to this analyzer.
-            if (!isSqliteSpecialCaseMethod && _symbolsWithNoAsyncOverloads.Contains(targetMethod))
+            // Methods skipped because of the Sqlite special cases are never added to the cache, so a cache hit means
+            // the method has no async equivalent whatever the instance is.
+            if (_symbolsWithNoAsyncOverloads.Contains(targetMethod))
                 return;
 
+            var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
             if (HasAsyncEquivalent(operation, sqliteSpecialCasesEnabled, context.CancellationToken, out var diagnosticMessage))
             {
                 ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage);
             }
-            else if (!isSqliteSpecialCaseMethod)
+            else if (!sqliteSpecialCasesEnabled || !IsSqliteSpecialCaseMethod(operation, context.CancellationToken))
             {
                 _symbolsWithNoAsyncOverloads.Add(targetMethod);
             }
@@ -479,8 +485,22 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return type.IsEqualToAny(SqliteConnectionSymbol, SqliteCommandSymbol, SqliteDataReaderSymbol);
         }
 
+        /// <summary>
+        /// Indicates whether a value of the declared type <paramref name="type"/> could hold an instance of a Sqlite special-case type.
+        /// </summary>
+        private bool CanHoldSqliteSpecialCaseType(INamedTypeSymbol type)
+        {
+            return CanHold(SqliteConnectionSymbol, type) || CanHold(SqliteCommandSymbol, type) || CanHold(SqliteDataReaderSymbol, type);
+
+            static bool CanHold(INamedTypeSymbol? sqliteType, INamedTypeSymbol declaredType)
+                => sqliteType is not null && (sqliteType.InheritsFrom(declaredType) || sqliteType.Implements(declaredType));
+        }
+
         private bool IsSqliteSpecialCaseMethod(IInvocationOperation operation, CancellationToken cancellationToken)
         {
+            if (!HasSqliteSymbols)
+                return false;
+
             if (IsSqliteSpecialCaseType(operation.TargetMethod.ContainingType))
                 return true;
 
@@ -490,10 +510,21 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.TargetMethod.IsStatic)
                 return false;
 
-            if (operation.Instance?.GetActualType(cancellationToken) is not INamedTypeSymbol type)
+            if (operation.Instance is not { } instance)
                 return false;
 
-            return IsSqliteSpecialCaseType(type);
+            // The data flow analysis walks the whole syntax tree, so only run it when the declared type of the instance
+            // could actually hold a Sqlite instance.
+            if (instance.GetActualType(useDataFlowAnalysis: false, cancellationToken) is not INamedTypeSymbol declaredType)
+                return false;
+
+            if (IsSqliteSpecialCaseType(declaredType))
+                return true;
+
+            if (!CanHoldSqliteSpecialCaseType(declaredType))
+                return false;
+
+            return instance.GetActualType(cancellationToken) is INamedTypeSymbol type && IsSqliteSpecialCaseType(type);
         }
 
         private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName)
