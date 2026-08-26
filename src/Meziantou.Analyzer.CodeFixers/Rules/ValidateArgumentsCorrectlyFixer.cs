@@ -58,7 +58,7 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
         // Create local function
         var returnTypeSyntax = generator.TypeExpression(symbol.ReturnType);
         var localFunctionSyntaxNode = LocalFunctionStatement((TypeSyntax)returnTypeSyntax, symbol.Name);
-        localFunctionSyntaxNode = localFunctionSyntaxNode.WithParameterList(CopyParametersWithoutDefaultValues(methodSyntaxNode.ParameterList));
+        localFunctionSyntaxNode = localFunctionSyntaxNode.WithParameterList(CreateLocalFunctionParameterList(methodSyntaxNode.ParameterList));
         if (methodSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)))
         {
             localFunctionSyntaxNode = localFunctionSyntaxNode.AddModifiers(Token(SyntaxKind.AsyncKeyword));
@@ -95,9 +95,13 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static ParameterListSyntax CopyParametersWithoutDefaultValues(ParameterListSyntax parameterListSyntax)
+    private static ParameterListSyntax CreateLocalFunctionParameterList(ParameterListSyntax parameterListSyntax)
     {
-        return ParameterList(SeparatedList(parameterListSyntax.Parameters.Select(p => p.WithDefault(null))));
+        // Default values are useless as the local function is always called with all the arguments.
+        // The "this" modifier must be removed as a local function cannot be an extension method (CS1106).
+        return ParameterList(SeparatedList(parameterListSyntax.Parameters.Select(p => p
+            .WithDefault(null)
+            .WithModifiers(TokenList(p.Modifiers.Where(modifier => !modifier.IsKind(SyntaxKind.ThisKeyword)))))));
     }
 
     private static ParameterListSyntax RemoveEnumeratorCancellationAttribute(ParameterListSyntax parameterListSyntax, SemanticModel semanticModel, CancellationToken cancellationToken)

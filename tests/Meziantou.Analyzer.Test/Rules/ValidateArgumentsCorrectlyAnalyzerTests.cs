@@ -465,4 +465,47 @@ class TypeName
               .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task ReportDiagnostic_ExtensionMethod()
+    {
+        const string SourceCode = """
+            using System;
+            using System.Collections.Generic;
+            static class TypeName
+            {
+                public static IEnumerable<int> [|A|](this string a)
+                {
+                    if (a is null)
+                        throw new ArgumentNullException(nameof(a));
+
+                    yield return 1;
+                }
+            }
+            """;
+
+        const string CodeFix = """
+            using System;
+            using System.Collections.Generic;
+            static class TypeName
+            {
+                public static IEnumerable<int> A(this string a)
+                {
+                    if (a is null)
+                        throw new ArgumentNullException(nameof(a));
+
+                    return A(a);
+                    IEnumerable<int> A(string a)
+                    {
+                        yield return 1;
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(CodeFix)
+              .ValidateAsync();
+    }
 }
