@@ -218,6 +218,7 @@
 |[MA0217](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0217.md)|Design|Use a static lambda|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 |[MA0218](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0218.md)|Design|The language attribute is empty|<span title='Info'>ℹ️</span>|✔️|❌|❌|
 |[MA0219](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0219.md)|Design|Set the language attribute in XML comment|<span title='Hidden'>👻</span>|✔️|✔️|❌|
+|[MA0220](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0220.md)|Design|The configured regular expression is not valid|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|

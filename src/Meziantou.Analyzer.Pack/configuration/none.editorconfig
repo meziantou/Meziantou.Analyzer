@@ -652,3 +652,6 @@ dotnet_diagnostic.MA0218.severity = none
 
 # MA0219: Set the language attribute in XML comment
 dotnet_diagnostic.MA0219.severity = none
+
+# MA0220: The configured regular expression is not valid
+dotnet_diagnostic.MA0220.severity = none

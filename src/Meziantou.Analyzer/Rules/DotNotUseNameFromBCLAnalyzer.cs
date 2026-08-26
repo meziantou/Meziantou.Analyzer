@@ -18,8 +18,8 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> OnlyConsiderPublicSymbolsConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> UsePreviewTypesConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
-    private static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", defaultValue: "^System($|\\.)");
-    private static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)") { IsHidden = true };
+    internal static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", defaultValue: "^System($|\\.)");
+    internal static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)") { IsHidden = true };
 
     private static Dictionary<string, List<string>>? s_types;
     private static Dictionary<string, List<string>>? s_typesPreview;
@@ -53,22 +53,35 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         var types = usePreviewTypes ? s_typesPreview : s_types;
         if (types!.TryGetValue(symbol.MetadataName, out var namespaces))
         {
-            var regex = context.Options.GetConfigurationValue(symbol, LegacyNamepacesRegexConfiguration);
-            if (context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out var configuredRegex))
-            {
-                regex = configuredRegex;
-            }
+            var namespaceRegex = GetNamespacesRegex(context, symbol);
+            if (namespaceRegex is null)
+                return;
 
-            var namespaceRegex = RegexCache.GetOrCreate(regex, RegexOptions.None, Timeout.InfiniteTimeSpan);
             foreach (var ns in namespaces)
             {
-                if (namespaceRegex.IsMatch(ns))
+                if (RegexCache.IsMatch(namespaceRegex, ns, defaultValue: false))
                 {
                     context.ReportDiagnostic(Rule, symbol, symbol.MetadataName, ns);
                     return;
                 }
             }
         }
+    }
+
+    private static Regex? GetNamespacesRegex(SymbolAnalysisContext context, ISymbol symbol)
+    {
+        var pattern = context.Options.GetConfigurationValue(symbol, LegacyNamepacesRegexConfiguration);
+        if (context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out var configuredPattern))
+        {
+            pattern = configuredPattern;
+        }
+
+        if (RegexCache.TryGetOrCreate(pattern, RegexOptions.None, out var regex))
+            return regex;
+
+        // The configured pattern is invalid, so fallback to the default pattern instead of failing the analysis
+        RegexCache.TryGetOrCreate(NamespacesRegexConfiguration.DefaultValue, RegexOptions.None, out regex);
+        return regex;
     }
 
     private static Dictionary<string, List<string>> LoadTypes(bool preview)

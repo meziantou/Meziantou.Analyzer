@@ -394,7 +394,29 @@ public sealed class NamedParameterAnalyzerTests
             """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
               .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "M[a-z][A-Z]ethod")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task Int32_ExcludedMethodWithInvalidRegex_ShouldReportDiagnostic()
+    {
+        const string SourceCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    MyMethod([|1|], [|1L|], [|3|]);
+                }
+
+                void MyMethod(int a, long b, short c) { }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
+              .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "[")
               .ValidateAsync();
     }
 

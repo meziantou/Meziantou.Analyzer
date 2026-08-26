@@ -76,4 +76,22 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
               .AddAnalyzerConfiguration("MA0104.namepaces_regex", "dummy")
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task InvalidRegex_UseDefaultRegex()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"public class [|Action|] { }")
+              .AddAnalyzerConfiguration("MA0104.namespaces_regex", "[")
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task InvalidRegex_UseDefaultRegex_OldConfigurationName()
+    {
+        await CreateProjectBuilder()
+              .WithSourceCode(@"public class [|Action|] { }")
+              .AddAnalyzerConfiguration("MA0104.namepaces_regex", "[")
+              .ValidateAsync();
+    }
 }
