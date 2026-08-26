@@ -38,6 +38,24 @@ jobs:
     - run: git status
       if: failure()
 
+  check_pragmas:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - name: Ensure no '#pragma warning disable' without a warning list
+      run: |
+        # A '#pragma warning disable' with no warning ID disables every warning until the end of the file
+        $barePragmas = @(Get-ChildItem -Recurse -Filter *.cs | Select-String -Pattern '^\s*#pragma\s+warning\s+disable\s*(//.*)?$')
+        if ($barePragmas.Count -gt 0) {
+          $barePragmas | ForEach-Object {
+            $path = (Resolve-Path -Relative -Path $_.Path) -replace '^\./', ''
+            Write-Host "::error file=$path,line=$($_.LineNumber)::'#pragma warning disable' without a warning list disables every warning until the end of the file. List the warnings to disable."
+          }
+          exit 1
+        }
+
+        Write-Host "No '#pragma warning disable' without a warning list"
+
   compute_package_version:
     runs-on: ubuntu-latest
     outputs:
@@ -238,7 +256,7 @@ jobs:
 
   deploy:
     runs-on: 'ubuntu-latest'
-    needs: [ check_documentation, validate_nuget, build_and_test ]
+    needs: [ check_documentation, check_pragmas, validate_nuget, build_and_test ]
     permissions:
       contents: read
       id-token: write
