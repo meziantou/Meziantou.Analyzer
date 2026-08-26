@@ -59,6 +59,39 @@ public sealed class ProjectBuilderValidationTests
             .ValidateAsync();
     }
 
+    [Fact]
+    public async Task VerifyDiagnostic_ReportsAnalyzerException()
+    {
+        // The exception is reported by Roslyn as an AD0001 diagnostic, which the default analyzer id would filter out
+        var exception = await Assert.ThrowsAnyAsync<Exception>(() => new ProjectBuilder()
+            .WithAnalyzer(new ThrowingAnalyzer(), id: "TEST0002")
+            .WithSourceCode("""
+                class TestClass
+                {
+                    bool Test(object o) => o is string;
+                }
+                """)
+            .ValidateAsync());
+
+        Assert.Contains("An analyzer threw an exception", exception.Message);
+        Assert.Contains(nameof(ThrowingAnalyzer), exception.Message);
+    }
+
+    [DiagnosticAnalyzer(LanguageNames.CSharp)]
+    private sealed class ThrowingAnalyzer : DiagnosticAnalyzer
+    {
+        private static readonly DiagnosticDescriptor Rule = new("TEST0002", "Throw", "Throw", "Test", DiagnosticSeverity.Warning, isEnabledByDefault: true);
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+
+        public override void Initialize(AnalysisContext context)
+        {
+            context.EnableConcurrentExecution();
+            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            context.RegisterSyntaxNodeAction(_ => throw new InvalidOperationException("Analyzer failure"), SyntaxKind.IsExpression);
+        }
+    }
+
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     private sealed class TypeCheckAnalyzer : DiagnosticAnalyzer
     {

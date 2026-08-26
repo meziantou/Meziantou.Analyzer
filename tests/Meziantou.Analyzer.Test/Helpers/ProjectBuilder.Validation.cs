@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using Meziantou.Analyzer.Internals;
@@ -375,10 +376,18 @@ public sealed partial class ProjectBuilder
                 ? analyzers.Select(analyzer => (DiagnosticAnalyzer)new GeneratedCodeAnalysisAnalyzer(analyzer, generatedCodeAnalysisFlags)).ToArray()
                 : analyzers;
 
+            // Report the exceptions thrown by the analyzers instead of letting Roslyn convert them to AD0001 diagnostics,
+            // as those diagnostics may be filtered out before the assertions
+            var analyzerExceptions = new ConcurrentBag<(DiagnosticAnalyzer Analyzer, Exception Exception)>();
             var compilationWithAnalyzers = compilation.WithAnalyzers(
                 ImmutableArray.CreateRange(effectiveAnalyzers),
-                new AnalyzerOptions(additionalFiles, analyzerOptionsProvider));
+                new CompilationWithAnalyzersOptions(
+                    new AnalyzerOptions(additionalFiles, analyzerOptionsProvider),
+                    onAnalyzerException: (exception, analyzer, _) => analyzerExceptions.Add((analyzer, exception)),
+                    concurrentAnalysis: true,
+                    logAnalyzerExecutionTime: false));
             var diags = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(CancellationToken.None).ConfigureAwait(false);
+            AssertNoAnalyzerException(analyzerExceptions, diags);
             foreach (var diag in diags)
             {
                 if (diag.Location == Location.None || diag.Location.IsInMetadata || !diag.Location.IsInSource)
@@ -403,6 +412,21 @@ public sealed partial class ProjectBuilder
         var results = SortDiagnostics(diagnostics);
         diagnostics.Clear();
         return results;
+    }
+
+    private static void AssertNoAnalyzerException(IReadOnlyCollection<(DiagnosticAnalyzer Analyzer, Exception Exception)> analyzerExceptions, ImmutableArray<Diagnostic> diagnostics)
+    {
+        if (analyzerExceptions.Count > 0)
+        {
+            Assert.Fail("An analyzer threw an exception:\n\n" + string.Join("\n\n", analyzerExceptions.Select(item => item.Analyzer.GetType().FullName + ": " + item.Exception)));
+        }
+
+        // Safety net in case Roslyn reports the exception without calling the handler
+        var analyzerFailures = diagnostics.Where(diagnostic => diagnostic.Id is "AD0001").ToArray();
+        if (analyzerFailures.Length > 0)
+        {
+            Assert.Fail("An analyzer threw an exception:\n\n" + string.Join("\n\n", analyzerFailures.Select(diagnostic => diagnostic.GetMessage(CultureInfo.InvariantCulture))));
+        }
     }
 
     private static string FormatDiagnostics(IList<DiagnosticAnalyzer> analyzers, params Diagnostic[] diagnostics)
