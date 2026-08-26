@@ -308,6 +308,43 @@ class Test
     }
 
     [Fact]
+    public async Task FormattableString_Invariant_StringConcat()
+    {
+        var sourceCode = """
+            class Test
+            {
+                void A(string b)
+                {
+                    _ = System.FormattableString.Invariant($"abc{1:N0}") + b;
+                    _ = b + System.FormattableString.Invariant($"abc{1:N0}");
+                    _ = System.FormattableString.Invariant($"abc{1:N0}") + System.FormattableString.Invariant($"abc{2:N0}");
+                    _ = (System.FormattableString.Invariant($"abc{1:N0}")) + b;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task FormattableString_CurrentCulture_StringConcat()
+    {
+        var sourceCode = """
+            class Test
+            {
+                void A(string b)
+                {
+                    _ = [|System.FormattableString.CurrentCulture($"abc{1:N0}")|] + b;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task StringConcatFormattableString()
     {
         var sourceCode = """

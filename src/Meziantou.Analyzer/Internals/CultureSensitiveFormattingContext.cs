@@ -50,6 +50,9 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         AddDocumentationId(result, compilation, "M:System.Convert.ToChar(System.Object)");
         AddDocumentationId(result, compilation, "M:System.Convert.ToBoolean(System.String)");
         AddDocumentationId(result, compilation, "M:System.Convert.ToBoolean(System.Object)");
+
+        // FormattableString.Invariant formats the FormattableString using CultureInfo.InvariantCulture
+        AddDocumentationId(result, compilation, "M:System.FormattableString.Invariant(System.FormattableString)");
         return result;
 
         static void AddDocumentationId(HashSet<ISymbol> result, Compilation compilation, string id)
