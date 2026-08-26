@@ -15,22 +15,33 @@ public sealed class CA1507SerializationPropertyNameSuppressor : DiagnosticSuppre
 
     public override void ReportSuppressions(SuppressionAnalysisContext context)
     {
+        // Resolved on the first diagnostic located in an attribute, so the symbol is not loaded when there is none
+        INamedTypeSymbol? jsonPropertyAttributeSymbol = null;
+
         foreach (var diagnostic in context.ReportedDiagnostics)
         {
             var node = diagnostic.FindNode(context.CancellationToken);
             if (node is null)
-                return;
+                continue;
 
             var parent = node.FirstAncestorOrSelf<AttributeSyntax>();
             if (parent is null)
-                return;
+                continue;
 
             var semanticModel = context.GetSemanticModel(node.SyntaxTree);
             var info = semanticModel.GetSymbolInfo(parent, context.CancellationToken);
             if (info.Symbol is not IMethodSymbol methodSymbol)
-                return;
+                continue;
 
-            if (methodSymbol.ContainingType.IsEqualTo(context.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.JsonPropertyAttribute")))
+
+            if (jsonPropertyAttributeSymbol is null)
+            {
+                jsonPropertyAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.JsonPropertyAttribute");
+                if (jsonPropertyAttributeSymbol is null)
+                    return;
+            }
+
+            if (methodSymbol.ContainingType.IsEqualTo(jsonPropertyAttributeSymbol))
             {
                 var suppression = Suppression.Create(RuleJsonProperty, diagnostic);
                 context.ReportSuppression(suppression);
