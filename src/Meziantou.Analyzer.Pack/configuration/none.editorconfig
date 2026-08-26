@@ -646,3 +646,9 @@ dotnet_diagnostic.MA0216.severity = none
 
 # MA0217: Use a static lambda
 dotnet_diagnostic.MA0217.severity = none
+
+# MA0218: The language attribute is empty
+dotnet_diagnostic.MA0218.severity = none
+
+# MA0219: Set the language attribute in XML comment
+dotnet_diagnostic.MA0219.severity = none

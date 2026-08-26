@@ -216,6 +216,8 @@
 |[MA0215](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0215.md)|Performance|Return the task instead of awaiting it|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 |[MA0216](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0216.md)|Design|Remove unnecessary closed modifier|<span title='Info'>ℹ️</span>|✔️|❌|❌|
 |[MA0217](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0217.md)|Design|Use a static lambda|<span title='Info'>ℹ️</span>|❌|✔️|❌|
+|[MA0218](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0218.md)|Design|The language attribute is empty|<span title='Info'>ℹ️</span>|✔️|❌|❌|
+|[MA0219](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0219.md)|Design|Set the language attribute in XML comment|<span title='Hidden'>👻</span>|✔️|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|

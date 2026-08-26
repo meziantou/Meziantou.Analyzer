@@ -236,6 +236,8 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0215](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0215.md)|Performance|Return the task instead of awaiting it|ℹ️|❌|✔️|❌|
 |[MA0216](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0216.md)|Design|Remove unnecessary closed modifier|ℹ️|✔️|❌|❌|
 |[MA0217](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0217.md)|Design|Use a static lambda|ℹ️|❌|✔️|❌|
+|[MA0218](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0218.md)|Design|The language attribute is empty|ℹ️|✔️|❌|❌|
+|[MA0219](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0219.md)|Design|Set the language attribute in XML comment|👻|✔️|✔️|❌|
 
 <!-- rules -->
 
