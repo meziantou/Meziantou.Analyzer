@@ -24,7 +24,7 @@ class TestClass
 {
     void Test()
     {
-        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "[|") + options + (isValid ? "" : "|]") + @", default);
+        Regex.IsMatch(""test"", """ + regex + @""", " + (isValid ? "" : "{|MA0023:") + options + (isValid ? "" : "|}") + @", default);
     }
 }");
         await project.ValidateAsync();
@@ -40,7 +40,7 @@ class TestClass
                   {
                       void Test()
                       {
-                          Regex.IsMatch("test", "([a-z]+)", [|RegexOptions.None|], default);
+                          Regex.IsMatch("test", "([a-z]+)", {|MA0023:RegexOptions.None|}, default);
                       }
                   }
                   """)
@@ -72,7 +72,7 @@ class TestClass
 {
     void Test()
     {
-        new Regex(""" + regex + @""", " + (isValid ? "" : "[|") + options + (isValid ? "" : "|]") + @", default);
+        new Regex(""" + regex + @""", " + (isValid ? "" : "{|MA0023:") + options + (isValid ? "" : "|}") + @", default);
     }
 }");
 
@@ -112,7 +112,7 @@ partial class TestClass
               .WithSourceCode(@"using System.Text.RegularExpressions;
 partial class TestClass
 {
-    [[|GeneratedRegex(""" + regex + @""", " + options + @", 0)|]]
+    [{|MA0023:GeneratedRegex(""" + regex + @""", " + options + @", 0)|}]
     private static partial Regex Test();
 }
 partial class TestClass
@@ -135,7 +135,7 @@ partial class TestClass
                   using System.Text.RegularExpressions;
                   partial class TestClass
                   {
-                      [[|GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, 0)|]]
+                      [{|MA0023:GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, 0)|}]
                       private static partial Regex Test();
                   }
                   partial class TestClass
@@ -193,7 +193,7 @@ partial class TestClass
 
                   partial class TestClass
                   {
-                      [[|GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, 0)|]]
+                      [{|MA0023:GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, 0)|}]
                       private static partial Regex Test { get; }
                   }
                   partial class TestClass
@@ -217,7 +217,7 @@ partial class TestClass
 
                   partial class TestClass
                   {
-                      [[|GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, 0)|]]
+                      [{|MA0023:GeneratedRegex("([a-z]+)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, 0)|}]
                       private static partial Regex Test { get; }
                   }
                   partial class TestClass

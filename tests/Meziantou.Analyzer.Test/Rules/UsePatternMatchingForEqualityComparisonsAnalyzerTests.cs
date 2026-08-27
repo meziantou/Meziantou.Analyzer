@@ -36,7 +36,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     public async Task NullCheckForNullableOfT_NotNull()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("_ = [|(int?)0 != null|];")
+              .WithSourceCode("_ = {|MA0141:(int?)0 != null|};")
               .ShouldFixCodeWith("_ = (int?)0 is not null;")
               .ValidateAsync();
     }
@@ -63,7 +63,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     public async Task NullCheckForObject_NotNull_NullFirst()
     {
         await CreateProjectBuilder()
-              .WithSourceCode("_ = [|null != new object()|];")
+              .WithSourceCode("_ = {|MA0141:null != new object()|};")
               .ShouldFixCodeWith("_ = new object() is not null;")
               .ValidateAsync();
     }
@@ -74,7 +74,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
         await CreateProjectBuilder()
               .WithSourceCode("""
                   string line;
-                  while ([|(line = null) != null|]) { }
+                  while ({|MA0141:(line = null) != null|}) { }
                   """)
               .ShouldFixCodeWith("""
                   string line;
@@ -129,8 +129,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     public async Task EqualityComparison_String()
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"""_ = [|(string)"dummy" == "dummy"|];""")
-              .ShouldFixCodeWith($"""_ = (string)"dummy" is "dummy";""")
+              .WithSourceCode("""_ = {|MA0148:(string)"dummy" == "dummy"|};""")
+              .ShouldFixCodeWith("""_ = (string)"dummy" is "dummy";""")
               .ValidateAsync();
     }
 
@@ -138,8 +138,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     public async Task EqualityComparison_NullableInt32_Int32()
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"_ = [|(int?)0 == 1|];")
-              .ShouldFixCodeWith($"_ = (int?)0 is 1;")
+              .WithSourceCode("_ = {|MA0148:(int?)0 == 1|};")
+              .ShouldFixCodeWith("_ = (int?)0 is 1;")
               .ValidateAsync();
     }
 
@@ -147,8 +147,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     public async Task EqualityComparison_Enum()
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"_ = [|(System.DayOfWeek)1 == System.DayOfWeek.Monday|];")
-              .ShouldFixCodeWith($"_ = (System.DayOfWeek)1 is System.DayOfWeek.Monday;")
+              .WithSourceCode("_ = {|MA0148:(System.DayOfWeek)1 == System.DayOfWeek.Monday|};")
+              .ShouldFixCodeWith("_ = (System.DayOfWeek)1 is System.DayOfWeek.Monday;")
               .ValidateAsync();
     }
 
@@ -156,8 +156,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     public async Task EqualityComparison_NullableEnum()
     {
         await CreateProjectBuilder()
-              .WithSourceCode($"_ = [|(System.DayOfWeek?)1 == System.DayOfWeek.Monday|];")
-              .ShouldFixCodeWith($"_ = (System.DayOfWeek?)1 is System.DayOfWeek.Monday;")
+              .WithSourceCode("_ = {|MA0148:(System.DayOfWeek?)1 == System.DayOfWeek.Monday|};")
+              .ShouldFixCodeWith("_ = (System.DayOfWeek?)1 is System.DayOfWeek.Monday;")
               .ValidateAsync();
     }
 
@@ -167,7 +167,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
         await CreateProjectBuilder()
               .WithSourceCode("""
                   var value = 0;
-                  _ = [|value == 0|] || [|value == 1|];
+                  _ = {|MA0148:value == 0|} || {|MA0148:value == 1|};
                   """)
               .ShouldFixCodeWith("""
                   var value = 0;
@@ -182,7 +182,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
         await CreateProjectBuilder()
               .WithSourceCode("""
                   var value = 0;
-                  _ = [|value != 0|] && [|value != 1|];
+                  _ = {|MA0149:value != 0|} && {|MA0149:value != 1|};
                   """)
               .ShouldFixCodeWith("""
                   var value = 0;
@@ -198,7 +198,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
               .WithSourceCode("""
                   var value1 = 0;
                   var value2 = 0;
-                  _ = [|value1 == 0|] || [|value2 == 1|];
+                  _ = {|MA0148:value1 == 0|} || {|MA0148:value2 == 1|};
                   """)
               .ShouldFixCodeWith("""
                   var value1 = 0;
@@ -215,7 +215,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
               .WithSourceCode("""
                   var value1 = 0;
                   var value2 = 0;
-                  _ = [|value1 == 0|] || [|value2 == 1|] || [|value1 == 2|];
+                  _ = {|MA0148:value1 == 0|} || {|MA0148:value2 == 1|} || {|MA0148:value1 == 2|};
                   """)
               .ShouldFixCodeWith("""
                   var value1 = 0;
@@ -231,8 +231,8 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
         await CreateProjectBuilder()
               .WithSourceCode("""
                   var value = 0;
-                  _ = [|value == 0|] || [|value == 1|];
-                  _ = [|value != 2|] && [|value != 3|];
+                  _ = {|MA0148:value == 0|} || {|MA0148:value == 1|};
+                  _ = {|MA0149:value != 2|} && {|MA0149:value != 3|};
                   """)
               .ShouldBatchFixCodeWith("""
                   var value = 0;
@@ -297,7 +297,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
               .WithSourceCode("""
                   var number = 0;
                   Sample value = null;
-                  _ = [|number == 0|] || value == 0;
+                  _ = {|MA0148:number == 0|} || value == 0;
 
                   class Sample
                   {

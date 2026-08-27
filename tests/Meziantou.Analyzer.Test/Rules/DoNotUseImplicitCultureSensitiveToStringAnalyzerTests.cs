@@ -146,23 +146,23 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     }
 
     [Theory]
-    [InlineData("abc[|{(sbyte)-1}|]")]
-    [InlineData("abc[|{(short)-1}|]")]
-    [InlineData("abc[|{(int)-1}|]")]
-    [InlineData("abc[|{(long)-1}|]")]
-    [InlineData("abc[|{(long?)-1}|]")]
-    [InlineData("abc[|{(float)-1}|]")]
-    [InlineData("abc[|{(double)-1}|]")]
-    [InlineData("abc[|{(decimal)-1}|]")]
-    [InlineData("abc[|{(float)0}|]")]
-    [InlineData("abc[|{(double)0}|]")]
-    [InlineData("abc[|{(decimal)0}|]")]
-    [InlineData("abc[|{(float)1}|]")]
-    [InlineData("abc[|{(double)1}|]")]
-    [InlineData("abc[|{(decimal)1}|]")]
-    [InlineData(@"test[|{new int[0].Min()}|]")]
-    [InlineData(@"test[|{System.Int128.One}|]")]
-    [InlineData(@"test[|{new System.DateOnly(2023,1,1)}|]")]
+    [InlineData("abc{|MA0076:{(sbyte)-1}|}")]
+    [InlineData("abc{|MA0076:{(short)-1}|}")]
+    [InlineData("abc{|MA0076:{(int)-1}|}")]
+    [InlineData("abc{|MA0076:{(long)-1}|}")]
+    [InlineData("abc{|MA0076:{(long?)-1}|}")]
+    [InlineData("abc{|MA0076:{(float)-1}|}")]
+    [InlineData("abc{|MA0076:{(double)-1}|}")]
+    [InlineData("abc{|MA0076:{(decimal)-1}|}")]
+    [InlineData("abc{|MA0076:{(float)0}|}")]
+    [InlineData("abc{|MA0076:{(double)0}|}")]
+    [InlineData("abc{|MA0076:{(decimal)0}|}")]
+    [InlineData("abc{|MA0076:{(float)1}|}")]
+    [InlineData("abc{|MA0076:{(double)1}|}")]
+    [InlineData("abc{|MA0076:{(decimal)1}|}")]
+    [InlineData(@"test{|MA0076:{new int[0].Min()}|}")]
+    [InlineData(@"test{|MA0076:{System.Int128.One}|}")]
+    [InlineData(@"test{|MA0076:{new System.DateOnly(2023,1,1)}|}")]
     public async Task InterpolatedStringDiagnostic(string content)
     {
         var sourceCode = @"using System.Linq;
@@ -183,7 +183,7 @@ class Test
 {
     void A(int value)
     {
-        _ = $"abc[|{value}|]";
+        _ = $"abc{|MA0076:{value}|}";
     }
 }
 """;
@@ -216,7 +216,7 @@ class Test
 {
     void A(int value)
     {
-        _ = $"abc[|{value}|]";
+        _ = $"abc{|MA0076:{value}|}";
     }
 }
 """;
@@ -350,7 +350,7 @@ class Test
         var sourceCode = """
             class Test
             {
-                void A() { var a = "abc" + $"[|{-1}|]"; }
+                void A() { var a = "abc" + $"{|MA0076:{-1}|}"; }
             }
             """;
         await CreateProjectBuilder()
@@ -378,7 +378,7 @@ class Test
         var sourceCode = """
             class Test
             {
-                void ToString() { var a = "abc" + $"[|{-1}|]"; }
+                void ToString() { var a = "abc" + $"{|MA0076:{-1}|}"; }
             }
             """;
         await CreateProjectBuilder()
@@ -393,7 +393,7 @@ class Test
         var sourceCode = """
             class Test
             {
-                string A() => [|new object().ToString()|];
+                string A() => {|MA0107:new object().ToString()|};
             }
             """;
         await CreateProjectBuilder()
@@ -412,7 +412,7 @@ class Test
                 void A()
                 {
                     var sample = new Sample();
-                    _ = $"Value: {[|sample|]}";
+                    _ = $"Value: {{|MA0107:sample|}}";
                 }
             }
             """;
@@ -580,7 +580,7 @@ class Test
 
     [Theory]
     [InlineData(""" $"abc{new System.DateTime()}" """)]
-    [InlineData(""" $"abc[|{new System.DateTime():a}|]" """)]
+    [InlineData(""" $"abc{|MA0076:{new System.DateTime():a}|}" """)]
     public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatInvariant(string content)
     {
         var sourceCode = $$"""
@@ -600,8 +600,8 @@ class Test
     }
 
     [Theory]
-    [InlineData(""" $"abc[|{new System.DateTime()}|]" """)]
-    [InlineData(""" $"abc[|{new System.DateTime():a}|]" """)]
+    [InlineData(""" $"abc{|MA0076:{new System.DateTime()}|}" """)]
+    [InlineData(""" $"abc{|MA0076:{new System.DateTime():a}|}" """)]
     public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatCultureSensitive(string content)
     {
         var sourceCode = $$"""
@@ -630,7 +630,7 @@ class Test
 {
     void A()
     {
-        _ = $"abc[|{new System.DateTime():other}|]";
+        _ = $"abc{|MA0076:{new System.DateTime():other}|}";
     }
 }
 """;
@@ -676,8 +676,8 @@ class Sample : System.IFormattable
                     _ = "abc" + Value;
                     _ = $"abc{Value}";
                     _ = Value.ToString();
-                    _ = "abc" + [|OtherValue|];
-                    _ = $"abc[|{OtherValue}|]";
+                    _ = "abc" + {|MA0075:OtherValue|};
+                    _ = $"abc{|MA0076:{OtherValue}|}";
                 }
 
                 [Meziantou.Analyzer.Annotations.CultureInsensitive]
@@ -741,8 +741,8 @@ class Sample : System.IFormattable
                 {
                     Write($"abc{value}");
                     Write("abc" + value);
-                    WriteOther($"abc[|{value}|]");
-                    WriteOther("abc" + [|value|]);
+                    WriteOther($"abc{|MA0076:{value}|}");
+                    WriteOther("abc" + {|MA0075:value|});
                 }
 
                 static void Write([Meziantou.Analyzer.Annotations.CultureInsensitive] string value) { }
@@ -793,7 +793,7 @@ class Sample : System.IFormattable
             {
                 void A(double value)
                 {
-                    Write(Identity($"abc[|{value}|]"));
+                    Write(Identity($"abc{|MA0076:{value}|}"));
                 }
 
                 static string Identity(string value) => value;
@@ -1056,7 +1056,7 @@ class Test
 {
     void A(object value)
     {
-        _ = $"Value: [|{value}|]";
+        _ = $"Value: {|MA0076:{value}|}";
     }
 }
 """;
@@ -1129,7 +1129,7 @@ class Test
 {
     void A(System.IFormattable value)
     {
-        _ = $"Value: [|{value}|]";
+        _ = $"Value: {|MA0076:{value}|}";
     }
 }
 """;
@@ -1204,7 +1204,7 @@ class Test
 {
     void A(Value value)
     {
-        _ = $"Value: [|{value}|]";
+        _ = $"Value: {|MA0076:{value}|}";
     }
 }
 
@@ -1622,7 +1622,7 @@ class Sample : System.IFormattable
             using System;
             class Test
             {
-                void A(Test value) { _ = $"abc[|{value?.Value}|]"; }
+                void A(Test value) { _ = $"abc{|MA0076:{value?.Value}|}"; }
 
                 DateTime Value { get; }
             }
@@ -1826,7 +1826,7 @@ class Test
 {
     void A(Sample value)
     {
-        _ = $"[|{value}|]";
+        _ = $"{|MA0076:{value}|}";
     }
 }
 

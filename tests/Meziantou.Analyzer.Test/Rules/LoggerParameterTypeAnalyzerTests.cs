@@ -33,7 +33,7 @@ Name;System.Int32
 using Microsoft.Extensions.Logging;
 
 ILogger logger = null;
-logger.BeginScope([|"{Prop} {Name} {Name}"|], 1, 2, (int?)null);
+logger.BeginScope({|MA0135:"{Prop} {Name} {Name}"|}, 1, 2, (int?)null);
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -414,7 +414,7 @@ Prop;System.Int32
 using Microsoft.Extensions.Logging;
 
 ILogger logger = null;
-logger.LogInformation([|"{Prop}"|], 2);
+logger.LogInformation({|MA0135:"{Prop}"|}, 2);
 logger.LogInformation("{Dummy}", 2);
 """;
         await CreateProjectBuilder()
@@ -568,7 +568,7 @@ using System.Runtime.CompilerServices;
 partial class LoggerExtensions
 {
     [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
-    static partial void LogTestMessage(ILogger logger, string [|Prop|], int Name);
+    static partial void LogTestMessage(ILogger logger, string {|MA0135:Prop|}, int Name);
 }
 """;
         await CreateProjectBuilder()

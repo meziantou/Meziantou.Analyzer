@@ -59,7 +59,7 @@ class ClassTest
 {
    void Test()
    {
-       _ = [|{{code}}|];
+       _ = {|MA0114:{{code}}|};
    }
 }
 """;

@@ -15,7 +15,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
         var originalCode = """
             using System;
 
-            class [|Test|] : IComparable<string>
+            class {|MA0094:Test|} : IComparable<string>
             {
                 public int CompareTo(string other) => throw null;
                 public int CompareTo(Test other) => throw null;
@@ -193,7 +193,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
         var originalCode = """
             using System;
 
-            class [|Test|] : IComparable<string>
+            class {|MA0094:Test|} : IComparable<string>
             {
                 public int CompareTo(string other) => throw null;
                 public int CompareTo(Test other) => throw null;
