@@ -38,7 +38,13 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
             var method = (MethodDeclarationSyntax)nodeToFix;
             editor.ReplaceNode(method, method.WithModifiers(method.Modifiers.Add(SyntaxKind.ReadOnlyKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
         }
-        else if (nodeToFix.IsKind(SyntaxKind.GetAccessorDeclaration) || nodeToFix.IsKind(SyntaxKind.SetAccessorDeclaration) || nodeToFix.IsKind(SyntaxKind.AddAccessorDeclaration) || nodeToFix.IsKind(SyntaxKind.RemoveAccessorDeclaration))
+        else if (nodeToFix.IsKind(SyntaxKind.EventDeclaration))
+        {
+            // 'readonly' cannot be applied to an event accessor, MA0102 reports the event itself
+            var eventDeclaration = (EventDeclarationSyntax)nodeToFix;
+            editor.ReplaceNode(eventDeclaration, eventDeclaration.WithModifiers(eventDeclaration.Modifiers.Add(SyntaxKind.ReadOnlyKeyword)).WithAdditionalAnnotations(Formatter.Annotation));
+        }
+        else if (nodeToFix.IsKind(SyntaxKind.GetAccessorDeclaration) || nodeToFix.IsKind(SyntaxKind.SetAccessorDeclaration))
         {
             var accessor = (AccessorDeclarationSyntax)nodeToFix;
             var addToAccessor = false;
