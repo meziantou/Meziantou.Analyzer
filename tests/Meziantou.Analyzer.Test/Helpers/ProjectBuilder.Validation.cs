@@ -40,7 +40,7 @@ public sealed partial class ProjectBuilder
         }
         else if (CodeFixProvider is not null)
         {
-            await VerifyCodeFixRegistration(CodeFixProvider, documents, diagnostics).ConfigureAwait(false);
+            await VerifyCodeFixActions(CodeFixProvider, documents, diagnostics).ConfigureAwait(false);
         }
     }
 
@@ -60,14 +60,15 @@ public sealed partial class ProjectBuilder
     }
 
     /// <summary>
-    /// Runs the code fix provider over the reported diagnostics without applying the registered actions.
+    /// Registers the code fixes for every reported diagnostic and computes the changes of every registered
+    /// action, without applying them.
     /// </summary>
     /// <remarks>
     /// A test that configures a code fix provider but no expected fixed code never invokes the provider
-    /// otherwise, so a provider that throws for that shape of code goes unnoticed. Only the registration is
-    /// exercised: the test did not declare what the fixed code should be, so the actions cannot be applied.
+    /// otherwise, so a provider that throws for that shape of code goes unnoticed. The changes cannot be
+    /// compared, as the test did not declare what the fixed code should be, but they must be computable.
     /// </remarks>
-    private static async Task VerifyCodeFixRegistration(CodeFixProvider codeFixProvider, Document[] documents, Diagnostic[] diagnostics)
+    private static async Task VerifyCodeFixActions(CodeFixProvider codeFixProvider, Document[] documents, Diagnostic[] diagnostics)
     {
         foreach (var document in documents)
         {
@@ -80,9 +81,24 @@ public sealed partial class ProjectBuilder
                 if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
                     continue;
 
-                var context = new CodeFixContext(document, diagnostic, (_, _) => { }, CancellationToken.None);
+                var actions = new List<CodeAction>();
+                var context = new CodeFixContext(document, diagnostic, (action, _) => actions.Add(action), CancellationToken.None);
                 await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+                await ComputeCodeActionOperations(actions).ConfigureAwait(false);
             }
+        }
+    }
+
+    /// <summary>
+    /// Computes the operations of every action, which is what runs the delegate a code fix provider
+    /// registered. A provider often registers several actions, and applying one of them exercises only that
+    /// one, so the others must be computed explicitly.
+    /// </summary>
+    private static async Task ComputeCodeActionOperations(List<CodeAction> actions)
+    {
+        foreach (var action in actions)
+        {
+            await action.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
         }
     }
 
@@ -619,6 +635,7 @@ public sealed partial class ProjectBuilder
             var actions = new List<CodeAction>();
             var context = new CodeFixContext(document, diagnostic, (a, _) => actions.Add(a), CancellationToken.None);
             await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+            await ComputeCodeActionOperations(actions).ConfigureAwait(false);
 
             if (actions.Count > 0)
             {
@@ -637,6 +654,7 @@ public sealed partial class ProjectBuilder
                 var actions = new List<CodeAction>();
                 var context = new CodeFixContext(document, diagnostic, (a, _) => actions.Add(a), CancellationToken.None);
                 await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+                await ComputeCodeActionOperations(actions).ConfigureAwait(false);
 
                 if (actions.Count == 0)
                     break;

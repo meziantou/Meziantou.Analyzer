@@ -817,7 +817,11 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
             }
             """);
 
-        await CreateProjectBuilder()
+        // Only the analyzer is exercised: an "else if" chain is nested syntax, so a chain this long is a
+        // 1000-level deep tree, and the formatter Roslyn runs when a code action computes its changes
+        // recurses once per level and throws InsufficientExecutionStackException
+        await new ProjectBuilder()
+              .WithAnalyzer<AvoidUsingRedundantElseAnalyzer>()
               .WithSourceCode(sourceCode.ToString())
               .ValidateAsync();
     }
