@@ -744,4 +744,81 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 .WithSourceCode(originalCode)
                 .ValidateAsync();
     }
+
+    [Fact]
+    public async Task Test_ElseIfChainWithBranchThatDoesNotJump_FollowingElsesNotReported()
+    {
+        var originalCode = """
+            class TestClass
+            {
+                int Test(int value)
+                {
+                    if (value == 0)
+                    {
+                        return 0;
+                    }
+                    [|else|] if (value == 1)
+                    {
+                        value++;
+                    }
+                    else if (value == 2)
+                    {
+                        return 2;
+                    }
+                    else
+                    {
+                        return -1;
+                    }
+
+                    return value;
+                }
+            }
+            """;
+        await CreateProjectBuilder()
+              .WithSourceCode(originalCode)
+              .ValidateAsync();
+    }
+
+    // The chain used to be analyzed once per else clause, each time re-analyzing every branch above it,
+    // which is quadratic: 1600 branches took more than 4 minutes. Keep the chain long enough that a
+    // reintroduction of that behavior is obvious in the duration of this test.
+    [Fact]
+    public async Task Test_LongElseIfChainWhereEveryBranchJumps_AllElsesReported()
+    {
+        const int BranchCount = 1000;
+
+        var sourceCode = new StringBuilder();
+        sourceCode.AppendLine("""
+            class TestClass
+            {
+                int Test(int value)
+                {
+                    if (value == 0)
+                    {
+                        return 0;
+                    }
+            """);
+
+        for (var i = 1; i < BranchCount; i++)
+        {
+            var branch = i.ToString(CultureInfo.InvariantCulture);
+            sourceCode.AppendLine("        [|else|] if (value == " + branch + ")");
+            sourceCode.AppendLine("        {");
+            sourceCode.AppendLine("            return " + branch + ";");
+            sourceCode.AppendLine("        }");
+        }
+
+        sourceCode.AppendLine("""
+                    [|else|]
+                    {
+                        return -1;
+                    }
+                }
+            }
+            """);
+
+        await CreateProjectBuilder()
+              .WithSourceCode(sourceCode.ToString())
+              .ValidateAsync();
+    }
 }
