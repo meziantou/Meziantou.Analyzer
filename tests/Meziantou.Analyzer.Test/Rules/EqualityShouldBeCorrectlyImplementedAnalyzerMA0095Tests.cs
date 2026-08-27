@@ -15,7 +15,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0095Tests
         var originalCode = """
 using System;
 
-public sealed class [|TriggersMA0095AndCA1067|] : IEquatable<TriggersMA0095AndCA1067>
+public sealed class {|MA0095:TriggersMA0095AndCA1067|} : IEquatable<TriggersMA0095AndCA1067>
 {
     public bool Equals(TriggersMA0095AndCA1067? other) => true;
 }
@@ -125,7 +125,7 @@ public abstract class Base : IEquatable<Base>
     public override int GetHashCode() => 0;
 }
 
-public sealed class [|Derived|] : Base, IEquatable<Derived>
+public sealed class {|MA0095:Derived|} : Base, IEquatable<Derived>
 {
     public bool Equals(Derived? other) => true;
 }
@@ -142,7 +142,7 @@ public sealed class [|Derived|] : Base, IEquatable<Derived>
         var originalCode = """
 using System;
 
-public struct [|TestStruct|] : IEquatable<TestStruct>
+public struct {|MA0095:TestStruct|} : IEquatable<TestStruct>
 {
     public bool Equals(TestStruct other) => true;
 }

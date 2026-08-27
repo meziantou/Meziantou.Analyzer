@@ -42,7 +42,7 @@ public sealed class ValidateFixedAddressValueTypeAttributeUsageAnalyzerTests
                 class Sample
                 {
                     [System.Runtime.CompilerServices.FixedAddressValueType]
-                    static [|string|] _field;
+                    static {|MA0208:string|} _field;
                 }
                 """)
             .ValidateAsync();
@@ -56,7 +56,7 @@ public sealed class ValidateFixedAddressValueTypeAttributeUsageAnalyzerTests
                 class Sample
                 {
                     [System.Runtime.CompilerServices.FixedAddressValueType]
-                    [|string|] {|MA0207:_field|};
+                    {|MA0208:string|} {|MA0207:_field|};
                 }
                 """)
             .ValidateAsync();

@@ -14,7 +14,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     {
         var originalCode = """
             class BaseClass {}
-            class [|Test|] : BaseClass
+            class {|MA0077:Test|} : BaseClass
             {
                 public bool Equals(Test other) => throw null;
             }
@@ -36,7 +36,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     public async Task Test_StructImplementsNoInterfaceAndProvidesCompatibleEqualsMethod_DiagnosticIsReported()
     {
         var originalCode = """
-            struct [|Test|]     //  This comment stays
+            struct {|MA0077:Test|}     //  This comment stays
             {
                 public bool Equals(Test other) => throw null;
             }
@@ -74,7 +74,7 @@ ref struct Test
     public async Task RefStruct_CSharp13()
     {
         var originalCode = """
-ref struct [|Test|]
+ref struct {|MA0077:Test|}
 {
     public bool Equals(Test other) => throw null;
 }
@@ -91,7 +91,7 @@ ref struct [|Test|]
     public async Task Test_ClassImplementsSystemIEquatableWithTOfWrongTypeButProvidesCompatibleEqualsMethod_DiagnosticIsReported()
     {
         var originalCode = @"using System;
-class [|Test|] : IEquatable<string>
+class {|MA0077:Test|} : IEquatable<string>
 {
     public bool Equals(Test other) => throw null;
     public bool Equals(string other) => throw null;
@@ -112,7 +112,7 @@ class Test : IEquatable<string>, IEquatable<Test>
     public async Task Test_StructImplementsSystemIEquatableWithTOfWrongTypeButProvidesCompatibleEqualsMethod_DiagnosticIsReported()
     {
         var originalCode = @"using System;
-struct [|Test|] : IEquatable<string>
+struct {|MA0077:Test|} : IEquatable<string>
 {
     public bool Equals(Test other) => throw null;
     public bool Equals(string other) => throw null;
@@ -134,7 +134,7 @@ struct Test : IEquatable<string>, IEquatable<Test>
     {
         var originalCode = """
             interface IEquatable<T> { bool Equals(T other); }
-            class [|Test|] : IEquatable<Test>
+            class {|MA0077:Test|} : IEquatable<Test>
             {
                 public bool Equals(Test other) => throw null;
             }
@@ -157,7 +157,7 @@ struct Test : IEquatable<string>, IEquatable<Test>
     {
         var originalCode = """
             interface IEquatable<T> { bool Equals(T other); }
-            struct [|Test|] : IEquatable<Test>
+            struct {|MA0077:Test|} : IEquatable<Test>
             {
                 public bool Equals(Test other) => throw null;
             }
@@ -180,7 +180,7 @@ struct Test : IEquatable<string>, IEquatable<Test>
     {
         var originalCode = """
             #nullable enable
-            class [|Test|]
+            class {|MA0077:Test|}
             {
                 public bool Equals(Test? other) => throw null;
             }
@@ -203,7 +203,7 @@ struct Test : IEquatable<string>, IEquatable<Test>
     {
         var originalCode = """
             #nullable enable
-            class [|Test|]
+            class {|MA0077:Test|}
             {
                 public bool Equals(Test other) => throw null;
             }

@@ -93,7 +93,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 
                 void OnEvent()
                 {
-                    MyEvent.Invoke([|this|], EventArgs.Empty);
+                    MyEvent.Invoke({|MA0092:this|}, EventArgs.Empty);
                 }
             }
             """;
@@ -113,7 +113,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 
                 void OnEvent()
                 {
-                    MyEvent.Invoke(this, [|null|]);
+                    MyEvent.Invoke(this, {|MA0093:null|});
                 }
             }
             """;
@@ -147,7 +147,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 
                 void OnEvent()
                 {
-                    MyEvent.Invoke(this, e: [|null|]);
+                    MyEvent.Invoke(this, e: {|MA0093:null|});
                 }
             }
             """;
@@ -184,7 +184,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                     var ev = MyEvent;
                     if (ev != null)
                     {
-                        ev.Invoke(this, [|null|]);
+                        ev.Invoke(this, {|MA0093:null|});
                     }
                 }
             }
@@ -227,7 +227,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                     var ev = a;
                     if (ev != null)
                     {
-                        ev.Invoke(this, [|null|]);
+                        ev.Invoke(this, {|MA0093:null|});
                     }
                 }
             }
@@ -268,7 +268,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 void OnEvent()
                 {
                     var ev = MyEvent;
-                    ev?.Invoke(this, [|null|]);
+                    ev?.Invoke(this, {|MA0093:null|});
                 }
             }
             """;
@@ -304,7 +304,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 
                 void OnEvent()
                 {
-                    MyEvent?.Invoke(this, [|null|]);
+                    MyEvent?.Invoke(this, {|MA0093:null|});
                 }
             }
             """;

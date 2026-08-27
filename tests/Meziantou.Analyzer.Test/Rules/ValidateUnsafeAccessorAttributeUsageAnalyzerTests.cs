@@ -36,7 +36,7 @@ public class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                       {
                           // Local function name are mangle by the compiler, so the Name property is required
                           [UnsafeAccessor(UnsafeAccessorKind.Field)]
-                          extern static ref int [|B|](System.Version a);
+                          extern static ref int {|MA0146:B|}(System.Version a);
                       }
                   }
                   """)

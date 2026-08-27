@@ -106,7 +106,7 @@ using Microsoft.AspNetCore.Components;
 class Test
 {
     [Parameter, SupplyParameterFromQuery]
-    public int [|A|] { get; set; }
+    public int {|MA0122:A|} { get; set; }
 }
 """;
         await CreateProjectBuilder()
@@ -123,7 +123,7 @@ class Test
             class Test
             {
                 [EditorRequired]
-                public int [|A|] { get; set; }
+                public int {|MA0117:A|} { get; set; }
             }
             """;
         const string Fix = """
@@ -172,7 +172,7 @@ class Test
             {
                 [CascadingParameter]
                 [EditorRequired]
-                public int [|A|] { get; set; }
+                public int {|MA0117:A|} { get; set; }
 
                 public int B { get; set; }
             }

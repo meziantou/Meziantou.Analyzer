@@ -81,7 +81,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
             {
                 void A(System.TimeProvider foo)
                 {
-                    [|System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|];
+                    {|MA0166:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|};
                 }
             }
             """;
@@ -109,7 +109,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
             {
                 void A(Sample foo)
                 {
-                    [|System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|];
+                    {|MA0166:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|};
                 }
 
                 class Sample { public System.TimeProvider A {get;} }
@@ -145,7 +145,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
 
                 void A(System.TimeProvider foo)
                 {
-                    [|Delay()|];
+                    {|MA0166:Delay()|};
                 }
             }
             """;
@@ -182,7 +182,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
 
                 void A(System.TimeProvider foo)
                 {
-                    [|Delay()|];
+                    {|MA0166:Delay()|};
                 }
             }
             """;

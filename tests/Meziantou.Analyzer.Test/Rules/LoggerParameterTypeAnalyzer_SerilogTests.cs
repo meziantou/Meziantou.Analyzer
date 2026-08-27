@@ -15,7 +15,7 @@ public sealed class LoggerParameterTypeAnalyzer_SerilogTests
 using Serilog;
 
 Log.Information("{Prop}", 1);
-Log.Information("{Prop}", [|(int?)1|]);
+Log.Information("{Prop}", {|MA0139:(int?)1|});
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -32,7 +32,7 @@ Prop;System.Int32
 using Serilog;
 
 Log.Information((System.Exception)null, "{Prop}", 1);
-Log.Information((System.Exception)null, "{Prop}", [|(int?)1|]);
+Log.Information((System.Exception)null, "{Prop}", {|MA0139:(int?)1|});
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -215,7 +215,7 @@ Prop;System.Int32
         const string SourceCode = """
 using Serilog;
 
-Log.ForContext("Prop", [|""|]);
+Log.ForContext("Prop", {|MA0139:""|});
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -247,7 +247,7 @@ Prop;System.Int32
         const string SourceCode = """
 using Serilog;
 
-Log.Logger.ForContext("Prop", [|""|]);
+Log.Logger.ForContext("Prop", {|MA0139:""|});
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
@@ -279,7 +279,7 @@ Prop;System.Int32
         const string SourceCode = """
 using Serilog;
 
-Log.Logger.ForContext(Serilog.Events.LogEventLevel.Warning,"Prop", [|""|]);
+Log.Logger.ForContext(Serilog.Events.LogEventLevel.Warning,"Prop", {|MA0139:""|});
 """;
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
