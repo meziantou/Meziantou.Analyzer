@@ -104,7 +104,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
         var fixedCode = """
             using System;
             
-            class Test : IComparable<string>, IComparable<Test>
+            class {|MA0096:Test|} : IComparable<string>, IComparable<Test>
             {
                 public int CompareTo(string other) => throw null;
                 public int CompareTo(Test other) => throw null;
@@ -117,9 +117,11 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
             }
             """;
 
+        // Implementing IComparable<Test> makes the type subject to MA0096, which the same code fixer handles, so
+        // only the code action of MA0094 is applied
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
+              .ShouldFixFirstDiagnosticWith(fixedCode)
               .ValidateAsync();
     }
 

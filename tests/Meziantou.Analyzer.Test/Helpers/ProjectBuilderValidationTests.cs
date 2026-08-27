@@ -27,7 +27,8 @@ public sealed class ProjectBuilderValidationTests
     public async Task VerifyFix_CompilesTheTextProducedByTheFixer()
     {
         // The fixer produces a valid tree ('!' applied to the is-expression), but its text is '!o is string',
-        // which re-parses as '(!o) is string' and does not compile
+        // which re-parses as '(!o) is string' and does not compile. The test framework compiles the expected
+        // fixed code, so the text of the fix is validated and not only the tree it was built from.
         var exception = await Assert.ThrowsAnyAsync<Exception>(() => new ProjectBuilder()
             .WithAnalyzer(new TypeCheckAnalyzer())
             .WithCodeFixProvider(new NegateWithoutParenthesesFixer())
@@ -40,7 +41,7 @@ public sealed class ProjectBuilderValidationTests
                 """)
             .ValidateAsync());
 
-        Assert.Contains("The fixed code doesn't compile.", exception.Message);
+        Assert.Contains("error CS0023", exception.Message);
     }
 
     [Fact]
@@ -62,7 +63,7 @@ public sealed class ProjectBuilderValidationTests
     [Fact]
     public async Task VerifyDiagnostic_ReportsAnalyzerException()
     {
-        // The exception is reported by Roslyn as an AD0001 diagnostic, which the default analyzer id would filter out
+        // The exception is reported by Roslyn as an AD0001 diagnostic, which the default analyzer id must not filter out
         var exception = await Assert.ThrowsAnyAsync<Exception>(() => new ProjectBuilder()
             .WithAnalyzer(new ThrowingAnalyzer(), id: "TEST0002")
             .WithSourceCode("""
@@ -73,7 +74,7 @@ public sealed class ProjectBuilderValidationTests
                 """)
             .ValidateAsync());
 
-        Assert.Contains("An analyzer threw an exception", exception.Message);
+        Assert.Contains("AD0001", exception.Message);
         Assert.Contains(nameof(ThrowingAnalyzer), exception.Message);
     }
 
@@ -103,7 +104,21 @@ public sealed class ProjectBuilderValidationTests
         {
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-            context.RegisterSyntaxNodeAction(ctx => ctx.ReportDiagnostic(Diagnostic.Create(Rule, ctx.Node.GetLocation())), SyntaxKind.IsExpression);
+            context.RegisterSyntaxNodeAction(
+                ctx =>
+                {
+                    // Do not report the type checks that the fixers produce, so that applying a fix converges.
+                    // '!(o is string)' is the tree the fixers build, '(!o) is string' is what the text of the
+                    // fixer that omits the parentheses re-parses to.
+                    if (ctx.Node.Parent is ParenthesizedExpressionSyntax { Parent: PrefixUnaryExpressionSyntax })
+                        return;
+
+                    if (((BinaryExpressionSyntax)ctx.Node).Left is not IdentifierNameSyntax)
+                        return;
+
+                    ctx.ReportDiagnostic(Diagnostic.Create(Rule, ctx.Node.GetLocation()));
+                },
+                SyntaxKind.IsExpression);
         }
     }
 

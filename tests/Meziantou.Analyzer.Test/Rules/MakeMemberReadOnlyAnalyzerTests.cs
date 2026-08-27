@@ -425,6 +425,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
+#if ROSLYN_4_14_OR_GREATER
         const string CodeFix = """
             struct Test
             {
@@ -436,6 +437,20 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
+#else
+        // Adding the modifier moves the line break and the indentation of the accessor to the 'readonly' keyword,
+        // and the formatter of Roslyn 4.8 does not put them back
+        const string CodeFix = """
+            struct Test
+            {
+                int a;
+                int A
+                { readonly get => a;
+                    set => a = value;
+                }
+            }
+            """;
+#endif
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
               .ShouldFixCodeWith(CodeFix)

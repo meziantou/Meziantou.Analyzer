@@ -2424,7 +2424,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         const string CodeFix = """
 
-            internal class UnusedClass2
+            internal class {|MA0182:UnusedClass2|}
             {
                 public int Value { get; set; }
             }

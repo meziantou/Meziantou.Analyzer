@@ -292,12 +292,17 @@ struct TypeName
             record struct [|TypeName|](int A, int B);
             """;
 
+#if ROSLYN_4_14_OR_GREATER
         const string CodeFix = """
             using System.Runtime.InteropServices;
 
             [StructLayout(LayoutKind.Auto)]
             record struct TypeName(int A, int B);
             """;
+#else
+        // Roslyn 4.8 adds the using directive with '\r\n' line endings, whatever the line endings of the document
+        const string CodeFix = "using System.Runtime.InteropServices;\r\n\r\n[StructLayout(LayoutKind.Auto)]\nrecord struct TypeName(int A, int B);";
+#endif
 
         await CreateProjectBuilder()
             .WithSourceCode(SourceCode)

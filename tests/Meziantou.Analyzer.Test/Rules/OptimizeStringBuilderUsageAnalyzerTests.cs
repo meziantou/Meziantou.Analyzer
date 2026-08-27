@@ -543,13 +543,13 @@ class Test
                     }
                 }
                 """)
-              .ShouldFixCodeWith("""
+              .ShouldFixFirstDiagnosticWith("""
                 using System.Text;
                 class Test
                 {
                     void A(int count)
                     {
-                        new StringBuilder().Append("a").Append(count).AppendLine();
+                        new StringBuilder().Append({|MA0028:"a"|}).Append(count).AppendLine();
                     }
                 }
                 """)
@@ -570,13 +570,13 @@ class Test
                     }
                 }
                 """)
-              .ShouldFixCodeWith("""
+              .ShouldFixFirstDiagnosticWith("""
                 using System.Text;
                 class Test
                 {
                     void A(int count)
                     {
-                        new StringBuilder().Append("a").Append(count);
+                        new StringBuilder().Append({|MA0028:"a"|}).Append(count);
                     }
                 }
                 """)
@@ -895,12 +895,12 @@ class Test
         [|new StringBuilder().AppendLine("""".Substring(0, 1))|];
     }
 }")
-              .ShouldFixCodeWith(@"using System.Text;
+              .ShouldFixFirstDiagnosticWith(@"using System.Text;
 class Test
 {
     void A()
     {
-        new StringBuilder().Append("""", 0, 1).AppendLine();
+        {|MA0028:new StringBuilder().Append("""", 0, 1)|}.AppendLine();
     }
 }")
               .ValidateAsync();

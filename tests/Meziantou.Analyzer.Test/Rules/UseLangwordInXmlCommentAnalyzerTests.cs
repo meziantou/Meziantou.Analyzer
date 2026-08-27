@@ -58,8 +58,8 @@ class Sample { }
     }
 
     [Theory]
-    [InlineData("[|<c>void</c>|]", "<c language=\"\">void</c>")]
-    [InlineData("[|<code>void</code>|]", "<code language=\"\">void</code>")]
+    [InlineData("[|<c>void</c>|]", "<c {|MA0218:language=\"\"|}>void</c>")]
+    [InlineData("[|<code>void</code>|]", "<code {|MA0218:language=\"\"|}>void</code>")]
     public async Task AddLanguageAttribute(string comment, string fix)
     {
         await CreateProjectBuilderWithAddLanguageAttributeFixer()

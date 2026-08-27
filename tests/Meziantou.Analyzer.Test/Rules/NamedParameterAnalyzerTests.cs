@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class NamedParameterAnalyzerTests
@@ -1134,6 +1136,7 @@ public sealed class NamedParameterAnalyzerTests
                     }
                 }
                 """)
+              .ShouldReportDiagnosticWithSeverity(DiagnosticSeverity.Warning)
               .ValidateAsync();
     }
 
@@ -1172,6 +1175,7 @@ public sealed class NamedParameterAnalyzerTests
                     }
                 }
                 """)
+              .ShouldReportDiagnosticWithSeverity(DiagnosticSeverity.Warning)
               .ValidateAsync();
     }
 
@@ -1254,6 +1258,7 @@ public sealed class NamedParameterAnalyzerTests
                     }
                 }
                 """)
+              .ShouldReportDiagnosticWithSeverity(DiagnosticSeverity.Warning)
               .ValidateAsync();
     }
 
@@ -1397,6 +1402,7 @@ public sealed class NamedParameterAnalyzerTests
                     }
                 }
                 """)
+              .ShouldReportDiagnosticWithSeverity(DiagnosticSeverity.Warning)
               .ValidateAsync();
     }
 
@@ -1438,6 +1444,7 @@ public sealed class NamedParameterAnalyzerTests
                     }
                 }
                 """)
+              .ShouldReportDiagnosticWithSeverity(DiagnosticSeverity.Warning)
               .ValidateAsync();
     }
 
@@ -1459,6 +1466,7 @@ public sealed class NamedParameterAnalyzerTests
                     }
                 }
                 """)
+              .ShouldReportDiagnosticWithSeverity(DiagnosticSeverity.Warning)
               .ValidateAsync();
     }
 
@@ -1479,6 +1487,7 @@ public sealed class NamedParameterAnalyzerTests
                     }
                 }
                 """)
+              .ShouldReportDiagnosticWithSeverity(DiagnosticSeverity.Warning)
               .ValidateAsync();
     }
 

@@ -22,6 +22,7 @@ public sealed partial class ProjectBuilder
     private readonly AnalyzerAssemblyLoader _analyzerAssemblyLoader = new();
 
     private int _diagnosticMessageIndex;
+    private int _diagnosticSeverityIndex;
 
     public OutputKind OutputKind { get; private set; } = OutputKind.DynamicallyLinkedLibrary;
     public string? FileName { get; private set; }
@@ -42,9 +43,16 @@ public sealed partial class ProjectBuilder
     public string? ExpectedFixedCode { get; private set; }
     public int? CodeFixIndex { get; private set; }
     public bool UseBatchFixer { get; private set; }
+    public bool FixFirstDiagnosticOnly { get; private set; }
     public GeneratedCodeAnalysisFlags? GeneratedCodeAnalysisFlags { get; private set; }
     public string? DefaultAnalyzerId { get; set; }
     public string? DefaultAnalyzerMessage { get; set; }
+
+    /// <summary>
+    /// The rule reported by the <c>[|code|]</c> syntax when the test does not set a default analyzer id, for the
+    /// analyzers that come from a NuGet package and support many rules.
+    /// </summary>
+    public string? FallbackAnalyzerId { get; private set; }
 
     private static async Task<string[]> GetNuGetReferences(string packageName, string version, string[] includedPaths)
     {
@@ -221,6 +229,11 @@ public sealed partial class ProjectBuilder
 
         if (!ruleFound)
             throw new InvalidOperationException("Rule id not found");
+
+        if (ruleIds.Length == 1)
+        {
+            FallbackAnalyzerId ??= ruleIds[0];
+        }
 
         return this;
     }
@@ -513,8 +526,34 @@ public sealed partial class ProjectBuilder
         return this;
     }
 
+    /// <summary>
+    /// Sets the severity of the next annotated diagnostic, for the rules that are not reported with the default
+    /// severity of their descriptor.
+    /// </summary>
+    public ProjectBuilder ShouldReportDiagnosticWithSeverity(DiagnosticSeverity severity)
+    {
+        if (_diagnosticSeverityIndex >= ExpectedDiagnosticResults.Count)
+            throw new InvalidOperationException("Did you forget to annotate the code with [||]?");
+
+        ExpectedDiagnosticResults[_diagnosticSeverityIndex].Severity = severity;
+        _diagnosticSeverityIndex++;
+        return this;
+    }
+
     public ProjectBuilder ShouldFixCodeWith([StringSyntax("C#-test")] string codeFix) =>
         ShouldFixCodeWith(index: null, codeFix);
+
+    /// <summary>
+    /// The expected code after applying the code fix to the first reported diagnostic, for the tests where the
+    /// fixed code is reported by another rule that the same code fixer handles. The diagnostics that remain must
+    /// be annotated in the fixed code, the same way they are in the code under test.
+    /// </summary>
+    public ProjectBuilder ShouldFixFirstDiagnosticWith([StringSyntax("C#-test")] string codeFix)
+    {
+        ExpectedFixedCode = codeFix;
+        FixFirstDiagnosticOnly = true;
+        return this;
+    }
 
     public ProjectBuilder ShouldFixCodeWith(int? index, [StringSyntax("C#-test")] string codeFix)
     {
@@ -526,6 +565,10 @@ public sealed partial class ProjectBuilder
     public ProjectBuilder ShouldBatchFixCodeWith([StringSyntax("C#-test")] string codeFix) =>
         ShouldBatchFixCodeWith(index: null, codeFix);
 
+    /// <summary>
+    /// The expected code after the fix all provider fixed every diagnostic, which is also the code expected from
+    /// applying the code fixes one at a time.
+    /// </summary>
     public ProjectBuilder ShouldBatchFixCodeWith(int? index, [StringSyntax("C#-test")] string codeFix)
     {
         ExpectedFixedCode = codeFix;

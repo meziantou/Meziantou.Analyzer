@@ -21,14 +21,14 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
             """;
         var modifiedCode = """
             class BaseClass {}
-            class Test : BaseClass, System.IEquatable<Test>
+            class {|MA0095:Test|} : BaseClass, System.IEquatable<Test>
             {
                 public bool Equals(Test other) => throw null;
             }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 
@@ -42,14 +42,14 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
             }
             """;
         var modifiedCode = """
-            struct Test : System.IEquatable<Test>     //  This comment stays
+            struct {|MA0095:Test|} : System.IEquatable<Test>     //  This comment stays
             {
                 public bool Equals(Test other) => throw null;
             }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 
@@ -97,14 +97,14 @@ class {|MA0077:Test|} : IEquatable<string>
     public bool Equals(string other) => throw null;
 }";
         var modifiedCode = @"using System;
-class Test : IEquatable<string>, IEquatable<Test>
+class {|MA0095:Test|} : IEquatable<string>, IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
     public bool Equals(string other) => throw null;
 }";
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 
@@ -118,14 +118,14 @@ struct {|MA0077:Test|} : IEquatable<string>
     public bool Equals(string other) => throw null;
 }";
         var modifiedCode = @"using System;
-struct Test : IEquatable<string>, IEquatable<Test>
+struct {|MA0095:Test|} : IEquatable<string>, IEquatable<Test>
 {
     public bool Equals(Test other) => throw null;
     public bool Equals(string other) => throw null;
 }";
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 
@@ -141,14 +141,14 @@ struct Test : IEquatable<string>, IEquatable<Test>
             """;
         var modifiedCode = """
             interface IEquatable<T> { bool Equals(T other); }
-            class Test : IEquatable<Test>, System.IEquatable<Test>
+            class {|MA0095:Test|} : IEquatable<Test>, System.IEquatable<Test>
             {
                 public bool Equals(Test other) => throw null;
             }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 
@@ -164,14 +164,14 @@ struct Test : IEquatable<string>, IEquatable<Test>
             """;
         var modifiedCode = """
             interface IEquatable<T> { bool Equals(T other); }
-            struct Test : IEquatable<Test>, System.IEquatable<Test>
+            struct {|MA0095:Test|} : IEquatable<Test>, System.IEquatable<Test>
             {
                 public bool Equals(Test other) => throw null;
             }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 
@@ -187,14 +187,14 @@ struct Test : IEquatable<string>, IEquatable<Test>
             """;
         var modifiedCode = """
             #nullable enable
-            class Test : System.IEquatable<Test?>
+            class {|MA0095:Test|} : System.IEquatable<Test?>
             {
                 public bool Equals(Test? other) => throw null;
             }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 
@@ -210,14 +210,14 @@ struct Test : IEquatable<string>, IEquatable<Test>
             """;
         var modifiedCode = """
             #nullable enable
-            class Test : System.IEquatable<Test>
+            class {|MA0095:Test|} : System.IEquatable<Test>
             {
                 public bool Equals(Test other) => throw null;
             }
             """;
         await CreateProjectBuilder()
               .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
+              .ShouldFixFirstDiagnosticWith(modifiedCode)
               .ValidateAsync();
     }
 

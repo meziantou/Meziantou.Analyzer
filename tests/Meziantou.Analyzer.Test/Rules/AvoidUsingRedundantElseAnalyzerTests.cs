@@ -781,11 +781,13 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
 
     // The chain used to be analyzed once per else clause, each time re-analyzing every branch above it,
     // which is quadratic: 1600 branches took more than 4 minutes. Keep the chain long enough that a
-    // reintroduction of that behavior is obvious in the duration of this test.
+    // reintroduction of that behavior is obvious in the duration of this test, but short enough for the
+    // matching of the expected and the actual diagnostics of the Roslyn test framework, which recurses
+    // once per diagnostic and overflows the stack around a thousand of them.
     [Fact]
     public async Task Test_LongElseIfChainWhereEveryBranchJumps_AllElsesReported()
     {
-        const int BranchCount = 1000;
+        const int BranchCount = 500;
 
         var sourceCode = new StringBuilder();
         sourceCode.AppendLine("""
