@@ -32,25 +32,58 @@ public sealed partial class ProjectBuilder
             Assert.Fail("ExpectedDiagnostic is not configured");
         }
 
-        await VerifyDiagnostic(ExpectedDiagnosticResults).ConfigureAwait(false);
+        var (documents, diagnostics) = await VerifyDiagnostic(ExpectedDiagnosticResults).ConfigureAwait(false);
 
         if (ExpectedFixedCode is not null)
         {
             await VerifyFix(DiagnosticAnalyzer, CodeFixProvider!, ExpectedFixedCode, CodeFixIndex).ConfigureAwait(false);
         }
+        else if (CodeFixProvider is not null)
+        {
+            await VerifyCodeFixRegistration(CodeFixProvider, documents, diagnostics).ConfigureAwait(false);
+        }
     }
 
     [DebuggerStepThrough]
-    private Task VerifyDiagnostic(IList<DiagnosticResult> expected)
+    private Task<(Document[] Documents, Diagnostic[] Diagnostics)> VerifyDiagnostic(IList<DiagnosticResult> expected)
     {
         return VerifyDiagnostics(DiagnosticAnalyzer, expected);
     }
 
     [DebuggerStepThrough]
-    private async Task VerifyDiagnostics(IList<DiagnosticAnalyzer> analyzers, IList<DiagnosticResult> expected)
+    private async Task<(Document[] Documents, Diagnostic[] Diagnostics)> VerifyDiagnostics(IList<DiagnosticAnalyzer> analyzers, IList<DiagnosticResult> expected)
     {
-        var diagnostics = await GetSortedDiagnostics(analyzers).ConfigureAwait(false);
+        var documents = await GetDocuments().ConfigureAwait(false);
+        var diagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, documents, compileSolution: IsValidCode).ConfigureAwait(false);
         VerifyDiagnosticResults(diagnostics, analyzers, expected);
+        return (documents, diagnostics);
+    }
+
+    /// <summary>
+    /// Runs the code fix provider over the reported diagnostics without applying the registered actions.
+    /// </summary>
+    /// <remarks>
+    /// A test that configures a code fix provider but no expected fixed code never invokes the provider
+    /// otherwise, so a provider that throws for that shape of code goes unnoticed. Only the registration is
+    /// exercised: the test did not declare what the fixed code should be, so the actions cannot be applied.
+    /// </remarks>
+    private static async Task VerifyCodeFixRegistration(CodeFixProvider codeFixProvider, Document[] documents, Diagnostic[] diagnostics)
+    {
+        foreach (var document in documents)
+        {
+            var syntaxTree = await document.GetSyntaxTreeAsync().ConfigureAwait(false);
+            foreach (var diagnostic in diagnostics)
+            {
+                if (diagnostic.Location.SourceTree != syntaxTree)
+                    continue;
+
+                if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
+                    continue;
+
+                var context = new CodeFixContext(document, diagnostic, (_, _) => { }, CancellationToken.None);
+                await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+            }
+        }
     }
 
     [DebuggerStepThrough]
@@ -134,12 +167,6 @@ public sealed partial class ProjectBuilder
                         expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzers, actual), annotatedSource));
             }
         }
-    }
-
-    private async Task<Diagnostic[]> GetSortedDiagnostics(IList<DiagnosticAnalyzer> analyzers)
-    {
-        var documents = await GetDocuments().ConfigureAwait(false);
-        return await GetSortedDiagnosticsFromDocuments(analyzers, documents, compileSolution: IsValidCode).ConfigureAwait(false);
     }
 
     private async Task<Document[]> GetDocuments()
