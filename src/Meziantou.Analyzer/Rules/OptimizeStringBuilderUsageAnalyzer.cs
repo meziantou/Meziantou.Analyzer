@@ -227,7 +227,11 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             else if (value is IInvocationOperation invocationOperation)
             {
                 var targetMethod = invocationOperation.TargetMethod;
-                if (string.Equals(targetMethod.Name, "ToString", System.StringComparison.Ordinal))
+
+                // Insert is excluded: the overloads below are the ones of Append, and StringBuilder has no
+                // Insert counterpart for some of them (StringBuilder, ReadOnlyMemory<char>), so removing the
+                // ToString call would not always compile
+                if (methodName != "Insert" && string.Equals(targetMethod.Name, "ToString", System.StringComparison.Ordinal))
                 {
                     if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
                     {
