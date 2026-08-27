@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -29,6 +31,10 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
             if (!CouldBeReadOnly(symbol))
                 return;
 
+            // 'readonly' cannot be applied to an event accessor, only to the event itself, so the accessors are
+            // collected and the event is reported once every one of them can be readonly
+            var readOnlyEventAccessors = new ConcurrentDictionary<IEventSymbol, ConcurrentHashSet<IMethodSymbol>>(SymbolEqualityComparer.Default);
+
             ctx.RegisterOperationBlockStartAction(ctx =>
             {
                 if (!CouldBeReadOnly(ctx.OwningSymbol))
@@ -40,14 +46,44 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
                         return;
                 }
 
-                var analyzerContext = new AnalyzerContext();
+                var analyzerContext = new AnalyzerContext(readOnlyEventAccessors);
                 ctx.RegisterOperationAction(analyzerContext.AnalyzeBlock, OperationKind.Block);
                 ctx.RegisterOperationBlockEndAction(analyzerContext.AnalyzeEnd);
             });
+
+            ctx.RegisterSymbolEndAction(ctx => ReportEvents(ctx, readOnlyEventAccessors));
         }, SymbolKind.NamedType);
     }
 
-    private sealed class AnalyzerContext
+    private static void ReportEvents(SymbolAnalysisContext context, ConcurrentDictionary<IEventSymbol, ConcurrentHashSet<IMethodSymbol>> readOnlyEventAccessors)
+    {
+        foreach (var (eventSymbol, readOnlyAccessors) in readOnlyEventAccessors)
+        {
+            var accessorCount = 0;
+            if (eventSymbol.AddMethod is not null)
+            {
+                accessorCount++;
+            }
+
+            if (eventSymbol.RemoveMethod is not null)
+            {
+                accessorCount++;
+            }
+
+            if (readOnlyAccessors.Count != accessorCount)
+                continue;
+
+            foreach (var syntaxReference in eventSymbol.DeclaringSyntaxReferences)
+            {
+                if (syntaxReference.GetSyntax(context.CancellationToken) is EventDeclarationSyntax eventDeclaration)
+                {
+                    context.ReportDiagnostic(Rule, eventDeclaration.Identifier, [eventSymbol.Name]);
+                }
+            }
+        }
+    }
+
+    private sealed class AnalyzerContext(ConcurrentDictionary<IEventSymbol, ConcurrentHashSet<IMethodSymbol>> readOnlyEventAccessors)
     {
         private bool _canBeReadOnly = true;
 
@@ -82,12 +118,25 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
         {
             if (_canBeReadOnly)
             {
-                if (context.OwningSymbol is IMethodSymbol method && method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet)
+                if (context.OwningSymbol is IMethodSymbol method)
                 {
-                    var parent = context.OperationBlocks.FirstOrDefault()?.Syntax.Parent;
-                    if (parent?.IsKind(SyntaxKind.PropertyDeclaration) == true)
+                    if (method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet)
                     {
-                        context.ReportDiagnostic(Rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
+                        var parent = context.OperationBlocks.FirstOrDefault()?.Syntax.Parent;
+                        if (parent?.IsKind(SyntaxKind.PropertyDeclaration) == true)
+                        {
+                            context.ReportDiagnostic(Rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
+                            return;
+                        }
+                    }
+                    else if (method.MethodKind is MethodKind.EventAdd or MethodKind.EventRemove)
+                    {
+                        // The event is reported by ReportEvents once all its accessors can be readonly
+                        if (method.AssociatedSymbol is IEventSymbol eventSymbol)
+                        {
+                            readOnlyEventAccessors.GetOrAdd(eventSymbol, _ => []).Add(method);
+                        }
+
                         return;
                     }
                 }

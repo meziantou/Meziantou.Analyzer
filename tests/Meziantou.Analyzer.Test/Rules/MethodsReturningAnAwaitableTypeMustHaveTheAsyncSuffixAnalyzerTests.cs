@@ -180,7 +180,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
     [Fact]
     public Task IAsyncEnumerableWithoutSuffix_CodeFix_AddsAsyncSuffix()
+        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
         => CreateProjectBuilder()
+              .WithDefaultAnalyzerId("MA0156")
               .WithSourceCode("""
                  class TypeName
                  {
@@ -211,7 +213,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
     [Fact]
     public Task IAsyncEnumerableWithSuffix_CodeFix_RemovesAsyncSuffix()
+        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
         => CreateProjectBuilder()
+              .WithDefaultAnalyzerId("MA0157")
               .WithSourceCode("""
                  class TypeName
                  {

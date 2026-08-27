@@ -507,10 +507,10 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
         const string SourceCode = """
             struct Test
             {
-                public event System.Action<System.EventArgs> Event1
+                public event System.Action<System.EventArgs> [|Event1|]
                 {
-                    [|add|] { }
-                    [|remove|] { }
+                    add { }
+                    remove { }
                 }
             }
             """;
@@ -527,12 +527,54 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
 
         await CreateProjectBuilder()
               .WithSourceCode(SourceCode)
-              .ShouldBatchFixCodeWith(CodeFix)
+              .ShouldFixCodeWith(CodeFix)
               .ValidateAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadonly_CallNonReadOnlyMethod()
+    public async Task CannotBeReadOnly_EventWithOnlyOneReadOnlyAccessor()
+    {
+        // 'readonly' applies to both accessors of an event, so an event whose remove writes to a field cannot be
+        // made readonly, even though its add could
+        const string SourceCode = """
+            struct Test
+            {
+                int a;
+
+                public event System.Action<System.EventArgs> Event1
+                {
+                    add { }
+                    remove { a = 0; }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CannotBeReadOnly_ReadOnlyEvent()
+    {
+        const string SourceCode = """
+            struct Test
+            {
+                public readonly event System.Action<System.EventArgs> Event1
+                {
+                    add { }
+                    remove { }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CannotBeReadOnly_CallNonReadOnlyMethod()
     {
         const string SourceCode = """
             struct Test
