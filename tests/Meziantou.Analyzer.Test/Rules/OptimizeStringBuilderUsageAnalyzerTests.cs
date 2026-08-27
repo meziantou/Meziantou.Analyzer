@@ -231,6 +231,9 @@ class Test
     [InlineData(@"""a"" + 10")]
     [InlineData(@"10 + 20 + ""a""")]
     [InlineData(@"string.Format(""{0}"", 0)")]
+    // StringBuilder.Insert has no counterpart for some of the Append overloads, so the ToString call is kept
+    [InlineData(@"10.ToString()")]
+    [InlineData(@"new StringBuilder().ToString()")]
     public async Task Insert_NoDiagnostic(string text)
     {
         await CreateProjectBuilder()
@@ -240,22 +243,6 @@ class Test
     void A()
     {
         new StringBuilder().Insert(0, " + text + @");
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Theory]
-    [InlineData(@"10.ToString()")]
-    public async Task Insert_Diagnostic(string text)
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().Insert(0, " + text + @")|];
     }
 }")
               .ValidateAsync();
