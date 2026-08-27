@@ -23,70 +23,89 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSyntaxNodeAction(AnalyzeElseClause, SyntaxKind.ElseClause);
+        // Analyze the whole "if / else if / else" chain from the 'if' that starts it. Registering on the
+        // else clause instead means every clause re-analyzes the branches above it, which is quadratic in
+        // the length of the chain.
+        context.RegisterSyntaxNodeAction(AnalyzeIfStatement, SyntaxKind.IfStatement);
     }
 
-    private static void AnalyzeElseClause(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeIfStatement(SyntaxNodeAnalysisContext context)
     {
-        var elseClause = (ElseClauseSyntax)context.Node;
-        if (elseClause is null)
+        var ifStatement = (IfStatementSyntax)context.Node;
+
+        // Only the 'if' that starts the chain drives the analysis; the following ones are visited by the loop
+        if (ifStatement.Parent is ElseClauseSyntax { Parent: IfStatementSyntax })
             return;
 
-        if (elseClause.Parent is not IfStatementSyntax ifStatement)
-            return;
-
-        var thenStatement = ifStatement.Statement;
-        var elseStatement = elseClause.Statement;
-        if (thenStatement is null || elseStatement is null)
-            return;
-
-        // If the 'else' clause contains a "using statement local declaration" as direct child, return
-        // NOTE:
-        //  using var charEnumerator = "".GetEnumerator();          => LocalDeclarationStatementSyntax  (will return)
-        //  using (var charEnumerator = "".GetEnumerator()) { }     => UsingStatementSyntax             (will carry on)
-        var elseHasUsingStatementLocalDeclaration = AvoidUsingRedundantElseAnalyzerCommon.GetElseClauseChildren(elseClause)
-            .OfType<LocalDeclarationStatementSyntax>()
-            .Any(localDeclaration => localDeclaration.UsingKeyword.IsKind(SyntaxKind.UsingKeyword));
-        if (elseHasUsingStatementLocalDeclaration)
-            return;
-
-        // If there are conflicting local (variable or function) declarations in 'if' and 'else' blocks, return
-        var thenLocalIdentifiers = FindLocalIdentifiersIn(thenStatement);
-        var elseLocalIdentifiers = FindLocalIdentifiersIn(elseStatement);
-        if (thenLocalIdentifiers.Intersect(elseLocalIdentifiers, System.StringComparer.Ordinal).Any())
-            return;
-
-        var controlFlowAnalysis = context.SemanticModel.AnalyzeControlFlow(thenStatement);
-        if (controlFlowAnalysis is null || !controlFlowAnalysis.Succeeded)
-            return;
-
-        if (!AllPreviousBranchesJumpUnconditionally(context.SemanticModel, ifStatement))
-            return;
-
-        if (!controlFlowAnalysis.EndPointIsReachable)
-        {
-            context.ReportDiagnostic(Rule, elseClause.ElseKeyword);
-        }
-    }
-
-    private static bool AllPreviousBranchesJumpUnconditionally(SemanticModel semanticModel, IfStatementSyntax ifStatement)
-    {
         var currentIfStatement = ifStatement;
-        while (currentIfStatement.Parent is ElseClauseSyntax { Parent: IfStatementSyntax parentIfStatement })
+        while (true)
         {
-            var controlFlowAnalysis = semanticModel.AnalyzeControlFlow(parentIfStatement.Statement);
-            if (!IsUnreachableEndpoint(controlFlowAnalysis))
-                return false;
+            var elseClause = currentIfStatement.Else;
+            if (elseClause is null)
+                return;
 
-            currentIfStatement = parentIfStatement;
+            // A branch that does not jump unconditionally makes the 'else' of every following branch
+            // meaningful too, so there is nothing left to report in this chain
+            if (!IsUnreachableEndpoint(context.SemanticModel.AnalyzeControlFlow(currentIfStatement.Statement)))
+                return;
+
+            if (!HasUsingLocalDeclaration(elseClause) && !HasConflictingLocalIdentifiers(currentIfStatement.Statement, elseClause.Statement))
+            {
+                context.ReportDiagnostic(Rule, elseClause.ElseKeyword);
+            }
+
+            if (elseClause.Statement is not IfStatementSyntax nextIfStatement)
+                return;
+
+            currentIfStatement = nextIfStatement;
         }
-
-        return true;
     }
 
     private static bool IsUnreachableEndpoint(ControlFlowAnalysis? controlFlowAnalysis)
     {
         return controlFlowAnalysis is { Succeeded: true, EndPointIsReachable: false };
+    }
+
+    /// <summary>
+    /// Detects a "using statement local declaration" as a direct child of the else clause.
+    /// </summary>
+    /// <remarks>
+    /// <c>using var charEnumerator = "".GetEnumerator();</c> is a <see cref="LocalDeclarationStatementSyntax"/> (matches),
+    /// whereas <c>using (var charEnumerator = "".GetEnumerator()) { }</c> is a <see cref="UsingStatementSyntax"/> (does not match).
+    /// </remarks>
+    private static bool HasUsingLocalDeclaration(ElseClauseSyntax elseClause)
+    {
+        foreach (var child in AvoidUsingRedundantElseAnalyzerCommon.GetElseClauseChildren(elseClause))
+        {
+            if (child is LocalDeclarationStatementSyntax localDeclaration && localDeclaration.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasConflictingLocalIdentifiers(SyntaxNode thenStatement, SyntaxNode elseStatement)
+    {
+        // In an "else if" chain the else statement holds every following branch, so walking it is expensive.
+        // The intersection is empty as soon as the 'then' branch declares nothing, which is the common case,
+        // so collect the 'then' identifiers first and only walk the else statement when one can collide.
+        HashSet<string>? thenLocalIdentifiers = null;
+        foreach (var identifier in FindLocalIdentifiersIn(thenStatement))
+        {
+            thenLocalIdentifiers ??= new HashSet<string>(System.StringComparer.Ordinal);
+            thenLocalIdentifiers.Add(identifier);
+        }
+
+        if (thenLocalIdentifiers is null)
+            return false;
+
+        foreach (var identifier in FindLocalIdentifiersIn(elseStatement))
+        {
+            if (thenLocalIdentifiers.Contains(identifier))
+                return true;
+        }
+
+        return false;
     }
 
     private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)
