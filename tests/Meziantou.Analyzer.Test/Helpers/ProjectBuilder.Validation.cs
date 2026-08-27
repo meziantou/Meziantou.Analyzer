@@ -32,25 +32,74 @@ public sealed partial class ProjectBuilder
             Assert.Fail("ExpectedDiagnostic is not configured");
         }
 
-        await VerifyDiagnostic(ExpectedDiagnosticResults).ConfigureAwait(false);
+        var (documents, diagnostics) = await VerifyDiagnostic(ExpectedDiagnosticResults).ConfigureAwait(false);
 
         if (ExpectedFixedCode is not null)
         {
             await VerifyFix(DiagnosticAnalyzer, CodeFixProvider!, ExpectedFixedCode, CodeFixIndex).ConfigureAwait(false);
         }
+        else if (CodeFixProvider is not null)
+        {
+            await VerifyCodeFixActions(CodeFixProvider, documents, diagnostics).ConfigureAwait(false);
+        }
     }
 
     [DebuggerStepThrough]
-    private Task VerifyDiagnostic(IList<DiagnosticResult> expected)
+    private Task<(Document[] Documents, Diagnostic[] Diagnostics)> VerifyDiagnostic(IList<DiagnosticResult> expected)
     {
         return VerifyDiagnostics(DiagnosticAnalyzer, expected);
     }
 
     [DebuggerStepThrough]
-    private async Task VerifyDiagnostics(IList<DiagnosticAnalyzer> analyzers, IList<DiagnosticResult> expected)
+    private async Task<(Document[] Documents, Diagnostic[] Diagnostics)> VerifyDiagnostics(IList<DiagnosticAnalyzer> analyzers, IList<DiagnosticResult> expected)
     {
-        var diagnostics = await GetSortedDiagnostics(analyzers).ConfigureAwait(false);
+        var documents = await GetDocuments().ConfigureAwait(false);
+        var diagnostics = await GetSortedDiagnosticsFromDocuments(analyzers, documents, compileSolution: IsValidCode).ConfigureAwait(false);
         VerifyDiagnosticResults(diagnostics, analyzers, expected);
+        return (documents, diagnostics);
+    }
+
+    /// <summary>
+    /// Registers the code fixes for every reported diagnostic and computes the changes of every registered
+    /// action, without applying them.
+    /// </summary>
+    /// <remarks>
+    /// A test that configures a code fix provider but no expected fixed code never invokes the provider
+    /// otherwise, so a provider that throws for that shape of code goes unnoticed. The changes cannot be
+    /// compared, as the test did not declare what the fixed code should be, but they must be computable.
+    /// </remarks>
+    private static async Task VerifyCodeFixActions(CodeFixProvider codeFixProvider, Document[] documents, Diagnostic[] diagnostics)
+    {
+        foreach (var document in documents)
+        {
+            var syntaxTree = await document.GetSyntaxTreeAsync().ConfigureAwait(false);
+            foreach (var diagnostic in diagnostics)
+            {
+                if (diagnostic.Location.SourceTree != syntaxTree)
+                    continue;
+
+                if (!codeFixProvider.FixableDiagnosticIds.Any(id => string.Equals(diagnostic.Id, id, StringComparison.Ordinal)))
+                    continue;
+
+                var actions = new List<CodeAction>();
+                var context = new CodeFixContext(document, diagnostic, (action, _) => actions.Add(action), CancellationToken.None);
+                await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+                await ComputeCodeActionOperations(actions).ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Computes the operations of every action, which is what runs the delegate a code fix provider
+    /// registered. A provider often registers several actions, and applying one of them exercises only that
+    /// one, so the others must be computed explicitly.
+    /// </summary>
+    private static async Task ComputeCodeActionOperations(List<CodeAction> actions)
+    {
+        foreach (var action in actions)
+        {
+            await action.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
+        }
     }
 
     [DebuggerStepThrough]
@@ -134,12 +183,6 @@ public sealed partial class ProjectBuilder
                         expected.Message, actual.GetMessage(CultureInfo.InvariantCulture), FormatDiagnostics(analyzers, actual), annotatedSource));
             }
         }
-    }
-
-    private async Task<Diagnostic[]> GetSortedDiagnostics(IList<DiagnosticAnalyzer> analyzers)
-    {
-        var documents = await GetDocuments().ConfigureAwait(false);
-        return await GetSortedDiagnosticsFromDocuments(analyzers, documents, compileSolution: IsValidCode).ConfigureAwait(false);
     }
 
     private async Task<Document[]> GetDocuments()
@@ -592,6 +635,7 @@ public sealed partial class ProjectBuilder
             var actions = new List<CodeAction>();
             var context = new CodeFixContext(document, diagnostic, (a, _) => actions.Add(a), CancellationToken.None);
             await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+            await ComputeCodeActionOperations(actions).ConfigureAwait(false);
 
             if (actions.Count > 0)
             {
@@ -610,6 +654,7 @@ public sealed partial class ProjectBuilder
                 var actions = new List<CodeAction>();
                 var context = new CodeFixContext(document, diagnostic, (a, _) => actions.Add(a), CancellationToken.None);
                 await codeFixProvider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+                await ComputeCodeActionOperations(actions).ConfigureAwait(false);
 
                 if (actions.Count == 0)
                     break;
