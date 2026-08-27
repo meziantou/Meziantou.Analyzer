@@ -61,11 +61,22 @@ jobs:
     outputs:
       package_version: ${{ steps.compute-version.outputs.package_version }}
     steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      with:
+        # The version is computed from the tags: fetch them all, without the file contents
+        fetch-depth: 0
+        filter: tree:0
     - id: compute-version
       name: Compute version
       run: |
-        $(Invoke-WebRequest "https://www.nuget.org/api/v2/package/Meziantou.Analyzer/").BaseResponse.RequestMessage.RequestUri -match "meziantou\.analyzer\.3\.0\.([0-9]+).nupkg"
-        $NewVersion = "3.0.$([int]$Matches.1 + 1)"
+        # The create_release job creates a tag named after the version for every published package
+        $versions = @(git tag --list "3.0.*" | ForEach-Object { if ($_ -match '^3\.0\.([0-9]+)$') { [int]$Matches[1] } })
+        if ($versions.Count -eq 0) {
+          Write-Host "::error::No '3.0.*' tag found. The version is computed from the tags created by the create_release job."
+          exit 1
+        }
+
+        $NewVersion = "3.0.$(($versions | Measure-Object -Maximum).Maximum + 1)"
         if ($env:GITHUB_REF -ne 'refs/heads/main') {
           $NewVersion = $NewVersion + '-build.${{ github.run_id }}'
         }
