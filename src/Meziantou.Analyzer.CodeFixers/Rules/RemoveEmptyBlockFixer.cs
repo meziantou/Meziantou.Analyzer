@@ -12,47 +12,40 @@ public sealed class RemoveEmptyBlockFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
-            return;
 
-        if (nodeToFix is ElseClauseSyntax || nodeToFix.AncestorsAndSelf().OfType<ElseClauseSyntax>().FirstOrDefault() is not null)
+        // The analyzer reports the diagnostic on the clause itself, so the node kind determines the fix.
+        // Walking up the ancestors would pick the enclosing else clause of a nested finally clause.
+        switch (root?.FindNode(context.Span, getInnermostNodeForTie: true))
         {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Remove empty else block",
-                    ct => RemoveElseClause(context.Document, nodeToFix, ct),
-                    equivalenceKey: "Remove empty else block"),
-                context.Diagnostics);
-        }
-        else if (nodeToFix is FinallyClauseSyntax || nodeToFix.AncestorsAndSelf().OfType<FinallyClauseSyntax>().FirstOrDefault() is not null)
-        {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Remove empty finally block",
-                    ct => RemoveFinallyClause(context.Document, nodeToFix, ct),
-                    equivalenceKey: "Remove empty finally block"),
-                context.Diagnostics);
+            case ElseClauseSyntax { Parent: IfStatementSyntax ifStatement }:
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        "Remove empty else block",
+                        ct => RemoveElseClause(context.Document, ifStatement, ct),
+                        equivalenceKey: "Remove empty else block"),
+                    context.Diagnostics);
+                break;
+
+            case FinallyClauseSyntax { Parent: TryStatementSyntax tryStatement }:
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        "Remove empty finally block",
+                        ct => RemoveFinallyClause(context.Document, tryStatement, ct),
+                        equivalenceKey: "Remove empty finally block"),
+                    context.Diagnostics);
+                break;
         }
     }
 
-    private static async Task<Document> RemoveElseClause(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> RemoveElseClause(Document document, IfStatementSyntax ifStatement, CancellationToken cancellationToken)
     {
-        var elseClause = nodeToFix as ElseClauseSyntax ?? nodeToFix.AncestorsAndSelf().OfType<ElseClauseSyntax>().FirstOrDefault();
-        if (elseClause?.Parent is not IfStatementSyntax ifStatement)
-            return document;
-
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.ReplaceNode(ifStatement, ifStatement.WithElse(null).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> RemoveFinallyClause(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> RemoveFinallyClause(Document document, TryStatementSyntax tryStatement, CancellationToken cancellationToken)
     {
-        var finallyClause = nodeToFix as FinallyClauseSyntax ?? nodeToFix.AncestorsAndSelf().OfType<FinallyClauseSyntax>().FirstOrDefault();
-        if (finallyClause?.Parent is not TryStatementSyntax tryStatement)
-            return document;
-
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         if (tryStatement.Catches.Count > 0)
         {

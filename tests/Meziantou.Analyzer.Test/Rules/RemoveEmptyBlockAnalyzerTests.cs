@@ -333,4 +333,111 @@ public sealed class RemoveEmptyBlockAnalyzerTests
               .WithSourceCode(SourceCode)
               .ValidateAsync();
     }
+
+    [Fact]
+    public async Task EmptyFinallyBlockInsideElseBlock_CodeFix()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void Foo() => throw null;
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                        Foo();
+                    }
+                    else
+                    {
+                        try
+                        {
+                            Foo();
+                        }
+                        [|finally
+                        {
+                        }|]
+                    }
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            class Test
+            {
+                void Foo() => throw null;
+                void A(bool condition)
+                {
+                    if (condition)
+                    {
+                        Foo();
+                    }
+                    else
+                    {
+                        {
+                            Foo();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task EmptyElseBlockInsideFinallyBlock_CodeFix()
+    {
+        const string SourceCode = """
+            class Test
+            {
+                void Foo() => throw null;
+                void A(bool condition)
+                {
+                    try
+                    {
+                        Foo();
+                    }
+                    finally
+                    {
+                        if (condition)
+                        {
+                            Foo();
+                        }
+                        [|else
+                        {
+                        }|]
+                    }
+                }
+            }
+            """;
+
+        const string FixedCode = """
+            class Test
+            {
+                void Foo() => throw null;
+                void A(bool condition)
+                {
+                    try
+                    {
+                        Foo();
+                    }
+                    finally
+                    {
+                        if (condition)
+                        {
+                            Foo();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await CreateProjectBuilder()
+              .WithSourceCode(SourceCode)
+              .ShouldFixCodeWith(FixedCode)
+              .ValidateAsync();
+    }
 }
