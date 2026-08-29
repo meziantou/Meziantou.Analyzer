@@ -26,6 +26,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<string> ExcludedMethodsConfiguration = new(RuleIdentifiers.UseNamedParameter + ".excluded_methods");
     private static readonly ConfigurationDefinition<string> MinimumMethodParametersConfiguration = new(RuleIdentifiers.UseNamedParameter + ".minimum_method_parameters", defaultValue: string.Empty);
     private static readonly ConfigurationDefinition<string> ExpressionKindsConfiguration = new(RuleIdentifiers.UseNamedParameter + ".expression_kinds", defaultValue: string.Empty);
+    private static readonly ConfigurationDefinition<bool> IgnoreArgumentsMatchingParameterNameConfiguration = new(RuleIdentifiers.UseNamedParameter + ".ignore_arguments_matching_parameter_name", defaultValue: true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -64,30 +65,16 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                 if (argument.Expression is null)
                     return;
 
-                if (IsCallerMustUseNamedArgumentAttribute(syntaxContext, argument))
+                var argumentOperation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
+
+                // Naming an argument that already carries the name of the parameter doesn't improve readability
+                if (argumentOperation is not null && HasSameNameAsParameter(syntaxContext.Options, argumentOperation))
+                    return;
+
+                if (IsCallerMustUseNamedArgumentAttribute(argumentOperation))
                 {
                     syntaxContext.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
                     return;
-                }
-
-                static bool IsCallerMustUseNamedArgumentAttribute(SyntaxNodeAnalysisContext context, SyntaxNode argument)
-                {
-                    var operation = context.SemanticModel.GetOperation(argument, context.CancellationToken) as IArgumentOperation;
-                    if ((operation?.Parameter) is not null)
-                    {
-                        var attributes = operation.Parameter.GetAttributes();
-                        foreach (var attribute in attributes)
-                        {
-                            if (!AnnotationAttributes.IsRequireNamedArgumentAttributeSymbol(attribute.AttributeClass))
-                                continue;
-
-                            var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
-                            if (requireNamedArgument)
-                                return true;
-                        }
-                    }
-
-                    return false;
                 }
 
                 var expression = argument.Expression;
@@ -125,10 +112,9 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                     return; // Don't consider tuple
 
 
-                var operation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
-                if (operation?.Parameter is not null)
+                if (argumentOperation?.Parameter is not null)
                 {
-                    var parameterName = operation.Parameter.Name;
+                    var parameterName = argumentOperation.Parameter.Name;
                     if (!IsMeaningfulParameterName(parameterName))
                         return;
                 }
@@ -272,7 +258,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritsFrom(syntaxNodeType))
                             return;
 
-                        if (operation is not null && !operation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(operation))
+                        if (argumentOperation is not null && !argumentOperation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(argumentOperation))
                             return;
 
                         if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex))
@@ -360,6 +346,72 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     {
         var options = GetExpressionKindsConfiguration(context.Options, expression);
         return (options & kind) == kind;
+    }
+
+    private static bool IsCallerMustUseNamedArgumentAttribute(IArgumentOperation? operation)
+    {
+        if (operation?.Parameter is not { } parameter)
+            return false;
+
+        // The receiver of an extension method cannot be named when the method is called using the instance syntax (value.Method())
+        if (IsExtensionMethodReceiver(parameter))
+            return false;
+
+        foreach (var attribute in parameter.GetAttributes())
+        {
+            if (!AnnotationAttributes.IsRequireNamedArgumentAttributeSymbol(attribute.AttributeClass))
+                continue;
+
+            var requireNamedArgument = attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is true;
+            if (requireNamedArgument)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsExtensionMethodReceiver(IParameterSymbol parameter)
+    {
+        return parameter is { Ordinal: 0, ContainingSymbol: IMethodSymbol { IsExtensionMethod: true, ReducedFrom: null } };
+    }
+
+    private static bool HasSameNameAsParameter(AnalyzerOptions options, IArgumentOperation operation)
+    {
+        if (operation.Parameter is not { } parameter)
+            return false;
+
+        var value = operation.Value.UnwrapImplicitConversions();
+        var name = value switch
+        {
+            ILocalReferenceOperation localReference => localReference.Local.Name,
+            IParameterReferenceOperation parameterReference => parameterReference.Parameter.Name,
+            IPropertyReferenceOperation propertyReference => propertyReference.Property.Name,
+            IFieldReferenceOperation fieldReference => fieldReference.Field.Name,
+            _ => null,
+        };
+
+        if (name is null)
+            return false;
+
+        if (!string.Equals(name, parameter.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            // Fields are commonly prefixed with '_' or 's_'
+            if (value is not IFieldReferenceOperation || !string.Equals(TrimFieldNamePrefix(name), parameter.Name, StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+
+        return options.GetConfigurationValue(operation.Syntax.SyntaxTree, IgnoreArgumentsMatchingParameterNameConfiguration);
+    }
+
+    private static string TrimFieldNamePrefix(string name)
+    {
+        if (name.StartsWith("s_", StringComparison.Ordinal))
+            return name[2..];
+
+        if (name.StartsWith("_", StringComparison.Ordinal))
+            return name[1..];
+
+        return name;
     }
 
     private static bool IsMeaningfulParameterName(string parameterName)

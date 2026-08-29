@@ -1176,6 +1176,293 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public async Task CallerMustUseNamedArgument_ExtensionMethodReceiver_InstanceSyntax()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                static class Test
+                {
+                    public static void A([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]this object value) { }
+
+                    static void B()
+                    {
+                        new object().A();
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ExtensionMethodReceiver_StaticSyntax()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                static class Test
+                {
+                    public static void A([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]this object value) { }
+
+                    static void B()
+                    {
+                        Test.A(new object());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ExtensionBlockReceiver()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                static class Test
+                {
+                    extension([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object value)
+                    {
+                        public void A() { }
+                    }
+
+                    static void B()
+                    {
+                        new object().A();
+                        Test.A(new object());
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+#endif
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ExtensionMethodNonReceiverParameter()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                static class Test
+                {
+                    public static void A(this object value, [Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object other) { }
+
+                    static void B()
+                    {
+                        new object().A([|new object()|]);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithSameName()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    void A()
+                    {
+                        object sample = null;
+                        _ = new Test(sample);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsParameterWithSameNameIgnoringCase()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    void A(object Sample)
+                    {
+                        _ = new Test(Sample);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsPropertyWithSameName()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    object Sample => null;
+
+                    void A()
+                    {
+                        _ = new Test(this.Sample);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsFieldWithSameName()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    object sample;
+
+                    void A()
+                    {
+                        _ = new Test(sample);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsFieldWithUnderscorePrefix()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    object _sample;
+
+                    void A()
+                    {
+                        _ = new Test(_sample);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsStaticFieldWithUnderscorePrefix()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    static object s_sample;
+
+                    void A()
+                    {
+                        _ = new Test(s_sample);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithUnderscorePrefix()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    void A()
+                    {
+                        object _sample = null;
+                        _ = new Test([|_sample|]);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsFieldNamedLikeTheParameterWithUnderscorePrefix()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object _sample) { }
+
+                    object _sample;
+
+                    void A()
+                    {
+                        _ = new Test(_sample);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithDifferentName()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    void A()
+                    {
+                        object other = null;
+                        _ = new Test([|other|]);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
+    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithSameName_OptionDisabled()
+    {
+        await CreateProjectBuilder()
+              .AddMeziantouAttributes()
+              .AddAnalyzerConfiguration("MA0003.ignore_arguments_matching_parameter_name", "false")
+              .WithSourceCode("""
+                class Test
+                {
+                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                    void A()
+                    {
+                        object sample = null;
+                        _ = new Test([|sample|]);
+                    }
+                }
+                """)
+              .ValidateAsync();
+    }
+
+    [Fact]
     public async Task MinimumNumberOfParameters_2_RequireNamedArgumentAttribute()
     {
         await CreateProjectBuilder()
