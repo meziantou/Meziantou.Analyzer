@@ -20,6 +20,15 @@
       ],
       "groupName": "roslyn-analyzers",
       "separateMajorMinor": true
+    },
+    {
+      "matchPackageNames": [
+        "Meziantou.Framework.Roslyn"
+      ],
+      "groupName": "Meziantou.Framework.Roslyn",
+      "separateMajorMinor": false,
+      "automerge": true,
+      "automergeType": "pr"
     }
   ]
 }
