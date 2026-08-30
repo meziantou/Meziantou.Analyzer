@@ -92,7 +92,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
         test.FixedCode = """
             unsafe struct IpAddressBuffer
             {
-                public fixed byte IpAddress[17];
+                public fixed byte [|IpAddress|][17];
             }
             """;
 

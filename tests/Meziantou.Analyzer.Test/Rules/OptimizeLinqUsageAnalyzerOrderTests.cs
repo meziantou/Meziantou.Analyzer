@@ -1,136 +1,154 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageAnalyzer,
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class OptimizeLinqUsageAnalyzerOrderTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    // This class covers MA0159 only, the way the original test filtered the diagnostics to that rule
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_UseOrder)
-            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net80 };
+        test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.DuplicateEnumerable_OrderBy);
+        return test;
+    }
+
+    private static DiagnosticResult ExpectedUseOrder(string message) =>
+        new DiagnosticResult(RuleIdentifiers.OptimizeEnumerable_UseOrder, DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithMessage(message);
+
+    [Fact]
+    public Task IEnumerable_Order_net5()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<string> query = null;
+                    query.OrderBy(x => x);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IEnumerable_Order_net5()
+    public Task IEnumerable_Order_LambdaNotValid()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class Test
-                  {
-                      public Test()
-                      {
-                          IEnumerable<string> query = null;
-                          query.OrderBy(x => x);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<string> query = null;
+                    query.OrderBy(x => true);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IEnumerable_Order_LambdaNotValid()
+    public Task IEnumerable_Order_LambdaReferenceAnotherParameter()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class Test
-                  {
-                      public Test()
-                      {
-                          IEnumerable<string> query = null;
-                          query.OrderBy(x => true);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test(int a)
+                {
+                    IEnumerable<string> query = null;
+                    query.OrderBy(x => a);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IEnumerable_Order_LambdaReferenceAnotherParameter()
+    public Task IEnumerable_Order()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class Test
-                  {
-                      public Test(int a)
-                      {
-                          IEnumerable<string> query = null;
-                          query.OrderBy(x => a);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<string> query = null;
+                    query.{|#0:OrderBy|}(x => x);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(ExpectedUseOrder("Use 'Order' instead of 'OrderBy'"));
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<string> query = null;
+                    query.Order();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IEnumerable_Order()
+    public Task IEnumerable_OrderDescending()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class Test
-                  {
-                      public Test()
-                      {
-                          IEnumerable<string> query = null;
-                          query.[|OrderBy|](x => x);
-                      }
-                  }
-                  """)
-              .ShouldReportDiagnosticWithMessage("Use 'Order' instead of 'OrderBy'")
-              .ShouldFixCodeWith("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class Test
-                  {
-                      public Test()
-                      {
-                          IEnumerable<string> query = null;
-                          query.Order();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<string> query = null;
+                    query.{|#0:OrderByDescending|}(x => x);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(ExpectedUseOrder("Use 'OrderDescending' instead of 'OrderByDescending'"));
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<string> query = null;
+                    query.OrderDescending();
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task IEnumerable_OrderDescending()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class Test
-                  {
-                      public Test()
-                      {
-                          IEnumerable<string> query = null;
-                          query.[|OrderByDescending|](x => x);
-                      }
-                  }
-                  """)
-              .ShouldReportDiagnosticWithMessage("Use 'OrderDescending' instead of 'OrderByDescending'")
-              .ShouldFixCodeWith("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class Test
-                  {
-                      public Test()
-                      {
-                          IEnumerable<string> query = null;
-                          query.OrderDescending();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

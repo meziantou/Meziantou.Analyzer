@@ -9,7 +9,7 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
 {
-    private static CodeFixTest CreateTest() => new();
+    private static CodeFixTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net80 };
 
     [Fact]
     public Task NotExternStaticMethod()
@@ -20,7 +20,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
             class Sample
             {
                 [System.Runtime.CompilerServices.UnsafeAccessor(System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod)]
-                void [|A|]() { }
+                void {|MA0145:A|}() { }
             }
             """;
 
@@ -89,7 +89,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                 void A()
                 {
                     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                    extern static ref int [|B|](System.Version a, int b);
+                    extern static ref int {|MA0145:B|}(System.Version a, int b);
                 }
             }
             """;
@@ -108,7 +108,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                 void A()
                 {
                     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                    extern static void [|B|](System.Version a);
+                    extern static void {|MA0145:B|}(System.Version a);
                 }
             }
             """;
@@ -127,7 +127,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                 void A()
                 {
                     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                    extern static int [|B|](System.Version a);
+                    extern static int {|MA0145:B|}(System.Version a);
                 }
             }
             """;
@@ -146,7 +146,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                 void A()
                 {
                     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_Major")]
-                    extern static ref int [|B|](System.Int32 a);
+                    extern static ref int {|MA0145:B|}(System.Int32 a);
                 }
             }
             """;

@@ -1,157 +1,174 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseIsPatternInsteadOfSequenceEqualAnalyzer,
+    Meziantou.Analyzer.Rules.UseIsPatternInsteadOfSequenceEqualFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseIsPatternInsteadOfSequenceEqualAnalyzer>()
-            .WithCodeFixProvider<UseIsPatternInsteadOfSequenceEqualFixer>()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-            .WithTargetFramework(TargetFramework.Net7_0);
+        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net70 };
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task EqualsOrdinal_CSharp10()
+    public Task EqualsOrdinal_CSharp10()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-_ = "foo".AsSpan().Equals("bar", StringComparison.Ordinal);
-""")
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestCode = """
+            using System;
+            _ = "foo".AsSpan().Equals("bar", StringComparison.Ordinal);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReadOnlySpanByte_SequenceEqual()
+    public Task ReadOnlySpanByte_SequenceEqual()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-_ = new byte[1].AsSpan().SequenceEqual(new byte[0].AsSpan());
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            _ = new byte[1].AsSpan().SequenceEqual(new byte[0].AsSpan());
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SpanByte_SequenceEqual()
+    public Task SpanByte_SequenceEqual()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-Span<byte> value = default;
-_ = value.SequenceEqual(new byte[0].AsSpan());
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            Span<byte> value = default;
+            _ = value.SequenceEqual(new byte[0].AsSpan());
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReadOnlySpan_Equals()
+    public Task ReadOnlySpan_Equals()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-_ = "foo".AsSpan().Equals("value");
-""")
-              .ValidateAsync();
+            _ = "foo".AsSpan().Equals("value");
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualsOrdinal_NonConstant()
+    public Task EqualsOrdinal_NonConstant()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-string value = "test";
-_ = "foo".AsSpan().Equals(value, StringComparison.Ordinal);
-""")
-              .ValidateAsync();
+            string value = "test";
+            _ = "foo".AsSpan().Equals(value, StringComparison.Ordinal);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SequenceEquals_NonConstant()
+    public Task SequenceEquals_NonConstant()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-string value = "test";
-_ = "foo".AsSpan().SequenceEqual(value);
-""")
-              .ValidateAsync();
+            string value = "test";
+            _ = "foo".AsSpan().SequenceEqual(value);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SequenceEquals_Comparer()
+    public Task SequenceEquals_Comparer()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-string value = "test";
-_ = "foo".AsSpan().SequenceEqual(value, default(System.Collections.Generic.IEqualityComparer<char>));
-""")
-              .ValidateAsync();
+            string value = "test";
+            _ = "foo".AsSpan().SequenceEqual(value, default(System.Collections.Generic.IEqualityComparer<char>));
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReadOnlySpanChar_EqualsOrdinal()
+    public Task ReadOnlySpanChar_EqualsOrdinal()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-_ = [|"foo".AsSpan().Equals("bar", StringComparison.Ordinal)|];
-""")
-              .ShouldFixCodeWith("""
-using System;
-_ = "foo".AsSpan() is "bar";
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            _ = [|"foo".AsSpan().Equals("bar", StringComparison.Ordinal)|];
+            """;
+        test.FixedCode = """
+            using System;
+            _ = "foo".AsSpan() is "bar";
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReadOnlySpanChar_EqualsOrdinalIgnoreCase()
+    public Task ReadOnlySpanChar_EqualsOrdinalIgnoreCase()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-_ = "foo".AsSpan().Equals("bar", StringComparison.OrdinalIgnoreCase);
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            _ = "foo".AsSpan().Equals("bar", StringComparison.OrdinalIgnoreCase);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReadOnlySpanChar_SequenceEqual()
+    public Task ReadOnlySpanChar_SequenceEqual()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-_ = [|"foo".AsSpan().SequenceEqual("bar")|];
-""")
-              .ShouldFixCodeWith("""
-using System;
-_ = "foo".AsSpan() is "bar";
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            _ = [|"foo".AsSpan().SequenceEqual("bar")|];
+            """;
+        test.FixedCode = """
+            using System;
+            _ = "foo".AsSpan() is "bar";
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SpanChar_SequenceEqual()
+    public Task SpanChar_SequenceEqual()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-Span<char> str = default;
-_ = [|str.SequenceEqual("bar")|];
-""")
-              .ShouldFixCodeWith("""
-using System;
-Span<char> str = default;
-_ = str is "bar";
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            Span<char> str = default;
+            _ = [|str.SequenceEqual("bar")|];
+            """;
+        test.FixedCode = """
+            using System;
+            Span<char> str = default;
+            _ = str is "bar";
+            """;
+
+        return test.RunAsync();
     }
 }
