@@ -457,9 +457,9 @@ public sealed partial class ProjectBuilder
         return results;
     }
 
-    private static void AssertNoAnalyzerException(IReadOnlyCollection<(DiagnosticAnalyzer Analyzer, Exception Exception)> analyzerExceptions, ImmutableArray<Diagnostic> diagnostics)
+    private static void AssertNoAnalyzerException(ConcurrentBag<(DiagnosticAnalyzer Analyzer, Exception Exception)> analyzerExceptions, ImmutableArray<Diagnostic> diagnostics)
     {
-        if (analyzerExceptions.Count > 0)
+        if (!analyzerExceptions.IsEmpty)
         {
             Assert.Fail("An analyzer threw an exception:\n\n" + string.Join("\n\n", analyzerExceptions.Select(item => item.Analyzer.GetType().FullName + ": " + item.Exception)));
         }

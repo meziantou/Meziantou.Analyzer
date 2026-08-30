@@ -91,6 +91,28 @@ internal static class AnnotationAttributes
         };
     }
 
+    public static bool IsExcludeFromCancellationTokenAnalysisAttributeSymbol(ITypeSymbol? symbol)
+    {
+        // Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysisAttribute
+        return symbol is INamedTypeSymbol
+        {
+            Name: "ExcludeFromCancellationTokenAnalysisAttribute",
+            ContainingSymbol: INamespaceSymbol
+            {
+                Name: "Annotations",
+                ContainingSymbol: INamespaceSymbol
+                {
+                    Name: "Analyzer",
+                    ContainingSymbol: INamespaceSymbol
+                    {
+                        Name: "Meziantou",
+                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
+                    }
+                }
+            }
+        };
+    }
+
     public static bool IsNonAwaitableTypeAttributeSymbol(ITypeSymbol? symbol)
     {
         // Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute
