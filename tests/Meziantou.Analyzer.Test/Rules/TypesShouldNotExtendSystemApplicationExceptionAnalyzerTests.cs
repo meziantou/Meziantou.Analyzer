@@ -1,26 +1,27 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.TypesShouldNotExtendSystemApplicationExceptionAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task InheritFromException_ShouldNotReportError()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<TypesShouldNotExtendSystemApplicationExceptionAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = "class Test : System.Exception { }";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InheritFromException_ShouldNotReportError()
+    public Task InheritFromApplicationException_ShouldReportError()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("class Test : System.Exception { }")
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = "class [|Test|] : System.ApplicationException { }";
 
-    [Fact]
-    public async Task InheritFromApplicationException_ShouldReportError()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("class [|Test|] : System.ApplicationException { }")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

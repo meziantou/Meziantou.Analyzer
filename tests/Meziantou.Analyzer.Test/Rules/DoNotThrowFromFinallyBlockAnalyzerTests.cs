@@ -1,17 +1,20 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotThrowFromFinallyBlockAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotThrowFromFinallyBlockAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task FinallyThrowsDirectly_DiagnosticIsReported()
+    public Task FinallyThrowsDirectly_DiagnosticIsReported()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -26,15 +29,15 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyDoesNotThrow_NoDiagnosticReported()
+    public Task FinallyDoesNotThrow_NoDiagnosticReported()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -50,15 +53,15 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyThrowsFromNestedBlock_DiagnosticIsReported()
+    public Task FinallyThrowsFromNestedBlock_DiagnosticIsReported()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -78,15 +81,15 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
+    public Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -107,15 +110,15 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsUnhandled_DiagnosticIsReported()
+    public Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsUnhandled_DiagnosticIsReported()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -136,15 +139,15 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyThrowsFromSeveralLocations_DiagnosticIsReportedForEachOne()
+    public Task FinallyThrowsFromSeveralLocations_DiagnosticIsReportedForEachOne()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -166,8 +169,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

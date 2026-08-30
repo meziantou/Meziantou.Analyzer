@@ -1,176 +1,180 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.RecordClassDeclarationShouldBeImplicitAnalyzer,
+    Meziantou.Analyzer.Rules.RecordClassDeclarationShouldBeImplicitFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task ExplicitRecordClass_ShouldReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<RecordClassDeclarationShouldBeImplicitAnalyzer>()
-            .WithCodeFixProvider<RecordClassDeclarationShouldBeImplicitFixer>()
-            .WithTargetFramework(TargetFramework.NetLatest);
+        var test = CreateTest();
+        test.TestCode = """
+            public record [|class|] Target { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitRecordClass_ShouldReportDiagnostic()
+    public Task ExplicitRecordClass_WithModifiers_ShouldReportDiagnostic()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed record [|class|] Target { }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplicitRecordClass_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record Target { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitRecordStruct_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record struct Target { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RegularClass_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class Target { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RegularStruct_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public struct Target { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitRecordClass_WithParameters_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record [|class|] Target(int Id) { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplicitRecordClass_WithParameters_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record Target(int Id) { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitRecordClass_Generic_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record [|class|] Target<T> { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitRecordClass_InNamespace_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            namespace MyNamespace
+            {
                 public record [|class|] Target { }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitRecordClass_WithModifiers_ShouldReportDiagnostic()
+    public Task ExplicitRecordClass_WithInheritance_ShouldReportDiagnostic()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            public abstract record BaseRecord { }
+            public record [|class|] Target : BaseRecord { }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public sealed record [|class|] Target { }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitRecordClass_ShouldNotReportDiagnostic()
+    public Task Fix_ExplicitRecordClass()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            public record [|class|] Target { }
+            """;
+        test.FixedCode = """
+            public record Target { }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public record Target { }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitRecordStruct_ShouldNotReportDiagnostic()
+    public Task Fix_ExplicitRecordClass_WithModifiers()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed record [|class|] Target { }
+            """;
+        test.FixedCode = """
+            public sealed record Target { }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public record struct Target { }
-                """)
-            .ValidateAsync();
-    }
-
-[Fact]
-    public async Task RegularClass_ShouldNotReportDiagnostic()
-    {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public class Target { }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegularStruct_ShouldNotReportDiagnostic()
+    public Task Fix_ExplicitRecordClass_WithParameters()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            public record [|class|] Target(int Id) { }
+            """;
+        test.FixedCode = """
+            public record Target(int Id) { }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public struct Target { }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ExplicitRecordClass_WithParameters_ShouldReportDiagnostic()
-    {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public record [|class|] Target(int Id) { }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ImplicitRecordClass_WithParameters_ShouldNotReportDiagnostic()
-    {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public record Target(int Id) { }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ExplicitRecordClass_Generic_ShouldReportDiagnostic()
-    {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public record [|class|] Target<T> { }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ExplicitRecordClass_InNamespace_ShouldReportDiagnostic()
-    {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                namespace MyNamespace
-                {
-                    public record [|class|] Target { }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ExplicitRecordClass_WithInheritance_ShouldReportDiagnostic()
-    {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public abstract record BaseRecord { }
-                public record [|class|] Target : BaseRecord { }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Fix_ExplicitRecordClass()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public record [|class|] Target { }
-                """)
-            .ShouldFixCodeWith("""
-                public record Target { }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Fix_ExplicitRecordClass_WithModifiers()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public sealed record [|class|] Target { }
-                """)
-            .ShouldFixCodeWith("""
-                public sealed record Target { }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Fix_ExplicitRecordClass_WithParameters()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public record [|class|] Target(int Id) { }
-                """)
-            .ShouldFixCodeWith("""
-                public record Target(int Id) { }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

@@ -1,173 +1,180 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotOverwriteRazorComponentParameterValue>;
+
 namespace Meziantou.Analyzer.Test.Rules;
-public class DoNotOverwriteRazorComponentParameterValueTests
+
+public sealed class DoNotOverwriteRazorComponentParameterValueTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotOverwriteRazorComponentParameterValue>()
-            .WithTargetFramework(TargetFramework.AspNetCore6_0);
+        var test = new AnalyzerTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
+        return test;
     }
 
     [Fact]
-    public async Task AssignParameterInMethod()
+    public Task AssignParameterInMethod()
     {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase
-{
-    [Parameter]
-    public string Param1 { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase
+            {
+                [Parameter]
+                public string Param1 { get; set; }
 
-    void A()
-    {
-        [|Param1 = ""|];
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+                void A()
+                {
+                    [|Param1 = ""|];
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task PropertyInitializer()
-    {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase
-{
-    [Parameter]
-    public string Param1 { get; set; } = "Value";
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Ctor()
+    public Task PropertyInitializer()
     {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase
-{
-    [Parameter]
-    public string Param1 { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase
+            {
+                [Parameter]
+                public string Param1 { get; set; } = "Value";
+            }
+            """;
 
-    public Test() => Param1 = "Value";
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dispose()
+    public Task Ctor()
     {
-        const string SourceCode = """
-using System;
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase, IDisposable
-{
-    [Parameter]
-    public string Param1 { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase
+            {
+                [Parameter]
+                public string Param1 { get; set; }
 
-    public void Dispose() => Param1 = "Value";
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+                public Test() => Param1 = "Value";
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DisposeAsync()
+    public Task Dispose()
     {
-        const string SourceCode = """
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase, IAsyncDisposable
-{
-    [Parameter]
-    public string Param1 { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase, IDisposable
+            {
+                [Parameter]
+                public string Param1 { get; set; }
 
-    public async ValueTask DisposeAsync() => Param1 = "Value";
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+                public void Dispose() => Param1 = "Value";
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OnInitializedAsync()
+    public Task DisposeAsync()
     {
-        const string SourceCode = """
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase
-{
-    [Parameter]
-    public string Param1 { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase, IAsyncDisposable
+            {
+                [Parameter]
+                public string Param1 { get; set; }
 
-    protected override void OnInitialized()
-    {
-        Param1 = "Value";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+                public async ValueTask DisposeAsync() => Param1 = "Value";
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OnInitializedAsyncAsync()
+    public Task OnInitializedAsync()
     {
-        const string SourceCode = """
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase
-{
-    [Parameter]
-    public string Param1 { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase
+            {
+                [Parameter]
+                public string Param1 { get; set; }
 
-    protected override async Task OnInitializedAsync()
-    {
-        Param1 = "Value";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+                protected override void OnInitialized()
+                {
+                    Param1 = "Value";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SetParametersAsync()
+    public Task OnInitializedAsyncAsync()
     {
-        const string SourceCode = """
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-class Test : ComponentBase
-{
-    [Parameter]
-    public string Param1 { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase
+            {
+                [Parameter]
+                public string Param1 { get; set; }
 
-    public override async Task SetParametersAsync(ParameterView parameters)
-    {
-        Param1 = "Value";
+                protected override async Task OnInitializedAsync()
+                {
+                    Param1 = "Value";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+    [Fact]
+    public Task SetParametersAsync()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            class Test : ComponentBase
+            {
+                [Parameter]
+                public string Param1 { get; set; }
+
+                public override async Task SetParametersAsync(ParameterView parameters)
+                {
+                    Param1 = "Value";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

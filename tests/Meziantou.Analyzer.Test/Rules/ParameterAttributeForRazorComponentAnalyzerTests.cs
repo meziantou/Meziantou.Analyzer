@@ -1,123 +1,129 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ParameterAttributeForRazorComponentAnalyzer,
+    Meziantou.Analyzer.Rules.ParameterAttributeForRazorComponentFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class ParameterAttributeForRazorComponentAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<ParameterAttributeForRazorComponentAnalyzer>()
-            .WithCodeFixProvider<ParameterAttributeForRazorComponentFixer>()
-            .WithTargetFramework(TargetFramework.AspNetCore6_0);
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60.AddAspNetCore("6.0.10");
+        return test;
     }
 
     [Fact]
-    public async Task SupplyParameterFromQuery_MissingParameter()
+    public Task SupplyParameterFromQuery_MissingParameter()
     {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-[Route("/test")]
-class Test
-{
-    [SupplyParameterFromQuery]
-    public int [|A|] { get; set; }
-}
-""";
-        const string Fix = """
-using Microsoft.AspNetCore.Components;
+            [Route("/test")]
+            class Test
+            {
+                [SupplyParameterFromQuery]
+                public int {|MA0116:A|} { get; set; }
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.AspNetCore.Components;
 
-[Route("/test")]
-class Test
-{
-    [SupplyParameterFromQuery]
-    [Parameter]
-    public int A { get; set; }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+            [Route("/test")]
+            class Test
+            {
+                [SupplyParameterFromQuery]
+                [Parameter]
+                public int A { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SupplyParameterFromQuery_MissingParameter_AspNetCore8()
+    public Task SupplyParameterFromQuery_MissingParameter_AspNetCore8()
     {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddAspNetCore("8.0.0");
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-[Route("/test")]
-class Test
-{
-    [SupplyParameterFromQuery]
-    public int A { get; set; }
-}
-""";
+            [Route("/test")]
+            class Test
+            {
+                [SupplyParameterFromQuery]
+                public int A { get; set; }
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithTargetFramework(TargetFramework.AspNetCore8_0)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SupplyParameterFromQuery_WithParameter()
+    public Task SupplyParameterFromQuery_WithParameter()
     {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-[Route("/test")]
-class Test
-{
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public int A { get; set; }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            [Route("/test")]
+            class Test
+            {
+                [Parameter]
+                [SupplyParameterFromQuery]
+                public int A { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SupplyParameterFromQuery_WithCascadingParameter()
+    public Task SupplyParameterFromQuery_WithCascadingParameter()
     {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-[Route("/test")]
-class Test
-{
-    [CascadingParameter]
-    [SupplyParameterFromQuery]
-    public int [|A|] { get; set; }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            [Route("/test")]
+            class Test
+            {
+                [CascadingParameter]
+                [SupplyParameterFromQuery]
+                public int {|MA0116:A|} { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SupplyParameterFromQuery_NonRoutable()
+    public Task SupplyParameterFromQuery_NonRoutable()
     {
-        const string SourceCode = """
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class Test
-{
-    [Parameter, SupplyParameterFromQuery]
-    public int {|MA0122:A|} { get; set; }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            class Test
+            {
+                [Parameter, SupplyParameterFromQuery]
+                public int {|MA0122:A|} { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EditorRequired_MissingParameter()
+    public Task EditorRequired_MissingParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.AspNetCore.Components;
 
             class Test
@@ -126,7 +132,7 @@ class Test
                 public int {|MA0117:A|} { get; set; }
             }
             """;
-        const string Fix = """
+        test.FixedCode = """
             using Microsoft.AspNetCore.Components;
 
             class Test
@@ -136,16 +142,15 @@ class Test
                 public int A { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EditorRequired_WithParameter()
+    public Task EditorRequired_WithParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.AspNetCore.Components;
 
             class Test
@@ -157,15 +162,15 @@ class Test
                 public int B { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EditorRequired_WithCascadingParameter()
+    public Task EditorRequired_WithCascadingParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.AspNetCore.Components;
 
             class Test
@@ -177,8 +182,7 @@ class Test
                 public int B { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

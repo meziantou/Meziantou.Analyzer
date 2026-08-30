@@ -1,170 +1,181 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.RemoveUnnecessaryBracesInTypeDeclarationAnalyzer,
+    Meziantou.Analyzer.Rules.RemoveUnnecessaryBracesInTypeDeclarationFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task PositionalRecord_WithEmptyBraces()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<RemoveUnnecessaryBracesInTypeDeclarationAnalyzer>()
-            .WithCodeFixProvider<RemoveUnnecessaryBracesInTypeDeclarationFixer>();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            public record Foo(string Value1, string Value2) [|{|]}
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PositionalRecord_WithEmptyBraces()
+    public Task PositionalRecord_CodeFix()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp9)
-            .WithSourceCode("""
-                public record Foo(string Value1, string Value2) [|{|]}
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            public record Foo(string Value1, string Value2) [|{|]}
+            """;
+        test.FixedCode = """
+            public record Foo(string Value1, string Value2);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PositionalRecord_CodeFix()
+    public Task PositionalRecord_WithSemicolon()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp9)
-            .WithSourceCode("""
-                public record Foo(string Value1, string Value2) [|{|]}
-                """)
-            .ShouldFixCodeWith("""
-                public record Foo(string Value1, string Value2);
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            public record Foo(string Value1, string Value2);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PositionalRecord_WithSemicolon()
+    public Task PositionalRecord_WithMember()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp9)
-            .WithSourceCode("""
-                public record Foo(string Value1, string Value2);
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            public record Foo(string Value1, string Value2)
+            {
+                public string Value3 { get; init; } = "";
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PositionalRecord_WithMember()
+    public Task PositionalRecord_WithComment()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp9)
-            .WithSourceCode("""
-                public record Foo(string Value1, string Value2)
-                {
-                    public string Value3 { get; init; } = "";
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            public record Foo(string Value1, string Value2)
+            {
+                // Keep this comment
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PositionalRecord_WithComment()
+    public Task RecordWithoutParameterList()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp9)
-            .WithSourceCode("""
-                public record Foo(string Value1, string Value2)
-                {
-                    // Keep this comment
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            public record Foo [|{|]}
+            """;
+        test.FixedCode = """
+            public record Foo;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RecordWithoutParameterList()
+    public Task ClassPrimaryConstructor_WithEmptyBraces()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp9)
-            .WithSourceCode("""
-                public record Foo [|{|]}
-                """)
-            .ShouldFixCodeWith("""
-                public record Foo;
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            public class Foo(string Value1, string Value2) [|{|]}
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassPrimaryConstructor_WithEmptyBraces()
+    public Task ClassPrimaryConstructor_CodeFix()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                public class Foo(string Value1, string Value2) [|{|]}
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            public class Foo(string Value1, string Value2) [|{|]}
+            """;
+        test.FixedCode = """
+            public class Foo(string Value1, string Value2);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassPrimaryConstructor_CodeFix()
+    public Task StructPrimaryConstructor_CodeFix()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                public class Foo(string Value1, string Value2) [|{|]}
-                """)
-            .ShouldFixCodeWith("""
-                public class Foo(string Value1, string Value2);
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            public struct Foo(string Value1, string Value2) [|{|]}
+            """;
+        test.FixedCode = """
+            public struct Foo(string Value1, string Value2);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StructPrimaryConstructor_CodeFix()
+    public Task ClassPrimaryConstructor_WithDocumentation()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                public struct Foo(string Value1, string Value2) [|{|]}
-                """)
-            .ShouldFixCodeWith("""
-                public struct Foo(string Value1, string Value2);
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            /// <summary>
+            /// I show up when you hover my constructor invocation too!
+            /// </summary>
+            public sealed class Documented() [|{|]}
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// I show up when you hover my constructor invocation too!
+            /// </summary>
+            public sealed class Documented();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassPrimaryConstructor_WithDocumentation()
+    public Task ClassWithoutPrimaryConstructor_WithDocumentation()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                /// <summary>
-                /// I show up when you hover my constructor invocation too!
-                /// </summary>
-                public sealed class Documented() [|{|]}
-                """)
-            .ShouldFixCodeWith("""
-                /// <summary>
-                /// I show up when you hover my constructor invocation too!
-                /// </summary>
-                public sealed class Documented();
-                """)
-            .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            /// <summary>
+            /// I don't. :(
+            /// </summary>
+            public sealed class HalfDocumented [|{|]}
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// I don't. :(
+            /// </summary>
+            public sealed class HalfDocumented;
+            """;
 
-    [Fact]
-    public async Task ClassWithoutPrimaryConstructor_WithDocumentation()
-    {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                /// <summary>
-                /// I don't. :(
-                /// </summary>
-                public sealed class HalfDocumented [|{|]}
-                """)
-            .ShouldFixCodeWith("""
-                /// <summary>
-                /// I don't. :(
-                /// </summary>
-                public sealed class HalfDocumented;
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

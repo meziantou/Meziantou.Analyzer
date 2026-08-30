@@ -1,39 +1,51 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.MakeMethodStaticAnalyzer,
+    Meziantou.Analyzer.Rules.MakeMethodStaticFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class MakeMethodStaticAnalyzerTests_Properties
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    // This class covers MA0041 only, the way the original test filtered the diagnostics to that rule
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<MakeMethodStaticAnalyzer>(id: "MA0041")
-            .WithCodeFixProvider<MakeMethodStaticFixer>();
+        var test = new CodeFixTest();
+        test.DisabledDiagnostics.Add(RuleIdentifiers.MakeMethodStatic);
+
+        // MA0041 is reported by a compilation action, so the diagnostic is not local to the syntax tree,
+        // which the testing library rejects for a code fix by default
+        test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck;
+        return test;
     }
 
     [Fact]
-    public async Task ExpressionBodyAsync()
+    public Task ExpressionBodyAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
-                int [|A|] => throw null;
+                int {|MA0041:A|} => throw null;
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TestClass
             {
                 static int A => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AccessInstanceProperty_NoDiagnostic()
+    public Task AccessInstanceProperty_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 int A => TestProperty;
@@ -41,37 +53,37 @@ public sealed class MakeMethodStaticAnalyzerTests_Properties
                 public int TestProperty { get; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
+    public Task AccessInstanceMethodInLinqQuery_Where_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 int A { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AccessStaticProperty()
+    public Task AccessStaticProperty()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
-                public int [|A|] => TestProperty;
+                public int {|MA0041:A|} => TestProperty;
 
                 public static int TestProperty => 0;
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TestClass
             {
                 public static int A => TestProperty;
@@ -79,40 +91,39 @@ public sealed class MakeMethodStaticAnalyzerTests_Properties
                 public static int TestProperty => 0;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AccessStaticMethod()
+    public Task AccessStaticMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
-                int [|A|] => TestMethod();
+                int {|MA0041:A|} => TestMethod();
 
                 public static int TestMethod() => 0;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AccessStaticField()
+    public Task AccessStaticField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
-                int [|A|] => _a;
+                int {|MA0041:A|} => _a;
 
                 static int _a;
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TestClass
             {
                 static int A => _a;
@@ -120,16 +131,15 @@ public sealed class MakeMethodStaticAnalyzerTests_Properties
                 static int _a;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AccessInstanceField()
+    public Task AccessInstanceField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 int A => _a;
@@ -137,15 +147,15 @@ public sealed class MakeMethodStaticAnalyzerTests_Properties
                 public int _a;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MethodImplementAnInterface()
+    public Task MethodImplementAnInterface()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass : ITest
             {
                 public int A { get; }
@@ -156,15 +166,15 @@ public sealed class MakeMethodStaticAnalyzerTests_Properties
                 int A { get; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MethodExplicitlyImplementAnInterface()
+    public Task MethodExplicitlyImplementAnInterface()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass : ITest
             {
                 int ITest.A { get; }
@@ -175,8 +185,7 @@ public sealed class MakeMethodStaticAnalyzerTests_Properties
                 int A { get; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

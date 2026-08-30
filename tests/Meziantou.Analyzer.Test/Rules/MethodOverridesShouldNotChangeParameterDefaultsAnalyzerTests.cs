@@ -1,18 +1,25 @@
+using Microsoft.CodeAnalysis;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.MethodOverridesShouldNotChangeParameterDefaultsAnalyzer,
+    Meziantou.Analyzer.Rules.MethodOverridesShouldNotChangeParameterDefaultsFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<MethodOverridesShouldNotChangeParameterDefaultsAnalyzer>()
-            .WithCodeFixProvider<MethodOverridesShouldNotChangeParameterDefaultsFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
+
+    private static DiagnosticResult ExpectedChangedDefault(int markupKey, string original, string current) =>
+        new DiagnosticResult(RuleIdentifiers.MethodOverridesShouldNotChangeParameterDefaults, DiagnosticSeverity.Warning)
+            .WithLocation(markupKey)
+            .WithMessage($"Method overrides should not change default values (original: {original}; current: {current})");
 
     [Fact]
-    public async Task Interface_ExplicitImplementation()
+    public Task Interface_ExplicitImplementation()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             interface ITest
             {
                 void A(int a = 0);
@@ -23,15 +30,15 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
                 void ITest.A(int a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_SameValue()
+    public Task Interface_SameValue()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             interface ITest
             {
                 void A(int a = 0);
@@ -42,15 +49,15 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
                 public void A(int a = 0) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Override_SameValue()
+    public Task Override_SameValue()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public virtual void A(int a = 0, int b = 1) { }
@@ -61,15 +68,15 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
                 public override void A(int a = 0, int b = 1) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Override_DifferentValue()
+    public Task Override_DifferentValue()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public virtual void A(int a = 0, int b = 1) { }
@@ -77,11 +84,12 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
 
             class TestDerived : Test
             {
-                public override void A(int [|a|] = 1, int [|b|] = 2) { }
+                public override void A(int {|#0:a|} = 1, int {|#1:b|} = 2) { }
             }
             """;
-
-        const string Fix = """
+        test.ExpectedDiagnostics.Add(ExpectedChangedDefault(0, "'0'", "'1'"));
+        test.ExpectedDiagnostics.Add(ExpectedChangedDefault(1, "'1'", "'2'"));
+        test.FixedCode = """
             class Test
             {
                 public virtual void A(int a = 0, int b = 1) { }
@@ -92,18 +100,15 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
                 public override void A(int a = 0, int b = 1) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '0'; current: '1')")
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '1'; current: '2')")
-              .ShouldBatchFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task New_DifferentValue()
+    public Task New_DifferentValue()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public virtual void A(int a = 0, int b = 1) { }
@@ -114,15 +119,15 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
                 public void A(int a = 1, int b = 2) { } // no override
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Override_DifferentValue_OriginalParameterHasNoDefault()
+    public Task Override_DifferentValue_OriginalParameterHasNoDefault()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public virtual void A(int a) { }
@@ -130,10 +135,11 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
 
             class TestDerived : Test
             {
-                public override void A(int [|a|] = 1) { }
+                public override void A(int {|#0:a|} = 1) { }
             }
             """;
-        const string Fix = """
+        test.ExpectedDiagnostics.Add(ExpectedChangedDefault(0, "<no default value>", "'1'"));
+        test.FixedCode = """
             class Test
             {
                 public virtual void A(int a) { }
@@ -144,17 +150,15 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
                 public override void A(int a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: <no default value>; current: '1')")
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Override_DifferentValue_OverrideParameterHasNoDefault()
+    public Task Override_DifferentValue_OverrideParameterHasNoDefault()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public virtual void A(int a = 0) { }
@@ -162,10 +166,11 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
 
             class TestDerived : Test
             {
-                public override void A(int [|a|]) { }
+                public override void A(int {|#0:a|}) { }
             }
             """;
-        const string Fix = """
+        test.ExpectedDiagnostics.Add(ExpectedChangedDefault(0, "'0'", "<no default value>"));
+        test.FixedCode = """
             class Test
             {
                 public virtual void A(int a = 0) { }
@@ -176,10 +181,7 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
                 public override void A(int a = 0) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Method overrides should not change default values (original: '0'; current: <no default value>)")
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }
