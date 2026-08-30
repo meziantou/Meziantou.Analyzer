@@ -1,204 +1,191 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseStringEqualsInsteadOfIsPatternAnalyzer,
+    Meziantou.Analyzer.Rules.UseStringEqualsInsteadOfIsPatternFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task IsStringEmpty()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseStringEqualsInsteadOfIsPatternAnalyzer>()
-            .WithCodeFixProvider<UseStringEqualsInsteadOfIsPatternFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = str is "";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsStringEmpty()
+    public Task IsNull()
     {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = str is "";
-    }
-}
-""";
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = str is null;
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task IsNull()
-    {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = str is null;
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsNotNull()
+    public Task IsNotNull()
     {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = str is not null;
-    }
-}
-""";
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = str is not null;
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task PatternMatching()
-    {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = str is [|"b"|];
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PatternMatching_CodeFix_Ordinal()
+    public Task PatternMatching()
     {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = str is [|"b"|];
-    }
-}
-""";
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = str is [|"b"|];
+                }
+            }
+            """;
 
-        const string FixedCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = string.Equals(str, "b", System.StringComparison.Ordinal);
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(0, FixedCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PatternMatching_CodeFix_OrdinalIgnoreCase()
+    public Task PatternMatching_CodeFix_Ordinal()
     {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = str is [|"b"|];
-    }
-}
-""";
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = str is [|"b"|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = string.Equals(str, "b", System.StringComparison.Ordinal);
+                }
+            }
+            """;
 
-        const string FixedCode = """
-class TypeName
-{
-    public void Test(string str)
-    {
-        _ = string.Equals(str, "b", System.StringComparison.OrdinalIgnoreCase);
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(1, FixedCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PatternMatching_Complex1()
+    public Task PatternMatching_CodeFix_OrdinalIgnoreCase()
     {
-        const string SourceCode = """
-class TypeName
-{
-    string Value { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = str is [|"b"|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test(string str)
+                {
+                    _ = string.Equals(str, "b", System.StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            """;
 
-    public void Test(TypeName obj)
-    {
-        _ = obj is { Value: [|"b"|]};
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task PatternMatching_Complex2()
-    {
-        const string SourceCode = """
-class TypeName
-{
-    string Value { get; set; }
-
-    public void Test(TypeName obj)
-    {
-        _ = obj is { Value: [|"b"|] or [|"c"|]};
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PatternMatching_Complex3()
+    public Task PatternMatching_Complex1()
     {
-        const string SourceCode = """
-class TypeName
-{
-    string Value { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                string Value { get; set; }
 
-    public void Test(TypeName obj)
-    {
-        _ = obj is { Value: var a and ([|"b"|] or [|"c"|])};
+                public void Test(TypeName obj)
+                {
+                    _ = obj is { Value: [|"b"|]};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
-""";
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+    [Fact]
+    public Task PatternMatching_Complex2()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                string Value { get; set; }
+
+                public void Test(TypeName obj)
+                {
+                    _ = obj is { Value: [|"b"|] or [|"c"|]};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_Complex3()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                string Value { get; set; }
+
+                public void Test(TypeName obj)
+                {
+                    _ = obj is { Value: var a and ([|"b"|] or [|"c"|])};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
