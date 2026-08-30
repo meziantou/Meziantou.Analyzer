@@ -52,7 +52,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationFixer : CodeFix
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var invocationExpression = editor.Generator.InvocationExpression(
-            editor.Generator.MemberAccessExpression(editor.Generator.TypeExpression(operatingSystemType), methodName));
+            editor.Generator.TypeMemberAccessExpression(operatingSystemType, methodName));
 
         editor.ReplaceNode(operationSyntax, invocationExpression.WithTriviaFrom(operationSyntax).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();

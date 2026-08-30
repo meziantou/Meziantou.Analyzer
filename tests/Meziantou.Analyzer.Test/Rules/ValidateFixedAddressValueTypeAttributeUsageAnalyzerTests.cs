@@ -1,64 +1,70 @@
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.ValidateFixedAddressValueTypeAttributeUsageAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ValidateFixedAddressValueTypeAttributeUsageAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder() => new ProjectBuilder()
-        .WithTargetFramework(TargetFramework.Net10_0)
-        .WithAnalyzer<ValidateFixedAddressValueTypeAttributeUsageAnalyzer>();
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task ValidField()
+    public Task ValidField()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class Sample
-                {
-                    [System.Runtime.CompilerServices.FixedAddressValueType]
-                    static int _field;
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                [System.Runtime.CompilerServices.FixedAddressValueType]
+                static int _field;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FieldMustBeStatic()
+    public Task FieldMustBeStatic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class Sample
-                {
-                    [System.Runtime.CompilerServices.FixedAddressValueType]
-                    int {|MA0207:_field|};
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                [System.Runtime.CompilerServices.FixedAddressValueType]
+                int {|MA0207:_field|};
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FieldTypeMustBeValueType()
+    public Task FieldTypeMustBeValueType()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class Sample
-                {
-                    [System.Runtime.CompilerServices.FixedAddressValueType]
-                    static {|MA0208:string|} _field;
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                [System.Runtime.CompilerServices.FixedAddressValueType]
+                static {|MA0208:string|} _field;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BothDiagnostics()
+    public Task BothDiagnostics()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class Sample
-                {
-                    [System.Runtime.CompilerServices.FixedAddressValueType]
-                    {|MA0208:string|} {|MA0207:_field|};
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                [System.Runtime.CompilerServices.FixedAddressValueType]
+                {|MA0208:string|} {|MA0207:_field|};
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

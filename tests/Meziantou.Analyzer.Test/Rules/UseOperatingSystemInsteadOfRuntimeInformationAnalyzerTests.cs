@@ -1,60 +1,69 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseOperatingSystemInsteadOfRuntimeInformationAnalyzer,
+    Meziantou.Analyzer.Rules.UseOperatingSystemInsteadOfRuntimeInformationFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public class UseOperatingSystemInsteadOfRuntimeInformationAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseOperatingSystemInsteadOfRuntimeInformationAnalyzer>()
-            .WithCodeFixProvider<UseOperatingSystemInsteadOfRuntimeInformationFixer>()
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task ShouldReport()
+    public Task ShouldReport()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)|];
-                """)
-            .ShouldFixCodeWith("""
-                System.OperatingSystem.IsWindows();
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)|];
+            """;
+        test.FixedCode = """
+            System.OperatingSystem.IsWindows();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldReport_MacOS()
+    public Task ShouldReport_MacOS()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)|];
-                """)
-            .ShouldFixCodeWith("""
-                System.OperatingSystem.IsMacOS();
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)|];
+            """;
+        test.FixedCode = """
+            System.OperatingSystem.IsMacOS();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldNotReport_WhenOperatingSystemIsNotAvailable()
+    public Task ShouldNotReport_WhenOperatingSystemIsNotAvailable()
     {
-        await CreateProjectBuilder()
-            .WithTargetFramework(TargetFramework.NetStandard2_0)
-            .WithSourceCode("""
-                System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldNotReport_WhenDynamic()
+    public Task ShouldNotReport_WhenDynamic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                var a = System.Runtime.InteropServices.OSPlatform.Windows;
-                System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(a);
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var a = System.Runtime.InteropServices.OSPlatform.Windows;
+            System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(a);
+            """;
+
+        return test.RunAsync();
     }
 }

@@ -1,58 +1,54 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ExceptionNameShouldEndWithExceptionAnalyzer,
+    Meziantou.Analyzer.Rules.TypeNameShouldEndWithSuffixFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ExceptionNameShouldEndWithExceptionAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<ExceptionNameShouldEndWithExceptionAnalyzer>()
-            .WithCodeFixProvider<TypeNameShouldEndWithSuffixFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task NameEndsWithException()
+    public Task NameEndsWithException()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class CustomException : System.Exception
             {
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NameDoesNotEndWithAttribute()
+    public Task NameDoesNotEndWithAttribute()
     {
-        const string SourceCode = """
-            class [|CustomEx|] : System.Exception
-            {
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NameDoesNotEndWithAttribute_CodeFix()
-    {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class [|CustomEx|] : System.Exception
             {
             }
             """;
 
-        const string Fix = """
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NameDoesNotEndWithAttribute_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class [|CustomEx|] : System.Exception
+            {
+            }
+            """;
+        test.FixedCode = """
             class CustomExException : System.Exception
             {
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }
