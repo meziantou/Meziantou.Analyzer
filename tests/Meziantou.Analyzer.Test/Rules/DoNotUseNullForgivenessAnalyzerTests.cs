@@ -1,120 +1,126 @@
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseNullForgivenessAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseNullForgivenessAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task NullForgiveness_NullLiteral_ReportsDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(Helpers.TargetFramework.Net9_0)
-            .WithAnalyzer<DoNotUseNullForgivenessAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = """
+            #nullable enable
+            class Sample
+            {
+                string _field = [|null!|];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullForgiveness_NullLiteral_ReportsDiagnostic()
+    public Task NullForgiveness_DefaultLiteral_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Sample
-                {
-                    string _field = [|null!|];
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            #nullable enable
+            class Sample
+            {
+                string _field = [|default!|];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullForgiveness_DefaultLiteral_ReportsDiagnostic()
+    public Task NullForgiveness_DefaultExpression_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Sample
-                {
-                    string _field = [|default!|];
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            #nullable enable
+            class Sample
+            {
+                string _field = [|default(string)!|];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullForgiveness_DefaultExpression_ReportsDiagnostic()
+    public Task NullForgiveness_Property_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Sample
-                {
-                    string _field = [|default(string)!|];
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            #nullable enable
+            class Sample
+            {
+                string Prop { get; set; } = [|null!|];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullForgiveness_Property_ReportsDiagnostic()
+    public Task NullForgiveness_VariableAssignment_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            #nullable enable
+            class Sample
+            {
+                void M()
                 {
-                    string Prop { get; set; } = [|null!|];
+                    string s = [|null!|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullForgiveness_VariableAssignment_ReportsDiagnostic()
+    public Task NullForgiveness_MemberAccess_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            #nullable enable
+            class Model
+            {
+                public string? Value { get; set; }
+            }
+            class Sample
+            {
+                void M(Model model)
                 {
-                    void M()
-                    {
-                        string s = [|null!|];
-                    }
+                    _ = model.Value!.Length;
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullForgiveness_MemberAccess_NoDiagnostic()
+    public Task NoNullForgiveness_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Model
-                {
-                    public string? Value { get; set; }
-                }
-                class Sample
-                {
-                    void M(Model model)
-                    {
-                        _ = model.Value!.Length;
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            #nullable enable
+            class Sample
+            {
+                string _field = "value";
+                string Prop { get; set; } = "value";
+            }
+            """;
 
-    [Fact]
-    public async Task NoNullForgiveness_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                #nullable enable
-                class Sample
-                {
-                    string _field = "value";
-                    string Prop { get; set; } = "value";
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

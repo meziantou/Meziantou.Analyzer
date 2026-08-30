@@ -1,18 +1,24 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.OptionalParametersAttributeAnalyzer,
+    Meziantou.Analyzer.Rules.OptionalParametersAttributeFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    // This class covers MA0088 only, the way the original test filtered the diagnostics to that rule
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<OptionalParametersAttributeAnalyzer>(id: "MA0088")
-            .WithCodeFixProvider<OptionalParametersAttributeFixer>();
+        var test = new CodeFixTest();
+        test.DisabledDiagnostics.Add(RuleIdentifiers.ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter);
+        return test;
     }
 
     [Fact]
-    public async Task DefaultParameterValue()
+    public Task DefaultParameterValue()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.ComponentModel;
             using System.Runtime.InteropServices;
 
@@ -23,34 +29,34 @@ public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DefaultValue()
+    public Task DefaultValue()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.ComponentModel;
             using System.Runtime.InteropServices;
 
             class Test
             {
-                void A([DefaultValue(10)]int [|a|])
+                void A([DefaultValue(10)]int {|MA0088:a|})
                 {
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BothAttributes()
+    public Task BothAttributes()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.ComponentModel;
             using System.Runtime.InteropServices;
 
@@ -61,27 +67,26 @@ public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DefaultValue_CodeFix()
+    public Task DefaultValue_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.ComponentModel;
             using System.Runtime.InteropServices;
 
             class Test
             {
-                void A([DefaultValue(10)]int [|a|])
+                void A([DefaultValue(10)]int {|MA0088:a|})
                 {
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             using System.ComponentModel;
             using System.Runtime.InteropServices;
 
@@ -93,9 +98,6 @@ public sealed class OptionalParametersAttributeAnalyzerMA0088Tests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

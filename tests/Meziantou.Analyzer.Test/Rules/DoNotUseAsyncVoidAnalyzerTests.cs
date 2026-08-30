@@ -1,97 +1,103 @@
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseAsyncVoidAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class DoNotUseAsyncVoidAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net80 };
+
+    [Fact]
+    public Task Method_Void()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseAsyncVoidAnalyzer>()
-            .WithTargetFramework(TargetFramework.Net8_0);
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                void A() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Method_Void()
+    public Task Method_AsyncVoid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      void A() => throw null;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                async void [|A|]() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Method_AsyncVoid()
+    public Task Method_AsyncTask()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      async void [|A|]() => throw null;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                async System.Threading.Tasks.Task A() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Method_AsyncTask()
+    public Task LocalFunction_Void()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      async System.Threading.Tasks.Task A() => throw null;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                void A()
+                {
+                  void Local() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalFunction_Void()
+    public Task LocalFunction_AsyncVoid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      void A()
-                      {
-                        void Local() => throw null;
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                void A()
+                {
+                  [|async void Local() => throw null;|]
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalFunction_AsyncVoid()
+    public Task LocalFunction_AsyncTask()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      void A()
-                      {
-                        [|async void Local() => throw null;|]
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                void A()
+                {
+                  async System.Threading.Tasks.Task Local() => throw null;
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task LocalFunction_AsyncTask()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      void A()
-                      {
-                        async System.Threading.Tasks.Task Local() => throw null;
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

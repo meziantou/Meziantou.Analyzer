@@ -1,134 +1,148 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseAsyncDelegateForSyncDelegateAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseAsyncDelegateForSyncDelegateAnalyzer>()
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
+        var test = new AnalyzerTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task List_ForEach_Sync()
+    public Task List_ForEach_Sync()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  new System.Collections.Generic.List<int>().ForEach(item => {});
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            new System.Collections.Generic.List<int>().ForEach(item => {});
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task List_ForEach_Async()
+    public Task List_ForEach_Async()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  new System.Collections.Generic.List<int>().ForEach([|async item => {}|]);
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            new System.Collections.Generic.List<int>().ForEach([|async item => {}|]);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CustomDelegate_Sync()
+    public Task CustomDelegate_Sync()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(() => {});
+        var test = CreateTest();
+        test.TestCode = """
+            A(() => {});
 
-                  void A(D a) => throw null;
-                  delegate void D();
-                  """)
-              .ValidateAsync();
+            void A(D a) => throw null;
+            delegate void D();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CustomDelegate_AsyncVoid()
+    public Task CustomDelegate_AsyncVoid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A([|async () => {}|]);
+        var test = CreateTest();
+        test.TestCode = """
+            A([|async () => {}|]);
 
-                  void A(D a) => throw null;
-                  delegate void D();
-                  """)
-              .ValidateAsync();
+            void A(D a) => throw null;
+            delegate void D();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Action_Sync()
+    public Task Action_Sync()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(() => {});
+        var test = CreateTest();
+        test.TestCode = """
+            A(() => {});
 
-                  void A(System.Action a) => throw null;
-                  """)
-              .ValidateAsync();
+            void A(System.Action a) => throw null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Action_AsyncVoid()
+    public Task Action_AsyncVoid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A([|async () => {}|]);
+        var test = CreateTest();
+        test.TestCode = """
+            A([|async () => {}|]);
 
-                  void A(System.Action a) => throw null;
-                  """)
-              .ValidateAsync();
+            void A(System.Action a) => throw null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FuncTask_AsyncDelegate()
+    public Task FuncTask_AsyncDelegate()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(async () => {});
+        var test = CreateTest();
+        test.TestCode = """
+            A(async () => {});
 
-                  void A(System.Func<System.Threading.Tasks.Task> a) => throw null;
-                  """)
-              .ValidateAsync();
+            void A(System.Func<System.Threading.Tasks.Task> a) => throw null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FuncValueTask_AsyncDelegate()
+    public Task FuncValueTask_AsyncDelegate()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(async () => {});
+        var test = CreateTest();
+        test.TestCode = """
+            A(async () => {});
 
-                  void A(System.Func<System.Threading.Tasks.ValueTask> a) => throw null;
-                  """)
-              .ValidateAsync();
+            void A(System.Func<System.Threading.Tasks.ValueTask> a) => throw null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FuncValueTaskOfInt_AsyncDelegate()
+    public Task FuncValueTaskOfInt_AsyncDelegate()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(async () => 1);
+        var test = CreateTest();
+        test.TestCode = """
+            A(async () => 1);
 
-                  void A(System.Func<System.Threading.Tasks.ValueTask<int>> a) => throw null;
-                  """)
-              .ValidateAsync();
+            void A(System.Func<System.Threading.Tasks.ValueTask<int>> a) => throw null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Event_AsyncVoid()
+    public Task Event_AsyncVoid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  Sample.A += async (sender, e) => { };
-                  Sample.A -= async (sender, e) => { };
+        var test = CreateTest();
+        test.TestCode = """
+            Sample.A += async (sender, e) => { };
+            Sample.A -= async (sender, e) => { };
 
-                  class Sample
-                  {
-                      public static event System.EventHandler A;
-                  }
-                  """)
-              .ValidateAsync();
+            class Sample
+            {
+                public static event System.EventHandler A;
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

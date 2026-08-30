@@ -1,17 +1,17 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task UnsubscribeWithLambda()
+    public Task UnsubscribeWithLambda()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -23,15 +23,15 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnsubscribeWithAction()
+    public Task UnsubscribeWithAction()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -44,15 +44,15 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnsubscribeWithLocalFunction()
+    public Task UnsubscribeWithLocalFunction()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -66,15 +66,15 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnsubscribeWithDelegate()
+    public Task UnsubscribeWithDelegate()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -86,15 +86,15 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnsubscribeWithMethod()
+    public Task UnsubscribeWithMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -108,8 +108,7 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
                 void Handler(object sender, EventArgs e) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

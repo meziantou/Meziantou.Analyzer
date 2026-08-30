@@ -1,11 +1,18 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DotNotUseNameFromBCLAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DotNotUseNameFromBCLAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    private static string MarkTypeName(string typeName)
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DotNotUseNameFromBCLAnalyzer>();
+        var genericStart = typeName.IndexOf('<', StringComparison.Ordinal);
+        return genericStart >= 0
+            ? "[|" + typeName[..genericStart] + "|]" + typeName[genericStart..]
+            : "[|" + typeName + "|]";
     }
 
     [Theory]
@@ -13,17 +20,13 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     [InlineData("Action<T>")]
     [InlineData("Func<T1, T2>")]
     [InlineData("String")]
-    public async Task ReportDiagnostic(string typeName)
+    public Task ReportDiagnostic(string typeName)
     {
-        var genericStart = typeName.IndexOf('<', StringComparison.Ordinal);
-        var markedTypeName = genericStart >= 0
-                ? "[|" + typeName[..genericStart] + "|]" + typeName[genericStart..]
-                : "[|" + typeName + "|]";
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.use_preview_types", "true");
+        test.TestCode = "public class " + MarkTypeName(typeName) + " { }";
 
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0104.use_preview_types", "true")
-                            .WithSourceCode("public class " + markedTypeName + " { }")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -31,67 +34,69 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     [InlineData("Action<T>")]
     [InlineData("Func<T1, T2>")]
     [InlineData("String")]
-    public async Task ReportDiagnostic_UsePreviewTypes(string typeName)
+    public Task ReportDiagnostic_UsePreviewTypes(string typeName)
     {
-        var genericStart = typeName.IndexOf('<', StringComparison.Ordinal);
-        var markedTypeName = genericStart >= 0
-                ? "[|" + typeName[..genericStart] + "|]" + typeName[genericStart..]
-                : "[|" + typeName + "|]";
+        var test = CreateTest();
+        test.TestCode = "public class " + MarkTypeName(typeName) + " { }";
 
-        await CreateProjectBuilder()
-                            .WithSourceCode("public class " + markedTypeName + " { }")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DoNotReportDiagnostic()
+    public Task DoNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"public class Dummy { }")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "public class Dummy { }";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedType_DoNotReportDiagnostic()
+    public Task NestedType_DoNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"public class Dummy { public class Action { } }")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "public class Dummy { public class Action { } }";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Regex_DoNotReportDiagnostic()
+    public Task Regex_DoNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"public class Action { }")
-              .AddAnalyzerConfiguration("MA0104.namespaces_regex", "dummy")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.namespaces_regex", "dummy");
+        test.TestCode = "public class Action { }";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Regex_DoNotReportDiagnostic_OldConfigurationName()
+    public Task Regex_DoNotReportDiagnostic_OldConfigurationName()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"public class Action { }")
-              .AddAnalyzerConfiguration("MA0104.namepaces_regex", "dummy")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.namepaces_regex", "dummy");
+        test.TestCode = "public class Action { }";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidRegex_UseDefaultRegex()
+    public Task InvalidRegex_UseDefaultRegex()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"public class [|Action|] { }")
-              .AddAnalyzerConfiguration("MA0104.namespaces_regex", "[")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.namespaces_regex", "[");
+        test.TestCode = "public class [|Action|] { }";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidRegex_UseDefaultRegex_OldConfigurationName()
+    public Task InvalidRegex_UseDefaultRegex_OldConfigurationName()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"public class [|Action|] { }")
-              .AddAnalyzerConfiguration("MA0104.namepaces_regex", "[")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.namepaces_regex", "[");
+        test.TestCode = "public class [|Action|] { }";
+
+        return test.RunAsync();
     }
 }

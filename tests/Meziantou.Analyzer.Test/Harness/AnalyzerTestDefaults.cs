@@ -17,12 +17,18 @@ internal static class AnalyzerTestDefaults
     public const LanguageVersion LanguageVersion = Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest;
 
     /// <summary>
+    /// The version of the .NET packages the tests reference by default, shared by the runtime reference assemblies
+    /// and the packages shipped with them, such as the one of <see cref="ReferenceAssembliesExtensions.AddAspNetCore(ReferenceAssemblies)"/>.
+    /// </summary>
+    public const string DotNetVersion = "11.0.0-preview.7.26381.103";
+
+    /// <summary>
     /// The equivalent of <see cref="TargetFramework.NetLatest"/>, which is the target framework
     /// <see cref="TestHelper.ProjectBuilder"/> uses when a test does not configure one.
     /// </summary>
     public static readonly ReferenceAssemblies ReferenceAssemblies = new(
         "net11.0",
-        new PackageIdentity("Microsoft.NETCore.App.Ref", "11.0.0-preview.7.26381.103"),
+        new PackageIdentity("Microsoft.NETCore.App.Ref", DotNetVersion),
         Path.Combine("ref", "net11.0"));
 
     /// <summary>

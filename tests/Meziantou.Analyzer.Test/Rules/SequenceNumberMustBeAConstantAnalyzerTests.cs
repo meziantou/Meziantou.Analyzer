@@ -1,12 +1,13 @@
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.SequenceNumberMustBeAConstantAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class SequenceNumberMustBeAConstantAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<SequenceNumberMustBeAConstantAnalyzer>()
-            .WithTargetFramework(TargetFramework.AspNetCore7_0);
-    }
+    private static AnalyzerTest CreateTest() =>
+        new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net70.AddAspNetCore("7.0.0") };
 
     [Theory]
     [InlineData("builder.AddAttribute(0, frame: default)")]
@@ -37,23 +38,23 @@ public sealed class SequenceNumberMustBeAConstantAnalyzerTests
     [InlineData("builder.AddEventPreventDefaultAttribute(param, eventName: default(string), value: false)")]
     [InlineData("builder.AddEventPreventDefaultAttribute((int)(long)param, eventName: default(string), value: false)")]
     [InlineData("builder.AddEventPreventDefaultAttribute((int)longparam, eventName: default(string), value: false)")]
-    public async Task Valid(string code)
+    public Task Valid(string code)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode($$"""
-using System;    
-using Microsoft.AspNetCore.Components.Rendering;
-using Microsoft.AspNetCore.Components.Web;
-class Test
-{
-    void BuildRenderTree(RenderTreeBuilder builder, int param, long longparam)
-	{
-        {{code}};
-	}
-}
-""");
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using Microsoft.AspNetCore.Components.Rendering;
+            using Microsoft.AspNetCore.Components.Web;
+            class Test
+            {
+                void BuildRenderTree(RenderTreeBuilder builder, int param, long longparam)
+                {
+                    {{code}};
+                }
+            }
+            """;
 
-        await project.ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -83,23 +84,23 @@ class Test
     [InlineData("builder.AddEventStopPropagationAttribute([|value++|], eventName: default(string), value: false)")]
     [InlineData("builder.AddEventStopPropagationAttribute([|param++|], eventName: default(string), value: false)")]
     [InlineData("builder.AddEventStopPropagationAttribute([|(int)longparam++|], eventName: default(string), value: false)")]
-    public async Task Variable(string code)
+    public Task Variable(string code)
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode($$"""
-using System;
-using Microsoft.AspNetCore.Components.Rendering;
-using Microsoft.AspNetCore.Components.Web;
-class Test
-{
-    void BuildRenderTree(RenderTreeBuilder builder, int param, long longparam)
-	{
-        int value = 0;
-        {{code}};
-	}
-}
-""");
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using Microsoft.AspNetCore.Components.Rendering;
+            using Microsoft.AspNetCore.Components.Web;
+            class Test
+            {
+                void BuildRenderTree(RenderTreeBuilder builder, int param, long longparam)
+                {
+                    int value = 0;
+                    {{code}};
+                }
+            }
+            """;
 
-        await project.ValidateAsync();
+        return test.RunAsync();
     }
 }

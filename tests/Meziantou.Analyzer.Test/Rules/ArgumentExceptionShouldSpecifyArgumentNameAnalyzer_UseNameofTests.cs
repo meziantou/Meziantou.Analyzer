@@ -1,29 +1,28 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ArgumentExceptionShouldSpecifyArgumentNameAnalyzer,
+    Meziantou.Analyzer.Rules.ArgumentExceptionShouldSpecifyArgumentNameFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameofTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0043")
-            .WithCodeFixProvider<ArgumentExceptionShouldSpecifyArgumentNameFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task Property()
+    public Task Property()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 string Prop
                 {
                     get { throw null; }
-                    set { throw new System.ArgumentNullException([|"value"|]); }
+                    set { throw new System.ArgumentNullException({|MA0043:"value"|}); }
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             class Sample
             {
                 string Prop
@@ -34,26 +33,23 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameof
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Method()
+    public Task Method()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 string M(string arg0)
                 {
-                    throw new System.ArgumentNullException([|"arg0"|]);
+                    throw new System.ArgumentNullException({|MA0043:"arg0"|});
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             class Sample
             {
                 string M(string arg0)
@@ -63,26 +59,23 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameof
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Operator()
+    public Task Operator()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 public static Sample operator +(Sample first, Sample second)
                 {
-                    throw new System.ArgumentNullException([|"first"|]);
+                    throw new System.ArgumentNullException({|MA0043:"first"|});
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             class Sample
             {
                 public static Sample operator +(Sample first, Sample second)
@@ -92,9 +85,6 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer_UseNameof
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

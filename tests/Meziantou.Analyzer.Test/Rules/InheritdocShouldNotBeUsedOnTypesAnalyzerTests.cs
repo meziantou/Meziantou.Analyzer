@@ -1,110 +1,114 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.InheritdocShouldNotBeUsedOnTypesAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task ReportDiagnostic_MA0197_WhenBaseTypeIsPresent()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<InheritdocShouldNotBeUsedOnTypesAnalyzer>()
-            .WithTargetFramework(TargetFramework.NetLatest);
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseType
+            {
+            }
+
+            /// {|MA0197:<inheritdoc />|}
+            class Sample : BaseType
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_MA0197_WhenBaseTypeIsPresent()
+    public Task ReportDiagnostic_MA0197_WhenSingleDeclaredInterfaceIsPresent()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class BaseType
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+            }
 
-                  /// {|MA0197:<inheritdoc />|}
-                  class Sample : BaseType
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            /// {|MA0197:<inheritdoc />|}
+            class Sample : ITest
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_MA0197_WhenSingleDeclaredInterfaceIsPresent()
+    public Task ReportDiagnostic_MA0197_WhenDeclaredInterfaceInheritsMultipleInterfaces()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITest
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
 
-                  /// {|MA0197:<inheritdoc />|}
-                  class Sample : ITest
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            interface IInterface2
+            {
+            }
+
+            interface ICompositeInterface : IInterface1, IInterface2
+            {
+            }
+
+            /// {|MA0197:<inheritdoc />|}
+            class Sample : ICompositeInterface
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_MA0197_WhenDeclaredInterfaceInheritsMultipleInterfaces()
+    public Task NoDiagnostic_WhenCrefIsPresent()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface IInterface1
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            /// <inheritdoc cref="object" />
+            class Sample
+            {
+            }
+            """;
 
-                  interface IInterface2
-                  {
-                  }
-
-                  interface ICompositeInterface : IInterface1, IInterface2
-                  {
-                  }
-
-                  /// {|MA0197:<inheritdoc />|}
-                  class Sample : ICompositeInterface
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenCrefIsPresent()
+    public Task NoDiagnostic_WhenCrefIsPresentOnXmlElement()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <inheritdoc cref="object" />
-                  class Sample
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// <inheritdoc cref="object"></inheritdoc>
+            class Sample
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenCrefIsPresentOnXmlElement()
+    public Task NoDiagnostic_WhenUsedOnMember()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <inheritdoc cref="object"></inheritdoc>
-                  class Sample
-                  {
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// <inheritdoc />
+                public override string ToString() => base.ToString();
+            }
+            """;
 
-    [Fact]
-    public async Task NoDiagnostic_WhenUsedOnMember()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// <inheritdoc />
-                      public override string ToString() => base.ToString();
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

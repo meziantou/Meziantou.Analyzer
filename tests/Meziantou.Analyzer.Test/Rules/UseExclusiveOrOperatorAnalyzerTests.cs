@@ -1,22 +1,22 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseExclusiveOrOperatorAnalyzer,
+    Meziantou.Analyzer.Rules.UseExclusiveOrOperatorFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseExclusiveOrOperatorAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseExclusiveOrOperatorAnalyzer>()
-            .WithCodeFixProvider<UseExclusiveOrOperatorFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Theory]
     [InlineData("(x && !y) || (!x && y)", "x ^ y")]
     [InlineData("(!x && y) || (x && !y)", "y ^ x")]
     [InlineData("(x && !y) || (y && !x)", "x ^ y")]
     [InlineData("(!y && x) || (!x && y)", "x ^ y")]
-    public async Task UseExclusiveOrOperator(string expression, string fixedExpression)
+    public Task UseExclusiveOrOperator(string expression, string fixedExpression)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 void Test(bool x, bool y)
@@ -25,7 +25,7 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
                 }
             }
             """;
-        var fixedCode = $$"""
+        test.FixedCode = $$"""
             class TestClass
             {
                 void Test(bool x, bool y)
@@ -34,16 +34,15 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UseExclusiveOrOperator_LocalVariables()
+    public Task UseExclusiveOrOperator_LocalVariables()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -54,7 +53,7 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
                 }
             }
             """;
-        var fixedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test()
@@ -65,10 +64,8 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -77,9 +74,10 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
     [InlineData("(x || !y) || (!x && y)")]
     [InlineData("(x && !y) && (!x && y)")]
     [InlineData("x ^ y")]
-    public async Task NoDiagnostic(string expression)
+    public Task NoDiagnostic(string expression)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 void Test(bool x, bool y)
@@ -88,15 +86,15 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_ForMemberAccess()
+    public Task NoDiagnostic_ForMemberAccess()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 bool X { get; }
@@ -108,8 +106,7 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }
