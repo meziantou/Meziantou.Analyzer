@@ -1,18 +1,18 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.AbstractTypesShouldNotHaveConstructorsAnalyzer,
+    Meziantou.Analyzer.Rules.AbstractTypesShouldNotHaveConstructorsFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<AbstractTypesShouldNotHaveConstructorsAnalyzer>()
-            .WithCodeFixProvider<AbstractTypesShouldNotHaveConstructorsFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task Ctor()
+    public Task Ctor()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             abstract class Test
             {
                 protected Test(int a) { }
@@ -27,61 +27,55 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
                 private Test2(object a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PublicCtor()
+    public Task PublicCtor()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             abstract class Test
             {
                 public [|Test|]() { }
             }
             """;
-
-            var expectedCodeFix = """
+        test.FixedCode = """
             abstract class Test
             {
                 protected Test() { }
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(sourceCode)
-                .ShouldFixCodeWith(expectedCodeFix)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalCtor()
+    public Task InternalCtor()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             abstract class Test
             {
                 internal [|Test|]() { }
             }
             """;
-
-        var codeFix = """
+        test.FixedCode = """
             abstract class Test
             {
                 protected Test() { }
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(sourceCode)
-                .ShouldFixCodeWith(codeFix)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalCtor_BatchFix()
+    public Task InternalCtor_BatchFix()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             abstract class Test
             {
                 internal [|Test|]() { }
@@ -89,8 +83,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
                 internal [|Test|](int a) { }
             }
             """;
-
-        var codeFix = """
+        test.FixedCode = """
             abstract class Test
             {
                 protected Test() { }
@@ -99,9 +92,6 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(sourceCode)
-                .ShouldBatchFixCodeWith(codeFix)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 }
