@@ -13,6 +13,7 @@
   <!-- Global using directives shared by all the files of this project -->
   <ItemGroup>
     <Using Include="Meziantou.Analyzer.Rules" />
+    <Using Include="Meziantou.Analyzer.Test.Harness" />
     <Using Include="Meziantou.Analyzer.Test.Helpers" />
     <Using Include="TestHelper" />
   </ItemGroup>

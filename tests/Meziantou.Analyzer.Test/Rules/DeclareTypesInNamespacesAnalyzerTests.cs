@@ -1,78 +1,82 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DeclareTypesInNamespacesAnalyzer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DeclareTypesInNamespacesAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DeclareTypesInNamespacesAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task InNamespace_IsValid()
+    public Task InNamespace_IsValid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                namespace Test
+        var test = CreateTest();
+        test.TestCode = """
+            namespace Test
+            {
+                class Sample
                 {
-                    class Sample
-                    {
-                    }
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotInNamespace_IsInvalid()
+    public Task NotInNamespace_IsInvalid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class [|Sample|]
-                {
-                    class Nested { }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class [|Sample|]
+            {
+                class Nested { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelProgram_9()
+    public Task TopLevelProgram_9()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-              .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode("""
-                System.Console.WriteLine();
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            System.Console.WriteLine();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelProgram_10()
+    public Task TopLevelProgram_10()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode("""
-                System.Console.WriteLine();
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            System.Console.WriteLine();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelProgram_10_partial()
+    public Task TopLevelProgram_10_partial()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode("""
-                System.Console.WriteLine();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            System.Console.WriteLine();
 
-                public partial class Program { }
-                """)
-              .ValidateAsync();
+            public partial class Program { }
+            """;
+
+        return test.RunAsync();
     }
 }

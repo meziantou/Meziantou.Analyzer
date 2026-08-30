@@ -27,6 +27,11 @@ internal sealed class CSharpAnalyzerTest<TAnalyzer>
     /// </summary>
     public Task RunAsync() => RunAsync(TestContext.Current.CancellationToken);
 
+    /// <summary>
+    /// The language version the code is parsed with.
+    /// </summary>
+    public LanguageVersion LanguageVersion { get; set; } = AnalyzerTestDefaults.LanguageVersion;
+
     protected override ParseOptions CreateParseOptions() =>
-        ((CSharpParseOptions)base.CreateParseOptions()).WithLanguageVersion(AnalyzerTestDefaults.LanguageVersion);
+        ((CSharpParseOptions)base.CreateParseOptions()).WithLanguageVersion(LanguageVersion);
 }
