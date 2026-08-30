@@ -79,9 +79,7 @@ public sealed class UseAnOverloadThatHasMidpointRoundingFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var midpointRoundingExpression = generator.MemberAccessExpression(
-            generator.TypeExpression(midpointRoundingSymbol, addImport: true),
-            midpointRoundingMember);
+        var midpointRoundingExpression = generator.TypeMemberAccessExpression(midpointRoundingSymbol, midpointRoundingMember, addImport: true);
 
         var newArgument = (ArgumentSyntax)generator.Argument(midpointRoundingExpression);
 

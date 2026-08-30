@@ -1,263 +1,279 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseCastAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseCastAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task ExplicitCast_IntToDouble_ShouldReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseCastAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    int value = 42;
+                    double result = [|(double)value|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_IntToDouble_ShouldReportDiagnostic()
+    public Task ExplicitCast_ObjectToString_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        int value = 42;
-                        double result = [|(double)value|];
-                    }
+                    object value = "test";
+                    string result = [|(string)value|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_ObjectToString_ShouldReportDiagnostic()
+    public Task ExplicitCast_EnumToInt_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { Value1, Value2 }
+
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        object value = "test";
-                        string result = [|(string)value|];
-                    }
+                    MyEnum value = MyEnum.Value1;
+                    int result = [|(int)value|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_EnumToInt_ShouldReportDiagnostic()
+    public Task ExplicitCast_IntToEnum_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                enum MyEnum { Value1, Value2 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { Value1, Value2 }
 
-                class TestClass
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        MyEnum value = MyEnum.Value1;
-                        int result = [|(int)value|];
-                    }
+                    int value = 1;
+                    MyEnum result = [|(MyEnum)value|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_IntToEnum_ShouldReportDiagnostic()
+    public Task ExplicitCast_CharToInt_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                enum MyEnum { Value1, Value2 }
-
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        int value = 1;
-                        MyEnum result = [|(MyEnum)value|];
-                    }
+                    char value = 'A';
+                    int result = [|(int)value|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_CharToInt_ShouldReportDiagnostic()
+    public Task ExplicitCast_IntToChar_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        char value = 'A';
-                        int result = [|(int)value|];
-                    }
+                    int value = 65;
+                    char result = [|(char)value|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_IntToChar_ShouldReportDiagnostic()
+    public Task ImplicitConversion_IntToDouble_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        int value = 65;
-                        char result = [|(char)value|];
-                    }
+                    int value = 42;
+                    double result = value;
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitConversion_IntToDouble_ShouldNotReportDiagnostic()
+    public Task AsOperator_ObjectToString_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        int value = 42;
-                        double result = value;
-                    }
+                    object value = "test";
+                    string? result = value as string;
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AsOperator_ObjectToString_ShouldNotReportDiagnostic()
+    public Task IsPattern_ObjectToString_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
+                    object value = "test";
+                    if (value is string result)
                     {
-                        object value = "test";
-                        string? result = value as string;
                     }
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsPattern_ObjectToString_ShouldNotReportDiagnostic()
+    public Task UserDefinedConversion_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class MyClass
+            {
+                public static explicit operator int(MyClass c) => 0;
+            }
+
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        object value = "test";
-                        if (value is string result)
-                        {
-                        }
-                    }
+                    MyClass value = new MyClass();
+                    int result = (int)value;
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UserDefinedConversion_ShouldNotReportDiagnostic()
+    public Task ExplicitCast_MultipleInMethod_ShouldReportAll()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class MyClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    public static explicit operator int(MyClass c) => 0;
+                    int a = 1;
+                    int b = 2;
+                    double x = [|(double)a|];
+                    double y = [|(double)b|];
                 }
+            }
+            """;
 
-                class TestClass
-                {
-                    void Test()
-                    {
-                        MyClass value = new MyClass();
-                        int result = (int)value;
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_MultipleInMethod_ShouldReportAll()
+    public Task ExplicitCast_InExpression_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        int a = 1;
-                        int b = 2;
-                        double x = [|(double)a|];
-                        double y = [|(double)b|];
-                    }
+                    int value = 42;
+                    double result = [|(double)value|] + 1.5;
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_InExpression_ShouldReportDiagnostic()
+    public Task ExplicitCast_BaseToDerivedException_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        int value = 42;
-                        double result = [|(double)value|] + 1.5;
-                    }
+                    Exception ex = new ArgumentException();
+                    ArgumentException argEx = [|(ArgumentException)ex|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitCast_BaseToDerivedException_ShouldReportDiagnostic()
+    public Task ExplicitCast_NullableToValue_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        Exception ex = new ArgumentException();
-                        ArgumentException argEx = [|(ArgumentException)ex|];
-                    }
+                    int? nullable = 42;
+                    int value = [|(int)nullable|];
                 }
-                """)
-            .ValidateAsync();
-    }
+            }
+            """;
 
-    [Fact]
-    public async Task ExplicitCast_NullableToValue_ShouldReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TestClass
-                {
-                    void Test()
-                    {
-                        int? nullable = 42;
-                        int value = [|(int)nullable|];
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

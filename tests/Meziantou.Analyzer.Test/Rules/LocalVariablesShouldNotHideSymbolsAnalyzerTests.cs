@@ -1,17 +1,20 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.LocalVariablesShouldNotHideSymbolsAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<LocalVariablesShouldNotHideSymbolsAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task LocalVariableHideField()
+    public Task LocalVariableHideField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 string a;
@@ -22,15 +25,15 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableHideProperty()
+    public Task LocalVariableHideProperty()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 string Prop {get;set;}
@@ -41,15 +44,15 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableHideVisibleFieldFromParentClass()
+    public Task LocalVariableHideVisibleFieldFromParentClass()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Base
             {
                 protected string a;
@@ -63,15 +66,16 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableHidePrimaryConstructorParameter()
+    public Task LocalVariableHidePrimaryConstructorParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
             class Test(int a)
             {
                 void A()
@@ -80,16 +84,16 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableDoesNotHidePrimaryConstructorParameterInStaticMethod()
+    public Task LocalVariableDoesNotHidePrimaryConstructorParameterInStaticMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
             class Test(int a)
             {
                 static void A()
@@ -98,16 +102,16 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableDoesNotHidePrimaryConstructorParameter()
+    public Task LocalVariableDoesNotHidePrimaryConstructorParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
             class Test(int a)
             {
                 void A()
@@ -116,16 +120,15 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableHideNotVisibleFieldFromParentClass()
+    public Task LocalVariableHideNotVisibleFieldFromParentClass()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Base
             {
                 private string a;
@@ -139,15 +142,15 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableDoesNotHideSymbol()
+    public Task LocalVariableDoesNotHideSymbol()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -156,15 +159,15 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableInLocalFunctionHidesLocalVariableFromContainingMethod()
+    public Task LocalVariableInLocalFunctionHidesLocalVariableFromContainingMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -178,15 +181,15 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableInStaticLocalFunctionDoesNotHideLocalVariableFromContainingMethod()
+    public Task LocalVariableInStaticLocalFunctionDoesNotHideLocalVariableFromContainingMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -200,15 +203,15 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariableInNestedLocalFunctionDoesNotHideLocalVariableAcrossStaticLocalFunction()
+    public Task LocalVariableInNestedLocalFunctionDoesNotHideLocalVariableAcrossStaticLocalFunction()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -225,8 +228,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

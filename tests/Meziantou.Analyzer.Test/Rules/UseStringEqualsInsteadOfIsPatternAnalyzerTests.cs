@@ -118,6 +118,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
                 }
             }
             """;
+        test.CodeActionIndex = 1;
         test.FixedCode = """
             class TypeName
             {

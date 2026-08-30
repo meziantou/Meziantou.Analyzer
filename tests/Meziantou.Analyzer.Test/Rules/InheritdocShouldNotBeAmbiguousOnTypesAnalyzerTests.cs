@@ -1,206 +1,211 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.InheritdocShouldNotBeAmbiguousOnTypesAnalyzer,
+    Meziantou.Analyzer.Rules.InheritdocShouldNotBeUsedOnTypesFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<InheritdocShouldNotBeAmbiguousOnTypesAnalyzer>()
-            .WithTargetFramework(TargetFramework.NetLatest);
-    }
+    private static CodeFixTest CreateTest() => new();
 
-    private static ProjectBuilder CreateProjectBuilderWithCodeFixProvider()
+    [Fact]
+    public Task ReportDiagnostic_MA0198_WhenMultipleDeclaredInterfacesArePresentAndNoBaseType()
     {
-        return CreateProjectBuilder()
-            .WithCodeFixProvider<InheritdocShouldNotBeUsedOnTypesFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
+
+            interface IInterface2
+            {
+            }
+
+            /// {|MA0198:<inheritdoc />|}
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_MA0198_WhenMultipleDeclaredInterfacesArePresentAndNoBaseType()
+    public Task CodeFix_MA0198_EmptyElement_FirstInterface()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface IInterface1
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
 
-                  interface IInterface2
-                  {
-                  }
+            interface IInterface2
+            {
+            }
 
-                  /// {|MA0198:<inheritdoc />|}
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            /// {|MA0198:<inheritdoc />|}
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
+        test.FixedCode = """
+            interface IInterface1
+            {
+            }
+
+            interface IInterface2
+            {
+            }
+
+            /// <inheritdoc cref="IInterface1" />
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_MA0198_EmptyElement_FirstInterface()
+    public Task CodeFix_MA0198_EmptyElement_SecondInterface()
     {
-        await CreateProjectBuilderWithCodeFixProvider()
-              .WithSourceCode("""
-                  interface IInterface1
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
 
-                  interface IInterface2
-                  {
-                  }
+            interface IInterface2
+            {
+            }
 
-                  /// {|MA0198:<inheritdoc />|}
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ShouldFixCodeWith(index: 0, """
-                  interface IInterface1
-                  {
-                  }
+            /// {|MA0198:<inheritdoc />|}
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+            interface IInterface1
+            {
+            }
 
-                  interface IInterface2
-                  {
-                  }
+            interface IInterface2
+            {
+            }
 
-                  /// <inheritdoc cref="IInterface1" />
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            /// <inheritdoc cref="IInterface2" />
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_MA0198_EmptyElement_SecondInterface()
+    public Task CodeFix_MA0198_XmlElement()
     {
-        await CreateProjectBuilderWithCodeFixProvider()
-              .WithSourceCode("""
-                  interface IInterface1
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
 
-                  interface IInterface2
-                  {
-                  }
+            interface IInterface2
+            {
+            }
 
-                  /// {|MA0198:<inheritdoc />|}
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ShouldFixCodeWith(index: 1, """
-                  interface IInterface1
-                  {
-                  }
+            /// {|MA0198:<inheritdoc>|}</inheritdoc>
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+            interface IInterface1
+            {
+            }
 
-                  interface IInterface2
-                  {
-                  }
+            interface IInterface2
+            {
+            }
 
-                  /// <inheritdoc cref="IInterface2" />
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            /// <inheritdoc cref="IInterface2"></inheritdoc>
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_MA0198_XmlElement()
+    public Task NoDiagnostic_WhenSingleDeclaredInterfaceIsPresent()
     {
-        await CreateProjectBuilderWithCodeFixProvider()
-              .WithSourceCode("""
-                  interface IInterface1
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
 
-                  interface IInterface2
-                  {
-                  }
+            /// <inheritdoc />
+            class Sample : IInterface1
+            {
+            }
+            """;
 
-                  /// {|MA0198:<inheritdoc>|}</inheritdoc>
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ShouldFixCodeWith(index: 1, """
-                  interface IInterface1
-                  {
-                  }
-
-                  interface IInterface2
-                  {
-                  }
-
-                  /// <inheritdoc cref="IInterface2"></inheritdoc>
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenSingleDeclaredInterfaceIsPresent()
+    public Task NoDiagnostic_WhenBaseTypeIsPresent()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface IInterface1
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseClass
+            {
+            }
 
-                  /// <inheritdoc />
-                  class Sample : IInterface1
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            interface IInterface1
+            {
+            }
+
+            interface IInterface2
+            {
+            }
+
+            /// <inheritdoc />
+            class Sample : BaseClass, IInterface1, IInterface2
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenBaseTypeIsPresent()
+    public Task NoDiagnostic_WhenCrefIsPresent()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class BaseClass
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
 
-                  interface IInterface1
-                  {
-                  }
+            interface IInterface2
+            {
+            }
 
-                  interface IInterface2
-                  {
-                  }
+            /// <inheritdoc cref="T:IInterface1" />
+            class Sample : IInterface1, IInterface2
+            {
+            }
+            """;
 
-                  /// <inheritdoc />
-                  class Sample : BaseClass, IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NoDiagnostic_WhenCrefIsPresent()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface IInterface1
-                  {
-                  }
-
-                  interface IInterface2
-                  {
-                  }
-
-                  /// <inheritdoc cref="T:IInterface1" />
-                  class Sample : IInterface1, IInterface2
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

@@ -1,18 +1,21 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedAnalyzer,
+    Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<EqualityShouldBeCorrectlyImplementedAnalyzer>()
-            .WithCodeFixProvider<EqualityShouldBeCorrectlyImplementedFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task ClassImplementsNoInterfaceAndProvidesCompatibleCompareToMethod_DiagnosticIsReported()
+    public Task ClassImplementsNoInterfaceAndProvidesCompatibleCompareToMethod_DiagnosticIsReported()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             class {|MA0094:Test|} : IComparable<string>
@@ -28,15 +31,14 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AlreadyImplemented()
+    public Task AlreadyImplemented()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             class Test : IComparable<Test>, IEquatable<Test>
@@ -54,18 +56,17 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MissingIEquatable()
+    public Task MissingIEquatable()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
-            class [|Test|] : IComparable<Test>
+            class {|MA0096:Test|} : IComparable<Test>
             {
                 public int CompareTo(string other) => throw null;
                 public int CompareTo(Test other) => throw null;
@@ -78,17 +79,16 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MA0094_CodeFix()
+    public Task MA0094_CodeFix()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
-            
+
             class {|MA0094:Test|} : IComparable<string>
             {
                 public int CompareTo(string other) => throw null;
@@ -101,10 +101,14 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
                 public static bool operator !=(Test a, Test b) => throw null;
             }
             """;
-        var fixedCode = """
+        // Fixing MA0094 makes MA0096 report on the result, which the iterative fixer would fix as well.
+        // MarkupMode.Allow is needed for the fixed code to declare a diagnostic the fixer could fix.
+        test.CodeFixTestBehaviors = CodeFixTestBehaviors.FixOne;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedCode = """
             using System;
-            
-            class Test : IComparable<string>, IComparable<Test>
+
+            class {|MA0096:Test|} : IComparable<string>, IComparable<Test>
             {
                 public int CompareTo(string other) => throw null;
                 public int CompareTo(Test other) => throw null;
@@ -117,18 +121,16 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MA0096_CodeFix()
+    public Task MA0096_CodeFix()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
-            
+
             class {|MA0096:Test|} : IComparable<Test>
             {
                 public int CompareTo(Test other) => throw null;
@@ -142,9 +144,9 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
                 public static bool operator !=(Test a, Test b) => throw null;
             }
             """;
-        var fixedCode = """
+        test.FixedCode = """
             using System;
-            
+
             class Test : IComparable<Test>, IEquatable<Test>
             {
                 public int CompareTo(Test other) => throw null;
@@ -161,10 +163,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -174,23 +173,24 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
     [InlineData("public int CompareTo(int other)")]
     [InlineData("public void CompareTo(Test other)")]
     [InlineData("public bool CompareTo(Test other)")]
-    public async Task ClassImplementsNoInterfaceAndProvidesIncompatibleCompareToMethod_NoDiagnosticReported(string methodSignature)
+    public Task ClassImplementsNoInterfaceAndProvidesIncompatibleCompareToMethod_NoDiagnosticReported(string methodSignature)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class Test
             {
                 {{methodSignature}} => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MissingOperators()
+    public Task MissingOperators()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             class {|MA0094:Test|} : IComparable<string>
@@ -200,8 +200,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0094Tests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }
