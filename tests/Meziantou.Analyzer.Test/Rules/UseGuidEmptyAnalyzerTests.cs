@@ -1,13 +1,12 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseGuidEmptyAnalyzer,
+    Meziantou.Analyzer.Rules.UseGuidEmptyFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseGuidEmptyAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseGuidEmptyAnalyzer>()
-            .WithCodeFixProvider<UseGuidEmptyFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Theory]
     [InlineData("new System.Guid()")]
@@ -20,55 +19,57 @@ public sealed class UseGuidEmptyAnalyzerTests
     [InlineData("System.Guid.Parse(\"{00000000-0000-0000-0000-000000000000}\")")]
     [InlineData("System.Guid.Parse(\"00000000000000000000000000000000\")")]
     [InlineData("System.Guid.Parse(\"(00000000-0000-0000-0000-000000000000)\")")]
-    public async Task ShouldReportError(string code)
+    public Task ShouldReportError(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-class TestClass
-{
-    void Test()
-    {
-        _ = [|{{code}}|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-class TestClass
-{
-    void Test()
-    {
-        _ = System.Guid.Empty;
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = [|{{code}}|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = System.Guid.Empty;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldReportError_FlowedFromLocal()
+    public Task ShouldReportError_FlowedFromLocal()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-class TestClass
-{
-    void Test()
-    {
-        var value = "00000000-0000-0000-0000-000000000000";
-        _ = [|System.Guid.Parse(value)|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-class TestClass
-{
-    void Test()
-    {
-        var value = "00000000-0000-0000-0000-000000000000";
-        _ = System.Guid.Empty;
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    var value = "00000000-0000-0000-0000-000000000000";
+                    _ = [|System.Guid.Parse(value)|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    var value = "00000000-0000-0000-0000-000000000000";
+                    _ = System.Guid.Empty;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -76,18 +77,19 @@ class TestClass
     [InlineData("new System.Guid(\"10752bc4-c151-50f5-f27b-df92d8af5a61\")")]
     [InlineData("System.Guid.Parse(\"10752bc4-c151-50f5-f27b-df92d8af5a61\")")]
     [InlineData("new System.Guid(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)")]
-    public async Task ShouldNotReportError(string code)
+    public Task ShouldNotReportError(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-class TestClass
-{
-    void Test()
-    {
-        _ = {{code}};
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = {{code}};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

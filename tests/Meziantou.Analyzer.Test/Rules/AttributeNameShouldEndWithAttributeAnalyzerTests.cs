@@ -1,58 +1,54 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.AttributeNameShouldEndWithAttributeAnalyzer,
+    Meziantou.Analyzer.Rules.TypeNameShouldEndWithSuffixFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AttributeNameShouldEndWithAttributeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<AttributeNameShouldEndWithAttributeAnalyzer>()
-            .WithCodeFixProvider<TypeNameShouldEndWithSuffixFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task NameEndsWithAttribute()
+    public Task NameEndsWithAttribute()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class CustomAttribute : System.Attribute
             {
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NameDoesNotEndWithAttribute()
+    public Task NameDoesNotEndWithAttribute()
     {
-        const string SourceCode = """
-            class [|CustomAttr|] : System.Attribute
-            {
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NameDoesNotEndWithAttribute_CodeFix()
-    {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class [|CustomAttr|] : System.Attribute
             {
             }
             """;
 
-        const string Fix = """
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NameDoesNotEndWithAttribute_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class [|CustomAttr|] : System.Attribute
+            {
+            }
+            """;
+        test.FixedCode = """
             class CustomAttrAttribute : System.Attribute
             {
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

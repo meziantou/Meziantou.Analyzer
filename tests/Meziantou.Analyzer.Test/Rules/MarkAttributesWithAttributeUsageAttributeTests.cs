@@ -1,73 +1,69 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.MarkAttributesWithAttributeUsageAttributeAnalyzer,
+    Meziantou.Analyzer.Rules.MarkAttributesWithAttributeUsageAttributeFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class MarkAttributesWithAttributeUsageAttributeTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<MarkAttributesWithAttributeUsageAttributeAnalyzer>()
-            .WithCodeFixProvider<MarkAttributesWithAttributeUsageAttributeFixer>();
+        var test = CreateTest();
+        test.TestCode = "class [|TestAttribute|] : System.Attribute { }";
+        test.FixedCode = """
+            [System.AttributeUsage(System.AttributeTargets.All)]
+            class TestAttribute : System.Attribute { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
+    public Task ClassDoesNotInheritsFromAttribute_ShouldNotReportError()
     {
-        const string SourceCode = "class [|TestAttribute|] : System.Attribute { }";
+        var test = CreateTest();
+        test.TestCode = "class TestAttribute : System.Object { }";
 
-        const string CodeFix = @"[System.AttributeUsage(System.AttributeTargets.All)]
-class TestAttribute : System.Attribute { }";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassDoesNotInheritsFromAttribute_ShouldNotReportError()
+    public Task ClassHasAttribute_ShouldNotReportError()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("class TestAttribute : System.Object { }")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ClassHasAttribute_ShouldNotReportError()
-    {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
             class TestAttribute : System.Attribute { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AbstractClass_ShouldNotReportError()
+    public Task AbstractClass_ShouldNotReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             abstract class TestAttribute : System.Attribute { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ParentClassHasAttribute_ShouldNotReportError()
+    public Task ParentClassHasAttribute_ShouldNotReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = true)]
             class TestAttribute : System.Attribute { }
             class ChildTestAttribute : TestAttribute { }
             class GrandChildTestAttribute : ChildTestAttribute { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

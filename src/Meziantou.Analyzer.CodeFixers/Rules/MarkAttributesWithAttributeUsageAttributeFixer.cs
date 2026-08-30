@@ -49,9 +49,7 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
             generator.TypeExpression(attributeUsageAttribute, addImport: true),
             [
                     generator.AttributeArgument(
-                        generator.MemberAccessExpression(
-                            generator.TypeExpression(attributeTargets, addImport: true),
-                            nameof(AttributeTargets.All))),
+                        generator.TypeMemberAccessExpression(attributeTargets, nameof(AttributeTargets.All), addImport: true)),
             ]);
 
         editor.AddAttribute(classNode, attribute);
