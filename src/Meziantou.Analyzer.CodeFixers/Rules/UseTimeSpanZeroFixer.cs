@@ -47,8 +47,6 @@ public sealed class UseTimeSpanZeroFixer : CodeFixProvider
     private static SyntaxNode GenerateTimeSpanZeroExpression(SyntaxGenerator generator, SemanticModel semanticModel)
     {
         var timeSpanType = semanticModel.Compilation.GetBestTypeByMetadataName("System.TimeSpan");
-        return generator.MemberAccessExpression(
-            generator.TypeExpression(timeSpanType!),
-            nameof(TimeSpan.Zero));
+        return generator.TypeMemberAccessExpression(timeSpanType!, nameof(TimeSpan.Zero));
     }
 }

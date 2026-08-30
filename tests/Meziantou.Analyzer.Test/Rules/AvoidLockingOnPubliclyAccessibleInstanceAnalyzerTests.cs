@@ -1,17 +1,17 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.AvoidLockingOnPubliclyAccessibleInstanceAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<AvoidLockingOnPubliclyAccessibleInstanceAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task LockThis_Internal()
+    public Task LockThis_Internal()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Test
             {
                 void A()
@@ -20,15 +20,15 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LockThis_Public()
+    public Task LockThis_Public()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 void A()
@@ -37,15 +37,15 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LockTypeof()
+    public Task LockTypeof()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -57,15 +57,15 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LockVariableOfTypeSystemType()
+    public Task LockVariableOfTypeSystemType()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -75,15 +75,15 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LockPubliclyAccessibleField()
+    public Task LockPubliclyAccessibleField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 public string TestField;
@@ -93,15 +93,15 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LockPrivateFieldShouldNotReport()
+    public Task LockPrivateFieldShouldNotReport()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 private string TestField;
@@ -111,15 +111,15 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LockVariableOfTypeStringShouldNotReport()
+    public Task LockVariableOfTypeStringShouldNotReport()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 private string TestField;
@@ -130,8 +130,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

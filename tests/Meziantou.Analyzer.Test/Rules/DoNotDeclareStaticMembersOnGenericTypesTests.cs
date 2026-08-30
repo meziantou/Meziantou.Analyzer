@@ -1,17 +1,19 @@
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotDeclareStaticMembersOnGenericTypes>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotDeclareStaticMembersOnGenericTypes>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task StaticMembersInNonGenericClass()
+    public Task StaticMembersInNonGenericClass()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 public static string field;
@@ -23,15 +25,15 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
                 public string Method2() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonStaticMembersInGenericClass()
+    public Task NonStaticMembersInGenericClass()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test<T>
             {
                 public string field2;
@@ -39,86 +41,85 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
                 public string Method2() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMembers_Field()
+    public Task StaticMembers_Field()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test<T>
             {
                 public static string [|field|];
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMembers_Property()
+    public Task StaticMembers_Property()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test<T>
             {
                 public static string [|Prop|] => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMembers_Method()
+    public Task StaticMembers_Method()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test<T>
             {
                 public static string [|Method|]() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMembers_Operator()
+    public Task StaticMembers_Operator()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test<T>
             {
                 public static implicit operator Test<T>(int i) => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Const()
+    public Task Const()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test<T>
             {
                 public const string PasswordlessSignInPurpose = "PasswordlessSignIn";
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonPublicStaticMembers()
+    public Task NonPublicStaticMembers()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test<T>
             {
                 internal protected static string Method1() => throw null;
@@ -128,24 +129,23 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
                 private static string Method5() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticAbstract()
+    public Task StaticAbstract()
     {
-        const string SourceCode = """"
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
             public interface IFactory<TSelf> where TSelf : IFactory<TSelf>
             {
                 static abstract TSelf Create();
             }
-            """";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 }

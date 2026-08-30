@@ -1,18 +1,18 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotNaNInComparisonsAnalyzer,
+    Meziantou.Analyzer.Rules.DoNotNaNInComparisonsFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotNaNInComparisonsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotNaNInComparisonsAnalyzer>()
-            .WithCodeFixProvider<DoNotNaNInComparisonsFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task Comparisons()
+    public Task Comparisons()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -42,15 +42,15 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Comparisons_CodeFix()
+    public Task Comparisons_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(double value)
@@ -59,8 +59,7 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 void A(double value)
@@ -70,16 +69,14 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Comparisons_CodeFix_Float()
+    public Task Comparisons_CodeFix_Float()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(float value)
@@ -88,8 +85,7 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 void A(float value)
@@ -99,16 +95,14 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Comparisons_CodeFix_Half()
+    public Task Comparisons_CodeFix_Half()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -118,8 +112,7 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -130,9 +123,6 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

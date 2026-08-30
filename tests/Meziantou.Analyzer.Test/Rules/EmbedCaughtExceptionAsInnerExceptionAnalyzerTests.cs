@@ -1,18 +1,18 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.EmbedCaughtExceptionAsInnerExceptionAnalyzer,
+    Meziantou.Analyzer.Rules.EmbedCaughtExceptionAsInnerExceptionFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<EmbedCaughtExceptionAsInnerExceptionAnalyzer>()
-            .WithCodeFixProvider<EmbedCaughtExceptionAsInnerExceptionFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task NotInCaughtException_ShouldNotReportDiagnostic()
+    public Task NotInCaughtException_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public void A()
@@ -21,15 +21,15 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InCaughtExceptionWithInnerException_ShouldNotReportDiagnostic()
+    public Task InCaughtExceptionWithInnerException_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public void A()
@@ -44,15 +44,15 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InCaughtExceptionWithoutInnerException_ShouldReportDiagnostic()
+    public Task InCaughtExceptionWithoutInnerException_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public void A()
@@ -67,15 +67,15 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InCaughtExceptionWithoutInnerException_NoConstructorWithInnerException_ShouldNotReportDiagnostic()
+    public Task InCaughtExceptionWithoutInnerException_NoConstructorWithInnerException_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public void A()
@@ -97,15 +97,15 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InCaughtExceptionWithoutInnerException_CodeFix()
+    public Task InCaughtExceptionWithoutInnerException_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public void A()
@@ -120,8 +120,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 public void A()
@@ -137,9 +136,6 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

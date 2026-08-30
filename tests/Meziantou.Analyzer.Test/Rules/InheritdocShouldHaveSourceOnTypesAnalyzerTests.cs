@@ -1,147 +1,154 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.InheritdocShouldHaveSourceOnTypesAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class InheritdocShouldHaveSourceOnTypesAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task ReportDiagnostic_MA0199_WhenNoBaseTypeAndNoDeclaredInterface()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<InheritdocShouldHaveSourceOnTypesAnalyzer>()
-            .WithTargetFramework(TargetFramework.NetLatest);
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0199:<inheritdoc />|}
+            class Sample
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_MA0199_WhenNoBaseTypeAndNoDeclaredInterface()
+    public Task ReportDiagnostic_MA0199_WhenInterfaceHasNoBaseInterface()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0199:<inheritdoc />|}
-                  class Sample
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0199:<inheritdoc />|}
+            interface ITest
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_MA0199_WhenInterfaceHasNoBaseInterface()
+    public Task ReportDiagnostic_ForEachPartialDeclaration()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0199:<inheritdoc />|}
-                  interface ITest
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0199:<inheritdoc />|}
+            partial class Sample
+            {
+            }
+
+            /// {|MA0199:<inheritdoc />|}
+            partial class Sample
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_ForEachPartialDeclaration()
+    public Task NoDiagnostic_WhenBaseTypeIsPresent()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0199:<inheritdoc />|}
-                  partial class Sample
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseClass
+            {
+            }
 
-                  /// {|MA0199:<inheritdoc />|}
-                  partial class Sample
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            /// <inheritdoc />
+            class Sample : BaseClass
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenBaseTypeIsPresent()
+    public Task NoDiagnostic_WhenCrefIsPresent()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class BaseClass
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            /// <inheritdoc cref="object" />
+            class Sample
+            {
+            }
+            """;
 
-                  /// <inheritdoc />
-                  class Sample : BaseClass
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenCrefIsPresent()
+    public Task NoDiagnostic_WhenInterfaceInheritsAnotherInterface()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <inheritdoc cref="object" />
-                  class Sample
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface IBase
+            {
+            }
+
+            /// <inheritdoc />
+            interface IChild : IBase
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenInterfaceInheritsAnotherInterface()
+    public Task NoDiagnostic_WhenRecordInheritsBaseRecord()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface IBase
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            record BaseRecord;
 
-                  /// <inheritdoc />
-                  interface IChild : IBase
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+            /// <inheritdoc />
+            record Sample : BaseRecord;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenRecordInheritsBaseRecord()
+    public Task NoDiagnostic_WhenStructImplementsInterface()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  record BaseRecord;
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+            }
 
-                  /// <inheritdoc />
-                  record Sample : BaseRecord;
-                  """)
-              .ValidateAsync();
+            /// <inheritdoc />
+            struct Sample : ITest
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenStructImplementsInterface()
+    public Task NoDiagnostic_WhenRecordStructImplementsInterface()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITest
-                  {
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+            }
 
-                  /// <inheritdoc />
-                  struct Sample : ITest
-                  {
-                  }
-                  """)
-              .ValidateAsync();
-    }
+            /// <inheritdoc />
+            record struct Sample : ITest;
+            """;
 
-    [Fact]
-    public async Task NoDiagnostic_WhenRecordStructImplementsInterface()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITest
-                  {
-                  }
-
-                  /// <inheritdoc />
-                  record struct Sample : ITest;
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

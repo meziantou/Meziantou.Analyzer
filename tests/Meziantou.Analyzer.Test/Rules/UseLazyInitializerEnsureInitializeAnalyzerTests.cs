@@ -1,139 +1,149 @@
+using Microsoft.CodeAnalysis;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseLazyInitializerEnsureInitializeAnalyzer,
+    Meziantou.Analyzer.Rules.UseLazyInitializerEnsureInitializeFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseLazyInitializerEnsureInitializeAnalyzer>()
-            .WithCodeFixProvider<UseLazyInitializerEnsureInitializeFixer>()
-            .WithTargetFramework(TargetFramework.NetLatest)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task NewObject_Null()
+    public Task NewObject_Null()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                object a = default;
-                [|System.Threading.Interlocked.CompareExchange(ref a, new object(), null)|];
-                """)
-              .ShouldFixCodeWith("""
-                object a = default;
-                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new object());
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            object a = default;
+            [|System.Threading.Interlocked.CompareExchange(ref a, new object(), null)|];
+            """;
+        test.FixedCode = """
+            object a = default;
+            System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new object());
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewCustomClass_Null()
+    public Task NewCustomClass_Null()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                Sample a = default;
-                [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
-                class Sample { };
-                """)
-              .ShouldFixCodeWith("""
-                Sample a = default;
-                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
-                class Sample { };
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
+            class Sample { };
+            """;
+        test.FixedCode = """
+            Sample a = default;
+            System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
+            class Sample { };
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewCustomClass_Object_Null()
+    public Task NewCustomClass_Object_Null()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                object? a = default;
-                [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
-                class Sample { };
-                """)
-              .ShouldFixCodeWith("""
-                object? a = default;
-                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
-                class Sample { };
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            object? a = default;
+            [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
+            class Sample { };
+            """;
+        test.FixedCode = """
+            object? a = default;
+            System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
+            class Sample { };
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewCustomClass_Default()
+    public Task NewCustomClass_Default()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                Sample a = default;
-                [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default)|];
-                class Sample { };
-                """)
-              .ShouldFixCodeWith("""
-                Sample a = default;
-                System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
-                class Sample { };
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default)|];
+            class Sample { };
+            """;
+        test.FixedCode = """
+            Sample a = default;
+            System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample());
+            class Sample { };
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariable_Field_Null()
+    public Task LocalVariable_Field_Null()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                _ = new Sample().M();
+        var test = CreateTest();
+        test.TestCode = """
+            _ = new Sample().M();
 
-                class Sample
+            class Sample
+            {
+                private static System.Func<string>? s_getDisplayName;
+
+                public string M()
                 {
-                    private static System.Func<string>? s_getDisplayName;
-
-                    public string M()
-                    {
-                        System.Func<string> getDisplayName = () => string.Empty;
-                        [|System.Threading.Interlocked.CompareExchange(ref s_getDisplayName, getDisplayName, comparand: null)|];
-                        return getDisplayName();
-                    }
+                    System.Func<string> getDisplayName = () => string.Empty;
+                    [|System.Threading.Interlocked.CompareExchange(ref s_getDisplayName, getDisplayName, comparand: null)|];
+                    return getDisplayName();
                 }
-                """)
-              .ShouldFixCodeWith("""
-                _ = new Sample().M();
+            }
+            """;
+        test.FixedCode = """
+            _ = new Sample().M();
 
-                class Sample
+            class Sample
+            {
+                private static System.Func<string>? s_getDisplayName;
+
+                public string M()
                 {
-                    private static System.Func<string>? s_getDisplayName;
-
-                    public string M()
-                    {
-                        System.Func<string> getDisplayName = () => string.Empty;
-                        System.Threading.LazyInitializer.EnsureInitialized(ref s_getDisplayName, () => getDisplayName);
-                        return getDisplayName();
-                    }
+                    System.Func<string> getDisplayName = () => string.Empty;
+                    System.Threading.LazyInitializer.EnsureInitialized(ref s_getDisplayName, () => getDisplayName);
+                    return getDisplayName();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewCustomStruct()
+    public Task NewCustomStruct()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                Sample a = default;
-                System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default);
-                struct Sample { };
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default);
+            struct Sample { };
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewInt32_Zero()
+    public Task NewInt32_Zero()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                int a = default;
-                System.Threading.Interlocked.CompareExchange(ref a, 0, 0);
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            int a = default;
+            System.Threading.Interlocked.CompareExchange(ref a, 0, 0);
+            """;
+
+        return test.RunAsync();
     }
 }

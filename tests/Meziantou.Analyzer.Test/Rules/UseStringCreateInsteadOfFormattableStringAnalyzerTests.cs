@@ -1,142 +1,139 @@
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseStringCreateInsteadOfFormattableStringAnalyzer,
+    Meziantou.Analyzer.Rules.UseStringCreateInsteadOfFormattableStringFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task Net5_NoDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseStringCreateInsteadOfFormattableStringAnalyzer>()
-            .WithCodeFixProvider<UseStringCreateInsteadOfFormattableStringFixer>();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
+            using System;
+            class TypeName
+            {
+                public void Test()
+                {
+                    FormattableString.Invariant($"");
+                    FormattableString.CurrentCulture($"");
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Net5_NoDiagnostic()
+    public Task FormattableString_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-class TypeName
-{
-    public void Test()
-    {
-        FormattableString.Invariant($"");
-        FormattableString.CurrentCulture($"");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            class TypeName
+            {
+                public void Test()
+                {
+                    FormattableString fs = default;
+                    FormattableString.Invariant(fs);
+                    FormattableString.CurrentCulture(fs);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_NoDiagnostic()
+    public Task Charp9_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-class TypeName
-{
-    public void Test()
-    {
-        FormattableString fs = default;
-        FormattableString.Invariant(fs);
-        FormattableString.CurrentCulture(fs);
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            using System;
+            class TypeName
+            {
+                public void Test()
+                {
+                    FormattableString.Invariant($"");
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task Charp9_NoDiagnostic()
-    {
-        const string SourceCode = """
-using System;
-class TypeName
-{
-    public void Test()
-    {
-        FormattableString.Invariant($"");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableStringInvariant()
+    public Task FormattableStringInvariant()
     {
-        const string SourceCode = """
-using System;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestCode = """
+            using System;
 
-class TypeName
-{
-    public void Test()
-    {
-        [|FormattableString.Invariant($"")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|FormattableString.Invariant($"")|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-        const string Fix = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test()
+                {
+                    string.Create(CultureInfo.InvariantCulture, $"");
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test()
-    {
-        string.Create(CultureInfo.InvariantCulture, $"");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableStringCurrentCulture()
+    public Task FormattableStringCurrentCulture()
     {
-        const string SourceCode = """
-using System;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestCode = """
+            using System;
 
-class TypeName
-{
-    public void Test()
-    {
-        [|FormattableString.CurrentCulture($"")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|FormattableString.CurrentCulture($"")|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-        const string Fix = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test()
+                {
+                    string.Create(CultureInfo.CurrentCulture, $"");
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test()
-    {
-        string.Create(CultureInfo.CurrentCulture, $"");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }
