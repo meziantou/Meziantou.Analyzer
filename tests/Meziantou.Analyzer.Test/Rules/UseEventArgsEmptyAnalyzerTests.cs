@@ -1,38 +1,36 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseEventArgsEmptyAnalyzer,
+    Meziantou.Analyzer.Rules.UseEventArgsEmptyFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseEventArgsEmptyAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseEventArgsEmptyAnalyzer>()
-            .WithCodeFixProvider<UseEventArgsEmptyFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task ShouldReport()
+    public Task ShouldReport()
     {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test()
-    {
-        _ = [|new System.EventArgs()|];
-    }
-}
-""";
-        const string Fixed = """
-class TypeName
-{
-    public void Test()
-    {
-        _ = System.EventArgs.Empty;
-    }
-}
-""";
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(Fixed)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = [|new System.EventArgs()|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = System.EventArgs.Empty;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

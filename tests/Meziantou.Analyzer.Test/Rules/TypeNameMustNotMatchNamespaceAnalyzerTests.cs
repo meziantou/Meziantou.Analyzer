@@ -1,17 +1,17 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.TypeNameMustNotMatchNamespaceAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<TypeNameMustNotMatchNamespaceAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task DifferentName()
+    public Task DifferentName()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace TestNamespace
             {
                 class TestClass
@@ -19,15 +19,15 @@ public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SameName()
+    public Task SameName()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace Test
             {
                 class [|Test|]
@@ -35,15 +35,15 @@ public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SameNameInNestedType()
+    public Task SameNameInNestedType()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace Test
             {
                 class TestClass
@@ -54,8 +54,7 @@ public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

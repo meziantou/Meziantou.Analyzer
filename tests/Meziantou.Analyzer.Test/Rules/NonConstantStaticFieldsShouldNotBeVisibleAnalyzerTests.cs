@@ -1,89 +1,94 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.NonConstantStaticFieldsShouldNotBeVisibleAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task ReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<NonConstantStaticFieldsShouldNotBeVisibleAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public static int [|a|] = 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic()
+    public Task InternalClass()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                public class Sample
-                {
-                    public static int [|a|] = 0;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            internal class Sample
+            {
+                public static int a = 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClass()
+    public Task StaticReadOnly()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                internal class Sample
-                {
-                    public static int a = 0;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public static readonly int a = 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticReadOnly()
+    public Task InstanceField()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                public class Sample
-                {
-                    public static readonly int a = 0;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public int a = 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InstanceField()
+    public Task EnumMembers()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                public class Sample
-                {
-                    public int a = 0;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            public enum Sample
+            {
+                A = 1,
+                B,
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumMembers()
+    public Task Const()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                public enum Sample
-                {
-                    A = 1,
-                    B,
-                }
-                """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public const int a = 0;
+            }
+            """;
 
-    [Fact]
-    public async Task Const()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                public class Sample
-                {
-                    public const int a = 0;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

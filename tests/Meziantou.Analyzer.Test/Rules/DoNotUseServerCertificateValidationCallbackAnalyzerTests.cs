@@ -1,17 +1,17 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseServerCertificateValidationCallbackAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseServerCertificateValidationCallbackAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task ServicePointManager_ServerCertificateValidationCallbackAsync()
+    public Task ServicePointManager_ServerCertificateValidationCallbackAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -32,16 +32,16 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
             {
                 public delegate bool RemoteCertificateValidationCallback(object sender, object certificate, object chain, object sslPolicyErrors);
             }
-        """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
+    public Task HttpClientHandler_ServerCertificateCustomValidationCallbackAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -58,9 +58,8 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
                     public Func<object, object, object, object, bool> ServerCertificateCustomValidationCallback { get; set; }
                 }
             }
-        """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 }

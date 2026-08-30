@@ -1,44 +1,45 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedAnalyzer,
+    Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0097Tests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task BaseClassImplementsOperators()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<EqualityShouldBeCorrectlyImplementedAnalyzer>()
-            .WithCodeFixProvider<EqualityShouldBeCorrectlyImplementedFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            abstract class Test : IComparable
+            {
+                public int CompareTo(object other) => 0;
+                public override bool Equals(object? obj) => true;
+                public override int GetHashCode() => 0;
+                public static bool operator <(Test a, Test b) => true;
+                public static bool operator <=(Test a, Test b) => true;
+                public static bool operator >(Test a, Test b) => true;
+                public static bool operator >=(Test a, Test b) => true;
+                public static bool operator ==(Test a, Test b) => true;
+                public static bool operator !=(Test a, Test b) => true;
+            }
+
+            class InheritedTest : Test // should be ok as the operators are implemented in the base class
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BaseClassImplementsOperators()
+    public Task MA0097_CodeFix()
     {
-        var originalCode = @"using System;
-abstract class Test : IComparable
-{
-    public int CompareTo(object other) => 0;
-    public override bool Equals(object? obj) => true;
-    public override int GetHashCode() => 0;
-    public static bool operator <(Test a, Test b) => true;
-    public static bool operator <=(Test a, Test b) => true;
-    public static bool operator >(Test a, Test b) => true;
-    public static bool operator >=(Test a, Test b) => true;
-    public static bool operator ==(Test a, Test b) => true;
-    public static bool operator !=(Test a, Test b) => true;
-}
-
-class InheritedTest : Test // should be ok as the operators are implemented in the base class
-{
-}
-";
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MA0097_CodeFix()
-    {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             class {|MA0097:Test|} : IComparable<Test>, IEquatable<Test>
@@ -49,7 +50,7 @@ class InheritedTest : Test // should be ok as the operators are implemented in t
                 public override int GetHashCode() => 0;
             }
             """;
-        var fixedCode = """
+        test.FixedCode = """
             using System;
 
             class Test : IComparable<Test>, IEquatable<Test>
@@ -68,9 +69,6 @@ class InheritedTest : Test // should be ok as the operators are implemented in t
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

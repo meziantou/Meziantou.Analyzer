@@ -1,58 +1,54 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.EventArgsNameShouldEndWithEventArgsAnalyzer,
+    Meziantou.Analyzer.Rules.TypeNameShouldEndWithSuffixFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<EventArgsNameShouldEndWithEventArgsAnalyzer>()
-            .WithCodeFixProvider<TypeNameShouldEndWithSuffixFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task NameEndsWithEventArgs()
+    public Task NameEndsWithEventArgs()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class CustomEventArgs : System.EventArgs
             {
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NameDoesNotEndWithEventArgs()
+    public Task NameDoesNotEndWithEventArgs()
     {
-        const string SourceCode = """
-            class [|CustomArgs|] : System.EventArgs
-            {
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NameDoesNotEndWithEventArgs_CodeFix()
-    {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class [|CustomArgs|] : System.EventArgs
             {
             }
             """;
 
-        const string Fix = """
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NameDoesNotEndWithEventArgs_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class [|CustomArgs|] : System.EventArgs
+            {
+            }
+            """;
+        test.FixedCode = """
             class CustomArgsEventArgs : System.EventArgs
             {
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

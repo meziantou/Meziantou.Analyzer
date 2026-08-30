@@ -282,7 +282,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                     SyntaxKind.SimpleMemberAccessExpression,
                     MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
-                        comparerTypeSyntax,
+                        comparerTypeSyntax.AsExpressionSyntax(),
                         IdentifierName("Default")),
                     IdentifierName(nameof(IComparer<int>.Compare))))
                 .WithArgumentList(
@@ -301,7 +301,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
                     SyntaxKind.SimpleMemberAccessExpression,
                     MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
-                        equalityComparerTypeSyntax,
+                        equalityComparerTypeSyntax.AsExpressionSyntax(),
                         IdentifierName("Default")),
                     IdentifierName(nameof(IEqualityComparer<int>.Equals))))
                 .WithArgumentList(

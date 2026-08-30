@@ -1,12 +1,16 @@
+using Microsoft.CodeAnalysis;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.BothSideOfTheConditionAreIdenticalAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class BothSideOfTheConditionAreIdenticalAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<BothSideOfTheConditionAreIdenticalAnalyzer>();
+        var test = new AnalyzerTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Theory]
@@ -20,16 +24,17 @@ public sealed class BothSideOfTheConditionAreIdenticalAnalyzerTests
     [InlineData("a is true")]
     [InlineData("a is false or true")]
     [InlineData("a is false and not true")]
-    public async Task DifferentCode(string expression)
+    public Task DifferentCode(string expression)
     {
-        await CreateProjectBuilder()
-                .WithSourceCode($$"""
-                    var a = false;
-                    var b = false;
-                    var c = 0;
-                    _ = {{expression}};
-                    """)
-                .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            var a = false;
+            var b = false;
+            var c = 0;
+            _ = {{expression}};
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -41,16 +46,16 @@ public sealed class BothSideOfTheConditionAreIdenticalAnalyzerTests
     [InlineData("[|a || a|]")]
     [InlineData("a is [|true or true|]")]
     [InlineData("a is [|true and true|]")]
-    public async Task SameCode(string expression)
+    public Task SameCode(string expression)
     {
-        await CreateProjectBuilder()
-                .WithSourceCode($$"""
-                    var a = false;
-                    var b = false;
-                    var c = 0;
-                    _ = {{expression}};
-                    """)
-                .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = $$"""
+            var a = false;
+            var b = false;
+            var c = 0;
+            _ = {{expression}};
+            """;
 
+        return test.RunAsync();
+    }
 }

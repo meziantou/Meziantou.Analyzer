@@ -1,89 +1,99 @@
+using Microsoft.CodeAnalysis;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.UseReadOnlyStructForRefReadOnlyParametersAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UseReadOnlyStructForRefReadOnlyParametersAnalyzer>();
+        var test = new AnalyzerTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task ParameterNotRefReadOnly()
+    public Task ParameterNotRefReadOnly()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(default);
+        var test = CreateTest();
+        test.TestCode = """
+            A(default);
 
-                  void A(Foo foo) { }
-                  struct Foo { }
-                  """)
-              .ValidateAsync();
+            void A(Foo foo) { }
+            struct Foo { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StructNotReadOnly_in()
+    public Task StructNotReadOnly_in()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(default);
+        var test = CreateTest();
+        test.TestCode = """
+            A(default);
 
-                  void A(in Foo [|foo|]) { }
-                  struct Foo { }
-                  """)
-              .ValidateAsync();
+            void A(in Foo [|foo|]) { }
+            struct Foo { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StructNotReadOnly_ref_readonly()
+    public Task StructNotReadOnly_ref_readonly()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(default);
+        var test = CreateTest();
+        test.TestCode = """
+            A(default);
 
-                  void A(ref readonly Foo [|foo|]) { }
-                  struct Foo { }
-                  """)
-              .ValidateAsync();
+            void A(ref readonly Foo [|foo|]) { }
+            struct Foo { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StructReadOnly()
+    public Task StructReadOnly()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(default);
+        var test = CreateTest();
+        test.TestCode = """
+            A(default);
 
-                  void A(in Foo foo) { }
-                  readonly struct Foo { }
-                  """)
-              .ValidateAsync();
+            void A(in Foo foo) { }
+            readonly struct Foo { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StructNotReadOnly_Generic()
+    public Task StructNotReadOnly_Generic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A([|new Foo()|]);
+        var test = CreateTest();
+        test.TestCode = """
+            A([|new Foo()|]);
 
-                  void A<T>(in T foo) where T: struct { }
-                  struct Foo { }
-                  """)
-              .ValidateAsync();
+            void A<T>(in T foo) where T: struct { }
+            struct Foo { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StructReadOnly_Generic()
+    public Task StructReadOnly_Generic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  A(new Foo());
+        var test = CreateTest();
+        test.TestCode = """
+            A(new Foo());
 
-                  void A<T>(in T foo) where T: struct { }
-                  readonly struct Foo { }
-                  """)
-              .ValidateAsync();
+            void A<T>(in T foo) where T: struct { }
+            readonly struct Foo { }
+            """;
+
+        return test.RunAsync();
     }
 }

@@ -1,19 +1,21 @@
 #pragma warning disable CA1030 // Use events where appropriate
 
+using Microsoft.CodeAnalysis;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotRaiseReservedExceptionTypeAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotRaiseReservedExceptionTypeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotRaiseReservedExceptionTypeAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
+    public Task RaiseNotReservedException_ShouldNotReportErrorAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class TestAttribute
             {
@@ -24,34 +26,37 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RaiseReservedException_ShouldReportErrorAsync()
+    public Task RaiseReservedException_ShouldReportErrorAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class TestAttribute
             {
                 void Test()
                 {
-                    [|throw new IndexOutOfRangeException();|]
+                    {|#0:throw new IndexOutOfRangeException();|}
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("'System.IndexOutOfRangeException' is a reserved exception type")
-              .ValidateAsync();
+        test.ExpectedDiagnostics.Add(
+            new DiagnosticResult(RuleIdentifiers.DoNotRaiseReservedExceptionType, DiagnosticSeverity.Warning)
+                .WithLocation(0)
+                .WithMessage("'System.IndexOutOfRangeException' is a reserved exception type"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowNull()
+    public Task ThrowNull()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class TestAttribute
             {
@@ -61,8 +66,7 @@ public sealed class DoNotRaiseReservedExceptionTypeAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }
