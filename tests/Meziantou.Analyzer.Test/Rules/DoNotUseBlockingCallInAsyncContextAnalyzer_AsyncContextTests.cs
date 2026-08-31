@@ -12,7 +12,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard21;
         test.DisabledDiagnostics.Add("MA0045");
         return test;
     }
@@ -486,7 +485,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task AsyncMethodWithAsyncOverload()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSystemTextJson();
         test.TestCode = """
             using System;
             using System.IO;
@@ -612,6 +610,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task ProcessWaitForExit_NET5()
     {
         var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System.Threading.Tasks;
             using System.Diagnostics;

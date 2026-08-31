@@ -30,12 +30,6 @@ internal static class ReferenceAssembliesExtensions
         ]);
 
     /// <summary>
-    /// Adds <c>System.Text.Json</c>.
-    /// </summary>
-    public static ReferenceAssemblies AddSystemTextJson(this ReferenceAssemblies referenceAssemblies) =>
-        referenceAssemblies.AddPackages([new PackageIdentity("System.Text.Json", "4.7.2")]);
-
-    /// <summary>
     /// Adds the NUnit API.
     /// </summary>
     public static ReferenceAssemblies AddNUnitApi(this ReferenceAssemblies referenceAssemblies) =>
